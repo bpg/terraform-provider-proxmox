@@ -17,7 +17,7 @@ ability to merge PRs and respond to issues.
 > `$GOPATH` is the path to your Go workspace. If undefined, it defaults to `$HOME/go` on Linux and macOS, and `%USERPROFILE%\go` on Windows.
 
 > [!NOTE]
-> The provider requires Go 1.24 or later to build.
+> The provider requires Go 1.25 or later to build.
 
 - Clone the repository to: `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
 
@@ -37,12 +37,12 @@ ability to merge PRs and respond to issues.
 - To cross-compile the provider for all supported platforms:
 
   ```sh
-  make build-all
+  make release-build
   ```
 
   The compiled binaries will be placed in the `dist` directory.
 
-A portion of the documentation is generated from the source code. To update the documentation, run:
+- A portion of the documentation is generated from the source code. To update the documentation, run:
 
 ```sh
 make docs
@@ -83,7 +83,7 @@ The project has a test suite that must pass for contributions to be accepted. Wh
 
 ### Acceptance Tests
 
-Acceptance tests run against a real Proxmox instance and verify the provider's functionality end-to-end. These tests are located in the `fwprovider/tests` directory.
+Acceptance tests run against a real Proxmox instance and verify the provider's functionality end-to-end. These tests are located in the `fwprovider/test` directory.
 
 #### Prerequisites
 
@@ -122,7 +122,7 @@ If you want to run a single test or a group of tests, use the helper script:
 ./testacc <test_name>
 ```
 
-For example, to run all VM-related tests: `./testacc.sh TestAccResourceVM.*`
+For example, to run all VM-related tests: `./testacc TestAccResourceVM.*`
 
 > [!NOTE]
 >
@@ -183,6 +183,7 @@ We expect all code contributions to follow these guidelines:
 
 2. Code must be linted using `golangci-lint`
    - Run `make lint` to lint your code
+   - The project uses `.golangci.yml` for linting configuration
 
 ## Commit message conventions
 
@@ -217,7 +218,7 @@ feat(vm): add support for the `clone` operation
 
 ### Developer Certificate of Origin (DCO)
 
-All contributions must be signed off according to the Developer Certificate of Origin (DCO). The DCO is a lightweight way of certifying that you wrote or have the right to submit the code you are contributing. You can find the full text [here](https://developercertificate.org).
+All contributions must be signed off according to the Developer Certificate of Origin (DCO). The DCO is a lightweight way of certifying that you wrote or have the right to submit the code you are contributing. It provides legal protection for the project by ensuring contributors have the necessary rights to their contributions and agree to license them under the project's terms. You can find the full text [here](https://developercertificate.org).
 
 To sign off your commits, add a `Signed-off-by` line to your commit message:
 
@@ -229,9 +230,9 @@ Signed-off-by: Random Developer <random@developer.example.org>
 
 > [!NOTE]
 >
-> - Use your real name and a valid email address
-> - You can use GitHub's `noreply` email address for privacy (see [GitHub docs](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address#setting-your-commit-email-address-on-github))
-> - If your Git config has `user.name` and `user.email` set, use `git commit -s` to automatically add the sign-off
+> - **Name**: Use your real name (preferred) or GitHub username if you prefer privacy
+> - **Email**: Use a valid email address (GitHub's 'noreply' email is acceptable for privacy, see [GitHub docs](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address#setting-your-commit-email-address-on-github))
+> - **Auto-sign**: If your Git config has `user.name` and `user.email` set, use `git commit -s` to automatically add the sign-off
 
 For more details about the DCO checker, see the [DCO app repo](https://github.com/dcoapp/app).
 

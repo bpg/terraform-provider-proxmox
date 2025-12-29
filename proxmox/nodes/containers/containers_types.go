@@ -11,9 +11,11 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -25,6 +27,12 @@ var (
 	// regexMountPointKey matches mount point keys like mp0, mp1, etc.
 	regexMountPointKey = regexp.MustCompile(`^mp\d+$`)
 )
+
+// WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
+type WaitForIPConfig struct {
+	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
+	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+}
 
 // CloneRequestBody contains the data for an container clone request.
 type CloneRequestBody struct {
@@ -41,47 +49,51 @@ type CloneRequestBody struct {
 
 // CreateRequestBody contains the data for a user create request.
 type CreateRequestBody struct {
-	BandwidthLimit       *float64                 `json:"bwlimit,omitempty"              url:"bwlimit,omitempty"`
-	ConsoleEnabled       *types.CustomBool        `json:"console,omitempty"              url:"console,omitempty,int"`
-	ConsoleMode          *string                  `json:"cmode,omitempty"                url:"cmode,omitempty"`
-	CPUArchitecture      *string                  `json:"arch,omitempty"                 url:"arch,omitempty"`
-	CPUCores             *int                     `json:"cores,omitempty"                url:"cores,omitempty"`
-	CPULimit             *int                     `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
-	CPUUnits             *int                     `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
-	DatastoreID          *string                  `json:"storage,omitempty"              url:"storage,omitempty"`
-	DedicatedMemory      *int                     `json:"memory,omitempty"               url:"memory,omitempty"`
-	Delete               []string                 `json:"delete,omitempty"               url:"delete,omitempty"`
-	Description          *string                  `json:"description,omitempty"          url:"description,omitempty"`
-	DNSDomain            *string                  `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
-	DNSServer            *string                  `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
-	Features             *CustomFeatures          `json:"features,omitempty"             url:"features,omitempty"`
-	Force                *types.CustomBool        `json:"force,omitempty"                url:"force,omitempty,int"`
-	HookScript           *string                  `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
-	Hostname             *string                  `json:"hostname,omitempty"             url:"hostname,omitempty"`
-	IgnoreUnpackErrors   *types.CustomBool        `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
-	Lock                 *string                  `json:"lock,omitempty"                 url:"lock,omitempty,int"`
-	MountPoints          CustomMountPoints        `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
-	PassthroughDevices   CustomPassthroughDevices `json:"dev,omitempty"                  url:"dev,omitempty,numbered"`
-	NetworkInterfaces    CustomNetworkInterfaces  `json:"net,omitempty"                  url:"net,omitempty,numbered"`
-	OSTemplateFileVolume *string                  `json:"ostemplate,omitempty"           url:"ostemplate,omitempty"`
-	OSType               *string                  `json:"ostype,omitempty"               url:"ostype,omitempty"`
-	Password             *string                  `json:"password,omitempty"             url:"password,omitempty"`
-	PoolID               *string                  `json:"pool,omitempty"                 url:"pool,omitempty"`
-	Protection           *types.CustomBool        `json:"protection,omitempty"           url:"protection,omitempty,int"`
-	Restore              *types.CustomBool        `json:"restore,omitempty"              url:"restore,omitempty,int"`
-	RootFS               *CustomRootFS            `json:"rootfs,omitempty"               url:"rootfs,omitempty"`
-	SSHKeys              *CustomSSHKeys           `json:"ssh-public-keys,omitempty"      url:"ssh-public-keys,omitempty"`
-	Start                *types.CustomBool        `json:"start,omitempty"                url:"start,omitempty,int"`
-	StartOnBoot          *types.CustomBool        `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
-	StartupBehavior      *CustomStartupBehavior   `json:"startup,omitempty"              url:"startup,omitempty"`
-	Swap                 *int                     `json:"swap,omitempty"                 url:"swap,omitempty"`
-	Tags                 *string                  `json:"tags,omitempty"                 url:"tags,omitempty"`
-	Template             *types.CustomBool        `json:"template,omitempty"             url:"template,omitempty,int"`
-	TTY                  *int                     `json:"tty,omitempty"                  url:"tty,omitempty"`
-	Unique               *types.CustomBool        `json:"unique,omitempty"               url:"unique,omitempty,int"`
-	Unprivileged         *types.CustomBool        `json:"unprivileged,omitempty"         url:"unprivileged,omitempty,int"`
-	VMID                 *int                     `json:"vmid,omitempty"                 url:"vmid,omitempty"`
+	BandwidthLimit       *float64                    `json:"bwlimit,omitempty"              url:"bwlimit,omitempty"`
+	ConsoleEnabled       *types.CustomBool           `json:"console,omitempty"              url:"console,omitempty,int"`
+	ConsoleMode          *string                     `json:"cmode,omitempty"                url:"cmode,omitempty"`
+	CPUArchitecture      *string                     `json:"arch,omitempty"                 url:"arch,omitempty"`
+	CPUCores             *int                        `json:"cores,omitempty"                url:"cores,omitempty"`
+	CPULimit             *int                        `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
+	CPUUnits             *int                        `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
+	DatastoreID          *string                     `json:"storage,omitempty"              url:"storage,omitempty"`
+	DedicatedMemory      *int                        `json:"memory,omitempty"               url:"memory,omitempty"`
+	Delete               []string                    `json:"delete,omitempty"               url:"delete,omitempty"`
+	Description          *string                     `json:"description,omitempty"          url:"description,omitempty"`
+	DNSDomain            *string                     `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
+	DNSServer            *string                     `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
+	EnvironmentVariables *CustomEnvironmentVariables `json:"env,omitempty"                  url:"env,omitempty"`
+	Features             *CustomFeatures             `json:"features,omitempty"             url:"features,omitempty"`
+	Force                *types.CustomBool           `json:"force,omitempty"                url:"force,omitempty,int"`
+	HookScript           *string                     `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
+	Hostname             *string                     `json:"hostname,omitempty"             url:"hostname,omitempty"`
+	IgnoreUnpackErrors   *types.CustomBool           `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
+	Lock                 *string                     `json:"lock,omitempty"                 url:"lock,omitempty,int"`
+	MountPoints          CustomMountPoints           `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
+	PassthroughDevices   CustomPassthroughDevices    `json:"dev,omitempty"                  url:"dev,omitempty,numbered"`
+	NetworkInterfaces    CustomNetworkInterfaces     `json:"net,omitempty"                  url:"net,omitempty,numbered"`
+	OSTemplateFileVolume *string                     `json:"ostemplate,omitempty"           url:"ostemplate,omitempty"`
+	OSType               *string                     `json:"ostype,omitempty"               url:"ostype,omitempty"`
+	Password             *string                     `json:"password,omitempty"             url:"password,omitempty"`
+	PoolID               *string                     `json:"pool,omitempty"                 url:"pool,omitempty"`
+	Protection           *types.CustomBool           `json:"protection,omitempty"           url:"protection,omitempty,int"`
+	Restore              *types.CustomBool           `json:"restore,omitempty"              url:"restore,omitempty,int"`
+	RootFS               *CustomRootFS               `json:"rootfs,omitempty"               url:"rootfs,omitempty"`
+	SSHKeys              *CustomSSHKeys              `json:"ssh-public-keys,omitempty"      url:"ssh-public-keys,omitempty"`
+	Start                *types.CustomBool           `json:"start,omitempty"                url:"start,omitempty,int"`
+	StartOnBoot          *types.CustomBool           `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
+	StartupBehavior      *CustomStartupBehavior      `json:"startup,omitempty"              url:"startup,omitempty"`
+	Swap                 *int                        `json:"swap,omitempty"                 url:"swap,omitempty"`
+	Tags                 *string                     `json:"tags,omitempty"                 url:"tags,omitempty"`
+	Template             *types.CustomBool           `json:"template,omitempty"             url:"template,omitempty,int"`
+	TTY                  *int                        `json:"tty,omitempty"                  url:"tty,omitempty"`
+	Unique               *types.CustomBool           `json:"unique,omitempty"               url:"unique,omitempty,int"`
+	Unprivileged         *types.CustomBool           `json:"unprivileged,omitempty"         url:"unprivileged,omitempty,int"`
+	VMID                 *int                        `json:"vmid,omitempty"                 url:"vmid,omitempty"`
 }
+
+// CustomEnvironmentVariables contains environment variable key-value pairs.
+type CustomEnvironmentVariables map[string]string
 
 // CustomFeatures contains the values for the "features" property.
 type CustomFeatures struct {
@@ -164,12 +176,16 @@ type CustomStartupBehavior struct {
 	Up    *int `json:"up,omitempty"    url:"up,omitempty"`
 }
 
-// CreateResponseBody contains the body from a container create response.
-type CreateResponseBody struct {
+type TaskSubmittedResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-type ShutdownResponseBody = CreateResponseBody
+type (
+	CreateResponseBody   = TaskSubmittedResponseBody
+	CloneResponseBody    = TaskSubmittedResponseBody
+	RebootResponseBody   = TaskSubmittedResponseBody
+	ShutdownResponseBody = TaskSubmittedResponseBody
+)
 
 // GetResponseBody contains the body from a user get response.
 type GetResponseBody struct {
@@ -178,35 +194,36 @@ type GetResponseBody struct {
 
 // GetResponseData contains the data from a user get response.
 type GetResponseData struct {
-	ConsoleEnabled     *types.CustomBool        `json:"console,omitempty"`
-	ConsoleMode        *string                  `json:"cmode,omitempty"`
-	CPUArchitecture    *string                  `json:"arch,omitempty"`
-	CPUCores           *int                     `json:"cores,omitempty"`
-	CPULimit           *types.CustomInt         `json:"cpulimit,omitempty"`
-	CPUUnits           *int                     `json:"cpuunits,omitempty"`
-	DedicatedMemory    *int                     `json:"memory,omitempty"`
-	Description        *string                  `json:"description,omitempty"`
-	Digest             string                   `json:"digest"`
-	DNSDomain          *string                  `json:"searchdomain,omitempty"`
-	DNSServer          *string                  `json:"nameserver,omitempty"`
-	Features           *CustomFeatures          `json:"features,omitempty"`
-	HookScript         *string                  `json:"hookscript,omitempty"`
-	Hostname           *string                  `json:"hostname,omitempty"`
-	Lock               *types.CustomBool        `json:"lock,omitempty"`
-	LXCConfiguration   *[][2]string             `json:"lxc,omitempty"`
-	MountPoints        CustomMountPoints        `json:"mp,omitempty"`
-	PassthroughDevices CustomPassthroughDevices `json:"dev,omitempty"`
-	NetworkInterfaces  CustomNetworkInterfaces  `json:"net,omitempty"`
-	OSType             *string                  `json:"ostype,omitempty"`
-	Protection         *types.CustomBool        `json:"protection,omitempty"`
-	RootFS             *CustomRootFS            `json:"rootfs,omitempty"`
-	StartOnBoot        *types.CustomBool        `json:"onboot,omitempty"`
-	StartupBehavior    *CustomStartupBehavior   `json:"startup,omitempty"`
-	Swap               *int                     `json:"swap,omitempty"`
-	Tags               *string                  `json:"tags,omitempty"`
-	Template           *types.CustomBool        `json:"template,omitempty"`
-	TTY                *int                     `json:"tty,omitempty"`
-	Unprivileged       *types.CustomBool        `json:"unprivileged,omitempty"`
+	ConsoleEnabled       *types.CustomBool           `json:"console,omitempty"`
+	ConsoleMode          *string                     `json:"cmode,omitempty"`
+	CPUArchitecture      *string                     `json:"arch,omitempty"`
+	CPUCores             *int                        `json:"cores,omitempty"`
+	CPULimit             *types.CustomInt            `json:"cpulimit,omitempty"`
+	CPUUnits             *int                        `json:"cpuunits,omitempty"`
+	DedicatedMemory      *int                        `json:"memory,omitempty"`
+	Description          *string                     `json:"description,omitempty"`
+	Digest               string                      `json:"digest"`
+	DNSDomain            *string                     `json:"searchdomain,omitempty"`
+	DNSServer            *string                     `json:"nameserver,omitempty"`
+	EnvironmentVariables *CustomEnvironmentVariables `json:"env,omitempty"`
+	Features             *CustomFeatures             `json:"features,omitempty"`
+	HookScript           *string                     `json:"hookscript,omitempty"`
+	Hostname             *string                     `json:"hostname,omitempty"`
+	Lock                 *types.CustomBool           `json:"lock,omitempty"`
+	LXCConfiguration     *[][2]string                `json:"lxc,omitempty"`
+	MountPoints          CustomMountPoints           `json:"mp,omitempty"`
+	PassthroughDevices   CustomPassthroughDevices    `json:"dev,omitempty"`
+	NetworkInterfaces    CustomNetworkInterfaces     `json:"net,omitempty"`
+	OSType               *string                     `json:"ostype,omitempty"`
+	Protection           *types.CustomBool           `json:"protection,omitempty"`
+	RootFS               *CustomRootFS               `json:"rootfs,omitempty"`
+	StartOnBoot          *types.CustomBool           `json:"onboot,omitempty"`
+	StartupBehavior      *CustomStartupBehavior      `json:"startup,omitempty"`
+	Swap                 *int                        `json:"swap,omitempty"`
+	Tags                 *string                     `json:"tags,omitempty"`
+	Template             *types.CustomBool           `json:"template,omitempty"`
+	TTY                  *int                        `json:"tty,omitempty"`
+	Unprivileged         *types.CustomBool           `json:"unprivileged,omitempty"`
 }
 
 // GetStatusResponseBody contains the body from a container get status response.
@@ -220,7 +237,7 @@ type GetStatusResponseData struct {
 	Lock             *string          `json:"lock,omitempty"`
 	MemoryAllocation *int64           `json:"maxmem,omitempty"`
 	Name             *string          `json:"name,omitempty"`
-	RootDiskSize     *interface{}     `json:"maxdisk,omitempty"`
+	RootDiskSize     *any             `json:"maxdisk,omitempty"`
 	Status           string           `json:"status,omitempty"`
 	SwapAllocation   *int64           `json:"maxswap,omitempty"`
 	Tags             *string          `json:"tags,omitempty"`
@@ -638,6 +655,31 @@ func (r *CustomStartupBehavior) EncodeValues(
 	return nil
 }
 
+// EncodeValues converts a CustomEnvironmentVariables map to a NUL-separated string.
+func (r CustomEnvironmentVariables) EncodeValues(key string, v *url.Values) error {
+	if len(r) == 0 {
+		return nil
+	}
+
+	keys := make([]string, 0, len(r))
+	for k := range r {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	envVars := make([]string, 0, len(r))
+
+	for _, k := range keys {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", k, r[k]))
+	}
+
+	// join with NUL character (ASCII 0)
+	v.Add(key, strings.Join(envVars, "\x00"))
+
+	return nil
+}
+
 // UnmarshalJSON converts a ContainerCustomFeatures string to an object.
 func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 	var s string
@@ -647,19 +689,17 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal ContainerCustomFeatures: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 2 {
 			switch v[0] {
 			case "fuse":
-				bv := types.CustomBool(v[1] == "1")
-				r.FUSE = &bv
+				r.FUSE = types.CustomBool(v[1] == "1").Pointer()
 			case "keyctl":
-				bv := types.CustomBool(v[1] == "1")
-				r.KeyControl = &bv
+				r.KeyControl = types.CustomBool(v[1] == "1").Pointer()
 			case "mount":
 				if v[1] != "" {
 					a := strings.Split(v[1], ";")
@@ -670,8 +710,7 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 					r.MountTypes = &a
 				}
 			case "nesting":
-				bv := types.CustomBool(v[1] == "1")
-				r.Nesting = &bv
+				r.Nesting = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}
@@ -682,9 +721,9 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomPassthroughDevice string to an object.
 func (r *CustomPassthroughDevice) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("unable to unmarshal CustomPassthroughDevice: %w", err)
 	}
 
@@ -700,24 +739,17 @@ func (r *CustomPassthroughDevice) UnmarshalJSON(b []byte) error {
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "deny-write":
-				bv := types.CustomBool(v[1] == "1")
-				r.DenyWrite = &bv
+				r.DenyWrite = types.CustomBool(v[1] == "1").Pointer()
 			case "path":
 				path = v[1]
 			case "uid":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'uid': %w", err)
+				if r.UID, err = ptr.ParseIntPtr(v[1], "uid"); err != nil {
+					return err
 				}
-
-				r.UID = &iv
 			case "gid":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'gid': %w", err)
+				if r.GID, err = ptr.ParseIntPtr(v[1], "gid"); err != nil {
+					return err
 				}
-
-				r.GID = &iv
 			case "mode":
 				r.Mode = &v[1]
 			}
@@ -732,15 +764,15 @@ func (r *CustomPassthroughDevice) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomMountPoint string to an object.
 func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("unable to unmarshal CustomMountPoint: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
@@ -748,11 +780,9 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "acl":
-				bv := types.CustomBool(v[1] == "1")
-				r.ACL = &bv
+				r.ACL = types.CustomBool(v[1] == "1").Pointer()
 			case "backup":
-				bv := types.CustomBool(v[1] == "1")
-				r.Backup = &bv
+				r.Backup = types.CustomBool(v[1] == "1").Pointer()
 			case "mountoptions":
 				if v[1] != "" {
 					a := strings.Split(v[1], ";")
@@ -765,17 +795,13 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 			case "mp":
 				r.MountPoint = v[1]
 			case "quota":
-				bv := types.CustomBool(v[1] == "1")
-				r.Quota = &bv
+				r.Quota = types.CustomBool(v[1] == "1").Pointer()
 			case "ro":
-				bv := types.CustomBool(v[1] == "1")
-				r.ReadOnly = &bv
+				r.ReadOnly = types.CustomBool(v[1] == "1").Pointer()
 			case "replicate":
-				bv := types.CustomBool(v[1] == "1")
-				r.Replicate = &bv
+				r.Replicate = types.CustomBool(v[1] == "1").Pointer()
 			case "shared":
-				bv := types.CustomBool(v[1] == "1")
-				r.Shared = &bv
+				r.Shared = types.CustomBool(v[1] == "1").Pointer()
 			case "size":
 				r.DiskSize = &v[1]
 			}
@@ -788,15 +814,15 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomNetworkInterface string to an object.
 func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	er := json.Unmarshal(b, &s)
-	if er != nil {
-		return fmt.Errorf("unable to unmarshal CustomNetworkInterface: %w", er)
+	if err = json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("unable to unmarshal CustomNetworkInterface: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		//nolint:nestif
@@ -807,8 +833,7 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 			case "bridge":
 				r.Bridge = &v[1]
 			case "firewall":
-				bv := types.CustomBool(v[1] == "1")
-				r.Firewall = &bv
+				r.Firewall = types.CustomBool(v[1] == "1").Pointer()
 			case "gw":
 				r.IPv4Gateway = &v[1]
 			case "gw6":
@@ -820,38 +845,26 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 			case "hwaddr":
 				r.MACAddress = &v[1]
 			case "mtu":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'mtu': %w", err)
+				if r.MTU, err = ptr.ParseIntPtr(v[1], "mtu"); err != nil {
+					return err
 				}
-
-				r.MTU = &iv
 			case "name":
 				r.Name = v[1]
 			case "rate":
-				fv, err := strconv.ParseFloat(v[1], 64)
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'rate': %w", err)
+				if r.RateLimit, err = ptr.ParseFloat64Ptr(v[1], "rate"); err != nil {
+					return err
 				}
-
-				r.RateLimit = &fv
 			case "tag":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'tag': %w", err)
+				if r.Tag, err = ptr.ParseIntPtr(v[1], "tag"); err != nil {
+					return err
 				}
-
-				r.Tag = &iv
 			case "trunks":
-				var err error
-
 				if v[1] != "" {
 					trunks := strings.Split(v[1], ";")
 					a := make([]int, len(trunks))
 
 					for ti, tv := range trunks {
-						a[ti], err = strconv.Atoi(tv)
-						if err != nil {
+						if a[ti], err = strconv.Atoi(tv); err != nil {
 							return fmt.Errorf("unable to unmarshal 'trunks': %w", err)
 						}
 					}
@@ -874,15 +887,15 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomRootFS string to an object.
 func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("unable to unmarshal CustomRootFS: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
@@ -892,8 +905,7 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 			case "volume":
 				r.Volume = v[1]
 			case "acl":
-				bv := types.CustomBool(v[1] == "1")
-				r.ACL = &bv
+				r.ACL = types.CustomBool(v[1] == "1").Pointer()
 			case "mountoptions":
 				if v[1] != "" {
 					a := strings.Split(v[1], ";")
@@ -904,22 +916,17 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 					r.MountOptions = &a
 				}
 			case "quota":
-				bv := types.CustomBool(v[1] == "1")
-				r.Quota = &bv
+				r.Quota = types.CustomBool(v[1] == "1").Pointer()
 			case "ro":
-				bv := types.CustomBool(v[1] == "1")
-				r.ReadOnly = &bv
+				r.ReadOnly = types.CustomBool(v[1] == "1").Pointer()
 			case "replicate":
-				bv := types.CustomBool(v[1] == "1")
-				r.Replicate = &bv
+				r.Replicate = types.CustomBool(v[1] == "1").Pointer()
 			case "shared":
-				bv := types.CustomBool(v[1] == "1")
-				r.Shared = &bv
+				r.Shared = types.CustomBool(v[1] == "1").Pointer()
 			case "size":
 				r.Size = new(types.DiskSize)
 
-				err = r.Size.UnmarshalJSON([]byte(v[1]))
-				if err != nil {
+				if err = r.Size.UnmarshalJSON([]byte(v[1])); err != nil {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)
 				}
 			}
@@ -932,41 +939,56 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomStartupBehavior string to an object.
 func (r *CustomStartupBehavior) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("unable to unmarshal CustomStartupBehavior: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 2 {
 			switch v[0] {
 			case "down":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'down': %w", err)
+				if r.Down, err = ptr.ParseIntPtr(v[1], "down"); err != nil {
+					return err
 				}
-
-				r.Down = &iv
 			case "order":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'order': %w", err)
+				if r.Order, err = ptr.ParseIntPtr(v[1], "order"); err != nil {
+					return err
 				}
-
-				r.Order = &iv
 			case "up":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'up': %w", err)
+				if r.Up, err = ptr.ParseIntPtr(v[1], "up"); err != nil {
+					return err
 				}
-
-				r.Up = &iv
 			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomEnvironmentVariables NUL-separated string to a map.
+func (r *CustomEnvironmentVariables) UnmarshalJSON(b []byte) error {
+	var s string
+
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("unable to unmarshal CustomEnvironmentVariables: %w", err)
+	}
+
+	*r = make(CustomEnvironmentVariables)
+
+	// Split by NUL character (ASCII 0)
+	pairs := strings.SplitSeq(s, "\x00")
+
+	for p := range pairs {
+		v := strings.SplitN(p, "=", 2)
+
+		if len(v) == 2 {
+			(*r)[v[0]] = v[1]
 		}
 	}
 
@@ -984,7 +1006,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 
-	var byAttr map[string]interface{}
+	var byAttr map[string]any
 
 	// now get map by attribute name
 	err := json.Unmarshal(b, &byAttr)

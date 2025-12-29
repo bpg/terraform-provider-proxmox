@@ -8,8 +8,10 @@ package firewall
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -21,6 +23,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
+
+// ErrRuleMissing is a sentinel error to indicate a rule doesn't exist at the expected position.
+var ErrRuleMissing = errors.New("rule missing")
 
 const (
 	dvSecurityGroup = ""
@@ -67,7 +72,6 @@ func Rules() *schema.Resource {
 			Type:        schema.TypeString,
 			Description: "Security group name",
 			Optional:    true,
-			ForceNew:    true,
 			Default:     dvSecurityGroup,
 		},
 		mkRuleAction: {
@@ -161,9 +165,11 @@ func Rules() *schema.Resource {
 		MkRule: {
 			Type:        schema.TypeList,
 			Description: "List of rules",
-			Required:    true,
-			ForceNew:    true,
-			Elem:        &schema.Resource{Schema: rule},
+			Optional:    true,
+			DefaultFunc: func() (any, error) {
+				return make([]any, 0), nil
+			},
+			Elem: &schema.Resource{Schema: rule},
 		},
 	}
 
@@ -175,47 +181,125 @@ func Rules() *schema.Resource {
 		ReadContext:   invokeRuleAPI(RulesRead),
 		UpdateContext: invokeRuleAPI(RulesUpdate),
 		DeleteContext: invokeRuleAPI(RulesDelete),
+		Importer: &schema.ResourceImporter{
+			StateContext: RulesImport,
+		},
 	}
+}
+
+// RulesImport imports firewall rules.
+func RulesImport(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
+	id := d.Id()
+
+	switch {
+	case id == "cluster":
+	case strings.HasPrefix(id, "node/"):
+		parts := strings.SplitN(id, "/", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid node import ID format: %s (expected: node/<node_name>)", id)
+		}
+
+		nodeName := parts[1]
+		if nodeName == "" {
+			return nil, fmt.Errorf("invalid node import ID: node name cannot be empty in %s", id)
+		}
+
+		err := d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting node name during import: %w", err)
+		}
+	case strings.HasPrefix(id, "vm/"):
+		parts := strings.SplitN(id, "/", 3)
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("invalid VM import ID format: %s (expected: vm/<node_name>/<vm_id>)", id)
+		}
+
+		nodeName := parts[1]
+		if nodeName == "" {
+			return nil, fmt.Errorf("invalid VM import ID: node name cannot be empty in %s", id)
+		}
+
+		vmID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid VM import ID: VM ID must be a number in %s: %w", id, err)
+		}
+
+		err = d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting node name during import: %w", err)
+		}
+
+		err = d.Set(mkSelectorVMID, vmID)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting VM ID during import: %w", err)
+		}
+	case strings.HasPrefix(id, "container/"):
+		parts := strings.SplitN(id, "/", 3)
+
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("invalid container import ID format: %s (expected: container/<node_name>/<container_id>)", id)
+		}
+
+		nodeName := parts[1]
+		if nodeName == "" {
+			return nil, fmt.Errorf("invalid container import ID: node name cannot be empty in %s", id)
+		}
+
+		containerID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid container import ID: container ID must be a number in %s: %w", id, err)
+		}
+
+		err = d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting node name during import: %w", err)
+		}
+
+		err = d.Set(mkSelectorContainerID, containerID)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting container ID during import: %w", err)
+		}
+	default:
+		return nil, fmt.Errorf("invalid import ID: %s (expected: 'cluster', 'vm/<node_name>/<vm_id>', or 'container/<node_name>/<container_id>')", id)
+	}
+
+	api, err := firewallApiFor(d, m)
+	if err != nil {
+		return nil, err
+	}
+
+	d.SetId(api.GetRulesID())
+
+	return []*schema.ResourceData{d}, nil
 }
 
 // RulesCreate creates new firewall rules.
 func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
-	rules := d.Get(MkRule).([]interface{})
+	existingRules, err := api.ListRules(ctx)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+		return diags
+	}
+
+	if len(existingRules) > 0 {
+		diags = append(diags, diag.Errorf("Existing rules detected. Aborting...")...)
+		return diags
+	}
+
+	rules := d.Get(MkRule).([]any)
 
 	for i := len(rules) - 1; i >= 0; i-- {
-		var ruleBody firewall.RuleCreateRequestBody
+		rule := rules[i].(map[string]any)
 
-		rule := rules[i].(map[string]interface{})
-
-		sg := rule[mkSecurityGroup].(string)
-		if sg != "" {
-			// this is a special case of security group insertion
-			ruleBody = firewall.RuleCreateRequestBody{
-				Action:   sg,
-				Type:     "group",
-				BaseRule: *mapToSecurityGroupBaseRule(rule),
-			}
-		} else {
-			a := rule[mkRuleAction].(string)
-			t := rule[mkRuleType].(string)
-
-			if a == "" || t == "" {
-				diags = append(diags, diag.Errorf("Either '%s' OR both '%s' and '%s' must be defined for the rule #%d",
-					mkSecurityGroup, mkRuleAction, mkRuleType, i)...)
-
-				continue
-			}
-
-			ruleBody = firewall.RuleCreateRequestBody{
-				Action:   a,
-				Type:     t,
-				BaseRule: *mapToBaseRule(rule),
-			}
+		ruleBody, err := mapToRuleCreateRequestBody(rule)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+			continue
 		}
 
-		err := api.CreateRule(ctx, &ruleBody)
+		err = api.CreateRule(ctx, ruleBody)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -224,7 +308,7 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	}
 
 	// reset rules, we re-read them (with proper positions) from the API
-	err := d.Set(MkRule, nil)
+	err = d.Set(MkRule, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -238,22 +322,19 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
-	readRule := func(pos int, ruleMap map[string]interface{}) error {
+	readRule := func(pos int, ruleMap map[string]any) error {
 		rule, err := api.GetRule(ctx, pos)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rule at position") {
-				// this is not an error, the rule does not exist
-				return nil
+				return ErrRuleMissing
 			}
 
 			return fmt.Errorf("error reading rule %d : %w", pos, err)
 		}
 
-		// pos in the map should be int!
 		ruleMap[mkRulePos] = pos
 
 		if rule.Type == "group" {
-			// this is a special case of security group insertion
 			ruleMap[mkSecurityGroup] = rule.Action
 			securityGroupBaseRuleToMap(&rule.BaseRule, ruleMap)
 		} else {
@@ -265,31 +346,24 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 		return nil
 	}
 
-	rules := d.Get(MkRule).([]interface{})
-	if len(rules) > 0 {
-		// We have rules in the state, so we need to read them from the API
-		for _, v := range rules {
-			ruleMap := v.(map[string]interface{})
-			pos := ruleMap[mkRulePos].(int)
+	ruleIDs, err := api.ListRules(ctx)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+		return diags
+	}
 
-			err := readRule(pos, ruleMap)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	} else {
-		ruleIDs, err := api.ListRules(ctx)
+	rules := make([]map[string]any, 0)
+
+	for _, id := range ruleIDs {
+		ruleMap := map[string]any{}
+
+		err = readRule(id.Pos, ruleMap)
 		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		for _, id := range ruleIDs {
-			ruleMap := map[string]interface{}{}
-
-			err = readRule(id.Pos, ruleMap)
-			if err != nil {
+			if !errors.Is(err, ErrRuleMissing) {
 				diags = append(diags, diag.FromErr(err)...)
-			} else if len(ruleMap) > 0 {
-				rules = append(rules, ruleMap)
 			}
+		} else if len(ruleMap) > 0 {
+			rules = append(rules, ruleMap)
 		}
 	}
 
@@ -297,7 +371,7 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 		return diags
 	}
 
-	err := d.Set(MkRule, rules)
+	err = d.Set(MkRule, rules)
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
@@ -307,27 +381,115 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
-	rules := d.Get(MkRule).([]interface{})
-	for i := len(rules) - 1; i >= 0; i-- {
-		rule := rules[i].(map[string]interface{})
+	oldRules, newRules := d.GetChange(MkRule)
+
+	oldRulesList := oldRules.([]any)
+	newRulesList := newRules.([]any)
+
+	if len(oldRulesList) < len(newRulesList) {
+		// create new rules
+		rulesToCreate := newRulesList[len(oldRulesList):]
+
+		maxPos := -1
+
+		for _, rule := range oldRulesList {
+			ruleMap := rule.(map[string]any)
+			maxPos = max(maxPos, ruleMap[mkRulePos].(int))
+		}
+
+		for _, rule := range rulesToCreate {
+			ruleMap := rule.(map[string]any)
+
+			ruleBody, err := mapToRuleCreateRequestBody(ruleMap)
+			if err != nil {
+				diags = append(diags, diag.Errorf("Could not create rule: %v", err)...)
+				return diags
+			}
+
+			err = api.CreateRule(ctx, ruleBody)
+			if err != nil {
+				diags = append(diags, diag.Errorf("Could not create rule: %v", err)...)
+				return diags
+			}
+
+			maxPos++
+			moveTo := maxPos + 1
+
+			err = api.UpdateRule(ctx, 0, &firewall.RuleUpdateRequestBody{
+				MoveTo: &moveTo,
+			})
+			if err != nil {
+				diags = append(diags, diag.Errorf("Could not move the created rule to the end of the rule list: %v", err)...)
+				return diags
+			}
+		}
+	}
+
+	if len(oldRulesList) > len(newRulesList) {
+		// delete old rules
+		rulesToDelete := oldRulesList[len(newRulesList):]
+
+		sort.Slice(rulesToDelete, func(i, j int) bool {
+			ruleI := rulesToDelete[i].(map[string]any)
+			ruleJ := rulesToDelete[j].(map[string]any)
+
+			return ruleI[mkRulePos].(int) > ruleJ[mkRulePos].(int)
+		})
+
+		for _, rule := range rulesToDelete {
+			ruleMap := rule.(map[string]any)
+			pos := ruleMap[mkRulePos].(int)
+
+			err := api.DeleteRule(ctx, pos)
+			if err != nil {
+				diags = append(diags, diag.Errorf("Could not delete rule at pos %d: %v", pos, err)...)
+				return diags
+			}
+		}
+	}
+
+	for i := min(len(oldRulesList), len(newRulesList)) - 1; i >= 0; i-- {
+		newRule := newRulesList[i].(map[string]any)
+		oldRule := oldRulesList[i].(map[string]any)
+
+		pos := oldRule[mkRulePos].(int)
 
 		ruleBody := firewall.RuleUpdateRequestBody{
-			BaseRule: *mapToBaseRule(rule),
+			BaseRule: *mapToBaseRule(newRule),
+			Pos:      &pos,
 		}
 
-		pos := rule[mkRulePos].(int)
-		if pos >= 0 {
-			ruleBody.Pos = &pos
-		}
-
-		action := rule[mkRuleAction].(string)
-		if action != "" {
+		if action := newRule[mkRuleAction].(string); action != "" {
 			ruleBody.Action = &action
 		}
 
-		rType := rule[mkRuleType].(string)
-		if rType != "" {
+		if rType := newRule[mkRuleType].(string); rType != "" {
 			ruleBody.Type = &rType
+		}
+
+		var fieldsToDelete []string
+
+		fields := []string{
+			mkRuleComment,
+			mkRuleDPort,
+			mkRuleDest,
+			mkRuleIFace,
+			mkRuleLog,
+			mkRuleMacro,
+			mkRuleProto,
+			mkRuleSource,
+			mkRuleSPort,
+		}
+
+		for _, field := range fields {
+			if newRule[field].(string) == "" && oldRule[field].(string) != "" {
+				fieldsToDelete = append(fieldsToDelete, field)
+			}
+		}
+
+		if len(fieldsToDelete) > 0 {
+			deleteStr := strings.Join(fieldsToDelete, ",")
+			ruleBody.Delete = &deleteStr
 		}
 
 		err := api.UpdateRule(ctx, pos, &ruleBody)
@@ -347,16 +509,16 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	rules := d.Get(MkRule).([]interface{})
+	rules := d.Get(MkRule).([]any)
 	sort.Slice(rules, func(i, j int) bool {
-		ruleI := rules[i].(map[string]interface{})
-		ruleJ := rules[j].(map[string]interface{})
+		ruleI := rules[i].(map[string]any)
+		ruleJ := rules[j].(map[string]any)
 
 		return ruleI[mkRulePos].(int) > ruleJ[mkRulePos].(int)
 	})
 
 	for _, v := range rules {
-		rule := v.(map[string]interface{})
+		rule := v.(map[string]any)
 		pos := rule[mkRulePos].(int)
 
 		_, err := api.GetRule(ctx, pos)
@@ -372,26 +534,61 @@ func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	return diags
 }
 
-func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
+func mapToRuleCreateRequestBody(rule map[string]any) (*firewall.RuleCreateRequestBody, error) {
+	var body firewall.RuleCreateRequestBody
+
+	sg := rule[mkSecurityGroup].(string)
+	if sg != "" {
+		// this is a special case of security group insertion
+		body = firewall.RuleCreateRequestBody{
+			Action:   sg,
+			Type:     "group",
+			BaseRule: *mapToSecurityGroupBaseRule(rule),
+		}
+	} else {
+		a := rule[mkRuleAction].(string)
+		t := rule[mkRuleType].(string)
+
+		if a == "" || t == "" {
+			return nil, fmt.Errorf("either '%s' OR both '%s' and '%s' must be defined", mkSecurityGroup, mkRuleAction, mkRuleType)
+		}
+
+		body = firewall.RuleCreateRequestBody{
+			Action:   a,
+			Type:     t,
+			BaseRule: *mapToBaseRule(rule),
+		}
+	}
+
+	return &body, nil
+}
+
+func mapToBaseRule(rule map[string]any) *firewall.BaseRule {
 	baseRule := &firewall.BaseRule{}
 
 	comment := rule[mkRuleComment].(string)
-	if comment != "" {
-		baseRule.Comment = &comment
-	}
+	baseRule.Comment = &comment
 
 	dest := rule[mkRuleDest].(string)
-	if dest != "" {
-		baseRule.Dest = &dest
-	}
+	baseRule.Dest = &dest
 
 	dport := rule[mkRuleDPort].(string)
-	if dport != "" {
-		baseRule.DPort = &dport
-	}
+	baseRule.DPort = &dport
 
 	enableBool := types.CustomBool(rule[mkRuleEnabled].(bool))
 	baseRule.Enable = &enableBool
+
+	macro := rule[mkRuleMacro].(string)
+	baseRule.Macro = &macro
+
+	proto := rule[mkRuleProto].(string)
+	baseRule.Proto = &proto
+
+	source := rule[mkRuleSource].(string)
+	baseRule.Source = &source
+
+	sport := rule[mkRuleSPort].(string)
+	baseRule.SPort = &sport
 
 	iface := rule[mkRuleIFace].(string)
 	if iface != "" {
@@ -403,36 +600,14 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 		baseRule.Log = &log
 	}
 
-	macro := rule[mkRuleMacro].(string)
-	if macro != "" {
-		baseRule.Macro = &macro
-	}
-
-	proto := rule[mkRuleProto].(string)
-	if proto != "" {
-		baseRule.Proto = &proto
-	}
-
-	source := rule[mkRuleSource].(string)
-	if source != "" {
-		baseRule.Source = &source
-	}
-
-	sport := rule[mkRuleSPort].(string)
-	if sport != "" {
-		baseRule.SPort = &sport
-	}
-
 	return baseRule
 }
 
-func mapToSecurityGroupBaseRule(rule map[string]interface{}) *firewall.BaseRule {
+func mapToSecurityGroupBaseRule(rule map[string]any) *firewall.BaseRule {
 	baseRule := &firewall.BaseRule{}
 
 	comment := rule[mkRuleComment].(string)
-	if comment != "" {
-		baseRule.Comment = &comment
-	}
+	baseRule.Comment = &comment
 
 	enableBool := types.CustomBool(rule[mkRuleEnabled].(bool))
 	baseRule.Enable = &enableBool
@@ -445,7 +620,7 @@ func mapToSecurityGroupBaseRule(rule map[string]interface{}) *firewall.BaseRule 
 	return baseRule
 }
 
-func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
+func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]any) {
 	if baseRule.Comment != nil {
 		rule[mkRuleComment] = *baseRule.Comment
 	}
@@ -487,7 +662,7 @@ func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	}
 }
 
-func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
+func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]any) {
 	if baseRule.Comment != nil {
 		rule[mkRuleComment] = *baseRule.Comment
 	}
@@ -503,8 +678,8 @@ func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]int
 
 func invokeRuleAPI(
 	f func(context.Context, firewall.Rule, *schema.ResourceData) diag.Diagnostics,
-) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
-	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+) func(context.Context, *schema.ResourceData, any) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 		return selectFirewallAPI(func(ctx context.Context, api firewall.API, data *schema.ResourceData) diag.Diagnostics {
 			return f(ctx, api, data)
 		})(ctx, d, m)

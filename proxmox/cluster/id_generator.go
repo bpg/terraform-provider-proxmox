@@ -12,15 +12,17 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go/v5"
 	"github.com/rogpeppe/go-internal/lockedfile"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
@@ -95,19 +97,7 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 
 	var errs []error
 
-	id, err := retry.DoWithData(func() (*int, error) {
-		if g.config.RandomIDs {
-			//nolint:gosec
-			newID = ptr.Ptr(rand.Intn(g.config.RandomIDEnd-g.config.RandomIDStat) + g.config.RandomIDStat)
-		} else if newID == nil {
-			newID, err = nextSequentialID(g.config.seqFName)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		return g.client.GetNextID(ctx, newID)
-	},
+	id, err := retry.NewWithData[*int](
 		retry.OnRetry(func(_ uint, err error) {
 			if strings.Contains(err.Error(), "already exists") && newID != nil {
 				newID, err = g.client.GetNextID(ctx, nil)
@@ -116,9 +106,27 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 			errs = append(errs, err)
 		}),
 		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			var httpError *api.HTTPError
+			return !errors.As(err, &httpError) || httpError.Code != http.StatusForbidden
+		}),
 		retry.UntilSucceeded(),
 		retry.DelayType(retry.FixedDelay),
 		retry.Delay(200*time.Millisecond),
+	).Do(
+		func() (*int, error) {
+			if g.config.RandomIDs {
+				//nolint:gosec
+				newID = ptr.Ptr(rand.Intn(g.config.RandomIDEnd-g.config.RandomIDStat) + g.config.RandomIDStat)
+			} else if newID == nil {
+				newID, err = nextSequentialID(g.config.seqFName)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			return g.client.GetNextID(ctx, newID)
+		},
 	)
 	if err != nil {
 		errs = append(errs, err)

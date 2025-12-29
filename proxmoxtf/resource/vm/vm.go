@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -72,7 +73,6 @@ const (
 	dvCPUNUMA             = false
 	dvCPUSockets          = 1
 	dvCPUType             = "qemu64"
-	dvCPUUnits            = 1024
 	dvCPUAffinity         = ""
 	dvDescription         = ""
 
@@ -101,43 +101,46 @@ const (
 	dvMigrate                           = false
 	dvName                              = ""
 
-	dvOperatingSystemType = "other"
-	dvPoolID              = ""
-	dvProtection          = false
-	dvRNGMaxBytes         = 1024
-	dvRNGPeriod           = 1000
-	dvSerialDeviceDevice  = "socket"
-	dvSMBIOSFamily        = ""
-	dvSMBIOSManufacturer  = ""
-	dvSMBIOSProduct       = ""
-	dvSMBIOSSKU           = ""
-	dvSMBIOSSerial        = ""
-	dvSMBIOSVersion       = ""
-	dvStarted             = true
-	dvStartupOrder        = -1
-	dvStartupUpDelay      = -1
-	dvStartupDownDelay    = -1
-	dvTabletDevice        = true
-	dvTemplate            = false
-	dvTimeoutClone        = 1800
-	dvTimeoutCreate       = 1800
-	dvTimeoutMigrate      = 1800
-	dvTimeoutReboot       = 1800
-	dvTimeoutShutdownVM   = 1800
-	dvTimeoutStartVM      = 1800
-	dvTimeoutStopVM       = 300
-	dvVGAClipboard        = ""
-	dvVGAMemory           = 16
-	dvVGAType             = "std"
-	dvVirtiofsCache       = "auto"
-	dvVirtiofsDirectIo    = false
-	dvVirtiofsExposeAcl   = false
-	dvVirtiofsExposeXattr = false
-	dvSCSIHardware        = "virtio-scsi-pci"
-	dvStopOnDestroy       = false
-	dvHookScript          = ""
-	dvWatchdogModel       = "i6300esb"
-	dvWatchdogAction      = "none"
+	dvOperatingSystemType              = "other"
+	dvPoolID                           = ""
+	dvProtection                       = false
+	dvRNGMaxBytes                      = 1024
+	dvRNGPeriod                        = 1000
+	dvSerialDeviceDevice               = "socket"
+	dvSMBIOSFamily                     = ""
+	dvSMBIOSManufacturer               = ""
+	dvSMBIOSProduct                    = ""
+	dvSMBIOSSKU                        = ""
+	dvSMBIOSSerial                     = ""
+	dvSMBIOSVersion                    = ""
+	dvStarted                          = true
+	dvStartupOrder                     = -1
+	dvStartupUpDelay                   = -1
+	dvStartupDownDelay                 = -1
+	dvTabletDevice                     = true
+	dvTemplate                         = false
+	dvTimeoutClone                     = 1800
+	dvTimeoutCreate                    = 1800
+	dvTimeoutMigrate                   = 1800
+	dvTimeoutReboot                    = 1800
+	dvTimeoutShutdownVM                = 1800
+	dvTimeoutStartVM                   = 1800
+	dvTimeoutStopVM                    = 300
+	dvTimeoutMoveDisk                  = 1800
+	dvVGAClipboard                     = ""
+	dvVGAMemory                        = 16
+	dvVGAType                          = "std"
+	dvVirtiofsCache                    = "auto"
+	dvVirtiofsDirectIo                 = false
+	dvVirtiofsExposeAcl                = false
+	dvVirtiofsExposeXattr              = false
+	dvSCSIHardware                     = "virtio-scsi-pci"
+	dvStopOnDestroy                    = false
+	dvPurgeOnDestroy                   = true
+	dvDeleteUnreferencedDisksOnDestroy = true
+	dvHookScript                       = ""
+	dvWatchdogModel                    = "i6300esb"
+	dvWatchdogAction                   = "none"
 
 	maxResourceVirtualEnvironmentVMAudioDevices  = 1
 	maxResourceVirtualEnvironmentVMSerialDevices = 4
@@ -158,6 +161,9 @@ const (
 	mkAgentTimeout        = "timeout"
 	mkAgentTrim           = "trim"
 	mkAgentType           = "type"
+	mkAgentWaitForIP      = "wait_for_ip"
+	mkAgentWaitForIPIPv4  = "ipv4"
+	mkAgentWaitForIPIPv6  = "ipv6"
 	mkAMDSEV              = "amd_sev"
 	mkAMDSEVType          = "type"
 	mkAMDSEVAllowSMT      = "allow_smt"
@@ -219,6 +225,7 @@ const (
 	mkInitialization                    = "initialization"
 	mkInitializationDatastoreID         = "datastore_id"
 	mkInitializationInterface           = "interface"
+	mkInitializationFileFormat          = "file_format"
 	mkInitializationDNS                 = "dns"
 	mkInitializationDNSDomain           = "domain"
 	mkInitializationDNSServers          = "servers"
@@ -251,59 +258,62 @@ const (
 	mkMigrate             = "migrate"
 	mkName                = "name"
 
-	mkNodeName             = "node_name"
-	mkOperatingSystem      = "operating_system"
-	mkOperatingSystemType  = "type"
-	mkPoolID               = "pool_id"
-	mkProtection           = "protection"
-	mkRNG                  = "rng"
-	mkRNGSource            = "source"
-	mkRNGMaxBytes          = "max_bytes"
-	mkRNGPeriod            = "period"
-	mkSerialDevice         = "serial_device"
-	mkSerialDeviceDevice   = "device"
-	mkSMBIOS               = "smbios"
-	mkSMBIOSFamily         = "family"
-	mkSMBIOSManufacturer   = "manufacturer"
-	mkSMBIOSProduct        = "product"
-	mkSMBIOSSKU            = "sku"
-	mkSMBIOSSerial         = "serial"
-	mkSMBIOSUUID           = "uuid"
-	mkSMBIOSVersion        = "version"
-	mkStarted              = "started"
-	mkStartup              = "startup"
-	mkStartupOrder         = "order"
-	mkStartupUpDelay       = "up_delay"
-	mkStartupDownDelay     = "down_delay"
-	mkTabletDevice         = "tablet_device"
-	mkTags                 = "tags"
-	mkTemplate             = "template"
-	mkTimeoutClone         = "timeout_clone"
-	mkTimeoutCreate        = "timeout_create"
-	mkTimeoutMigrate       = "timeout_migrate" // this is essentially a "timeout_update", needs to be refactored
-	mkTimeoutReboot        = "timeout_reboot"
-	mkTimeoutShutdownVM    = "timeout_shutdown_vm"
-	mkTimeoutStartVM       = "timeout_start_vm"
-	mkTimeoutStopVM        = "timeout_stop_vm"
-	mkHostUSB              = "usb"
-	mkHostUSBDevice        = "host"
-	mkHostUSBDeviceMapping = "mapping"
-	mkHostUSBDeviceUSB3    = "usb3"
-	mkVGA                  = "vga"
-	mkVGAClipboard         = "clipboard"
-	mkVGAMemory            = "memory"
-	mkVGAType              = "type"
-	mkVMID                 = "vm_id"
-	mkSCSIHardware         = "scsi_hardware"
-	mkHookScriptFileID     = "hook_script_file_id"
-	mkStopOnDestroy        = "stop_on_destroy"
-	mkVirtiofs             = "virtiofs"
-	mkVirtiofsMapping      = "mapping"
-	mkVirtiofsCache        = "cache"
-	mkVirtiofsDirectIO     = "direct_io"
-	mkVirtiofsExposeACL    = "expose_acl"
-	mkVirtiofsExposeXAttr  = "expose_xattr"
-	mkWatchdog             = "watchdog"
+	mkNodeName                         = "node_name"
+	mkOperatingSystem                  = "operating_system"
+	mkOperatingSystemType              = "type"
+	mkPoolID                           = "pool_id"
+	mkProtection                       = "protection"
+	mkRNG                              = "rng"
+	mkRNGSource                        = "source"
+	mkRNGMaxBytes                      = "max_bytes"
+	mkRNGPeriod                        = "period"
+	mkSerialDevice                     = "serial_device"
+	mkSerialDeviceDevice               = "device"
+	mkSMBIOS                           = "smbios"
+	mkSMBIOSFamily                     = "family"
+	mkSMBIOSManufacturer               = "manufacturer"
+	mkSMBIOSProduct                    = "product"
+	mkSMBIOSSKU                        = "sku"
+	mkSMBIOSSerial                     = "serial"
+	mkSMBIOSUUID                       = "uuid"
+	mkSMBIOSVersion                    = "version"
+	mkStarted                          = "started"
+	mkStartup                          = "startup"
+	mkStartupOrder                     = "order"
+	mkStartupUpDelay                   = "up_delay"
+	mkStartupDownDelay                 = "down_delay"
+	mkTabletDevice                     = "tablet_device"
+	mkTags                             = "tags"
+	mkTemplate                         = "template"
+	mkTimeoutClone                     = "timeout_clone"
+	mkTimeoutCreate                    = "timeout_create"
+	mkTimeoutMigrate                   = "timeout_migrate" // this is essentially a "timeout_update", needs to be refactored
+	mkTimeoutReboot                    = "timeout_reboot"
+	mkTimeoutShutdownVM                = "timeout_shutdown_vm"
+	mkTimeoutStartVM                   = "timeout_start_vm"
+	mkTimeoutStopVM                    = "timeout_stop_vm"
+	mkTimeoutMoveDisk                  = "timeout_move_disk"
+	mkHostUSB                          = "usb"
+	mkHostUSBDevice                    = "host"
+	mkHostUSBDeviceMapping             = "mapping"
+	mkHostUSBDeviceUSB3                = "usb3"
+	mkVGA                              = "vga"
+	mkVGAClipboard                     = "clipboard"
+	mkVGAMemory                        = "memory"
+	mkVGAType                          = "type"
+	mkVMID                             = "vm_id"
+	mkSCSIHardware                     = "scsi_hardware"
+	mkHookScriptFileID                 = "hook_script_file_id"
+	mkStopOnDestroy                    = "stop_on_destroy"
+	mkPurgeOnDestroy                   = "purge_on_destroy"
+	mkDeleteUnreferencedDisksOnDestroy = "delete_unreferenced_disks_on_destroy"
+	mkVirtiofs                         = "virtiofs"
+	mkVirtiofsMapping                  = "mapping"
+	mkVirtiofsCache                    = "cache"
+	mkVirtiofsDirectIO                 = "direct_io"
+	mkVirtiofsExposeACL                = "expose_acl"
+	mkVirtiofsExposeXAttr              = "expose_xattr"
+	mkWatchdog                         = "watchdog"
 	// a workaround for the lack of proper support of default and undefined values in SDK.
 	mkWatchdogEnabled = "enabled"
 	mkWatchdogModel   = "model"
@@ -342,10 +352,8 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The guest will attempt to boot from devices in the order they appear here",
 			Optional:    true,
+			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
-			},
 		},
 		mkACPI: {
 			Type:        schema.TypeBool,
@@ -357,9 +365,9 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The QEMU agent configuration",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
+			DefaultFunc: func() (any, error) {
+				return []any{
+					map[string]any{
 						mkAgentEnabled: dvAgentEnabled,
 						mkAgentTimeout: dvAgentTimeout,
 						mkAgentTrim:    dvAgentTrim,
@@ -395,6 +403,29 @@ func VM() *schema.Resource {
 						Default:          dvAgentType,
 						ValidateDiagFunc: QEMUAgentTypeValidator(),
 					},
+					mkAgentWaitForIP: {
+						Type:        schema.TypeList,
+						Description: "Configuration for waiting for specific IP address types",
+						Optional:    true,
+						MaxItems:    1,
+						MinItems:    0,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								mkAgentWaitForIPIPv4: {
+									Type:        schema.TypeBool,
+									Description: "Wait for at least one IPv4 address (non-loopback, non-link-local)",
+									Optional:    true,
+									Default:     false,
+								},
+								mkAgentWaitForIPIPv6: {
+									Type:        schema.TypeBool,
+									Description: "Wait for at least one IPv6 address (non-loopback, non-link-local)",
+									Optional:    true,
+									Default:     false,
+								},
+							},
+						},
+					},
 				},
 			},
 			MaxItems: 1,
@@ -405,8 +436,8 @@ func VM() *schema.Resource {
 			Description: "Secure Encrypted Virtualization (SEV) features by AMD CPUs",
 			Optional:    true,
 			ForceNew:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -457,8 +488,8 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The audio devices",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -498,9 +529,9 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The CDROM drive",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
+			DefaultFunc: func() (any, error) {
+				return []any{
+					map[string]any{
 						mkCDROMFileID:    dvCDROMFileID,
 						mkCDROMInterface: dvCDROMInterface,
 					},
@@ -542,8 +573,8 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The cloning configuration",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -591,18 +622,18 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The CPU allocation",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
+			DefaultFunc: func() (any, error) {
+				return []any{
+					map[string]any{
 						mkCPUArchitecture: dvCPUArchitecture,
 						mkCPUCores:        dvCPUCores,
-						mkCPUFlags:        []interface{}{},
+						mkCPUFlags:        []any{},
 						mkCPUHotplugged:   dvCPUHotplugged,
 						mkCPULimit:        dvCPULimit,
 						mkCPUNUMA:         dvCPUNUMA,
 						mkCPUSockets:      dvCPUSockets,
 						mkCPUType:         dvCPUType,
-						mkCPUUnits:        dvCPUUnits,
+						mkCPUUnits:        0,
 						mkCPUAffinity:     dvCPUAffinity,
 					},
 				}, nil
@@ -627,8 +658,8 @@ func VM() *schema.Resource {
 						Type:        schema.TypeList,
 						Description: "The CPU flags",
 						Optional:    true,
-						DefaultFunc: func() (interface{}, error) {
-							return []interface{}{}, nil
+						DefaultFunc: func() (any, error) {
+							return []any{}, nil
 						},
 						Elem: &schema.Schema{Type: schema.TypeString},
 					},
@@ -672,9 +703,9 @@ func VM() *schema.Resource {
 						Type:        schema.TypeInt,
 						Description: "The CPU units",
 						Optional:    true,
-						Default:     dvCPUUnits,
+						Computed:    true,
 						ValidateDiagFunc: validation.ToDiagFunc(
-							validation.IntBetween(2, 262144),
+							validation.IntBetween(1, 262144),
 						),
 					},
 					mkCPUAffinity: {
@@ -694,7 +725,7 @@ func VM() *schema.Resource {
 			Description: "The description",
 			Optional:    true,
 			Default:     dvDescription,
-			StateFunc: func(i interface{}) string {
+			StateFunc: func(i any) string {
 				// PVE always adds a newline to the description, so we have to do the same,
 				// also taking in account the CLRF case (Windows)
 				// Unlike container, VM description does not have trailing "\n"
@@ -709,9 +740,8 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The efidisk device",
 			Optional:    true,
-			ForceNew:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -725,7 +755,6 @@ func VM() *schema.Resource {
 						Type:             schema.TypeString,
 						Description:      "The file format",
 						Optional:         true,
-						ForceNew:         true,
 						Computed:         true,
 						ValidateDiagFunc: validators.FileFormat(),
 					},
@@ -745,7 +774,6 @@ func VM() *schema.Resource {
 						Description: "Use an EFI vars template with distribution-specific and Microsoft Standard " +
 							"keys enrolled, if used with efi type=`4m`.",
 						Optional: true,
-						ForceNew: true,
 						Default:  dvEFIDiskPreEnrolledKeys,
 					},
 				},
@@ -758,8 +786,8 @@ func VM() *schema.Resource {
 			Description: "The tpmstate device",
 			Optional:    true,
 			ForceNew:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -789,8 +817,8 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The cloud-init configuration",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -810,12 +838,19 @@ func VM() *schema.Resource {
 							return newValue == ""
 						},
 					},
+					mkInitializationFileFormat: {
+						Type:             schema.TypeString,
+						Description:      "The file format",
+						Optional:         true,
+						Computed:         true,
+						ValidateDiagFunc: validators.FileFormat(),
+					},
 					mkInitializationDNS: {
 						Type:        schema.TypeList,
 						Description: "The DNS configuration",
 						Optional:    true,
-						DefaultFunc: func() (interface{}, error) {
-							return []interface{}{}, nil
+						DefaultFunc: func() (any, error) {
+							return []any{}, nil
 						},
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -841,8 +876,8 @@ func VM() *schema.Resource {
 						Type:        schema.TypeList,
 						Description: "The IP configuration",
 						Optional:    true,
-						DefaultFunc: func() (interface{}, error) {
-							return []interface{}{}, nil
+						DefaultFunc: func() (any, error) {
+							return []any{}, nil
 						},
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -850,8 +885,8 @@ func VM() *schema.Resource {
 									Type:        schema.TypeList,
 									Description: "The IPv4 configuration",
 									Optional:    true,
-									DefaultFunc: func() (interface{}, error) {
-										return []interface{}{}, nil
+									DefaultFunc: func() (any, error) {
+										return []any{}, nil
 									},
 									Elem: &schema.Resource{
 										Schema: map[string]*schema.Schema{
@@ -876,8 +911,8 @@ func VM() *schema.Resource {
 									Type:        schema.TypeList,
 									Description: "The IPv6 configuration",
 									Optional:    true,
-									DefaultFunc: func() (interface{}, error) {
-										return []interface{}{}, nil
+									DefaultFunc: func() (any, error) {
+										return []any{}, nil
 									},
 									Elem: &schema.Resource{
 										Schema: map[string]*schema.Schema{
@@ -907,8 +942,8 @@ func VM() *schema.Resource {
 						Type:        schema.TypeList,
 						Description: "The user account configuration",
 						Optional:    true,
-						DefaultFunc: func() (interface{}, error) {
-							return []interface{}{}, nil
+						DefaultFunc: func() (any, error) {
+							return []any{}, nil
 						},
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -989,8 +1024,8 @@ func VM() *schema.Resource {
 			Description: "The Host PCI devices mapped to the VM",
 			Optional:    true,
 			ForceNew:    false,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -1046,8 +1081,8 @@ func VM() *schema.Resource {
 			Description: "The Host USB devices mapped to the VM",
 			Optional:    true,
 			ForceNew:    false,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -1087,9 +1122,9 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The memory allocation",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
+			DefaultFunc: func() (any, error) {
+				return []any{
+					map[string]any{
 						mkMemoryDedicated:     dvMemoryDedicated,
 						mkMemoryFloating:      dvMemoryFloating,
 						mkMemoryShared:        dvMemoryShared,
@@ -1168,8 +1203,8 @@ func VM() *schema.Resource {
 			Description: "The NUMA topology",
 			Optional:    true,
 			ForceNew:    false,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			DiffSuppressFunc:      structure.SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(mkNUMADevice),
 			DiffSuppressOnRefresh: true,
@@ -1235,9 +1270,9 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The operating system configuration",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
+			DefaultFunc: func() (any, error) {
+				return []any{
+					map[string]any{
 						mkOperatingSystemType: dvOperatingSystemType,
 					},
 				}, nil
@@ -1261,6 +1296,9 @@ func VM() *schema.Resource {
 			Description: "The ID of the pool to assign the virtual machine to",
 			Optional:    true,
 			Default:     dvPoolID,
+			DiffSuppressFunc: func(k, oldVal, newVal string, d *schema.ResourceData) bool {
+				return newVal == "" && oldVal != ""
+			},
 		},
 		mkProtection: {
 			Type:        schema.TypeBool,
@@ -1272,8 +1310,8 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The RNG configuration",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -1308,9 +1346,9 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The serial devices",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
+			DefaultFunc: func() (any, error) {
+				return []any{
+					map[string]any{
 						mkSerialDeviceDevice: dvSerialDeviceDevice,
 					},
 				}, nil
@@ -1456,11 +1494,11 @@ func VM() *schema.Resource {
 			Optional:    true,
 			Default:     dvTimeoutCreate,
 		},
-		"timeout_move_disk": {
+		mkTimeoutMoveDisk: {
 			Type:        schema.TypeInt,
-			Description: "MoveDisk timeout",
+			Description: "Disk move timeout",
 			Optional:    true,
-			Default:     1800,
+			Default:     dvTimeoutMoveDisk,
 			Deprecated: "This field is deprecated and will be removed in a future release. " +
 				"An overall operation timeout (timeout_create / timeout_clone / timeout_migrate) is used instead.",
 		},
@@ -1534,8 +1572,8 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "Virtiofs share configuration",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -1603,13 +1641,25 @@ func VM() *schema.Resource {
 			Optional:    true,
 			Default:     dvStopOnDestroy,
 		},
+		mkPurgeOnDestroy: {
+			Type:        schema.TypeBool,
+			Description: "Whether to purge the VM from backup configurations on destroy",
+			Optional:    true,
+			Default:     dvPurgeOnDestroy,
+		},
+		mkDeleteUnreferencedDisksOnDestroy: {
+			Type:        schema.TypeBool,
+			Description: "Whether to delete unreferenced disks on destroy",
+			Optional:    true,
+			Default:     dvDeleteUnreferencedDisksOnDestroy,
+		},
 		mkWatchdog: {
 			Type:        schema.TypeList,
 			Description: "The watchdog configuration",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
+			DefaultFunc: func() (any, error) {
+				return []any{
+					map[string]any{
 						mkWatchdogAction:  dvWatchdogAction,
 						mkWatchdogEnabled: false,
 						mkWatchdogModel:   dvWatchdogModel,
@@ -1668,7 +1718,7 @@ func VM() *schema.Resource {
 			customdiff.All(network.CustomizeDiff()...),
 			customdiff.ForceNewIf(
 				mkVMID,
-				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
 					if !d.HasChange(mkVMID) {
 						return false
 					}
@@ -1682,7 +1732,7 @@ func VM() *schema.Resource {
 			),
 			customdiff.ForceNewIf(
 				mkNodeName,
-				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
 					if !d.HasChange(mkNodeName) {
 						return false
 					}
@@ -1692,13 +1742,14 @@ func VM() *schema.Resource {
 			),
 		),
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				node, id, err := parseImportIDWithNodeName(d.Id())
 				if err != nil {
 					return nil, err
 				}
 
 				d.SetId(id)
+
 				err = d.Set(mkNodeName, node)
 				if err != nil {
 					return nil, fmt.Errorf("failed setting state during import: %w", err)
@@ -1710,8 +1761,8 @@ func VM() *schema.Resource {
 	}
 }
 
-func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	clone := d.Get(mkClone).([]interface{})
+func vmCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+	clone := d.Get(mkClone).([]any)
 
 	// reset the default timeout for the create operation
 	ctx = context.WithoutCancel(ctx)
@@ -1724,16 +1775,16 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 }
 
 // Check for an existing CloudInit IDE drive. If no such drive is found, return the specified `defaultValue`.
-func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, defaultValue string) string {
+func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, defaultValue string) (string, *vms.CustomStorageDevice) {
 	devs := vmConfig.StorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
 		return device.IsCloudInitDrive(vmID)
 	})
 
-	for iface := range devs {
-		return iface
+	for iface, device := range devs {
+		return iface, device
 	}
 
-	return defaultValue
+	return defaultValue, nil
 }
 
 // Return a pointer to the storage device configuration based on a name. The device name is assumed to be a
@@ -1833,7 +1884,7 @@ func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag
 	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
 }
 
-func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	cloneTimeoutSec := d.Get(mkTimeoutClone).(int)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(cloneTimeoutSec)*time.Second)
@@ -1846,8 +1897,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	clone := d.Get(mkClone).([]interface{})
-	cloneBlock := clone[0].(map[string]interface{})
+	clone := d.Get(mkClone).([]any)
+	cloneBlock := clone[0].(map[string]any)
 	cloneRetries := cloneBlock[mkCloneRetries].(int)
 	cloneDatastoreID := cloneBlock[mkCloneDatastoreID].(string)
 	cloneNodeName := cloneBlock[mkCloneNodeName].(string)
@@ -1856,7 +1907,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	description := d.Get(mkDescription).(string)
 	name := d.Get(mkName).(string)
-	tags := d.Get(mkTags).([]interface{})
+	tags := d.Get(mkTags).([]any)
 	nodeName := d.Get(mkNodeName).(string)
 	poolID := d.Get(mkPoolID).(string)
 	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
@@ -1906,7 +1957,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			return diag.FromErr(err)
 		}
 
-		datastores := getDiskDatastores(vmConfig, d)
+		datastores := getDiskDatastores(vmConfig)
 
 		onlySharedDatastores := true
 
@@ -1989,29 +2040,29 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	audioDevices := vmGetAudioDeviceList(d)
 
 	acpi := types.CustomBool(d.Get(mkACPI).(bool))
-	agent := d.Get(mkAgent).([]interface{})
-	amdsev := d.Get(mkAMDSEV).([]interface{})
+	agent := d.Get(mkAgent).([]any)
+	amdsev := d.Get(mkAMDSEV).([]any)
 	bios := d.Get(mkBIOS).(string)
-	cdrom := d.Get(mkCDROM).([]interface{})
-	cpu := d.Get(mkCPU).([]interface{})
-	hostPCI := d.Get(mkHostPCI).([]interface{})
-	hostUSB := d.Get(mkHostUSB).([]interface{})
-	initialization := d.Get(mkInitialization).([]interface{})
+	cdrom := d.Get(mkCDROM).([]any)
+	cpu := d.Get(mkCPU).([]any)
+	hostPCI := d.Get(mkHostPCI).([]any)
+	hostUSB := d.Get(mkHostUSB).([]any)
+	initialization := d.Get(mkInitialization).([]any)
 	keyboardLayout := d.Get(mkKeyboardLayout).(string)
 	kvmArguments := d.Get(mkKVMArguments).(string)
 	machine := d.Get(mkMachine).(string)
-	memory := d.Get(mkMemory).([]interface{})
-	numa := d.Get(mkNUMA).([]interface{})
+	memory := d.Get(mkMemory).([]any)
+	numa := d.Get(mkNUMA).([]any)
 	onBoot := types.CustomBool(d.Get(mkOnBoot).(bool))
-	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
+	operatingSystem := d.Get(mkOperatingSystem).([]any)
 	protection := types.CustomBool(d.Get(mkProtection).(bool))
 	scsiHardware := d.Get(mkSCSIHardware).(string)
-	serialDevice := d.Get(mkSerialDevice).([]interface{})
+	serialDevice := d.Get(mkSerialDevice).([]any)
 	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
-	vga := d.Get(mkVGA).([]interface{})
-	virtiofs := d.Get(mkVirtiofs).([]interface{})
-	watchdog := d.Get(mkWatchdog).([]interface{})
+	vga := d.Get(mkVGA).([]any)
+	virtiofs := d.Get(mkVirtiofs).([]any)
+	watchdog := d.Get(mkWatchdog).([]any)
 
 	updateBody := &vms.UpdateRequestBody{
 		AudioDevices: audioDevices,
@@ -2026,7 +2077,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(agent) > 0 && agent[0] != nil {
-		agentBlock := agent[0].(map[string]interface{})
+		agentBlock := agent[0].(map[string]any)
 
 		agentEnabled := types.CustomBool(
 			agentBlock[mkAgentEnabled].(bool),
@@ -2042,7 +2093,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(amdsev) > 0 && amdsev[0] != nil {
-		amdsevBlock := amdsev[0].(map[string]interface{})
+		amdsevBlock := amdsev[0].(map[string]any)
 
 		amdsevType := amdsevBlock[mkAMDSEVType].(string)
 		amdsevAllowSMT := types.CustomBool(
@@ -2084,7 +2135,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(cdrom) > 0 && cdrom[0] != nil {
-		cdromBlock := cdrom[0].(map[string]interface{})
+		cdromBlock := cdrom[0].(map[string]any)
 
 		cdromFileID := cdromBlock[mkCDROMFileID].(string)
 		cdromInterface := cdromBlock[mkCDROMInterface].(string)
@@ -2102,11 +2153,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(cpu) > 0 && cpu[0] != nil {
-		cpuBlock := cpu[0].(map[string]interface{})
+		cpuBlock := cpu[0].(map[string]any)
 
 		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
 		cpuCores := cpuBlock[mkCPUCores].(int)
-		cpuFlags := cpuBlock[mkCPUFlags].([]interface{})
+		cpuFlags := cpuBlock[mkCPUFlags].([]any)
 		cpuHotplugged := cpuBlock[mkCPUHotplugged].(int)
 		cpuLimit := cpuBlock[mkCPULimit].(int)
 		cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
@@ -2132,7 +2183,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 		updateBody.NUMAEnabled = &cpuNUMA
 		updateBody.CPUSockets = ptr.Ptr(int64(cpuSockets))
-		updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
 
 		if cpuAffinity != "" {
 			updateBody.CPUAffinity = &cpuAffinity
@@ -2145,6 +2195,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if cpuLimit > 0 {
 			updateBody.CPULimit = ptr.Ptr(int64(cpuLimit))
 		}
+
+		if cpuUnits > 0 {
+			updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
+		}
 	}
 
 	vmConfig, err := vmAPI.GetVM(ctx)
@@ -2155,23 +2209,29 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if len(initialization) > 0 && initialization[0] != nil {
 		tflog.Trace(ctx, "Preparing the CloudInit configuration")
 
-		initializationBlock := initialization[0].(map[string]interface{})
+		initializationBlock := initialization[0].(map[string]any)
 		initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
 		initializationInterface := initializationBlock[mkInitializationInterface].(string)
+		initializationFileFormat := initializationBlock[mkInitializationFileFormat].(string)
 
-		existingInterface := findExistingCloudInitDrive(vmConfig, vmID, "ide2")
+		existingInterface, _ := findExistingCloudInitDrive(vmConfig, vmID, "ide2")
 		if initializationInterface == "" {
 			initializationInterface = existingInterface
 		}
 
 		tflog.Trace(ctx, fmt.Sprintf("CloudInit IDE interface is '%s'", initializationInterface))
 
-		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
-		cdromCloudInitMedia := "cdrom"
-		ideDevices[initializationInterface] = &vms.CustomStorageDevice{
-			FileVolume: cdromCloudInitFileID,
-			Media:      &cdromCloudInitMedia,
+		initializationFileVolume := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
+
+		device := &vms.CustomStorageDevice{
+			FileVolume: initializationFileVolume,
 		}
+
+		if initializationFileFormat != "" {
+			device.Format = &initializationFileFormat
+		}
+
+		ideDevices[initializationInterface] = device
 
 		if err := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); err != nil {
 			return err
@@ -2203,7 +2263,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(memory) > 0 && memory[0] != nil {
-		memoryBlock := memory[0].(map[string]interface{})
+		memoryBlock := memory[0].(map[string]any)
 
 		memoryDedicated := memoryBlock[mkMemoryDedicated].(int)
 		memoryFloating := memoryBlock[mkMemoryFloating].(int)
@@ -2232,7 +2292,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
-	networkDevice := d.Get(network.MkNetworkDevice).([]interface{})
+	networkDevice := d.Get(network.MkNetworkDevice).([]any)
 	if len(networkDevice) > 0 {
 		updateBody.NetworkDevices, err = network.GetNetworkDeviceObjects(d)
 		if err != nil {
@@ -2251,7 +2311,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(operatingSystem) > 0 && operatingSystem[0] != nil {
-		operatingSystemBlock := operatingSystem[0].(map[string]interface{})
+		operatingSystemBlock := operatingSystem[0].(map[string]any)
 		operatingSystemType := operatingSystemBlock[mkOperatingSystemType].(string)
 
 		updateBody.OSType = &operatingSystemType
@@ -2284,10 +2344,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.Tags = &tagString
 	}
 
-	if template {
-		updateBody.Template = &template
-	}
-
 	if len(vga) > 0 {
 		vgaDevice := vmGetVGADeviceObject(d)
 		updateBody.VGADevice = vgaDevice
@@ -2308,7 +2364,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(watchdog) > 0 && watchdog[0] != nil {
-		watchdogBlock := watchdog[0].(map[string]interface{})
+		watchdogBlock := watchdog[0].(map[string]any)
 
 		watchdogEnabled := types.CustomBool(
 			watchdogBlock[mkWatchdogEnabled].(bool),
@@ -2341,7 +2397,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	clonedDiskInfo := disk.GetInfo(vmConfig, d) // from the cloned VM
+	clonedDiskInfo := vmConfig.StorageDevices
 
 	planDisks, e := disk.GetDiskDeviceObjects(d, VM(), nil) // from the resource config
 	if e != nil {
@@ -2353,11 +2409,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	efiDisk := d.Get(mkEFIDisk).([]interface{})
+	efiDisk := d.Get(mkEFIDisk).([]any)
 	efiDiskInfo := vmGetEfiDisk(d, nil) // from the resource config
 
 	for i := range efiDisk {
-		diskBlock := efiDisk[i].(map[string]interface{})
+		diskBlock := efiDisk[i].(map[string]any)
 		diskInterface := "efidisk0"
 		dataStoreID := diskBlock[mkEFIDiskDatastoreID].(string)
 		efiType := diskBlock[mkEFIDiskType].(string)
@@ -2415,11 +2471,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
-	tpmState := d.Get(mkTPMState).([]interface{})
+	tpmState := d.Get(mkTPMState).([]any)
 	tpmStateInfo := vmGetTPMState(d, nil) // from the resource config
 
 	for i := range tpmState {
-		diskBlock := tpmState[i].(map[string]interface{})
+		diskBlock := tpmState[i].(map[string]any)
 		diskInterface := "tpmstate0"
 		dataStoreID := diskBlock[mkTPMStateDatastoreID].(string)
 
@@ -2466,6 +2522,15 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
+	if template {
+		tflog.Info(ctx, fmt.Sprintf("Converting cloned VM %d to template", vmID))
+
+		e = vmAPI.ConvertToTemplate(ctx)
+		if e != nil {
+			return diag.FromErr(e)
+		}
+	}
+
 	return vmCreateStart(ctx, d, m)
 }
 
@@ -2488,7 +2553,7 @@ func setCPUArchitecture(
 	return nil
 }
 
-func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	createTimeoutSec := d.Get(mkTimeoutCreate).(int)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(createTimeoutSec)*time.Second)
@@ -2533,9 +2598,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	cdromFileID := ""
 	cdromInterface := ""
 
-	cdrom := d.Get(mkCDROM).([]interface{})
+	cdrom := d.Get(mkCDROM).([]any)
 	if len(cdrom) > 0 {
-		cdromBlock := cdrom[0].(map[string]interface{})
+		cdromBlock := cdrom[0].(map[string]any)
 		cdromFileID = cdromBlock[mkCDROMFileID].(string)
 		cdromInterface = cdromBlock[mkCDROMInterface].(string)
 
@@ -2544,8 +2609,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		}
 	}
 
-	cdromCloudInitFileID := ""
-	cdromCloudInitInterface := ""
+	initializationFileVolume := ""
+	initializationInterface := ""
+	initializationFileFormat := ""
 
 	cpuBlock, err := structure.GetSchemaBlock(
 		resource,
@@ -2560,7 +2626,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
 	cpuCores := cpuBlock[mkCPUCores].(int)
-	cpuFlags := cpuBlock[mkCPUFlags].([]interface{})
+	cpuFlags := cpuBlock[mkCPUFlags].([]any)
 	cpuHotplugged := cpuBlock[mkCPUHotplugged].(int)
 	cpuLimit := cpuBlock[mkCPULimit].(int)
 	cpuSockets := cpuBlock[mkCPUSockets].(int)
@@ -2573,9 +2639,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	var efiDisk *vms.CustomEFIDisk
 
-	efiDiskBlock := d.Get(mkEFIDisk).([]interface{})
+	efiDiskBlock := d.Get(mkEFIDisk).([]any)
 	if len(efiDiskBlock) > 0 && efiDiskBlock[0] != nil {
-		block := efiDiskBlock[0].(map[string]interface{})
+		block := efiDiskBlock[0].(map[string]any)
 
 		datastoreID, _ := block[mkEFIDiskDatastoreID].(string)
 		fileFormat, _ := block[mkEFIDiskFileFormat].(string)
@@ -2605,16 +2671,17 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	initializationAttr := d.Get(mkInitialization)
 
 	if initializationConfig != nil && initializationAttr != nil {
-		initialization := initializationAttr.([]interface{})
+		initialization := initializationAttr.([]any)
 
-		initializationBlock := initialization[0].(map[string]interface{})
+		initializationBlock := initialization[0].(map[string]any)
 		initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
+		initializationFileFormat = initializationBlock[mkInitializationFileFormat].(string)
 
-		cdromCloudInitFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
+		initializationFileVolume = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 
-		cdromCloudInitInterface = initializationBlock[mkInitializationInterface].(string)
-		if cdromCloudInitInterface == "" {
-			cdromCloudInitInterface = "ide2"
+		initializationInterface = initializationBlock[mkInitializationInterface].(string)
+		if initializationInterface == "" {
+			initializationInterface = "ide2"
 		}
 	}
 
@@ -2645,7 +2712,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	machine := d.Get(mkMachine).(string)
 	name := d.Get(mkName).(string)
-	tags := d.Get(mkTags).([]interface{})
+	tags := d.Get(mkTags).([]any)
 
 	networkDeviceObjects, err := network.GetNetworkDeviceObjects(d)
 	if err != nil {
@@ -2678,7 +2745,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	onBoot := types.CustomBool(d.Get(mkOnBoot).(bool))
 	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
+	template := types.CustomBool(false)
 
 	virtiofsShares := vmGetVirtiofsShares(d)
 	vgaDevice := vmGetVGADeviceObject(d)
@@ -2706,13 +2773,13 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	var bootOrderConverted []string
-	if cdromInterface != "" {
-		bootOrderConverted = []string{cdromInterface}
-	}
-
-	bootOrder := d.Get(mkBootOrder).([]interface{})
+	bootOrder := d.Get(mkBootOrder).([]any)
 
 	if len(bootOrder) == 0 {
+		if cdromInterface != "" {
+			bootOrderConverted = []string{cdromInterface}
+		}
+
 		if _, ok := diskDeviceObjects["ide0"]; ok {
 			bootOrderConverted = append(bootOrderConverted, "ide0")
 		}
@@ -2744,19 +2811,24 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		cpuFlagsConverted[fi] = flag.(string)
 	}
 
-	ideDevice2Media := "cdrom"
+	cdromMedia := "cdrom"
 
-	if cdromCloudInitInterface != "" {
-		diskDeviceObjects[cdromCloudInitInterface] = &vms.CustomStorageDevice{
-			FileVolume: cdromCloudInitFileID,
-			Media:      &ideDevice2Media,
+	if initializationInterface != "" {
+		device := &vms.CustomStorageDevice{
+			FileVolume: initializationFileVolume,
 		}
+
+		if initializationFileFormat != "" {
+			device.Format = &initializationFileFormat
+		}
+
+		diskDeviceObjects[initializationInterface] = device
 	}
 
 	if cdromInterface != "" {
 		diskDeviceObjects[cdromInterface] = &vms.CustomStorageDevice{
 			FileVolume: cdromFileID,
-			Media:      &ideDevice2Media,
+			Media:      &cdromMedia,
 		}
 	}
 
@@ -2818,7 +2890,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			Type:  cpuType,
 		},
 		CPUSockets:           ptr.Ptr(int64(cpuSockets)),
-		CPUUnits:             ptr.Ptr(int64(cpuUnits)),
 		DedicatedMemory:      &memoryDedicated,
 		DeletionProtection:   &protection,
 		EFIDisk:              efiDisk,
@@ -2857,6 +2928,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if cpuLimit > 0 {
 		createBody.CPULimit = ptr.Ptr(int64(cpuLimit))
+	}
+
+	if cpuUnits > 0 {
+		createBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
 	}
 
 	if cpuAffinity != "" {
@@ -2932,10 +3007,20 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		}
 	}
 
+	// Convert to template if requested
+	if d.Get(mkTemplate).(bool) {
+		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
+
+		err = client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	return vmCreateStart(ctx, d, m)
 }
 
-func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func vmCreateStart(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	started := d.Get(mkStarted).(bool)
 	template := d.Get(mkTemplate).(bool)
 	reboot := d.Get(mkRebootAfterCreation).(bool)
@@ -2979,9 +3064,9 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 func vmGetAMDSEVObject(d *schema.ResourceData) *vms.CustomAMDSEV {
 	var amdsev *vms.CustomAMDSEV
 
-	amdsevBlock := d.Get(mkAMDSEV).([]interface{})
+	amdsevBlock := d.Get(mkAMDSEV).([]any)
 	if len(amdsevBlock) > 0 && amdsevBlock[0] != nil {
-		block := amdsevBlock[0].(map[string]interface{})
+		block := amdsevBlock[0].(map[string]any)
 
 		amdsevType := block[mkAMDSEVType].(string)
 		amdsevAllowSMT := types.CustomBool(
@@ -3010,11 +3095,11 @@ func vmGetAMDSEVObject(d *schema.ResourceData) *vms.CustomAMDSEV {
 }
 
 func vmGetAudioDeviceList(d *schema.ResourceData) vms.CustomAudioDevices {
-	devices := d.Get(mkAudioDevice).([]interface{})
+	devices := d.Get(mkAudioDevice).([]any)
 	list := make(vms.CustomAudioDevices, len(devices))
 
 	for i, v := range devices {
-		block := v.(map[string]interface{})
+		block := v.(map[string]any)
 
 		device, _ := block[mkAudioDeviceDevice].(string)
 		driver, _ := block[mkAudioDeviceDriver].(string)
@@ -3029,7 +3114,7 @@ func vmGetAudioDeviceList(d *schema.ResourceData) vms.CustomAudioDevices {
 }
 
 func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
-	initialization := d.Get(mkInitialization).([]interface{})
+	initialization := d.Get(mkInitialization).([]any)
 
 	if len(initialization) == 0 || initialization[0] == nil {
 		return nil
@@ -3037,19 +3122,19 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 
 	var initializationConfig *vms.CustomCloudInitConfig
 
-	initializationBlock := initialization[0].(map[string]interface{})
+	initializationBlock := initialization[0].(map[string]any)
 	initializationConfig = &vms.CustomCloudInitConfig{}
-	initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
+	initializationDNS := initializationBlock[mkInitializationDNS].([]any)
 
 	if len(initializationDNS) > 0 && initializationDNS[0] != nil {
-		initializationDNSBlock := initializationDNS[0].(map[string]interface{})
+		initializationDNSBlock := initializationDNS[0].(map[string]any)
 		domain := initializationDNSBlock[mkInitializationDNSDomain].(string)
 
 		if domain != "" {
 			initializationConfig.SearchDomain = &domain
 		}
 
-		servers := initializationDNSBlock[mkInitializationDNSServers].([]interface{})
+		servers := initializationDNSBlock[mkInitializationDNSServers].([]any)
 
 		if len(servers) > 0 {
 			nameserver := strings.Join(utils.ConvertToStringSlice(servers), " ")
@@ -3058,15 +3143,15 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		}
 	}
 
-	initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]interface{})
+	initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]any)
 	initializationConfig.IPConfig = make([]vms.CustomCloudInitIPConfig, len(initializationIPConfig))
 
 	for i, c := range initializationIPConfig {
-		configBlock := c.(map[string]interface{})
-		ipv4 := configBlock[mkInitializationIPConfigIPv4].([]interface{})
+		configBlock := c.(map[string]any)
+		ipv4 := configBlock[mkInitializationIPConfigIPv4].([]any)
 
 		if len(ipv4) > 0 && ipv4[0] != nil {
-			ipv4Block := ipv4[0].(map[string]interface{})
+			ipv4Block := ipv4[0].(map[string]any)
 			ipv4Address := ipv4Block[mkInitializationIPConfigIPv4Address].(string)
 
 			if ipv4Address != "" {
@@ -3080,10 +3165,10 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 			}
 		}
 
-		ipv6 := configBlock[mkInitializationIPConfigIPv6].([]interface{})
+		ipv6 := configBlock[mkInitializationIPConfigIPv6].([]any)
 
 		if len(ipv6) > 0 && ipv6[0] != nil {
-			ipv6Block := ipv6[0].(map[string]interface{})
+			ipv6Block := ipv6[0].(map[string]any)
 			ipv6Address := ipv6Block[mkInitializationIPConfigIPv6Address].(string)
 
 			if ipv6Address != "" {
@@ -3098,11 +3183,11 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		}
 	}
 
-	initializationUserAccount := initializationBlock[mkInitializationUserAccount].([]interface{})
+	initializationUserAccount := initializationBlock[mkInitializationUserAccount].([]any)
 
 	if len(initializationUserAccount) > 0 && initializationUserAccount[0] != nil {
-		initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
-		keys := initializationUserAccountBlock[mkInitializationUserAccountKeys].([]interface{})
+		initializationUserAccountBlock := initializationUserAccount[0].(map[string]any)
+		keys := initializationUserAccountBlock[mkInitializationUserAccountKeys].([]any)
 
 		if len(keys) > 0 {
 			sshKeys := make(vms.CustomCloudInitSSHKeys, len(keys))
@@ -3169,13 +3254,13 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 	return initializationConfig
 }
 
-func vmGetEfiDisk(d *schema.ResourceData, disk []interface{}) *vms.CustomEFIDisk {
-	var efiDisk []interface{}
+func vmGetEfiDisk(d *schema.ResourceData, disk []any) *vms.CustomEFIDisk {
+	var efiDisk []any
 
 	if disk != nil {
 		efiDisk = disk
 	} else {
-		efiDisk = d.Get(mkEFIDisk).([]interface{})
+		efiDisk = d.Get(mkEFIDisk).([]any)
 	}
 
 	var efiDiskConfig *vms.CustomEFIDisk
@@ -3183,7 +3268,7 @@ func vmGetEfiDisk(d *schema.ResourceData, disk []interface{}) *vms.CustomEFIDisk
 	if len(efiDisk) > 0 && efiDisk[0] != nil {
 		efiDiskConfig = &vms.CustomEFIDisk{}
 
-		block := efiDisk[0].(map[string]interface{})
+		block := efiDisk[0].(map[string]any)
 		datastoreID, _ := block[mkEFIDiskDatastoreID].(string)
 		fileFormat, _ := block[mkEFIDiskFileFormat].(string)
 		efiType, _ := block[mkEFIDiskType].(string)
@@ -3200,7 +3285,7 @@ func vmGetEfiDisk(d *schema.ResourceData, disk []interface{}) *vms.CustomEFIDisk
 	return efiDiskConfig
 }
 
-func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*vms.CustomStorageDevice, error) {
+func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []any) (*vms.CustomStorageDevice, error) {
 	efiDisk := vmGetEfiDisk(d, disk)
 
 	var storageDevice *vms.CustomStorageDevice
@@ -3227,13 +3312,13 @@ func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*v
 	return storageDevice, nil
 }
 
-func vmGetTPMState(d *schema.ResourceData, disk []interface{}) *vms.CustomTPMState {
-	var tpmState []interface{}
+func vmGetTPMState(d *schema.ResourceData, disk []any) *vms.CustomTPMState {
+	var tpmState []any
 
 	if disk != nil {
 		tpmState = disk
 	} else {
-		tpmState = d.Get(mkTPMState).([]interface{})
+		tpmState = d.Get(mkTPMState).([]any)
 	}
 
 	var tpmStateConfig *vms.CustomTPMState
@@ -3241,7 +3326,7 @@ func vmGetTPMState(d *schema.ResourceData, disk []interface{}) *vms.CustomTPMSta
 	if len(tpmState) > 0 && tpmState[0] != nil {
 		tpmStateConfig = &vms.CustomTPMState{}
 
-		block := tpmState[0].(map[string]interface{})
+		block := tpmState[0].(map[string]any)
 		datastoreID, _ := block[mkTPMStateDatastoreID].(string)
 		version, _ := block[mkTPMStateVersion].(string)
 
@@ -3254,7 +3339,7 @@ func vmGetTPMState(d *schema.ResourceData, disk []interface{}) *vms.CustomTPMSta
 	return tpmStateConfig
 }
 
-func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []interface{}) *vms.CustomStorageDevice {
+func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []any) *vms.CustomStorageDevice {
 	tpmState := vmGetTPMState(d, disk)
 
 	var storageDevice *vms.CustomStorageDevice
@@ -3271,21 +3356,21 @@ func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []interface{}) *v
 }
 
 func vmGetRNGDevice(d *schema.ResourceData) *vms.CustomRNGDevice {
-	rngBlock := d.Get(mkRNG).([]interface{})
+	rngBlock := d.Get(mkRNG).([]any)
 
 	var rng *vms.CustomRNGDevice
 
 	if len(rngBlock) > 0 && rngBlock[0] != nil {
-		block := rngBlock[0].(map[string]interface{})
+		block := rngBlock[0].(map[string]any)
 
-		source, _ := block[mkRNGSource].(string)
+		source := getStringFromBlock(block, mkRNGSource, "")
 
-		maxBytes, _ := block[mkRNGMaxBytes].(int)
+		maxBytes := getIntFromBlock(block, mkRNGMaxBytes, 0)
 		if maxBytes == 0 {
 			maxBytes = dvRNGMaxBytes
 		}
 
-		period, _ := block[mkRNGPeriod].(int)
+		period := getIntFromBlock(block, mkRNGPeriod, 0)
 		if period == 0 {
 			period = dvRNGPeriod
 		}
@@ -3301,11 +3386,11 @@ func vmGetRNGDevice(d *schema.ResourceData) *vms.CustomRNGDevice {
 }
 
 func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
-	pciDevice := d.Get(mkHostPCI).([]interface{})
+	pciDevice := d.Get(mkHostPCI).([]any)
 	pciDeviceObjects := make(vms.CustomPCIDevices, len(pciDevice))
 
 	for _, pciDeviceEntry := range pciDevice {
-		block := pciDeviceEntry.(map[string]interface{})
+		block := pciDeviceEntry.(map[string]any)
 
 		deviceName := block[mkHostPCIDevice].(string)
 		ids, _ := block[mkHostPCIDeviceID].(string)
@@ -3348,17 +3433,17 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 }
 
 func vmGetNumaDeviceObjects(d *schema.ResourceData) vms.CustomNUMADevices {
-	numaNode := d.Get(mkNUMA).([]interface{})
+	numaNode := d.Get(mkNUMA).([]any)
 	numaNodeObjects := make(vms.CustomNUMADevices, len(numaNode))
 
 	for i, numaNodeEntry := range numaNode {
-		block := numaNodeEntry.(map[string]interface{})
+		block := numaNodeEntry.(map[string]any)
 
 		deviceName := block[mkNUMADevice].(string)
 		ids := block[mkNUMACPUIDs].(string)
-		hostNodes, _ := block[mkNUMAHostNodeNames].(string)
-		memory, _ := block[mkNUMAMemory].(int)
-		policy, _ := block[mkNUMAPolicy].(string)
+		hostNodes := getStringFromBlock(block, mkNUMAHostNodeNames, "")
+		memory := getIntFromBlock(block, mkNUMAMemory, 0)
+		policy := getStringFromBlock(block, mkNUMAPolicy, "")
 
 		device := vms.CustomNUMADevice{
 			Memory: &memory,
@@ -3391,11 +3476,11 @@ func vmGetNumaDeviceObjects(d *schema.ResourceData) vms.CustomNUMADevices {
 }
 
 func vmGetHostUSBDeviceObjects(d *schema.ResourceData) vms.CustomUSBDevices {
-	usbDevice := d.Get(mkHostUSB).([]interface{})
+	usbDevice := d.Get(mkHostUSB).([]any)
 	usbDeviceObjects := make(vms.CustomUSBDevices, len(usbDevice))
 
 	for i, usbDeviceEntry := range usbDevice {
-		block := usbDeviceEntry.(map[string]interface{})
+		block := usbDeviceEntry.(map[string]any)
 
 		host, _ := block[mkHostUSBDevice].(string)
 		usb3 := types.CustomBool(block[mkHostUSBDeviceUSB3].(bool))
@@ -3420,11 +3505,11 @@ func vmGetHostUSBDeviceObjects(d *schema.ResourceData) vms.CustomUSBDevices {
 }
 
 func vmGetSerialDeviceList(d *schema.ResourceData) vms.CustomSerialDevices {
-	device := d.Get(mkSerialDevice).([]interface{})
+	device := d.Get(mkSerialDevice).([]any)
 	list := make(vms.CustomSerialDevices, len(device))
 
 	for i, v := range device {
-		block := v.(map[string]interface{})
+		block := v.(map[string]any)
 
 		device, _ := block[mkSerialDeviceDevice].(string)
 
@@ -3435,10 +3520,10 @@ func vmGetSerialDeviceList(d *schema.ResourceData) vms.CustomSerialDevices {
 }
 
 func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
-	smbiosSections := d.Get(mkSMBIOS).([]interface{})
+	smbiosSections := d.Get(mkSMBIOS).([]any)
 
 	if len(smbiosSections) > 0 && smbiosSections[0] != nil {
-		smbiosBlock := smbiosSections[0].(map[string]interface{})
+		smbiosBlock := smbiosSections[0].(map[string]any)
 		b64 := types.CustomBool(true)
 		family, _ := smbiosBlock[mkSMBIOSFamily].(string)
 		manufacturer, _ := smbiosBlock[mkSMBIOSManufacturer].(string)
@@ -3497,10 +3582,10 @@ func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 }
 
 func vmGetStartupOrder(d *schema.ResourceData) *vms.CustomStartupOrder {
-	startup := d.Get(mkStartup).([]interface{})
+	startup := d.Get(mkStartup).([]any)
 
 	if len(startup) > 0 && startup[0] != nil {
-		startupBlock := startup[0].(map[string]interface{})
+		startupBlock := startup[0].(map[string]any)
 		startupOrder := startupBlock[mkStartupOrder].(int)
 		startupUpDelay := startupBlock[mkStartupUpDelay].(int)
 		startupDownDelay := startupBlock[mkStartupDownDelay].(int)
@@ -3528,7 +3613,7 @@ func vmGetStartupOrder(d *schema.ResourceData) *vms.CustomStartupOrder {
 func vmGetTagsString(d *schema.ResourceData) string {
 	var sanitizedTags []string
 
-	tags := d.Get(mkTags).([]interface{})
+	tags := d.Get(mkTags).([]any)
 	for _, tag := range tags {
 		sanitizedTag := strings.TrimSpace(tag.(string))
 		if len(sanitizedTag) > 0 {
@@ -3542,11 +3627,11 @@ func vmGetTagsString(d *schema.ResourceData) string {
 }
 
 func vmGetVirtiofsShares(d *schema.ResourceData) vms.CustomVirtiofsShares {
-	virtiofs := d.Get(mkVirtiofs).([]interface{})
+	virtiofs := d.Get(mkVirtiofs).([]any)
 	virtiofsShares := make(vms.CustomVirtiofsShares, len(virtiofs))
 
 	for i, virtiofsShare := range virtiofs {
-		block := virtiofsShare.(map[string]interface{})
+		block := virtiofsShare.(map[string]any)
 
 		mapping, _ := block[mkVirtiofsMapping].(string)
 		cache, _ := block[mkVirtiofsCache].(string)
@@ -3577,9 +3662,9 @@ func vmGetVirtiofsShares(d *schema.ResourceData) vms.CustomVirtiofsShares {
 }
 
 func vmGetVGADeviceObject(d *schema.ResourceData) *vms.CustomVGADevice {
-	vga := d.Get(mkVGA).([]interface{})
+	vga := d.Get(mkVGA).([]any)
 	if len(vga) > 0 && vga[0] != nil {
-		vgaBlock := vga[0].(map[string]interface{})
+		vgaBlock := vga[0].(map[string]any)
 		vgaClipboard := vgaBlock[mkVGAClipboard].(string)
 		vgaMemory := vgaBlock[mkVGAMemory].(int)
 
@@ -3605,7 +3690,46 @@ func vmGetVGADeviceObject(d *schema.ResourceData) *vms.CustomVGADevice {
 	return nil
 }
 
-func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+//nolint:unparam // defaultValue parameter is kept for API consistency and future flexibility
+func getIntFromBlock(block map[string]any, key string, defaultValue int) int {
+	if val, ok := block[key].(int); ok {
+		return val
+	}
+
+	return defaultValue
+}
+
+//nolint:unparam // defaultValue parameter is kept for API consistency and future flexibility
+func getStringFromBlock(block map[string]any, key string, defaultValue string) string {
+	if val, ok := block[key].(string); ok {
+		return val
+	}
+
+	return defaultValue
+}
+
+func getBoolFromBlock(block map[string]any, key string, defaultValue bool) bool {
+	if val, ok := block[key].(bool); ok {
+		return val
+	}
+
+	return defaultValue
+}
+
+func isAgentEnabled(ctx context.Context, vmAPI *vms.Client) (bool, diag.Diagnostics) {
+	vmConfig, err := vmAPI.GetVM(ctx)
+	if err != nil {
+		return false, diag.FromErr(err)
+	}
+
+	if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil {
+		return bool(*vmConfig.Agent.Enabled), nil
+	}
+
+	return false, nil
+}
+
+func vmRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -3659,10 +3783,31 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	return vmReadCustom(ctx, d, m, vmID, vmConfig, vmStatus)
 }
 
+func setDefaultIfNotSet(d *schema.ResourceData, diags diag.Diagnostics, key string, value any) diag.Diagnostics {
+	if _, ok := d.GetOk(key); !ok {
+		if err := d.Set(key, value); err != nil {
+			return append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	return diags
+}
+
+//nolint:staticcheck
+func setDefaultIfNotExists(d *schema.ResourceData, diags diag.Diagnostics, key string, value any) diag.Diagnostics {
+	if _, ok := d.GetOkExists(key); !ok {
+		if err := d.Set(key, value); err != nil {
+			return append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	return diags
+}
+
 func vmReadCustom(
 	ctx context.Context,
 	d *schema.ResourceData,
-	m interface{},
+	m any,
 	vmID int,
 	vmConfig *vms.GetResponseData,
 	vmStatus *vms.GetStatusResponseData,
@@ -3701,15 +3846,15 @@ func vmReadCustom(
 	}
 
 	nodeName := d.Get(mkNodeName).(string)
-	clone := d.Get(mkClone).([]interface{})
+	clone := d.Get(mkClone).([]any)
 
 	// Compare the agent configuration to the one stored in the state.
-	currentAgent := d.Get(mkAgent).([]interface{})
+	currentAgent := d.Get(mkAgent).([]any)
 
 	//nolint:gocritic
 	if len(clone) == 0 || len(currentAgent) > 0 {
 		if vmConfig.Agent != nil {
-			agent := map[string]interface{}{}
+			agent := map[string]any{}
 
 			if vmConfig.Agent.Enabled != nil {
 				agent[mkAgentEnabled] = bool(*vmConfig.Agent.Enabled)
@@ -3726,7 +3871,7 @@ func vmReadCustom(
 			}
 
 			if len(currentAgent) > 0 && currentAgent[0] != nil {
-				currentAgentBlock := currentAgent[0].(map[string]interface{})
+				currentAgentBlock := currentAgent[0].(map[string]any)
 				currentAgentTimeout := currentAgentBlock[mkAgentTimeout].(string)
 
 				if currentAgentTimeout != "" {
@@ -3744,9 +3889,17 @@ func vmReadCustom(
 				agent[mkAgentType] = ""
 			}
 
+			// preserve wait_for_ip from current state if present
+			if len(currentAgent) > 0 && currentAgent[0] != nil {
+				currentAgentBlock := currentAgent[0].(map[string]any)
+				if waitForIP, ok := currentAgentBlock[mkAgentWaitForIP].([]any); ok && len(waitForIP) > 0 {
+					agent[mkAgentWaitForIP] = waitForIP
+				}
+			}
+
 			if len(clone) > 0 {
 				if len(currentAgent) > 0 {
-					err := d.Set(mkAgent, []interface{}{agent})
+					err := d.Set(mkAgent, []any{agent})
 					diags = append(diags, diag.FromErr(err)...)
 				}
 			} else if len(currentAgent) > 0 ||
@@ -3754,27 +3907,27 @@ func vmReadCustom(
 				agent[mkAgentTimeout] != dvAgentTimeout ||
 				agent[mkAgentTrim] != dvAgentTrim ||
 				agent[mkAgentType] != dvAgentType {
-				err := d.Set(mkAgent, []interface{}{agent})
+				err := d.Set(mkAgent, []any{agent})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(clone) > 0 {
 			if len(currentAgent) > 0 {
-				err := d.Set(mkAgent, []interface{}{})
+				err := d.Set(mkAgent, []any{})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else {
-			err := d.Set(mkAgent, []interface{}{})
+			err := d.Set(mkAgent, []any{})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
 	// Compare the amdsev configuration to the one stored in the state.
-	currentAMDSEV := d.Get(mkAMDSEV).([]interface{})
+	currentAMDSEV := d.Get(mkAMDSEV).([]any)
 
 	//nolint:gocritic
 	if len(clone) == 0 || len(currentAMDSEV) > 0 {
 		if vmConfig.AMDSEV != nil {
-			amdsev := map[string]interface{}{}
+			amdsev := map[string]any{}
 
 			amdsev[mkAMDSEVType] = vmConfig.AMDSEV.Type
 
@@ -3804,7 +3957,7 @@ func vmReadCustom(
 
 			if len(clone) > 0 {
 				if len(currentAMDSEV) > 0 {
-					err := d.Set(mkAMDSEV, []interface{}{amdsev})
+					err := d.Set(mkAMDSEV, []any{amdsev})
 					diags = append(diags, diag.FromErr(err)...)
 				}
 			} else if len(currentAMDSEV) > 0 ||
@@ -3813,31 +3966,31 @@ func vmReadCustom(
 				amdsev[mkAMDSEVKernelHashes] != dvAMDSEVKernelHashes ||
 				amdsev[mkAMDSEVNoDebug] != dvAMDSEVNoDebug ||
 				amdsev[mkAMDSEVNoKeySharing] != dvAMDSEVNoKeySharing {
-				err := d.Set(mkAMDSEV, []interface{}{amdsev})
+				err := d.Set(mkAMDSEV, []any{amdsev})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(clone) > 0 {
 			if len(currentAMDSEV) > 0 {
-				err := d.Set(mkAMDSEV, []interface{}{})
+				err := d.Set(mkAMDSEV, []any{})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else {
-			err := d.Set(mkAMDSEV, []interface{}{})
+			err := d.Set(mkAMDSEV, []any{})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
 	// Compare the audio devices to those stored in the state.
-	currentAudioDevice := d.Get(mkAudioDevice).([]interface{})
+	currentAudioDevice := d.Get(mkAudioDevice).([]any)
 
-	audioDevices := make([]interface{}, 1)
+	audioDevices := make([]any, 1)
 	audioDevicesArray := []*vms.CustomAudioDevice{
 		vmConfig.AudioDevice,
 	}
 	audioDevicesCount := 0
 
 	for adi, ad := range audioDevicesArray {
-		m := map[string]interface{}{}
+		m := map[string]any{}
 
 		if ad != nil {
 			m[mkAudioDeviceDevice] = ad.Device
@@ -3868,24 +4021,24 @@ func vmReadCustom(
 	// Compare the IDE devices to the CD-ROM configurations stored in the state.
 	currentInterface := dvCDROMInterface
 
-	currentCDROM := d.Get(mkCDROM).([]interface{})
+	currentCDROM := d.Get(mkCDROM).([]any)
 	if len(currentCDROM) > 0 && currentCDROM[0] != nil {
-		currentBlock := currentCDROM[0].(map[string]interface{})
+		currentBlock := currentCDROM[0].(map[string]any)
 		currentInterface = currentBlock[mkCDROMInterface].(string)
 	}
 
 	cdromIDEDevice := getStorageDevice(vmConfig, currentInterface)
 
 	if cdromIDEDevice != nil {
-		cdrom := make([]interface{}, 1)
-		cdromBlock := map[string]interface{}{}
+		cdrom := make([]any, 1)
+		cdromBlock := map[string]any{}
 
 		if len(clone) == 0 || len(currentCDROM) > 0 {
 			cdromBlock[mkCDROMFileID] = cdromIDEDevice.FileVolume
 			cdromBlock[mkCDROMInterface] = currentInterface
 
 			if len(currentCDROM) > 0 && currentCDROM[0] != nil {
-				currentBlock := currentCDROM[0].(map[string]interface{})
+				currentBlock := currentCDROM[0].(map[string]any)
 
 				if currentBlock[mkCDROMFileID] == "" {
 					cdromBlock[mkCDROMFileID] = ""
@@ -3898,12 +4051,12 @@ func vmReadCustom(
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else {
-		err := d.Set(mkCDROM, []interface{}{})
+		err := d.Set(mkCDROM, []any{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the CPU configuration to the one stored in the state.
-	cpu := map[string]interface{}{}
+	cpu := map[string]any{}
 
 	if vmConfig.CPUArchitecture != nil {
 		cpu[mkCPUArchitecture] = *vmConfig.CPUArchitecture
@@ -3940,8 +4093,8 @@ func vmReadCustom(
 		cpu[mkCPUNUMA] = false
 	}
 
-	currentNUMAList := d.Get(mkNUMA).([]interface{})
-	numaMap := map[string]interface{}{}
+	currentNUMAList := d.Get(mkNUMA).([]any)
+	numaMap := map[string]any{}
 
 	numaDevices := getNUMAInfo(vmConfig, d)
 	for ni, np := range numaDevices {
@@ -3949,7 +4102,7 @@ func vmReadCustom(
 			continue
 		}
 
-		numaNode := map[string]interface{}{}
+		numaNode := map[string]any{}
 		numaNode[mkNUMADevice] = ni
 
 		if len(np.CPUIDs) > 0 {
@@ -3964,7 +4117,7 @@ func vmReadCustom(
 	}
 
 	if len(clone) == 0 || len(currentNUMAList) > 0 {
-		var numaList []interface{}
+		var numaList []any
 
 		if len(currentNUMAList) > 0 {
 			devices := utils.ListResourcesAttributeValue(currentNUMAList, mkNUMADevice)
@@ -3986,7 +4139,7 @@ func vmReadCustom(
 
 	if vmConfig.CPUEmulation != nil {
 		if vmConfig.CPUEmulation.Flags != nil {
-			convertedFlags := make([]interface{}, len(*vmConfig.CPUEmulation.Flags))
+			convertedFlags := make([]any, len(*vmConfig.CPUEmulation.Flags))
 
 			for fi, fv := range *vmConfig.CPUEmulation.Flags {
 				convertedFlags[fi] = fv
@@ -3994,12 +4147,12 @@ func vmReadCustom(
 
 			cpu[mkCPUFlags] = convertedFlags
 		} else {
-			cpu[mkCPUFlags] = []interface{}{}
+			cpu[mkCPUFlags] = []any{}
 		}
 
 		cpu[mkCPUType] = vmConfig.CPUEmulation.Type
 	} else {
-		cpu[mkCPUFlags] = []interface{}{}
+		cpu[mkCPUFlags] = []any{}
 		// Default value of "cputype" is "qemu64" according to the QEMU documentation.
 		cpu[mkCPUType] = "qemu64"
 	}
@@ -4007,8 +4160,7 @@ func vmReadCustom(
 	if vmConfig.CPUUnits != nil {
 		cpu[mkCPUUnits] = int(*vmConfig.CPUUnits)
 	} else {
-		// Default value of "cpuunits" is "1024" according to the API documentation.
-		cpu[mkCPUUnits] = 1024
+		cpu[mkCPUUnits] = 0
 	}
 
 	if vmConfig.CPUAffinity != nil {
@@ -4017,32 +4169,32 @@ func vmReadCustom(
 		cpu[mkCPUAffinity] = ""
 	}
 
-	currentCPU := d.Get(mkCPU).([]interface{})
+	currentCPU := d.Get(mkCPU).([]any)
 
 	if len(clone) > 0 {
 		if len(currentCPU) > 0 {
-			err := d.Set(mkCPU, []interface{}{cpu})
+			err := d.Set(mkCPU, []any{cpu})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentCPU) > 0 ||
 		cpu[mkCPUArchitecture] != dvCPUArchitecture ||
 		cpu[mkCPUCores] != dvCPUCores ||
-		len(cpu[mkCPUFlags].([]interface{})) > 0 ||
+		len(cpu[mkCPUFlags].([]any)) > 0 ||
 		cpu[mkCPUHotplugged] != dvCPUHotplugged ||
 		cpu[mkCPULimit] != dvCPULimit ||
 		cpu[mkCPUSockets] != dvCPUSockets ||
 		cpu[mkCPUType] != dvCPUType ||
-		cpu[mkCPUUnits] != dvCPUUnits {
-		err := d.Set(mkCPU, []interface{}{cpu})
+		cpu[mkCPUUnits] != 0 {
+		err := d.Set(mkCPU, []any{cpu})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	allDiskInfo := disk.GetInfo(vmConfig, d)
+	allDiskInfo := disk.GetDiskInfoWithFileID(vmConfig, d)
 
 	diags = append(diags, disk.Read(ctx, d, allDiskInfo, vmID, client, nodeName, len(clone) > 0)...)
 
 	if vmConfig.EFIDisk != nil {
-		efiDisk := map[string]interface{}{}
+		efiDisk := map[string]any{}
 
 		fileIDParts := strings.Split(vmConfig.EFIDisk.FileVolume, ":")
 
@@ -4073,11 +4225,11 @@ func vmReadCustom(
 			efiDisk[mkEFIDiskPreEnrolledKeys] = false
 		}
 
-		currentEfiDisk := d.Get(mkEFIDisk).([]interface{})
+		currentEfiDisk := d.Get(mkEFIDisk).([]any)
 
 		if len(clone) > 0 {
 			if len(currentEfiDisk) > 0 {
-				err := d.Set(mkEFIDisk, []interface{}{efiDisk})
+				err := d.Set(mkEFIDisk, []any{efiDisk})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(currentEfiDisk) > 0 ||
@@ -4085,36 +4237,36 @@ func vmReadCustom(
 			efiDisk[mkEFIDiskType] != dvEFIDiskType ||
 			efiDisk[mkEFIDiskPreEnrolledKeys] != dvEFIDiskPreEnrolledKeys ||
 			efiDisk[mkEFIDiskFileFormat] != dvEFIDiskFileFormat {
-			err := d.Set(mkEFIDisk, []interface{}{efiDisk})
+			err := d.Set(mkEFIDisk, []any{efiDisk})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
 	if vmConfig.TPMState != nil {
-		tpmState := map[string]interface{}{}
+		tpmState := map[string]any{}
 
 		fileIDParts := strings.Split(vmConfig.TPMState.FileVolume, ":")
 
 		tpmState[mkTPMStateDatastoreID] = fileIDParts[0]
 		tpmState[mkTPMStateVersion] = dvTPMStateVersion
 
-		currentTPMState := d.Get(mkTPMState).([]interface{})
+		currentTPMState := d.Get(mkTPMState).([]any)
 
 		if len(clone) > 0 {
 			if len(currentTPMState) > 0 {
-				err := d.Set(mkTPMState, []interface{}{tpmState})
+				err := d.Set(mkTPMState, []any{tpmState})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(currentTPMState) > 0 ||
 			tpmState[mkTPMStateDatastoreID] != dvTPMStateDatastoreID ||
 			tpmState[mkTPMStateVersion] != dvTPMStateVersion {
-			err := d.Set(mkTPMState, []interface{}{tpmState})
+			err := d.Set(mkTPMState, []any{tpmState})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
 	if vmConfig.RNGDevice != nil {
-		rng := map[string]interface{}{}
+		rng := map[string]any{}
 
 		rng[mkRNGSource] = vmConfig.RNGDevice.Source
 
@@ -4126,31 +4278,31 @@ func vmReadCustom(
 			rng[mkRNGPeriod] = *vmConfig.RNGDevice.Period
 		}
 
-		currentRNG := d.Get(mkRNG).([]interface{})
+		currentRNG := d.Get(mkRNG).([]any)
 
 		if len(clone) > 0 {
 			if len(currentRNG) > 0 {
-				err := d.Set(mkRNG, []interface{}{rng})
+				err := d.Set(mkRNG, []any{rng})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(currentRNG) > 0 ||
 			rng[mkRNGSource] != "" ||
 			rng[mkRNGMaxBytes] != dvRNGMaxBytes || // or != 0?
 			rng[mkRNGPeriod] != dvRNGPeriod {
-			err := d.Set(mkRNG, []interface{}{rng})
+			err := d.Set(mkRNG, []any{rng})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
-	currentPCIList := d.Get(mkHostPCI).([]interface{})
-	pciMap := map[string]interface{}{}
+	currentPCIList := d.Get(mkHostPCI).([]any)
+	pciMap := map[string]any{}
 
 	for pi, pp := range vmConfig.PCIDevices {
 		if (pp == nil) || (pp.DeviceIDs == nil && pp.Mapping == nil) {
 			continue
 		}
 
-		pci := map[string]interface{}{}
+		pci := map[string]any{}
 
 		pci[mkHostPCIDevice] = pi
 		if pp.DeviceIDs != nil {
@@ -4204,8 +4356,8 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	currentUSBList := d.Get(mkHostUSB).([]interface{})
-	usbMap := map[string]interface{}{}
+	currentUSBList := d.Get(mkHostUSB).([]any)
+	usbMap := map[string]any{}
 
 	usbDevices := getUSBInfo(vmConfig, d)
 	for pi, pp := range usbDevices {
@@ -4213,7 +4365,7 @@ func vmReadCustom(
 			continue
 		}
 
-		usb := map[string]interface{}{}
+		usb := map[string]any{}
 
 		if pp.HostDevice != nil {
 			usb[mkHostUSBDevice] = *pp.HostDevice
@@ -4243,15 +4395,15 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	currentVirtiofsList := d.Get(mkVirtiofs).([]interface{})
-	virtiofsMap := map[string]interface{}{}
+	currentVirtiofsList := d.Get(mkVirtiofs).([]any)
+	virtiofsMap := map[string]any{}
 
 	for pi, pp := range vmConfig.VirtiofsShares {
 		if pp == nil {
 			continue
 		}
 
-		share := map[string]interface{}{}
+		share := map[string]any{}
 
 		share[mkVirtiofsMapping] = pp.DirId
 
@@ -4293,19 +4445,34 @@ func vmReadCustom(
 	}
 
 	// Compare the initialization configuration to the one stored in the state.
-	initialization := map[string]interface{}{}
+	initialization := map[string]any{}
 
-	initializationInterface := findExistingCloudInitDrive(vmConfig, vmID, "")
+	initializationInterface, initializationDevice := findExistingCloudInitDrive(vmConfig, vmID, "")
 	if initializationInterface != "" {
-		initializationDevice := getStorageDevice(vmConfig, initializationInterface)
-		fileVolumeParts := strings.Split(initializationDevice.FileVolume, ":")
+		parts := strings.Split(initializationDevice.FileVolume, ",")
+
+		fileVolume := parts[0]
+		fileVolumeParts := strings.Split(fileVolume, ":")
+
+		datastoreId := fileVolumeParts[0]
+		pathInDatastore := fileVolumeParts[1]
 
 		initialization[mkInitializationInterface] = initializationInterface
-		initialization[mkInitializationDatastoreID] = fileVolumeParts[0]
+		initialization[mkInitializationDatastoreID] = datastoreId
+
+		if initializationDevice.Format != nil && *initializationDevice.Format != "" {
+			initialization[mkInitializationFileFormat] = *initializationDevice.Format
+		} else {
+			fileFormat := filepath.Ext(pathInDatastore)
+
+			if fileFormat != "" {
+				initialization[mkInitializationFileFormat] = fileFormat[1:]
+			}
+		}
 	}
 
 	if vmConfig.CloudInitDNSDomain != nil || vmConfig.CloudInitDNSServer != nil {
-		initializationDNS := map[string]interface{}{}
+		initializationDNS := map[string]any{}
 
 		if vmConfig.CloudInitDNSDomain != nil {
 			initializationDNS[mkInitializationDNSDomain] = *vmConfig.CloudInitDNSDomain
@@ -4320,7 +4487,7 @@ func vmReadCustom(
 			initializationDNS[mkInitializationDNSServers] = []string{}
 		}
 
-		initialization[mkInitializationDNS] = []interface{}{
+		initialization[mkInitializationDNS] = []any{
 			initializationDNS,
 		}
 	}
@@ -4361,16 +4528,16 @@ func vmReadCustom(
 		vmConfig.IPConfig30,
 		vmConfig.IPConfig31,
 	}
-	ipConfigList := make([]interface{}, len(ipConfigObjects))
+	ipConfigList := make([]any, len(ipConfigObjects))
 
 	for ipConfigIndex, ipConfig := range ipConfigObjects {
-		ipConfigItem := map[string]interface{}{}
+		ipConfigItem := map[string]any{}
 
 		if ipConfig != nil {
 			ipConfigLast = ipConfigIndex
 
 			if ipConfig.GatewayIPv4 != nil || ipConfig.IPv4 != nil {
-				ipv4 := map[string]interface{}{}
+				ipv4 := map[string]any{}
 
 				if ipConfig.IPv4 != nil {
 					ipv4[mkInitializationIPConfigIPv4Address] = *ipConfig.IPv4
@@ -4384,15 +4551,15 @@ func vmReadCustom(
 					ipv4[mkInitializationIPConfigIPv4Gateway] = ""
 				}
 
-				ipConfigItem[mkInitializationIPConfigIPv4] = []interface{}{
+				ipConfigItem[mkInitializationIPConfigIPv4] = []any{
 					ipv4,
 				}
 			} else {
-				ipConfigItem[mkInitializationIPConfigIPv4] = []interface{}{}
+				ipConfigItem[mkInitializationIPConfigIPv4] = []any{}
 			}
 
 			if ipConfig.GatewayIPv6 != nil || ipConfig.IPv6 != nil {
-				ipv6 := map[string]interface{}{}
+				ipv6 := map[string]any{}
 
 				if ipConfig.IPv6 != nil {
 					ipv6[mkInitializationIPConfigIPv6Address] = *ipConfig.IPv6
@@ -4406,15 +4573,15 @@ func vmReadCustom(
 					ipv6[mkInitializationIPConfigIPv6Gateway] = ""
 				}
 
-				ipConfigItem[mkInitializationIPConfigIPv6] = []interface{}{
+				ipConfigItem[mkInitializationIPConfigIPv6] = []any{
 					ipv6,
 				}
 			} else {
-				ipConfigItem[mkInitializationIPConfigIPv6] = []interface{}{}
+				ipConfigItem[mkInitializationIPConfigIPv6] = []any{}
 			}
 		} else {
-			ipConfigItem[mkInitializationIPConfigIPv4] = []interface{}{}
-			ipConfigItem[mkInitializationIPConfigIPv6] = []interface{}{}
+			ipConfigItem[mkInitializationIPConfigIPv4] = []any{}
+			ipConfigItem[mkInitializationIPConfigIPv6] = []any{}
 		}
 
 		ipConfigList[ipConfigIndex] = ipConfigItem
@@ -4426,7 +4593,7 @@ func vmReadCustom(
 
 	if vmConfig.CloudInitPassword != nil || vmConfig.CloudInitSSHKeys != nil ||
 		vmConfig.CloudInitUsername != nil {
-		initializationUserAccount := map[string]interface{}{}
+		initializationUserAccount := map[string]any{}
 
 		if vmConfig.CloudInitSSHKeys != nil {
 			initializationUserAccount[mkInitializationUserAccountKeys] = []string(
@@ -4448,7 +4615,7 @@ func vmReadCustom(
 			initializationUserAccount[mkInitializationUserAccountUsername] = ""
 		}
 
-		initialization[mkInitializationUserAccount] = []interface{}{
+		initialization[mkInitializationUserAccount] = []any{
 			initializationUserAccount,
 		}
 	}
@@ -4490,29 +4657,29 @@ func vmReadCustom(
 		initialization[mkInitializationType] = ""
 	}
 
-	currentInitialization := d.Get(mkInitialization).([]interface{})
+	currentInitialization := d.Get(mkInitialization).([]any)
 
 	//nolint:gocritic
 	if len(clone) > 0 {
 		if len(currentInitialization) > 0 {
 			if len(initialization) > 0 {
-				err := d.Set(mkInitialization, []interface{}{initialization})
+				err := d.Set(mkInitialization, []any{initialization})
 				diags = append(diags, diag.FromErr(err)...)
 			} else {
-				err := d.Set(mkInitialization, []interface{}{})
+				err := d.Set(mkInitialization, []any{})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		}
 	} else if len(initialization) > 0 {
-		err := d.Set(mkInitialization, []interface{}{initialization})
+		err := d.Set(mkInitialization, []any{initialization})
 		diags = append(diags, diag.FromErr(err)...)
 	} else {
-		err := d.Set(mkInitialization, []interface{}{})
+		err := d.Set(mkInitialization, []any{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the operating system configuration to the one stored in the state.
-	kvmArguments := map[string]interface{}{}
+	kvmArguments := map[string]any{}
 
 	if vmConfig.KVMArguments != nil {
 		kvmArguments[mkKVMArguments] = *vmConfig.KVMArguments
@@ -4521,7 +4688,7 @@ func vmReadCustom(
 	}
 
 	// Compare the memory configuration to the one stored in the state.
-	memory := map[string]interface{}{}
+	memory := map[string]any{}
 
 	if vmConfig.DedicatedMemory != nil {
 		memory[mkMemoryDedicated] = int(*vmConfig.DedicatedMemory)
@@ -4553,11 +4720,11 @@ func vmReadCustom(
 		memory[mkMemoryKeepHugepages] = false
 	}
 
-	currentMemory := d.Get(mkMemory).([]interface{})
+	currentMemory := d.Get(mkMemory).([]any)
 
 	if len(clone) > 0 {
 		if len(currentMemory) > 0 {
-			err := d.Set(mkMemory, []interface{}{memory})
+			err := d.Set(mkMemory, []any{memory})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentMemory) > 0 ||
@@ -4566,14 +4733,14 @@ func vmReadCustom(
 		memory[mkMemoryShared] != dvMemoryShared ||
 		memory[mkMemoryHugepages] != dvMemoryHugepages ||
 		memory[mkMemoryKeepHugepages] != dvMemoryKeepHugepages {
-		err := d.Set(mkMemory, []interface{}{memory})
+		err := d.Set(mkMemory, []any{memory})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	diags = append(diags, network.ReadNetworkDeviceObjects(d, vmConfig)...)
 
 	// Compare the operating system configuration to the one stored in the state.
-	operatingSystem := map[string]interface{}{}
+	operatingSystem := map[string]any{}
 
 	if vmConfig.OSType != nil {
 		operatingSystem[mkOperatingSystemType] = *vmConfig.OSType
@@ -4581,37 +4748,43 @@ func vmReadCustom(
 		operatingSystem[mkOperatingSystemType] = ""
 	}
 
-	currentOperatingSystem := d.Get(mkOperatingSystem).([]interface{})
+	currentOperatingSystem := d.Get(mkOperatingSystem).([]any)
 
 	switch {
 	case len(clone) > 0:
 		if len(currentOperatingSystem) > 0 {
 			err := d.Set(
 				mkOperatingSystem,
-				[]interface{}{operatingSystem},
+				[]any{operatingSystem},
 			)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	case len(currentOperatingSystem) > 0 || operatingSystem[mkOperatingSystemType] != dvOperatingSystemType:
-		err := d.Set(mkOperatingSystem, []interface{}{operatingSystem})
+		err := d.Set(mkOperatingSystem, []any{operatingSystem})
 		diags = append(diags, diag.FromErr(err)...)
 	default:
-		err := d.Set(mkOperatingSystem, []interface{}{})
+		err := d.Set(mkOperatingSystem, []any{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	// Compare the pool ID to the value stored in the state.
-	currentPoolID := d.Get(mkPoolID).(string)
-
-	if len(clone) == 0 || currentPoolID != dvPoolID {
-		if vmConfig.PoolID != nil {
-			err := d.Set(mkPoolID, *vmConfig.PoolID)
-			diags = append(diags, diag.FromErr(err)...)
+	observedPool := ""
+	if vmConfig.PoolID != nil && *vmConfig.PoolID != "" {
+		observedPool = *vmConfig.PoolID
+	} else {
+		p, err := findPoolForVM(ctx, client.Pool(), vmID)
+		if err != nil {
+			diags = append(diags, diag.FromErr(fmt.Errorf("failed to determine pool for VM %d: %w", vmID, err))...)
+		} else {
+			observedPool = p
 		}
 	}
 
+	if err := d.Set(mkPoolID, observedPool); err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	// Compare the serial devices to those stored in the state.
-	serialDevices := make([]interface{}, 4)
+	serialDevices := make([]any, 4)
 	serialDevicesArray := []*string{
 		vmConfig.SerialDevice0,
 		vmConfig.SerialDevice1,
@@ -4621,7 +4794,7 @@ func vmReadCustom(
 	serialDevicesCount := 0
 
 	for sdi, sd := range serialDevicesArray {
-		m := map[string]interface{}{}
+		m := map[string]any{}
 
 		if sd != nil {
 			m[mkSerialDeviceDevice] = *sd
@@ -4633,7 +4806,7 @@ func vmReadCustom(
 		serialDevices[sdi] = m
 	}
 
-	currentSerialDevice := d.Get(mkSerialDevice).([]interface{})
+	currentSerialDevice := d.Get(mkSerialDevice).([]any)
 
 	if len(clone) == 0 || len(currentSerialDevice) > 0 {
 		err := d.Set(mkSerialDevice, serialDevices[:serialDevicesCount])
@@ -4641,10 +4814,10 @@ func vmReadCustom(
 	}
 
 	// Compare the SMBIOS to the one stored in the state.
-	var smbios map[string]interface{}
+	var smbios map[string]any
 
 	if vmConfig.SMBIOS != nil {
-		smbios = map[string]interface{}{}
+		smbios = map[string]any{}
 
 		if vmConfig.SMBIOS.Family != nil {
 			b, err := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Family)
@@ -4701,7 +4874,7 @@ func vmReadCustom(
 		}
 	}
 
-	currentSMBIOS := d.Get(mkSMBIOS).([]interface{})
+	currentSMBIOS := d.Get(mkSMBIOS).([]any)
 
 	switch {
 	case len(clone) > 0:
@@ -4710,7 +4883,7 @@ func vmReadCustom(
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	case len(smbios) == 0:
-		err := d.Set(mkSMBIOS, []interface{}{})
+		err := d.Set(mkSMBIOS, []any{})
 		diags = append(diags, diag.FromErr(err)...)
 	default:
 		if len(currentSMBIOS) > 0 ||
@@ -4720,16 +4893,16 @@ func vmReadCustom(
 			smbios[mkSMBIOSSerial] != dvSMBIOSSerial ||
 			smbios[mkSMBIOSSKU] != dvSMBIOSSKU ||
 			smbios[mkSMBIOSVersion] != dvSMBIOSVersion {
-			err := d.Set(mkSMBIOS, []interface{}{smbios})
+			err := d.Set(mkSMBIOS, []any{smbios})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
 	// Compare the startup order to the one stored in the state.
-	var startup map[string]interface{}
+	var startup map[string]any
 
 	if vmConfig.StartupOrder != nil {
-		startup = map[string]interface{}{}
+		startup = map[string]any{}
 
 		if vmConfig.StartupOrder.Order != nil {
 			startup[mkStartupOrder] = *vmConfig.StartupOrder.Order
@@ -4750,29 +4923,29 @@ func vmReadCustom(
 		}
 	}
 
-	currentStartup := d.Get(mkStartup).([]interface{})
+	currentStartup := d.Get(mkStartup).([]any)
 
 	switch {
 	case len(clone) > 0:
 		if len(currentStartup) > 0 {
-			err := d.Set(mkStartup, []interface{}{startup})
+			err := d.Set(mkStartup, []any{startup})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	case len(startup) == 0:
-		err := d.Set(mkStartup, []interface{}{})
+		err := d.Set(mkStartup, []any{})
 		diags = append(diags, diag.FromErr(err)...)
 	default:
 		if len(currentStartup) > 0 ||
 			startup[mkStartupOrder] != mkStartupOrder ||
 			startup[mkStartupUpDelay] != dvStartupUpDelay ||
 			startup[mkStartupDownDelay] != dvStartupDownDelay {
-			err := d.Set(mkStartup, []interface{}{startup})
+			err := d.Set(mkStartup, []any{startup})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
 	// Compare the VGA configuration to the one stored in the state.
-	vga := map[string]interface{}{}
+	vga := map[string]any{}
 
 	if vmConfig.VGADevice != nil {
 		if vmConfig.VGADevice.Clipboard != nil {
@@ -4796,20 +4969,20 @@ func vmReadCustom(
 		vga[mkVGAType] = dvVGAType
 	}
 
-	currentVGA := d.Get(mkVGA).([]interface{})
+	currentVGA := d.Get(mkVGA).([]any)
 
 	switch {
 	case len(clone) > 0 && len(currentVGA) > 0:
-		err := d.Set(mkVGA, []interface{}{vga})
+		err := d.Set(mkVGA, []any{vga})
 		diags = append(diags, diag.FromErr(err)...)
 	case len(currentVGA) > 0 ||
 		vga[mkVGAClipboard] != dvVGAClipboard ||
 		vga[mkVGAMemory] != dvVGAMemory ||
 		vga[mkVGAType] != dvVGAType:
-		err := d.Set(mkVGA, []interface{}{vga})
+		err := d.Set(mkVGA, []any{vga})
 		diags = append(diags, diag.FromErr(err)...)
 	default:
-		err := d.Set(mkVGA, []interface{}{})
+		err := d.Set(mkVGA, []any{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4823,7 +4996,7 @@ func vmReadCustom(
 		}
 	}
 
-	watchdog := map[string]interface{}{}
+	watchdog := map[string]any{}
 
 	if vmConfig.WatchdogDevice != nil {
 		watchdog[mkWatchdogEnabled] = true
@@ -4845,26 +5018,26 @@ func vmReadCustom(
 		watchdog[mkWatchdogModel] = dvWatchdogModel
 	}
 
-	currentWatchdog := d.Get(mkWatchdog).([]interface{})
+	currentWatchdog := d.Get(mkWatchdog).([]any)
 	currentWatchdogEnabled := len(currentWatchdog) > 0 &&
-		currentWatchdog[0] != nil && currentWatchdog[0].(map[string]interface{})[mkWatchdogEnabled].(bool)
+		currentWatchdog[0] != nil && currentWatchdog[0].(map[string]any)[mkWatchdogEnabled].(bool)
 	currentWatchdogDisabled := len(currentWatchdog) > 0 &&
-		currentWatchdog[0] != nil && !currentWatchdog[0].(map[string]interface{})[mkWatchdogEnabled].(bool)
+		currentWatchdog[0] != nil && !currentWatchdog[0].(map[string]any)[mkWatchdogEnabled].(bool)
 
 	switch {
 	case len(clone) > 0 && len(currentWatchdog) > 0:
-		err := d.Set(mkWatchdog, []interface{}{watchdog})
+		err := d.Set(mkWatchdog, []any{watchdog})
 		diags = append(diags, diag.FromErr(err)...)
 	case currentWatchdogEnabled ||
 		watchdog[mkWatchdogEnabled] != false ||
 		watchdog[mkWatchdogAction] != dvWatchdogAction ||
 		watchdog[mkWatchdogModel] != dvWatchdogModel:
-		err := d.Set(mkWatchdog, []interface{}{watchdog})
+		err := d.Set(mkWatchdog, []any{watchdog})
 		diags = append(diags, diag.FromErr(err)...)
 	case currentWatchdogDisabled && vmConfig.WatchdogDevice == nil:
 		// do nothing
 	default:
-		err := d.Set(mkWatchdog, []interface{}{})
+		err := d.Set(mkWatchdog, []any{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4876,9 +5049,11 @@ func vmReadCustom(
 		return diag.FromErr(e)
 	}
 
+	waitForIPConfig := getAgentWaitForIPConfig(d)
+
 	diags = append(
 		diags,
-		network.ReadNetworkValues(ctx, d, vmAPI, started, vmConfig, agentTimeout)...)
+		network.ReadNetworkValues(ctx, d, vmAPI, started, vmConfig, agentTimeout, waitForIPConfig)...)
 
 	// during import these core attributes might not be set, so set them explicitly here
 	d.SetId(strconv.Itoa(vmID))
@@ -4886,6 +5061,21 @@ func vmReadCustom(
 	diags = append(diags, diag.FromErr(e)...)
 	e = d.Set(mkNodeName, nodeName)
 	diags = append(diags, diag.FromErr(e)...)
+
+	diags = setDefaultIfNotExists(d, diags, mkMigrate, dvMigrate)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutClone, dvTimeoutClone)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutCreate, dvTimeoutCreate)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutMigrate, dvTimeoutMigrate)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutReboot, dvTimeoutReboot)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutShutdownVM, dvTimeoutShutdownVM)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutStartVM, dvTimeoutStartVM)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutStopVM, dvTimeoutStopVM)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutMoveDisk, dvTimeoutMoveDisk)
+	diags = setDefaultIfNotExists(d, diags, mkStopOnDestroy, dvStopOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkPurgeOnDestroy, dvPurgeOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkRebootAfterUpdate, dvRebootAfterUpdate)
+	diags = setDefaultIfNotExists(d, diags, mkRebootAfterCreation, dvRebootAfterCreation)
 
 	return diags
 }
@@ -4898,7 +5088,7 @@ func vmReadPrimitiveValues(
 
 	var err error
 
-	clone := d.Get(mkClone).([]interface{})
+	clone := d.Get(mkClone).([]any)
 	currentACPI := d.Get(mkACPI).(bool)
 
 	if len(clone) == 0 || !currentACPI {
@@ -4952,13 +5142,30 @@ func vmReadPrimitiveValues(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	currentTags := d.Get(mkTags).([]interface{})
+	currentTags := d.Get(mkTags).([]any)
+
+	err = d.Set(mkOnBoot, vmConfig.StartOnBoot)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	if vmConfig.BootOrder == nil {
+		err = d.Set(mkBootOrder, nil)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else {
+		err = d.Set(mkBootOrder, vmConfig.BootOrder.Order)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
 
 	if len(clone) == 0 || len(currentTags) > 0 {
 		var tags []string
 
 		if vmConfig.Tags != nil {
-			for _, tag := range strings.Split(*vmConfig.Tags, ";") {
+			for tag := range strings.SplitSeq(*vmConfig.Tags, ";") {
 				t := strings.TrimSpace(tag)
 				if len(t) > 0 {
 					tags = append(tags, t)
@@ -5059,19 +5266,29 @@ func vmReadPrimitiveValues(
 }
 
 // vmUpdatePool moves the VM to the pool it is supposed to be in if the pool ID changed.
+// Only updates pool_id if it is explicitly set to a non-empty value to avoid conflicts with pool_membership resource.
 func vmUpdatePool(
 	ctx context.Context,
 	d *schema.ResourceData,
 	api *pools.Client,
 	vmID int,
 ) error {
-	oldPoolValue, newPoolValue := d.GetChange(mkPoolID)
-	if cmp.Equal(newPoolValue, oldPoolValue) {
+	if !d.HasChange(mkPoolID) {
 		return nil
 	}
 
+	oldPoolValue, newPoolValue := d.GetChange(mkPoolID)
 	oldPool := oldPoolValue.(string)
 	newPool := newPoolValue.(string)
+
+	if cmp.Equal(newPool, oldPool) {
+		return nil
+	}
+
+	if newPool == "" && oldPool != "" {
+		return nil
+	}
+
 	vmList := (types.CustomCommaSeparatedList)([]string{strconv.Itoa(vmID)})
 
 	tflog.Debug(ctx, fmt.Sprintf("Moving VM %d from pool '%s' to pool '%s'", vmID, oldPool, newPool))
@@ -5089,19 +5306,17 @@ func vmUpdatePool(
 		}
 	}
 
-	if newPool != "" {
-		poolUpdate := &pools.PoolUpdateRequestBody{VMs: &vmList}
+	poolUpdate := &pools.PoolUpdateRequestBody{VMs: &vmList}
 
-		err := api.UpdatePool(ctx, newPool, poolUpdate)
-		if err != nil {
-			return fmt.Errorf("while adding VM %d to pool %s: %w", vmID, newPool, err)
-		}
+	err := api.UpdatePool(ctx, newPool, poolUpdate)
+	if err != nil {
+		return fmt.Errorf("while adding VM %d to pool %s: %w", vmID, newPool, err)
 	}
 
 	return nil
 }
 
-func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, e := config.GetClient()
@@ -5227,11 +5442,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 
-	if d.HasChange(mkTemplate) {
-		updateBody.Template = &template
-		rebootRequired = true
-	}
-
 	// Prepare the new agent configuration.
 	if d.HasChange(mkAgent) {
 		agentBlock, err := structure.GetSchemaBlock(
@@ -5288,7 +5498,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new boot configuration.
 	if d.HasChange(mkBootOrder) {
-		bootOrder := d.Get(mkBootOrder).([]interface{})
+		bootOrder := d.Get(mkBootOrder).([]any)
 		bootOrderConverted := make([]string, len(bootOrder))
 
 		for i, device := range bootOrder {
@@ -5320,9 +5530,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		old, _ := d.GetChange(mkCDROM)
 
-		if len(old.([]interface{})) > 0 && old.([]interface{})[0] != nil {
-			oldList := old.([]interface{})[0]
-			oldBlock := oldList.(map[string]interface{})
+		if len(old.([]any)) > 0 && old.([]any)[0] != nil {
+			oldList := old.([]any)[0]
+			oldBlock := oldList.(map[string]any)
 
 			// If the interface is not set, use the default, for backward compatibility.
 			oldInterface, ok := oldBlock[mkCDROMInterface].(string)
@@ -5363,7 +5573,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
 		cpuCores := cpuBlock[mkCPUCores].(int)
-		cpuFlags := cpuBlock[mkCPUFlags].([]interface{})
+		cpuFlags := cpuBlock[mkCPUFlags].([]any)
 		cpuHotplugged := cpuBlock[mkCPUHotplugged].(int)
 		cpuLimit := cpuBlock[mkCPULimit].(int)
 		cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
@@ -5372,14 +5582,42 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
 		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
+		oldCPU, _ := d.GetChange(mkCPU)
+
+		oldCPUBlock := make(map[string]any)
+		if len(oldCPU.([]any)) > 0 && oldCPU.([]any)[0] != nil {
+			oldCPUBlock = oldCPU.([]any)[0].(map[string]any)
+		}
+
+		oldCPUCores := getIntFromBlock(oldCPUBlock, mkCPUCores, 0)
+		oldCPUSockets := getIntFromBlock(oldCPUBlock, mkCPUSockets, 0)
+		oldCPUType := getStringFromBlock(oldCPUBlock, mkCPUType, "")
+		oldCPUArchitecture := getStringFromBlock(oldCPUBlock, mkCPUArchitecture, "")
+		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA, false)
+
+		coresOrSocketsIncreased := (cpuCores > oldCPUCores) || (cpuSockets > oldCPUSockets)
+		noNonHotpluggableChanges := (cpuCores >= oldCPUCores && cpuSockets >= oldCPUSockets &&
+			cpuType == oldCPUType && cpuArchitecture == oldCPUArchitecture &&
+			bool(cpuNUMA) == oldCPUNUMA &&
+			!d.HasChange(mkCPU+".0."+mkCPUFlags) &&
+			!d.HasChange(mkCPU+".0."+mkCPUAffinity) &&
+			!d.HasChange(mkCPU+".0."+mkCPUHotplugged) &&
+			!d.HasChange(mkCPU+".0."+mkCPULimit) &&
+			!d.HasChange(mkCPU+".0."+mkCPUUnits))
+
+		onlyHotpluggableChange := coresOrSocketsIncreased && noNonHotpluggableChanges
+
 		if err = setCPUArchitecture(ctx, cpuArchitecture, client, updateBody); err != nil {
 			return diag.FromErr(err)
 		}
 
 		updateBody.CPUCores = ptr.Ptr(int64(cpuCores))
 		updateBody.CPUSockets = ptr.Ptr(int64(cpuSockets))
-		updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
 		updateBody.NUMAEnabled = &cpuNUMA
+
+		if cpuUnits > 0 {
+			updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
+		}
 
 		// CPU affinity is a special case, only root can change it.
 		// we can't even have it in the delete list, as PVE will return an error for non-root.
@@ -5415,20 +5653,51 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			Type:  cpuType,
 		}
 
-		rebootRequired = true
+		if !onlyHotpluggableChange {
+			rebootRequired = true
+		}
 	}
 
 	// Prepare the new disk device configuration.
-	allDiskInfo := disk.GetInfo(vmConfig, d)
-
 	planDisks, err := disk.GetDiskDeviceObjects(d, resource, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
+	allDiskInfo := vmConfig.StorageDevices
+
+	// Handle disk deletion before applying other changes
+	if d.HasChange(disk.MkDisk) {
+		bootOrder := d.Get(mkBootOrder).([]any)
+
+		bootDeviceSet := make(map[string]struct{}, len(bootOrder))
+		for _, device := range bootOrder {
+			bootDeviceSet[device.(string)] = struct{}{}
+		}
+
+		for currentInterface := range allDiskInfo {
+			if _, present := planDisks[currentInterface]; !present {
+				if _, isBootDevice := bootDeviceSet[currentInterface]; isBootDevice {
+					return diag.Errorf(
+						"cannot delete boot disk %q. Please remove it from boot order first or change boot order before deleting",
+						currentInterface,
+					)
+				}
+
+				updateBody.Delete = append(updateBody.Delete, currentInterface)
+			}
+		}
+	}
+
+	stoppedBeforeUpdate, rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if stoppedBeforeUpdate {
+		if er := vmShutdown(ctx, vmAPI, d); er != nil {
+			return er
+		}
 	}
 
 	rebootRequired = rebootRequired || rr
@@ -5461,7 +5730,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	// Prepare the new cloud-init configuration.
-	stoppedBeforeUpdate := false
 	cloudInitRebuildRequired := false
 
 	if d.HasChange(mkInitialization) {
@@ -5469,47 +5737,57 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		updateBody.CloudInitConfig = cloudInitConfig
 
-		initialization := d.Get(mkInitialization).([]interface{})
+		initialization := d.Get(mkInitialization).([]any)
 
 		if updateBody.CloudInitConfig != nil && len(initialization) > 0 && initialization[0] != nil {
 			var fileVolume string
 
-			initializationBlock := initialization[0].(map[string]interface{})
+			initializationBlock := initialization[0].(map[string]any)
 			initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
 			initializationInterface := initializationBlock[mkInitializationInterface].(string)
-			cdromMedia := "cdrom"
+			initializationFileFormat := initializationBlock[mkInitializationFileFormat].(string)
 
-			existingInterface := findExistingCloudInitDrive(vmConfig, vmID, "")
+			existingInterface, existingDevice := findExistingCloudInitDrive(vmConfig, vmID, "")
 			if initializationInterface == "" && existingInterface == "" {
 				initializationInterface = "ide2"
 			} else if initializationInterface == "" {
 				initializationInterface = existingInterface
 			}
 
-			mustMove := existingInterface != "" && initializationInterface != existingInterface
-			if mustMove {
+			mustChangeInterface := existingInterface != "" && initializationInterface != existingInterface
+			if mustChangeInterface {
 				tflog.Debug(ctx, fmt.Sprintf("CloudInit must be moved from %s to %s", existingInterface, initializationInterface))
 			}
 
 			mustChangeDatastore := false
+			mustChangeFileFormat := false
 
 			oldInit, _ := d.GetChange(mkInitialization)
-			if len(oldInit.([]interface{})) > 0 {
-				oldInitBlock := oldInit.([]interface{})[0].(map[string]interface{})
+			if len(oldInit.([]any)) > 0 {
+				oldInitBlock := oldInit.([]any)[0].(map[string]any)
 				prevDatastoreID := oldInitBlock[mkInitializationDatastoreID].(string)
+				prevFileFormat := oldInitBlock[mkInitializationFileFormat].(string)
 
 				mustChangeDatastore = prevDatastoreID != initializationDatastoreID
 				if mustChangeDatastore {
 					tflog.Debug(ctx, fmt.Sprintf("CloudInit must be moved from datastore %s to datastore %s",
 						prevDatastoreID, initializationDatastoreID))
 				}
+
+				mustChangeFileFormat = prevFileFormat != initializationFileFormat
+				if mustChangeFileFormat {
+					tflog.Debug(ctx, fmt.Sprintf("CloudInit must be moved from file format %s to file format %s",
+						prevFileFormat, initializationFileFormat))
+				}
 			}
 
-			if mustMove || mustChangeDatastore || existingInterface == "" {
+			if mustChangeInterface || mustChangeDatastore || mustChangeFileFormat || existingInterface == "" {
 				// CloudInit must be moved, either from a device to another or from a datastore
 				// to another (or both). This requires the VM to be stopped.
-				if er := vmShutdown(ctx, vmAPI, d); er != nil {
-					return er
+				if !stoppedBeforeUpdate {
+					if er := vmShutdown(ctx, vmAPI, d); er != nil {
+						return er
+					}
 				}
 
 				if er := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); er != nil {
@@ -5519,14 +5797,18 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				stoppedBeforeUpdate = true
 				fileVolume = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 			} else {
-				ideDevice := getStorageDevice(vmConfig, existingInterface)
-				fileVolume = ideDevice.FileVolume
+				fileVolume = existingDevice.FileVolume
 			}
 
-			updateBody.AddCustomStorageDevice(initializationInterface, vms.CustomStorageDevice{
+			device := vms.CustomStorageDevice{
 				FileVolume: fileVolume,
-				Media:      &cdromMedia,
-			})
+			}
+
+			if initializationFileFormat != "" {
+				device.Format = &initializationFileFormat
+			}
+
+			updateBody.AddCustomStorageDevice(initializationInterface, device)
 		}
 
 		cloudInitRebuildRequired = true
@@ -5585,6 +5867,28 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		memoryHugepages := memoryBlock[mkMemoryHugepages].(string)
 		memoryKeepHugepages := types.CustomBool(memoryBlock[mkMemoryKeepHugepages].(bool))
 
+		oldMemory, _ := d.GetChange(mkMemory)
+
+		oldMemoryBlock := make(map[string]any)
+		if len(oldMemory.([]any)) > 0 && oldMemory.([]any)[0] != nil {
+			oldMemoryBlock = oldMemory.([]any)[0].(map[string]any)
+		}
+
+		oldMemoryDedicated := getIntFromBlock(oldMemoryBlock, mkMemoryDedicated, 0)
+		oldMemoryFloating := getIntFromBlock(oldMemoryBlock, mkMemoryFloating, 0)
+		oldMemoryShared := getIntFromBlock(oldMemoryBlock, mkMemoryShared, 0)
+
+		memoryIncreased := (memoryDedicated > oldMemoryDedicated) ||
+			(memoryFloating > oldMemoryFloating) ||
+			(memoryShared > oldMemoryShared)
+		noNonHotpluggableChanges := (memoryDedicated >= oldMemoryDedicated &&
+			memoryFloating >= oldMemoryFloating &&
+			memoryShared >= oldMemoryShared &&
+			!d.HasChange(mkMemory+".0."+mkMemoryHugepages) &&
+			!d.HasChange(mkMemory+".0."+mkMemoryKeepHugepages))
+
+		onlyHotpluggableChange := memoryIncreased && noNonHotpluggableChanges
+
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.FloatingMemory = &memoryFloating
 
@@ -5613,7 +5917,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			}
 		}
 
-		rebootRequired = true
+		if !onlyHotpluggableChange {
+			rebootRequired = true
+		}
 	}
 
 	// Prepare the new network device configuration.
@@ -5634,7 +5940,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			del = append(del, fmt.Sprintf("net%d", i))
 		}
 
-		rebootRequired = true
+		// Network devices can be hotplugged, no reboot required
 	}
 
 	// Prepare the new operating system configuration.
@@ -5755,6 +6061,39 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(e)
 	}
 
+	// Handle template conversion if the template flag changed to true
+	if d.HasChange(mkTemplate) {
+		oldValue, newValue := d.GetChange(mkTemplate)
+		oldTemplate := oldValue.(bool)
+		newTemplate := newValue.(bool)
+
+		if !oldTemplate && newTemplate {
+			tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
+
+			status, err := vmAPI.GetVMStatus(ctx)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			if status != nil && status.Status != "stopped" {
+				tflog.Info(ctx, fmt.Sprintf("Stopping VM %d before converting to template", vmID))
+
+				if diags := vmStop(ctx, vmAPI, d); diags != nil {
+					return diags
+				}
+			}
+
+			e = vmAPI.ConvertToTemplate(ctx)
+			if e != nil {
+				return diag.FromErr(e)
+			}
+
+			rebootRequired = false
+		} else if oldTemplate && !newTemplate {
+			return diag.Errorf("Cannot convert a template back to a regular VM")
+		}
+	}
+
 	// Determine if the state of the virtual machine state needs to be changed.
 	//nolint: nestif
 	if (d.HasChange(mkStarted) || stoppedBeforeUpdate) && !bool(template) {
@@ -5763,7 +6102,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			if diags := vmStart(ctx, vmAPI, d); diags != nil {
 				return diags
 			}
-		} else {
+		} else if !stoppedBeforeUpdate {
 			if er := vmShutdown(ctx, vmAPI, d); er != nil {
 				return er
 			}
@@ -5790,7 +6129,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 func vmUpdateDiskLocationAndSize(
 	ctx context.Context,
 	d *schema.ResourceData,
-	m interface{},
+	m any,
 	reboot bool,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -5821,7 +6160,7 @@ func vmUpdateDiskLocationAndSize(
 		diskOldEntries, err := disk.GetDiskDeviceObjects(
 			d,
 			resource,
-			diskOld.([]interface{}),
+			diskOld.([]any),
 		)
 		if err != nil {
 			return diag.FromErr(err)
@@ -5830,7 +6169,7 @@ func vmUpdateDiskLocationAndSize(
 		diskNewEntries, err := disk.GetDiskDeviceObjects(
 			d,
 			resource,
-			diskNew.([]interface{}),
+			diskNew.([]any),
 		)
 		if err != nil {
 			return diag.FromErr(err)
@@ -5840,12 +6179,12 @@ func vmUpdateDiskLocationAndSize(
 		if d.HasChange(mkEFIDisk) {
 			diskOld, diskNew := d.GetChange(mkEFIDisk)
 
-			oldEfiDisk, e := vmGetEfiDiskAsStorageDevice(d, diskOld.([]interface{}))
+			oldEfiDisk, e := vmGetEfiDiskAsStorageDevice(d, diskOld.([]any))
 			if e != nil {
 				return diag.FromErr(e)
 			}
 
-			newEfiDisk, e := vmGetEfiDiskAsStorageDevice(d, diskNew.([]interface{}))
+			newEfiDisk, e := vmGetEfiDiskAsStorageDevice(d, diskNew.([]any))
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -5869,8 +6208,8 @@ func vmUpdateDiskLocationAndSize(
 		if d.HasChange(mkTPMState) {
 			diskOld, diskNew := d.GetChange(mkTPMState)
 
-			oldTPMState := vmGetTPMStateAsStorageDevice(d, diskOld.([]interface{}))
-			newTPMState := vmGetTPMStateAsStorageDevice(d, diskNew.([]interface{}))
+			oldTPMState := vmGetTPMStateAsStorageDevice(d, diskOld.([]any))
+			newTPMState := vmGetTPMStateAsStorageDevice(d, diskNew.([]any))
 
 			if oldTPMState != nil {
 				diskOldEntries["tpmstate0"] = oldTPMState
@@ -5894,11 +6233,9 @@ func vmUpdateDiskLocationAndSize(
 		shutdownForDisksRequired := false
 
 		for oldIface, oldDisk := range diskOldEntries {
+			// Skip deleted disks - they are handled earlier in vmUpdate
 			if _, present := diskNewEntries[oldIface]; !present {
-				return diag.Errorf(
-					"deletion of disks not supported. Please delete disk by hand. Old interface was %q",
-					oldIface,
-				)
+				continue
 			}
 
 			if *oldDisk.DatastoreID != *diskNewEntries[oldIface].DatastoreID {
@@ -5961,6 +6298,30 @@ func vmUpdateDiskLocationAndSize(
 			}
 		}
 
+		vmConfig, err := vmAPI.GetVM(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		for newIface, newDisk := range diskNewEntries {
+			if _, present := diskOldEntries[newIface]; !present {
+				currentDisk := vmConfig.StorageDevices[newIface]
+				if currentDisk != nil && currentDisk.Size != nil && newDisk.Size != nil {
+					if currentDisk.Size.InMegabytes() < newDisk.Size.InMegabytes() {
+						if currentDisk.IsOwnedBy(vmID) {
+							diskResizeBodies = append(
+								diskResizeBodies,
+								&vms.ResizeDiskRequestBody{
+									Disk: newIface,
+									Size: *newDisk.Size,
+								},
+							)
+						}
+					}
+				}
+			}
+		}
+
 		if shutdownForDisksRequired && !template {
 			if e := vmShutdown(ctx, vmAPI, d); e != nil {
 				return e
@@ -6008,10 +6369,24 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		if vmStatus.Status != "stopped" {
-			rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
+			agentEnabled, diags := isAgentEnabled(ctx, vmAPI)
+			if diags != nil {
+				return diags
+			}
 
-			if e := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); e != nil {
-				return diag.FromErr(e)
+			if agentEnabled {
+				rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
+				if e := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); e != nil {
+					return diag.FromErr(e)
+				}
+			} else {
+				if e := vmStop(ctx, vmAPI, d); e != nil {
+					return e
+				}
+
+				if diags := vmStart(ctx, vmAPI, d); diags != nil {
+					return diags
+				}
 			}
 		}
 	}
@@ -6019,7 +6394,7 @@ func vmUpdateDiskLocationAndSize(
 	return vmRead(ctx, d, m)
 }
 
-func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	timeout := d.Get(mkTimeoutStopVM).(int)
 	shutdownTimeout := d.Get(mkTimeoutShutdownVM).(int)
 
@@ -6064,13 +6439,27 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				return e
 			}
 		} else {
-			if e := vmShutdown(ctx, vmAPI, d); e != nil {
-				return e
+			agentEnabled, diags := isAgentEnabled(ctx, vmAPI)
+			if diags != nil {
+				return diags
+			}
+
+			if agentEnabled {
+				if e := vmShutdown(ctx, vmAPI, d); e != nil {
+					return e
+				}
+			} else {
+				if e := vmStop(ctx, vmAPI, d); e != nil {
+					return e
+				}
 			}
 		}
 	}
 
-	err = vmAPI.DeleteVM(ctx)
+	purge := d.Get(mkPurgeOnDestroy).(bool)
+	deleteUnreferencedDisks := d.Get(mkDeleteUnreferencedDisksOnDestroy).(bool)
+
+	err = vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")
@@ -6092,11 +6481,10 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 }
 
 // getDiskDatastores returns a list of the used datastores in a VM.
-func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string {
-	storageDevices := disk.GetInfo(vm, d)
+func getDiskDatastores(vm *vms.GetResponseData) []string {
 	datastoresSet := map[string]int{}
 
-	for _, diskInfo := range storageDevices {
+	for _, diskInfo := range vm.StorageDevices {
 		// Ignore empty storage devices and storage devices (like ide) which may not have any media mounted
 		if diskInfo == nil || diskInfo.FileVolume == "none" {
 			continue
@@ -6182,4 +6570,73 @@ func getAgentTimeout(d *schema.ResourceData) (time.Duration, error) {
 	}
 
 	return agentTimeout, nil
+}
+
+func getAgentWaitForIPConfig(d *schema.ResourceData) *vms.WaitForIPConfig {
+	resource := VM()
+
+	agentBlock, err := structure.GetSchemaBlock(
+		resource,
+		d,
+		[]string{mkAgent},
+		0,
+		true,
+	)
+	if err != nil {
+		return nil
+	}
+
+	waitForIPList, ok := agentBlock[mkAgentWaitForIP].([]any)
+	if !ok || len(waitForIPList) == 0 || waitForIPList[0] == nil {
+		return nil
+	}
+
+	waitForIPBlock := waitForIPList[0].(map[string]any)
+
+	config := &vms.WaitForIPConfig{
+		IPv4: getBoolFromBlock(waitForIPBlock, mkAgentWaitForIPIPv4, false),
+		IPv6: getBoolFromBlock(waitForIPBlock, mkAgentWaitForIPIPv6, false),
+	}
+
+	// if both are false, return nil for backward compatibility
+	if !config.IPv4 && !config.IPv6 {
+		return nil
+	}
+
+	return config
+}
+
+func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (string, error) {
+	poolsList, err := poolsAPI.ListPools(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	needle := fmt.Sprintf("qemu/%d", vmID)
+
+	for _, p := range poolsList {
+		full, err := poolsAPI.GetPool(ctx, p.ID)
+		if err != nil {
+			// If a pool is not found, it might have been deleted between API calls.
+			// It's safe to skip it. For other errors, we should fail.
+			if errors.Is(err, api.ErrResourceDoesNotExist) {
+				tflog.Debug(ctx, fmt.Sprintf("Pool %s not found, skipping.", p.ID))
+				continue
+			}
+
+			return "", fmt.Errorf("failed to get details for pool %q: %w", p.ID, err)
+		}
+
+		if full == nil {
+			continue
+		}
+
+		for _, m := range full.Members {
+			if m.ID == needle {
+				return p.ID, nil
+			}
+		}
+	}
+
+	return "", nil
 }

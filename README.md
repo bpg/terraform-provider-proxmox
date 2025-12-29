@@ -19,10 +19,11 @@ The project is not affiliated with [Proxmox Server Solutions GmbH](https://www.p
 
 ## Compatibility Promise
 
-This provider is compatible with Proxmox VE 9.x (currently **9.0**). See [Known Issues](#known-issues) below for compatibility details.
+This provider is compatible with Proxmox VE 9.x (currently **9.1**). See [Known Issues](#known-issues) below for compatibility details.
 
 > [!IMPORTANT]
 > Proxmox VE 8.x is supported, but some functionality might be limited or not work as expected. Testing against 8.x is not a priority, and issues specific to 8.x will not be addressed.
+>
 > Proxmox VE 7.x is NOT supported. While some features might work with 7.x, we do not test against it, and issues specific to 7.x will not be addressed.
 
 While the provider is on version 0.x, it is not guaranteed to be backward compatible with all previous minor versions.
@@ -38,7 +39,7 @@ However, we will try to maintain backward compatibility between provider version
 
 ### Development Requirements
 
-- [Go](https://golang.org/doc/install) 1.24 (to build the provider plugin)
+- [Go](https://golang.org/doc/install) 1.25 (to build the provider plugin)
 - [Docker](https://www.docker.com/products/docker-desktop/) (optional, for running dev tools)
 
 ## Using the Provider
@@ -58,9 +59,9 @@ make test
 
 Tests are limited to regression tests, ensuring backward compatibility.
 
-A limited number of acceptance tests are available in the `proxmoxtf/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
+A limited number of acceptance tests are available in the `fwprovider/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
 These tests are not run by default, as they require a Proxmox VE environment to be available.
-They can be run using `make testacc`. The Proxmox connection can be configured using environment variables; see the provider documentation for details.
+They can be run using `./testacc` (requires `testacc.env` in the project root). The Proxmox connection can be configured using environment variables; see the provider documentation for details.
 
 ## Deploying the Example Resources
 
@@ -94,11 +95,9 @@ Work has started to migrate the provider to the new [Terraform Plugin Framework]
 
 ## Known Issues
 
-### Proxmox VE 9.0
+### Proxmox VE 9.x
 
-Proxmox VE 9.0 has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
-
-`apt_*` resources / datasources do not support the new deb822 style format.
+Proxmox VE 9.x has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
 
 ### HA VMs / containers
 
@@ -159,8 +158,17 @@ This requires the use of a PAM account (standard Linux account).
 
 ### Cluster Hardware Mappings Cannot Be Created by Non-PAM Accounts
 
-Due to limitations in the Proxmox VE API, cluster hardware mappings must be created using the `root` PAM account (standard Linux account) due to [IOMMU](https://en.wikipedia.org/wiki/Input%E2%80%93output_memory_management_unit#Virtualization) interactions.
+Due to limitations in the Proxmox VE API, cluster hardware mappings must be created using the `root` PAM account (standard Linux account) because of [IOMMU](https://en.wikipedia.org/wiki/Input%E2%80%93output_memory_management_unit#Virtualization) interactions.
 Hardware mappings allow the use of [PCI "passthrough"](https://pve.proxmox.com/wiki/PCI_Passthrough) and [map physical USB ports](https://pve.proxmox.com/wiki/USB_Physical_Port_Mapping).
+
+### Lock Errors when Creating Multiple VMs/Containers
+
+Creating multiple VMs or containers simultaneously can cause lock errors due to I/O bottlenecks in Proxmox VE (PVE).
+Using sequential creation or setting `parallelism=1` can help mitigate this issue.
+
+Additional information and sample error messages can be found in issues [#1929](https://github.com/bpg/terraform-provider-proxmox/issues/1929) & [#995](https://github.com/bpg/terraform-provider-proxmox/issues/995).
+
+An OpenTofu feature request to help with configuring provider parallelization is tracked at [#2466](https://github.com/opentofu/opentofu/issues/2466). Consider adding a 👍 to help with prioritization, as suggested by the team in this [comment](https://github.com/opentofu/opentofu/issues/2466#issuecomment-2634533959).
 
 ## Contributors
 
@@ -183,6 +191,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Radosław Szamszur](https://github.com/rszamszur)
 - [Marshall Ford](https://github.com/marshallford)
 - [Simon Caron](https://github.com/simoncaron)
+- [/ar/sh](https://github.com/0x0000ARSH)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 

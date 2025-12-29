@@ -40,7 +40,7 @@ func Role() *schema.Resource {
 	}
 }
 
-func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func roleRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	api, err := config.GetClient()

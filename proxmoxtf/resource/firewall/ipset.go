@@ -8,6 +8,8 @@ package firewall
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -49,8 +51,8 @@ func IPSet() *schema.Resource {
 			Description: "List of IP or Networks",
 			Optional:    true,
 			ForceNew:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			DiffSuppressFunc: structure.SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(mkIPSetCIDRName),
 			Elem: &schema.Resource{
@@ -88,18 +90,102 @@ func IPSet() *schema.Resource {
 		ReadContext:   selectFirewallAPI(ipSetRead),
 		UpdateContext: selectFirewallAPI(ipSetUpdate),
 		DeleteContext: selectFirewallAPI(ipSetDelete),
+		Importer: &schema.ResourceImporter{
+			StateContext: ipSetImport,
+		},
 	}
+}
+
+// ipSetImport imports IP sets.
+func ipSetImport(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
+	id := d.Id()
+
+	switch {
+	case strings.HasPrefix(id, "cluster/"):
+		name := strings.TrimPrefix(id, "cluster/")
+		d.SetId(name)
+
+		err := d.Set(mkIPSetName, name)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting IPSet name during import: %w", err)
+		}
+	case strings.HasPrefix(id, "vm/"):
+		parts := strings.SplitN(id, "/", 4)
+		if len(parts) != 4 {
+			return nil, fmt.Errorf("invalid VM import ID format: %s (expected: vm/<node_name>/<vm_id>/<ipset_name>)", id)
+		}
+
+		nodeName := parts[1]
+
+		err := d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting node name during import: %w", err)
+		}
+
+		vmID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid VM import ID: VM ID must be a number in %s: %w", id, err)
+		}
+
+		err = d.Set(mkSelectorVMID, vmID)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting VM ID during import: %w", err)
+		}
+
+		name := parts[3]
+		d.SetId(name)
+
+		err = d.Set(mkIPSetName, name)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting IPSet name during import: %w", err)
+		}
+	case strings.HasPrefix(id, "container/"):
+		parts := strings.SplitN(id, "/", 4)
+		if len(parts) != 4 {
+			return nil, fmt.Errorf("invalid container import ID format: %s (expected: container/<node_name>/<container_id>/<ipset_name>)", id)
+		}
+
+		nodeName := parts[1]
+
+		err := d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting node name during import: %w", err)
+		}
+
+		containerID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid container import ID: container ID must be a number in %s: %w", id, err)
+		}
+
+		err = d.Set(mkSelectorContainerID, containerID)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting container ID during import: %w", err)
+		}
+
+		name := parts[3]
+		d.SetId(name)
+
+		err = d.Set(mkIPSetName, name)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting IPSet name during import: %w", err)
+		}
+	default:
+		return nil, fmt.Errorf("invalid import ID: %s "+
+			"(expected: 'cluster/<ipset_name>', 'vm/<node_name>/<vm_id>/<ipset_name>', or 'container/<node_name>/<container_id>/<ipset_name>')", id)
+	}
+
+	return []*schema.ResourceData{d}, nil
 }
 
 func ipSetCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkIPSetCIDRComment).(string)
 	name := d.Get(mkIPSetName).(string)
 
-	ipSets := d.Get(mkIPSetCIDR).([]interface{})
+	ipSets := d.Get(mkIPSetCIDR).([]any)
 	ipSetsArray := make(firewall.IPSetContent, len(ipSets))
 
 	for i, v := range ipSets {
-		ipSetMap := v.(map[string]interface{})
+		ipSetMap := v.(map[string]any)
 		ipSetObject := firewall.IPSetGetResponseData{}
 
 		cidr := ipSetMap[mkIPSetCIDRName].(string)
@@ -176,10 +262,10 @@ func ipSetRead(ctx context.Context, api firewall.API, d *schema.ResourceData) di
 	}
 
 	//nolint:prealloc
-	var entries []interface{}
+	var entries []any
 
 	for key := range ipSet {
-		entry := map[string]interface{}{}
+		entry := map[string]any{}
 
 		entry[mkIPSetCIDRName] = ipSet[key].CIDR
 		entry[mkIPSetCIDRNoMatch] = ipSet[key].NoMatch

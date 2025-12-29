@@ -49,6 +49,30 @@ func TestAccDataSourceSDNZoneSimple(t *testing.T) {
 				// pending and state attributes are computed by the provider
 			),
 		}}},
+		{"create simple zone with DHCP and read with datasource", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "dhcp_test" {
+					id    = "dhcpdst1"
+					nodes = ["{{.NodeName}}"]
+					mtu   = 1500
+					dhcp  = "dnsmasq"
+				}
+				
+				data "proxmox_virtual_environment_sdn_zone_simple" "dhcp_test" {
+					id = proxmox_virtual_environment_sdn_zone_simple.dhcp_test.id
+				}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_simple.dhcp_test", map[string]string{
+					"id":      "dhcpdst1",
+					"mtu":     "1500",
+					"dhcp":    "dnsmasq",
+					"nodes.#": "1",
+					"nodes.0": "pve",
+				}),
+				// pending and state attributes are computed by the provider
+			),
+		}}},
 	}
 
 	for _, tt := range tests {

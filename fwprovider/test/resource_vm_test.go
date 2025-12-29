@@ -10,6 +10,7 @@ package test
 
 import (
 	"fmt"
+	"math/rand"
 	"regexp"
 	"testing"
 
@@ -147,6 +148,22 @@ func TestAccResourceVM(t *testing.T) {
 						"cpu.0.sockets": "1",
 					}),
 				),
+			},
+		}},
+		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2353
+		{"create VM without cpu.units and verify no drift", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cpu_units" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					cpu {
+						cores = 2
+					}
+				}`),
+			},
+			{
+				RefreshState: true,
 			},
 		}},
 		{"set cpu.architecture as non root is not supported", []resource.TestStep{
@@ -446,12 +463,153 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		{"purge_on_destroy and delete_unreferenced_disks_on_destroy defaults", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_destroy_params" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_destroy_params", map[string]string{
+						"purge_on_destroy":                     "true",
+						"delete_unreferenced_disks_on_destroy": "true",
+					}),
+				),
+			},
+		}},
+		{"purge_on_destroy and delete_unreferenced_disks_on_destroy set to false", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_destroy_params_false" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					purge_on_destroy                      = false
+					delete_unreferenced_disks_on_destroy = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_destroy_params_false", map[string]string{
+						"purge_on_destroy":                     "false",
+						"delete_unreferenced_disks_on_destroy": "false",
+					}),
+				),
+			},
+		}},
+		{"purge_on_destroy and delete_unreferenced_disks_on_destroy update", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_destroy_params_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					purge_on_destroy                      = true
+					delete_unreferenced_disks_on_destroy = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_destroy_params_update", map[string]string{
+						"purge_on_destroy":                     "true",
+						"delete_unreferenced_disks_on_destroy": "true",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_destroy_params_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					purge_on_destroy                      = false
+					delete_unreferenced_disks_on_destroy = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_destroy_params_update", map[string]string{
+						"purge_on_destroy":                     "false",
+						"delete_unreferenced_disks_on_destroy": "false",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.step,
+			})
+		})
+	}
+}
+
+func TestAccResourceVMImport(t *testing.T) {
+	te := InitEnvironment(t)
+
+	// Generate dynamic VM ID to avoid conflicts
+	testVMID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"TestVMID": testVMID,
+	})
+
+	tests := []struct {
+		name string
+		step []resource.TestStep
+	}{
+		{"vm import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_import" {
+						node_name = "{{.NodeName}}"
+
+						vm_id = {{.TestVMID}}
+
+						started   = false
+						agent {
+							enabled = true
+						}
+						boot_order = ["virtio0", "net0"]
+						cpu {
+							cores = 2
+						}
+						memory {
+							dedicated = 2048
+						}
+
+						disk {
+							datastore_id = "local-lvm"
+							interface    = "virtio0"
+							iothread     = true
+							discard      = "on"
+							size         = 20
+						}
+
+						initialization {
+							interface = "scsi1"
+
+							ip_config {
+								ipv4 {
+									address = "dhcp"
+								}
+							}
+						}
+						network_device {
+							bridge = "vmbr0"
+						}
+					}`),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_vm.vm_import",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, testVMID),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.step,
@@ -467,6 +625,49 @@ func TestAccResourceVMInitialization(t *testing.T) {
 		name string
 		step []resource.TestStep
 	}{
+		{"custom cloud-init drive file format", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit" {
+					node_name = "{{.NodeName}}"
+					started = false
+					cpu {
+						cores = 1
+					}
+					memory {
+						dedicated = 1024
+					}
+
+					initialization {
+						datastore_id = "local"
+						file_format = "raw"
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit", map[string]string{
+				"initialization.0.datastore_id": "local",
+				"initialization.0.file_format":  "raw",
+			}),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit" {
+					node_name = "{{.NodeName}}"
+					started = false
+					cpu {
+						cores = 1
+					}
+					memory {
+						dedicated = 1024
+					}
+
+					initialization {
+						datastore_id = "local"
+						file_format  = "qcow2"
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit", map[string]string{
+				"initialization.0.datastore_id": "local",
+				"initialization.0.file_format":  "qcow2",
+			}),
+		}}},
 		{"custom cloud-init: use SCSI interface", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "cloud_config" {
@@ -526,7 +727,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name = "{{.NodeName}}"
-					url = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}`),
 		}}},
@@ -691,7 +892,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}`),
 			Check: resource.ComposeTestCheckFunc(
@@ -700,6 +901,75 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					"mac_addresses.#":         "2",
 					"network_device.0.bridge": "vmbr0",
 					"network_device.0.trunks": "10;20;30",
+				}),
+			),
+		}}},
+		{"wait for IPv4 address", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "cloud_config" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name = "{{.NodeName}}"
+					source_raw {
+						data = <<-EOF
+						#cloud-config
+						runcmd:
+						  - apt update
+						  - apt install -y qemu-guest-agent
+						  - systemctl enable qemu-guest-agent
+						  - systemctl start qemu-guest-agent
+						EOF
+						file_name = "cloud-config.yaml"
+					}
+				}
+				
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_ipv4" {
+					node_name = "{{.NodeName}}"
+					started   = true
+					agent {
+						enabled = true
+						wait_for_ip {
+							ipv4 = true
+						}
+					}
+					cpu {
+						cores = 2
+					}
+					memory {
+						dedicated = 2048
+					}
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+						interface    = "virtio0"
+						iothread     = true
+						discard      = "on"
+						size         = 20
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+						user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+
+				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
+					content_type = "iso"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+					overwrite_unmanaged = true
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_ipv4", map[string]string{
+					"ipv4_addresses.#":           "2",
+					"agent.0.wait_for_ip.0.ipv4": "true",
 				}),
 			),
 		}}},
@@ -739,6 +1009,188 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 		}},
+		{"remove network device", []resource.TestStep{
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#": "0",
+					}),
+				),
+			},
+		}},
+		{"multiple network devices removal", []resource.TestStep{
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+
+					network_device {
+						bridge = "vmbr1"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "2",
+						"network_device.0.bridge": "vmbr0",
+						"network_device.1.bridge": "vmbr1",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					# Only keep the first network device
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#": "0",
+					}),
+				),
+			},
+		}},
+		{"network device state consistency", []resource.TestStep{
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+						"network_device.0.model":  "virtio",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				// This step tests that the state is read correctly after network device removal
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#": "0",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				// This step tests that we can add network devices back after removal
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+						"network_device.0.model":  "virtio",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
@@ -764,6 +1216,30 @@ func TestAccResourceVMClone(t *testing.T) {
 		name string
 		step []resource.TestStep
 	}{
+		{"clone with network device", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template = true
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
+					"network_device.#":        "1",
+					"network_device.0.bridge": "vmbr0",
+				}),
+			),
+		}}},
 		{"clone cpu.architecture as root", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
@@ -821,6 +1297,29 @@ func TestAccResourceVMClone(t *testing.T) {
 				}),
 			),
 		}}},
+		{"clone with network devices", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
+					"network_device.#":        "1",
+					"network_device.0.bridge": "vmbr0",
+				}),
+			),
+		}}},
 		{"clone initialization datastore does not exist", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
@@ -857,4 +1356,84 @@ func TestAccResourceVMClone(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestAccResourceVMVirtioSCSISingleWithAgent(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "cloud_config" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name = "{{.NodeName}}"
+					source_raw {
+						data = <<-EOF
+						#cloud-config
+						runcmd:
+						  - apt update
+						  - apt install -y qemu-guest-agent
+						  - systemctl enable qemu-guest-agent
+						  - systemctl start qemu-guest-agent
+						EOF
+						file_name = "cloud-config.yaml"
+					}
+				}
+
+				resource "proxmox_virtual_environment_vm" "test_vm_scsi_single" {
+					node_name = "{{.NodeName}}"
+					started   = true
+					agent {
+						enabled = true
+					}
+					cpu {
+						cores = 2
+					}
+					memory {
+						dedicated = 2048
+					}
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+						interface    = "scsi0"
+						iothread     = true
+						discard      = "on"
+						size         = 20
+					}
+					scsi_hardware = "virtio-scsi-single"
+					initialization {
+						interface = "scsi1"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+						user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+
+				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
+					content_type = "iso"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+					overwrite_unmanaged = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm_scsi_single", map[string]string{
+						"scsi_hardware":             "virtio-scsi-single",
+						"agent.0.enabled":           "true",
+						"ipv4_addresses.#":          "2",
+						"network_interface_names.#": "2",
+					}),
+				),
+			},
+		},
+	})
 }

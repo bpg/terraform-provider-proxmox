@@ -72,9 +72,9 @@ func (r *CustomUSBDevice) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal CustomUSBDevice: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 		if len(v) == 1 {
 			r.HostDevice = &v[0]
@@ -85,8 +85,7 @@ func (r *CustomUSBDevice) UnmarshalJSON(b []byte) error {
 			case "mapping":
 				r.Mapping = &v[1]
 			case "usb3":
-				bv := types.CustomBool(v[1] == "1")
-				r.USB3 = &bv
+				r.USB3 = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}

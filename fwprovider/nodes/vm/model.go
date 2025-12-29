@@ -29,22 +29,20 @@ import (
 // Note: for computed fields / blocks we have to use an Object type (or an alias),
 // or a custom type in order to hold an unknown value.
 type Model struct {
-	Description types.String `tfsdk:"description"`
-	CDROM       cdrom.Value  `tfsdk:"cdrom"`
-	CPU         cpu.Value    `tfsdk:"cpu"`
-	Clone       *struct {
-		ID      types.Int64 `tfsdk:"id"`
-		Retries types.Int64 `tfsdk:"retries"`
-	} `tfsdk:"clone"`
-	ID            types.Int64     `tfsdk:"id"`
-	Name          types.String    `tfsdk:"name"`
-	NodeName      types.String    `tfsdk:"node_name"`
-	RNG           rng.Value       `tfsdk:"rng"`
-	StopOnDestroy types.Bool      `tfsdk:"stop_on_destroy"`
-	Tags          stringset.Value `tfsdk:"tags"`
-	Template      types.Bool      `tfsdk:"template"`
-	Timeouts      timeouts.Value  `tfsdk:"timeouts"`
-	VGA           vga.Value       `tfsdk:"vga"`
+	Description                      types.String    `tfsdk:"description"`
+	CDROM                            cdrom.Value     `tfsdk:"cdrom"`
+	CPU                              cpu.Value       `tfsdk:"cpu"`
+	ID                               types.Int64     `tfsdk:"id"`
+	Name                             types.String    `tfsdk:"name"`
+	NodeName                         types.String    `tfsdk:"node_name"`
+	RNG                              rng.Value       `tfsdk:"rng"`
+	StopOnDestroy                    types.Bool      `tfsdk:"stop_on_destroy"`
+	PurgeOnDestroy                   types.Bool      `tfsdk:"purge_on_destroy"`
+	DeleteUnreferencedDisksOnDestroy types.Bool      `tfsdk:"delete_unreferenced_disks_on_destroy"`
+	Tags                             stringset.Value `tfsdk:"tags"`
+	Template                         types.Bool      `tfsdk:"template"`
+	Timeouts                         timeouts.Value  `tfsdk:"timeouts"`
+	VGA                              vga.Value       `tfsdk:"vga"`
 }
 
 // read retrieves the current state of the resource from the API and updates the state.
@@ -56,7 +54,7 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 	config, err := vmAPI.GetVM(ctx)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			tflog.Info(ctx, "VM does not exist, removing from the state", map[string]interface{}{
+			tflog.Info(ctx, "VM does not exist, removing from the state", map[string]any{
 				"vm_id": vmAPI.VMID,
 			})
 		} else {

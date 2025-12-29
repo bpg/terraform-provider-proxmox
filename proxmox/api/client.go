@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go/v5"
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
@@ -39,7 +39,7 @@ type Client interface {
 	DoRequest(
 		ctx context.Context,
 		method, path string,
-		requestBody, responseBody interface{},
+		requestBody, responseBody any,
 	) error
 
 	// ExpandPath expands a path relative to the client's base path.
@@ -150,7 +150,7 @@ func NewClient(creds Credentials, conn *Connection) (Client, error) {
 func (c *client) DoRequest(
 	ctx context.Context,
 	method, path string,
-	requestBody, responseBody interface{},
+	requestBody, responseBody any,
 ) error {
 	var reqBodyReader io.Reader
 
@@ -234,10 +234,7 @@ func (c *client) DoRequest(
 	}
 
 	//nolint:bodyclose
-	res, err := retry.DoWithData(
-		func() (*http.Response, error) {
-			return c.conn.httpClient.Do(req)
-		},
+	res, err := retry.NewWithData[*http.Response](
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
 			var urlErr *url.Error
@@ -249,6 +246,10 @@ func (c *client) DoRequest(
 		}),
 		retry.LastErrorOnly(true),
 		retry.Attempts(3),
+	).Do(
+		func() (*http.Response, error) {
+			return c.conn.httpClient.Do(req)
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to perform HTTP %s request (path: %s) - Reason: %w",
@@ -296,7 +297,7 @@ func (c *client) DoRequest(
 				}
 			}
 
-			tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
+			tflog.Warn(ctx, "unhandled HTTP response body", map[string]any{
 				"data": dr.Data,
 			})
 		}
@@ -306,7 +307,7 @@ func (c *client) DoRequest(
 }
 
 type dataResponse struct {
-	Data interface{} `json:"data"`
+	Data any `json:"data"`
 }
 
 // ExpandPath expands the given path to an absolute path.

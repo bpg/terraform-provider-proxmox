@@ -18,6 +18,12 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   node_name = "first-node"
   vm_id     = 1234
 
+  # newer linux distributions require unprivileged user namespaces
+  unprivileged = true
+  features {
+    nesting = true
+  }
+
   initialization {
     hostname = "terraform-provider-proxmox-ubuntu-container"
 
@@ -45,7 +51,7 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   }
   
   operating_system {
-    template_file_id = proxmox_virtual_environment_download_file.latest_ubuntu_22_jammy_lxc_img.id
+    template_file_id = proxmox_virtual_environment_download_file.ubuntu_2504_lxc_img.id
     # Or you can use a volume ID, as obtained from a "pvesm list <storage>"
     # template_file_id = "local:vztmpl/jammy-server-cloudimg-amd64.tar.gz"
     type             = "ubuntu"
@@ -71,11 +77,11 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   }
 }
 
-resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc_img" {
+resource "proxmox_virtual_environment_download_file" "ubuntu_2504_lxc_img" {
   content_type = "vztmpl"
   datastore_id = "local"
   node_name    = "first-node"
-  url          = "http://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+  url          = "https://mirrors.servercentral.com/ubuntu-cloud-images/releases/25.04/release/ubuntu-25.04-server-cloudimg-amd64-root.tar.xz"
 }
 
 resource "random_password" "ubuntu_container_password" {
@@ -135,24 +141,29 @@ output "ubuntu_container_public_key" {
         to `4`). When set to 0 a directory or zfs/btrfs subvolume will be created.
         Requires `datastore_id` to be set.
     - `mount_options` (Optional) List of extra mount options.
+- `environment_variables` - (Optional) A map of runtime environment variables for the container init process.
 - `initialization` - (Optional) The initialization configuration.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
-        - `server` - (Optional) The DNS server. The `server` attribute is
-            deprecated and will be removed in a future release. Please use
+        - `server` - (Optional) The DNS server.
+            The `server` attribute is deprecated and will be removed in a future release. Please use
             the `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers.
     - `hostname` - (Optional) The hostname.
     - `ip_config` - (Optional) The IP configuration (one block per network
         device).
         - `ipv4` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv4 address (use `dhcp` for auto-discovery).
+            - `address` - (Optional) The IPv4 address in CIDR notation
+              (e.g. 192.168.2.2/24). Alternatively, set this to `dhcp` for
+              autodiscovery.
             - `gateway` - (Optional) The IPv4 gateway (must be omitted
                 when `dhcp` is used as the address).
-        - `ipv6` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv6 address (use `dhcp` for auto-discovery).
+        - `ipv6` - (Optional) The IPv6 configuration.
+            - `address` - (Optional) The IPv6 address in CIDR notation
+              (e.g. fd1c::7334/64). Alternatively, set this
+              to `dhcp` for DHCPv6, or `auto` for SLAAC.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
-                when `dhcp` is used as the address).
+                when `dhcp` or `auto` are used as the address).
     - `user_account` - (Optional) The user account configuration.
         - `keys` - (Optional) The SSH keys for the root account.
         - `password` - (Optional) The password for the root account.
@@ -238,6 +249,11 @@ output "ubuntu_container_public_key" {
 - `timeout_delete` - (Optional) Timeout for deleting a container in seconds (defaults to 60).
 - `timeout_update` - (Optional) Timeout for updating a container in seconds (defaults to 1800).
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on the host (defaults to `false`).
+- `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the container starts.
+    - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
+    - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
+
+    When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false`, the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
 - `vm_id` - (Optional) The container identifier
 - `features` - (Optional) The container feature flags. Changing flags (except nesting) is only allowed for `root@pam` authenticated user.
     - `nesting` - (Optional) Whether the container is nested (defaults to `false`)

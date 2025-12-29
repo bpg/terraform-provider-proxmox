@@ -58,28 +58,38 @@ func selectorSchemaMandatory() map[string]*schema.Schema {
 	return s
 }
 
+func firewallApiFor(d *schema.ResourceData, m any) (firewall.API, error) {
+	config := m.(proxmoxtf.ProviderConfiguration)
+
+	api, err := config.GetClient()
+	if err != nil {
+		return nil, err
+	}
+
+	var fwAPI firewall.API = api.Cluster().Firewall()
+
+	if nn, ok := d.GetOk(mkSelectorNodeName); ok {
+		nodeName := nn.(string)
+		nodeAPI := api.Node(nodeName)
+		fwAPI = nodeAPI.Firewall()
+
+		if v, ok := d.GetOk(mkSelectorVMID); ok {
+			fwAPI = nodeAPI.VM(v.(int)).Firewall()
+		} else if v, ok := d.GetOk(mkSelectorContainerID); ok {
+			fwAPI = nodeAPI.Container(v.(int)).Firewall()
+		}
+	}
+
+	return fwAPI, nil
+}
+
 func selectFirewallAPI(
 	f func(context.Context, firewall.API, *schema.ResourceData) diag.Diagnostics,
-) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
-	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-		config := m.(proxmoxtf.ProviderConfiguration)
-
-		api, err := config.GetClient()
+) func(context.Context, *schema.ResourceData, any) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+		fwAPI, err := firewallApiFor(d, m)
 		if err != nil {
 			return diag.FromErr(err)
-		}
-
-		var fwAPI firewall.API = api.Cluster().Firewall()
-
-		if nn, ok := d.GetOk(mkSelectorNodeName); ok {
-			nodeName := nn.(string)
-			nodeAPI := api.Node(nodeName)
-
-			if v, ok := d.GetOk(mkSelectorVMID); ok {
-				fwAPI = nodeAPI.VM(v.(int)).Firewall()
-			} else if v, ok := d.GetOk(mkSelectorContainerID); ok {
-				fwAPI = nodeAPI.Container(v.(int)).Firewall()
-			}
 		}
 
 		return f(ctx, fwAPI, d)

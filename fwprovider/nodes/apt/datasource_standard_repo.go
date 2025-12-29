@@ -86,7 +86,8 @@ func (d *standardRepositoryDataSource) Read(
 		return
 	}
 
-	srp.importFromAPI(ctx, data)
+	ver := getProxmoxVersion(ctx, d.client)
+	srp.importFromAPI(ctx, data, ver)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &srp)...)
 }

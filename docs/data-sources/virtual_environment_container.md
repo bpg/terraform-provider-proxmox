@@ -27,5 +27,5 @@ data "proxmox_virtual_environment_container" "test_container" {
 
 - `name` - The container name.
 - `tags` - A list of tags of the container.
-- `status` - Status of the container
-- `template` - Is container a template (true) or a regular container (false)
+- `status` - The status of the container.
+- `template` - Whether the container is a template.

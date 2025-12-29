@@ -81,7 +81,6 @@ func FillUpdateBody(
 	ctx context.Context,
 	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
-	isClone bool,
 	diags *diag.Diagnostics,
 ) {
 	var plan, state Model
@@ -106,7 +105,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Clipboard.Equal(state.Clipboard) {
-		if attribute.ShouldBeRemoved(plan.Clipboard, state.Clipboard, isClone) {
+		if attribute.ShouldBeRemoved(plan.Clipboard, state.Clipboard) {
 			vgaDevice.Clipboard = nil
 		} else if attribute.IsDefined(plan.Clipboard) {
 			vgaDevice.Clipboard = plan.Clipboard.ValueStringPointer()
@@ -114,7 +113,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Type.Equal(state.Type) {
-		if attribute.ShouldBeRemoved(plan.Type, state.Type, isClone) {
+		if attribute.ShouldBeRemoved(plan.Type, state.Type) {
 			vgaDevice.Type = nil
 		} else if attribute.IsDefined(plan.Type) {
 			vgaDevice.Type = plan.Type.ValueStringPointer()
@@ -122,7 +121,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Memory.Equal(state.Memory) {
-		if attribute.ShouldBeRemoved(plan.Memory, state.Memory, isClone) {
+		if attribute.ShouldBeRemoved(plan.Memory, state.Memory) {
 			vgaDevice.Memory = nil
 		} else if attribute.IsDefined(plan.Memory) {
 			vgaDevice.Memory = plan.Memory.ValueInt64Pointer()

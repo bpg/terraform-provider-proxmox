@@ -9,12 +9,14 @@ package disk
 import (
 	"context"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -30,18 +32,18 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 	diskSchema := Schema()
 
 	// Create resource data with multiple disks in a specific order that could be affected by map iteration
-	currentDiskList := []interface{}{
-		map[string]interface{}{
+	currentDiskList := []any{
+		map[string]any{
 			mkDiskInterface:   "scsi1", // Intentionally put scsi1 first
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        150,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi0", // Then scsi0 second
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        50,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	}
 
@@ -64,11 +66,11 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 	// Run the ordering logic multiple times to ensure deterministic results
 	const iterations = 10
 
-	results := make([][]interface{}, 0, iterations)
+	results := make([][]any, 0, iterations)
 
 	for range iterations {
 		// Create a new resource data for each iteration
-		resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]interface{}{
+		resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
 			MkDisk: currentDiskList,
 		})
 
@@ -76,13 +78,13 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 		ctx := context.Background()
 		vmID := 100 // Test VM ID
 
-		var client proxmox.Client = nil
+		var client proxmox.Client
 
 		diags := Read(ctx, resourceData, diskDeviceObjects, vmID, client, "test-node", false)
 		require.Empty(t, diags, "Read should not return any diagnostics")
 
 		// Get the resulting disk list
-		diskList := resourceData.Get(MkDisk).([]interface{})
+		diskList := resourceData.Get(MkDisk).([]any)
 		results = append(results, diskList)
 	}
 
@@ -96,8 +98,8 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 	// Verify the specific ordering - should preserve currentDiskList order: scsi1, then scsi0
 	require.Len(t, expectedResult, 2, "Should have 2 disks")
 
-	disk0 := expectedResult[0].(map[string]interface{})
-	disk1 := expectedResult[1].(map[string]interface{})
+	disk0 := expectedResult[0].(map[string]any)
+	disk1 := expectedResult[1].(map[string]any)
 
 	require.Equal(t, "scsi1", disk0[mkDiskInterface], "First disk should be scsi1 (as in currentDiskList)")
 	require.Equal(t, 150, disk0[mkDiskSize], "First disk should have size 150")
@@ -114,30 +116,30 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 	diskSchema := Schema()
 
 	// Test with various interface types in random order
-	currentDiskList := []interface{}{
-		map[string]interface{}{
+	currentDiskList := []any{
+		map[string]any{
 			mkDiskInterface:   "virtio2",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        30,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi0",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        10,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "sata1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        20,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "virtio0",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        40,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	}
 
@@ -152,22 +154,22 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 	// Test multiple iterations
 	const iterations = 5
 
-	results := make([][]interface{}, 0, iterations)
+	results := make([][]any, 0, iterations)
 
 	for range iterations {
-		resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]interface{}{
+		resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
 			MkDisk: currentDiskList,
 		})
 
 		ctx := context.Background()
 		vmID := 100
 
-		var client proxmox.Client = nil
+		var client proxmox.Client
 
 		diags := Read(ctx, resourceData, diskDeviceObjects, vmID, client, "test-node", false)
 		require.Empty(t, diags)
 
-		diskList := resourceData.Get(MkDisk).([]interface{})
+		diskList := resourceData.Get(MkDisk).([]any)
 		results = append(results, diskList)
 	}
 
@@ -183,7 +185,7 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 
 	expectedOrder := []string{"virtio2", "scsi0", "sata1", "virtio0"}
 	for i, expectedInterface := range expectedOrder {
-		disk := expectedResult[i].(map[string]interface{})
+		disk := expectedResult[i].(map[string]any)
 		require.Equal(t, expectedInterface, disk[mkDiskInterface],
 			"Disk at position %d should be %s (as in currentDiskList)", i, expectedInterface)
 	}
@@ -208,12 +210,15 @@ func TestDiskDevicesEqual(t *testing.T) {
 	size2 := types.DiskSizeFromGigabytes(10)
 	datastore1 := "local"
 	datastore2 := "local"
+	importFrom1 := "local:import/test.qcow2"
+	importFrom2 := "local:import/test.qcow2"
 
 	disk1 := &vms.CustomStorageDevice{
 		AIO:         &aio1,
 		Cache:       &cache1,
 		Size:        size1,
 		DatastoreID: &datastore1,
+		ImportFrom:  &importFrom1,
 	}
 
 	disk2 := &vms.CustomStorageDevice{
@@ -221,6 +226,7 @@ func TestDiskDevicesEqual(t *testing.T) {
 		Cache:       &cache2,
 		Size:        size2,
 		DatastoreID: &datastore2,
+		ImportFrom:  &importFrom2,
 	}
 
 	// Test identical disks
@@ -245,6 +251,17 @@ func TestDiskDevicesEqual(t *testing.T) {
 		DatastoreID: &datastore2,
 	}
 	require.False(t, disk1.Equals(disk2SizeChanged))
+
+	// Test different ImportFrom values
+	importFrom2Changed := "local:import/test2.qcow2"
+	disk2ImportFromChanged := &vms.CustomStorageDevice{
+		AIO:         &aio2,
+		Cache:       &cache2,
+		Size:        size2,
+		ImportFrom:  &importFrom2Changed,
+		DatastoreID: &datastore2,
+	}
+	require.False(t, disk1.Equals(disk2ImportFromChanged))
 }
 
 // TestDiskUpdateSkipsUnchangedDisks tests that the Update function only updates changed disks.
@@ -256,20 +273,20 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 
 	var err error
 
-	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]interface{}{
-		MkDisk: []interface{}{
-			map[string]interface{}{
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
+		MkDisk: []any{
+			map[string]any{
 				mkDiskInterface:   "scsi0",
 				mkDiskDatastoreID: "local",
 				mkDiskSize:        10,
 				mkDiskImportFrom:  "local:iso/disk.qcow2",
-				mkDiskSpeed:       []interface{}{},
+				mkDiskSpeed:       []any{},
 			},
-			map[string]interface{}{
+			map[string]any{
 				mkDiskInterface:   "scsi1",
 				mkDiskDatastoreID: "local",
 				mkDiskSize:        20,
-				mkDiskSpeed:       []interface{}{},
+				mkDiskSpeed:       []any{},
 			},
 		},
 	})
@@ -316,36 +333,486 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	nodeName := "test-node"
 
 	// Force HasChange to return true by setting old and new values
-	err = resourceData.Set(MkDisk, []interface{}{
-		map[string]interface{}{
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
 			mkDiskInterface:   "scsi1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        5, // Old size
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	})
 	require.NoError(t, err)
 
-	err = resourceData.Set(MkDisk, []interface{}{
-		map[string]interface{}{
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
 			mkDiskInterface:   "scsi1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        20, // New size
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	})
 	require.NoError(t, err)
 
 	// Call the Update function
-	_, err = Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
+	shutdownBeforeUpdate, _, err := Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
 	require.NoError(t, err)
-
-	// Check that only the changed disk (scsi1) is in the update body
-	// scsi0 should NOT be in the update body since it hasn't changed
-	require.NotNil(t, updateBody)
+	require.False(t, shutdownBeforeUpdate)
 
 	// The update body should only contain scsi1, not scsi0
 	// This prevents the "can't unplug bootdisk 'scsi0'" error
-	// Note: We can't directly inspect the updateBody content in this test framework,
-	// but the fact that no error occurred means the logic worked correctly
+	require.Contains(t, updateBody.CustomStorageDevices, "scsi1", "Update body should contain the changed disk scsi1")
+	require.NotContains(t, updateBody.CustomStorageDevices, "scsi0", "Update body should not contain the unchanged disk scsi0")
+}
+
+// TestImportFromDiskNotReimportedOnSizeChange tests issue #2385:
+// when a disk with import_from is resized in Proxmox GUI, terraform should NOT
+// attempt to re-import the disk (which would fail with "cannot shrink" error).
+func TestImportFromDiskNotReimportedOnSizeChange(t *testing.T) {
+	t.Parallel()
+
+	diskSchema := Schema()
+
+	// Terraform config has a disk with import_from and size=20GB
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
+		MkDisk: []any{
+			map[string]any{
+				mkDiskInterface:   "scsi0",
+				mkDiskDatastoreID: "nfs-v3-tmp-01",
+				mkDiskSize:        20,
+				mkDiskImportFrom:  "nfs-v3-tmp-01:iso/ubuntu-22.04-cloud.qcow2",
+				mkDiskSpeed:       []any{},
+			},
+		},
+	})
+
+	resourceData.MarkNewResource()
+
+	// Proxmox currently has the disk at 30GB (resized via GUI)
+	// Note: PVE does NOT return import_from for existing disks
+	datastoreID := "nfs-v3-tmp-01"
+	currentDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(30), // larger than plan (resized in GUI)
+			DatastoreID: &datastoreID,
+			// ImportFrom is nil - PVE doesn't return this for existing disks
+		},
+	}
+
+	// Plan has the original size from terraform config
+	importFrom := "nfs-v3-tmp-01:iso/ubuntu-22.04-cloud.qcow2"
+	planDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20), // smaller than current
+			DatastoreID: &datastoreID,
+			ImportFrom:  &importFrom, // preserved from terraform config
+		},
+	}
+
+	updateBody := &vms.UpdateRequestBody{}
+	var client proxmox.Client
+
+	ctx := context.Background()
+	vmID := 1002
+	nodeName := "test-node"
+
+	// Force HasChange to return true
+	err := resourceData.Set(MkDisk, []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "nfs-v3-tmp-01",
+			mkDiskSize:        30, // current size
+			mkDiskSpeed:       []any{},
+		},
+	})
+	require.NoError(t, err)
+
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "nfs-v3-tmp-01",
+			mkDiskSize:        20, // plan size
+			mkDiskSpeed:       []any{},
+		},
+	})
+	require.NoError(t, err)
+
+	shutdownBeforeUpdate, _, err := Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
+	require.NoError(t, err)
+
+	// shutdownBeforeUpdate should be false - we should NOT shutdown VM to re-import
+	require.False(t, shutdownBeforeUpdate,
+		"should not shutdown VM for disk with import_from when size differs")
+
+	// the update body should NOT contain ImportFrom - we're updating existing disk, not re-importing
+	if updateBody.CustomStorageDevices != nil && updateBody.CustomStorageDevices["scsi0"] != nil {
+		require.Nil(t, updateBody.CustomStorageDevices["scsi0"].ImportFrom,
+			"should not set ImportFrom when updating existing disk")
+	}
+}
+
+func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
+	t.Parallel()
+
+	diskSchema := Schema()
+
+	// Create a simple resource schema for testing
+	resource := &schema.Resource{
+		Schema: diskSchema,
+	}
+
+	// Create test configuration with multiple disks in specific order
+	oldDiskList := []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        32,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        20,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi2",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        1,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi3",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        50,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi7",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        4,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+	}
+
+	// New configuration with scsi7 removed
+	newDiskList := []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        32,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        20,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi2",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        1,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi3",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        50,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+	}
+
+	// Create resource data
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
+		MkDisk: oldDiskList,
+	})
+
+	// Get old disk device objects
+	oldDiskDevices, err := GetDiskDeviceObjects(resourceData, resource, oldDiskList)
+	require.NoError(t, err)
+	require.Len(t, oldDiskDevices, 5)
+
+	// Get new disk device objects
+	newDiskDevices, err := GetDiskDeviceObjects(resourceData, resource, newDiskList)
+	require.NoError(t, err)
+	require.Len(t, newDiskDevices, 4)
+
+	// Verify that the removed interface (scsi7) is detected
+	require.Contains(t, oldDiskDevices, "scsi7")
+	require.NotContains(t, newDiskDevices, "scsi7")
+
+	// Verify that all other interfaces remain in correct positions
+	for _, iface := range []string{"scsi0", "scsi1", "scsi2", "scsi3"} {
+		require.Contains(t, oldDiskDevices, iface)
+		require.Contains(t, newDiskDevices, iface)
+
+		// Verify disk properties remain unchanged for existing disks
+		oldDisk := oldDiskDevices[iface]
+		newDisk := newDiskDevices[iface]
+		require.Equal(t, oldDisk.Size, newDisk.Size, "Disk size should remain unchanged for interface %s", iface)
+		require.Equal(t, oldDisk.DatastoreID, newDisk.DatastoreID, "Datastore ID should remain unchanged for interface %s", iface)
+	}
+
+	// Simulate the deletion detection logic that should happen in vmUpdate
+	// This is what should identify the disk for deletion
+	deletedInterfaces := []string{}
+
+	for oldIface := range oldDiskDevices {
+		if _, present := newDiskDevices[oldIface]; !present {
+			deletedInterfaces = append(deletedInterfaces, oldIface)
+		}
+	}
+
+	// Verify exactly one disk is detected as deleted
+	require.Len(t, deletedInterfaces, 1, "Exactly one disk should be detected as deleted")
+	require.Equal(t, "scsi7", deletedInterfaces[0], "scsi7 should be the deleted disk")
+}
+
+func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
+	t.Parallel()
+
+	// Mock current disk configuration (what Proxmox currently has)
+	currentDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(32),
+			DatastoreID: ptr.Ptr("local"),
+		},
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local"),
+		},
+		"scsi7": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(4),
+			DatastoreID: ptr.Ptr("local"),
+		},
+	}
+
+	// Test case 1: Try to delete boot disk (should be protected)
+	planDisksWithBootDiskRemoved := vms.CustomStorageDevices{
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local"),
+		},
+		"scsi7": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(4),
+			DatastoreID: ptr.Ptr("local"),
+		},
+	}
+
+	bootDevices := []string{"scsi0", "net0"} // scsi0 is in boot order
+
+	// Check for deleted disks and boot protection
+	bootDiskDeletionAttempted := false
+
+	for currentInterface := range currentDisks {
+		if _, present := planDisksWithBootDiskRemoved[currentInterface]; !present {
+			// Check if this is a boot disk
+			if slices.Contains(bootDevices, currentInterface) {
+				bootDiskDeletionAttempted = true
+			}
+		}
+	}
+
+	require.True(t, bootDiskDeletionAttempted, "Boot disk deletion should be detected and would be blocked")
+
+	// Test case 2: Delete non-boot disk (should be allowed)
+	planDisksWithNonBootDiskRemoved := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(32),
+			DatastoreID: ptr.Ptr("local"),
+		},
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local"),
+		},
+	}
+
+	deletedInterfaces := []string{}
+	bootDiskInDeletion := false
+
+	for currentInterface := range currentDisks {
+		if _, present := planDisksWithNonBootDiskRemoved[currentInterface]; !present {
+			deletedInterfaces = append(deletedInterfaces, currentInterface)
+
+			// Check if this is a boot disk
+			if slices.Contains(bootDevices, currentInterface) {
+				bootDiskInDeletion = true
+			}
+		}
+	}
+
+	require.Len(t, deletedInterfaces, 1, "One disk should be marked for deletion")
+	require.Equal(t, "scsi7", deletedInterfaces[0], "scsi7 should be the deleted disk")
+	require.False(t, bootDiskInDeletion, "No boot disk should be in deletion list")
+}
+
+func TestOriginalBugScenario(t *testing.T) {
+	t.Parallel()
+
+	// This represents the original VM configuration from the bug report
+	originalDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(32),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi2": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi3": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(50),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi4": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi5": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(50),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi6": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi7": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(4),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+	}
+
+	// This represents the new configuration with scsi7 removed
+	newDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(32),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi2": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi3": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(50),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi4": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi5": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(50),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi6": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+	}
+
+	// Simulate the disk deletion detection logic
+	var deletesToAdd []string
+
+	for oldIface := range originalDisks {
+		if _, present := newDisks[oldIface]; !present {
+			deletesToAdd = append(deletesToAdd, oldIface)
+		}
+	}
+
+	// Verify behavior
+	require.Len(t, deletesToAdd, 1, "Exactly one disk should be marked for deletion")
+	require.Equal(t, "scsi7", deletesToAdd[0], "scsi7 should be the only disk marked for deletion")
+
+	// Verify all other disks remain unchanged and in correct positions
+	expectedInterfaces := []string{"scsi0", "scsi1", "scsi2", "scsi3", "scsi4", "scsi5", "scsi6"}
+	for _, iface := range expectedInterfaces {
+		require.Contains(t, originalDisks, iface, "Original disks should contain %s", iface)
+		require.Contains(t, newDisks, iface, "New disks should contain %s", iface)
+
+		originalDisk := originalDisks[iface]
+		newDisk := newDisks[iface]
+
+		// Verify no disk properties changed (no re-ordering/reassignment)
+		require.Equal(t, originalDisk.Size, newDisk.Size, "Disk %s size should remain unchanged", iface)
+		require.Equal(t, originalDisk.DatastoreID, newDisk.DatastoreID, "Disk %s datastore should remain unchanged", iface)
+	}
 }

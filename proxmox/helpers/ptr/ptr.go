@@ -6,9 +6,34 @@
 
 package ptr
 
+import (
+	"fmt"
+	"strconv"
+)
+
 // Ptr creates a ptr from a value to use it inline.
 func Ptr[T any](val T) *T {
 	return &val
+}
+
+// ParseIntPtr parses a string to int and returns a pointer, with contextual error.
+func ParseIntPtr(s, fieldName string) (*int, error) {
+	iv, err := strconv.Atoi(s)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %s: %w", fieldName, err)
+	}
+
+	return &iv, nil
+}
+
+// ParseFloat64Ptr parses a string to float64 and returns a pointer, with contextual error.
+func ParseFloat64Ptr(s, fieldName string) (*float64, error) {
+	fv, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %s: %w", fieldName, err)
+	}
+
+	return &fv, nil
 }
 
 // Or will dereference a pointer and return the given value if it's nil.

@@ -16,7 +16,7 @@ import (
 
 // MACAddress is a schema validation function for MAC address.
 func MACAddress() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, path string) ([]string, []error) {
+	return validation.ToDiagFunc(func(i any, path string) ([]string, []error) {
 		v, ok := i.(string)
 
 		var ws []string

@@ -77,8 +77,7 @@ func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
 				t := strings.ToLower(v[1])
 				r.Type = &t
 			case "pre-enrolled-keys":
-				bv := types.CustomBool(v[1] == "1")
-				r.PreEnrolledKeys = &bv
+				r.PreEnrolledKeys = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}

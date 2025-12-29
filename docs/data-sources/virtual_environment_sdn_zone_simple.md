@@ -40,6 +40,7 @@ output "data_proxmox_virtual_environment_sdn_zone_simple" {
 
 ### Read-Only
 
+- `dhcp` (String) The type of the DHCP backend for this zone.
 - `dns` (String) DNS API server address.
 - `dns_zone` (String) DNS domain name. Used to register hostnames, such as `<hostname>.<domain>`. The DNS zone must already exist on the DNS server.
 - `ipam` (String) IP Address Management system.

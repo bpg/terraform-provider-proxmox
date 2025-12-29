@@ -41,7 +41,7 @@ func Groups() *schema.Resource {
 	}
 }
 
-func groupsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func groupsRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

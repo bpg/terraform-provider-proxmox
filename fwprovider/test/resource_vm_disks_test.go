@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/bpg/terraform-provider-proxmox/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
@@ -110,7 +111,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_disk" {
@@ -148,7 +149,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-disk-image.img.raw"
 					overwrite_unmanaged = true
 				}
@@ -536,7 +537,285 @@ func TestAccResourceVMDisks(t *testing.T) {
 						size         = 8
 					}
 				}`),
-				ExpectError: regexp.MustCompile(`deletion of disks not supported`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_disk", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
+					"disk.0.interface":         "scsi0",
+					"disk.0.path_in_datastore": `vm-\d+-disk-0`,
+					"disk.#":                   "1", // Verify only one disk remains
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
+		{"boot disk deletion protection", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_boot_protection" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-boot-protection"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_boot_protection", map[string]string{
+					"disk.0.interface": "scsi0",
+					"disk.1.interface": "scsi1",
+					"boot_order.0":     "scsi0",
+					"boot_order.1":     "net0",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_boot_protection" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-boot-protection"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`cannot delete boot disk "scsi0"`),
+			},
+		}},
+		{"non-boot disk deletion works", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_non_boot_deletion" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-non-boot-deletion"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_non_boot_deletion", map[string]string{
+					"disk.0.interface": "scsi0",
+					"disk.1.interface": "scsi1",
+					"boot_order.0":     "scsi0",
+					"boot_order.1":     "net0",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_non_boot_deletion" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-non-boot-deletion"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_non_boot_deletion", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_non_boot_deletion", map[string]string{
+					"disk.0.interface": "scsi0",
+					"disk.#":           "1", // Verify only boot disk remains
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
+		{"issue #2172 exact bug scenario", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "debian_git01" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "git01"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 32
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 20
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi2"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi3"
+						size         = 50
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi4"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi5"
+						size         = 50
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi6"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi7"
+						size         = 4
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.debian_git01", map[string]string{
+					"disk.#":           "8", // All 8 disks present
+					"disk.0.interface": "scsi0",
+					"disk.0.size":      "32",
+					"disk.1.interface": "scsi1",
+					"disk.1.size":      "20",
+					"disk.2.interface": "scsi2",
+					"disk.2.size":      "1",
+					"disk.3.interface": "scsi3",
+					"disk.3.size":      "50",
+					"disk.4.interface": "scsi4",
+					"disk.4.size":      "1",
+					"disk.5.interface": "scsi5",
+					"disk.5.size":      "50",
+					"disk.6.interface": "scsi6",
+					"disk.6.size":      "1",
+					"disk.7.interface": "scsi7",
+					"disk.7.size":      "4",
+					"boot_order.0":     "scsi0",
+					"boot_order.1":     "net0",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "debian_git01" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "git01"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 32
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 20
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi2"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi3"
+						size         = 50
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi4"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi5"
+						size         = 50
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi6"
+						size         = 1
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.debian_git01", plancheck.ResourceActionUpdate),
+						plancheck.ExpectNonEmptyPlan(),
+					},
+				},
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.debian_git01", map[string]string{
+					"disk.#":           "7",
+					"disk.0.interface": "scsi0",
+					"disk.0.size":      "32",
+					"disk.1.interface": "scsi1",
+					"disk.1.size":      "20",
+					"disk.2.interface": "scsi2",
+					"disk.2.size":      "1",
+					"disk.3.interface": "scsi3",
+					"disk.3.size":      "50",
+					"disk.4.interface": "scsi4",
+					"disk.4.size":      "1",
+					"disk.5.interface": "scsi5",
+					"disk.5.size":      "50",
+					"disk.6.interface": "scsi6",
+					"disk.6.size":      "1",
+					"boot_order.0":     "scsi0",
+					"boot_order.1":     "net0",
+				}),
+			},
+			{
+				RefreshState: true,
 			},
 		}},
 		{"efi disk", []resource.TestStep{
@@ -561,6 +840,53 @@ func TestAccResourceVMDisks(t *testing.T) {
 			},
 			{
 				RefreshState: true,
+			},
+		}},
+		{"efi disk parameter change issue 1515", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_change" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-efi-disk-change-1515"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+						pre_enrolled_keys = false
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_change", map[string]string{
+						"efi_disk.0.datastore_id":      "local-lvm",
+						"efi_disk.0.type":              "4m",
+						"efi_disk.0.pre_enrolled_keys": "false",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_change" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-efi-disk-change-1515"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+						pre_enrolled_keys = true
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_change", map[string]string{
+						"efi_disk.0.pre_enrolled_keys": "true",
+					}),
+				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_efi_disk_change", plancheck.ResourceActionUpdate),
+					},
+				},
 			},
 		}},
 		{"ide disks", []resource.TestStep{
@@ -835,7 +1161,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-bootdisk-bug-image.img.raw"
 					overwrite_unmanaged = true
 				}
@@ -870,7 +1196,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-bootdisk-bug-image.img.raw"
 					overwrite_unmanaged = true
 				}
@@ -910,7 +1236,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-boot-resize-image.img.raw"
 					overwrite_unmanaged = true
 				}
@@ -938,7 +1264,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-boot-resize-image.img.raw"
 					overwrite_unmanaged = true
 				}
@@ -971,4 +1297,198 @@ func TestAccResourceVMDisks(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestAccResourceVMDiskCloneNFSResize tests cloning a VM with disk resize to NFS storage.
+// This is a regression test for https://github.com/bpg/terraform-provider-proxmox/issues/1599
+// where disk resize fails on NFS storage with "volume does not exist" error due to
+// NFS storage sync timing issues after disk move.
+func TestAccResourceVMDiskCloneNFSResize(t *testing.T) {
+	nfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NFS_DATASTORE_ID")
+	if nfsDatastoreID == "" {
+		t.Skip("NFS storage is not available")
+	}
+
+	te := InitEnvironment(t)
+	te.AddTemplateVars(map[string]any{
+		"NFSDatastoreID": nfsDatastoreID,
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_nfs_resize" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-template-nfs-resize"
+					template  = true
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone_nfs_resize" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-clone-nfs-resize"
+
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template_nfs_resize.vm_id
+						full  = true
+					}
+
+					# Clone to NFS storage with disk resize - this is the scenario from issue #1599
+					# The disk needs to be moved from local-lvm to NFS storage and resized.
+					# On NFS storage, there can be a timing issue where the volume is not
+					# immediately available for resize after the move operation completes.
+					disk {
+						datastore_id = "{{.NFSDatastoreID}}"
+						interface    = "scsi0"
+						size         = 10
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.clone_nfs_resize", map[string]string{
+						"disk.0.datastore_id": nfsDatastoreID,
+						"disk.0.interface":    "scsi0",
+						"disk.0.size":         "10",
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceVMDiskRemovalReuseIssue2218(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 1
+						serial       = "test_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.size":      "1",
+						"disk.0.serial":    "os_disk",
+						"disk.1.interface": "scsi1",
+						"disk.1.size":      "1",
+						"disk.1.serial":    "test_disk",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.size":      "1",
+						"disk.0.serial":    "os_disk",
+						"disk.#":           "1",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 5
+						serial       = "different_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.size":      "1",
+						"disk.0.serial":    "os_disk",
+						"disk.1.interface": "scsi1",
+						"disk.1.size":      "5",
+						"disk.1.serial":    "different_disk",
+						"disk.#":           "2",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 5
+						serial       = "different_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.1.size": "5",
+					}),
+				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
 }

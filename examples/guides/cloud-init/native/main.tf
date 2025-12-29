@@ -10,6 +10,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   stop_on_destroy = true
 
   initialization {
+    # uncomment and specify the datastore for cloud-init disk if default `local-lvm` is not available
+    # datastore_id = "local-lvm"
+
     ip_config {
       ipv4 {
         address = "192.168.3.233/24"

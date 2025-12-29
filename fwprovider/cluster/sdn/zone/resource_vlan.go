@@ -28,8 +28,8 @@ type vlanModel struct {
 	Bridge types.String `tfsdk:"bridge"`
 }
 
-func (m *vlanModel) importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
-	m.genericModel.importFromAPI(name, data, diags)
+func (m *vlanModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
+	m.genericModel.fromAPI(name, data, diags)
 
 	m.Bridge = types.StringPointerValue(data.Bridge)
 
@@ -40,8 +40,8 @@ func (m *vlanModel) importFromAPI(name string, data *zones.ZoneData, diags *diag
 	}
 }
 
-func (m *vlanModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {
-	data := m.genericModel.toAPIRequestBody(ctx, diags)
+func (m *vlanModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone {
+	data := m.genericModel.toAPI(ctx, diags)
 
 	data.Bridge = m.Bridge.ValueStringPointer()
 
@@ -49,12 +49,12 @@ func (m *vlanModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostic
 }
 
 type VLANResource struct {
-	generic *genericZoneResource
+	*genericZoneResource
 }
 
 func NewVLANResource() resource.Resource {
 	return &VLANResource{
-		generic: newGenericZoneResource(zoneResourceConfig{
+		genericZoneResource: newGenericZoneResource(zoneResourceConfig{
 			typeNameSuffix: "_sdn_zone_vlan",
 			zoneType:       zones.TypeVLAN,
 			modelFunc:      func() zoneModel { return &vlanModel{} },
@@ -79,30 +79,6 @@ func (r *VLANResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 	}
 }
 
-func (r *VLANResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	r.generic.Metadata(ctx, req, resp)
-}
-
-func (r *VLANResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.generic.Configure(ctx, req, resp)
-}
-
-func (r *VLANResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	r.generic.Create(ctx, req, resp)
-}
-
-func (r *VLANResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	r.generic.Read(ctx, req, resp)
-}
-
-func (r *VLANResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	r.generic.Update(ctx, req, resp)
-}
-
-func (r *VLANResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	r.generic.Delete(ctx, req, resp)
-}
-
-func (r *VLANResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	r.generic.ImportState(ctx, req, resp)
+func (m *vlanModel) getGenericModel() *genericModel {
+	return &m.genericModel
 }

@@ -101,9 +101,9 @@ func (d *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal CustomPCIDevice: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 		if len(v) == 1 {
 			dIDs := strings.Split(v[0], ";")
@@ -118,16 +118,13 @@ func (d *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 			case "mdev":
 				d.MDev = &v[1]
 			case "pcie":
-				bv := types.CustomBool(v[1] == "1")
-				d.PCIExpress = &bv
+				d.PCIExpress = types.CustomBool(v[1] == "1").Pointer()
 			case "rombar":
-				bv := types.CustomBool(v[1] == "1")
-				d.ROMBAR = &bv
+				d.ROMBAR = types.CustomBool(v[1] == "1").Pointer()
 			case "romfile":
 				d.ROMFile = &v[1]
 			case "x-vga":
-				bv := types.CustomBool(v[1] == "1")
-				d.XVGA = &bv
+				d.XVGA = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}

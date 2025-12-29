@@ -24,7 +24,6 @@ This is an experimental implementation of a Proxmox VM datasource using Plugin F
 
 ### Optional
 
-- `clone` (Attributes) The cloning configuration. (see [below for nested schema](#nestedatt--clone))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `description` (String) The description of the VM.
 - `name` (String) The name of the VM.
@@ -33,18 +32,6 @@ This is an experimental implementation of a Proxmox VM datasource using Plugin F
 - `template` (Boolean) Whether the VM is a template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 - `vga` (Attributes) The VGA configuration. (see [below for nested schema](#nestedatt--vga))
-
-<a id="nestedatt--clone"></a>
-### Nested Schema for `clone`
-
-Required:
-
-- `id` (Number) The ID of the VM to clone.
-
-Optional:
-
-- `retries` (Number) The number of retries to perform when cloning the VM (default: 3).
-
 
 <a id="nestedatt--cpu"></a>
 ### Nested Schema for `cpu`

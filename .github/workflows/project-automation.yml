@@ -1,0 +1,327 @@
+name: Project Automation
+
+on:
+  issues:
+    types: [opened, labeled, closed, reopened]
+  pull_request:
+    types: [opened, closed]
+
+env:
+  PROJECT_NUMBER: 4
+  PROJECT_OWNER: bpg
+
+jobs:
+  add-to-project:
+    name: Add issue/PR to project
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    steps:
+      - name: Add to project
+        uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
+        with:
+          project-url: https://github.com/users/${{ env.PROJECT_OWNER }}/projects/${{ env.PROJECT_NUMBER }}
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+
+  sync-priority-label-to-field:
+    name: Sync priority label to Priority field
+    runs-on: ubuntu-latest
+    if: github.event.action == 'labeled' && startsWith(github.event.label.name, 'priority:')
+    steps:
+      - name: Get priority from label
+        id: priority
+        run: |
+          LABEL="${{ github.event.label.name }}"
+          PRIORITY="${LABEL#priority:}"
+          echo "value=$PRIORITY" >> $GITHUB_OUTPUT
+          echo "Priority: $PRIORITY"
+
+      - name: Remove other priority labels
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const newLabel = '${{ github.event.label.name }}';
+            const issueNumber = context.payload.issue.number;
+            const allPriorityLabels = ['priority:P0', 'priority:P1', 'priority:P2', 'priority:P3'];
+            
+            for (const label of allPriorityLabels) {
+              if (label !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    name: label
+                  });
+                  console.log(`Removed ${label}`);
+                } catch (e) {
+                  // Label might not exist on issue, that's ok
+                }
+              }
+            }
+
+      - name: Update Priority field in project
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const priority = '${{ steps.priority.outputs.value }}';
+            const issueNodeId = context.payload.issue.node_id;
+            
+            // Get project and field info
+            const projectQuery = `
+              query($owner: String!, $number: Int!) {
+                user(login: $owner) {
+                  projectV2(number: $number) {
+                    id
+                    field(name: "Priority") {
+                      ... on ProjectV2SingleSelectField {
+                        id
+                        options { id name }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            
+            const projectResult = await github.graphql(projectQuery, {
+              owner: '${{ env.PROJECT_OWNER }}',
+              number: ${{ env.PROJECT_NUMBER }}
+            });
+            
+            const project = projectResult.user.projectV2;
+            const priorityField = project.field;
+            
+            if (!priorityField) {
+              console.log('Priority field not found');
+              return;
+            }
+            
+            const option = priorityField.options.find(o => o.name === priority);
+            if (!option) {
+              console.log(`Priority option ${priority} not found`);
+              return;
+            }
+            
+            // Add issue to project (or get existing item ID)
+            const addMutation = `
+              mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: {
+                  projectId: $projectId
+                  contentId: $contentId
+                }) {
+                  item { id }
+                }
+              }
+            `;
+            
+            let itemId;
+            try {
+              const addResult = await github.graphql(addMutation, {
+                projectId: project.id,
+                contentId: issueNodeId
+              });
+              itemId = addResult.addProjectV2ItemById.item.id;
+              console.log(`Added/found issue in project, item ID: ${itemId}`);
+            } catch (e) {
+              console.log(`Error adding to project: ${e.message}`);
+              return;
+            }
+            
+            // Update the Priority field
+            const mutation = `
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId
+                  itemId: $itemId
+                  fieldId: $fieldId
+                  value: { singleSelectOptionId: $optionId }
+                }) {
+                  projectV2Item { id }
+                }
+              }
+            `;
+            
+            await github.graphql(mutation, {
+              projectId: project.id,
+              itemId: itemId,
+              fieldId: priorityField.id,
+              optionId: option.id
+            });
+            
+            console.log(`Updated Priority to ${priority}`);
+
+  move-to-column-on-label:
+    name: Move to column based on label
+    runs-on: ubuntu-latest
+    if: github.event.action == 'labeled'
+    steps:
+      - name: Determine target column
+        id: column
+        run: |
+          LABEL="${{ github.event.label.name }}"
+          case "$LABEL" in
+            "priority:P0") echo "column=P0" >> $GITHUB_OUTPUT ;;
+            "priority:P1") echo "column=P1" >> $GITHUB_OUTPUT ;;
+            "priority:P2") echo "column=Triage" >> $GITHUB_OUTPUT ;;
+            "priority:P3") echo "column=Backlog" >> $GITHUB_OUTPUT ;;
+            "lifecycle:needs-info") echo "column=Needs Info" >> $GITHUB_OUTPUT ;;
+            "status:in-progress") echo "column=In Progress" >> $GITHUB_OUTPUT ;;
+            "status:blocked") echo "column=Blocked" >> $GITHUB_OUTPUT ;;
+            *) echo "column=" >> $GITHUB_OUTPUT ;;
+          esac
+
+      - name: Add to project and move to column
+        if: steps.column.outputs.column != ''
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const targetColumn = '${{ steps.column.outputs.column }}';
+            const issueNodeId = context.payload.issue.node_id;
+            
+            // Get project info
+            const projectQuery = `
+              query($owner: String!, $number: Int!) {
+                user(login: $owner) {
+                  projectV2(number: $number) {
+                    id
+                    field(name: "Status") {
+                      ... on ProjectV2SingleSelectField {
+                        id
+                        options { id name }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            
+            const projectResult = await github.graphql(projectQuery, {
+              owner: '${{ env.PROJECT_OWNER }}',
+              number: ${{ env.PROJECT_NUMBER }}
+            });
+            
+            const project = projectResult.user.projectV2;
+            const statusField = project.field;
+            const option = statusField.options.find(o => o.name === targetColumn);
+            
+            if (!option) {
+              console.log(`Column ${targetColumn} not found`);
+              return;
+            }
+            
+            // First, try to add the issue to the project (will return existing item if already added)
+            const addMutation = `
+              mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: {
+                  projectId: $projectId
+                  contentId: $contentId
+                }) {
+                  item { id }
+                }
+              }
+            `;
+            
+            let itemId;
+            try {
+              const addResult = await github.graphql(addMutation, {
+                projectId: project.id,
+                contentId: issueNodeId
+              });
+              itemId = addResult.addProjectV2ItemById.item.id;
+              console.log(`Added/found issue in project, item ID: ${itemId}`);
+            } catch (e) {
+              console.log(`Error adding to project: ${e.message}`);
+              return;
+            }
+            
+            // Update Status field
+            const updateMutation = `
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId
+                  itemId: $itemId
+                  fieldId: $fieldId
+                  value: { singleSelectOptionId: $optionId }
+                }) {
+                  projectV2Item { id }
+                }
+              }
+            `;
+            
+            await github.graphql(updateMutation, {
+              projectId: project.id,
+              itemId: itemId,
+              fieldId: statusField.id,
+              optionId: option.id
+            });
+            
+            console.log(`Moved to ${targetColumn}`);
+
+  pr-link-to-in-progress:
+    name: Move linked issue to In Progress when PR opened
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    steps:
+      - name: Add in-progress label to linked issues
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prBody = context.payload.pull_request.body || '';
+            const prTitle = context.payload.pull_request.title || '';
+            
+            const issuePattern = /(?:fixes|closes|resolves|ref|references?)?\s*#(\d+)/gi;
+            const allText = `${prTitle} ${prBody}`;
+            const matches = [...allText.matchAll(issuePattern)];
+            const uniqueIssues = [...new Set(matches.map(m => parseInt(m[1])))];
+            
+            for (const issueNumber of uniqueIssues) {
+              console.log(`PR references issue #${issueNumber}, adding status:in-progress label`);
+              
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  labels: ['status:in-progress']
+                });
+              } catch (e) {
+                console.log(`Could not add label to issue #${issueNumber}: ${e.message}`);
+              }
+            }
+
+  pr-merged-to-review:
+    name: Move linked issue to Review when PR merged
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    steps:
+      - name: Update linked issues
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prBody = context.payload.pull_request.body || '';
+            const prTitle = context.payload.pull_request.title || '';
+            
+            const issuePattern = /(?:fixes|closes|resolves|ref|references?)?\s*#(\d+)/gi;
+            const allText = `${prTitle} ${prBody}`;
+            const matches = [...allText.matchAll(issuePattern)];
+            const uniqueIssues = [...new Set(matches.map(m => parseInt(m[1])))];
+            
+            for (const issueNumber of uniqueIssues) {
+              console.log(`PR merged, removing status:in-progress from #${issueNumber}`);
+              
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  name: 'status:in-progress'
+                });
+              } catch (e) {
+                // Label might not exist
+              }
+            }

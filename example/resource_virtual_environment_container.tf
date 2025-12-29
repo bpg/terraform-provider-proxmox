@@ -3,6 +3,10 @@ resource "proxmox_virtual_environment_container" "example_template" {
 
   start_on_boot = "true"
 
+  wait_for_ip {
+    ipv4 = true
+  }
+
   disk {
     datastore_id = var.virtual_environment_storage
     size         = 4
@@ -42,7 +46,7 @@ resource "proxmox_virtual_environment_container" "example_template" {
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
 
   operating_system {
-    template_file_id = proxmox_virtual_environment_download_file.release_20250701_ubuntu_24_10_lxc_img.id
+    template_file_id = proxmox_virtual_environment_download_file.ubuntu_24_04_lxc_img.id
     type             = "ubuntu"
   }
 
@@ -71,6 +75,10 @@ resource "proxmox_virtual_environment_container" "example" {
 
   clone {
     vm_id = proxmox_virtual_environment_container.example_template.id
+  }
+
+  wait_for_ip {
+    ipv4 = true
   }
 
   tags = [

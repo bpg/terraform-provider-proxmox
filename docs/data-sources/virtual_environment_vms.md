@@ -59,5 +59,5 @@ data "proxmox_virtual_environment_vms" "ubuntu_templates" {
     - `node_name` - The node name.
     - `tags` - A list of tags of the VM.
     - `vm_id` - The VM identifier.
-    - `status` - Status of the VM
-    - `template` - Is VM a template (true) or a regular VM (false)
+    - `status` - The status of the VM.
+    - `template` - Whether the VM is a template.

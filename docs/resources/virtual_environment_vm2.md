@@ -31,12 +31,13 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 ### Optional
 
 - `cdrom` (Attributes Map) The CD-ROM configuration. The key is the interface of the CD-ROM, could be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces. (see [below for nested schema](#nestedatt--cdrom))
-- `clone` (Attributes) The cloning configuration. (see [below for nested schema](#nestedatt--clone))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
+- `delete_unreferenced_disks_on_destroy` (Boolean) Set to true to delete unreferenced disks on destroy (defaults to `true`).
 - `description` (String) The description of the VM.
 - `id` (Number) The unique identifier of the VM in the Proxmox cluster.
 - `name` (String) The name of the VM. Doesn't have to be unique.
-- `rng` (Attributes) Configure the RNG (Random Number Generator) device. The RNG device provides entropy to guests to ensure good quality random numbers for guest applications that require them. Can only be set by `root@pam.`See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for more information. (see [below for nested schema](#nestedatt--rng))
+- `purge_on_destroy` (Boolean) Set to true to purge the VM from backup configurations on destroy (defaults to `true`).
+- `rng` (Attributes) Configure the RNG (Random Number Generator) device. The RNG device provides entropy to guests to ensure good quality random numbers for guest applications that require them. Can only be set by `root@pam.` See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for more information. (see [below for nested schema](#nestedatt--rng))
 - `stop_on_destroy` (Boolean) Set to true to stop (rather than shutdown) the VM on destroy (defaults to `false`).
 - `tags` (Set of String) The tags assigned to the VM.
 - `template` (Boolean) Set to true to create a VM template.
@@ -51,25 +52,13 @@ Optional:
 - `file_id` (String) The file ID of the CD-ROM, or `cdrom|none`. Defaults to `none` to leave the CD-ROM empty. Use `cdrom` to connect to the physical drive.
 
 
-<a id="nestedatt--clone"></a>
-### Nested Schema for `clone`
-
-Required:
-
-- `id` (Number) The ID of the VM to clone.
-
-Optional:
-
-- `retries` (Number) The number of retries to perform when cloning the VM (default: 3).
-
-
 <a id="nestedatt--cpu"></a>
 ### Nested Schema for `cpu`
 
 Optional:
 
 - `affinity` (String) The CPU cores that are used to run the VM’s vCPU. The value is a list of CPU IDs, separated by commas. The CPU IDs are zero-based.  For example, `0,1,2,3` (which also can be shortened to `0-3`) means that the VM’s vCPUs are run on the first four CPU cores. Setting `affinity` is only allowed for `root@pam` authenticated user.
-- `architecture` (String) The CPU architecture `<aarch64 | x86_64>` (defaults to the host). Setting `affinity` is only allowed for `root@pam` authenticated user.
+- `architecture` (String) The CPU architecture `<aarch64 | x86_64>` (defaults to the host). Setting `architecture` is only allowed for `root@pam` authenticated user.
 - `cores` (Number) The number of CPU cores per socket (defaults to `1`).
 - `flags` (Set of String) Set of additional CPU flags. Use `+FLAG` to enable, `-FLAG` to disable a flag. Custom CPU models can specify any flag supported by QEMU/KVM, VM-specific flags must be from the following set for security reasons: `pcid`, `spec-ctrl`, `ibpb`, `ssbd`, `virt-ssbd`, `amd-ssbd`, `amd-no-ssb`, `pdpe1gb`, `md-clear`, `hv-tlbflush`, `hv-evmcs`, `aes`.
 - `hotplugged` (Number) The number of hotplugged vCPUs (defaults to `0`).

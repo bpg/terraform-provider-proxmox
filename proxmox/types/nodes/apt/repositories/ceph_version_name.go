@@ -31,6 +31,9 @@ var (
 	// CephVersionNameReef is the name for the "Reef" Ceph major version.
 	CephVersionNameReef = CephVersionName{"reef"}
 
+	// CephVersionNameSquid is the name for the "Squid" Ceph major version.
+	CephVersionNameSquid = CephVersionName{"squid"}
+
 	// CephVersionNameUnknown is the name for an unknown Ceph major version.
 	CephVersionNameUnknown = CephVersionName{"unknown"}
 )
@@ -99,6 +102,8 @@ func ParseCephVersionName(input string) (CephVersionName, error) {
 		return CephVersionNameQuincy, nil
 	case CephVersionNameReef.String():
 		return CephVersionNameReef, nil
+	case CephVersionNameSquid.String():
+		return CephVersionNameSquid, nil
 	default:
 		return CephVersionName{}, ErrCephVersionNameIllegal(input)
 	}

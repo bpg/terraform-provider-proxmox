@@ -14,7 +14,7 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go/v5"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -26,15 +26,21 @@ func (c *Client) DeleteDatastoreFile(
 ) error {
 	path := c.ExpandPath(fmt.Sprintf("content/%s", url.PathEscape(volumeID)))
 
-	err := retry.Do(
-		func() error {
-			return c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
-		},
+	err := retry.New(
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
+			var httpError *api.HTTPError
+			if errors.As(err, &httpError) && httpError.Code == http.StatusForbidden {
+				return false
+			}
+
 			return !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
 		retry.LastErrorOnly(true),
+	).Do(
+		func() error {
+			return c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("error deleting file %s from datastore %s: %w", volumeID, c.StorageName, err)
@@ -44,20 +50,32 @@ func (c *Client) DeleteDatastoreFile(
 }
 
 // ListDatastoreFiles retrieves a list of the files in a datastore.
+// contentType is optional and filters the results by content type (e.g., "iso", "vztmpl", "backup").
+// If contentType is nil, all files in the datastore are returned (unfiltered).
 func (c *Client) ListDatastoreFiles(
 	ctx context.Context,
+	contentType *string,
 ) ([]*DatastoreFileListResponseData, error) {
 	resBody := &DatastoreFileListResponseBody{}
+	reqBody := &DatastoreFileListRequestBody{
+		ContentType: contentType,
+	}
 
-	err := retry.Do(
-		func() error {
-			return c.DoRequest(ctx, http.MethodGet, c.ExpandPath("content"), nil, resBody)
-		},
+	err := retry.New(
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
+			var httpError *api.HTTPError
+			if errors.As(err, &httpError) && httpError.Code == http.StatusForbidden {
+				return false
+			}
+
 			return !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
 		retry.LastErrorOnly(true),
+	).Do(
+		func() error {
+			return c.DoRequest(ctx, http.MethodGet, c.ExpandPath("content"), reqBody, resBody)
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error listing files from datastore %s: %w", c.StorageName, err)

@@ -17,7 +17,16 @@ type Client struct {
 	api.Client
 }
 
+func (c *Client) basePath() string {
+	return c.Client.ExpandPath("sdn/zones")
+}
+
 // ExpandPath returns the API path for SDN zones.
 func (c *Client) ExpandPath(path string) string {
-	return fmt.Sprintf("cluster/sdn/zones/%s", path)
+	p := c.basePath()
+	if path != "" {
+		p = fmt.Sprintf("%s/%s", p, path)
+	}
+
+	return p
 }

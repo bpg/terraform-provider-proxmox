@@ -89,7 +89,7 @@ func aliasRead(ctx context.Context, api firewall.API, d *schema.ResourceData) di
 		return diag.FromErr(err)
 	}
 
-	aliasMap := map[string]interface{}{
+	aliasMap := map[string]any{
 		mkAliasComment: alias.Comment,
 		mkAliasName:    alias.Name,
 		mkAliasCIDR:    alias.CIDR,

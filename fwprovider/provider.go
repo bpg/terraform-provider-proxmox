@@ -12,6 +12,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -31,10 +33,13 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
 	sdnapplier "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/applier"
+	sdnsubnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/subnet"
+	sdnvnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/vnet"
 	sdnzone "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/zone"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/clonedvm"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
@@ -519,6 +524,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		acme.NewACMEPluginResource,
 		apt.NewRepositoryResource,
 		apt.NewStandardRepositoryResource,
+		clonedvm.NewResource,
 		ha.NewHAGroupResource,
 		ha.NewHAResourceResource,
 		hardwaremapping.NewDirResource,
@@ -528,21 +534,25 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
 		nodes.NewDownloadFileResource,
+		nodes.NewOCIImageResource,
 		options.NewClusterOptionsResource,
-		vm.NewResource,
+		pools.NewPoolMembershipResource,
+		sdnapplier.NewResource,
+		sdnsubnet.NewResource,
+		sdnvnet.NewResource,
+		sdnzone.NewEVPNResource,
+		sdnzone.NewQinQResource,
 		sdnzone.NewSimpleResource,
 		sdnzone.NewVLANResource,
-		sdnzone.NewQinQResource,
 		sdnzone.NewVXLANResource,
-		sdnzone.NewEVPNResource,
-    sdnapplier.NewResource,
+		storage.NewCIFSStorageResource,
 		storage.NewDirectoryStorageResource,
 		storage.NewLVMPoolStorageResource,
 		storage.NewLVMThinPoolStorageResource,
 		storage.NewNFSStorageResource,
 		storage.NewProxmoxBackupServerStorageResource,
-		storage.NewCIFSStorageResource,
 		storage.NewZFSPoolStorageResource,
+		vm.NewResource,
 	}
 }
 
@@ -565,11 +575,15 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewPCIDataSource,
 		hardwaremapping.NewUSBDataSource,
 		metrics.NewMetricsServerDatasource,
+		nodes.NewFileDataSource,
+		sdnsubnet.NewDataSource,
+		sdnvnet.NewDataSource,
+		sdnvnet.NewVNetsDataSource,
+		sdnzone.NewEVPNDataSource,
+		sdnzone.NewQinQDataSource,
 		sdnzone.NewSimpleDataSource,
 		sdnzone.NewVLANDataSource,
-		sdnzone.NewQinQDataSource,
 		sdnzone.NewVXLANDataSource,
-		sdnzone.NewEVPNDataSource,
 		sdnzone.NewZonesDataSource,
 		vm.NewDataSource,
 	}

@@ -25,6 +25,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   stop_on_destroy = true
 
   initialization {
+    # uncomment and specify the datastore for cloud-init disk if default `local-lvm` is not available
+    # datastore_id = "local-lvm"
+
     ip_config {
       ipv4 {
         address = "192.168.3.233/24"
@@ -62,7 +65,7 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
 }
 ```
 
-Note that many cloud images do not have `qemu-guest-agent` installed by default, so you won't be able to retrieve the dynamic IP address of the VM from Proxmox, as this is agent's responsibility. You can use the `ip_config` block to configure a static IP address instead.
+Note that many cloud images do not have `qemu-guest-agent` installed by default, so you won't be able to retrieve the dynamic IP address of the VM from Proxmox, as this is the agent's responsibility. You can use the `ip_config` block to configure a static IP address instead.
 
 ## Custom Cloud-Init Configuration
 
@@ -139,6 +142,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   }
 
   initialization {
+    # uncomment and specify the datastore for cloud-init disk if default `local-lvm` is not available
+    # datastore_id = "local-lvm"
+
     ip_config {
       ipv4 {
         address = "dhcp"

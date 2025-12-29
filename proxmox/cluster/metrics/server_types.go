@@ -28,6 +28,10 @@ type ServerData struct {
 	// graphite only options
 	Path  *string `json:"path,omitempty"  url:"path,omitempty"`
 	Proto *string `json:"proto,omitempty" url:"proto,omitempty"`
+
+	// opentelemetry only options
+	OTelProto *string `json:"otel-protocol,omitempty" url:"otel-protocol,omitempty"`
+	OTelPath  *string `json:"otel-path,omitempty"     url:"otel-path,omitempty"`
 }
 
 // ServerResponseBody contains the body from a metrics server response.
