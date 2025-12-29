@@ -475,6 +475,133 @@ func TestClient_Contract_CreateAndUpdateStorage_RequestKeys(t *testing.T) {
 	}
 }
 
+func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
+	t.Parallel()
+
+	server := newStorageGetContractServer()
+	t.Cleanup(server.Close)
+
+	storageClient := newStorageClientForTest(t, server.URL)
+	ctx := context.Background()
+
+	for _, tc := range []struct {
+		name      string
+		id        string
+		assertion func(got *DatastoreGetResponseData) string
+	}{
+		{
+			name: "nfs",
+			id:   "nfs-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.Server == nil || *got.Server != "127.0.0.1" {
+					return "unexpected server"
+				}
+				if got.Export == nil || *got.Export != "/export" {
+					return "unexpected export"
+				}
+				if got.Preallocation == nil || *got.Preallocation != "metadata" {
+					return "unexpected preallocation"
+				}
+				if got.SnapshotsAsVolumeChain == nil || !bool(*got.SnapshotsAsVolumeChain) {
+					return "unexpected snapshot-as-volume-chain"
+				}
+				return ""
+			},
+		},
+		{
+			name: "cifs",
+			id:   "cifs-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.Domain == nil || *got.Domain != "WORKGROUP" {
+					return "unexpected domain"
+				}
+				if got.SubDirectory == nil || *got.SubDirectory != "subdir" {
+					return "unexpected subdir"
+				}
+				if got.Preallocation == nil || *got.Preallocation != "metadata" {
+					return "unexpected preallocation"
+				}
+				if got.SnapshotsAsVolumeChain == nil || !bool(*got.SnapshotsAsVolumeChain) {
+					return "unexpected snapshot-as-volume-chain"
+				}
+				return ""
+			},
+		},
+		{
+			name: "dir",
+			id:   "dir-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.Path == nil || *got.Path != "/var/lib/vz" {
+					return "unexpected path"
+				}
+				if got.Preallocation == nil || *got.Preallocation != "metadata" {
+					return "unexpected preallocation"
+				}
+				return ""
+			},
+		},
+		{
+			name: "lvm",
+			id:   "lvm-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.VolumeGroup == nil || *got.VolumeGroup != "vg0" {
+					return "unexpected vgname"
+				}
+				if got.WipeRemovedVolumes == nil || bool(*got.WipeRemovedVolumes) {
+					return "unexpected saferemove"
+				}
+				return ""
+			},
+		},
+		{
+			name: "lvmthin",
+			id:   "lvmthin-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.VolumeGroup == nil || *got.VolumeGroup != "vg0" {
+					return "unexpected vgname"
+				}
+				if got.ThinPool == nil || *got.ThinPool != "data" {
+					return "unexpected thinpool"
+				}
+				return ""
+			},
+		},
+		{
+			name: "zfspool",
+			id:   "zfs-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.ZFSPool == nil || *got.ZFSPool != "rpool/data" {
+					return "unexpected pool"
+				}
+				if got.Blocksize == nil || *got.Blocksize != "64k" {
+					return "unexpected blocksize"
+				}
+				if got.ThinProvision == nil || !bool(*got.ThinProvision) {
+					return "unexpected sparse"
+				}
+				return ""
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := storageClient.GetDatastore(ctx, &DatastoreGetRequest{ID: &tc.id})
+			if err != nil {
+				t.Fatalf("GetDatastore returned error: %v", err)
+			}
+
+			if got == nil {
+				t.Fatalf("GetDatastore returned nil data")
+			}
+
+			if msg := tc.assertion(got); msg != "" {
+				t.Fatalf("%s: %#v", msg, got)
+			}
+		})
+	}
+}
+
 type requestCaptures struct {
 	mu  sync.Mutex
 	req []capturedRequest
@@ -560,6 +687,77 @@ func captureRequest(r *http.Request) capturedRequest {
 	}
 
 	return cr
+}
+
+func newStorageGetContractServer() *httptest.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api2/json/storage/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		id := strings.TrimPrefix(r.URL.Path, "/api2/json/storage/")
+		if id == "" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		base := map[string]any{
+			"storage":       id,
+			"nodes":         "node-1",
+			"content":       "images",
+			"disable":       0,
+			"shared":        0,
+			"type":          "dir",
+			"preallocation": "metadata",
+		}
+
+		switch id {
+		case "nfs-get":
+			base["type"] = "nfs"
+			base["server"] = "127.0.0.1"
+			base["export"] = "/export"
+			base["snapshot-as-volume-chain"] = 1
+		case "cifs-get":
+			base["type"] = "cifs"
+			base["server"] = "127.0.0.1"
+			base["share"] = "share"
+			base["domain"] = "WORKGROUP"
+			base["subdir"] = "subdir"
+			base["snapshot-as-volume-chain"] = 1
+		case "dir-get":
+			base["type"] = "dir"
+			base["path"] = "/var/lib/vz"
+		case "lvm-get":
+			base["type"] = "lvm"
+			base["vgname"] = "vg0"
+			base["saferemove"] = 0
+		case "lvmthin-get":
+			base["type"] = "lvmthin"
+			base["vgname"] = "vg0"
+			base["thinpool"] = "data"
+		case "zfs-get":
+			base["type"] = "zfspool"
+			base["pool"] = "rpool/data"
+			base["sparse"] = 1
+			base["blocksize"] = "64k"
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(map[string]any{"data": base}); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	})
+
+	mux.HandleFunc("/api2/json/storage", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	return httptest.NewTLSServer(mux)
 }
 
 func newStorageClientForTest(t *testing.T, endpoint string) *Client {

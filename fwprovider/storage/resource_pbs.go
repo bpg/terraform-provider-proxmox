@@ -127,15 +127,24 @@ func (r *pbsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 		"username": schema.StringAttribute{
 			Description: "The username for authenticating with the Proxmox Backup Server.",
 			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
 		"password": schema.StringAttribute{
 			Description: "The password for authenticating with the Proxmox Backup Server.",
 			Required:    true,
 			Sensitive:   true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
 		"namespace": schema.StringAttribute{
 			Description: "The namespace to use on the Proxmox Backup Server.",
 			Optional:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
 		"fingerprint": schema.StringAttribute{
 			Description: "The SHA256 fingerprint of the Proxmox Backup Server's certificate.",
