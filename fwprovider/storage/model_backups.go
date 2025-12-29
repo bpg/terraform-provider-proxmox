@@ -9,6 +9,8 @@ package storage
 import (
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -99,4 +101,76 @@ func (m BackupModel) toAPI() (storage.DataStoreWithBackups, error) {
 	}
 
 	return backups, nil
+}
+
+// fromAPI populates BackupModel from API response fields.
+func (m *BackupModel) fromAPI(maxProtectedBackups *proxmox_types.CustomInt64, pruneBackups *string) error {
+	if maxProtectedBackups != nil {
+		m.MaxProtectedBackups = types.Int64Value(int64(*maxProtectedBackups))
+	} else {
+		m.MaxProtectedBackups = types.Int64Null()
+	}
+
+	m.KeepAll = types.BoolValue(false)
+	m.KeepLast = types.Int64Null()
+	m.KeepHourly = types.Int64Null()
+	m.KeepDaily = types.Int64Null()
+	m.KeepWeekly = types.Int64Null()
+	m.KeepMonthly = types.Int64Null()
+	m.KeepYearly = types.Int64Null()
+
+	if pruneBackups == nil || *pruneBackups == "" {
+		return nil
+	}
+
+	parts := strings.Split(*pruneBackups, ",")
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		kv := strings.SplitN(part, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+
+		key := strings.TrimSpace(kv[0])
+		value := strings.TrimSpace(kv[1])
+
+		switch key {
+		case "keep-all":
+			if value == "1" {
+				m.KeepAll = types.BoolValue(true)
+			} else {
+				m.KeepAll = types.BoolValue(false)
+			}
+		case "keep-last":
+			if v, err := strconv.ParseInt(value, 10, 64); err == nil {
+				m.KeepLast = types.Int64Value(v)
+			}
+		case "keep-hourly":
+			if v, err := strconv.ParseInt(value, 10, 64); err == nil {
+				m.KeepHourly = types.Int64Value(v)
+			}
+		case "keep-daily":
+			if v, err := strconv.ParseInt(value, 10, 64); err == nil {
+				m.KeepDaily = types.Int64Value(v)
+			}
+		case "keep-weekly":
+			if v, err := strconv.ParseInt(value, 10, 64); err == nil {
+				m.KeepWeekly = types.Int64Value(v)
+			}
+		case "keep-monthly":
+			if v, err := strconv.ParseInt(value, 10, 64); err == nil {
+				m.KeepMonthly = types.Int64Value(v)
+			}
+		case "keep-yearly":
+			if v, err := strconv.ParseInt(value, 10, 64); err == nil {
+				m.KeepYearly = types.Int64Value(v)
+			}
+		}
+	}
+
+	return nil
 }

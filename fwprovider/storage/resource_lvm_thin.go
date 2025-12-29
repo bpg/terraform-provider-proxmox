@@ -42,7 +42,7 @@ func (r *lvmThinPoolStorageResource) Metadata(_ context.Context, _ resource.Meta
 	resp.TypeName = r.resourceName
 }
 
-// Schema defines the schema for the NFS storage resource.
+// Schema defines the schema for the LVM thin pool storage resource.
 func (r *lvmThinPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	attributes := map[string]schema.Attribute{
 		"volume_group": schema.StringAttribute{

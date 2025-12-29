@@ -86,5 +86,16 @@ func (m *DirectoryStorageModel) fromAPI(ctx context.Context, datastore *storage.
 		m.Preallocation = types.StringValue(*datastore.Preallocation)
 	}
 
+	if datastore.MaxProtectedBackups != nil || (datastore.PruneBackups != nil && *datastore.PruneBackups != "") {
+		if m.Backups == nil {
+			m.Backups = &BackupModel{}
+		}
+		if err := m.Backups.fromAPI(datastore.MaxProtectedBackups, datastore.PruneBackups); err != nil {
+			return err
+		}
+	} else {
+		m.Backups = nil
+	}
+
 	return nil
 }

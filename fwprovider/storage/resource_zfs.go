@@ -42,7 +42,7 @@ func (r *zfsPoolStorageResource) Metadata(_ context.Context, _ resource.Metadata
 	resp.TypeName = r.resourceName
 }
 
-// Schema defines the schema for the NFS storage resource.
+// Schema defines the schema for the ZFS pool storage resource.
 func (r *zfsPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	attributes := map[string]schema.Attribute{
 		"zfs_pool": schema.StringAttribute{
