@@ -17,6 +17,8 @@ This file tracks **current state**, **proof of work**, and **next steps** for PR
 - `16a9dc1f` `test(storage): add backups and import coverage`
   - extend directory storage acceptance test with backups update + import verify (retention ignored on import).
   - set default `disable/shared` values on read when the API omits them.
+- `6c502507` `test(storage): add cluster storage contract tests`
+  - add `httptest`-based contract coverage asserting `/api2/json/storage` request paths and form parameter keys for multiple storage types (no real backends required).
 
 ## Proof of work
 
@@ -66,6 +68,19 @@ Observed (sanitized) calls:
 
 Notes:
 - Terraform/plugin tooling may attempt calls to `checkpoint-api.hashicorp.com` which will fail TLS interception unless the mitm CA is trusted. This does not affect Proxmox API verification.
+
+### Contract tests (no real storage backends)
+
+The contract tests run against a local `httptest` TLS server and validate the request **paths** and **form-encoded parameter keys** for create/update.
+
+```bash
+go test ./... -count=1
+```
+
+## References
+
+- Proxmox VE API viewer (`/storage/{storage}`): `https://pve.proxmox.com/pve-docs/api-viewer/#/storage/{storage}`
+- Proxmox VE admin guide (storage manager chapter): `https://pve.proxmox.com/pve-docs/pve-admin-guide.html`
 
 ## Remaining gaps / next steps
 
