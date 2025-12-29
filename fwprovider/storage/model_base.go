@@ -58,10 +58,14 @@ func (m *StorageModelBase) populateBaseFromAPI(ctx context.Context, datastore *s
 
 	if datastore.Disable != nil {
 		m.Disable = datastore.Disable.ToValue()
+	} else {
+		m.Disable = types.BoolValue(false)
 	}
 
 	if datastore.Shared != nil {
 		m.Shared = datastore.Shared.ToValue()
+	} else {
+		m.Shared = types.BoolValue(false)
 	}
 
 	return nil

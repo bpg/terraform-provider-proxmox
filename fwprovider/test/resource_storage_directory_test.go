@@ -93,6 +93,48 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 					),
 				),
 			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_storage_directory" "test" {
+					id     = "{{.StorageID}}"
+					path   = "{{.DirPath}}"
+					nodes  = ["{{.NodeName}}"]
+					content = ["backup"]
+
+					shared  = false
+					disable = false
+
+					backups {
+						max_protected_backups = 5
+						keep_daily            = 7
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_storage_directory.test", map[string]string{
+						"disable":                       "false",
+						"content.#":                     "1",
+						"backups.max_protected_backups": "5",
+						"backups.keep_daily":            "7",
+					}),
+					resource.TestCheckTypeSetElemAttr(
+						"proxmox_virtual_environment_storage_directory.test",
+						"content.*",
+						"backup",
+					),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_storage_directory.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     storageID,
+				ImportStateVerifyIgnore: []string{
+					"backups",
+					"backups.keep_all",
+					"backups.keep_daily",
+					"backups.max_protected_backups",
+				},
+			},
 		},
 	})
 }
