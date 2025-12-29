@@ -7,10 +7,13 @@
 package storage
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/google/go-querystring/query"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func intPtr(i int) *int {
@@ -102,4 +105,59 @@ func TestDataStoreWithBackups_String(t *testing.T) {
 			assert.Equal(t, tc.expected, result)
 		})
 	}
+}
+
+func TestDataStoreWithBackups_EncodeValues(t *testing.T) {
+	t.Parallel()
+
+	input := DataStoreWithBackups{
+		MaxProtectedBackups: customInt64Ptr(10),
+		KeepDaily:           intPtr(7),
+	}
+
+	values := url.Values{}
+	err := input.EncodeValues("", &values)
+	require.NoError(t, err)
+
+	assert.Equal(t, "10", values.Get("max-protected-backups"))
+	assert.Equal(t, "keep-daily=7", values.Get("prune-backups"))
+}
+
+func TestStorageCreateRequest_QueryEncoding_Backups(t *testing.T) {
+	t.Parallel()
+
+	req := NFSStorageCreateRequest{
+		NFSStorageMutableFields: NFSStorageMutableFields{
+			Backups: DataStoreWithBackups{
+				MaxProtectedBackups: customInt64Ptr(9),
+				KeepHourly:          intPtr(24),
+			},
+		},
+	}
+
+	values, err := query.Values(req)
+	require.NoError(t, err)
+
+	assert.Equal(t, "9", values.Get("max-protected-backups"))
+	assert.Equal(t, "keep-hourly=24", values.Get("prune-backups"))
+	assert.Empty(t, values.Get("max"))
+}
+
+func TestStorageCreateRequest_QueryEncoding_Shared(t *testing.T) {
+	t.Parallel()
+
+	shared := true
+
+	req := LVMStorageCreateRequest{
+		LVMStorageMutableFields: LVMStorageMutableFields{
+			DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+				Shared: types.CustomBoolPtr(&shared),
+			},
+		},
+	}
+
+	values, err := query.Values(req)
+	require.NoError(t, err)
+
+	assert.Equal(t, "1", values.Get("shared"))
 }

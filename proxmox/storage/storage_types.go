@@ -25,7 +25,7 @@ type DatastoreGetResponse struct {
 
 // DatastoreListRequest contains the body for a datastore list request.
 type DatastoreListRequest struct {
-	Type *string `json:"type,omitempty" url:"type,omitempty,omitempty"`
+	Type *string `json:"type,omitempty" url:"type,omitempty"`
 }
 
 // DatastoreListResponse contains the body from a datastore list response.
@@ -85,12 +85,12 @@ type DataStoreCommonMutableFields struct {
 	ContentTypes *types.CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`
 	Nodes        *types.CustomCommaSeparatedList `json:"nodes,omitempty"   url:"nodes,omitempty,comma"`
 	Disable      *types.CustomBool               `json:"disable,omitempty" url:"disable,omitempty,int"`
-	Shared       *bool                           `json:"shared,omitempty"  url:"shared,omitempty,int"`
+	Shared       *types.CustomBool               `json:"shared,omitempty"  url:"shared,omitempty,int"`
 }
 
 // DataStoreWithBackups holds optional retention settings for backups.
 type DataStoreWithBackups struct {
-	MaxProtectedBackups *types.CustomInt64 `json:"max-protected-backups,omitempty" url:"max,omitempty"`
+	MaxProtectedBackups *types.CustomInt64 `json:"max-protected-backups,omitempty" url:"-"`
 	KeepAll             *types.CustomBool  `json:"-"                               url:"-"`
 	KeepDaily           *int               `json:"-"                               url:"-"`
 	KeepHourly          *int               `json:"-"                               url:"-"`
@@ -102,7 +102,7 @@ type DataStoreWithBackups struct {
 
 // String serializes DataStoreWithBackups into the Proxmox "key=value,key=value" format.
 // Only defined (non-nil) fields will be included.
-func (b *DataStoreWithBackups) String() string {
+func (b DataStoreWithBackups) String() string {
 	var parts []string
 
 	if b.KeepAll != nil {
@@ -136,7 +136,7 @@ func (b *DataStoreWithBackups) String() string {
 	return strings.Join(parts, ",")
 }
 
-func (b *DataStoreWithBackups) EncodeValues(key string, v *url.Values) error {
+func (b DataStoreWithBackups) EncodeValues(key string, v *url.Values) error {
 	if b.MaxProtectedBackups != nil {
 		v.Set("max-protected-backups", strconv.FormatInt(int64(*b.MaxProtectedBackups), 10))
 	}

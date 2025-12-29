@@ -5,7 +5,8 @@ import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 // DirectoryStorageMutableFields defines the mutable attributes for 'dir' type storage.
 type DirectoryStorageMutableFields struct {
 	DataStoreCommonMutableFields
-	DataStoreWithBackups
+
+	Backups DataStoreWithBackups `json:"-" url:"backups,omitempty"`
 
 	Preallocation          *string           `json:"preallocation,omitempty"            url:"preallocation,omitempty"`
 	SnapshotsAsVolumeChain types.CustomBool  `json:"snapshot-as-volume-chain,omitempty" url:"snapshot-as-volume-chain,omitempty"`

@@ -5,7 +5,8 @@ import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 // CIFSStorageMutableFields defines specific options for 'smb'/'cifs' type storage.
 type CIFSStorageMutableFields struct {
 	DataStoreCommonMutableFields
-	DataStoreWithBackups
+
+	Backups DataStoreWithBackups `json:"-" url:"backups,omitempty"`
 
 	Preallocation *string `json:"preallocation,omitempty" url:"preallocation,omitempty"`
 }

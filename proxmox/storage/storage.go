@@ -58,7 +58,7 @@ func (c *Client) GetDatastore(ctx context.Context, d *DatastoreGetRequest) (*Dat
 	return resBody.Data, nil
 }
 
-func (c *Client) CreateDatastore(ctx context.Context, d interface{}) (*DatastoreCreateResponseData, error) {
+func (c *Client) CreateDatastore(ctx context.Context, d any) (*DatastoreCreateResponseData, error) {
 	resBody := &DatastoreCreateResponse{}
 
 	err := c.DoRequest(
@@ -75,7 +75,7 @@ func (c *Client) CreateDatastore(ctx context.Context, d interface{}) (*Datastore
 	return resBody.Data, nil
 }
 
-func (c *Client) UpdateDatastore(ctx context.Context, storeID string, d interface{}) error {
+func (c *Client) UpdateDatastore(ctx context.Context, storeID string, d any) error {
 	err := c.DoRequest(
 		ctx,
 		http.MethodPut,

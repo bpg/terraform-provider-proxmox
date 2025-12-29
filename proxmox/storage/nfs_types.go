@@ -5,7 +5,8 @@ import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 // NFSStorageMutableFields defines the mutable attributes for 'nfs' type storage.
 type NFSStorageMutableFields struct {
 	DataStoreCommonMutableFields
-	DataStoreWithBackups
+
+	Backups DataStoreWithBackups `json:"-" url:"backups,omitempty"`
 
 	Options *string `json:"options,omitempty" url:"options,omitempty"`
 }
