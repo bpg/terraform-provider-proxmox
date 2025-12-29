@@ -18,33 +18,33 @@ import (
 )
 
 // Ensure the implementation satisfies the expected interfaces.
-var _ resource.Resource = &smbStorageResource{}
+var _ resource.Resource = &cifsStorageResource{}
 
 // NewCIFSStorageResource is a helper function to simplify the provider implementation.
 func NewCIFSStorageResource() resource.Resource {
-	return &smbStorageResource{
+	return &cifsStorageResource{
 		storageResource: &storageResource[
 			*CIFSStorageModel,
 			CIFSStorageModel,
 		]{
-			storageType:  "smb",
-			resourceName: "proxmox_virtual_environment_storage_smb",
+			storageType:  "cifs",
+			resourceName: "proxmox_virtual_environment_storage_cifs",
 		},
 	}
 }
 
-// smbStorageResource is the resource implementation.
-type smbStorageResource struct {
+// cifsStorageResource is the resource implementation.
+type cifsStorageResource struct {
 	*storageResource[*CIFSStorageModel, CIFSStorageModel]
 }
 
 // Metadata returns the resource type name.
-func (r *smbStorageResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *cifsStorageResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = r.resourceName
 }
 
-// Schema defines the schema for the SMB storage resource.
-func (r *smbStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+// Schema defines the schema for the CIFS storage resource.
+func (r *cifsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	attributes := map[string]schema.Attribute{
 		"server": schema.StringAttribute{
 			Description: "The IP address or DNS name of the SMB/CIFS server.",

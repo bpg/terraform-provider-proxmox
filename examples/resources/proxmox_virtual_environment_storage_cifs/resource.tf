@@ -1,11 +1,11 @@
-resource "proxmox_virtual_environment_storage_smb" "example" {
-  id     = "example-smb"
+resource "proxmox_virtual_environment_storage_cifs" "example" {
+  id     = "example-cifs"
   nodes  = ["pve"]
   server = "10.0.0.20"
   share  = "proxmox"
 
-  username = "smb-user"
-  password = "smb-password"
+  username = "cifs-user"
+  password = "cifs-password"
 
   content                  = ["images"]
   domain                   = "WORKGROUP"
@@ -18,4 +18,5 @@ resource "proxmox_virtual_environment_storage_smb" "example" {
     keep_daily            = 7
   }
 }
+
 

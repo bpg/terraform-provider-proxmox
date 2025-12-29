@@ -88,7 +88,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_lvm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_nfs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_pbs.md ./docs/resources/
-//go:generate cp ./build/docs-gen/resources/virtual_environment_storage_smb.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_storage_cifs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_zfspool.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_user_token.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_vm2.md ./docs/resources/
