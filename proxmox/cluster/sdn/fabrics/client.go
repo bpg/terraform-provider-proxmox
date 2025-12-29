@@ -16,7 +16,8 @@ import (
 type Client struct {
 	api.Client
 
-	ID string
+	ID       string
+	Protocol string
 }
 
 func (c *Client) basePath() string {

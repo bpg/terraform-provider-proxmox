@@ -15,7 +15,7 @@ Based on docs:
   - https://pve.proxmox.com/pve-docs/api-viewer/index.html#/cluster/sdn/fabrics
 */
 type Fabric struct {
-	ID         string  `json:"fabric"              url:"fabric"`
+	ID         string  `json:"id"              url:"id"`
 	Digest     *string `json:"digest,omitempty"        url:"digest,omitempty"`
 	Protocol   *string `json:"protocol,omitempty"      url:"protocol,omitempty"`
 	IPv6Prefix *string `json:"ip6_prefix,omitempty"   url:"ip6_prefix,omitempty"`
@@ -32,8 +32,6 @@ type Fabric struct {
 
 type FabricData struct {
 	Fabric
-
-	Pending *Fabric `json:"pending,omitempty" url:"pending,omitempty"`
 }
 
 type FabricCreate struct {
@@ -44,12 +42,4 @@ type FabricUpdate struct {
 	Fabric
 
 	Delete []string `url:"delete,omitempty"`
-}
-
-type fabricResponse struct {
-	Data *FabricData `json:"data"`
-}
-
-type fabricsResponse struct {
-	Data *[]FabricData `json:"data"`
 }
