@@ -25,6 +25,8 @@ This file tracks **current state**, **proof of work**, and **next steps** for PR
 - `932e03e6` `test(storage): validate storage GET decoding`
   - add contract decoding coverage for `GET /api2/json/storage/<id>` for multiple storage types.
   - align PBS and LVMThin create-only schema fields as replace-only.
+- `12c71f0e` `docs(storage): add examples and regenerate docs`
+  - add example configs for storage resources and regenerate `docs/resources` via `make docs`.
 
 ## Proof of work
 
