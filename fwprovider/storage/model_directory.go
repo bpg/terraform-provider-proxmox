@@ -90,6 +90,7 @@ func (m *DirectoryStorageModel) fromAPI(ctx context.Context, datastore *storage.
 		if m.Backups == nil {
 			m.Backups = &BackupModel{}
 		}
+
 		if err := m.Backups.fromAPI(datastore.MaxProtectedBackups, datastore.PruneBackups); err != nil {
 			return err
 		}

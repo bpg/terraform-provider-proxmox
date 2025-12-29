@@ -61,7 +61,7 @@ type DatastoreGetResponseData struct {
 	Share                  *string                         `json:"share,omitempty"                    url:"share,omitempty"`
 	Domain                 *string                         `json:"domain,omitempty"                   url:"domain,omitempty"`
 	SubDirectory           *string                         `json:"subdir,omitempty"                   url:"subdir,omitempty"`
-	MaxProtectedBackups    *types.CustomInt64              `json:"max-protected-backups,omitempty"   url:"max-protected-backups,omitempty"`
+	MaxProtectedBackups    *types.CustomInt64              `json:"max-protected-backups,omitempty"    url:"max-protected-backups,omitempty"`
 	PruneBackups           *string                         `json:"prune-backups,omitempty"            url:"prune-backups,omitempty"`
 }
 

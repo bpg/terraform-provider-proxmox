@@ -29,8 +29,11 @@ type BackupModel struct {
 	KeepYearly          types.Int64 `tfsdk:"keep_yearly"`
 }
 
-func (m BackupModel) toAPI() (storage.DataStoreWithBackups, error) {
+func (m *BackupModel) toAPI() (storage.DataStoreWithBackups, error) {
 	var backups storage.DataStoreWithBackups
+	if m == nil {
+		return backups, nil
+	}
 
 	intPtrFromInt64 := func(v int64) (*int, error) {
 		if v > math.MaxInt || v < math.MinInt {
@@ -123,8 +126,8 @@ func (m *BackupModel) fromAPI(maxProtectedBackups *proxmox_types.CustomInt64, pr
 		return nil
 	}
 
-	parts := strings.Split(*pruneBackups, ",")
-	for _, part := range parts {
+	parts := strings.SplitSeq(*pruneBackups, ",")
+	for part := range parts {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue
