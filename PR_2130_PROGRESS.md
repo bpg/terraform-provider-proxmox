@@ -22,6 +22,9 @@ This file tracks **current state**, **proof of work**, and **next steps** for PR
 - `eff9f619` `fix(storage): round-trip snapshot settings`
   - add `snapshot-as-volume-chain` to storage GET response, set it into NFS/CIFS state for import/read, and mark CIFS immutable fields as replace-only.
   - extend contract tests to cover additional option keys (`preallocation`, `domain/subdir`, `fingerprint/encryption-key`, `blocksize`).
+- `932e03e6` `test(storage): validate storage GET decoding`
+  - add contract decoding coverage for `GET /api2/json/storage/<id>` for multiple storage types.
+  - align PBS and LVMThin create-only schema fields as replace-only.
 
 ## Proof of work
 
