@@ -79,5 +79,9 @@ func (m *NFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 		m.Preallocation = types.StringValue(*datastore.Preallocation)
 	}
 
+	if datastore.SnapshotsAsVolumeChain != nil {
+		m.SnapshotsAsVolumeChain = types.BoolValue(*datastore.SnapshotsAsVolumeChain.PointerBool())
+	}
+
 	return nil
 }

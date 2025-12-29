@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -55,11 +56,17 @@ func (r *smbStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 		"username": schema.StringAttribute{
 			Description: "The username for authenticating with the SMB/CIFS server.",
 			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
 		"password": schema.StringAttribute{
 			Description: "The password for authenticating with the SMB/CIFS server.",
 			Required:    true,
 			Sensitive:   true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
 		"share": schema.StringAttribute{
 			Description: "The name of the SMB/CIFS share.",
@@ -71,10 +78,16 @@ func (r *smbStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 		"domain": schema.StringAttribute{
 			Description: "The SMB/CIFS domain.",
 			Optional:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
 		"subdirectory": schema.StringAttribute{
 			Description: "A subdirectory to mount within the share.",
 			Optional:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
 		"preallocation": schema.StringAttribute{
 			Description: "The preallocation mode for raw and qcow2 images.",
@@ -83,6 +96,9 @@ func (r *smbStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 		"snapshot_as_volume_chain": schema.BoolAttribute{
 			Description: "Enable support for creating snapshots through volume backing-chains.",
 			Optional:    true,
+			PlanModifiers: []planmodifier.Bool{
+				boolplanmodifier.RequiresReplace(),
+			},
 		},
 		"shared": schema.BoolAttribute{
 			Description: "Whether the storage is shared across all nodes.",

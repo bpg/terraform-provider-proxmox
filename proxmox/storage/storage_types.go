@@ -34,32 +34,33 @@ type DatastoreListResponse struct {
 }
 
 type DatastoreGetResponseData struct {
-	ID                 *string                         `json:"storage"                 url:"storage"`
-	Type               *string                         `json:"type"                    url:"type"`
-	ContentTypes       *types.CustomCommaSeparatedList `json:"content,omitempty"       url:"content,omitempty,comma"`
-	Path               *string                         `json:"path,omitempty"          url:"path,omitempty"`
-	Nodes              *types.CustomCommaSeparatedList `json:"nodes,omitempty"         url:"nodes,omitempty,comma"`
-	Disable            *types.CustomBool               `json:"disable,omitempty"       url:"disable,omitempty,int"`
-	Shared             *types.CustomBool               `json:"shared,omitempty"        url:"shared,omitempty,int"`
-	Server             *string                         `json:"server,omitempty"        url:"server,omitempty"`
-	Export             *string                         `json:"export,omitempty"        url:"export,omitempty"`
-	Options            *string                         `json:"options,omitempty"       url:"options,omitempty"`
-	Preallocation      *string                         `json:"preallocation,omitempty" url:"preallocation,omitempty"`
-	Datastore          *string                         `json:"datastore,omitempty"     url:"datastore,omitempty"`
-	Username           *string                         `json:"username,omitempty"      url:"username,omitempty"`
-	Password           *string                         `json:"password,omitempty"      url:"password,omitempty"`
-	Namespace          *string                         `json:"namespace,omitempty"     url:"namespace,omitempty"`
-	Fingerprint        *string                         `json:"fingerprint,omitempty"   url:"fingerprint,omitempty"`
-	EncryptionKey      *string                         `json:"keyring,omitempty"       url:"keyring,omitempty"`
-	ZFSPool            *string                         `json:"pool,omitempty"          url:"pool,omitempty"`
-	ThinProvision      *types.CustomBool               `json:"sparse,omitempty"        url:"sparse,omitempty,int"`
-	Blocksize          *string                         `json:"blocksize,omitempty"     url:"blocksize,omitempty"`
-	VolumeGroup        *string                         `json:"vgname,omitempty"        url:"vgname,omitempty"`
-	WipeRemovedVolumes *types.CustomBool               `json:"saferemove,omitempty"    url:"saferemove,omitempty,int"`
-	ThinPool           *string                         `json:"thinpool,omitempty"      url:"thinpool,omitempty"`
-	Share              *string                         `json:"share,omitempty"         url:"share,omitempty"`
-	Domain             *string                         `json:"domain,omitempty"        url:"domain,omitempty"`
-	SubDirectory       *string                         `json:"subdir,omitempty"        url:"subdir,omitempty"`
+	ID                     *string                         `json:"storage"                            url:"storage"`
+	Type                   *string                         `json:"type"                               url:"type"`
+	ContentTypes           *types.CustomCommaSeparatedList `json:"content,omitempty"                  url:"content,omitempty,comma"`
+	Path                   *string                         `json:"path,omitempty"                     url:"path,omitempty"`
+	Nodes                  *types.CustomCommaSeparatedList `json:"nodes,omitempty"                    url:"nodes,omitempty,comma"`
+	Disable                *types.CustomBool               `json:"disable,omitempty"                  url:"disable,omitempty,int"`
+	Shared                 *types.CustomBool               `json:"shared,omitempty"                   url:"shared,omitempty,int"`
+	SnapshotsAsVolumeChain *types.CustomBool               `json:"snapshot-as-volume-chain,omitempty" url:"snapshot-as-volume-chain,omitempty,int"`
+	Server                 *string                         `json:"server,omitempty"                   url:"server,omitempty"`
+	Export                 *string                         `json:"export,omitempty"                   url:"export,omitempty"`
+	Options                *string                         `json:"options,omitempty"                  url:"options,omitempty"`
+	Preallocation          *string                         `json:"preallocation,omitempty"            url:"preallocation,omitempty"`
+	Datastore              *string                         `json:"datastore,omitempty"                url:"datastore,omitempty"`
+	Username               *string                         `json:"username,omitempty"                 url:"username,omitempty"`
+	Password               *string                         `json:"password,omitempty"                 url:"password,omitempty"`
+	Namespace              *string                         `json:"namespace,omitempty"                url:"namespace,omitempty"`
+	Fingerprint            *string                         `json:"fingerprint,omitempty"              url:"fingerprint,omitempty"`
+	EncryptionKey          *string                         `json:"keyring,omitempty"                  url:"keyring,omitempty"`
+	ZFSPool                *string                         `json:"pool,omitempty"                     url:"pool,omitempty"`
+	ThinProvision          *types.CustomBool               `json:"sparse,omitempty"                   url:"sparse,omitempty,int"`
+	Blocksize              *string                         `json:"blocksize,omitempty"                url:"blocksize,omitempty"`
+	VolumeGroup            *string                         `json:"vgname,omitempty"                   url:"vgname,omitempty"`
+	WipeRemovedVolumes     *types.CustomBool               `json:"saferemove,omitempty"               url:"saferemove,omitempty,int"`
+	ThinPool               *string                         `json:"thinpool,omitempty"                 url:"thinpool,omitempty"`
+	Share                  *string                         `json:"share,omitempty"                    url:"share,omitempty"`
+	Domain                 *string                         `json:"domain,omitempty"                   url:"domain,omitempty"`
+	SubDirectory           *string                         `json:"subdir,omitempty"                   url:"subdir,omitempty"`
 }
 
 type DatastoreCreateResponse struct {
