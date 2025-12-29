@@ -70,7 +70,7 @@ type DatastoreCreateResponse struct {
 type DatastoreCreateResponseData struct {
 	Type    *string                           `json:"type"              url:"type"`
 	Storage *string                           `json:"storage,omitempty" url:"storage,omitempty"`
-	Config  DatastoreCreateResponseConfigData `json:"config,omitempty"  url:"config,omitempty"`
+	Config  DatastoreCreateResponseConfigData `json:"config"            url:"config,omitempty"`
 }
 
 type DatastoreCreateResponseConfigData struct {
