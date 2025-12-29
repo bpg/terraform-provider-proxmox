@@ -73,34 +73,35 @@ func (r *pbsStorageResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	plan.Shared = types.BoolValue(false)
-
-	if !plan.GenerateEncryptionKey.IsNull() && plan.GenerateEncryptionKey.ValueBool() {
+	if responseData != nil && responseData.Config.EncryptionKey != nil {
 		var encryptionKey storage.EncryptionKey
-
-		err := json.Unmarshal([]byte(*responseData.Config.EncryptionKey), &encryptionKey)
-		if err != nil {
+		if err := json.Unmarshal([]byte(*responseData.Config.EncryptionKey), &encryptionKey); err != nil {
 			resp.Diagnostics.AddError(fmt.Sprintf("Error unmarshaling encryption key for %s storage", r.storageType), err.Error())
 			return
 		}
 
-		plan.GeneratedEncryptionKey = types.StringValue(*responseData.Config.EncryptionKey)
 		plan.EncryptionKeyFingerprint = types.StringValue(encryptionKey.Fingerprint)
-	} else {
+
+		if !plan.GenerateEncryptionKey.IsNull() && plan.GenerateEncryptionKey.ValueBool() {
+			plan.GeneratedEncryptionKey = types.StringValue(*responseData.Config.EncryptionKey)
+		}
+	}
+
+	if plan.GenerateEncryptionKey.IsNull() || !plan.GenerateEncryptionKey.ValueBool() {
 		plan.GeneratedEncryptionKey = types.StringNull()
 	}
 
-	if !plan.EncryptionKey.IsNull() {
-		var encryptionKey storage.EncryptionKey
+	datastoreID := plan.GetID().ValueString()
 
-		err := json.Unmarshal([]byte(*responseData.Config.EncryptionKey), &encryptionKey)
-		if err != nil {
-			resp.Diagnostics.AddError(fmt.Sprintf("Error unmarshaling encryption key for %s storage", r.storageType), err.Error())
-			return
-		}
+	datastore, err := r.client.Storage().GetDatastore(ctx, &storage.DatastoreGetRequest{ID: &datastoreID})
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage after create", r.storageType), err.Error())
+		return
+	}
 
-		plan.EncryptionKey = types.StringValue(*responseData.Config.EncryptionKey)
-		plan.EncryptionKeyFingerprint = types.StringValue(encryptionKey.Fingerprint)
+	if err := plan.fromAPI(ctx, datastore); err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error populating state from API for %s storage", r.storageType), err.Error())
+		return
 	}
 
 	diags = resp.State.Set(ctx, &plan)

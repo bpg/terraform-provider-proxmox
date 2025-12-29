@@ -89,7 +89,12 @@ func (m BackupModel) toAPI() (storage.DataStoreWithBackups, error) {
 		return storage.DataStoreWithBackups{}, err
 	}
 
-	if backups.KeepAll != nil && backups.String() != "keep-all=1" {
+	if backups.KeepAll != nil && (backups.KeepLast != nil ||
+		backups.KeepHourly != nil ||
+		backups.KeepDaily != nil ||
+		backups.KeepWeekly != nil ||
+		backups.KeepMonthly != nil ||
+		backups.KeepYearly != nil) {
 		return storage.DataStoreWithBackups{}, fmt.Errorf("keep_all conflicts with other keep_* settings")
 	}
 

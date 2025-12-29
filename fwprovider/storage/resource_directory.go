@@ -8,9 +8,7 @@ package storage
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -70,23 +68,4 @@ func (r *directoryStorageResource) Schema(_ context.Context, _ resource.SchemaRe
 	factory.WithDescription("Manages directory-based storage in Proxmox VE.")
 	factory.WithBackupBlock()
 	resp.Schema = *factory.Schema
-}
-
-// Configure adds the provider configured client to the resource.
-func (r *directoryStorageResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	cfg, ok := req.ProviderData.(config.Resource)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = cfg.Client
 }

@@ -10,7 +10,6 @@ import (
 	"maps"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -38,18 +37,12 @@ func NewStorageSchemaFactory() *StorageSchemaFactory {
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-				},
 			},
 			"content": schema.SetAttribute{
 				Description: "The content types that can be stored on this storage.",
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-				},
 			},
 			"disable": schema.BoolAttribute{
 				Description: "Whether the storage is disabled.",
