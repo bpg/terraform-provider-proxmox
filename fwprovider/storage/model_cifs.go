@@ -93,5 +93,9 @@ func (m *CIFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datas
 		m.Preallocation = types.StringValue(*datastore.Preallocation)
 	}
 
+	if datastore.SnapshotsAsVolumeChain != nil {
+		m.SnapshotsAsVolumeChain = types.BoolValue(*datastore.SnapshotsAsVolumeChain.PointerBool())
+	}
+
 	return nil
 }
