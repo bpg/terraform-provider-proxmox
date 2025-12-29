@@ -19,6 +19,9 @@ This file tracks **current state**, **proof of work**, and **next steps** for PR
   - set default `disable/shared` values on read when the API omits them.
 - `6c502507` `test(storage): add cluster storage contract tests`
   - add `httptest`-based contract coverage asserting `/api2/json/storage` request paths and form parameter keys for multiple storage types (no real backends required).
+- `eff9f619` `fix(storage): round-trip snapshot settings`
+  - add `snapshot-as-volume-chain` to storage GET response, set it into NFS/CIFS state for import/read, and mark CIFS immutable fields as replace-only.
+  - extend contract tests to cover additional option keys (`preallocation`, `domain/subdir`, `fingerprint/encryption-key`, `blocksize`).
 
 ## Proof of work
 
