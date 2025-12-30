@@ -238,6 +238,17 @@ For more details about the DCO checker, see the [DCO app repo](https://github.co
 
 ## Submitting changes
 
+### Pull request scope
+
+Please keep PRs small and focused. Small PRs are easier to review, easier to test, and get merged faster.
+
+Guidelines:
+
+- **one change per PR**: a single fix/feature, or a refactor with no behavior change
+- **avoid multi-resource PRs**: if you need to change multiple resources/data sources, split the work into separate PRs (you can stack them and link follow-ups)
+- **do not mix concerns**: avoid combining formatting-only changes, refactors, and behavior changes in the same PR
+- **iterate quickly**: open a draft/WIP PR early if you want feedback on approach before polishing edge cases
+
 1. Create a new PR against the `main` branch using the project's [pull request template](.github/PULL_REQUEST_TEMPLATE.md)
 2. Ensure your PR title follows the Conventional Commits specification (we use this as the squash commit message)
 3. All commits in a PR are typically squashed on merge
