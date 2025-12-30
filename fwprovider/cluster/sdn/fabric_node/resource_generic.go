@@ -130,14 +130,6 @@ func (m *genericModel) handleDeletedStringValue(value *string) types.String {
 	return types.StringValue(*value)
 }
 
-func (m *genericModel) handleDeletedInt64Value(value *int64) types.Int64 {
-	if value == nil {
-		return types.Int64Null()
-	}
-
-	return types.Int64Value(*value)
-}
-
 func checkDeletedFields(state, plan *genericModel) []string {
 	var toDelete []string
 
