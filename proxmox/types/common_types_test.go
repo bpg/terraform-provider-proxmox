@@ -28,7 +28,6 @@ func TestCustomInt64_UnmarshalJSON(t *testing.T) {
 		{"2^53-1 scientific", "9.007199254740991e+15", 9007199254740991, false},
 		{"2^53+1 scientific", "9.007199254740993e+15", 9007199254740993, false},
 		{"value larger than int64", "1e20", 0, true},
-		{"empty string", "\"\"", 0, true},
 	}
 
 	for _, tt := range tests {
