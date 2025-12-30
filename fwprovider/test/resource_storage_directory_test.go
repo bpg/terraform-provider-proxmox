@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -23,15 +24,21 @@ import (
 func TestAccResourceStorageDirectory(t *testing.T) {
 	te := InitEnvironment(t)
 
-	storageID := fmt.Sprintf("dir-%s", strings.ToLower(gofakeit.Word()))
+	storageID := fmt.Sprintf("dir-%s-%d", strings.ToLower(gofakeit.Word()), time.Now().UnixNano())
 	dirPath := utils.GetAnyStringEnv("PROXMOX_VE_ACC_STORAGE_DIR_PATH")
 	if dirPath == "" {
 		dirPath = "/var/lib/vz"
 	}
 
+	preallocation1 := "off"
+	preallocation2 := "metadata"
+
 	te.AddTemplateVars(map[string]any{
-		"StorageID": storageID,
-		"DirPath":   dirPath,
+		"StorageID":      storageID,
+		"DirPath":        dirPath,
+		"DirPathReplace": dirPath + "/acc-replace",
+		"Preallocation1": preallocation1,
+		"Preallocation2": preallocation2,
 	})
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -45,17 +52,19 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 					nodes  = ["{{.NodeName}}"]
 					content = ["images"]
 
+					preallocation = "{{.Preallocation1}}"
 					shared  = true
 					disable = false
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_storage_directory.test", map[string]string{
-						"id":        storageID,
-						"path":      dirPath,
-						"shared":    "true",
-						"disable":   "false",
-						"nodes.#":   "1",
-						"content.#": "1",
+						"id":            storageID,
+						"path":          dirPath,
+						"preallocation": preallocation1,
+						"shared":        "true",
+						"disable":       "false",
+						"nodes.#":       "1",
+						"content.#":     "1",
 					}),
 					resource.TestCheckTypeSetElemAttr(
 						"proxmox_virtual_environment_storage_directory.test",
@@ -70,6 +79,21 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 				),
 			},
 			{
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_storage_directory" "test" {
+					id     = "{{.StorageID}}"
+					path   = "{{.DirPathReplace}}"
+					nodes  = ["{{.NodeName}}"]
+					content = ["images"]
+
+					preallocation = "{{.Preallocation1}}"
+					shared  = true
+					disable = false
+				}`),
+			},
+			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_storage_directory" "test" {
 					id     = "{{.StorageID}}"
@@ -77,15 +101,17 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 					nodes  = ["{{.NodeName}}"]
 					content = ["iso"]
 
+					preallocation = "{{.Preallocation2}}"
 					shared  = false
 					disable = true
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_storage_directory.test", map[string]string{
-						"shared":    "false",
-						"disable":   "true",
-						"nodes.#":   "1",
-						"content.#": "1",
+						"preallocation": preallocation2,
+						"shared":        "false",
+						"disable":       "true",
+						"nodes.#":       "1",
+						"content.#":     "1",
 					}),
 					resource.TestCheckTypeSetElemAttr(
 						"proxmox_virtual_environment_storage_directory.test",
@@ -102,12 +128,16 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 					nodes  = ["{{.NodeName}}"]
 					content = ["backup"]
 
+					preallocation = "{{.Preallocation2}}"
 					shared  = false
 					disable = false
 
 					backups {
 						max_protected_backups = 5
+						keep_last             = 3
+						keep_hourly           = 12
 						keep_daily            = 7
+						keep_weekly           = 4
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
@@ -115,7 +145,10 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 						"disable":                       "false",
 						"content.#":                     "1",
 						"backups.max_protected_backups": "5",
+						"backups.keep_last":             "3",
+						"backups.keep_hourly":           "12",
 						"backups.keep_daily":            "7",
+						"backups.keep_weekly":           "4",
 					}),
 					resource.TestCheckTypeSetElemAttr(
 						"proxmox_virtual_environment_storage_directory.test",
@@ -132,6 +165,7 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 					nodes  = ["{{.NodeName}}"]
 					content = ["backup"]
 
+					preallocation = "{{.Preallocation2}}"
 					shared  = false
 					disable = false
 
@@ -162,6 +196,7 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 					nodes  = ["{{.NodeName}}"]
 					content = ["backup"]
 
+					preallocation = "{{.Preallocation2}}"
 					shared  = false
 					disable = false
 
@@ -180,6 +215,7 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 					nodes  = ["{{.NodeName}}"]
 					content = ["backup"]
 
+					preallocation = "{{.Preallocation2}}"
 					shared  = false
 					disable = false
 
