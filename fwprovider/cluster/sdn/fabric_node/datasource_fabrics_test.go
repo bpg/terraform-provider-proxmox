@@ -16,7 +16,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-func TestAccDataSourceSDNFabricOpenFabric(t *testing.T) {
+func TestAccDataSourceSDNFabricNodeOpenFabric(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
@@ -25,7 +25,7 @@ func TestAccDataSourceSDNFabricOpenFabric(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create openfabric fabric and read with datasource", []resource.TestStep{{
+		{"create openfabric fabric node and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_openfabric" "test" {
 					id    = "dstest1"
@@ -72,7 +72,7 @@ func TestAccDataSourceSDNFabricOSPF(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create OSPF fabric and read with datasource", []resource.TestStep{{
+		{"create OSPF fabric node and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_ospf" "test" {
 					id     = "dstest2"

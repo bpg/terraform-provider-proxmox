@@ -110,7 +110,7 @@ func (d *genericFabricDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	// Verify the zone type matches what this datasource expects
+	// Verify the fabric protocol matches what this datasource expects
 	if fabric.Protocol != nil && *fabric.Protocol != d.config.fabricProtocol {
 		resp.Diagnostics.AddError(
 			"SDN Fabric Protocol Mismatch",

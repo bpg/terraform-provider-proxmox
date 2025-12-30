@@ -25,7 +25,7 @@ func TestAccResourceSDNFabricNodeOpenFabric(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create and update fabric nodes", []resource.TestStep{{
+		{"create and update openfabric fabric node", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_openfabric" "fabric_openfabric" {
 				  id  = "fabricS"
