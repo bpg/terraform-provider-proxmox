@@ -8,6 +8,7 @@ package fabric
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -37,10 +38,10 @@ type openFabricModel struct {
 func (m *openFabricModel) fromAPI(name string, data *fabrics.FabricData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPI(name, data, diags)
 
-	m.IPv4Prefix = types.StringPointerValue(data.IPv4Prefix)
-	m.IPv6Prefix = types.StringPointerValue(data.IPv6Prefix)
-	m.CsnpInterval = types.Int64PointerValue(data.CsnpInterval)
-	m.HelloInterval = types.Int64PointerValue(data.HelloInterval)
+	m.IPv4Prefix = m.handleDeletedStringValue(data.IPv4Prefix)
+	m.IPv6Prefix = m.handleDeletedStringValue(data.IPv6Prefix)
+	m.CsnpInterval = m.handleDeletedInt64Value(data.CsnpInterval)
+	m.HelloInterval = m.handleDeletedInt64Value(data.HelloInterval)
 }
 
 func (m *openFabricModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabrics.Fabric {
@@ -52,6 +53,30 @@ func (m *openFabricModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *f
 	data.HelloInterval = m.HelloInterval.ValueInt64Pointer()
 
 	return data
+}
+
+func checkDeletedOpenFabricFields(state, plan *openFabricModel) []string {
+	var toDelete []string
+
+	if plan.IPv4Prefix.IsNull() && !state.IPv4Prefix.IsNull() {
+		toDelete = append(toDelete, "ip_prefix")
+	}
+
+	if plan.IPv6Prefix.IsNull() && !state.IPv6Prefix.IsNull() {
+		toDelete = append(toDelete, "ip6_prefix")
+	}
+
+	if plan.CsnpInterval.IsNull() && !state.CsnpInterval.IsNull() {
+		toDelete = append(toDelete, "csnp_interval")
+	}
+
+	if plan.HelloInterval.IsNull() && !state.HelloInterval.IsNull() {
+		toDelete = append(toDelete, "hello_interval")
+	}
+
+	toDelete = append(toDelete, checkDeletedFields(state.getGenericModel(), plan.getGenericModel())...)
+
+	return toDelete
 }
 
 type OpenFabricResource struct {
@@ -66,6 +91,44 @@ func NewOpenFabricResource() resource.Resource {
 			modelFunc:      func() fabricModel { return &openFabricModel{} },
 		}).(*genericFabricResource),
 	}
+}
+
+func (r *OpenFabricResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan openFabricModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var state openFabricModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	toDelete := checkDeletedOpenFabricFields(&state, &plan)
+
+	updateFabric := plan.toAPI(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	update := &fabrics.FabricUpdate{
+		Fabric: *updateFabric,
+		Delete: toDelete,
+	}
+
+	err := r.client.UpdateFabric(ctx, update)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Updating OpenFabric SDN Fabric",
+			fmt.Sprintf("Could not update OpenFabric SDN Fabric %q: %v", plan.ID.ValueString(), err),
+		)
+		return
+	}
+
+	// Read updated state
+	r.readAndSetState(ctx, plan.ID.ValueString(), &resp.State, &resp.Diagnostics)
 }
 
 func (r *OpenFabricResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {

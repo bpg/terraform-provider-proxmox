@@ -32,8 +32,8 @@ type ospfModel struct {
 func (m *ospfModel) fromAPI(name string, data *fabrics.FabricData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPI(name, data, diags)
 
-	m.Area = types.StringPointerValue(data.Area)
-	m.IPv4Prefix = types.StringPointerValue(data.IPv4Prefix)
+	m.Area = m.handleDeletedStringValue(data.Area)
+	m.IPv4Prefix = m.handleDeletedStringValue(data.IPv4Prefix)
 }
 
 func (m *ospfModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabrics.Fabric {
@@ -43,6 +43,19 @@ func (m *ospfModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabrics
 	data.IPv4Prefix = m.IPv4Prefix.ValueStringPointer()
 
 	return data
+}
+
+func checkDeletedOspfFields(state, plan *ospfModel) []string {
+	var toDelete []string
+
+	if plan.IPv4Prefix.IsNull() && !state.IPv4Prefix.IsNull() {
+		toDelete = append(toDelete, "ip_prefix")
+	}
+	if plan.Area.IsNull() && !state.Area.IsNull() {
+		toDelete = append(toDelete, "area")
+	}
+
+	return toDelete
 }
 
 type OSPFResource struct {
@@ -57,6 +70,43 @@ func NewOSPFResource() resource.Resource {
 			modelFunc:      func() fabricModel { return &ospfModel{} },
 		}).(*genericFabricResource),
 	}
+}
+
+func (r *OSPFResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan ospfModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var state ospfModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	toDelete := checkDeletedOspfFields(&state, &plan)
+	updateFabric := plan.toAPI(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	update := &fabrics.FabricUpdate{
+		Fabric: *updateFabric,
+		Delete: toDelete,
+	}
+
+	err := r.client.UpdateFabric(ctx, update)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Updating OSPF SDN Fabric",
+			err.Error(),
+		)
+
+		return
+	}
+
+	r.readAndSetState(ctx, plan.getID(), &resp.State, &resp.Diagnostics)
 }
 
 func (r *OSPFResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
