@@ -38,6 +38,7 @@ func (m *LVMStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 
 	request.VolumeGroup = m.VolumeGroup.ValueStringPointer()
 	request.WipeRemovedVolumes = proxmox_types.CustomBool(m.WipeRemovedVolumes.ValueBool())
+	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
 
 	return request, nil
 }
@@ -51,6 +52,7 @@ func (m *LVMStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 	}
 
 	request.WipeRemovedVolumes = proxmox_types.CustomBool(m.WipeRemovedVolumes.ValueBool())
+	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
 
 	return request, nil
 }

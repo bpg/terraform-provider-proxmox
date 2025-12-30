@@ -79,12 +79,6 @@ func (m *PBSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 
 	request.Fingerprint = m.Fingerprint.ValueStringPointer()
 
-	if !m.GenerateEncryptionKey.IsNull() && m.GenerateEncryptionKey.ValueBool() {
-		request.Encryption = types.StringValue("autogen").ValueStringPointer()
-	} else if !m.EncryptionKey.IsNull() && m.EncryptionKey.ValueString() != "" {
-		request.Encryption = m.EncryptionKey.ValueStringPointer()
-	}
-
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
 		if err != nil {
