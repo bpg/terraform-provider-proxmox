@@ -32,6 +32,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
 	sdnapplier "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/applier"
 	sdnfabric "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/fabric"
+	sdnfabricnode "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/fabric_node"
 	sdnsubnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/subnet"
 	sdnvnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/vnet"
 	sdnzone "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/zone"
@@ -548,6 +549,8 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		storage.NewCIFSStorageResource,
 		sdnfabric.NewOpenFabricResource,
 		sdnfabric.NewOSPFResource,
+		sdnfabricnode.NewOpenFabricResource,
+		sdnfabricnode.NewOSPFResource,
 		storage.NewDirectoryStorageResource,
 		storage.NewLVMPoolStorageResource,
 		storage.NewLVMThinPoolStorageResource,
@@ -589,6 +592,8 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		sdnzone.NewZonesDataSource,
 		sdnfabric.NewOpenFabricDataSource,
 		sdnfabric.NewOSPFDataSource,
+		sdnfabricnode.NewOpenFabricDataSource,
+		sdnfabricnode.NewOSPFDataSource,
 		vm.NewDataSource,
 	}
 }
