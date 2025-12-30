@@ -1,0 +1,839 @@
+package storage
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"slices"
+	"sort"
+	"strings"
+	"sync"
+	"testing"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+)
+
+type capturedRequest struct {
+	Method   string
+	Path     string
+	BodyKeys []string
+}
+
+func TestClient_Contract_CreateAndUpdateStorage_RequestKeys(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		name string
+
+		storageID   string
+		createReq   any
+		updateReq   any
+		createKeys  []string
+		updateKeys  []string
+		updateNoKey []string
+	}
+
+	const (
+		nodeName = "node-1"
+	)
+
+	nodes := types.CustomCommaSeparatedList{nodeName}
+	contentImages := types.CustomCommaSeparatedList{"images"}
+
+	disableFalse := types.CustomBool(false)
+	sharedFalse := types.CustomBool(false)
+
+	keepDaily := 7
+	maxProtected := types.CustomInt64(5)
+	backups := DataStoreWithBackups{
+		MaxProtectedBackups: &maxProtected,
+		KeepDaily:           &keepDaily,
+	}
+
+	snapshotChain := types.CustomBool(true)
+	preallocation := "metadata"
+	cifsDomain := "WORKGROUP"
+	cifsSubdir := "subdir"
+	pbsFingerprint := "aa:bb"
+	pbsEncryptionKey := "autogen"
+
+	cases := []testCase{
+		{
+			name:      "directory",
+			storageID: "dir-test",
+			createReq: DirectoryStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("dir-test"),
+					Type: ptr("dir"),
+				},
+				DirectoryStorageMutableFields: DirectoryStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					Backups:                backups,
+					Preallocation:          &preallocation,
+					SnapshotsAsVolumeChain: snapshotChain,
+					Shared:                 &sharedFalse,
+				},
+				DirectoryStorageImmutableFields: DirectoryStorageImmutableFields{
+					Path: ptr("/var/lib/vz"),
+				},
+			},
+			updateReq: DirectoryStorageUpdateRequest{
+				DirectoryStorageMutableFields: DirectoryStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					Backups:                backups,
+					Preallocation:          &preallocation,
+					SnapshotsAsVolumeChain: snapshotChain,
+					Shared:                 &sharedFalse,
+				},
+			},
+			createKeys: []string{
+				"content",
+				"disable",
+				"max-protected-backups",
+				"nodes",
+				"path",
+				"preallocation",
+				"prune-backups",
+				"snapshot-as-volume-chain",
+				"shared",
+				"storage",
+				"type",
+			},
+			updateKeys: []string{
+				"content",
+				"disable",
+				"max-protected-backups",
+				"nodes",
+				"preallocation",
+				"prune-backups",
+				"snapshot-as-volume-chain",
+				"shared",
+			},
+			updateNoKey: []string{"path", "storage", "type"},
+		},
+		{
+			name:      "nfs",
+			storageID: "nfs-test",
+			createReq: NFSStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("nfs-test"),
+					Type: ptr("nfs"),
+				},
+				NFSStorageMutableFields: NFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					Backups: backups,
+				},
+				NFSStorageImmutableFields: NFSStorageImmutableFields{
+					Server:                 ptr("127.0.0.1"),
+					Export:                 ptr("/export"),
+					Preallocation:          &preallocation,
+					SnapshotsAsVolumeChain: snapshotChain,
+				},
+			},
+			updateReq: NFSStorageUpdateRequest{
+				NFSStorageMutableFields: NFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					Backups: backups,
+				},
+			},
+			createKeys: []string{
+				"content",
+				"disable",
+				"export",
+				"max-protected-backups",
+				"nodes",
+				"preallocation",
+				"prune-backups",
+				"server",
+				"snapshot-as-volume-chain",
+				"storage",
+				"type",
+			},
+			updateKeys: []string{
+				"content",
+				"disable",
+				"max-protected-backups",
+				"nodes",
+				"prune-backups",
+			},
+			updateNoKey: []string{"export", "preallocation", "server", "snapshot-as-volume-chain", "storage", "type"},
+		},
+		{
+			name:      "cifs",
+			storageID: "cifs-test",
+			createReq: CIFSStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("cifs-test"),
+					Type: ptr("cifs"),
+				},
+				CIFSStorageMutableFields: CIFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					Backups:       backups,
+					Preallocation: &preallocation,
+				},
+				CIFSStorageImmutableFields: CIFSStorageImmutableFields{
+					Server:                 ptr("127.0.0.1"),
+					Username:               ptr("user"),
+					Password:               ptr("pass"),
+					Share:                  ptr("share"),
+					Domain:                 &cifsDomain,
+					Subdirectory:           &cifsSubdir,
+					SnapshotsAsVolumeChain: snapshotChain,
+				},
+			},
+			updateReq: CIFSStorageUpdateRequest{
+				CIFSStorageMutableFields: CIFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					Backups:       backups,
+					Preallocation: &preallocation,
+				},
+			},
+			createKeys: []string{
+				"content",
+				"disable",
+				"domain",
+				"max-protected-backups",
+				"nodes",
+				"password",
+				"preallocation",
+				"prune-backups",
+				"server",
+				"share",
+				"snapshot-as-volume-chain",
+				"storage",
+				"subdir",
+				"type",
+				"username",
+			},
+			updateKeys: []string{
+				"content",
+				"disable",
+				"max-protected-backups",
+				"nodes",
+				"preallocation",
+				"prune-backups",
+			},
+			updateNoKey: []string{"domain", "password", "server", "share", "snapshot-as-volume-chain", "storage", "subdir", "type", "username"},
+		},
+		{
+			name:      "pbs",
+			storageID: "pbs-test",
+			createReq: PBSStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("pbs-test"),
+					Type: ptr("pbs"),
+				},
+				PBSStorageMutableFields: PBSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					Backups:     backups,
+					Fingerprint: &pbsFingerprint,
+					Encryption:  &pbsEncryptionKey,
+				},
+				PBSStorageImmutableFields: PBSStorageImmutableFields{
+					Server:    ptr("127.0.0.1"),
+					Datastore: ptr("ds"),
+				},
+			},
+			updateReq: PBSStorageUpdateRequest{
+				PBSStorageMutableFields: PBSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					Backups:     backups,
+					Fingerprint: &pbsFingerprint,
+				},
+			},
+			createKeys: []string{
+				"content",
+				"datastore",
+				"disable",
+				"encryption-key",
+				"fingerprint",
+				"max-protected-backups",
+				"nodes",
+				"prune-backups",
+				"server",
+				"storage",
+				"type",
+			},
+			updateKeys: []string{
+				"content",
+				"disable",
+				"fingerprint",
+				"max-protected-backups",
+				"nodes",
+				"prune-backups",
+			},
+			updateNoKey: []string{"datastore", "server", "storage", "type"},
+		},
+		{
+			name:      "lvm",
+			storageID: "lvm-test",
+			createReq: LVMStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("lvm-test"),
+					Type: ptr("lvm"),
+				},
+				LVMStorageMutableFields: LVMStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+						Shared:       &sharedFalse,
+					},
+					WipeRemovedVolumes: types.CustomBool(false),
+				},
+				LVMStorageImmutableFields: LVMStorageImmutableFields{
+					VolumeGroup: ptr("vg0"),
+				},
+			},
+			updateReq: LVMStorageUpdateRequest{
+				LVMStorageMutableFields: LVMStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+						Shared:       &sharedFalse,
+					},
+					WipeRemovedVolumes: types.CustomBool(false),
+				},
+			},
+			createKeys: []string{
+				"content",
+				"disable",
+				"nodes",
+				"saferemove",
+				"shared",
+				"storage",
+				"type",
+				"vgname",
+			},
+			updateKeys: []string{
+				"content",
+				"disable",
+				"nodes",
+				"saferemove",
+				"shared",
+			},
+			updateNoKey: []string{"storage", "type", "vgname"},
+		},
+		{
+			name:      "lvmthin",
+			storageID: "lvmthin-test",
+			createReq: LVMThinStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("lvmthin-test"),
+					Type: ptr("lvmthin"),
+				},
+				LVMThinStorageMutableFields: LVMThinStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+						Shared:       &sharedFalse,
+					},
+				},
+				LVMThinStorageImmutableFields: LVMThinStorageImmutableFields{
+					VolumeGroup: ptr("vg0"),
+					ThinPool:    ptr("data"),
+				},
+			},
+			updateReq: LVMThinStorageUpdateRequest{
+				LVMThinStorageMutableFields: LVMThinStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+						Shared:       &sharedFalse,
+					},
+				},
+			},
+			createKeys: []string{
+				"content",
+				"disable",
+				"nodes",
+				"shared",
+				"storage",
+				"thinpool",
+				"type",
+				"vgname",
+			},
+			updateKeys: []string{
+				"content",
+				"disable",
+				"nodes",
+				"shared",
+			},
+			updateNoKey: []string{"storage", "thinpool", "type", "vgname"},
+		},
+		{
+			name:      "zfspool",
+			storageID: "zfs-test",
+			createReq: ZFSStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("zfs-test"),
+					Type: ptr("zfspool"),
+				},
+				ZFSStorageMutableFields: ZFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					ThinProvision: types.CustomBool(true),
+					Blocksize:     ptr("64k"),
+				},
+				ZFSStorageImmutableFields: ZFSStorageImmutableFields{
+					ZFSPool: ptr("rpool/data"),
+				},
+			},
+			updateReq: ZFSStorageUpdateRequest{
+				ZFSStorageMutableFields: ZFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					ThinProvision: types.CustomBool(true),
+					Blocksize:     ptr("64k"),
+				},
+			},
+			createKeys: []string{
+				"blocksize",
+				"content",
+				"disable",
+				"nodes",
+				"pool",
+				"sparse",
+				"storage",
+				"type",
+			},
+			updateKeys: []string{
+				"blocksize",
+				"content",
+				"disable",
+				"nodes",
+				"sparse",
+			},
+			updateNoKey: []string{"pool", "storage", "type"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			server, captures := newStorageContractServer()
+			t.Cleanup(server.Close)
+
+			storageClient := newStorageClientForTest(t, server.URL)
+			ctx := context.Background()
+
+			_, err := storageClient.CreateDatastore(ctx, tc.createReq)
+			if err != nil {
+				t.Fatalf("CreateDatastore returned error: %v", err)
+			}
+
+			if err := storageClient.UpdateDatastore(ctx, tc.storageID, tc.updateReq); err != nil {
+				t.Fatalf("UpdateDatastore returned error: %v", err)
+			}
+
+			got := captures.all()
+			if len(got) != 2 {
+				t.Fatalf("expected 2 requests, got %d", len(got))
+			}
+
+			assertRequest(t, got[0], http.MethodPost, "/api2/json/storage", tc.createKeys, nil)
+			assertRequest(t, got[1], http.MethodPut, "/api2/json/storage/"+tc.storageID, tc.updateKeys, tc.updateNoKey)
+		})
+	}
+}
+
+func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
+	t.Parallel()
+
+	server := newStorageGetContractServer()
+	t.Cleanup(server.Close)
+
+	storageClient := newStorageClientForTest(t, server.URL)
+	ctx := context.Background()
+
+	for _, tc := range []struct {
+		name      string
+		id        string
+		assertion func(got *DatastoreGetResponseData) string
+	}{
+		{
+			name: "nfs",
+			id:   "nfs-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.Server == nil || *got.Server != "127.0.0.1" {
+					return "unexpected server"
+				}
+				if got.Export == nil || *got.Export != "/export" {
+					return "unexpected export"
+				}
+				if got.Preallocation == nil || *got.Preallocation != "metadata" {
+					return "unexpected preallocation"
+				}
+				if got.SnapshotsAsVolumeChain == nil || !bool(*got.SnapshotsAsVolumeChain) {
+					return "unexpected snapshot-as-volume-chain"
+				}
+				return ""
+			},
+		},
+		{
+			name: "cifs",
+			id:   "cifs-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.Domain == nil || *got.Domain != "WORKGROUP" {
+					return "unexpected domain"
+				}
+				if got.SubDirectory == nil || *got.SubDirectory != "subdir" {
+					return "unexpected subdir"
+				}
+				if got.Preallocation == nil || *got.Preallocation != "metadata" {
+					return "unexpected preallocation"
+				}
+				if got.SnapshotsAsVolumeChain == nil || !bool(*got.SnapshotsAsVolumeChain) {
+					return "unexpected snapshot-as-volume-chain"
+				}
+				return ""
+			},
+		},
+		{
+			name: "dir",
+			id:   "dir-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.Path == nil || *got.Path != "/var/lib/vz" {
+					return "unexpected path"
+				}
+				if got.Preallocation == nil || *got.Preallocation != "metadata" {
+					return "unexpected preallocation"
+				}
+				return ""
+			},
+		},
+		{
+			name: "lvm",
+			id:   "lvm-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.VolumeGroup == nil || *got.VolumeGroup != "vg0" {
+					return "unexpected vgname"
+				}
+				if got.WipeRemovedVolumes == nil || bool(*got.WipeRemovedVolumes) {
+					return "unexpected saferemove"
+				}
+				return ""
+			},
+		},
+		{
+			name: "lvmthin",
+			id:   "lvmthin-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.VolumeGroup == nil || *got.VolumeGroup != "vg0" {
+					return "unexpected vgname"
+				}
+				if got.ThinPool == nil || *got.ThinPool != "data" {
+					return "unexpected thinpool"
+				}
+				return ""
+			},
+		},
+		{
+			name: "zfspool",
+			id:   "zfs-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.ZFSPool == nil || *got.ZFSPool != "rpool/data" {
+					return "unexpected pool"
+				}
+				if got.Blocksize == nil || *got.Blocksize != "64k" {
+					return "unexpected blocksize"
+				}
+				if got.ThinProvision == nil || !bool(*got.ThinProvision) {
+					return "unexpected sparse"
+				}
+				return ""
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := storageClient.GetDatastore(ctx, &DatastoreGetRequest{ID: &tc.id})
+			if err != nil {
+				t.Fatalf("GetDatastore returned error: %v", err)
+			}
+
+			if got == nil {
+				t.Fatalf("GetDatastore returned nil data")
+			}
+
+			if msg := tc.assertion(got); msg != "" {
+				t.Fatalf("%s: %#v", msg, got)
+			}
+		})
+	}
+}
+
+type requestCaptures struct {
+	mu  sync.Mutex
+	req []capturedRequest
+}
+
+func (c *requestCaptures) add(r capturedRequest) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.req = append(c.req, r)
+}
+
+func (c *requestCaptures) all() []capturedRequest {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	out := make([]capturedRequest, len(c.req))
+	copy(out, c.req)
+
+	return out
+}
+
+func newStorageContractServer() (*httptest.Server, *requestCaptures) {
+	captures := &requestCaptures{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api2/json/storage", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(captureRequest(r))
+
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		storeID := r.PostFormValue("storage")
+		storeType := r.PostFormValue("type")
+
+		if err := json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{
+				"storage": storeID,
+				"type":    storeType,
+				"config":  map[string]any{},
+			},
+		}); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	})
+
+	mux.HandleFunc("/api2/json/storage/", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(captureRequest(r))
+
+		switch r.Method {
+		case http.MethodPut, http.MethodDelete, http.MethodGet:
+			w.WriteHeader(http.StatusOK)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	return httptest.NewTLSServer(mux), captures
+}
+
+func captureRequest(r *http.Request) capturedRequest {
+	cr := capturedRequest{
+		Method: r.Method,
+		Path:   r.URL.Path,
+	}
+
+	if r.Method == http.MethodPost || r.Method == http.MethodPut {
+		if err := r.ParseForm(); err == nil {
+			for k := range r.PostForm {
+				cr.BodyKeys = append(cr.BodyKeys, k)
+			}
+		}
+
+		sort.Strings(cr.BodyKeys)
+	}
+
+	return cr
+}
+
+func newStorageGetContractServer() *httptest.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api2/json/storage/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		id := strings.TrimPrefix(r.URL.Path, "/api2/json/storage/")
+		if id == "" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		base := map[string]any{
+			"storage":       id,
+			"nodes":         "node-1",
+			"content":       "images",
+			"disable":       0,
+			"shared":        0,
+			"type":          "dir",
+			"preallocation": "metadata",
+		}
+
+		switch id {
+		case "nfs-get":
+			base["type"] = "nfs"
+			base["server"] = "127.0.0.1"
+			base["export"] = "/export"
+			base["snapshot-as-volume-chain"] = 1
+		case "cifs-get":
+			base["type"] = "cifs"
+			base["server"] = "127.0.0.1"
+			base["share"] = "share"
+			base["domain"] = "WORKGROUP"
+			base["subdir"] = "subdir"
+			base["snapshot-as-volume-chain"] = 1
+		case "dir-get":
+			base["type"] = "dir"
+			base["path"] = "/var/lib/vz"
+		case "lvm-get":
+			base["type"] = "lvm"
+			base["vgname"] = "vg0"
+			base["saferemove"] = 0
+		case "lvmthin-get":
+			base["type"] = "lvmthin"
+			base["vgname"] = "vg0"
+			base["thinpool"] = "data"
+		case "zfs-get":
+			base["type"] = "zfspool"
+			base["pool"] = "rpool/data"
+			base["sparse"] = 1
+			base["blocksize"] = "64k"
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(map[string]any{"data": base}); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	})
+
+	mux.HandleFunc("/api2/json/storage", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	return httptest.NewTLSServer(mux)
+}
+
+func newStorageClientForTest(t *testing.T, endpoint string) *Client {
+	t.Helper()
+
+	conn, err := api.NewConnection(endpoint, true, "1.2")
+	if err != nil {
+		t.Fatalf("NewConnection returned error: %v", err)
+	}
+
+	creds, err := api.NewCredentials("", "", "", "user@pve!token=abcd", "", "")
+	if err != nil {
+		t.Fatalf("NewCredentials returned error: %v", err)
+	}
+
+	c, err := api.NewClient(creds, conn)
+	if err != nil {
+		t.Fatalf("NewClient returned error: %v", err)
+	}
+
+	return &Client{Client: c}
+}
+
+func assertRequest(
+	t *testing.T,
+	got capturedRequest,
+	wantMethod string,
+	wantPath string,
+	wantKeys []string,
+	wantNoKeys []string,
+) {
+	t.Helper()
+
+	if got.Method != wantMethod {
+		t.Fatalf("unexpected method: got %q want %q", got.Method, wantMethod)
+	}
+
+	if got.Path != wantPath {
+		t.Fatalf("unexpected path: got %q want %q", got.Path, wantPath)
+	}
+
+	assertKeysPresent(t, got.BodyKeys, wantKeys)
+	assertKeysAbsent(t, got.BodyKeys, wantNoKeys)
+}
+
+func assertKeysPresent(t *testing.T, gotKeys []string, wantKeys []string) {
+	t.Helper()
+
+	for _, want := range wantKeys {
+		if !containsString(gotKeys, want) {
+			t.Fatalf("missing key %q in request body keys: %v", want, gotKeys)
+		}
+	}
+}
+
+func assertKeysAbsent(t *testing.T, gotKeys []string, wantNoKeys []string) {
+	t.Helper()
+
+	for _, want := range wantNoKeys {
+		if containsString(gotKeys, want) {
+			t.Fatalf("unexpected key %q in request body keys: %v", want, gotKeys)
+		}
+	}
+}
+
+func containsString(haystack []string, needle string) bool {
+	return slices.Contains(haystack, needle)
+}
+
+func ptr(s string) *string {
+	v := strings.Clone(s)
+	return &v
+}
