@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package types
 
 import (
@@ -126,5 +132,3 @@ func TestCustomInt_UnmarshalJSON_NullPointer(t *testing.T) {
 		t.Fatalf("expected nil count pointer when JSON is null")
 	}
 }
-
-// Note: intentionally scoped to only CustomInt and CustomInt64 UnmarshalJSON tests, aligned with Proxmox API numeric formats.
