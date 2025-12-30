@@ -43,6 +43,7 @@ resource "proxmox_virtual_environment_storage_pbs" "example" {
 
 ### Optional
 
+- `backups` (Block, Optional) Configure backup retention settings for the storage type. (see [below for nested schema](#nestedblock--backups))
 - `content` (Set of String) The content types that can be stored on this storage.
 - `disable` (Boolean) Whether the storage is disabled.
 - `encryption_key` (String, Sensitive) An existing encryption key for the datastore. This is a sensitive value. Conflicts with `generate_encryption_key`.
@@ -56,3 +57,17 @@ resource "proxmox_virtual_environment_storage_pbs" "example" {
 - `encryption_key_fingerprint` (String) The SHA256 fingerprint of the encryption key currently in use.
 - `generated_encryption_key` (String, Sensitive) The encryption key returned by Proxmox when `generate_encryption_key` is true.
 - `shared` (Boolean) Whether the storage is shared across all nodes.
+
+<a id="nestedblock--backups"></a>
+### Nested Schema for `backups`
+
+Optional:
+
+- `keep_all` (Boolean) Specifies if all backups should be kept, regardless of their age. When set to true, other keep_* attributes must not be set.
+- `keep_daily` (Number) The number of daily backups to keep. Older backups will be removed.
+- `keep_hourly` (Number) The number of hourly backups to keep. Older backups will be removed.
+- `keep_last` (Number) Specifies the number of the most recent backups to keep, regardless of their age.
+- `keep_monthly` (Number) The number of monthly backups to keep. Older backups will be removed.
+- `keep_weekly` (Number) The number of weekly backups to keep. Older backups will be removed.
+- `keep_yearly` (Number) The number of yearly backups to keep. Older backups will be removed.
+- `max_protected_backups` (Number) The maximum number of protected backups per guest. Use '-1' for unlimited.

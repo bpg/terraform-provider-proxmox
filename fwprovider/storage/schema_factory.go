@@ -127,11 +127,15 @@ func (s *StorageSchemaFactory) WithBackupBlock() *StorageSchemaFactory {
 					},
 				},
 				"keep_all": schema.BoolAttribute{
-					Description: "Specifies if all backups should be kept, regardless of their age.",
-					Optional:    true,
-					Computed:    true,
-					Default:     booldefault.StaticBool(false),
+					Description: "Specifies if all backups should be kept, regardless of their age. " +
+						"When set to true, other keep_* attributes must not be set.",
+					Optional: true,
+					Computed: true,
+					Default:  booldefault.StaticBool(false),
 				},
+			},
+			Validators: []validator.Object{
+				backupsKeepAllExcludesOtherKeepSettingsValidator{},
 			},
 			Description: "Configure backup retention settings for the storage type.",
 		},

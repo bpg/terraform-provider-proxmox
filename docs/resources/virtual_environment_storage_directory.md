@@ -52,7 +52,7 @@ resource "proxmox_virtual_environment_storage_directory" "example" {
 
 Optional:
 
-- `keep_all` (Boolean) Specifies if all backups should be kept, regardless of their age.
+- `keep_all` (Boolean) Specifies if all backups should be kept, regardless of their age. When set to true, other keep_* attributes must not be set.
 - `keep_daily` (Number) The number of daily backups to keep. Older backups will be removed.
 - `keep_hourly` (Number) The number of hourly backups to keep. Older backups will be removed.
 - `keep_last` (Number) Specifies the number of the most recent backups to keep, regardless of their age.

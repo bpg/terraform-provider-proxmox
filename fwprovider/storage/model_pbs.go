@@ -27,6 +27,7 @@ type PBSStorageModel struct {
 	EncryptionKeyFingerprint types.String `tfsdk:"encryption_key_fingerprint"`
 	GenerateEncryptionKey    types.Bool   `tfsdk:"generate_encryption_key"`
 	GeneratedEncryptionKey   types.String `tfsdk:"generated_encryption_key"`
+	Backups                  *BackupModel `tfsdk:"backups"`
 }
 
 // GetStorageType returns the storage type identifier.
@@ -56,6 +57,15 @@ func (m *PBSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 		request.Encryption = m.EncryptionKey.ValueStringPointer()
 	}
 
+	if m.Backups != nil {
+		backups, err := m.Backups.toAPI()
+		if err != nil {
+			return nil, err
+		}
+
+		request.Backups = backups
+	}
+
 	return request, nil
 }
 
@@ -73,6 +83,15 @@ func (m *PBSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 		request.Encryption = types.StringValue("autogen").ValueStringPointer()
 	} else if !m.EncryptionKey.IsNull() && m.EncryptionKey.ValueString() != "" {
 		request.Encryption = m.EncryptionKey.ValueStringPointer()
+	}
+
+	if m.Backups != nil {
+		backups, err := m.Backups.toAPI()
+		if err != nil {
+			return nil, err
+		}
+
+		request.Backups = backups
 	}
 
 	return request, nil
@@ -107,6 +126,18 @@ func (m *PBSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 
 	if datastore.Shared != nil {
 		m.Shared = types.BoolValue(*datastore.Shared.PointerBool())
+	}
+
+	if datastore.MaxProtectedBackups != nil || (datastore.PruneBackups != nil && *datastore.PruneBackups != "") {
+		if m.Backups == nil {
+			m.Backups = &BackupModel{}
+		}
+
+		if err := m.Backups.fromAPI(datastore.MaxProtectedBackups, datastore.PruneBackups); err != nil {
+			return err
+		}
+	} else {
+		m.Backups = nil
 	}
 
 	return nil

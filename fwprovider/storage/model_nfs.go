@@ -23,6 +23,7 @@ type NFSStorageModel struct {
 	Options                types.String `tfsdk:"options"`
 	Preallocation          types.String `tfsdk:"preallocation"`
 	SnapshotsAsVolumeChain types.Bool   `tfsdk:"snapshot_as_volume_chain"`
+	Backups                *BackupModel `tfsdk:"backups"`
 }
 
 func (m *NFSStorageModel) GetStorageType() types.String {
@@ -43,6 +44,15 @@ func (m *NFSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	request.Preallocation = m.Preallocation.ValueStringPointer()
 	request.SnapshotsAsVolumeChain = proxmox_types.CustomBool(m.SnapshotsAsVolumeChain.ValueBool())
 
+	if m.Backups != nil {
+		backups, err := m.Backups.toAPI()
+		if err != nil {
+			return nil, err
+		}
+
+		request.Backups = backups
+	}
+
 	return request, nil
 }
 
@@ -54,6 +64,15 @@ func (m *NFSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 	}
 
 	request.Options = m.Options.ValueStringPointer()
+
+	if m.Backups != nil {
+		backups, err := m.Backups.toAPI()
+		if err != nil {
+			return nil, err
+		}
+
+		request.Backups = backups
+	}
 
 	return request, nil
 }
@@ -81,6 +100,18 @@ func (m *NFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 
 	if datastore.SnapshotsAsVolumeChain != nil {
 		m.SnapshotsAsVolumeChain = types.BoolValue(*datastore.SnapshotsAsVolumeChain.PointerBool())
+	}
+
+	if datastore.MaxProtectedBackups != nil || (datastore.PruneBackups != nil && *datastore.PruneBackups != "") {
+		if m.Backups == nil {
+			m.Backups = &BackupModel{}
+		}
+
+		if err := m.Backups.fromAPI(datastore.MaxProtectedBackups, datastore.PruneBackups); err != nil {
+			return err
+		}
+	} else {
+		m.Backups = nil
 	}
 
 	return nil

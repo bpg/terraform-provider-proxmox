@@ -10,6 +10,7 @@ package test
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -115,6 +116,84 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 						"content.#":                     "1",
 						"backups.max_protected_backups": "5",
 						"backups.keep_daily":            "7",
+					}),
+					resource.TestCheckTypeSetElemAttr(
+						"proxmox_virtual_environment_storage_directory.test",
+						"content.*",
+						"backup",
+					),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_storage_directory" "test" {
+					id     = "{{.StorageID}}"
+					path   = "{{.DirPath}}"
+					nodes  = ["{{.NodeName}}"]
+					content = ["backup"]
+
+					shared  = false
+					disable = false
+
+					backups {
+						max_protected_backups = 5
+						keep_all              = true
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_storage_directory.test", map[string]string{
+						"disable":                       "false",
+						"content.#":                     "1",
+						"backups.max_protected_backups": "5",
+						"backups.keep_all":              "true",
+					}),
+					resource.TestCheckTypeSetElemAttr(
+						"proxmox_virtual_environment_storage_directory.test",
+						"content.*",
+						"backup",
+					),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_storage_directory" "test" {
+					id     = "{{.StorageID}}"
+					path   = "{{.DirPath}}"
+					nodes  = ["{{.NodeName}}"]
+					content = ["backup"]
+
+					shared  = false
+					disable = false
+
+					backups {
+						keep_all   = true
+						keep_daily = 7
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`(?s)invalid backup retention settings|keep_all.*keep_`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_storage_directory" "test" {
+					id     = "{{.StorageID}}"
+					path   = "{{.DirPath}}"
+					nodes  = ["{{.NodeName}}"]
+					content = ["backup"]
+
+					shared  = false
+					disable = false
+
+					backups {
+						max_protected_backups = 5
+						keep_all              = true
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_storage_directory.test", map[string]string{
+						"disable":                       "false",
+						"content.#":                     "1",
+						"backups.max_protected_backups": "5",
+						"backups.keep_all":              "true",
 					}),
 					resource.TestCheckTypeSetElemAttr(
 						"proxmox_virtual_environment_storage_directory.test",

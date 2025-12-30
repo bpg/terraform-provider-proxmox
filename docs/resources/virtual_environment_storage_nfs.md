@@ -45,6 +45,7 @@ resource "proxmox_virtual_environment_storage_nfs" "example" {
 
 ### Optional
 
+- `backups` (Block, Optional) Configure backup retention settings for the storage type. (see [below for nested schema](#nestedblock--backups))
 - `content` (Set of String) The content types that can be stored on this storage.
 - `disable` (Boolean) Whether the storage is disabled.
 - `nodes` (Set of String) A list of nodes where this storage is available.
@@ -55,3 +56,17 @@ resource "proxmox_virtual_environment_storage_nfs" "example" {
 ### Read-Only
 
 - `shared` (Boolean) Whether the storage is shared across all nodes.
+
+<a id="nestedblock--backups"></a>
+### Nested Schema for `backups`
+
+Optional:
+
+- `keep_all` (Boolean) Specifies if all backups should be kept, regardless of their age. When set to true, other keep_* attributes must not be set.
+- `keep_daily` (Number) The number of daily backups to keep. Older backups will be removed.
+- `keep_hourly` (Number) The number of hourly backups to keep. Older backups will be removed.
+- `keep_last` (Number) Specifies the number of the most recent backups to keep, regardless of their age.
+- `keep_monthly` (Number) The number of monthly backups to keep. Older backups will be removed.
+- `keep_weekly` (Number) The number of weekly backups to keep. Older backups will be removed.
+- `keep_yearly` (Number) The number of yearly backups to keep. Older backups will be removed.
+- `max_protected_backups` (Number) The maximum number of protected backups per guest. Use '-1' for unlimited.
