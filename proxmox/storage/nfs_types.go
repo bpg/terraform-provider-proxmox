@@ -16,7 +16,7 @@ type NFSStorageImmutableFields struct {
 	Server                 *string          `json:"server,omitempty"                   url:"server,omitempty"`
 	Export                 *string          `json:"export,omitempty"                   url:"export,omitempty"`
 	Preallocation          *string          `json:"preallocation,omitempty"            url:"preallocation,omitempty"`
-	SnapshotsAsVolumeChain types.CustomBool `json:"snapshot-as-volume-chain,omitempty" url:"snapshot-as-volume-chain,omitempty"`
+	SnapshotsAsVolumeChain types.CustomBool `json:"snapshot-as-volume-chain,omitempty" url:"snapshot-as-volume-chain,omitempty,int"`
 }
 
 // NFSStorageCreateRequest defines the request body for creating a new NFS storage.

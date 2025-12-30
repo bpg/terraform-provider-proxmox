@@ -18,7 +18,7 @@ type CIFSStorageImmutableFields struct {
 	Share                  *string          `json:"share"                              url:"share"`
 	Domain                 *string          `json:"domain,omitempty"                   url:"domain,omitempty"`
 	Subdirectory           *string          `json:"subdir,omitempty"                   url:"subdir,omitempty"`
-	SnapshotsAsVolumeChain types.CustomBool `json:"snapshot-as-volume-chain,omitempty" url:"snapshot-as-volume-chain,omitempty"`
+	SnapshotsAsVolumeChain types.CustomBool `json:"snapshot-as-volume-chain,omitempty" url:"snapshot-as-volume-chain,omitempty,int"`
 }
 
 // CIFSStorageCreateRequest defines the request body for creating a new SMB/CIFS storage.

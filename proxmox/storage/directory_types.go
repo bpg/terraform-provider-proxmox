@@ -9,7 +9,7 @@ type DirectoryStorageMutableFields struct {
 	Backups DataStoreWithBackups `json:"-" url:"backups,omitempty"`
 
 	Preallocation          *string           `json:"preallocation,omitempty"            url:"preallocation,omitempty"`
-	SnapshotsAsVolumeChain types.CustomBool  `json:"snapshot-as-volume-chain,omitempty" url:"snapshot-as-volume-chain,omitempty"`
+	SnapshotsAsVolumeChain types.CustomBool  `json:"snapshot-as-volume-chain,omitempty" url:"snapshot-as-volume-chain,omitempty,int"`
 	Shared                 *types.CustomBool `json:"shared,omitempty"                   url:"shared,omitempty,int"`
 }
 
