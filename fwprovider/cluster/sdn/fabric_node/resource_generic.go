@@ -317,16 +317,26 @@ func (r *genericFabricNodeResource) Delete(ctx context.Context, req resource.Del
 }
 
 func (r *genericFabricNodeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	client := r.client.SDNFabricNodes("", r.config.fabricProtocol)
-	fabricNode, err := client.GetFabricNode(ctx, req.ID)
+	parts := strings.SplitN(req.ID, "/", 2)
+	if len(parts) != 2 {
+		resp.Diagnostics.AddError(
+			"Unexpected SDN Fabric Node ID Format",
+			fmt.Sprintf("Expected SDN Fabric Node ID to be in the format <fabric_id>/<node_id>, got: %s", req.ID),
+		)
+
+		return
+	}
+	fabricID := parts[0]
+	nodeID := parts[1]
+	client := r.client.SDNFabricNodes(fabricID, r.config.fabricProtocol)
+	fabricNode, err := client.GetFabricNode(ctx, nodeID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			resp.Diagnostics.AddError(fmt.Sprintf("Fabric %s does not exist", req.ID), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("Fabric node %s does not exist", req.ID), err.Error())
 			return
 		}
 
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN Fabric %s", req.ID), err.Error())
-
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN Fabric node %s", req.ID), err.Error())
 		return
 	}
 
