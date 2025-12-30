@@ -11,7 +11,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -65,7 +64,6 @@ func (r *zfsPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequ
 		"shared": schema.BoolAttribute{
 			Description: "Whether the storage is shared across all nodes.",
 			Computed:    true,
-			Default:     booldefault.StaticBool(false),
 		},
 	}
 	factory := NewStorageSchemaFactory()

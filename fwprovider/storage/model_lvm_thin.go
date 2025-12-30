@@ -10,7 +10,6 @@ import (
 	"context"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -38,7 +37,6 @@ func (m *LVMThinStorageModel) toCreateAPIRequest(ctx context.Context) (any, erro
 
 	request.VolumeGroup = m.VolumeGroup.ValueStringPointer()
 	request.ThinPool = m.ThinPool.ValueStringPointer()
-	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
 
 	return request, nil
 }
@@ -50,8 +48,6 @@ func (m *LVMThinStorageModel) toUpdateAPIRequest(ctx context.Context) (any, erro
 	if err := m.populateUpdateFields(ctx, &request.DataStoreCommonMutableFields); err != nil {
 		return nil, err
 	}
-
-	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
 
 	return request, nil
 }

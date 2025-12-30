@@ -21,7 +21,6 @@ resource "proxmox_virtual_environment_storage_nfs" "example" {
   export = "/exports/proxmox"
 
   content = ["images", "iso", "backup"]
-  shared  = true
 
   options                  = "vers=4.2"
   preallocation            = "metadata"

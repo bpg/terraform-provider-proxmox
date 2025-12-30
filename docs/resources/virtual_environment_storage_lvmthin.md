@@ -39,4 +39,7 @@ resource "proxmox_virtual_environment_storage_lvmthin" "example" {
 - `content` (Set of String) The content types that can be stored on this storage.
 - `disable` (Boolean) Whether the storage is disabled.
 - `nodes` (Set of String) A list of nodes where this storage is available.
+
+### Read-Only
+
 - `shared` (Boolean) Whether the storage is shared across all nodes.

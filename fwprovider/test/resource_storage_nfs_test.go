@@ -98,6 +98,24 @@ func TestAccResourceStorageNFS(t *testing.T) {
 				),
 			},
 			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_storage_nfs" "test" {
+					id     = "{{.StorageID}}"
+					server = "{{.NFSServer}}"
+					export = "{{.NFSExport}}"
+
+					nodes   = ["{{.NodeName}}"]
+					content = ["images"]
+					disable = false
+
+					shared  = true
+					options  = "{{.Options1}}"
+					preallocation           = "{{.Preallocation}}"
+					snapshot_as_volume_chain = {{.SnapshotAsVolumeChain}}
+				}`),
+				ExpectError: regexp.MustCompile(`(?i)(read.?only|cannot be set|shared)`),
+			},
+			{
 				// both preallocation and snapshot_as_volume_chain are replace-only: ensure plan marks replacement
 				PlanOnly: true,
 				// PlanOnly can't use ConfigPlanChecks.PreApply, so use ExpectNonEmptyPlan for a stable assertion.
