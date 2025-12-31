@@ -15,8 +15,6 @@ import (
 )
 
 func TestAccDataSourceSDNFabricOpenFabric(t *testing.T) {
-	t.Parallel()
-
 	te := InitEnvironment(t)
 
 	tests := []struct {
@@ -54,8 +52,6 @@ func TestAccDataSourceSDNFabricOpenFabric(t *testing.T) {
 }
 
 func TestAccDataSourceSDNFabricOSPF(t *testing.T) {
-	t.Parallel()
-
 	te := InitEnvironment(t)
 
 	tests := []struct {
