@@ -197,9 +197,9 @@ func TestDiskDevicesEqual(t *testing.T) {
 
 	// Test nil cases
 	var nilDisk *vms.CustomStorageDevice
-	require.False(t, nilDisk.Equals(nil))
-	require.False(t, nilDisk.Equals(&vms.CustomStorageDevice{}))
-	require.False(t, (&vms.CustomStorageDevice{}).Equals(nil))
+	require.False(t, nilDisk.Equals(nil))                        //nolint:GoDfaNilDereference // verifying nil receiver handling
+	require.False(t, nilDisk.Equals(&vms.CustomStorageDevice{})) //nolint:GoDfaNilDereference // verifying nil receiver handling
+	require.False(t, (&vms.CustomStorageDevice{}).Equals(nil))   //nolint:GoDfaNilDereference // verifying nil receiver handling
 
 	// Create identical disks
 	aio1 := "io_uring"
@@ -627,7 +627,7 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 
 	// Simulate the deletion detection logic that should happen in vmUpdate
 	// This is what should identify the disk for deletion
-	deletedInterfaces := []string{}
+	var deletedInterfaces []string
 
 	for oldIface := range oldDiskDevices {
 		if _, present := newDiskDevices[oldIface]; !present {
@@ -699,7 +699,7 @@ func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
 		},
 	}
 
-	deletedInterfaces := []string{}
+	var deletedInterfaces []string
 	bootDiskInDeletion := false
 
 	for currentInterface := range currentDisks {

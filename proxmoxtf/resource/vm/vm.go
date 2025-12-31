@@ -2059,7 +2059,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	scsiHardware := d.Get(mkSCSIHardware).(string)
 	serialDevice := d.Get(mkSerialDevice).([]any)
 	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
+	template := d.Get(mkTemplate).(bool)
 	vga := d.Get(mkVGA).([]any)
 	virtiofs := d.Get(mkVirtiofs).([]any)
 	watchdog := d.Get(mkWatchdog).([]any)
@@ -5440,7 +5440,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		rebootRequired = true
 	}
 
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
+	template := d.Get(mkTemplate).(bool)
 
 	// Prepare the new agent configuration.
 	if d.HasChange(mkAgent) {
@@ -5596,14 +5596,14 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA, false)
 
 		coresOrSocketsIncreased := (cpuCores > oldCPUCores) || (cpuSockets > oldCPUSockets)
-		noNonHotpluggableChanges := (cpuCores >= oldCPUCores && cpuSockets >= oldCPUSockets &&
+		noNonHotpluggableChanges := cpuCores >= oldCPUCores && cpuSockets >= oldCPUSockets &&
 			cpuType == oldCPUType && cpuArchitecture == oldCPUArchitecture &&
 			bool(cpuNUMA) == oldCPUNUMA &&
 			!d.HasChange(mkCPU+".0."+mkCPUFlags) &&
 			!d.HasChange(mkCPU+".0."+mkCPUAffinity) &&
 			!d.HasChange(mkCPU+".0."+mkCPUHotplugged) &&
 			!d.HasChange(mkCPU+".0."+mkCPULimit) &&
-			!d.HasChange(mkCPU+".0."+mkCPUUnits))
+			!d.HasChange(mkCPU+".0."+mkCPUUnits)
 
 		onlyHotpluggableChange := coresOrSocketsIncreased && noNonHotpluggableChanges
 
@@ -5881,11 +5881,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		memoryIncreased := (memoryDedicated > oldMemoryDedicated) ||
 			(memoryFloating > oldMemoryFloating) ||
 			(memoryShared > oldMemoryShared)
-		noNonHotpluggableChanges := (memoryDedicated >= oldMemoryDedicated &&
+		noNonHotpluggableChanges := memoryDedicated >= oldMemoryDedicated &&
 			memoryFloating >= oldMemoryFloating &&
 			memoryShared >= oldMemoryShared &&
 			!d.HasChange(mkMemory+".0."+mkMemoryHugepages) &&
-			!d.HasChange(mkMemory+".0."+mkMemoryKeepHugepages))
+			!d.HasChange(mkMemory+".0."+mkMemoryKeepHugepages)
 
 		onlyHotpluggableChange := memoryIncreased && noNonHotpluggableChanges
 
@@ -6096,7 +6096,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	// Determine if the state of the virtual machine state needs to be changed.
 	//nolint: nestif
-	if (d.HasChange(mkStarted) || stoppedBeforeUpdate) && !bool(template) {
+	if (d.HasChange(mkStarted) || stoppedBeforeUpdate) && !template {
 		started := d.Get(mkStarted).(bool)
 		if started {
 			if diags := vmStart(ctx, vmAPI, d); diags != nil {
@@ -6122,7 +6122,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		ctx,
 		d,
 		m,
-		!bool(template) && rebootRequired,
+		!template && rebootRequired,
 	)
 }
 

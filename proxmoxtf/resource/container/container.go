@@ -1489,10 +1489,11 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		updateBody.Tags = &tagString
 	}
 
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
+	template := d.Get(mkTemplate).(bool)
+	templateAttr := types.CustomBool(template)
 
 	if template {
-		updateBody.Template = &template
+		updateBody.Template = &templateAttr
 	}
 
 	err = containerAPI.UpdateContainer(ctx, updateBody)
@@ -1792,7 +1793,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	var rootFS *containers.CustomRootFS
 
-	diskMountOptions := []string{}
+	var diskMountOptions []string
 
 	if diskBlock[mkDiskMountOptions] != nil {
 		for _, opt := range diskBlock[mkDiskMountOptions].([]any) {
@@ -2979,7 +2980,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.Description = &description
 	}
 
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
+	templateBool := d.Get(mkTemplate).(bool)
+	template := types.CustomBool(templateBool)
 
 	if d.HasChange(mkTemplate) {
 		updateBody.Template = &template
@@ -3482,7 +3484,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	// Determine if the state of the container needs to be changed.
 	started := d.Get(mkStarted).(bool)
 
-	if d.HasChange(mkStarted) && !bool(template) {
+	if d.HasChange(mkStarted) && !templateBool {
 		if started {
 			e = containerAPI.StartContainer(ctx)
 			if e != nil {
@@ -3515,7 +3517,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	// As a final step in the update procedure, we might need to reboot the container.
-	if !bool(template) && started && rebootRequired {
+	if !templateBool && started && rebootRequired {
 		rebootTimeout := 300
 
 		e = containerAPI.RebootContainer(
