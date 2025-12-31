@@ -35,8 +35,8 @@ func NewOpenFabricDataSource() datasource.DataSource {
 
 func (d *OpenFabricDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:         "OpenFabric Fabric in Proxmox SDN.",
-		MarkdownDescription: "OpenFabric Fabric in Proxmox SDN.",
+		Description:         "OpenFabric Fabric in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
+		MarkdownDescription: "OpenFabric Fabric in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
 		Attributes: genericDataSourceAttributesWith(map[string]schema.Attribute{
 			"ip_prefix": schema.StringAttribute{
 				Description: "IPv4 prefix cidr for the fabric.",

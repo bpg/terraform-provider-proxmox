@@ -133,8 +133,8 @@ func (r *OpenFabricResource) Update(ctx context.Context, req resource.UpdateRequ
 
 func (r *OpenFabricResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:         "OpenFabric Fabric in Proxmox SDN.",
-		MarkdownDescription: "OpenFabric Fabric in Proxmox SDN.",
+		Description:         "OpenFabric Fabric in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
+		MarkdownDescription: "OpenFabric Fabric in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
 		Attributes: genericAttributesWith(map[string]schema.Attribute{
 			"ip_prefix": schema.StringAttribute{
 				Description: "IPv4 prefix cidr for the fabric.",

@@ -111,8 +111,8 @@ func (r *OSPFResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 func (r *OSPFResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:         "OSPF Fabric in Proxmox SDN.",
-		MarkdownDescription: "OSPF Fabric in Proxmox SDN.",
+		Description:         "OSPF Fabric in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
+		MarkdownDescription: "OSPF Fabric in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
 		Attributes: genericAttributesWith(map[string]schema.Attribute{
 			"area": schema.StringAttribute{
 				Description: "OSPF area. Either a IPv4 address or a 32-bit number. Gets validated in rust.",

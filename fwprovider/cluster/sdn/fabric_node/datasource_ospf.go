@@ -35,8 +35,8 @@ func NewOSPFDataSource() datasource.DataSource {
 
 func (d *OSPFDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:         "OSPF Fabric Node in Proxmox SDN.",
-		MarkdownDescription: "OSPF Fabric Node in Proxmox SDN.",
+		Description:         "OSPF Fabric Node in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
+		MarkdownDescription: "OSPF Fabric Node in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
 		Attributes: genericDataSourceAttributesWith(map[string]schema.Attribute{
 			"ip": schema.StringAttribute{
 				Description: "IPv4 address for the fabric node.",

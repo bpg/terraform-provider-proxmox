@@ -78,10 +78,10 @@ func TestAccResourceSDNFabricOpenFabric(t *testing.T) {
 					"ip6_prefix",
 				}),
 			),
-			ResourceName: "proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric",
-			// ImportStateId:     "fabricS",
-			// ImportState:       true,
-			// ImportStateVerify: true,
+			ResourceName:      "proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric",
+			ImportStateId:     "fabricS",
+			ImportState:       true,
+			ImportStateVerify: true,
 		}}},
 	}
 
