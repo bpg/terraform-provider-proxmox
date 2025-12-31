@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -46,12 +46,12 @@ func (m *BackupModel) toAPI() (storage.DataStoreWithBackups, error) {
 	}
 
 	if !m.MaxProtectedBackups.IsNull() && !m.MaxProtectedBackups.IsUnknown() {
-		v := proxmox_types.CustomInt64(m.MaxProtectedBackups.ValueInt64())
+		v := proxmoxtypes.CustomInt64(m.MaxProtectedBackups.ValueInt64())
 		backups.MaxProtectedBackups = &v
 	}
 
 	if !m.KeepAll.IsNull() && !m.KeepAll.IsUnknown() && m.KeepAll.ValueBool() {
-		v := proxmox_types.CustomBool(true)
+		v := proxmoxtypes.CustomBool(true)
 		backups.KeepAll = &v
 	}
 
@@ -107,7 +107,7 @@ func (m *BackupModel) toAPI() (storage.DataStoreWithBackups, error) {
 }
 
 // fromAPI populates BackupModel from API response fields.
-func (m *BackupModel) fromAPI(maxProtectedBackups *proxmox_types.CustomInt64, pruneBackups *string) error {
+func (m *BackupModel) fromAPI(maxProtectedBackups *proxmoxtypes.CustomInt64, pruneBackups *string) error {
 	if maxProtectedBackups != nil {
 		m.MaxProtectedBackups = types.Int64Value(int64(*maxProtectedBackups))
 	} else {

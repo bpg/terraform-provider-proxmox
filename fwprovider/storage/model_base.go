@@ -11,7 +11,7 @@ import (
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -78,10 +78,10 @@ func (m *StorageModelBase) populateCreateFields(
 	mutableReq *storage.DataStoreCommonMutableFields,
 ) error {
 	immutableReq.ID = m.ID.ValueStringPointer()
-	mutableReq.Disable = proxmox_types.CustomBoolPtr(m.Disable.ValueBoolPointer())
+	mutableReq.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
 
 	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
-		var nodes proxmox_types.CustomCommaSeparatedList
+		var nodes proxmoxtypes.CustomCommaSeparatedList
 		if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
 			return fmt.Errorf("cannot convert nodes: %s", diags)
 		}
@@ -92,7 +92,7 @@ func (m *StorageModelBase) populateCreateFields(
 	}
 
 	if !m.ContentTypes.IsNull() && !m.ContentTypes.IsUnknown() {
-		var contentTypes proxmox_types.CustomCommaSeparatedList
+		var contentTypes proxmoxtypes.CustomCommaSeparatedList
 		if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
 			return fmt.Errorf("cannot convert content-types: %s", diags)
 		}
@@ -107,10 +107,10 @@ func (m *StorageModelBase) populateCreateFields(
 
 // populateUpdateFields is a helper to populate the common fields for an update request.
 func (m *StorageModelBase) populateUpdateFields(ctx context.Context, mutableReq *storage.DataStoreCommonMutableFields) error {
-	mutableReq.Disable = proxmox_types.CustomBoolPtr(m.Disable.ValueBoolPointer())
+	mutableReq.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
 
 	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
-		var nodes proxmox_types.CustomCommaSeparatedList
+		var nodes proxmoxtypes.CustomCommaSeparatedList
 		if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
 			return fmt.Errorf("cannot convert nodes: %s", diags)
 		}
@@ -121,7 +121,7 @@ func (m *StorageModelBase) populateUpdateFields(ctx context.Context, mutableReq 
 	}
 
 	if !m.ContentTypes.IsNull() && !m.ContentTypes.IsUnknown() {
-		var contentTypes proxmox_types.CustomCommaSeparatedList
+		var contentTypes proxmoxtypes.CustomCommaSeparatedList
 		if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
 			return fmt.Errorf("cannot convert content-types: %s", diags)
 		}

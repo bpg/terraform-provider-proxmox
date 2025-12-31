@@ -10,7 +10,7 @@ import (
 	"context"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -37,7 +37,7 @@ func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (any, er
 
 	request.Path = m.Path.ValueStringPointer()
 	request.Preallocation = m.Preallocation.ValueStringPointer()
-	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
+	request.Shared = proxmoxtypes.CustomBoolPtr(m.Shared.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
@@ -59,7 +59,7 @@ func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (any, er
 	}
 
 	request.Preallocation = m.Preallocation.ValueStringPointer()
-	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
+	request.Shared = proxmoxtypes.CustomBoolPtr(m.Shared.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()

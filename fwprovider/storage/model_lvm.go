@@ -10,7 +10,7 @@ import (
 	"context"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -37,8 +37,8 @@ func (m *LVMStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	}
 
 	request.VolumeGroup = m.VolumeGroup.ValueStringPointer()
-	request.WipeRemovedVolumes = proxmox_types.CustomBool(m.WipeRemovedVolumes.ValueBool())
-	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
+	request.WipeRemovedVolumes = proxmoxtypes.CustomBool(m.WipeRemovedVolumes.ValueBool())
+	request.Shared = proxmoxtypes.CustomBoolPtr(m.Shared.ValueBoolPointer())
 
 	return request, nil
 }
@@ -51,8 +51,8 @@ func (m *LVMStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	request.WipeRemovedVolumes = proxmox_types.CustomBool(m.WipeRemovedVolumes.ValueBool())
-	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
+	request.WipeRemovedVolumes = proxmoxtypes.CustomBool(m.WipeRemovedVolumes.ValueBool())
+	request.Shared = proxmoxtypes.CustomBoolPtr(m.Shared.ValueBoolPointer())
 
 	return request, nil
 }
