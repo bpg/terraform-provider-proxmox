@@ -63,7 +63,7 @@ func (r *lvmThinPoolStorageResource) Schema(_ context.Context, _ resource.Schema
 			Computed:    true,
 		},
 	}
-	factory := NewStorageSchemaFactory()
+	factory := newStorageSchemaFactory()
 	factory.WithAttributes(attributes)
 	factory.WithDescription("Manages thin LVM-based storage in Proxmox VE.")
 	resp.Schema = *factory.Schema

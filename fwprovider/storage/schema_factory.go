@@ -22,7 +22,7 @@ type schemaFactory struct {
 	Schema *schema.Schema
 }
 
-func NewStorageSchemaFactory() *schemaFactory {
+func newStorageSchemaFactory() *schemaFactory {
 	s := &schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
