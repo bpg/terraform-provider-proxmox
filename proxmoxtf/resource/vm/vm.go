@@ -5440,8 +5440,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		rebootRequired = true
 	}
 
-	template := d.Get(mkTemplate).(bool)
-
 	// Prepare the new agent configuration.
 	if d.HasChange(mkAgent) {
 		agentBlock, err := structure.GetSchemaBlock(
@@ -6095,6 +6093,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	}
 
 	// Determine if the state of the virtual machine state needs to be changed.
+	template := d.Get(mkTemplate).(bool)
 	//nolint: nestif
 	if (d.HasChange(mkStarted) || stoppedBeforeUpdate) && !template {
 		started := d.Get(mkStarted).(bool)

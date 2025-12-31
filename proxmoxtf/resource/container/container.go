@@ -2210,7 +2210,6 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		return diag.FromErr(e)
 	}
 
-	template := d.Get(mkTemplate).(bool)
 	nodeName := d.Get(mkNodeName).(string)
 
 	vmID, e := strconv.Atoi(d.Id())
@@ -2874,6 +2873,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	e = d.Set(mkEnvironmentVariables, envVarsMap)
 	diags = append(diags, diag.FromErr(e)...)
 
+	template := d.Get(mkTemplate).(bool)
+
 	if len(clone) == 0 || template {
 		if containerConfig.Template != nil {
 			e = d.Set(
@@ -2980,10 +2981,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.Description = &description
 	}
 
-	templateBool := d.Get(mkTemplate).(bool)
-	template := types.CustomBool(templateBool)
-
 	if d.HasChange(mkTemplate) {
+		template := types.CustomBool(d.Get(mkTemplate).(bool))
 		updateBody.Template = &template
 	}
 
@@ -3483,8 +3482,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	// Determine if the state of the container needs to be changed.
 	started := d.Get(mkStarted).(bool)
+	template := d.Get(mkTemplate).(bool)
 
-	if d.HasChange(mkStarted) && !templateBool {
+	if d.HasChange(mkStarted) && !template {
 		if started {
 			e = containerAPI.StartContainer(ctx)
 			if e != nil {
@@ -3517,7 +3517,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	// As a final step in the update procedure, we might need to reboot the container.
-	if !templateBool && started && rebootRequired {
+	if !template && started && rebootRequired {
 		rebootTimeout := 300
 
 		e = containerAPI.RebootContainer(
