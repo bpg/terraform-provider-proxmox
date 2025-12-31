@@ -34,7 +34,7 @@ func (c *Client) GetFabricWithParams(ctx context.Context, id string, params *sdn
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(id), params, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("error reading SDN Fabric %s: %w", c.ID, err)
+		return nil, fmt.Errorf("error reading SDN Fabric %s: %w", id, err)
 	}
 
 	if resBody.Data == nil {

@@ -16,7 +16,6 @@ import (
 type Client struct {
 	api.Client
 
-	ID       string
 	Protocol string
 }
 
@@ -26,7 +25,7 @@ func (c *Client) basePath() string {
 
 // ExpandPath expands a relative path to a full VM API path.
 func (c *Client) ExpandPath(path string) string {
-	p := fmt.Sprintf("%s/%s", c.basePath(), c.ID)
+	p := c.basePath()
 	if path != "" {
 		p = fmt.Sprintf("%s/%s", p, path)
 	}
