@@ -6,7 +6,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package fabric_node_test
+package test
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-func TestAccDataSourceSDNFabricNodeOpenFabric(t *testing.T) {
+func TestAccDataSourceSDNFabricOpenFabric(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
@@ -25,29 +25,21 @@ func TestAccDataSourceSDNFabricNodeOpenFabric(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create openfabric fabric node and read with datasource", []resource.TestStep{{
+		{"create openfabric fabric and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_openfabric" "test" {
 				  id        = "dstest1"
 				  ip_prefix = "10.0.0.0/16"
 				}
 				
-				resource "proxmox_virtual_environment_sdn_fabric_node_openfabric" "test_node" {
-				  fabric_id = proxmox_virtual_environment_sdn_fabric_openfabric.test.id
-				  node_id   = "pve"
-				  ip        = "10.0.0.1"
-				}
-
-				data "proxmox_virtual_environment_sdn_fabric_node_openfabric" "test_node" {
-				  fabric_id = proxmox_virtual_environment_sdn_fabric_openfabric.test.id
-				  node_id   = "pve"
+				data "proxmox_virtual_environment_sdn_fabric_openfabric" "test" {
+				  id = proxmox_virtual_environment_sdn_fabric_openfabric.test.id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_node_openfabric.test_node", map[string]string{
-					"fabric_id": "dstest1",
-					"node_id":   "pve",
-					"ip":        "10.0.0.1",
+				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_openfabric.test", map[string]string{
+					"id":        "dstest1",
+					"ip_prefix": "10.0.0.0/16",
 				}),
 			),
 		}}},
@@ -72,31 +64,24 @@ func TestAccDataSourceSDNFabricOSPF(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create OSPF fabric node and read with datasource", []resource.TestStep{{
+		{"create OSPF fabric and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_ospf" "test" {
-				  id     = "dstest2"
-				  area  = "0"
+				  id        = "dstest2"
+				  area      = "0"
 				  ip_prefix = "10.0.0.0/16"
 				}
 				
-				resource "proxmox_virtual_environment_sdn_fabric_node_ospf" "test_node" {
-				  fabric_id = proxmox_virtual_environment_sdn_fabric_ospf.test.id
-				  node_id   = "pve"
-				  ip        = "10.0.0.1"
-				}
-				
-				data "proxmox_virtual_environment_sdn_fabric_node_ospf" "test_node" {
-				  fabric_id       = proxmox_virtual_environment_sdn_fabric_ospf.test.id
-				  node_id         = "pve"
+				data "proxmox_virtual_environment_sdn_fabric_ospf" "test" {
+				  id = proxmox_virtual_environment_sdn_fabric_ospf.test.id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_node_ospf.test_node", map[string]string){
-					"fabric_id": "dstest2",
-					"node_id":   "pve",
-					"ip":        "10.0.0.1",
-				}
+				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_ospf.test", map[string]string{
+					"id":        "dstest2",
+					"area":      "0",
+					"ip_prefix": "10.0.0.0/16",
+				}),
 			),
 		}}},
 	}
