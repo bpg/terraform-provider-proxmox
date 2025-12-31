@@ -146,7 +146,7 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 	// Start with generic attributes as the base
 	result := map[string]schema.Attribute{
 		"node_id": schema.StringAttribute{
-			Description: "The unique identifier of the SDN fabric.",
+			Description: "The unique identifier of the SDN fabric node.",
 			Required:    true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
