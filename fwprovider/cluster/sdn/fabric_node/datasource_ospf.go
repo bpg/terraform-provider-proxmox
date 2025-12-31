@@ -9,7 +9,7 @@ package fabric_node
 import (
 	"context"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
@@ -27,7 +27,7 @@ func NewOSPFDataSource() datasource.DataSource {
 	return &OSPFDataSource{
 		generic: newGenericFabricNodeDataSource(fabricNodeDataSourceConfig{
 			typeNameSuffix: "_sdn_fabric_node_ospf",
-			fabricProtocol: fabric_nodes.ProtocolOSPF,
+			fabricProtocol: fabrics.ProtocolOSPF,
 			modelFunc:      func() fabricNodeModel { return &ospfModel{} },
 		}),
 	}

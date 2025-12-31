@@ -16,11 +16,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
-const (
-	ProtocolOpenFabric = "openfabric"
-	ProtocolOSPF       = "ospf"
-)
-
 // GetFabricNode retrieves a single SDN Fabric Node by Fabric Node ID.
 func (c *Client) GetFabricNode(ctx context.Context, nodeID string) (*FabricNodeData, error) {
 	return c.GetFabricNodeWithParams(ctx, nodeID, nil)
