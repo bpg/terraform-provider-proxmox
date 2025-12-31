@@ -34,12 +34,14 @@ import (
 )
 
 type genericModel struct {
+	ID             types.String `tfsdk:"id"`
 	NodeID         types.String `tfsdk:"node_id"`
 	FabricID       types.String `tfsdk:"fabric_id"`
 	InterfaceNames types.Set    `tfsdk:"interface_names"`
 }
 
 func (m *genericModel) fromAPI(name string, data *fabric_nodes.FabricNodeData, diags *diag.Diagnostics) {
+	m.ID = types.StringValue(name)
 	parts := strings.SplitN(name, "/", 2)
 	if len(parts) != 2 {
 		diags.AddError(
@@ -64,12 +66,11 @@ func (m *genericModel) fromAPI(name string, data *fabric_nodes.FabricNodeData, d
 
 func (m *genericModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabric_nodes.FabricNode {
 	data := &fabric_nodes.FabricNode{}
-
 	data.NodeID = m.NodeID.ValueString()
 	data.FabricID = m.FabricID.ValueString()
 
 	if m.InterfaceNames.IsNull() {
-		data.Interfaces = nil
+		data.Interfaces = []string{}
 	} else {
 		var interfaces []string
 		diags.Append(m.InterfaceNames.ElementsAs(ctx, &interfaces, false)...)
@@ -91,7 +92,7 @@ func (m *genericModel) getID() string {
 
 func (m *genericModel) toInterfaceNamesFromInterfaces(value []string) (types.Set, diag.Diagnostics) {
 	if value == nil {
-		return types.SetNull(types.StringType), nil
+		return types.SetValue(types.StringType, []attr.Value{})
 	}
 
 	// Convet filtered slice to types.List
@@ -99,11 +100,12 @@ func (m *genericModel) toInterfaceNamesFromInterfaces(value []string) (types.Set
 	for _, iface := range value {
 		parts := strings.SplitN(iface, "=", 2)
 		if len(parts) != 2 {
-			diags := diag.NewErrorDiagnostic(
+			emptySet, diags := types.SetValue(types.StringType, []attr.Value{})
+			diags.AddError(
 				"Unexpected SDN Fabric Node ID Format",
 				fmt.Sprintf("Expected SDN Fabric Node ID to be in the format <fabric_id>/<node_id>, got: %s", iface),
 			)
-			return types.SetNull(types.StringType), diag.Diagnostics{diags}
+			return emptySet, diags
 		}
 
 		k := parts[0]
@@ -161,7 +163,11 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 		"interface_names": schema.SetAttribute{
 			Description: "Set of interfaces associated with the fabric node.",
 			ElementType: types.StringType,
-			Optional:    true,
+			Required:    true,
+		},
+		"id": schema.StringAttribute{
+			Description: "The ID of the SDN fabric node, in the format <fabric_id>/<node_id>.",
+			Computed:    true,
 		},
 	}
 
