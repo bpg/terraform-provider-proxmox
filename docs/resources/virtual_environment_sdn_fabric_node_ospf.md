@@ -33,9 +33,10 @@ resource "proxmox_virtual_environment_sdn_fabric_node_ospf" "main" {
 ### Required
 
 - `fabric_id` (String) The unique identifier of the SDN fabric.
+- `interface_names` (Set of String) Set of interfaces associated with the fabric node.
 - `ip` (String) IPv4 address for the fabric node.
 - `node_id` (String) The unique identifier of the SDN fabric.
 
-### Optional
+### Read-Only
 
-- `interface_names` (Set of String) Set of interfaces associated with the fabric node.
+- `id` (String) The ID of the SDN fabric node, in the format <fabric_id>/<node_id>.
