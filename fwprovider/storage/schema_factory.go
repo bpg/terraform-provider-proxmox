@@ -18,11 +18,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type StorageSchemaFactory struct {
+type schemaFactory struct {
 	Schema *schema.Schema
 }
 
-func NewStorageSchemaFactory() *StorageSchemaFactory {
+func NewStorageSchemaFactory() *schemaFactory {
 	s := &schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -54,29 +54,29 @@ func NewStorageSchemaFactory() *StorageSchemaFactory {
 		Blocks: map[string]schema.Block{},
 	}
 
-	return &StorageSchemaFactory{
+	return &schemaFactory{
 		Schema: s,
 	}
 }
 
-func (s *StorageSchemaFactory) WithDescription(description string) *StorageSchemaFactory {
+func (s *schemaFactory) WithDescription(description string) *schemaFactory {
 	s.Schema.Description = description
 	return s
 }
 
-func (s *StorageSchemaFactory) WithAttributes(attributes map[string]schema.Attribute) *StorageSchemaFactory {
+func (s *schemaFactory) WithAttributes(attributes map[string]schema.Attribute) *schemaFactory {
 	maps.Copy(s.Schema.Attributes, attributes)
 
 	return s
 }
 
-func (s *StorageSchemaFactory) WithBlocks(blocks map[string]schema.Block) *StorageSchemaFactory {
+func (s *schemaFactory) WithBlocks(blocks map[string]schema.Block) *schemaFactory {
 	maps.Copy(s.Schema.Blocks, blocks)
 
 	return s
 }
 
-func (s *StorageSchemaFactory) WithBackupBlock() *StorageSchemaFactory {
+func (s *schemaFactory) WithBackupBlock() *schemaFactory {
 	return s.WithBlocks(map[string]schema.Block{
 		"backups": schema.SingleNestedBlock{
 			Attributes: map[string]schema.Attribute{
