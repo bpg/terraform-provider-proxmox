@@ -106,8 +106,8 @@ func (r *OSPFResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 func (r *OSPFResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:         "OSPF Fabric in Proxmox SDN.",
-		MarkdownDescription: "OSPF Fabric in Proxmox SDN.",
+		Description:         "OSPF Fabric Node in Proxmox SDN.",
+		MarkdownDescription: "OSPF Fabric Node in Proxmox SDN.",
 		Attributes: genericAttributesWith(map[string]schema.Attribute{
 			"ip": schema.StringAttribute{
 				Description: "IPv4 address for the fabric node.",
