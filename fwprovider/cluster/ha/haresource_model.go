@@ -9,10 +9,10 @@ package ha
 import (
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
-
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // ResourceModel maps the schema data for the High Availability resource data source.

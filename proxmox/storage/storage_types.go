@@ -139,7 +139,7 @@ func (b DataStoreWithBackups) String() string {
 	return strings.Join(parts, ",")
 }
 
-func (b DataStoreWithBackups) EncodeValues(key string, v *url.Values) error {
+func (b DataStoreWithBackups) EncodeValues(_ string, v *url.Values) error {
 	if b.MaxProtectedBackups != nil {
 		v.Set("max-protected-backups", strconv.FormatInt(int64(*b.MaxProtectedBackups), 10))
 	}

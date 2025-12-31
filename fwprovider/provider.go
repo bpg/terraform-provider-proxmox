@@ -12,8 +12,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -43,6 +41,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"

@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -31,6 +30,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
@@ -743,7 +743,11 @@ func fileGetVolumeID(ctx context.Context, d *schema.ResourceData, c proxmox.Clie
 	}
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
+
 	contentType, diags := fileGetContentType(ctx, d, c)
+	if diags.HasError() {
+		return fileVolumeID{}, diags
+	}
 
 	return fileVolumeID{
 		datastoreID: datastoreID,

@@ -101,9 +101,20 @@ formatters:
     - gofmt
     - gofumpt
     - goimports
+    - gci
   exclusions:
     generated: lax
     paths:
       - third_party$
       - builtin$
       - examples$
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/bpg/terraform-provider-proxmox
+    gci:
+      custom-order: true
+      sections:
+        - Standard
+        - Default
+        - Prefix(github.com/bpg/terraform-provider-proxmox)

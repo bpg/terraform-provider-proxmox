@@ -9,8 +9,9 @@ package storage
 import (
 	"context"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 )
 
 // LVMThinStorageModel maps the Terraform schema for LVM storage.

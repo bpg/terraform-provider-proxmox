@@ -17,11 +17,11 @@ import (
 
 type backupsKeepAllExcludesOtherKeepSettingsValidator struct{}
 
-func (v backupsKeepAllExcludesOtherKeepSettingsValidator) Description(context.Context) string {
+func (v backupsKeepAllExcludesOtherKeepSettingsValidator) Description(_ context.Context) string {
 	return "when keep_all is true, other keep_* attributes must not be set"
 }
 
-func (v backupsKeepAllExcludesOtherKeepSettingsValidator) MarkdownDescription(context.Context) string {
+func (v backupsKeepAllExcludesOtherKeepSettingsValidator) MarkdownDescription(_ context.Context) string {
 	return "when `keep_all` is true, other `keep_*` attributes must not be set"
 }
 

@@ -3793,8 +3793,8 @@ func setDefaultIfNotSet(d *schema.ResourceData, diags diag.Diagnostics, key stri
 	return diags
 }
 
-//nolint:staticcheck
 func setDefaultIfNotExists(d *schema.ResourceData, diags diag.Diagnostics, key string, value any) diag.Diagnostics {
+	//nolint:staticcheck
 	if _, ok := d.GetOkExists(key); !ok {
 		if err := d.Set(key, value); err != nil {
 			return append(diags, diag.FromErr(err)...)

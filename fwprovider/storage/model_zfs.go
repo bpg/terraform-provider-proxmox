@@ -9,9 +9,10 @@ package storage
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // ZFSStorageModel maps the Terraform schema for ZFS storage.
