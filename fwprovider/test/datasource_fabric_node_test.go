@@ -37,7 +37,7 @@ func TestAccDataSourceSDNFabricNodeOpenFabric(t *testing.T) {
 
 				data "proxmox_virtual_environment_sdn_fabric_node_openfabric" "test_node" {
 				  fabric_id = proxmox_virtual_environment_sdn_fabric_openfabric.test.id
-				  node_id   = "pve"
+				  node_id   = proxmox_virtual_environment_sdn_fabric_node_openfabric.test_node.node_id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
@@ -86,7 +86,7 @@ func TestAccDataSourceSDNFabricNodeOSPF(t *testing.T) {
 				
 				data "proxmox_virtual_environment_sdn_fabric_node_ospf" "test_node" {
 				  fabric_id       = proxmox_virtual_environment_sdn_fabric_ospf.test.id
-				  node_id         = "pve"
+				  node_id         = proxmox_virtual_environment_sdn_fabric_node_ospf.test_node.node_id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
