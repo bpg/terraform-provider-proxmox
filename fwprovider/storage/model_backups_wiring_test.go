@@ -18,7 +18,7 @@ func TestStorageModels_ToCreateAPIRequest_EncodesBackups(t *testing.T) {
 		t.Parallel()
 
 		m := &NFSStorageModel{
-			StorageModelBase: StorageModelBase{
+			modelBase: modelBase{
 				ID:           types.StringValue("nfs-test"),
 				Nodes:        types.SetNull(types.StringType),
 				ContentTypes: types.SetNull(types.StringType),
@@ -56,7 +56,7 @@ func TestStorageModels_ToCreateAPIRequest_EncodesBackups(t *testing.T) {
 		t.Parallel()
 
 		m := &CIFSStorageModel{
-			StorageModelBase: StorageModelBase{
+			modelBase: modelBase{
 				ID:           types.StringValue("cifs-test"),
 				Nodes:        types.SetNull(types.StringType),
 				ContentTypes: types.SetNull(types.StringType),
@@ -97,7 +97,7 @@ func TestStorageModels_ToCreateAPIRequest_EncodesBackups(t *testing.T) {
 		t.Parallel()
 
 		m := &PBSStorageModel{
-			StorageModelBase: StorageModelBase{
+			modelBase: modelBase{
 				ID:           types.StringValue("pbs-test"),
 				Nodes:        types.SetNull(types.StringType),
 				ContentTypes: types.SetNull(types.StringType),

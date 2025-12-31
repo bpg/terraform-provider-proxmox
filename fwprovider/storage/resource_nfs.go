@@ -83,7 +83,7 @@ func (r *nfsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 		},
 	}
 
-	factory := NewStorageSchemaFactory()
+	factory := newStorageSchemaFactory()
 	factory.WithAttributes(attributes)
 	factory.WithDescription("Manages an NFS-based storage in Proxmox VE.")
 	factory.WithBackupBlock()

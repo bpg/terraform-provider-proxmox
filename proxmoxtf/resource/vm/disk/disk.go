@@ -591,7 +591,6 @@ func Update(
 	updateBody *vms.UpdateRequestBody,
 ) (bool, bool, error) {
 	rebootRequired := false
-	shutdownBeforeUpdate := false
 
 	if d.HasChange(MkDisk) {
 		for iface, disk := range planDisks {
@@ -654,7 +653,5 @@ func Update(
 		}
 	}
 
-	// shutdownBeforeUpdate is always false now, as we're not updating a boot disk that was imported.
-	// but let's keep this api / flag in place for future use.
-	return shutdownBeforeUpdate, rebootRequired, nil
+	return false, rebootRequired, nil
 }

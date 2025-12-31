@@ -15,7 +15,7 @@ import (
 
 // PBSStorageModel maps the Terraform schema for PBS storage.
 type PBSStorageModel struct {
-	StorageModelBase
+	modelBase
 
 	Server                   types.String `tfsdk:"server"`
 	Datastore                types.String `tfsdk:"datastore"`

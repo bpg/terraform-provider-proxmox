@@ -750,7 +750,7 @@ func applyDisks(
 }
 
 func read(ctx context.Context, vmAPI *vms.Client, model *Model, diags *diag.Diagnostics) bool {
-	config, err := vmAPI.GetVM(ctx)
+	vmConfig, err := vmAPI.GetVM(ctx)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			tflog.Info(ctx, "VM does not exist, removing from state", map[string]any{
@@ -776,26 +776,26 @@ func read(ctx context.Context, vmAPI *vms.Client, model *Model, diags *diag.Diag
 
 	model.ID = types.Int64Value(int64(*status.VMID))
 	if !model.Description.IsUnknown() && !model.Description.IsNull() {
-		model.Description = types.StringPointerValue(config.Description)
+		model.Description = types.StringPointerValue(vmConfig.Description)
 	}
 
 	if !model.Name.IsUnknown() && !model.Name.IsNull() {
-		model.Name = types.StringPointerValue(config.Name)
+		model.Name = types.StringPointerValue(vmConfig.Name)
 	}
 
 	if !model.Tags.IsUnknown() && !model.Tags.IsNull() {
-		model.Tags = stringset.NewValueString(config.Tags, diags)
+		model.Tags = stringset.NewValueString(vmConfig.Tags, diags)
 	}
 
 	if model.Network != nil {
 		for slot := range model.Network {
-			model.Network[slot] = readNetworkSlot(config, slot, model.Network[slot])
+			model.Network[slot] = readNetworkSlot(vmConfig, slot, model.Network[slot])
 		}
 	}
 
 	if model.Disk != nil {
 		for slot := range model.Disk {
-			model.Disk[slot] = readDiskSlot(config, slot, model.Disk[slot])
+			model.Disk[slot] = readDiskSlot(vmConfig, slot, model.Disk[slot])
 		}
 	}
 

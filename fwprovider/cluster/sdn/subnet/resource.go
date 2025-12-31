@@ -335,8 +335,8 @@ ValidateConfig checks that the subnet's field are correctly set.
 Particularly that gateway, dhcp and dns are within CIDR.
 */
 func (r *Resource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config model
-	diags := req.Config.Get(ctx, &config)
+	var cfg model
+	diags := req.Config.Get(ctx, &cfg)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -345,17 +345,17 @@ func (r *Resource) ValidateConfig(ctx context.Context, req resource.ValidateConf
 
 	// skip validation if values are nill or not known yet. This method will be called again when all required attributes are known.
 	// specific attributes validation (required, not empty, etc.) will be handled by the corresponding attr rules in the schema.
-	if config.CIDR.IsNull() || config.CIDR.IsUnknown() {
+	if cfg.CIDR.IsNull() || cfg.CIDR.IsUnknown() {
 		return
 	}
 
-	_, ipnet, err := net.ParseCIDR(config.CIDR.ValueString())
+	_, ipnet, err := net.ParseCIDR(cfg.CIDR.ValueString())
 	if err != nil {
 		// the CIDR is already validated by the IPCIDRType, so this should never happen
 		resp.Diagnostics.AddAttributeError(
 			path.Root("cidr"),
 			"Invalid Subnet",
-			fmt.Sprintf("Could not parse subnet %q: %s", config.CIDR.ValueString(), err),
+			fmt.Sprintf("Could not parse subnet %q: %s", cfg.CIDR.ValueString(), err),
 		)
 
 		return
@@ -378,24 +378,24 @@ func (r *Resource) ValidateConfig(ctx context.Context, req resource.ValidateConf
 				resp.Diagnostics.AddAttributeError(
 					path.Root(attrName),
 					"Invalid IP for Subnet",
-					fmt.Sprintf("%s must be within the subnet %s", ipVal.ValueString(), config.CIDR.ValueString()),
+					fmt.Sprintf("%s must be within the subnet %s", ipVal.ValueString(), cfg.CIDR.ValueString()),
 				)
 			}
 		}
 	}
 
-	checkIPInCIDR("gateway", config.Gateway.StringValue)
-	checkIPInCIDR("dhcp_dns_server", config.DhcpDnsServer.StringValue)
+	checkIPInCIDR("gateway", cfg.Gateway.StringValue)
+	checkIPInCIDR("dhcp_dns_server", cfg.DhcpDnsServer.StringValue)
 
-	if config.DhcpRange != nil {
-		r := config.DhcpRange
+	if cfg.DhcpRange != nil {
+		r := cfg.DhcpRange
 		if !r.StartAddress.IsNull() && !r.StartAddress.IsUnknown() {
 			ip := net.ParseIP(r.StartAddress.ValueString())
 			if !ipnet.Contains(ip) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("dhcp_range").AtName("start_address"),
 					"Invalid DHCP Range Start Address",
-					fmt.Sprintf("Start address %s must be within the subnet %s", ip, config.CIDR.ValueString()),
+					fmt.Sprintf("Start address %s must be within the subnet %s", ip, cfg.CIDR.ValueString()),
 				)
 			}
 		}
@@ -406,7 +406,7 @@ func (r *Resource) ValidateConfig(ctx context.Context, req resource.ValidateConf
 				resp.Diagnostics.AddAttributeError(
 					path.Root("dhcp_range").AtName("end_address"),
 					"Invalid DHCP Range End Address",
-					fmt.Sprintf("End address %s must be within the subnet %s", ip, config.CIDR.ValueString()),
+					fmt.Sprintf("End address %s must be within the subnet %s", ip, cfg.CIDR.ValueString()),
 				)
 			}
 		}

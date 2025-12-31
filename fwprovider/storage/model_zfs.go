@@ -10,13 +10,13 @@ import (
 	"context"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // ZFSStorageModel maps the Terraform schema for ZFS storage.
 type ZFSStorageModel struct {
-	StorageModelBase
+	modelBase
 
 	ZFSPool       types.String `tfsdk:"zfs_pool"`
 	ThinProvision types.Bool   `tfsdk:"thin_provision"`
@@ -41,7 +41,7 @@ func (m *ZFSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	}
 
 	request.ZFSPool = m.ZFSPool.ValueStringPointer()
-	request.ThinProvision = proxmox_types.CustomBool(m.ThinProvision.ValueBool())
+	request.ThinProvision = proxmoxtypes.CustomBool(m.ThinProvision.ValueBool())
 	request.Blocksize = m.Blocksize.ValueStringPointer()
 
 	return request, nil
@@ -55,7 +55,7 @@ func (m *ZFSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	request.ThinProvision = proxmox_types.CustomBool(m.ThinProvision.ValueBool())
+	request.ThinProvision = proxmoxtypes.CustomBool(m.ThinProvision.ValueBool())
 	request.Blocksize = m.Blocksize.ValueStringPointer()
 
 	return request, nil

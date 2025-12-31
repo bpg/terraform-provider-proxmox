@@ -46,7 +46,7 @@ const ociSizeRequiresReplaceDescription = "Triggers resource force replacement i
 
 type ociSizeRequiresReplaceModifier struct{}
 
-//nolint:dupl
+//nolint:dupl // shared plan modifier logic reused across resources
 func (r ociSizeRequiresReplaceModifier) PlanModifyInt64(
 	ctx context.Context,
 	req planmodifier.Int64Request,
@@ -434,7 +434,7 @@ func (r *ociImageResource) Update(
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-//nolint:dupl
+//nolint:dupl // delete path mirrors download file resource implementation
 func (r *ociImageResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,

@@ -1489,10 +1489,11 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		updateBody.Tags = &tagString
 	}
 
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
+	template := d.Get(mkTemplate).(bool)
+	templateAttr := types.CustomBool(template)
 
 	if template {
-		updateBody.Template = &template
+		updateBody.Template = &templateAttr
 	}
 
 	err = containerAPI.UpdateContainer(ctx, updateBody)
@@ -1792,7 +1793,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	var rootFS *containers.CustomRootFS
 
-	diskMountOptions := []string{}
+	var diskMountOptions []string
 
 	if diskBlock[mkDiskMountOptions] != nil {
 		for _, opt := range diskBlock[mkDiskMountOptions].([]any) {
@@ -2209,7 +2210,6 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		return diag.FromErr(e)
 	}
 
-	template := d.Get(mkTemplate).(bool)
 	nodeName := d.Get(mkNodeName).(string)
 
 	vmID, e := strconv.Atoi(d.Id())
@@ -2873,6 +2873,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	e = d.Set(mkEnvironmentVariables, envVarsMap)
 	diags = append(diags, diag.FromErr(e)...)
 
+	template := d.Get(mkTemplate).(bool)
+
 	if len(clone) == 0 || template {
 		if containerConfig.Template != nil {
 			e = d.Set(
@@ -2979,9 +2981,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.Description = &description
 	}
 
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
-
 	if d.HasChange(mkTemplate) {
+		template := types.CustomBool(d.Get(mkTemplate).(bool))
 		updateBody.Template = &template
 	}
 
@@ -3481,8 +3482,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	// Determine if the state of the container needs to be changed.
 	started := d.Get(mkStarted).(bool)
+	template := d.Get(mkTemplate).(bool)
 
-	if d.HasChange(mkStarted) && !bool(template) {
+	if d.HasChange(mkStarted) && !template {
 		if started {
 			e = containerAPI.StartContainer(ctx)
 			if e != nil {
@@ -3515,7 +3517,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	// As a final step in the update procedure, we might need to reboot the container.
-	if !bool(template) && started && rebootRequired {
+	if !template && started && rebootRequired {
 		rebootTimeout := 300
 
 		e = containerAPI.RebootContainer(

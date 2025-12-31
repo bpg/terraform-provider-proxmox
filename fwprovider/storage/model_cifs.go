@@ -10,13 +10,13 @@ import (
 	"context"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // CIFSStorageModel maps the Terraform schema for CIFS storage.
 type CIFSStorageModel struct {
-	StorageModelBase
+	modelBase
 
 	Server                 types.String `tfsdk:"server"`
 	Username               types.String `tfsdk:"username"`
@@ -48,7 +48,7 @@ func (m *CIFSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) 
 	request.Domain = m.Domain.ValueStringPointer()
 	request.Subdirectory = m.SubDirectory.ValueStringPointer()
 	request.Preallocation = m.Preallocation.ValueStringPointer()
-	request.SnapshotsAsVolumeChain = proxmox_types.CustomBool(m.SnapshotsAsVolumeChain.ValueBool())
+	request.SnapshotsAsVolumeChain = proxmoxtypes.CustomBool(m.SnapshotsAsVolumeChain.ValueBool())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()

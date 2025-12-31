@@ -66,7 +66,7 @@ func (r *zfsPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequ
 			Computed:    true,
 		},
 	}
-	factory := NewStorageSchemaFactory()
+	factory := newStorageSchemaFactory()
 	factory.WithAttributes(attributes)
 	factory.WithDescription("Manages ZFS-based storage in Proxmox VE.")
 	resp.Schema = *factory.Schema

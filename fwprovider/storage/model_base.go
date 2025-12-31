@@ -11,13 +11,13 @@ import (
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// StorageModelBase contains the common fields for all storage models.
-type StorageModelBase struct {
+// modelBase contains the common fields for all storage models.
+type modelBase struct {
 	ID           types.String `tfsdk:"id"`
 	Nodes        types.Set    `tfsdk:"nodes"`
 	ContentTypes types.Set    `tfsdk:"content"`
@@ -26,12 +26,12 @@ type StorageModelBase struct {
 }
 
 // GetID returns the storage identifier from the base model.
-func (m *StorageModelBase) GetID() types.String {
+func (m *modelBase) GetID() types.String {
 	return m.ID
 }
 
 // populateBaseFromAPI is a helper to populate the common fields from an API response.
-func (m *StorageModelBase) populateBaseFromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error {
+func (m *modelBase) populateBaseFromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error {
 	m.ID = types.StringValue(*datastore.ID)
 
 	if datastore.Nodes != nil {
@@ -72,16 +72,16 @@ func (m *StorageModelBase) populateBaseFromAPI(ctx context.Context, datastore *s
 }
 
 // populateCreateFields is a helper to populate the common fields for a create request.
-func (m *StorageModelBase) populateCreateFields(
+func (m *modelBase) populateCreateFields(
 	ctx context.Context,
 	immutableReq *storage.DataStoreCommonImmutableFields,
 	mutableReq *storage.DataStoreCommonMutableFields,
 ) error {
 	immutableReq.ID = m.ID.ValueStringPointer()
-	mutableReq.Disable = proxmox_types.CustomBoolPtr(m.Disable.ValueBoolPointer())
+	mutableReq.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
 
 	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
-		var nodes proxmox_types.CustomCommaSeparatedList
+		var nodes proxmoxtypes.CustomCommaSeparatedList
 		if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
 			return fmt.Errorf("cannot convert nodes: %s", diags)
 		}
@@ -92,7 +92,7 @@ func (m *StorageModelBase) populateCreateFields(
 	}
 
 	if !m.ContentTypes.IsNull() && !m.ContentTypes.IsUnknown() {
-		var contentTypes proxmox_types.CustomCommaSeparatedList
+		var contentTypes proxmoxtypes.CustomCommaSeparatedList
 		if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
 			return fmt.Errorf("cannot convert content-types: %s", diags)
 		}
@@ -106,11 +106,11 @@ func (m *StorageModelBase) populateCreateFields(
 }
 
 // populateUpdateFields is a helper to populate the common fields for an update request.
-func (m *StorageModelBase) populateUpdateFields(ctx context.Context, mutableReq *storage.DataStoreCommonMutableFields) error {
-	mutableReq.Disable = proxmox_types.CustomBoolPtr(m.Disable.ValueBoolPointer())
+func (m *modelBase) populateUpdateFields(ctx context.Context, mutableReq *storage.DataStoreCommonMutableFields) error {
+	mutableReq.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
 
 	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
-		var nodes proxmox_types.CustomCommaSeparatedList
+		var nodes proxmoxtypes.CustomCommaSeparatedList
 		if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
 			return fmt.Errorf("cannot convert nodes: %s", diags)
 		}
@@ -121,7 +121,7 @@ func (m *StorageModelBase) populateUpdateFields(ctx context.Context, mutableReq 
 	}
 
 	if !m.ContentTypes.IsNull() && !m.ContentTypes.IsUnknown() {
-		var contentTypes proxmox_types.CustomCommaSeparatedList
+		var contentTypes proxmoxtypes.CustomCommaSeparatedList
 		if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
 			return fmt.Errorf("cannot convert content-types: %s", diags)
 		}

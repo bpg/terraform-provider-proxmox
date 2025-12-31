@@ -47,7 +47,7 @@ var (
 
 type sizeRequiresReplaceModifier struct{}
 
-//nolint:dupl
+//nolint:dupl // shared plan modifier logic reused across resources
 func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 	ctx context.Context,
 	req planmodifier.Int64Request,
@@ -554,7 +554,7 @@ func (r *downloadFileResource) Update(
 
 // Delete removes file resource.
 //
-//nolint:dupl
+//nolint:dupl // delete path mirrors OCI image resource implementation
 func (r *downloadFileResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
