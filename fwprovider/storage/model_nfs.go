@@ -16,7 +16,7 @@ import (
 
 // NFSStorageModel maps the Terraform schema for NFS storage.
 type NFSStorageModel struct {
-	StorageModelBase
+	modelBase
 
 	Server                 types.String `tfsdk:"server"`
 	Export                 types.String `tfsdk:"export"`

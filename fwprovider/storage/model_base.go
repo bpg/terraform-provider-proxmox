@@ -16,8 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// StorageModelBase contains the common fields for all storage models.
-type StorageModelBase struct {
+// modelBase contains the common fields for all storage models.
+type modelBase struct {
 	ID           types.String `tfsdk:"id"`
 	Nodes        types.Set    `tfsdk:"nodes"`
 	ContentTypes types.Set    `tfsdk:"content"`
@@ -26,12 +26,12 @@ type StorageModelBase struct {
 }
 
 // GetID returns the storage identifier from the base model.
-func (m *StorageModelBase) GetID() types.String {
+func (m *modelBase) GetID() types.String {
 	return m.ID
 }
 
 // populateBaseFromAPI is a helper to populate the common fields from an API response.
-func (m *StorageModelBase) populateBaseFromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error {
+func (m *modelBase) populateBaseFromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error {
 	m.ID = types.StringValue(*datastore.ID)
 
 	if datastore.Nodes != nil {
@@ -72,7 +72,7 @@ func (m *StorageModelBase) populateBaseFromAPI(ctx context.Context, datastore *s
 }
 
 // populateCreateFields is a helper to populate the common fields for a create request.
-func (m *StorageModelBase) populateCreateFields(
+func (m *modelBase) populateCreateFields(
 	ctx context.Context,
 	immutableReq *storage.DataStoreCommonImmutableFields,
 	mutableReq *storage.DataStoreCommonMutableFields,
@@ -106,7 +106,7 @@ func (m *StorageModelBase) populateCreateFields(
 }
 
 // populateUpdateFields is a helper to populate the common fields for an update request.
-func (m *StorageModelBase) populateUpdateFields(ctx context.Context, mutableReq *storage.DataStoreCommonMutableFields) error {
+func (m *modelBase) populateUpdateFields(ctx context.Context, mutableReq *storage.DataStoreCommonMutableFields) error {
 	mutableReq.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
 
 	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {

@@ -16,7 +16,7 @@ import (
 
 // ZFSStorageModel maps the Terraform schema for ZFS storage.
 type ZFSStorageModel struct {
-	StorageModelBase
+	modelBase
 
 	ZFSPool       types.String `tfsdk:"zfs_pool"`
 	ThinProvision types.Bool   `tfsdk:"thin_provision"`

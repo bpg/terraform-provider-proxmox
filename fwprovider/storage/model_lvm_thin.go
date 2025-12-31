@@ -15,7 +15,7 @@ import (
 
 // LVMThinStorageModel maps the Terraform schema for LVM storage.
 type LVMThinStorageModel struct {
-	StorageModelBase
+	modelBase
 
 	VolumeGroup types.String `tfsdk:"volume_group"`
 	ThinPool    types.String `tfsdk:"thin_pool"`

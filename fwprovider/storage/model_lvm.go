@@ -16,7 +16,7 @@ import (
 
 // LVMStorageModel maps the Terraform schema for LVM storage.
 type LVMStorageModel struct {
-	StorageModelBase
+	modelBase
 
 	VolumeGroup        types.String `tfsdk:"volume_group"`
 	WipeRemovedVolumes types.Bool   `tfsdk:"wipe_removed_volumes"`

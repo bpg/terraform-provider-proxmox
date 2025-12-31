@@ -16,7 +16,7 @@ import (
 
 // CIFSStorageModel maps the Terraform schema for CIFS storage.
 type CIFSStorageModel struct {
-	StorageModelBase
+	modelBase
 
 	Server                 types.String `tfsdk:"server"`
 	Username               types.String `tfsdk:"username"`

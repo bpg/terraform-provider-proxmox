@@ -16,7 +16,7 @@ import (
 
 // DirectoryStorageModel maps the Terraform schema for directory storage.
 type DirectoryStorageModel struct {
-	StorageModelBase
+	modelBase
 
 	Path          types.String `tfsdk:"path"`
 	Preallocation types.String `tfsdk:"preallocation"`
