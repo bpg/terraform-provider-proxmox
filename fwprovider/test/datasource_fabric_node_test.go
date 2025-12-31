@@ -34,6 +34,7 @@ func TestAccDataSourceSDNFabricNodeOpenFabric(t *testing.T) {
 				  fabric_id = proxmox_virtual_environment_sdn_fabric_openfabric.test.id
 				  node_id   = "pve"
 				  ip        = "10.0.0.1"
+				  interface_names = ["nic0"]
 				}
 
 				data "proxmox_virtual_environment_sdn_fabric_node_openfabric" "test_node" {
@@ -43,9 +44,11 @@ func TestAccDataSourceSDNFabricNodeOpenFabric(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_node_openfabric.test_node", map[string]string{
-					"fabric_id": "dstest1",
-					"node_id":   "pve",
-					"ip":        "10.0.0.1",
+					"fabric_id":         "dstest1",
+					"node_id":           "pve",
+					"ip":                "10.0.0.1",
+					"interface_names.#": "1",
+					"interface_names.0": "nic0",
 				}),
 			),
 		}}},
@@ -82,6 +85,7 @@ func TestAccDataSourceSDNFabricNodeOSPF(t *testing.T) {
 				  fabric_id = proxmox_virtual_environment_sdn_fabric_ospf.test.id
 				  node_id   = "pve"
 				  ip        = "10.0.0.1"
+				  interface_names = ["nic0"]
 				}
 				
 				data "proxmox_virtual_environment_sdn_fabric_node_ospf" "test_node" {
@@ -91,9 +95,11 @@ func TestAccDataSourceSDNFabricNodeOSPF(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_node_ospf.test_node", map[string]string{
-					"fabric_id": "dstest2",
-					"node_id":   "pve",
-					"ip":        "10.0.0.1",
+					"fabric_id":         "dstest2",
+					"node_id":           "pve",
+					"ip":                "10.0.0.1",
+					"interface_names.#": "1",
+					"interface_names.0": "nic0",
 				}),
 			),
 		}}},
