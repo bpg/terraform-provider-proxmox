@@ -71,6 +71,10 @@ func (d *genericFabricNodeDataSource) Configure(
 func genericDataSourceAttributesWith(extraAttributes map[string]schema.Attribute) map[string]schema.Attribute {
 	// Start with generic attributes as the base
 	result := map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Description: "The unique identifier of the SDN fabric node, in the format <fabric_id>/<node_id>.",
+			Computed:    true,
+		},
 		"fabric_id": schema.StringAttribute{
 			Description: "The unique identifier of the SDN fabric.",
 			Required:    true,
