@@ -28,12 +28,12 @@ func TestAccDataSourceSDNFabricOpenFabric(t *testing.T) {
 		{"create openfabric fabric and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_openfabric" "test" {
-					id    = "dstest1"
-					ip_prefix = "10.0.0.0/16"
+				  id        = "dstest1"
+				  ip_prefix = "10.0.0.0/16"
 				}
 				
 				data "proxmox_virtual_environment_sdn_fabric_openfabric" "test" {
-					id = proxmox_virtual_environment_sdn_fabric_openfabric.test.id
+				  id = proxmox_virtual_environment_sdn_fabric_openfabric.test.id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
@@ -67,13 +67,13 @@ func TestAccDataSourceSDNFabricOSPF(t *testing.T) {
 		{"create OSPF fabric and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_ospf" "test" {
-					id     = "dstest2"
-					area  = "0"
-					ip_prefix = "10.0.0.0/16"
+				  id        = "dstest2"
+				  area      = "0"
+				  ip_prefix = "10.0.0.0/16"
 				}
 				
 				data "proxmox_virtual_environment_sdn_fabric_ospf" "test" {
-					id = proxmox_virtual_environment_sdn_fabric_ospf.test.id
+				  id = proxmox_virtual_environment_sdn_fabric_ospf.test.id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(

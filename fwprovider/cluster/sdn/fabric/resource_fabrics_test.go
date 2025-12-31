@@ -28,16 +28,16 @@ func TestAccResourceSDNFabricOpenFabric(t *testing.T) {
 		{"create and update fabrics", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_openfabric" "fabric_openfabric" {
-				  id  = "fabricS"
-				  ip_prefix = "10.0.0.0/16
+				  id         = "fabricS"
+				  ip_prefix  = "10.0.0.0/16"
 				  depends_on = [
-					proxmox_virtual_environment_sdn_applier.finalizer
+				    proxmox_virtual_environment_sdn_applier.finalizer
 				  ]
 				}
 
 				resource "proxmox_virtual_environment_sdn_applier" "fabric_openfabric_applier" {
 				  depends_on = [
-					proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric
+				    proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric
 				  ]
 				}
 
@@ -56,13 +56,13 @@ func TestAccResourceSDNFabricOpenFabric(t *testing.T) {
 				  id  = "fabricS"
 				  ip_prefix = "10.0.1.0/16"
 				  depends_on = [
-					proxmox_virtual_environment_sdn_applier.finalizer
+				    proxmox_virtual_environment_sdn_applier.finalizer
 				  ]
 				}
 
 				resource "proxmox_virtual_environment_sdn_applier" "fabric_openfabric_applier" {
 				  depends_on = [
-					proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric
+				    proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric
 				  ]
 				}
 
@@ -107,8 +107,8 @@ func TestAccResourceSDNFabricOSPF(t *testing.T) {
 		{"create and update OSPF fabric", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_ospf" "fabric_ospf" {
-				  id    = "fabricO"
-				  area  = "0"
+				  id        = "fabricO"
+				  area      = "0"
 				  ip_prefix = "10.0.0.0/16"
 				}
 			`),
@@ -122,8 +122,8 @@ func TestAccResourceSDNFabricOSPF(t *testing.T) {
 		}, {
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_fabric_ospf" "fabric_ospf" {
-				  id    = "fabricO"
-				  area  = "0"
+				  id        = "fabricO"
+				  area      = "0"
 				  ip_prefix = "10.0.1.0/16"
 				}
 			`),
