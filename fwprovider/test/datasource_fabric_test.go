@@ -12,14 +12,12 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
 func TestAccDataSourceSDNFabricOpenFabric(t *testing.T) {
 	t.Parallel()
 
-	te := test.InitEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -37,7 +35,7 @@ func TestAccDataSourceSDNFabricOpenFabric(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_openfabric.test", map[string]string{
+				ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_openfabric.test", map[string]string{
 					"id":        "dstest1",
 					"ip_prefix": "10.0.0.0/16",
 				}),
@@ -58,7 +56,7 @@ func TestAccDataSourceSDNFabricOpenFabric(t *testing.T) {
 func TestAccDataSourceSDNFabricOSPF(t *testing.T) {
 	t.Parallel()
 
-	te := test.InitEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -77,7 +75,7 @@ func TestAccDataSourceSDNFabricOSPF(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_ospf.test", map[string]string{
+				ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_ospf.test", map[string]string{
 					"id":        "dstest2",
 					"area":      "0",
 					"ip_prefix": "10.0.0.0/16",

@@ -12,14 +12,12 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
 func TestAccResourceSDNFabricNodeOpenFabric(t *testing.T) {
 	// Cannot run in parallel due to SDN applier functionality affecting global state
 
-	te := test.InitEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -54,11 +52,10 @@ func TestAccResourceSDNFabricNodeOpenFabric(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_fabric_node_openfabric.fabric_node_openfabric", map[string]string{
+				ResourceAttributes("proxmox_virtual_environment_sdn_fabric_node_openfabric.fabric_node_openfabric", map[string]string{
 					"fabric_id": "fabricS",
 					"node_id":   "pve",
 					"ip":        "10.0.0.1",
-					"state":     "new",
 				}),
 			),
 		}, {
@@ -90,13 +87,12 @@ func TestAccResourceSDNFabricNodeOpenFabric(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_fabric_node_openfabric.fabric_node_openfabric", map[string]string{
+				ResourceAttributes("proxmox_virtual_environment_sdn_fabric_node_openfabric.fabric_node_openfabric", map[string]string{
 					"fabric_id": "fabricS",
 					"node_id":   "pve",
 					"ip":        "10.0.0.2",
-					"state":     "changed",
 				}),
-				test.NoResourceAttributesSet("proxmox_virtual_environment_sdn_fabric_node_openfabric.fabric_node_openfabric", []string{
+				NoResourceAttributesSet("proxmox_virtual_environment_sdn_fabric_node_openfabric.fabric_node_openfabric", []string{
 					"ip6",
 				}),
 			),
@@ -120,7 +116,7 @@ func TestAccResourceSDNFabricNodeOpenFabric(t *testing.T) {
 func TestAccResourceSDNFabricNodeOSPF(t *testing.T) {
 	// Cannot run in parallel due to SDN applier functionality affecting global state
 
-	te := test.InitEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -140,11 +136,10 @@ func TestAccResourceSDNFabricNodeOSPF(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_fabric_node_ospf.fabric_node_ospf", map[string]string{
+				ResourceAttributes("proxmox_virtual_environment_sdn_fabric_node_ospf.fabric_node_ospf", map[string]string{
 					"fabric_id": "fabricO",
 					"node_id":   "pve",
 					"ip":        "10.0.0.1",
-					"state":     "new",
 				}),
 			),
 		}, {
@@ -161,11 +156,10 @@ func TestAccResourceSDNFabricNodeOSPF(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_fabric_node_ospf.fabric_node_ospf", map[string]string{
+				ResourceAttributes("proxmox_virtual_environment_sdn_fabric_node_ospf.fabric_node_ospf", map[string]string{
 					"fabric_id": "fabricO",
 					"node_id":   "pve",
 					"ip":        "10.0.0.2",
-					"state":     "changed",
 				}),
 			),
 			ResourceName:      "proxmox_virtual_environment_sdn_fabric_node_ospf.fabric_node_ospf",

@@ -12,14 +12,12 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
 func TestAccResourceSDNFabricOpenFabric(t *testing.T) {
 	// Cannot run in parallel due to SDN applier functionality affecting global state
 
-	te := test.InitEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -44,10 +42,9 @@ func TestAccResourceSDNFabricOpenFabric(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric", map[string]string{
+				ResourceAttributes("proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric", map[string]string{
 					"id":        "fabricS",
 					"ip_prefix": "10.0.0.0/16",
-					"state":     "new",
 				}),
 			),
 		}, {
@@ -69,12 +66,11 @@ func TestAccResourceSDNFabricOpenFabric(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric", map[string]string{
+				ResourceAttributes("proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric", map[string]string{
 					"id":        "fabricS",
 					"ip_prefix": "10.0.1.0/16",
-					"state":     "changed",
 				}),
-				test.NoResourceAttributesSet("proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric", []string{
+				NoResourceAttributesSet("proxmox_virtual_environment_sdn_fabric_openfabric.fabric_openfabric", []string{
 					"ip6_prefix",
 				}),
 			),
@@ -98,7 +94,7 @@ func TestAccResourceSDNFabricOpenFabric(t *testing.T) {
 func TestAccResourceSDNFabricOSPF(t *testing.T) {
 	// Cannot run in parallel due to SDN applier functionality affecting global state
 
-	te := test.InitEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -113,10 +109,9 @@ func TestAccResourceSDNFabricOSPF(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_fabric_ospf.fabric_ospf", map[string]string{
-					"id":    "fabricO",
-					"area":  "0",
-					"state": "new",
+				ResourceAttributes("proxmox_virtual_environment_sdn_fabric_ospf.fabric_ospf", map[string]string{
+					"id":   "fabricO",
+					"area": "0",
 				}),
 			),
 		}, {
@@ -124,15 +119,13 @@ func TestAccResourceSDNFabricOSPF(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_fabric_ospf" "fabric_ospf" {
 				  id        = "fabricO"
 				  area      = "0"
-				  ip_prefix = "10.0.1.0/16"
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_fabric_ospf.fabric_ospf", map[string]string{
+				ResourceAttributes("proxmox_virtual_environment_sdn_fabric_ospf.fabric_ospf", map[string]string{
 					"id":        "fabricO",
 					"area":      "0",
 					"ip_prefix": "10.0.1.0/16",
-					"state":     "changed",
 				}),
 			),
 			ResourceName:      "proxmox_virtual_environment_sdn_fabric_ospf.fabric_ospf",

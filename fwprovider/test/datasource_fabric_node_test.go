@@ -12,14 +12,12 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
 func TestAccDataSourceSDNFabricNodeOpenFabric(t *testing.T) {
 	t.Parallel()
 
-	te := test.InitEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -44,7 +42,7 @@ func TestAccDataSourceSDNFabricNodeOpenFabric(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_node_openfabric.test_node", map[string]string{
+				ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_node_openfabric.test_node", map[string]string{
 					"fabric_id": "dstest1",
 					"node_id":   "pve",
 					"ip":        "10.0.0.1",
@@ -63,10 +61,10 @@ func TestAccDataSourceSDNFabricNodeOpenFabric(t *testing.T) {
 	}
 }
 
-func TestAccDataSourceSDNFabricOSPF(t *testing.T) {
+func TestAccDataSourceSDNFabricNodeOSPF(t *testing.T) {
 	t.Parallel()
 
-	te := test.InitEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -92,11 +90,11 @@ func TestAccDataSourceSDNFabricOSPF(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_node_ospf.test_node", map[string]string){
+				ResourceAttributes("data.proxmox_virtual_environment_sdn_fabric_node_ospf.test_node", map[string]string{
 					"fabric_id": "dstest2",
 					"node_id":   "pve",
 					"ip":        "10.0.0.1",
-				}
+				}),
 			),
 		}}},
 	}
