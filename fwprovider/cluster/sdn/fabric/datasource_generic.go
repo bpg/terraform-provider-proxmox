@@ -103,7 +103,7 @@ func (d *genericFabricDataSource) Read(ctx context.Context, req datasource.ReadR
 		}
 
 		resp.Diagnostics.AddError(
-			"Unable to Read SDN Zone",
+			"Unable to Read SDN Fabric",
 			err.Error(),
 		)
 
