@@ -12,9 +12,10 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/bpg/terraform-provider-proxmox/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 func TestAccResourceVMDisks(t *testing.T) {

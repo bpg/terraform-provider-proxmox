@@ -10,10 +10,11 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/google/go-querystring/query"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func intPtr(i int) *int {

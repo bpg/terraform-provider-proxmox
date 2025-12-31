@@ -38,9 +38,7 @@ func TestAccResourceStorageNFS(t *testing.T) {
 	options1 := "vers=4"
 	options2 := "vers=4,proto=tcp"
 	preallocation := "off"
-	snapshotAsVolumeChain := true
 	preallocationPlanOnlyReplace := "metadata"
-	snapshotAsVolumeChainPlanOnlyReplace := false
 
 	te.AddTemplateVars(map[string]any{
 		"StorageID":             storageID,
@@ -49,9 +47,9 @@ func TestAccResourceStorageNFS(t *testing.T) {
 		"Options1":              options1,
 		"Options2":              options2,
 		"Preallocation":         preallocation,
-		"SnapshotAsVolumeChain": snapshotAsVolumeChain,
+		"SnapshotAsVolumeChain": true,
 		"PreallocationReplace":  preallocationPlanOnlyReplace,
-		"SnapshotReplace":       snapshotAsVolumeChainPlanOnlyReplace,
+		"SnapshotReplace":       false,
 	})
 
 	resource.ParallelTest(t, resource.TestCase{

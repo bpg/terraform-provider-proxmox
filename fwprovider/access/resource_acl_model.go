@@ -12,9 +12,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type aclResourceModel struct {

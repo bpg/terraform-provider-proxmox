@@ -188,7 +188,7 @@ func Rules() *schema.Resource {
 }
 
 // RulesImport imports firewall rules.
-func RulesImport(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
+func RulesImport(_ context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	id := d.Id()
 
 	switch {

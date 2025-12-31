@@ -19,13 +19,11 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
-
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 

@@ -15,10 +15,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/nodes/apt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	api "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt/repositories"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"

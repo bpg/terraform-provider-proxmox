@@ -10,10 +10,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // modelBase contains the common fields for all storage models.

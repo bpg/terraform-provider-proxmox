@@ -38,7 +38,7 @@ type directoryStorageResource struct {
 }
 
 // Metadata returns the resource type name.
-func (r *directoryStorageResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *directoryStorageResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = r.resourceName
 }
 
