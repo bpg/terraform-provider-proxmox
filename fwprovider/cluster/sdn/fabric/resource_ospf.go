@@ -100,7 +100,7 @@ func (r *OSPFResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Updating OSPF SDN Fabric",
-			err.Error(),
+			fmt.Sprintf("Could not update OSPF SDN Fabric %q: %v", plan.ID.ValueString(), err),
 		)
 
 		return
