@@ -119,6 +119,7 @@ func TestAccResourceSDNFabricOSPF(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_fabric_ospf" "fabric_ospf" {
 				  id        = "fabricO"
 				  area      = "0"
+				  ip_prefix = "10.0.1.0/16"
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
