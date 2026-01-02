@@ -8,7 +8,6 @@ package fabric_node
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -96,30 +95,7 @@ func (r *OpenFabricResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	toDelete := checkDeletedOpenFabricFields(&state, &plan)
 
-	updateFabricNode := plan.toAPI(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	update := &fabric_nodes.FabricNodeUpdate{
-		FabricNode: *updateFabricNode,
-		Delete:     toDelete,
-	}
-
-	client := r.client.SDNFabricNodes(plan.getGenericModel().FabricID.ValueString(), r.config.fabricProtocol)
-
-	err := client.UpdateFabricNode(ctx, update)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Updating OpenFabric SDN Fabric Node",
-			fmt.Sprintf("Could not update OpenFabric SDN Fabric Node %q: %v", plan.getID(), err),
-		)
-
-		return
-	}
-
-	// Read updated state
-	r.readAndSetState(ctx, client, plan.getID(), &resp.State, &resp.Diagnostics)
+	r.update(ctx, req, resp, toDelete)
 }
 
 func (r *OpenFabricResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {

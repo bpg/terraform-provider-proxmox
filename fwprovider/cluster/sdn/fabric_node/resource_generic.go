@@ -289,6 +289,10 @@ func (r *genericFabricNodeResource) Read(ctx context.Context, req resource.ReadR
 }
 
 func (r *genericFabricNodeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	r.update(ctx, req, resp, []string{})
+}
+
+func (r *genericFabricNodeResource) update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse, toDelete []string) {
 	plan := r.config.modelFunc()
 	resp.Diagnostics.Append(req.Plan.Get(ctx, plan)...)
 
@@ -304,7 +308,7 @@ func (r *genericFabricNodeResource) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	toDelete := checkDeletedFields(state.getGenericModel(), plan.getGenericModel())
+	toDelete = append(toDelete, checkDeletedFields(state.getGenericModel(), plan.getGenericModel())...)
 	update := &fabric_nodes.FabricNodeUpdate{
 		FabricNode: *updateFabric,
 		Delete:     toDelete,

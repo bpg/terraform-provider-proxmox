@@ -8,7 +8,6 @@ package fabric_node
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -84,30 +83,7 @@ func (r *OSPFResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	toDelete := checkDeletedOspfFields(&state, &plan)
-
-	updateFabric := plan.toAPI(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	update := &fabric_nodes.FabricNodeUpdate{
-		FabricNode: *updateFabric,
-		Delete:     toDelete,
-	}
-
-	client := r.client.SDNFabricNodes(plan.getGenericModel().FabricID.ValueString(), r.config.fabricProtocol)
-
-	err := client.UpdateFabricNode(ctx, update)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Updating OSPF SDN Fabric Node",
-			fmt.Sprintf("Could not update OSPF SDN Fabric Node %q: %v", plan.getID(), err),
-		)
-
-		return
-	}
-
-	r.readAndSetState(ctx, client, plan.getID(), &resp.State, &resp.Diagnostics)
+	r.update(ctx, req, resp, toDelete)
 }
 
 func (r *OSPFResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
