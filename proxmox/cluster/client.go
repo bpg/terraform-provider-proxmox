@@ -16,6 +16,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/applier"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/vnets"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
@@ -67,6 +69,16 @@ func (c *Client) SDNZones() *zones.Client {
 // id is the identifier of the Vnet to manage.
 func (c *Client) SDNVnets(id string) *vnets.Client {
 	return &vnets.Client{Client: c, ID: id}
+}
+
+// SDNFabrics returns a client for managing the cluster's SDN fabrics.
+func (c *Client) SDNFabrics(protocol string) *fabrics.Client {
+	return &fabrics.Client{Client: c, Protocol: protocol}
+}
+
+// SDNFabricNodes returns a client for managing the cluster's SDN fabric nodes.
+func (c *Client) SDNFabricNodes(fabricID, protocol string) *fabric_nodes.Client {
+	return &fabric_nodes.Client{Client: c, FabricID: fabricID, FabricProtocol: protocol}
 }
 
 // SDNApplier returns a client for applying the SDN's configuration.
