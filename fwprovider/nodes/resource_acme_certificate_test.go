@@ -17,12 +17,29 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
+// ACME Certificate Test Environment Setup
+//
+// These tests require a properly configured ACME environment. Here's how to set it up:
+//
+// 1. ACME Account: Create an ACME account in Proxmox VE (Datacenter -> ACME -> Add Account)
+//    - Use Let's Encrypt staging for testing: https://acme-staging-v02.api.letsencrypt.org/directory
+//    - For production: https://acme-v02.api.letsencrypt.org/directory
+//    - See: https://pve.proxmox.com/wiki/Certificate_Management
+//
+// 2. DNS Plugin (for DNS-01 challenge): Configure a DNS plugin in Proxmox VE
+//    - Datacenter -> ACME -> Challenge Plugins -> Add
+//    - Supported plugins: https://pve.proxmox.com/pve-docs/pve-admin-guide.html#sysadmin_certs_acme_plugins
+//    - Example providers: Cloudflare, Desec, DigitalOcean, etc.
+//
+// 3. Environment Variables:
+//    - PROXMOX_VE_ACC_ACME_ACCOUNT_NAME: Name of the ACME account configured in step 1
+//    - PROXMOX_VE_ACC_ACME_DOMAIN: Domain name to use for the certificate (must be resolvable)
+//    - PROXMOX_VE_ACC_ACME_DNS_PLUGIN: (Optional) Name of the DNS plugin for DNS-01 challenge
+//
+// Note: HTTP-01 challenge requires the Proxmox node to be reachable on port 80 from the internet.
+// DNS-01 challenge is recommended for testing as it doesn't require inbound connectivity.
+
 // TestAccResourceACMECertificate tests the ACME certificate resource.
-// Note: This test requires a properly configured ACME environment:
-// - Set PROXMOX_VE_ACC_ACME_ACCOUNT_NAME environment variable
-// - Set PROXMOX_VE_ACC_ACME_DOMAIN environment variable
-// - Set PROXMOX_VE_ACC_ACME_DNS_PLUGIN (optional, for DNS-01 challenge)
-// The test will be skipped if these are not set.
 func TestAccResourceACMECertificate(t *testing.T) {
 	te := test.InitEnvironment(t)
 
@@ -32,11 +49,6 @@ func TestAccResourceACMECertificate(t *testing.T) {
 
 	if acmeAccount == "" || acmeDomain == "" {
 		t.Skip("Skipping ACME certificate test - set PROXMOX_VE_ACC_ACME_ACCOUNT_NAME and PROXMOX_VE_ACC_ACME_DOMAIN")
-	}
-
-	nodeName := te.NodeName
-	if nodeName == "" {
-		nodeName = "pve"
 	}
 
 	// Build domains config
@@ -52,7 +64,6 @@ func TestAccResourceACMECertificate(t *testing.T) {
 	}]`
 
 	te.AddTemplateVars(map[string]interface{}{
-		"NodeName":      nodeName,
 		"Account":       acmeAccount,
 		"DomainsConfig": domainsConfig,
 	})
@@ -65,14 +76,14 @@ func TestAccResourceACMECertificate(t *testing.T) {
 					resource "proxmox_virtual_environment_acme_certificate" "test_cert" {
 						node_name = "{{.NodeName}}"
 						account   = "{{.Account}}"
-						force     = false
+						force     = true
 						{{.DomainsConfig}}
 					}`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_acme_certificate.test_cert", map[string]string{
-						"node_name": nodeName,
+						"node_name": te.NodeName,
 						"account":   acmeAccount,
-						"force":     "false",
+						"force":     "true",
 					}),
 					test.ResourceAttributesSet("proxmox_virtual_environment_acme_certificate.test_cert", []string{
 						"certificate",
@@ -100,11 +111,6 @@ func TestAccResourceACMECertificate_Import(t *testing.T) {
 		t.Skip("Skipping ACME certificate import test - set PROXMOX_VE_ACC_ACME_ACCOUNT_NAME and PROXMOX_VE_ACC_ACME_DOMAIN")
 	}
 
-	nodeName := te.NodeName
-	if nodeName == "" {
-		nodeName = "pve"
-	}
-
 	// Build domains config
 	domainsConfig := `domains = [{
 		domain = "` + acmeDomain + `"`
@@ -118,7 +124,6 @@ func TestAccResourceACMECertificate_Import(t *testing.T) {
 	}]`
 
 	te.AddTemplateVars(map[string]interface{}{
-		"NodeName":      nodeName,
 		"Account":       acmeAccount,
 		"DomainsConfig": domainsConfig,
 	})
@@ -138,7 +143,7 @@ func TestAccResourceACMECertificate_Import(t *testing.T) {
 			{
 				ResourceName:      "proxmox_virtual_environment_acme_certificate.test_cert_import",
 				ImportState:       true,
-				ImportStateId:     nodeName,
+				ImportStateId:     te.NodeName,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"force", // force is not stored in state

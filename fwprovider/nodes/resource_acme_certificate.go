@@ -207,7 +207,6 @@ func (r *acmeCertificateResource) Configure(
 }
 
 // waitForCertificateAvailable polls ListCertificates until a certificate is available.
-// This replaces the fixed time.Sleep with a more robust retry mechanism.
 func (r *acmeCertificateResource) waitForCertificateAvailable(
 	ctx context.Context,
 	nodeClient *nodes.Client,
@@ -221,7 +220,6 @@ func (r *acmeCertificateResource) waitForCertificateAvailable(
 				return err
 			}
 
-			// Check if any certificates are found
 			if certs == nil || len(*certs) == 0 {
 				return fmt.Errorf("no certificates found yet")
 			}
@@ -230,11 +228,10 @@ func (r *acmeCertificateResource) waitForCertificateAvailable(
 
 			return nil
 		},
-		retry.Attempts(30),                    // Maximum 30 attempts
-		retry.Delay(1*time.Second),            // Start with 1 second delay
-		retry.DelayType(retry.BackOffDelay),   // Use exponential backoff
-		retry.MaxJitter(500*time.Millisecond), // Add jitter to prevent thundering herd
-		retry.Context(ctx),                    // Respect context cancellation
+		retry.Attempts(12),
+		retry.Delay(5*time.Second),
+		retry.DelayType(retry.FixedDelay),
+		retry.Context(ctx),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("waiting for certificate availability: %w", err)
@@ -384,8 +381,10 @@ func (r *acmeCertificateResource) Update(
 	nodeName := plan.NodeName.ValueString()
 	nodeClient := r.client.Node(nodeName)
 
+	configChanged := !plan.Account.Equal(state.Account) || !plan.Domains.Equal(state.Domains)
+
 	// Update node configuration if account or domains changed
-	if !plan.Account.Equal(state.Account) || !plan.Domains.Equal(state.Domains) {
+	if configChanged {
 		if err := r.configureNodeACME(ctx, nodeClient, &plan); err != nil {
 			resp.Diagnostics.AddError(
 				"Unable to update node ACME settings",
@@ -396,41 +395,43 @@ func (r *acmeCertificateResource) Update(
 		}
 	}
 
-	// Order a new certificate if force is true or other changes are made
-	force := proxmoxtypes.CustomBool(plan.Force.ValueBool())
-	orderReq := &nodes.CertificateOrderRequestBody{
-		Force: &force,
-	}
+	// Only order a new certificate if force is true or config changed
+	if plan.Force.ValueBool() || configChanged {
+		force := proxmoxtypes.CustomBool(plan.Force.ValueBool())
+		orderReq := &nodes.CertificateOrderRequestBody{
+			Force: &force,
+		}
 
-	taskID, err := nodeClient.OrderCertificate(ctx, orderReq)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to re-order ACME certificate",
-			fmt.Sprintf("An error occurred while re-ordering the ACME certificate for node %s: %s", nodeName, err.Error()),
-		)
-
-		return
-	}
-
-	// Wait for the task to complete
-	if taskID != nil && *taskID != "" {
-		err = nodeClient.Tasks().WaitForTask(ctx, *taskID)
+		taskID, err := nodeClient.OrderCertificate(ctx, orderReq)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				"Certificate renewal task failed",
-				fmt.Sprintf("The certificate renewal task for node %s failed: %s", nodeName, err.Error()),
+				"Unable to re-order ACME certificate",
+				fmt.Sprintf("An error occurred while re-ordering the ACME certificate for node %s: %s", nodeName, err.Error()),
 			)
 
 			return
 		}
+
+		// Wait for the task to complete
+		if taskID != nil && *taskID != "" {
+			err = nodeClient.Tasks().WaitForTask(ctx, *taskID)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Certificate renewal task failed",
+					fmt.Sprintf("The certificate renewal task for node %s failed: %s", nodeName, err.Error()),
+				)
+
+				return
+			}
+		}
 	}
 
-	// Poll for the certificate to be available using retry mechanism
+	// Read current certificate information
 	certificates, err := r.waitForCertificateAvailable(ctx, nodeClient)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to read certificate information",
-			fmt.Sprintf("Failed to retrieve the renewed certificate for node %s after multiple attempts: %s", nodeName, err.Error()),
+			fmt.Sprintf("Failed to retrieve the certificate for node %s after multiple attempts: %s", nodeName, err.Error()),
 		)
 
 		return
@@ -766,22 +767,26 @@ func (r *acmeCertificateResource) findMatchingCertificate(
 
 		// Check Subject field (CN) if SANs don't have matches
 		if cert.Subject != nil && matchCount == 0 {
-			// Extract CN from Subject string (format: CN=domain.com,...)
-			// Simple extraction: look for CN= and take until the next comma
+			// Extract CN from Subject string (format: /CN=domain.com/... or CN=domain.com,...)
 			subject := *cert.Subject
 			if cnIdx := strings.Index(subject, "CN="); cnIdx != -1 {
 				cnStart := cnIdx + 3
+				if cnStart <= len(subject) {
+					remainder := subject[cnStart:]
+					// Find the end of CN value - could be delimited by / or , or end of string
+					cnEnd := len(remainder)
+					if slashIdx := strings.Index(remainder, "/"); slashIdx != -1 && slashIdx < cnEnd {
+						cnEnd = slashIdx
+					}
 
-				cnEnd := strings.Index(subject[cnStart:], ",")
-				if cnEnd == -1 {
-					cnEnd = len(subject[cnStart:])
-				} else {
-					cnEnd += cnStart
-				}
+					if commaIdx := strings.Index(remainder, ","); commaIdx != -1 && commaIdx < cnEnd {
+						cnEnd = commaIdx
+					}
 
-				cn := subject[cnStart:cnEnd]
-				if domainMap[cn] {
-					matchCount++
+					cn := remainder[:cnEnd]
+					if domainMap[cn] {
+						matchCount++
+					}
 				}
 			}
 		}
