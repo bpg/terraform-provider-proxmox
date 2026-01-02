@@ -16,9 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
@@ -41,25 +39,6 @@ func (r *Resource) Schema(
 			"<br><br>It is a Proof of Concept, highly experimental and **will** change in future. " +
 			"It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.",
 		Attributes: map[string]schema.Attribute{
-			"clone": schema.SingleNestedAttribute{
-				Description: "The cloning configuration.",
-				Optional:    true,
-				PlanModifiers: []planmodifier.Object{
-					objectplanmodifier.RequiresReplace(),
-				},
-				Attributes: map[string]schema.Attribute{
-					"id": schema.Int64Attribute{
-						Description: "The ID of the VM to clone.",
-						Required:    true,
-					},
-					"retries": schema.Int64Attribute{
-						Description: "The number of retries to perform when cloning the VM (default: 3).",
-						Optional:    true,
-						Computed:    true,
-						Default:     int64default.StaticInt64(3),
-					},
-				},
-			},
 			"cdrom": cdrom.ResourceSchema(),
 			"cpu":   cpu.ResourceSchema(),
 			"description": schema.StringAttribute{
@@ -97,6 +76,20 @@ func (r *Resource) Schema(
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
+			},
+			"purge_on_destroy": schema.BoolAttribute{
+				Description:         "Set to true to purge the VM from backup configurations on destroy.",
+				MarkdownDescription: "Set to true to purge the VM from backup configurations on destroy (defaults to `true`).",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(true),
+			},
+			"delete_unreferenced_disks_on_destroy": schema.BoolAttribute{
+				Description:         "Set to true to delete unreferenced disks on destroy.",
+				MarkdownDescription: "Set to true to delete unreferenced disks on destroy (defaults to `true`).",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(true),
 			},
 			"tags": stringset.ResourceAttribute("The tags assigned to the VM.", ""),
 			"template": schema.BoolAttribute{

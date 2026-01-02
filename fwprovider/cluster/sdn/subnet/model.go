@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/subnets"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/subnets"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 

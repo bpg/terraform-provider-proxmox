@@ -56,7 +56,7 @@ func Time() *schema.Resource {
 		UpdateContext: timeUpdate,
 		DeleteContext: timeDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				nodeName := d.Id()
 
 				err := d.Set(mkResourceVirtualEnvironmentTimeNodeName, nodeName)
@@ -72,7 +72,7 @@ func Time() *schema.Resource {
 	}
 }
 
-func timeCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func timeCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	diags := timeUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
@@ -85,7 +85,7 @@ func timeCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return nil
 }
 
-func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func timeRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -125,7 +125,7 @@ func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	return diags
 }
 
-func timeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func timeUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	api, err := config.GetClient()
@@ -149,7 +149,7 @@ func timeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return timeRead(ctx, d, m)
 }
 
-func timeDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func timeDelete(_ context.Context, d *schema.ResourceData, _ any) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

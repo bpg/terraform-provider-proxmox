@@ -9,7 +9,10 @@ package test
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"net/url"
+	"regexp"
+	"strings"
 	"sync"
 	"testing"
 	"text/template"
@@ -28,6 +31,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -160,6 +164,7 @@ func InitEnvironment(t *testing.T) *Environment {
 			"DatastoreID":           datastoreID,
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
+			"TestName":              sanitizeTemplateName(t.Name()),
 		},
 		NodeName:              nodeName,
 		DatastoreID:           datastoreID,
@@ -170,13 +175,26 @@ func InitEnvironment(t *testing.T) *Environment {
 	}
 }
 
+var nonAlnum = regexp.MustCompile(`[^a-zA-Z0-9]+`)
+
+func sanitizeTemplateName(name string) string {
+	sanitized := strings.Trim(nonAlnum.ReplaceAllString(name, "-"), "-")
+	if sanitized == "" {
+		return "test"
+	}
+
+	if len(sanitized) > 48 {
+		return sanitized[:48]
+	}
+
+	return sanitized
+}
+
 // AddTemplateVars adds the given variables to the template variables of the current test environment.
 // Please note that NodeName and ProviderConfig are reserved keys, they are set by the test environment
 // and cannot be overridden.
 func (e *Environment) AddTemplateVars(vars map[string]any) {
-	for k, v := range vars {
-		e.templateVars[k] = v
-	}
+	maps.Copy(e.templateVars, vars)
 }
 
 // RenderConfig renders the given configuration with for the current test environment using template engine.
@@ -256,6 +274,11 @@ func (e *Environment) NodeStorageClient() *storage.Client {
 // ClusterClient returns a new cluster client for the test environment.
 func (e *Environment) ClusterClient() *cluster.Client {
 	return &cluster.Client{Client: e.Client()}
+}
+
+// PoolsClient returns a new pools client for the test environment.
+func (e *Environment) PoolsClient() *pools.Client {
+	return &pools.Client{Client: e.Client()}
 }
 
 // muxProviders returns a map of mux servers for the acceptance tests.

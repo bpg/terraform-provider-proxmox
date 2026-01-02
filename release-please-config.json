@@ -17,7 +17,8 @@
                 "examples/guides/cloud-image/ubuntu-img/provider.tf",
                 "examples/guides/cloud-init/custom/provider.tf",
                 "examples/guides/cloud-init/native/provider.tf",
-                "examples/guides/clone-vm/provider.tf"
+                "examples/guides/clone-vm/provider.tf",
+                "examples/guides/cloned-vm/provider.tf"
             ],
             "changelog-sections": [
                 {

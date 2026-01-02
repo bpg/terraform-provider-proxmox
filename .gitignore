@@ -17,6 +17,7 @@ modules-dev/
 .terraform/
 .vagrant/
 .run/
+.*cache/
 
 *~
 *#
@@ -46,8 +47,13 @@ id_rsa.pub
 # Binary
 terraform-provider-proxmox*
 
-# VScode / Cursor
+# VScode / Cursor / Claude
 .vscode/settings.json
 .cursor/
 .cursorrules
+.claude/
 coverage.out
+
+# local-only progress/report notes (keep out of git)
+*_PROGRESS.md
+*_REPORT.md

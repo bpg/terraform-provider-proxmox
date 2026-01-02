@@ -26,15 +26,23 @@ type CustomCPUEmulation struct {
 
 // EncodeValues converts a CustomCPUEmulation struct to a URL value.
 func (r *CustomCPUEmulation) EncodeValues(key string, v *url.Values) error {
-	values := []string{
-		fmt.Sprintf("cputype=%s", r.Type),
+	hasFlags := r.Flags != nil && len(*r.Flags) > 0
+	hasHidden := r.Hidden != nil
+	hasHVVendorID := r.HVVendorID != nil
+
+	var values []string
+
+	if hasFlags || hasHidden || hasHVVendorID {
+		values = append(values, fmt.Sprintf("cputype=%s", r.Type))
+	} else {
+		values = append(values, r.Type)
 	}
 
-	if r.Flags != nil && len(*r.Flags) > 0 {
+	if hasFlags {
 		values = append(values, fmt.Sprintf("flags=%s", strings.Join(*r.Flags, ";")))
 	}
 
-	if r.Hidden != nil {
+	if hasHidden {
 		if *r.Hidden {
 			values = append(values, "hidden=1")
 		} else {
@@ -42,7 +50,7 @@ func (r *CustomCPUEmulation) EncodeValues(key string, v *url.Values) error {
 		}
 	}
 
-	if r.HVVendorID != nil {
+	if hasHVVendorID {
 		values = append(values, fmt.Sprintf("hv-vendor-id=%s", *r.HVVendorID))
 	}
 
@@ -63,9 +71,9 @@ func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 		return errors.New("unexpected empty string")
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {

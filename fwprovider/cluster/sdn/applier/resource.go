@@ -12,11 +12,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/applier"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/applier"
 )
 
 var (
@@ -26,7 +30,9 @@ var (
 
 type model struct {
 	// Opaque ID set timestamp at creation time.
-	ID types.String `tfsdk:"id"`
+	ID        types.String `tfsdk:"id"`
+	OnCreate  types.Bool   `tfsdk:"on_create"`
+	OnDestroy types.Bool   `tfsdk:"on_destroy"`
 }
 
 type Resource struct {
@@ -51,6 +57,24 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Computed:    true,
 				Description: "Opaque identifier set to the Unix timestamp (milliseconds) when the apply was executed.",
 			},
+			"on_create": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(true),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+				Description: "Whether to apply SDN configuration on resource creation. Defaults to true.",
+			},
+			"on_destroy": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(true),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+				Description: "Whether to apply SDN configuration on resource destruction. Defaults to true.",
+			},
 		},
 	}
 }
@@ -73,30 +97,7 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 	r.client = cfg.Client.Cluster().SDNApplier()
 }
 
-func (r *Resource) Create(ctx context.Context, _ resource.CreateRequest, resp *resource.CreateResponse) {
-	if err := r.client.ApplyConfig(ctx); err != nil {
-		resp.Diagnostics.AddError("Unable to Apply SDN Configuration", err.Error())
-		return
-	}
-
-	state := &model{
-		ID: types.StringValue(strconv.FormatInt(time.Now().UTC().UnixMilli(), 10)),
-	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
-}
-
-func (r *Resource) Read(_ context.Context, _ resource.ReadRequest, _ *resource.ReadResponse) {
-	// Nothing to refresh
-}
-
-func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// We expect replacements only. But if someone does in-place Update,
-	// we just re-run apply for safety and bump the ID timestamp.
-	if err := r.client.ApplyConfig(ctx); err != nil {
-		resp.Diagnostics.AddError("Unable to Re-Apply SDN Configuration", err.Error())
-		return
-	}
-
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -104,13 +105,52 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
+	if plan.OnCreate.ValueBool() {
+		if err := r.client.ApplyConfig(ctx); err != nil {
+			resp.Diagnostics.AddError("Unable to Apply SDN Configuration", err.Error())
+			return
+		}
+	}
+
 	plan.ID = types.StringValue(strconv.FormatInt(time.Now().UTC().UnixMilli(), 10))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *Resource) Delete(ctx context.Context, _ resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *Resource) Read(_ context.Context, _ resource.ReadRequest, _ *resource.ReadResponse) {
+	// Nothing to refresh
+}
+
+func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// We expect replacements only. But if someone does in-place Update,
+	// we just re-run apply for safety and bump the ID timestamp.
 	if err := r.client.ApplyConfig(ctx); err != nil {
 		resp.Diagnostics.AddError("Unable to Re-Apply SDN Configuration", err.Error())
 		return
+	}
+
+	plan.ID = types.StringValue(strconv.FormatInt(time.Now().UTC().UnixMilli(), 10))
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if state.OnDestroy.ValueBool() {
+		if err := r.client.ApplyConfig(ctx); err != nil {
+			resp.Diagnostics.AddError("Unable to Apply SDN Configuration", err.Error())
+			return
+		}
 	}
 }

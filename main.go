@@ -49,6 +49,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresource.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresources.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_vnet.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_vnets.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zones.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_simple.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_subnet.md ./docs/data-sources/
@@ -82,9 +83,19 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_qinq.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_vxlan.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_evpn.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_storage_directory.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_storage_lvmthin.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_storage_lvm.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_storage_nfs.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_storage_pbs.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_storage_cifs.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_storage_zfspool.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_user_token.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_vm2.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_metrics_server.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_oci_image.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_pool_membership.md ./docs/resources/
 
 // these will be set by the goreleaser configuration
 // to appropriate values for the compiled binary.

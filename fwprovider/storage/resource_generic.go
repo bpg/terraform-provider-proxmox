@@ -1,0 +1,202 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+package storage
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
+)
+
+// storageModel is an interface that all storage resource models must implement.
+// This allows a generic resource implementation to handle the CRUD operations.
+type storageModel interface {
+	// GetID returns the storage identifier from the model.
+	GetID() types.String
+
+	// toCreateAPIRequest converts the Terraform model to the specific API request body for creation.
+	toCreateAPIRequest(ctx context.Context) (any, error)
+
+	// toUpdateAPIRequest converts the Terraform model to the specific API request body for updates.
+	toUpdateAPIRequest(ctx context.Context) (any, error)
+
+	// fromAPI populates the model from the Proxmox API response.
+	fromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error
+}
+
+// storageResource is a generic implementation for all storage resources.
+// It uses a generic type parameter 'T' which must be a pointer to a struct
+// that implements the storageModel interface.
+type storageResource[T interface {
+	*M
+	storageModel
+}, M any] struct {
+	client       proxmox.Client
+	storageType  string
+	resourceName string
+}
+
+func (r *storageResource[T, M]) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// Configure is the generic configuration function.
+func (r *storageResource[T, M]) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	cfg, ok := req.ProviderData.(config.Resource)
+	if !ok {
+		resp.Diagnostics.AddError("Unexpected Resource Configure Type", fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData))
+		return
+	}
+
+	r.client = cfg.Client
+}
+
+// Create is the generic create function.
+func (r *storageResource[T, M]) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan T = new(M)
+
+	diags := req.Plan.Get(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	requestBody, err := plan.toCreateAPIRequest(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error creating API request for %s storage", r.storageType), err.Error())
+		return
+	}
+
+	_, err = r.client.Storage().CreateDatastore(ctx, requestBody)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error creating %s storage", r.storageType), err.Error())
+		return
+	}
+
+	datastoreID := plan.GetID().ValueString()
+
+	datastore, err := r.client.Storage().GetDatastore(ctx, &storage.DatastoreGetRequest{ID: &datastoreID})
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage after create", r.storageType), err.Error())
+		return
+	}
+
+	if err := plan.fromAPI(ctx, datastore); err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage after create", r.storageType), err.Error())
+		return
+	}
+
+	diags = resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+}
+
+// Read is the generic read function.
+func (r *storageResource[T, M]) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state T = new(M)
+
+	diags := req.State.Get(ctx, state)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	datastoreID := state.GetID().ValueString()
+
+	datastore, err := r.client.Storage().GetDatastore(ctx, &storage.DatastoreGetRequest{ID: &datastoreID})
+	if err != nil {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage", r.storageType), err.Error())
+
+		return
+	}
+
+	err = state.fromAPI(ctx, datastore)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage", r.storageType), err.Error())
+		return
+	}
+
+	diags = resp.State.Set(ctx, state)
+	resp.Diagnostics.Append(diags...)
+}
+
+// Update is the generic update function.
+func (r *storageResource[T, M]) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan T = new(M)
+
+	diags := req.Plan.Get(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	requestBody, err := plan.toUpdateAPIRequest(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error creating API request for %s storage", r.storageType), err.Error())
+		return
+	}
+
+	err = r.client.Storage().UpdateDatastore(ctx, plan.GetID().ValueString(), requestBody)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error updating %s storage", r.storageType), err.Error())
+		return
+	}
+
+	datastoreID := plan.GetID().ValueString()
+
+	datastore, err := r.client.Storage().GetDatastore(ctx, &storage.DatastoreGetRequest{ID: &datastoreID})
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage after update", r.storageType), err.Error())
+		return
+	}
+
+	if err := plan.fromAPI(ctx, datastore); err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage after update", r.storageType), err.Error())
+		return
+	}
+
+	diags = resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+}
+
+// Delete is the generic delete function.
+func (r *storageResource[T, M]) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state T = new(M)
+
+	diags := req.State.Get(ctx, state)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := r.client.Storage().DeleteDatastore(ctx, state.GetID().ValueString())
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error deleting %s storage", r.storageType), err.Error())
+		return
+	}
+}

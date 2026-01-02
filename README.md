@@ -19,7 +19,7 @@ The project is not affiliated with [Proxmox Server Solutions GmbH](https://www.p
 
 ## Compatibility Promise
 
-This provider is compatible with Proxmox VE 9.x (currently **9.0**). See [Known Issues](#known-issues) below for compatibility details.
+This provider is compatible with Proxmox VE 9.x (currently **9.1**). See [Known Issues](#known-issues) below for compatibility details.
 
 > [!IMPORTANT]
 > Proxmox VE 8.x is supported, but some functionality might be limited or not work as expected. Testing against 8.x is not a priority, and issues specific to 8.x will not be addressed.
@@ -59,9 +59,9 @@ make test
 
 Tests are limited to regression tests, ensuring backward compatibility.
 
-A limited number of acceptance tests are available in the `proxmoxtf/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
+A limited number of acceptance tests are available in the `fwprovider/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
 These tests are not run by default, as they require a Proxmox VE environment to be available.
-They can be run using `make testacc`. The Proxmox connection can be configured using environment variables; see the provider documentation for details.
+They can be run using `./testacc` (requires `testacc.env` in the project root). The Proxmox connection can be configured using environment variables; see the provider documentation for details.
 
 ## Deploying the Example Resources
 
@@ -95,11 +95,9 @@ Work has started to migrate the provider to the new [Terraform Plugin Framework]
 
 ## Known Issues
 
-### Proxmox VE 9.0
+### Proxmox VE 9.x
 
-Proxmox VE 9.0 has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
-
-`apt_*` resources / datasources do not support the new deb822 style format.
+Proxmox VE 9.x has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
 
 ### HA VMs / containers
 
@@ -193,6 +191,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Radosław Szamszur](https://github.com/rszamszur)
 - [Marshall Ford](https://github.com/marshallford)
 - [Simon Caron](https://github.com/simoncaron)
+- [/ar/sh](https://github.com/0x0000ARSH)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 

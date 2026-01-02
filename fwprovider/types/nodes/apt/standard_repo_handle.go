@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 
 	apitypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/nodes/apt/repositories"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 )
 
 // Ensure the implementations satisfy the required interfaces.
@@ -139,10 +140,10 @@ func (v StandardRepoHandleValue) CephVersionName() apitypes.CephVersionName {
 }
 
 // ComponentName returns the corresponding component name.
-func (v StandardRepoHandleValue) ComponentName() string {
+func (v StandardRepoHandleValue) ComponentName(proxmoxVersion *version.ProxmoxVersion) string {
 	if v.cvn == apitypes.CephVersionNameUnknown && v.kind != apitypes.StandardRepoHandleKindUnknown {
-		// For whatever reason the non-Ceph handle "test" kind does not use a dash in between the "pve" prefix.
-		if v.kind == apitypes.StandardRepoHandleKindTest {
+		// On PVE8, for whatever reason the non-Ceph handle "test" kind does not use a dash in between the "pve" prefix.
+		if proxmoxVersion != nil && !proxmoxVersion.SupportModernAptSources() && v.kind == apitypes.StandardRepoHandleKindTest {
 			return fmt.Sprintf("pve%s", v.kind)
 		}
 
@@ -169,17 +170,37 @@ func (v StandardRepoHandleValue) IsCephHandle() bool {
 }
 
 // IsSupportedFilePath returns whether the handle is supported for the given source list file path.
-func (v StandardRepoHandleValue) IsSupportedFilePath(filePath string) bool {
-	switch filePath {
-	case apitypes.StandardRepoFilePathCeph:
-		return v.IsCephHandle()
-	case apitypes.StandardRepoFilePathEnterprise:
-		return !v.IsCephHandle() && v.kind == apitypes.StandardRepoHandleKindEnterprise
-	case apitypes.StandardRepoFilePathMain:
-		return !v.IsCephHandle() && v.kind != apitypes.StandardRepoHandleKindEnterprise
-	default:
-		return false
+// The proxmoxVersion parameter is used to determine whether to use old (.list) or new (.sources) format paths.
+// For versions below PVE 9: only old .list paths are supported.
+// For PVE 9 and above: both old and new paths are supported for compatibility.
+func (v StandardRepoHandleValue) IsSupportedFilePath(filePath string, proxmoxVersion *version.ProxmoxVersion) bool {
+	supportsModernPaths := proxmoxVersion == nil || proxmoxVersion.SupportModernAptSources()
+
+	if v.IsCephHandle() {
+		if supportsModernPaths {
+			return filePath == apitypes.StandardRepoFilePathCeph || filePath == apitypes.OldStandardRepoFilePathCeph
+		}
+
+		return filePath == apitypes.OldStandardRepoFilePathCeph
 	}
+
+	if v.kind == apitypes.StandardRepoHandleKindEnterprise {
+		if supportsModernPaths {
+			return filePath == apitypes.StandardRepoFilePathEnterprise || filePath == apitypes.OldStandardRepoFilePathEnterprise
+		}
+
+		return filePath == apitypes.OldStandardRepoFilePathEnterprise
+	}
+
+	if v.kind == apitypes.StandardRepoHandleKindNoSubscription || v.kind == apitypes.StandardRepoHandleKindTest {
+		if supportsModernPaths {
+			return filePath == apitypes.StandardRepoFilePathMain || filePath == apitypes.OldStandardRepoFilePathMain
+		}
+
+		return filePath == apitypes.OldStandardRepoFilePathMain
+	}
+
+	return false
 }
 
 // Type returns the type of the value.

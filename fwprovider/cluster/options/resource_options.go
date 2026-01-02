@@ -338,7 +338,7 @@ func (m *clusterOptionsModel) importFromOptionsAPI(_ context.Context, opts *clus
 
 	//nolint:nestif
 	if opts.BandwidthLimit != nil {
-		for _, bandwidth := range strings.Split(*opts.BandwidthLimit, ",") {
+		for bandwidth := range strings.SplitSeq(*opts.BandwidthLimit, ",") {
 			bandwidthData := strings.SplitN(bandwidth, "=", 2)
 			bandwidthName := bandwidthData[0]
 

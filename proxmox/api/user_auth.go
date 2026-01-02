@@ -74,7 +74,7 @@ func (t *userAuthenticator) authenticate(ctx context.Context) (*AuthenticationRe
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	tflog.Debug(ctx, "Sending authentication request", map[string]interface{}{
+	tflog.Debug(ctx, "Sending authentication request", map[string]any{
 		"path": req.URL.Path,
 	})
 
@@ -124,7 +124,7 @@ func (t *userAuthenticator) authenticate(ctx context.Context) (*AuthenticationRe
 func (t *userAuthenticator) IsRoot(ctx context.Context) bool {
 	if t.authData == nil {
 		if _, err := t.authenticate(ctx); err != nil {
-			tflog.Warn(ctx, "Failed to authenticate while checking root status", map[string]interface{}{
+			tflog.Warn(ctx, "Failed to authenticate while checking root status", map[string]any{
 				"error": err.Error(),
 			})
 

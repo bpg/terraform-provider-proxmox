@@ -92,7 +92,7 @@ func Group() *schema.Resource {
 	}
 }
 
-func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func groupCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -141,7 +141,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	return groupRead(ctx, d, m)
 }
 
-func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func groupRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -201,10 +201,13 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	err = d.Set(mkResourceVirtualEnvironmentGroupMembers, group.Members)
 	diags = append(diags, diag.FromErr(err)...)
 
+	err = d.Set(mkResourceVirtualEnvironmentGroupID, groupID)
+	diags = append(diags, diag.FromErr(err)...)
+
 	return diags
 }
 
-func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func groupUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -274,7 +277,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	return groupRead(ctx, d, m)
 }
 
-func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func groupDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()

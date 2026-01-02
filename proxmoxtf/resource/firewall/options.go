@@ -129,7 +129,7 @@ func Options() *schema.Resource {
 	}
 }
 
-func optionsImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func optionsImport(_ context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	id := d.Id()
 
 	switch {

@@ -30,6 +30,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
@@ -234,7 +235,7 @@ func File() *schema.Resource {
 		DeleteContext: fileDelete,
 		UpdateContext: fileUpdate,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				node, volID, err := fileParseImportID(d.Id())
 				if err != nil {
 					return nil, err
@@ -318,7 +319,7 @@ func fileParseImportID(id string) (string, fileVolumeID, error) {
 	return node, volID, nil
 }
 
-func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
 	fileMode := d.Get(mkResourceVirtualEnvironmentFileFileMode).(string)
 
@@ -347,7 +348,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	contentType, dg := fileGetContentType(ctx, d, capi)
 	diags = append(diags, dg...)
 
-	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
+	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx, contentType)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -355,7 +356,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	for _, file := range list {
 		volumeID, e := fileParseVolumeID(file.VolumeID)
 		if e != nil {
-			tflog.Warn(ctx, "failed to parse volume ID", map[string]interface{}{
+			tflog.Warn(ctx, "failed to parse volume ID", map[string]any{
 				"error": err,
 			})
 
@@ -566,7 +567,9 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
-		datastore, err2 := capi.Storage().GetDatastore(ctx, datastoreID)
+		req := &storage.DatastoreGetRequest{ID: &datastoreID}
+
+		datastore, err2 := capi.Storage().GetDatastore(ctx, req)
 		if err2 != nil {
 			return diag.Errorf("failed to get datastore: %s", err2)
 		}
@@ -575,15 +578,17 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			return diag.Errorf("failed to determine the datastore path")
 		}
 
-		sort.Strings(datastore.Content)
+		contentTypes := []string(*datastore.ContentTypes)
 
-		_, found := slices.BinarySearch(datastore.Content, *contentType)
+		sort.Strings(contentTypes)
+
+		_, found := slices.BinarySearch(contentTypes, *contentType)
 		if !found {
 			diags = append(diags, diag.Diagnostics{
 				diag.Diagnostic{
 					Severity: diag.Warning,
 					Summary: fmt.Sprintf("the datastore %q does not support content type %q; supported content types are: %v",
-						*datastore.Storage, *contentType, datastore.Content,
+						*datastore.ID, *contentType, contentTypes,
 					),
 				},
 			}...)
@@ -629,7 +634,7 @@ func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.C
 	if versionResp, err := c.Version().Version(ctx); err == nil {
 		ver = versionResp.Version
 	} else {
-		tflog.Warn(ctx, fmt.Sprintf("failed to determine Proxmox VE version, assume %v", ver), map[string]interface{}{
+		tflog.Warn(ctx, fmt.Sprintf("failed to determine Proxmox VE version, assume %v", ver), map[string]any{
 			"error": err,
 		})
 	}
@@ -738,7 +743,11 @@ func fileGetVolumeID(ctx context.Context, d *schema.ResourceData, c proxmox.Clie
 	}
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
+
 	contentType, diags := fileGetContentType(ctx, d, c)
+	if diags.HasError() {
+		return fileVolumeID{}, diags
+	}
 
 	return fileVolumeID{
 		datastoreID: datastoreID,
@@ -762,7 +771,7 @@ func fileIsURL(d *schema.ResourceData) bool {
 		strings.HasPrefix(sourceFilePath, "https://")
 }
 
-func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	capi, err := config.GetClient()
@@ -773,8 +782,15 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	contentTypeStr := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
 
-	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
+	// Filter by content type if available for better performance
+	var contentType *string
+	if contentTypeStr != "" {
+		contentType = &contentTypeStr
+	}
+
+	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx, contentType)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -804,7 +820,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				continue
 			}
 
-			sourceFileBlock := sourceFile[0].(map[string]interface{})
+			sourceFileBlock := sourceFile[0].(map[string]any)
 			sourceFilePath := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 
 			fileModificationDate, fileSize, fileTag, err := readFileAttrs(ctx, sourceFilePath)
@@ -941,7 +957,7 @@ func readURL(
 	}
 }
 
-func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func fileDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	capi, err := config.GetClient()
@@ -962,7 +978,7 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return nil
 }
 
-func fileUpdate(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func fileUpdate(_ context.Context, _ *schema.ResourceData, _ any) diag.Diagnostics {
 	// a pass-through update function -- no actual resource update is needed / allowed
 	// only the TF state is updated, for example, a timeout_upload attribute value
 	return nil

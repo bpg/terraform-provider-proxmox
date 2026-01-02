@@ -127,7 +127,7 @@ func Certificate() *schema.Resource {
 	}
 }
 
-func certificateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func certificateCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	diags := certificateUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
@@ -170,7 +170,7 @@ func certificateGetUpdateBody(d *schema.ResourceData) *nodes.CertificateUpdateRe
 	return body
 }
 
-func certificateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func certificateRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -302,7 +302,7 @@ func certificateRead(ctx context.Context, d *schema.ResourceData, m interface{})
 	return diags
 }
 
-func certificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func certificateUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	api, err := config.GetClient()
@@ -322,7 +322,7 @@ func certificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{
 	return certificateRead(ctx, d, m)
 }
 
-func certificateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func certificateDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	api, err := config.GetClient()

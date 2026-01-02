@@ -54,9 +54,9 @@ func (r *CustomRNGDevice) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal CustomRNGDevice: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 		if len(v) == 1 {
 			r.Source = v[0]

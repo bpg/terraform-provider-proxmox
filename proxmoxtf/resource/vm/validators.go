@@ -18,7 +18,7 @@ import (
 
 // VMIDValidator returns a schema validation function for a VM ID.
 func VMIDValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
+	return validation.ToDiagFunc(func(i any, k string) ([]string, []error) {
 		minID := 100
 		maxID := 2147483647
 
@@ -205,7 +205,7 @@ func MachineTypeValidator() schema.SchemaValidateDiagFunc {
 
 // TimeoutValidator is a schema validation function for timeouts.
 func TimeoutValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
+	return validation.ToDiagFunc(func(i any, k string) ([]string, []error) {
 		v, ok := i.(string)
 
 		var ws []string
@@ -338,7 +338,7 @@ func OperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 
 // SerialDeviceValidator is a schema validation function for serial devices.
 func SerialDeviceValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
+	return validation.ToDiagFunc(func(i any, k string) ([]string, []error) {
 		v, ok := i.(string)
 
 		var es []error

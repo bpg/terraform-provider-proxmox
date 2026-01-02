@@ -86,7 +86,7 @@ func Containers() *schema.Resource {
 }
 
 // containersRead reads the Containers.
-func containersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func containersRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -103,7 +103,7 @@ func containersRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	var filterTags []string
 
-	tagsData := d.Get(mkDataSourceVirtualEnvironmentContainerTags).([]interface{})
+	tagsData := d.Get(mkDataSourceVirtualEnvironmentContainerTags).([]any)
 	for _, tagData := range tagsData {
 		tag := strings.TrimSpace(tagData.(string))
 		if len(tag) > 0 {
@@ -113,9 +113,9 @@ func containersRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	sort.Strings(filterTags)
 
-	filters := d.Get(mkDataSourceFilter).([]interface{})
+	filters := d.Get(mkDataSourceFilter).([]any)
 
-	var containers []interface{}
+	var containers []any
 
 	for _, nodeName := range nodeNames {
 		listData, e := api.Node(nodeName).Container(0).ListContainers(ctx)
@@ -138,7 +138,7 @@ func containersRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		})
 
 		for _, data := range listData {
-			container := map[string]interface{}{
+			container := map[string]any{
 				mkDataSourceVirtualEnvironmentContainerNodeName: nodeName,
 				mkDataSourceVirtualEnvironmentContainerVMID:     data.VMID,
 			}
@@ -201,11 +201,11 @@ func containersRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 }
 
 //nolint:dupl // TODO: refactor to avoid duplication
-func checkContainerMatchFilters(container map[string]interface{}, filters []interface{}) (bool, error) {
+func checkContainerMatchFilters(container map[string]any, filters []any) (bool, error) {
 	for _, v := range filters {
-		filter := v.(map[string]interface{})
+		filter := v.(map[string]any)
 		filterName := filter["name"]
-		filterValues := filter["values"].([]interface{})
+		filterValues := filter["values"].([]any)
 		filterRegex := filter["regex"].(bool)
 
 		var containerValue string

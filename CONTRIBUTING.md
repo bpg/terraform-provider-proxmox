@@ -1,8 +1,9 @@
 # How to contribute
 
 **First:** if you're unsure or afraid of _anything_, ask for help! You can
-submit a work in progress (WIP) pull request, or file an issue with the parts
-you know. We'll do our best to guide you in the right direction, and let you
+submit a work in progress (WIP) pull request, or file an [issue](https://github.com/bpg/terraform-provider-proxmox/issues) with the parts
+you know. For questions and general discussion, use [GitHub Discussions](https://github.com/bpg/terraform-provider-proxmox/discussions).
+We'll do our best to guide you in the right direction, and let you
 know if there are guidelines we will need to follow. We want people to be able
 to participate without fear of doing the wrong thing.
 
@@ -10,6 +11,31 @@ Below are our expectations for contributors. Following these guidelines gives us
 the best opportunity to work with you, by making sure we have the things we need
 in order to make it happen. Doing your best to follow it will speed up our
 ability to merge PRs and respond to issues.
+
+## Quick start
+
+1. Fork and clone the repository.
+2. Create a feature branch.
+3. Implement your changes.
+4. Run `make test` and `make lint`.
+5. Commit with `git commit -s` (signs off on DCO).
+6. Open a PR against `main`.
+
+For common issues during development, see [Development Troubleshooting](docs/guides/dev-troubleshooting.md).
+
+## Table of contents
+
+- [Quick start](#quick-start)
+- [Build the provider](#build-the-provider)
+- [IDE support](#ide-support)
+- [Devcontainer support](#devcontainer-support)
+- [Testing](#testing)
+- [Provider implementation guidance](#provider-implementation-guidance)
+- [Coding conventions](#coding-conventions)
+- [Commit message conventions](#commit-message-conventions)
+- [Developer Certificate of Origin (DCO)](#developer-certificate-of-origin-dco)
+- [Submitting changes](#submitting-changes)
+- [Releasing](#releasing)
 
 ## Build the provider
 
@@ -44,9 +70,9 @@ ability to merge PRs and respond to issues.
 
 - A portion of the documentation is generated from the source code. To update the documentation, run:
 
-```sh
-make docs
-```
+  ```sh
+  make docs
+  ```
 
 ## IDE support
 
@@ -56,19 +82,19 @@ If you are using VS Code, feel free to copy `settings.json` from `.vscode/settin
 
 Prerequisites:
 
-- Docker (or Docker Desktop) installed on your machine  
+- Docker (or Docker Desktop) installed on your machine
 - [VS Code Remote - Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
 To launch the devcontainer:
 
-1. Open the project in VS Code.  
-2. Run **Remote-Containers: Open Folder in Container** from the Command Palette.  
+1. Open the project in VS Code.
+2. Run **Remote-Containers: Open Folder in Container** from the Command Palette.
 
 See [Developing inside a Container](https://code.visualstudio.com/docs/devcontainers/containers) for more details.
 
 ## Testing
 
-### Unit Tests
+### Unit tests
 
 The project has a test suite that must pass for contributions to be accepted. When making changes:
 
@@ -78,45 +104,47 @@ The project has a test suite that must pass for contributions to be accepted. Wh
    make test
    ```
 
-2. Add or modify test cases to cover your changes
-3. Ensure all tests pass before submitting your PR
+2. Add or modify test cases to cover your changes.
+3. Ensure all tests pass before submitting your PR.
 
-### Acceptance Tests
+### Acceptance tests
 
-Acceptance tests run against a real Proxmox instance and verify the provider's functionality end-to-end. These tests are located in the `fwprovider/tests` directory.
+Acceptance tests run against a real Proxmox instance and verify the provider's functionality end-to-end.
+
+**Where to put tests:** place acceptance tests alongside the resource or data source implementation (same package/folder) whenever possible. The shared `fwprovider/test/` directory is reserved for cross-resource integration tests or cases that require expensive Proxmox setup shared across multiple suites.
 
 #### Prerequisites
 
-1. A running Proxmox instance (see [Setup Proxmox for Tests](docs/guides/setup-proxmox-for-tests.md))
+1. A running Proxmox instance (see [Development Proxmox Setup](docs/guides/dev-proxmox-setup.md))
 2. Create a `testacc.env` file in the project root with:
 
-```env
-TF_ACC=1
-PROXMOX_VE_API_TOKEN="root@pam!<token name>=<token value>"
-PROXMOX_VE_ENDPOINT="https://<pve instance>:8006/"
-PROXMOX_VE_SSH_AGENT="true"
-PROXMOX_VE_SSH_USERNAME="root"
-```
+   ```env
+   TF_ACC=1
+   PROXMOX_VE_API_TOKEN="root@pam!<token name>=<token value>"
+   PROXMOX_VE_ENDPOINT="https://<pve instance>:8006/"
+   PROXMOX_VE_SSH_AGENT="true"
+   PROXMOX_VE_SSH_USERNAME="root"
+   ```
 
-Optional configuration:
+   Optional configuration:
 
-```env
-# Override default node name and SSH settings
-PROXMOX_VE_ACC_NODE_NAME="pve1"
-PROXMOX_VE_ACC_NODE_SSH_ADDRESS="10.0.0.11"
-PROXMOX_VE_ACC_NODE_SSH_PORT="22"
-PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
-```
+   ```env
+   # Override default node name and SSH settings
+   PROXMOX_VE_ACC_NODE_NAME="pve1"
+   PROXMOX_VE_ACC_NODE_SSH_ADDRESS="10.0.0.11"
+   PROXMOX_VE_ACC_NODE_SSH_PORT="22"
+   PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
+   ```
 
-#### Running Acceptance Tests
+#### Running acceptance tests
 
-Run the acceptance test suite with:
+Run the full acceptance test suite with:
 
 ```sh
 make testacc
 ```
 
-If you want to run a single test or a group of tests, use the helper script:
+To run a single test or a group of tests, use the helper script:
 
 ```sh
 ./testacc <test_name>
@@ -126,11 +154,11 @@ For example, to run all VM-related tests: `./testacc TestAccResourceVM.*`
 
 > [!NOTE]
 >
-> - Acceptance test coverage is still in development
-> - Only some resources and data sources are currently tested
-> - Some tests may require specific Proxmox configuration
+> - Acceptance test coverage is still in development.
+> - Only some resources and data sources are currently tested.
+> - Some tests may require specific Proxmox configuration.
 
-### Manual Testing
+### Manual testing
 
 You can test the provider locally before submitting changes:
 
@@ -174,16 +202,35 @@ You can test the provider locally before submitting changes:
 > [!TIP]
 > After the initial setup, you only need to run `go install .` when rebuilding the provider.
 
+## Provider implementation guidance
+
+New resources and data sources **must** be implemented using the Terraform Plugin Framework. The framework provider lives under the `fwprovider/` directory. The legacy SDK implementation in `proxmoxtf/` is feature-frozen; PRs that add new SDK-based resources or data sources will not be accepted.
+
+### Reference implementations
+
+When writing a new resource or data source, use these files as templates:
+
+| Use case                                                                                          | Reference file                             |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Full CRUD resource with plan modifiers, validators, diagnostics, and Proxmox client orchestration | `fwprovider/nodes/resource_oci_image.go`   |
+| SDN-backed resource with SDN-specific validators, delete handling, and import                     | `fwprovider/cluster/sdn/vnet/resource.go`  |
+
+### Best practices
+
+- Keep validation logic consistent across framework components.
+- Place acceptance tests alongside the implementation (same package/folder).
+- Reuse shared helpers from `fwprovider/attribute/` and `fwprovider/validators/`.
+
 ## Coding conventions
 
 We expect all code contributions to follow these guidelines:
 
 1. Code must be formatted using `gofmt`
-   - Run `make fmt` to format your code
+   - Run `make fmt` to format your code.
 
-2. Code must be linted using `golangci-lint`
-   - Run `make lint` to lint your code
-   - The project uses `.golangci.yml` for linting configuration
+2. Code must pass linting with `golangci-lint`
+   - Run `make lint` to lint your code.
+   - The project uses `.golangci.yml` for linting configuration.
 
 ## Commit message conventions
 
@@ -197,32 +244,32 @@ These types are used to automatically generate the changelog. Other types will b
 
 Use the `scope` field to indicate the area of the codebase being changed:
 
-- `vm` - Virtual Machine resources
-- `lxc` - Container resources
-- `provider` - Provider configuration and resources
-- `core` - Core libraries and utilities
-- `docs` - Documentation
-- `ci` - Continuous Integration / Actions / GitHub Workflows
+- `vm` – Virtual Machine resources
+- `lxc` – Container resources
+- `provider` – Provider configuration and resources
+- `core` – Core libraries and utilities
+- `docs` – Documentation
+- `ci` – Continuous Integration / Actions / GitHub Workflows
 
 Guidelines:
 
-- Use lowercase for descriptions
-- Do not end descriptions with a period
-- Keep the first line under 72 characters
+- Use lowercase for descriptions.
+- Do not end descriptions with a period.
+- Keep the first line under 72 characters.
 
 Example:
 
-```commit
+```text
 feat(vm): add support for the `clone` operation
 ```
 
-### Developer Certificate of Origin (DCO)
+## Developer Certificate of Origin (DCO)
 
 All contributions must be signed off according to the Developer Certificate of Origin (DCO). The DCO is a lightweight way of certifying that you wrote or have the right to submit the code you are contributing. It provides legal protection for the project by ensuring contributors have the necessary rights to their contributions and agree to license them under the project's terms. You can find the full text [here](https://developercertificate.org).
 
 To sign off your commits, add a `Signed-off-by` line to your commit message:
 
-```commit
+```text
 feat(vm): add support for the `clone` operation
 
 Signed-off-by: Random Developer <random@developer.example.org>
@@ -230,27 +277,40 @@ Signed-off-by: Random Developer <random@developer.example.org>
 
 > [!NOTE]
 >
-> - **Name**: Use your real name (preferred) or GitHub username if you prefer privacy
-> - **Email**: Use a valid email address (GitHub's 'noreply' email is acceptable for privacy, see [GitHub docs](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address#setting-your-commit-email-address-on-github))
-> - **Auto-sign**: If your Git config has `user.name` and `user.email` set, use `git commit -s` to automatically add the sign-off
+> - **Name**: Use your real name (preferred) or GitHub username if you prefer privacy.
+> - **Email**: Use a valid email address (GitHub's 'noreply' email is acceptable for privacy, see [GitHub docs](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address#setting-your-commit-email-address-on-github)).
+> - **Auto-sign**: If your Git config has `user.name` and `user.email` set, use `git commit -s` to automatically add the sign-off.
 
 For more details about the DCO checker, see the [DCO app repo](https://github.com/dcoapp/app).
 
 ## Submitting changes
 
-1. Create a new PR against the `main` branch using the project's [pull request template](.github/PULL_REQUEST_TEMPLATE.md)
-2. Ensure your PR title follows the Conventional Commits specification (we use this as the squash commit message)
-3. All commits in a PR are typically squashed on merge
+### Pull request scope
+
+Please keep PRs small and focused. Small PRs are easier to review, easier to test, and get merged faster.
+
+Guidelines:
+
+- **One change per PR**: a single fix/feature, or a refactor with no behavior change.
+- **Avoid multi-resource PRs**: if you need to change multiple resources/data sources, split the work into separate PRs (you can stack them and link follow-ups).
+- **Do not mix concerns**: avoid combining formatting-only changes, refactors, and behavior changes in the same PR.
+- **Iterate quickly**: open a draft/WIP PR early if you want feedback on approach before polishing edge cases.
+
+### How to submit
+
+1. Create a new PR against the `main` branch using the project's [pull request template](.github/PULL_REQUEST_TEMPLATE.md).
+2. Ensure your PR title follows the Conventional Commits specification (we use this as the squash commit message).
+3. All commits in a PR are typically squashed on merge.
 
 ## Releasing
 
 We use [release-please](https://github.com/googleapis/release-please) GitHub Action for automated release management. The process works as follows:
 
-1. The action creates a release PR based on commit messages
-2. The PR includes an auto-generated changelog and version bump
-3. Maintainers review and merge the release PR
+1. The action creates a release PR based on commit messages.
+2. The PR includes an auto-generated changelog and version bump.
+3. Maintainers review and merge the release PR.
 4. The release is automatically published to:
    - GitHub Releases
    - Terraform Registry
 
-We aim to release new versions every 1-2 weeks.
+We aim to release new versions every 1–2 weeks.

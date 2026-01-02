@@ -137,6 +137,11 @@ output "ubuntu_vm_public_key" {
     - `type` - (Optional) The QEMU agent interface type (defaults to `virtio`).
         - `isa` - ISA Serial Port.
         - `virtio` - VirtIO (paravirtualized).
+    - `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the VM starts.
+        - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
+        - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
+
+        When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false`, the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
 - `amd_sev` - (Optional) Secure Encrypted Virtualization (SEV) features by AMD CPUs.
     - `type` - (Optional) Enable standard SEV with `std` or enable experimental SEV-ES with the `es` option or enable experimental SEV-SNP with the `snp` option (defaults to `std`).
     - `allow_smt` - (Optional) Sets policy bit to allow Simultaneous Multi Threading (SMT)
@@ -159,8 +164,7 @@ output "ubuntu_vm_public_key" {
 - `bios` - (Optional) The BIOS implementation (defaults to `seabios`).
     - `ovmf` - OVMF (UEFI).
     - `seabios` - SeaBIOS.
-- `boot_order` - (Optional) Specify a list of devices to boot from in the order
-    they appear in the list (defaults to `[]`).
+- `boot_order` - (Optional) Specify a list of devices to boot from in the order they appear in the list.
 - `cdrom` - (Optional) The CD-ROM configuration.
     - `enabled` - (Optional) Whether to enable the CD-ROM drive (defaults
         to `false`). *Deprecated*. The attribute will be removed in the next version of the provider.
@@ -262,7 +266,7 @@ output "ubuntu_vm_public_key" {
             See <https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels>
         - `custom-<model>` - Custom CPU model. All `custom-<model>` values
             should be defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
-    - `units` - (Optional) The CPU units (defaults to `1024`).
+    - `units` - (Optional) The CPU units. PVE default is `1024` for cgroups v1 and `100` for cgroups v2.
     - `affinity` - (Optional) The CPU cores that are used to run the VM’s vCPU. The
         value is a list of CPU IDs, separated by commas. The CPU IDs are zero-based.
         For example, `0,1,2,3` (which also can be shortened to `0-3`) means that the VM’s vCPUs are run on the first four
@@ -298,10 +302,14 @@ output "ubuntu_vm_public_key" {
         - `vmdk` - VMware Disk Image.
     - `file_id` - (Optional) The file ID for a disk image when importing a disk into VM. The ID format is
           `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`. Can be also taken from
-          `proxmox_virtual_environment_download_file` resource. *Deprecated*, use `import_from` instead.
-    - `import_from` - (Optional) The file ID for a disk image to import into VM. The image must be of `import` content type.
-       The ID format is `<datastore_id>:import/<file_name>`, for example `local:import/centos8.qcow2`. Can be also taken from
-       `proxmox_virtual_environment_download_file` resource.
+          `proxmox_virtual_environment_download_file` resource. Prefer `import_from` for uncompressed images.
+          Use `file_id` when working with compressed cloud images (e.g., `.qcow2.xz`) that were downloaded
+          with `content_type = "iso"` and `decompression_algorithm` set. See the
+          [Create a VM from a Cloud Image](../guides/cloud-image) guide for examples.
+    - `import_from` - (Optional) The file ID for a disk image to import into VM. The image must be of `import` content type
+       (uncompressed images only). The ID format is `<datastore_id>:import/<file_name>`, for example `local:import/centos8.qcow2`.
+       Can be also taken from `proxmox_virtual_environment_download_file` resource. Note: compressed images downloaded with
+       `decompression_algorithm` cannot use `import_from`; use `file_id` instead.
     - `interface` - (Required) The disk interface for Proxmox, currently `scsi`,
         `sata` and `virtio` interfaces are supported. Append the disk index at
         the end, for example, `virtio0` for the first virtio disk, `virtio1` for
@@ -338,7 +346,10 @@ output "ubuntu_vm_public_key" {
         distribution-specific and Microsoft Standard keys enrolled, if used with
         EFI type=`4m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
         to `false`).
-- `tpm_state` - (Optional) The TPM state device.
+- `tpm_state` - (Optional) The TPM state device. The VM must be stopped before
+    adding, removing, or moving a TPM state device; the provider automatically
+    handles the shutdown/start cycle. Changing `version` requires recreating the
+    VM because Proxmox only supports setting the TPM version at creation time.
     - `datastore_id` (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
     - `version` (Optional) TPM state device version. Can be `v1.2` or `v2.0`.
@@ -373,6 +384,10 @@ output "ubuntu_vm_public_key" {
         image to. Must be one of `ide0..3`, `sata0..5`, `scsi0..30`. Will be
         detected if the setting is missing but a cloud-init image is present,
         otherwise defaults to `ide2`.
+    - `file_format` - (Optional) The file format.
+        - `qcow2` - QEMU Disk Image v2.
+        - `raw` - Raw Disk Image.
+        - `vmdk` - VMware Disk Image.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
         - `server` - (Optional) The DNS server. The `server` attribute is
@@ -390,9 +405,9 @@ output "ubuntu_vm_public_key" {
         - `ipv6` - (Optional) The IPv6 configuration.
             - `address` - (Optional) The IPv6 address in CIDR notation
                 (e.g. fd1c::7334/64). Alternatively, set this
-                to `dhcp` for autodiscovery.
+                to `dhcp` for DHCPv6, or `auto` for SLAAC.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
-                when `dhcp` is used as the address).
+                when `dhcp` or `auto` are used as the address).
     - `user_account` - (Optional) The user account configuration (conflicts
         with `user_data_file_id`).
         - `keys` - (Optional) The SSH keys.
@@ -549,6 +564,8 @@ output "ubuntu_vm_public_key" {
     changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
 - `stop_on_destroy` - (Optional) Whether to stop rather than shutdown on VM destroy (defaults to `false`)
+- `purge_on_destroy` - (Optional) Whether to purge the VM from backup configurations on destroy (defaults to `true`)
+- `delete_unreferenced_disks_on_destroy` - (Optional) Whether to delete unreferenced disks on destroy (defaults to `true`)
 - `timeout_clone` - (Optional) Timeout for cloning a VM in seconds (defaults to
     1800).
 - `timeout_create` - (Optional) Timeout for creating a VM in seconds (defaults to

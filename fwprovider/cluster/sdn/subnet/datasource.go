@@ -37,7 +37,7 @@ func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest,
 	resp.TypeName = req.ProviderTypeName + "_sdn_subnet"
 }
 
-func (d *DataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -74,6 +74,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 			},
 			"dhcp_dns_server": schema.StringAttribute{
 				Description: "The DNS server used for DHCP.",
+				CustomType:  customtypes.IPAddrType{},
 				Computed:    true,
 			},
 			"dhcp_range": schema.SingleNestedAttribute{
@@ -82,10 +83,12 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Computed:    true,
 				Attributes: map[string]schema.Attribute{
 					"start_address": schema.StringAttribute{
+						CustomType:  customtypes.IPAddrType{},
 						Computed:    true,
 						Description: "Start of the DHCP range.",
 					},
 					"end_address": schema.StringAttribute{
+						CustomType:  customtypes.IPAddrType{},
 						Computed:    true,
 						Description: "End of the DHCP range.",
 					},
@@ -97,6 +100,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 			},
 			"gateway": schema.StringAttribute{
 				Description: "The gateway address for the subnet.",
+				CustomType:  customtypes.IPAddrType{},
 				Computed:    true,
 			},
 			"snat": schema.BoolAttribute{

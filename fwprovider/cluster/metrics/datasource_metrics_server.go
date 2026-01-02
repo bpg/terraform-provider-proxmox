@@ -90,7 +90,15 @@ func (r *metricsServerDatasource) Schema(
 				Computed:    true,
 			},
 			"type": schema.StringAttribute{
-				Description: "Plugin type. Either `graphite` or `influxdb`.",
+				Description: "Plugin type. Either `graphite`, `influxdb`, or `opentelemetry`.",
+				Computed:    true,
+			},
+			"opentelemetry_proto": schema.StringAttribute{
+				Description: "Protocol for OpenTelemetry. Choice is between `http` | `https`.",
+				Computed:    true,
+			},
+			"opentelemetry_path": schema.StringAttribute{
+				Description: "OpenTelemetry endpoint path (e.g., `/v1/metrics`).",
 				Computed:    true,
 			},
 		},

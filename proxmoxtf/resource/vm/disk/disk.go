@@ -28,18 +28,19 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-// GetInfo returns the disk information for a VM.
-// Deprecated: use vms.MapCustomStorageDevices from proxmox/nodes/vms instead.
-func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
+// GetDiskInfoWithFileID returns the disk information for a VM.
+//
+// Use only when you need to get the disk information with the file ID. Otherwise, use vmConfig.StorageDevices instead.
+func GetDiskInfoWithFileID(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
 	storageDevices := resp.StorageDevices
 
 	currentDisk := d.Get(MkDisk)
 
-	diskMap := utils.MapResourcesByAttribute(currentDisk.([]interface{}), mkDiskInterface)
+	diskMap := utils.MapResourcesByAttribute(currentDisk.([]any), mkDiskInterface)
 
 	for k, v := range storageDevices {
 		if v != nil && diskMap[k] != nil {
-			if disk, ok := diskMap[k].(map[string]interface{}); ok {
+			if disk, ok := diskMap[k].(map[string]any); ok {
 				if fileID, ok := disk[mkDiskFileID].(string); ok && fileID != "" {
 					v.FileID = &fileID
 				}
@@ -148,14 +149,14 @@ func DigitPrefix(s string) string {
 func GetDiskDeviceObjects(
 	d *schema.ResourceData,
 	resource *schema.Resource,
-	disks []interface{},
+	disks []any,
 ) (vms.CustomStorageDevices, error) {
-	var diskDevices []interface{}
+	var diskDevices []any
 
 	if disks != nil {
 		diskDevices = disks
 	} else {
-		diskDevices = d.Get(MkDisk).([]interface{})
+		diskDevices = d.Get(MkDisk).([]any)
 	}
 
 	diskDeviceObjects := vms.CustomStorageDevices{}
@@ -163,7 +164,7 @@ func GetDiskDeviceObjects(
 	for _, diskEntry := range diskDevices {
 		diskDevice := &vms.CustomStorageDevice{}
 
-		block := diskEntry.(map[string]interface{})
+		block := diskEntry.(map[string]any)
 		datastoreID, _ := block[mkDiskDatastoreID].(string)
 		pathInDatastore := ""
 
@@ -348,7 +349,7 @@ func createCustomDisk(
 		return fmt.Errorf("creating custom disk: %w", err)
 	}
 
-	tflog.Debug(ctx, "vmCreateCustomDisks: commands", map[string]interface{}{
+	tflog.Debug(ctx, "vmCreateCustomDisks: commands", map[string]any{
 		"output": string(out),
 	})
 
@@ -373,8 +374,8 @@ func Read(
 	nodeName string,
 	isClone bool,
 ) diag.Diagnostics {
-	currentDiskList := d.Get(MkDisk).([]interface{})
-	diskMap := map[string]interface{}{}
+	currentDiskList := d.Get(MkDisk).([]any)
+	diskMap := map[string]any{}
 
 	var diags diag.Diagnostics
 
@@ -387,7 +388,7 @@ func Read(
 			continue
 		}
 
-		disk := map[string]interface{}{}
+		disk := map[string]any{}
 
 		datastoreID, pathInDatastore, hasDatastoreID := strings.Cut(dd.FileVolume, ":")
 		if !hasDatastoreID {
@@ -485,7 +486,7 @@ func Read(
 			dd.BurstableWriteSpeedMbps != nil ||
 			dd.MaxReadSpeedMbps != nil ||
 			dd.MaxWriteSpeedMbps != nil {
-			speed := map[string]interface{}{}
+			speed := map[string]any{}
 
 			if dd.IopsRead != nil {
 				speed[mkDiskIopsRead] = *dd.IopsRead
@@ -535,25 +536,31 @@ func Read(
 				speed[mkDiskSpeedWriteBurstable] = 0
 			}
 
-			disk[mkDiskSpeed] = []interface{}{speed}
+			disk[mkDiskSpeed] = []any{speed}
 		} else {
-			disk[mkDiskSpeed] = []interface{}{}
+			disk[mkDiskSpeed] = []any{}
 		}
 
 		diskMap[di] = disk
 	}
 
 	if !isClone || len(currentDiskList) > 0 {
-		var diskList []interface{}
+		var diskList []any
 
 		if len(currentDiskList) > 0 {
 			currentDiskMap := utils.MapResourcesByAttribute(currentDiskList, mkDiskInterface)
-			// copy import_from from the current disk if it exists
+			// copy import_from and size from the current disk if it exists
 			for k, v := range currentDiskMap {
-				if disk, ok := v.(map[string]interface{}); ok {
-					if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
-						if _, exists := diskMap[k]; exists {
-							diskMap[k].(map[string]interface{})[mkDiskImportFrom] = importFrom
+				if disk, ok := v.(map[string]any); ok {
+					if _, exists := diskMap[k]; exists {
+						if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
+							diskMap[k].(map[string]any)[mkDiskImportFrom] = importFrom
+						}
+						// preserve size from state when API returns zero size (for disks with import_from or file_id)
+						if currentSize, ok := disk[mkDiskSize].(int); ok && currentSize > 0 {
+							if apiSize, ok := diskMap[k].(map[string]any)[mkDiskSize].(int64); ok && apiSize == 0 {
+								diskMap[k].(map[string]any)[mkDiskSize] = currentSize
+							}
 						}
 					}
 				}
@@ -582,7 +589,7 @@ func Update(
 	planDisks vms.CustomStorageDevices,
 	currentDisks vms.CustomStorageDevices,
 	updateBody *vms.UpdateRequestBody,
-) (bool, error) {
+) (bool, bool, error) {
 	rebootRequired := false
 
 	if d.HasChange(MkDisk) {
@@ -595,7 +602,7 @@ func Update(
 					// only disks with defined file ID are custom image disks that need to be created via import.
 					err := createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)
 					if err != nil {
-						return false, fmt.Errorf("creating custom disk: %w", err)
+						return false, false, fmt.Errorf("creating custom disk: %w", err)
 					}
 				} else {
 					// otherwise this is a blank disk that can be added directly via update API
@@ -611,7 +618,7 @@ func Update(
 				tmp = currentDisks[iface]
 			default:
 				// something went wrong
-				return false, fmt.Errorf("missing device %s", iface)
+				return false, false, fmt.Errorf("missing device %s", iface)
 			}
 
 			if tmp == nil || disk == nil {
@@ -623,8 +630,8 @@ func Update(
 				tmp.AIO = disk.AIO
 			}
 
-			// Never send ImportFrom for existing disks - it triggers re-import which fails for boot disks
-			// ImportFrom is only for initial disk creation, not updates
+			// Never re-import existing disks - import_from is only for initial disk creation.
+			// See https://github.com/bpg/terraform-provider-proxmox/issues/2385
 
 			tmp.Backup = disk.Backup
 			tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
@@ -646,5 +653,5 @@ func Update(
 		}
 	}
 
-	return rebootRequired, nil
+	return false, rebootRequired, nil
 }

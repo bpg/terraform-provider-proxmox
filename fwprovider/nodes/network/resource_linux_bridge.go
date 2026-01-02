@@ -27,7 +27,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"

@@ -30,6 +30,8 @@ type metricsServerModel struct {
 	InfluxVerify        types.Bool   `tfsdk:"influx_verify"`
 	GraphitePath        types.String `tfsdk:"graphite_path"`
 	GraphiteProto       types.String `tfsdk:"graphite_proto"`
+	OTelProto           types.String `tfsdk:"opentelemetry_proto"`
+	OTelPath            types.String `tfsdk:"opentelemetry_path"`
 }
 
 func boolToInt64Ptr(boolPtr *bool) *int64 {
@@ -85,6 +87,8 @@ func (m *metricsServerModel) importFromAPI(name string, data *metrics.ServerData
 	m.InfluxVerify = types.BoolPointerValue(int64ToBoolPtr(data.Verify))
 	m.GraphitePath = types.StringPointerValue(data.Path)
 	m.GraphiteProto = types.StringPointerValue(data.Proto)
+	m.OTelProto = types.StringPointerValue(data.OTelProto)
+	m.OTelPath = types.StringPointerValue(data.OTelPath)
 }
 
 // toAPIRequestBody creates metrics server request data for PUT and POST requests.
@@ -108,17 +112,21 @@ func (m *metricsServerModel) toAPIRequestBody() *metrics.ServerRequestData {
 	data.Verify = boolToInt64Ptr(m.InfluxVerify.ValueBoolPointer())
 	data.Path = m.GraphitePath.ValueStringPointer()
 	data.Proto = m.GraphiteProto.ValueStringPointer()
+	data.OTelProto = m.OTelProto.ValueStringPointer()
+	data.OTelPath = m.OTelPath.ValueStringPointer()
 
 	return data
 }
 
 type metricsServerDatasourceModel struct {
-	ID      types.String `tfsdk:"id"`
-	Name    types.String `tfsdk:"name"`
-	Disable types.Bool   `tfsdk:"disable"`
-	Port    types.Int64  `tfsdk:"port"`
-	Server  types.String `tfsdk:"server"`
-	Type    types.String `tfsdk:"type"`
+	ID        types.String `tfsdk:"id"`
+	Name      types.String `tfsdk:"name"`
+	Disable   types.Bool   `tfsdk:"disable"`
+	Port      types.Int64  `tfsdk:"port"`
+	Server    types.String `tfsdk:"server"`
+	Type      types.String `tfsdk:"type"`
+	OTelProto types.String `tfsdk:"opentelemetry_proto"`
+	OTelPath  types.String `tfsdk:"opentelemetry_path"`
 }
 
 // importFromAPI takes data from metrics server PVE API response and set fields based on it.
@@ -131,4 +139,6 @@ func (m *metricsServerDatasourceModel) importFromAPI(name string, data *metrics.
 	m.Port = types.Int64Value(data.Port)
 	m.Server = types.StringValue(data.Server)
 	m.Type = types.StringPointerValue(data.Type)
+	m.OTelProto = types.StringPointerValue(data.OTelProto)
+	m.OTelPath = types.StringPointerValue(data.OTelPath)
 }

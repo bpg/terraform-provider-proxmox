@@ -86,17 +86,17 @@ func validateVersionReleaseConsistency(resourceName string) resource.TestCheckFu
 		}
 
 		release := rs.Primary.Attributes["release"]
-		version := rs.Primary.Attributes["version"]
+		ver := rs.Primary.Attributes["version"]
 
 		if release == "" {
 			return fmt.Errorf("release attribute is empty")
 		}
-		if version == "" {
+		if ver == "" {
 			return fmt.Errorf("version attribute is empty")
 		}
 
-		if !strings.HasPrefix(version, release) {
-			return fmt.Errorf("version %q does not start with release %q", version, release)
+		if !strings.HasPrefix(ver, release) {
+			return fmt.Errorf("version %q does not start with release %q", ver, release)
 		}
 
 		return nil

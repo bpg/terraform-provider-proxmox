@@ -15,9 +15,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/nodes/apt"
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	api "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt/repositories"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 )
 
 // Note that most constants are exported to allow the usage in (acceptance) tests.
@@ -219,7 +222,7 @@ func (rp *modelRepo) importFromAPI(ctx context.Context, data *api.GetResponseDat
 }
 
 // importFromAPI imports the contents of an APT standard repository from the Proxmox VE API's response data.
-func (srp *modelStandardRepo) importFromAPI(_ context.Context, data *api.GetResponseData) {
+func (srp *modelStandardRepo) importFromAPI(_ context.Context, data *api.GetResponseData, proxmoxVersion *version.ProxmoxVersion) {
 	for _, repo := range data.StandardRepos {
 		if repo.Handle == srp.Handle.ValueString() {
 			srp.Description = types.StringPointerValue(repo.Description)
@@ -240,13 +243,13 @@ func (srp *modelStandardRepo) importFromAPI(_ context.Context, data *api.GetResp
 	}
 
 	// Set the index…
-	srp.setIndex(data)
+	srp.setIndex(data, proxmoxVersion)
 	// … and then the file path when the index is valid…
 	if !srp.Index.IsNull() {
 		// …by iterating through all repository files…
 		for _, repoFile := range data.Files {
 			// …and get the repository when the file path matches.
-			if srp.Handle.IsSupportedFilePath(repoFile.Path) {
+			if srp.Handle.IsSupportedFilePath(repoFile.Path, proxmoxVersion) {
 				srp.FilePath = types.StringValue(repoFile.Path)
 			}
 		}
@@ -254,10 +257,10 @@ func (srp *modelStandardRepo) importFromAPI(_ context.Context, data *api.GetResp
 }
 
 // setIndex sets the index of the APT standard repository derived from the defining source list file.
-func (srp *modelStandardRepo) setIndex(data *api.GetResponseData) {
+func (srp *modelStandardRepo) setIndex(data *api.GetResponseData, proxmoxVersion *version.ProxmoxVersion) {
 	for _, file := range data.Files {
 		for idx, repo := range file.Repositories {
-			if slices.Contains(repo.Components, srp.Handle.ComponentName()) {
+			if slices.Contains(repo.Components, srp.Handle.ComponentName(proxmoxVersion)) {
 				// Return early for non-Ceph repositories…
 				if !srp.Handle.IsCephHandle() {
 					srp.Index = types.Int64Value(int64(idx))
@@ -278,4 +281,20 @@ func (srp *modelStandardRepo) setIndex(data *api.GetResponseData) {
 	}
 
 	srp.Index = types.Int64Null()
+}
+
+// getProxmoxVersion retrieves the Proxmox VE version from the API client, falling back to the minimum supported version
+// if the API call fails.
+func getProxmoxVersion(ctx context.Context, client proxmox.Client) *version.ProxmoxVersion {
+	ver := version.MinimumProxmoxVersion
+	if versionResp, err := client.Version().Version(ctx); err == nil {
+		ver = versionResp.Version
+	} else {
+		tflog.Warn(ctx, "Failed to determine Proxmox VE version, assuming minimum supported version.", map[string]any{
+			"error":           err,
+			"assumed_version": ver.String(),
+		})
+	}
+
+	return &ver
 }
