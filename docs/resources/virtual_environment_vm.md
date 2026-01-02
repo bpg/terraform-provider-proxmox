@@ -342,15 +342,14 @@ output "ubuntu_vm_public_key" {
         distribution-specific and Microsoft Standard keys enrolled, if used with
         EFI type=`4m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
         to `false`).
-- `tpm_state` - (Optional) The TPM state device.
+- `tpm_state` - (Optional) The TPM state device. The VM must be stopped before
+    adding, removing, or moving a TPM state device; the provider automatically
+    handles the shutdown/start cycle. Changing `version` requires recreating the
+    VM because Proxmox only supports setting the TPM version at creation time.
     - `datastore_id` (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
     - `version` (Optional) TPM state device version. Can be `v1.2` or `v2.0`.
         (defaults to `v2.0`).
-    - The VM must be stopped before adding, removing, or moving a TPM state
-        device. The provider automatically handles the shutdown/start cycle.
-    - Changing `version` requires recreating the VM because Proxmox only
-        supports setting the TPM version at creation time.
 - `hostpci` - (Optional) A host PCI device mapping (multiple blocks supported).
     - `device` - (Required) The PCI device name for Proxmox, in form
         of `hostpciX` where `X` is a sequential number from 0 to 15.
