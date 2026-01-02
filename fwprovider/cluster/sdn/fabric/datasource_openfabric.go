@@ -9,6 +9,7 @@ package fabric
 import (
 	"context"
 
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -41,10 +42,12 @@ func (d *OpenFabricDataSource) Schema(_ context.Context, _ datasource.SchemaRequ
 			"ip_prefix": schema.StringAttribute{
 				Description: "IPv4 prefix cidr for the fabric.",
 				Computed:    true,
+				CustomType:  customtypes.IPCIDRType{},
 			},
 			"ip6_prefix": schema.StringAttribute{
 				Description: "IPv6 prefix cidr for the fabric.",
 				Computed:    true,
+				CustomType:  customtypes.IPCIDRType{},
 			},
 			"csnp_interval": schema.Int64Attribute{
 				Description: "The csnp_interval property for OpenFabric.",

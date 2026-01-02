@@ -13,6 +13,7 @@ import (
 	"maps"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
@@ -54,10 +55,6 @@ func (m *genericModel) handleDeletedStringValue(value *string) types.String {
 		return types.StringNull()
 	}
 
-	if *value == "deleted" {
-		return types.StringNull()
-	}
-
 	return types.StringValue(*value)
 }
 
@@ -67,6 +64,16 @@ func (m *genericModel) handleDeletedInt64Value(value *int64) types.Int64 {
 	}
 
 	return types.Int64Value(*value)
+}
+
+func (m *genericModel) handleDeletedIPCIDRValue(value *string) customtypes.IPCIDRValue {
+	if value == nil {
+		return customtypes.IPCIDRValue{
+			StringValue: types.StringNull(),
+		}
+	}
+
+	return customtypes.NewIPCIDRValue(*value)
 }
 
 func checkDeletedFields(state, plan *genericModel) []string {

@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
@@ -29,17 +30,17 @@ var (
 type openFabricModel struct {
 	genericModel
 
-	IPv4Prefix    types.String `tfsdk:"ip_prefix"`
-	IPv6Prefix    types.String `tfsdk:"ip6_prefix"`
-	CsnpInterval  types.Int64  `tfsdk:"csnp_interval"`
-	HelloInterval types.Int64  `tfsdk:"hello_interval"`
+	IPv4Prefix    customtypes.IPCIDRValue `tfsdk:"ip_prefix"`
+	IPv6Prefix    customtypes.IPCIDRValue `tfsdk:"ip6_prefix"`
+	CsnpInterval  types.Int64             `tfsdk:"csnp_interval"`
+	HelloInterval types.Int64             `tfsdk:"hello_interval"`
 }
 
 func (m *openFabricModel) fromAPI(name string, data *fabrics.FabricData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPI(name, data, diags)
 
-	m.IPv4Prefix = m.handleDeletedStringValue(data.IPv4Prefix)
-	m.IPv6Prefix = m.handleDeletedStringValue(data.IPv6Prefix)
+	m.IPv4Prefix = m.handleDeletedIPCIDRValue(data.IPv4Prefix)
+	m.IPv6Prefix = m.handleDeletedIPCIDRValue(data.IPv6Prefix)
 	m.CsnpInterval = m.handleDeletedInt64Value(data.CsnpInterval)
 	m.HelloInterval = m.handleDeletedInt64Value(data.HelloInterval)
 }
@@ -139,10 +140,12 @@ func (r *OpenFabricResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			"ip_prefix": schema.StringAttribute{
 				Description: "IPv4 prefix cidr for the fabric.",
 				Optional:    true,
+				CustomType:  customtypes.IPCIDRType{},
 			},
 			"ip6_prefix": schema.StringAttribute{
 				Description: "IPv6 prefix cidr for the fabric.",
 				Optional:    true,
+				CustomType:  customtypes.IPCIDRType{},
 			},
 			"csnp_interval": schema.Int64Attribute{
 				Description: "The csnp_interval property for OpenFabric.",

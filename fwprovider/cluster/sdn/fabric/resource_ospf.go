@@ -8,12 +8,14 @@ package fabric
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 )
 
@@ -25,15 +27,15 @@ var (
 type ospfModel struct {
 	genericModel
 
-	Area       types.String `tfsdk:"area"`
-	IPv4Prefix types.String `tfsdk:"ip_prefix"`
+	Area       types.String            `tfsdk:"area"`
+	IPv4Prefix customtypes.IPCIDRValue `tfsdk:"ip_prefix"`
 }
 
 func (m *ospfModel) fromAPI(name string, data *fabrics.FabricData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPI(name, data, diags)
 
 	m.Area = m.handleDeletedStringValue(data.Area)
-	m.IPv4Prefix = m.handleDeletedStringValue(data.IPv4Prefix)
+	m.IPv4Prefix = m.handleDeletedIPCIDRValue(data.IPv4Prefix)
 }
 
 func (m *ospfModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabrics.Fabric {
@@ -121,6 +123,7 @@ func (r *OSPFResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"ip_prefix": schema.StringAttribute{
 				Description: "IPv4 prefix cidr for the fabric.",
 				Required:    true,
+				CustomType:  customtypes.IPCIDRType{},
 			},
 		}),
 	}

@@ -9,6 +9,7 @@ package fabric
 import (
 	"context"
 
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -41,6 +42,7 @@ func (d *OSPFDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 			"ip_prefix": schema.StringAttribute{
 				Description: "IPv4 prefix cidr for the fabric.",
 				Computed:    true,
+				CustomType:  customtypes.IPCIDRType{},
 			},
 			"area": schema.StringAttribute{
 				Description: "OSPF area. Either a IPv4 address or a 32-bit number. Gets validated in rust.",
