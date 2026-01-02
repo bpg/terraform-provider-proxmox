@@ -15,7 +15,7 @@ import (
 )
 
 // GetConfig retrieves the config for a node.
-func (c *Client) GetConfig(ctx context.Context) (*[]ConfigGetResponseData, error) {
+func (c *Client) GetConfig(ctx context.Context) (*ConfigGetResponseData, error) {
 	resBody := &ConfigGetResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("config"), nil, resBody)

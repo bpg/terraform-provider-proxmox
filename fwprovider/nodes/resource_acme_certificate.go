@@ -510,7 +510,7 @@ func (r *acmeCertificateResource) ImportState(
 	nodeClient := r.client.Node(nodeName)
 
 	// Read the node configuration to get ACME settings
-	config, err := nodeClient.GetConfig(ctx)
+	nodeConfig, err := nodeClient.GetConfig(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to read node configuration",
@@ -519,17 +519,6 @@ func (r *acmeCertificateResource) ImportState(
 
 		return
 	}
-
-	if config == nil || len(*config) == 0 {
-		resp.Diagnostics.AddError(
-			"Unable to read node configuration",
-			fmt.Sprintf("No configuration found for node %s", nodeName),
-		)
-
-		return
-	}
-
-	nodeConfig := (*config)[0]
 
 	// Extract ACME account from config
 	var accountName string

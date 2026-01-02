@@ -15,7 +15,7 @@ import (
 
 // ConfigGetResponseBody contains the body from a config get response.
 type ConfigGetResponseBody struct {
-	Data *[]ConfigGetResponseData `json:"data,omitempty"`
+	Data *ConfigGetResponseData `json:"data,omitempty"`
 }
 
 // ConfigGetResponseData contains the data from a config get response.
