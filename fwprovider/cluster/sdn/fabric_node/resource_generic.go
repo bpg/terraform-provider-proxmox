@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
@@ -125,11 +126,17 @@ func (m *genericModel) handleDeletedStringValue(value *string) types.String {
 		return types.StringNull()
 	}
 
-	if *value == "deleted" {
-		return types.StringNull()
+	return types.StringValue(*value)
+}
+
+func (m *genericModel) handleDeletedIPAddrValue(value *string) customtypes.IPAddrValue {
+	if value == nil {
+		return customtypes.IPAddrValue{
+			StringValue: types.StringNull(),
+		}
 	}
 
-	return types.StringValue(*value)
+	return customtypes.NewIPAddrPointerValue(value)
 }
 
 func checkDeletedFields(state, plan *genericModel) []string {

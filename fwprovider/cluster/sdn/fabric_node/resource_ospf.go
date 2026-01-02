@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 )
@@ -27,13 +27,13 @@ var (
 type ospfModel struct {
 	genericModel
 
-	IPv4Address types.String `tfsdk:"ip"`
+	IPv4Address customtypes.IPAddrValue `tfsdk:"ip"`
 }
 
 func (m *ospfModel) fromAPI(name string, data *fabric_nodes.FabricNodeData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPI(name, data, diags)
 
-	m.IPv4Address = m.handleDeletedStringValue(data.IPv4Address)
+	m.IPv4Address = m.handleDeletedIPAddrValue(data.IPv4Address)
 }
 
 func (m *ospfModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabric_nodes.FabricNode {
@@ -113,6 +113,7 @@ func (r *OSPFResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"ip": schema.StringAttribute{
 				Description: "IPv4 address for the fabric node.",
 				Required:    true,
+				CustomType:  customtypes.IPAddrType{},
 			},
 		}),
 	}

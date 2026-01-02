@@ -9,6 +9,7 @@ package fabric_node
 import (
 	"context"
 
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -41,10 +42,12 @@ func (d *OpenFabricDataSource) Schema(_ context.Context, _ datasource.SchemaRequ
 			"ip": schema.StringAttribute{
 				Description: "IPv4 address for the fabric node.",
 				Computed:    true,
+				CustomType:  customtypes.IPAddrType{},
 			},
 			"ip6": schema.StringAttribute{
 				Description: "IPv6 address for the fabric node.",
 				Computed:    true,
+				CustomType:  customtypes.IPAddrType{},
 			},
 		}),
 	}

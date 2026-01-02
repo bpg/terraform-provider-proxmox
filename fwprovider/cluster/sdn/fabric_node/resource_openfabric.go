@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 
@@ -30,15 +30,15 @@ var (
 type openFabricModel struct {
 	genericModel
 
-	IPv4Address types.String `tfsdk:"ip"`
-	IPv6Address types.String `tfsdk:"ip6"`
+	IPv4Address customtypes.IPAddrValue `tfsdk:"ip"`
+	IPv6Address customtypes.IPAddrValue `tfsdk:"ip6"`
 }
 
 func (m *openFabricModel) fromAPI(name string, data *fabric_nodes.FabricNodeData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPI(name, data, diags)
 
-	m.IPv4Address = m.handleDeletedStringValue(data.IPv4Address)
-	m.IPv6Address = m.handleDeletedStringValue(data.IPv6Address)
+	m.IPv4Address = m.handleDeletedIPAddrValue(data.IPv4Address)
+	m.IPv6Address = m.handleDeletedIPAddrValue(data.IPv6Address)
 }
 
 func (m *openFabricModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabric_nodes.FabricNode {
@@ -127,10 +127,12 @@ func (r *OpenFabricResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			"ip": schema.StringAttribute{
 				Description: "IPv4 address for the fabric node.",
 				Optional:    true,
+				CustomType:  customtypes.IPAddrType{},
 			},
 			"ip6": schema.StringAttribute{
 				Description: "IPv6 address for the fabric node.",
 				Optional:    true,
+				CustomType:  customtypes.IPAddrType{},
 			},
 		}),
 	}
