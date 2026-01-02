@@ -53,6 +53,7 @@ func checkDeletedOspfFields(state, plan *ospfModel) []string {
 	if plan.IPv4Prefix.IsNull() && !state.IPv4Prefix.IsNull() {
 		toDelete = append(toDelete, "ip_prefix")
 	}
+
 	if plan.Area.IsNull() && !state.Area.IsNull() {
 		toDelete = append(toDelete, "area")
 	}
@@ -77,17 +78,20 @@ func NewOSPFResource() resource.Resource {
 func (r *OSPFResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan ospfModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var state ospfModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	toDelete := checkDeletedOspfFields(&state, &plan)
+
 	updateFabric := plan.toAPI(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return

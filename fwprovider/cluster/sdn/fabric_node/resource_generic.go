@@ -13,16 +13,6 @@ import (
 	"maps"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
-
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -32,6 +22,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type genericModel struct {
@@ -43,6 +43,7 @@ type genericModel struct {
 
 func (m *genericModel) fromAPI(name string, data *fabric_nodes.FabricNodeData, diags *diag.Diagnostics) {
 	m.ID = types.StringValue(name)
+
 	parts := strings.SplitN(name, "/", 2)
 	if len(parts) != 2 {
 		diags.AddError(
@@ -59,9 +60,11 @@ func (m *genericModel) fromAPI(name string, data *fabric_nodes.FabricNodeData, d
 	m.FabricID = types.StringValue(fabricID)
 	interfaceNameSet, d := m.toInterfaceNamesFromInterfaces(data.Interfaces)
 	diags.Append(d...)
+
 	if diags.HasError() {
 		return
 	}
+
 	m.InterfaceNames = interfaceNameSet
 }
 
@@ -75,12 +78,15 @@ func (m *genericModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabr
 	} else {
 		var interfaces []string
 		diags.Append(m.InterfaceNames.ElementsAs(ctx, &interfaces, false)...)
+
 		if diags.HasError() {
 			return nil
 		}
+
 		for i, iface := range interfaces {
 			interfaces[i] = fmt.Sprintf("name=%s", iface)
 		}
+
 		data.Interfaces = interfaces
 	}
 
@@ -98,6 +104,7 @@ func (m *genericModel) toInterfaceNamesFromInterfaces(value []string) (types.Set
 
 	// Convet filtered slice to types.List
 	interfaces := make([]attr.Value, 0)
+
 	for _, iface := range value {
 		parts := strings.SplitN(iface, "=", 2)
 		if len(parts) != 2 {
@@ -106,6 +113,7 @@ func (m *genericModel) toInterfaceNamesFromInterfaces(value []string) (types.Set
 				"Unexpected SDN Fabric Node ID Format",
 				fmt.Sprintf("Expected SDN Fabric Node ID to be in the format <fabric_id>/<node_id>, got: %s", iface),
 			)
+
 			return emptySet, diags
 		}
 
@@ -119,14 +127,6 @@ func (m *genericModel) toInterfaceNamesFromInterfaces(value []string) (types.Set
 	}
 
 	return types.SetValue(types.StringType, interfaces)
-}
-
-func (m *genericModel) handleDeletedStringValue(value *string) types.String {
-	if value == nil {
-		return types.StringNull()
-	}
-
-	return types.StringValue(*value)
 }
 
 func (m *genericModel) handleDeletedIPAddrValue(value *string) customtypes.IPAddrValue {
@@ -268,7 +268,12 @@ func (r *genericFabricNodeResource) Read(ctx context.Context, req resource.ReadR
 
 	client := r.client.SDNFabricNodes(state.getGenericModel().FabricID.ValueString(), r.config.fabricProtocol)
 	tflog.Debug(ctx, fmt.Sprintf("Getting fabric node with ID %s", state.getGenericModel().NodeID.ValueString()))
-	fabricNode, err := client.GetFabricNodeWithParams(ctx, state.getGenericModel().NodeID.ValueString(), &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
+
+	fabricNode, err := client.GetFabricNodeWithParams(
+		ctx,
+		state.getGenericModel().NodeID.ValueString(),
+		&sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()},
+	)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.State.RemoveResource(ctx)
@@ -339,9 +344,11 @@ func (r *genericFabricNodeResource) ImportState(ctx context.Context, req resourc
 
 		return
 	}
+
 	fabricID := parts[0]
 	nodeID := parts[1]
 	client := r.client.SDNFabricNodes(fabricID, r.config.fabricProtocol)
+
 	fabricNode, err := client.GetFabricNode(ctx, nodeID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -350,6 +357,7 @@ func (r *genericFabricNodeResource) ImportState(ctx context.Context, req resourc
 		}
 
 		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN Fabric node %s", req.ID), err.Error())
+
 		return
 	}
 
@@ -361,7 +369,13 @@ func (r *genericFabricNodeResource) Schema(_ context.Context, _ resource.SchemaR
 	// Intentionally left blank. Should be set by the specific resource.
 }
 
-func (r *genericFabricNodeResource) readAndSetState(ctx context.Context, client *fabric_nodes.Client, fabricNodeID string, state *tfsdk.State, diags *diag.Diagnostics) {
+func (r *genericFabricNodeResource) readAndSetState(
+	ctx context.Context,
+	client *fabric_nodes.Client,
+	fabricNodeID string,
+	state *tfsdk.State,
+	diags *diag.Diagnostics,
+) {
 	parts := strings.SplitN(fabricNodeID, "/", 2)
 	if len(parts) != 2 {
 		diags.AddError(
@@ -371,7 +385,9 @@ func (r *genericFabricNodeResource) readAndSetState(ctx context.Context, client 
 
 		return
 	}
+
 	nodeID := parts[1]
+
 	fabricNode, err := client.GetFabricNodeWithParams(ctx, nodeID, &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
 		diags.AddError("Unable to Read SDN Fabric Node", err.Error())
@@ -381,7 +397,12 @@ func (r *genericFabricNodeResource) readAndSetState(ctx context.Context, client 
 	r.setModelFromFabricNode(ctx, fabricNode, state, diags)
 }
 
-func (r *genericFabricNodeResource) setModelFromFabricNode(ctx context.Context, fabricNode *fabric_nodes.FabricNodeData, state *tfsdk.State, diags *diag.Diagnostics) {
+func (r *genericFabricNodeResource) setModelFromFabricNode(
+	ctx context.Context,
+	fabricNode *fabric_nodes.FabricNodeData,
+	state *tfsdk.State,
+	diags *diag.Diagnostics,
+) {
 	readModel := r.config.modelFunc()
 	id := fmt.Sprintf("%s/%s", fabricNode.FabricID, fabricNode.NodeID)
 	readModel.fromAPI(id, fabricNode, diags)

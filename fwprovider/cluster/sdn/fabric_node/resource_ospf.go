@@ -40,6 +40,7 @@ func (m *ospfModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabric_
 	data := m.genericModel.toAPI(ctx, diags)
 
 	data.IPv4Address = m.IPv4Address.ValueStringPointer()
+
 	return data
 }
 
@@ -70,17 +71,20 @@ func NewOSPFResource() resource.Resource {
 func (r *OSPFResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan ospfModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var state ospfModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	toDelete := checkDeletedOspfFields(&state, &plan)
+
 	updateFabric := plan.toAPI(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -92,6 +96,7 @@ func (r *OSPFResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	client := r.client.SDNFabricNodes(plan.getGenericModel().FabricID.ValueString(), r.config.fabricProtocol)
+
 	err := client.UpdateFabricNode(ctx, update)
 	if err != nil {
 		resp.Diagnostics.AddError(

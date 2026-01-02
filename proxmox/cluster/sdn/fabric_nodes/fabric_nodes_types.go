@@ -7,7 +7,7 @@
 package fabric_nodes
 
 /*
-Fabric used to represent a Fabric in the API.
+FabricNode used to represent a Fabric in the API.
 
 This part is related to the SDN component: Fabric
 Based on docs:
@@ -15,14 +15,14 @@ Based on docs:
   - https://pve.proxmox.com/pve-docs/api-viewer/index.html#/cluster/sdn/fabrics
 */
 type FabricNode struct {
-	FabricID    string   `json:"fabric_id"      url:"fabric_id"`
+	FabricID    string   `json:"fabric_id"            url:"fabric_id"`
 	NodeID      string   `json:"node_id"              url:"node_id"`
-	Digest      *string  `json:"digest,omitempty"        url:"digest,omitempty"`
-	Protocol    *string  `json:"protocol,omitempty"      url:"protocol,omitempty"`
-	Interfaces  []string `json:"interfaces,omitempty"   url:"interfaces,omitempty"`
-	IPv4Address *string  `json:"ip,omitempty"    url:"ip,omitempty"`
-	IPv6Address *string  `json:"ip6,omitempty"   url:"ip6,omitempty"`
-	LockToken   *string  `json:"lock_token,omitempty"   url:"lock_token,omitempty"`
+	Digest      *string  `json:"digest,omitempty"     url:"digest,omitempty"`
+	Protocol    *string  `json:"protocol,omitempty"   url:"protocol,omitempty"`
+	Interfaces  []string `json:"interfaces,omitempty" url:"interfaces,omitempty"`
+	IPv4Address *string  `json:"ip,omitempty"         url:"ip,omitempty"`
+	IPv6Address *string  `json:"ip6,omitempty"        url:"ip6,omitempty"`
+	LockToken   *string  `json:"lock_token,omitempty" url:"lock_token,omitempty"`
 }
 
 type FabricNodeData struct {

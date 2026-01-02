@@ -84,6 +84,7 @@ func (c *Client) CreateFabric(ctx context.Context, data *Fabric) error {
 // UpdateFabric Updates an existing Fabric.
 func (c *Client) UpdateFabric(ctx context.Context, data *FabricUpdate) error {
 	data.Protocol = ptr.Ptr(c.Protocol)
+
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(data.ID), data, nil)
 	if err != nil {
 		return fmt.Errorf("error updating SDN Fabric: %w", err)

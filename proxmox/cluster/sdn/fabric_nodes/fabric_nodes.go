@@ -80,6 +80,7 @@ func (c *Client) CreateFabricNode(ctx context.Context, data *FabricNode) error {
 func (c *Client) UpdateFabricNode(ctx context.Context, data *FabricNodeUpdate) error {
 	data.Protocol = ptr.Ptr(c.FabricProtocol)
 	data.FabricID = c.FabricID
+
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(data.NodeID), data, nil)
 	if err != nil {
 		return fmt.Errorf("error updating SDN Fabric Node: %w", err)

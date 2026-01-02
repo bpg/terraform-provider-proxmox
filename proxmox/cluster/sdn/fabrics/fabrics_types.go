@@ -15,18 +15,18 @@ Based on docs:
   - https://pve.proxmox.com/pve-docs/api-viewer/index.html#/cluster/sdn/fabrics
 */
 type Fabric struct {
-	ID         string  `json:"id"              url:"id"`
-	Digest     *string `json:"digest,omitempty"        url:"digest,omitempty"`
-	Protocol   *string `json:"protocol,omitempty"      url:"protocol,omitempty"`
-	IPv6Prefix *string `json:"ip6_prefix,omitempty"   url:"ip6_prefix,omitempty"`
-	IPv4Prefix *string `json:"ip_prefix,omitempty"    url:"ip_prefix,omitempty"`
-	LockToken  *string `json:"lock_token,omitempty"   url:"lock_token,omitempty"`
+	ID         string  `json:"id"                   url:"id"`
+	Digest     *string `json:"digest,omitempty"     url:"digest,omitempty"`
+	Protocol   *string `json:"protocol,omitempty"   url:"protocol,omitempty"`
+	IPv6Prefix *string `json:"ip6_prefix,omitempty" url:"ip6_prefix,omitempty"`
+	IPv4Prefix *string `json:"ip_prefix,omitempty"  url:"ip_prefix,omitempty"`
+	LockToken  *string `json:"lock_token,omitempty" url:"lock_token,omitempty"`
 
 	// OSPF
-	Area *string `json:"area,omitempty"         url:"area,omitempty"`
+	Area *string `json:"area,omitempty" url:"area,omitempty"`
 
 	// OpenFabric
-	CsnpInterval  *int64 `json:"csnp_interval,omitempty" url:"csnp_interval,omitempty"`
+	CsnpInterval  *int64 `json:"csnp_interval,omitempty"  url:"csnp_interval,omitempty"`
 	HelloInterval *int64 `json:"hello_interval,omitempty" url:"hello_interval,omitempty"`
 }
 

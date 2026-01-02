@@ -105,7 +105,9 @@ func (d *genericFabricNodeDataSource) Read(ctx context.Context, req datasource.R
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	id := state.getID()
+
 	parts := strings.SplitN(id, "/", 2)
 	if len(parts) != 2 {
 		resp.Diagnostics.AddError(
@@ -115,10 +117,12 @@ func (d *genericFabricNodeDataSource) Read(ctx context.Context, req datasource.R
 
 		return
 	}
+
 	fabricID := parts[0]
 	nodeID := parts[1]
 
 	client := d.client.SDNFabricNodes(fabricID, d.config.fabricProtocol)
+
 	fabricNode, err := client.GetFabricNodeWithParams(ctx, nodeID, &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {

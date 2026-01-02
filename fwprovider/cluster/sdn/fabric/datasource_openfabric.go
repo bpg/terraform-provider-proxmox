@@ -9,10 +9,11 @@ package fabric
 import (
 	"context"
 
-	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 )
 
 var (

@@ -12,6 +12,14 @@ import (
 	"fmt"
 	"maps"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
@@ -20,25 +28,17 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
-
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type genericModel struct {
 	ID types.String `tfsdk:"id"`
 }
 
-func (m *genericModel) fromAPI(name string, data *fabrics.FabricData, diags *diag.Diagnostics) {
+func (m *genericModel) fromAPI(name string, _ *fabrics.FabricData, _ *diag.Diagnostics) {
 	m.ID = types.StringValue(name)
 }
 
-func (m *genericModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *fabrics.Fabric {
+func (m *genericModel) toAPI(_ context.Context, _ *diag.Diagnostics) *fabrics.Fabric {
 	data := &fabrics.Fabric{}
 
 	data.ID = m.ID.ValueString()

@@ -10,16 +10,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
-
-	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
 var (
@@ -83,12 +82,14 @@ func NewOpenFabricResource() resource.Resource {
 func (r *OpenFabricResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan openFabricModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var state openFabricModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -106,12 +107,14 @@ func (r *OpenFabricResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	client := r.client.SDNFabricNodes(plan.getGenericModel().FabricID.ValueString(), r.config.fabricProtocol)
+
 	err := client.UpdateFabricNode(ctx, update)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Updating OpenFabric SDN Fabric Node",
 			fmt.Sprintf("Could not update OpenFabric SDN Fabric Node %q: %v", plan.getID(), err),
 		)
+
 		return
 	}
 
