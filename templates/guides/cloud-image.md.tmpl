@@ -18,6 +18,16 @@ Ubuntu cloud images are available at [cloud-images.ubuntu.com](https://cloud-ima
 
 {{ codefile "terraform" "examples/guides/cloud-image/ubuntu-img/main.tf" }}
 
+## Create a VM from a compressed cloud image
+
+Some distributions, like Fedora CoreOS, only provide cloud images in compressed formats (e.g., `.qcow2.xz`). Proxmox does not directly support XZ-compressed images, but its ZST decompression can handle XZ archives.
+
+~> **Important:** Compressed images cannot be used with `import_from`. You must use `file_id` with `content_type = "iso"` instead. This requires SSH configuration in the provider.
+
+Example of how to create a Fedora CoreOS VM from an XZ-compressed `qcow2` image. CoreOS images are available at [fedoraproject.org/coreos](https://fedoraproject.org/coreos/download):
+
+{{ codefile "terraform" "examples/guides/cloud-image/coreos-xz/main.tf" }}
+
 ## Create a VM from an existing image on Proxmox
 
 If you already have a cloud image on Proxmox, you can use it to create a VM:
