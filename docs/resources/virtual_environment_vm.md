@@ -302,10 +302,14 @@ output "ubuntu_vm_public_key" {
         - `vmdk` - VMware Disk Image.
     - `file_id` - (Optional) The file ID for a disk image when importing a disk into VM. The ID format is
           `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`. Can be also taken from
-          `proxmox_virtual_environment_download_file` resource. *Deprecated*, use `import_from` instead.
-    - `import_from` - (Optional) The file ID for a disk image to import into VM. The image must be of `import` content type.
-       The ID format is `<datastore_id>:import/<file_name>`, for example `local:import/centos8.qcow2`. Can be also taken from
-       a disk replacement operation, which will require a VM reboot. Your original disks will remain as detached disks.
+          `proxmox_virtual_environment_download_file` resource. Prefer `import_from` for uncompressed images.
+          Use `file_id` when working with compressed cloud images (e.g., `.qcow2.xz`) that were downloaded
+          with `content_type = "iso"` and `decompression_algorithm` set. See the
+          [Create a VM from a Cloud Image](../guides/cloud-image) guide for examples.
+    - `import_from` - (Optional) The file ID for a disk image to import into VM. The image must be of `import` content type
+       (uncompressed images only). The ID format is `<datastore_id>:import/<file_name>`, for example `local:import/centos8.qcow2`.
+       Can be also taken from `proxmox_virtual_environment_download_file` resource. Note: compressed images downloaded with
+       `decompression_algorithm` cannot use `import_from`; use `file_id` instead.
     - `interface` - (Required) The disk interface for Proxmox, currently `scsi`,
         `sata` and `virtio` interfaces are supported. Append the disk index at
         the end, for example, `virtio0` for the first virtio disk, `virtio1` for
