@@ -1767,15 +1767,29 @@ func forceNewOnTPMVersionChange(ctx context.Context, d *schema.ResourceDiff, _ a
 
 	oldValue, newValue := d.GetChange(mkTPMState)
 
-	oldList, _ := oldValue.([]any)
-	newList, _ := newValue.([]any)
+	oldList, ok := oldValue.([]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for old %s value: %T", mkTPMState, oldValue)
+	}
+
+	newList, ok := newValue.([]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for new %s value: %T", mkTPMState, newValue)
+	}
 
 	if len(oldList) == 0 || len(newList) == 0 {
 		return nil
 	}
 
-	oldBlock, _ := oldList[0].(map[string]any)
-	newBlock, _ := newList[0].(map[string]any)
+	oldBlock, ok := oldList[0].(map[string]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for old %s block: %T", mkTPMState, oldList[0])
+	}
+
+	newBlock, ok := newList[0].(map[string]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for new %s block: %T", mkTPMState, newList[0])
+	}
 
 	if oldBlock == nil || newBlock == nil {
 		return nil
