@@ -785,7 +785,6 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The tpmstate device",
 			Optional:    true,
-			ForceNew:    true,
 			DefaultFunc: func() (any, error) {
 				return []any{}, nil
 			},
@@ -801,7 +800,6 @@ func VM() *schema.Resource {
 						Type:        schema.TypeString,
 						Description: "TPM version",
 						Optional:    true,
-						ForceNew:    true,
 						Default:     dvTPMStateVersion,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 							"v1.2",
@@ -1740,6 +1738,7 @@ func VM() *schema.Resource {
 					return !d.Get(mkMigrate).(bool)
 				},
 			),
+			forceNewOnTPMVersionChange,
 		),
 		Importer: &schema.ResourceImporter{
 			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
@@ -1759,6 +1758,67 @@ func VM() *schema.Resource {
 			},
 		},
 	}
+}
+
+func forceNewOnTPMVersionChange(ctx context.Context, d *schema.ResourceDiff, _ any) error {
+	if !d.HasChange(mkTPMState) {
+		return nil
+	}
+
+	oldValue, newValue := d.GetChange(mkTPMState)
+
+	oldList, ok := oldValue.([]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for old %s value: %T", mkTPMState, oldValue)
+	}
+
+	newList, ok := newValue.([]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for new %s value: %T", mkTPMState, newValue)
+	}
+
+	if len(oldList) == 0 || len(newList) == 0 {
+		return nil
+	}
+
+	oldBlock, ok := oldList[0].(map[string]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for old %s block: %T", mkTPMState, oldList[0])
+	}
+
+	newBlock, ok := newList[0].(map[string]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for new %s block: %T", mkTPMState, newList[0])
+	}
+
+	if oldBlock == nil || newBlock == nil {
+		return nil
+	}
+
+	oldVersion, _ := oldBlock[mkTPMStateVersion].(string)
+	newVersion, _ := newBlock[mkTPMStateVersion].(string)
+
+	if oldVersion == "" || newVersion == "" || oldVersion == newVersion {
+		return nil
+	}
+
+	attrPath := fmt.Sprintf("%s.0.%s", mkTPMState, mkTPMStateVersion)
+
+	if err := d.ForceNew(attrPath); err != nil {
+		tflog.Warn(ctx, "unable to require tpm_state version replacement", map[string]any{
+			"attribute": attrPath,
+			"error":     err,
+		})
+	}
+
+	if err := d.ForceNew(mkTPMState); err != nil {
+		tflog.Warn(ctx, "unable to require tpm_state replacement", map[string]any{
+			"attribute": mkTPMState,
+			"error":     err,
+		})
+	}
+
+	return nil
 }
 
 func vmCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -4248,7 +4308,11 @@ func vmReadCustom(
 		fileIDParts := strings.Split(vmConfig.TPMState.FileVolume, ":")
 
 		tpmState[mkTPMStateDatastoreID] = fileIDParts[0]
-		tpmState[mkTPMStateVersion] = dvTPMStateVersion
+		if vmConfig.TPMState.Version != nil && *vmConfig.TPMState.Version != "" {
+			tpmState[mkTPMStateVersion] = *vmConfig.TPMState.Version
+		} else {
+			tpmState[mkTPMStateVersion] = dvTPMStateVersion
+		}
 
 		currentTPMState := d.Get(mkTPMState).([]any)
 
@@ -5711,9 +5775,21 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	// Prepare the new tpm state configuration.
 	if d.HasChange(mkTPMState) {
+		if !stoppedBeforeUpdate {
+			if er := vmShutdown(ctx, vmAPI, d); er != nil {
+				return er
+			}
+
+			stoppedBeforeUpdate = true
+		}
+
 		tpmState := vmGetTPMState(d, nil)
 
-		updateBody.TPMState = tpmState
+		if tpmState != nil {
+			updateBody.TPMState = tpmState
+		} else {
+			del = append(del, "tpmstate0")
+		}
 
 		rebootRequired = true
 	}
