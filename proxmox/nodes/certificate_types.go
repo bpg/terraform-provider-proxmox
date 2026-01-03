@@ -41,3 +41,13 @@ type CertificateUpdateRequestBody struct {
 	PrivateKey   *string           `json:"key,omitempty"     url:"key,omitempty"`
 	Restart      *types.CustomBool `json:"restart,omitempty" url:"restart,omitempty,int"`
 }
+
+// CertificateOrderRequestBody contains the body for an ACME certificate order request.
+type CertificateOrderRequestBody struct {
+	Force *types.CustomBool `json:"force,omitempty" url:"force,omitempty,int"`
+}
+
+// CertificateOrderResponseBody contains the body from an ACME certificate order response.
+type CertificateOrderResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
