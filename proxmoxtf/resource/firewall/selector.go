@@ -23,6 +23,10 @@ const (
 	mkSelectorContainerID = "container_id"
 )
 
+type FirewallClient interface {
+	Firewall() firewall.API
+}
+
 func selectorSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkSelectorNodeName: {
@@ -47,18 +51,21 @@ func selectorSchema() map[string]*schema.Schema {
 	}
 }
 
-func selectorSchemaMandatory() map[string]*schema.Schema {
+func optionsSelectorSchema() map[string]*schema.Schema {
 	s := selectorSchema()
 	s[mkSelectorNodeName].Optional = false
 	s[mkSelectorNodeName].Required = true
 	// required attributes can't be included in RequiredWith
 	s[mkSelectorVMID].RequiredWith = nil
 	s[mkSelectorContainerID].RequiredWith = nil
+	// make sure exactly one of vm_id/container_id is present. neither is invalid. both is invalid.
+	s[mkSelectorVMID].ExactlyOneOf = []string{mkSelectorVMID, mkSelectorContainerID}
+	s[mkSelectorContainerID].ExactlyOneOf = []string{mkSelectorVMID, mkSelectorContainerID}
 
 	return s
 }
 
-func firewallApiFor(d *schema.ResourceData, m any) (firewall.API, error) {
+func firewallAPIFor(d *schema.ResourceData, m any) (firewall.API, error) {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	api, err := config.GetClient()
@@ -87,7 +94,7 @@ func selectFirewallAPI(
 	f func(context.Context, firewall.API, *schema.ResourceData) diag.Diagnostics,
 ) func(context.Context, *schema.ResourceData, any) diag.Diagnostics {
 	return func(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
-		fwAPI, err := firewallApiFor(d, m)
+		fwAPI, err := firewallAPIFor(d, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}

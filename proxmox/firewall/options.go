@@ -37,7 +37,7 @@ func (c *Client) GetOptionsID() string {
 func (c *Client) SetOptions(ctx context.Context, d *OptionsPutRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPut, c.optionsPath(), d, nil)
 	if err != nil {
-		return fmt.Errorf("error setting optionss: %w", err)
+		return fmt.Errorf("error setting options: %w", err)
 	}
 
 	return nil

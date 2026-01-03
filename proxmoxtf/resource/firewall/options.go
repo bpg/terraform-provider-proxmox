@@ -16,7 +16,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
@@ -115,14 +117,14 @@ func Options() *schema.Resource {
 		},
 	}
 
-	structure.MergeSchema(s, selectorSchemaMandatory())
+	structure.MergeSchema(s, optionsSelectorSchema())
 
 	return &schema.Resource{
 		Schema:        s,
-		CreateContext: selectFirewallAPI(optionsSet),
-		ReadContext:   selectFirewallAPI(optionsRead),
-		UpdateContext: selectFirewallAPI(optionsUpdate),
-		DeleteContext: selectFirewallAPI(optionsDelete),
+		CreateContext: selectFirewallOptionsAPI(optionsSet),
+		ReadContext:   selectFirewallOptionsAPI(optionsRead),
+		UpdateContext: selectFirewallOptionsAPI(optionsUpdate),
+		DeleteContext: selectFirewallOptionsAPI(optionsDelete),
 		Importer: &schema.ResourceImporter{
 			StateContext: optionsImport,
 		},
@@ -187,7 +189,7 @@ func optionsImport(_ context.Context, d *schema.ResourceData, m any) ([]*schema.
 		return nil, fmt.Errorf("invalid import ID: %s (expected: 'vm/<node_name>/<vm_id>' or 'container/<node_name>/<container_id>')", id)
 	}
 
-	api, err := firewallApiFor(d, m)
+	api, err := firewallAPIFor(d, m)
 	if err != nil {
 		return nil, err
 	}
@@ -222,8 +224,7 @@ func optionsSet(ctx context.Context, api firewall.API, d *schema.ResourceData) d
 		RAdv:        &radv,
 	}
 
-	err := api.SetOptions(ctx, body)
-	if err != nil {
+	if err := api.SetOptions(ctx, body); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -306,4 +307,37 @@ func optionsDelete(_ context.Context, _ firewall.API, d *schema.ResourceData) di
 	d.SetId("")
 
 	return nil
+}
+
+func selectFirewallOptionsAPI(
+	f func(context.Context, firewall.API, *schema.ResourceData) diag.Diagnostics,
+) func(context.Context, *schema.ResourceData, any) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+		config := m.(proxmoxtf.ProviderConfiguration)
+
+		api, err := config.GetClient()
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		nodeName := d.Get(mkSelectorNodeName).(string)
+		nodeAPI := api.Node(nodeName)
+
+		vmClient, err := getVMClientFromID(d, nodeAPI)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		return f(ctx, vmClient.Firewall(), d)
+	}
+}
+
+func getVMClientFromID(d *schema.ResourceData, nodeAPI *nodes.Client) (FirewallClient, error) {
+	if v, ok := d.GetOk(mkSelectorVMID); ok {
+		return nodeAPI.VM(v.(int)), nil
+	} else if v, ok := d.GetOk(mkSelectorContainerID); ok {
+		return nodeAPI.Container(v.(int)), nil
+	}
+
+	return nil, fmt.Errorf("expected either %s or %s but found neither", mkSelectorVMID, mkSelectorContainerID)
 }
