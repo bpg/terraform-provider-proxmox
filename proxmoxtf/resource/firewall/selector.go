@@ -23,10 +23,6 @@ const (
 	mkSelectorContainerID = "container_id"
 )
 
-type FirewallClient interface {
-	Firewall() firewall.API
-}
-
 func selectorSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkSelectorNodeName: {

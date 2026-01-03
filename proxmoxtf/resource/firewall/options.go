@@ -323,20 +323,20 @@ func selectFirewallOptionsAPI(
 		nodeName := d.Get(mkSelectorNodeName).(string)
 		nodeAPI := api.Node(nodeName)
 
-		vmClient, err := getVMClientFromID(d, nodeAPI)
+		firewallAPI, err := getFirewallAPIFromID(d, nodeAPI)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		return f(ctx, vmClient.Firewall(), d)
+		return f(ctx, firewallAPI, d)
 	}
 }
 
-func getVMClientFromID(d *schema.ResourceData, nodeAPI *nodes.Client) (FirewallClient, error) {
+func getFirewallAPIFromID(d *schema.ResourceData, nodeAPI *nodes.Client) (firewall.API, error) {
 	if v, ok := d.GetOk(mkSelectorVMID); ok {
-		return nodeAPI.VM(v.(int)), nil
+		return nodeAPI.VM(v.(int)).Firewall(), nil
 	} else if v, ok := d.GetOk(mkSelectorContainerID); ok {
-		return nodeAPI.Container(v.(int)), nil
+		return nodeAPI.Container(v.(int)).Firewall(), nil
 	}
 
 	return nil, fmt.Errorf("expected either %s or %s but found neither", mkSelectorVMID, mkSelectorContainerID)
