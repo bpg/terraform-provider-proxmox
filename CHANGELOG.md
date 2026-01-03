@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.91.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.90.0...v0.91.0) (2026-01-03)
+
+
+### Features
+
+* **acme:** add support for certificate ordering ([#2292](https://github.com/bpg/terraform-provider-proxmox/issues/2292)) ([a2a970d](https://github.com/bpg/terraform-provider-proxmox/commit/a2a970d06836c7740e1b6b040ebb8cfc622714c6))
+* **sdn:** add support for Fabric resources ([#2444](https://github.com/bpg/terraform-provider-proxmox/issues/2444)) ([b223dad](https://github.com/bpg/terraform-provider-proxmox/commit/b223dad82886db6738f1d2a6845720267c1742d4))
+* **storage:** add  support for provisioning storage types (NFS/CIFS/PBS/Directory/LVM) ([#2130](https://github.com/bpg/terraform-provider-proxmox/issues/2130)) ([f361704](https://github.com/bpg/terraform-provider-proxmox/commit/f361704ccaa7d794d83c6803e120c29f0178640c))
+
+
+### Bug Fixes
+
+* **core:** handle scientific notation in CustomInt/CustomInt64 unmarshaling ([#2431](https://github.com/bpg/terraform-provider-proxmox/issues/2431)) ([4baff92](https://github.com/bpg/terraform-provider-proxmox/commit/4baff92038235f7e4e7830a7a9b239c0a1eadf45))
+* **vm:** allow TPM state updates in place ([#2446](https://github.com/bpg/terraform-provider-proxmox/issues/2446)) ([f8717c4](https://github.com/bpg/terraform-provider-proxmox/commit/f8717c41a14af6ea1d0dc31cc62f14649fae7653))
+
+
+### Miscellaneous
+
+* **code:** cleanup issues reported by static code alalysis ([#2442](https://github.com/bpg/terraform-provider-proxmox/issues/2442)) ([686e575](https://github.com/bpg/terraform-provider-proxmox/commit/686e575fac3ac220cd8e397fa2e41770cf7b2ca3))
+* **code:** cleanups and linter rules adjustment ([#2443](https://github.com/bpg/terraform-provider-proxmox/issues/2443)) ([1eee491](https://github.com/bpg/terraform-provider-proxmox/commit/1eee491ebb96f7c27dca9c962157b9af58ea9af3))
+* **deps:** update image golang (36b4f45 → b6ba523) ([#2439](https://github.com/bpg/terraform-provider-proxmox/issues/2439)) ([f82f03c](https://github.com/bpg/terraform-provider-proxmox/commit/f82f03c85fa039b705e80eeb6f2fb78859fbab24))
+* **deps:** update image golang (b6ba523 → 6cc2338) ([#2448](https://github.com/bpg/terraform-provider-proxmox/issues/2448)) ([2b22bde](https://github.com/bpg/terraform-provider-proxmox/commit/2b22bde2cfb804818d2fedd31dded719614859ce))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.12.1 → v7.14.0) ([#2438](https://github.com/bpg/terraform-provider-proxmox/issues/2438)) ([4bdd335](https://github.com/bpg/terraform-provider-proxmox/commit/4bdd335fc66e38069806b9fa03d723c8cb6a307e))
+* **deps:** update module github.com/google/go-querystring (v1.1.0 → v1.2.0) ([#2440](https://github.com/bpg/terraform-provider-proxmox/issues/2440)) ([ad6b9b2](https://github.com/bpg/terraform-provider-proxmox/commit/ad6b9b26f0ce37019b54649ba469d983921b67e8))
+* **docs:** add guide for creating VMs from compressed cloud images ([#2449](https://github.com/bpg/terraform-provider-proxmox/issues/2449)) ([daa339b](https://github.com/bpg/terraform-provider-proxmox/commit/daa339b063c7ba3614347bc4877ffe2a3e592cd6))
+* **docs:** update contributing guidelines and dev setup guides ([#2447](https://github.com/bpg/terraform-provider-proxmox/issues/2447)) ([371e0a1](https://github.com/bpg/terraform-provider-proxmox/commit/371e0a17b63ed1c16a094df220d69718d6695dcf))
+* **docs:** update terraform proxmox (0.89.1 → 0.90.0) ([#2435](https://github.com/bpg/terraform-provider-proxmox/issues/2435)) ([975f818](https://github.com/bpg/terraform-provider-proxmox/commit/975f8186e20ad7d296f52a484b7b4dc7ec895f4d))
+
 ## [0.90.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.89.1...v0.90.0) (2025-12-24)
 
 
