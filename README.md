@@ -86,7 +86,7 @@ virtual_environment_api_token                = "root@pam!terraform=00000000-0000
 
 Then run `make example` to deploy the example resources.
 
-If you don't have a free Proxmox cluster to play with, there is a dedicated [how-to tutorial](docs/guides/setup-proxmox-for-tests.md) on how to set up Proxmox inside a VM and run `make example` on it.
+If you don't have a free Proxmox cluster to play with, there is a dedicated [how-to tutorial](docs/guides/dev-proxmox-setup.md) on how to set up Proxmox inside a VM and run `make example` on it.
 
 ## Future Work
 
