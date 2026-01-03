@@ -69,6 +69,8 @@ resource "proxmox_virtual_environment_container" "example_template" {
 }
 
 resource "proxmox_virtual_environment_container" "example" {
+  provider = proxmox.root
+
   disk {
     datastore_id = var.virtual_environment_storage
   }

@@ -57,9 +57,10 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
 Create a `terraform.tfvars` file in the `example/` directory (this file is git-ignored):
 
 ```hcl
-virtual_environment_username = "root@pam"
-virtual_environment_endpoint = "https://192.168.122.43:8006/"
-virtual_environment_password = "your-password"
+virtual_environment_ssh_username = "your-ssh-username"
+virtual_environment_endpoint     = "https://192.168.122.43:8006/"
+virtual_environment_password     = "your-password"
+virtual_environment_api_token    = "root@pam!<token>=<value>"
 ```
 
 Replace the IP address and password with your actual values.
