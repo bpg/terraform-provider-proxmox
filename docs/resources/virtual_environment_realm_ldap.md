@@ -176,12 +176,7 @@ The `bind_password` is sent to Proxmox and stored securely, but it's never retur
 
 ### User Synchronization
 
-To trigger manual synchronization after realm creation, use the Proxmox API or GUI:
-```bash
-pveum realm sync <realm> --scope users
-```
-
-A future version may include a separate resource for managing synchronization operations.
+To trigger synchronization, use the `proxmox_virtual_environment_realm_sync` resource.
 
 ## See Also
 
