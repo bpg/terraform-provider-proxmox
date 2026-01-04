@@ -135,13 +135,6 @@ resource "proxmox_virtual_environment_realm_ldap" "starttls_example" {
   - `enable-new` - Enable newly synced users: `1` or `0`
   - `full` - Perform full sync: `1` or `0`
   - `purge` - Purge removed entries: `1` or `0`
-  - `remove-vanished` - (Optional) A semicolon-separated list specifying how to handle entries that exist in Proxmox but no longer exist in the LDAP directory. Possible values:
-    - `entry` - Remove the user/group entirely from Proxmox
-    - `acl` - Remove ACL/permission entries for vanished users/groups  
-    - `properties` - Remove additional properties (e.g., email, comments)
-    - `none` - Keep everything (equivalent to omitting this parameter)
-      
-     Example: `"entry;acl"` removes both the user/group and their permissions. Use with caution in production - consider using `dry_run = true` first.
 
 #### General Settings
 
