@@ -33,8 +33,13 @@ resource "proxmox_virtual_environment_realm_sync" "example_sync" {
 
 - `realm` - (Required, String) Name of the realm to synchronize.
 - `scope` - (Optional, String) Sync scope. Valid values: `"users"`, `"groups"`, `"both"`.
-- `remove_vanished` - (Optional, String) How to handle vanished entries. Typically a
-  semicolon-separated combination of `acl`, `properties`, `entry`, or `none` (e.g. `acl;properties;entry`).
+- `remove_vanished` - (Optional, String) A semicolon-separated list specifying how to handle entries that exist in Proxmox but no longer exist in the LDAP directory. Use with caution. Possible values:
+  - `entry` - Remove the user/group entirely from Proxmox.
+  - `acl` - Remove ACL/permission entries for vanished users/groups.
+  - `properties` - Remove additional properties (e.g., email, comments).
+  - `none` - Keep everything (equivalent to omitting this parameter).
+
+  Example: `"entry;acl"` removes both the user/group and their permissions. It is recommended to test with `dry_run = true` first.
 - `enable_new` - (Optional, Boolean) Enable newly synced users.
 - `full` - (Optional, Boolean) Perform a full sync.
 - `purge` - (Optional, Boolean) Purge removed entries.
