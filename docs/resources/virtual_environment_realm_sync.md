@@ -41,8 +41,8 @@ resource "proxmox_virtual_environment_realm_sync" "example_sync" {
 
   Example: `"entry;acl"` removes both the user/group and their permissions. It is recommended to test with `dry_run = true` first.
 - `enable_new` - (Optional, Boolean) Enable newly synced users.
-- `full` - (Optional, Boolean) Perform a full sync.
-- `purge` - (Optional, Boolean) Purge removed entries.
+- `full` - (Optional, Boolean) Perform a full sync. **Deprecated by Proxmox**: use `remove_vanished` instead.
+- `purge` - (Optional, Boolean) Purge removed entries. **Deprecated by Proxmox**: use `remove_vanished` instead.
 - `dry_run` - (Optional, Boolean) Only simulate the sync without applying changes.
 
 ## Behavior Notes
