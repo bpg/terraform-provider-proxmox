@@ -161,7 +161,7 @@ func (r *realmSyncResource) Read(
 		return
 	}
 
-	if (state.ID.IsNull() || state.ID.ValueString() == "") && !state.Realm.IsNull() && state.Realm.ValueString() != "" {
+if state.ID.ValueString() == "" && state.Realm.ValueString() != "" {
 		state.ID = state.Realm
 	}
 
