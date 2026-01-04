@@ -347,7 +347,7 @@ func (m *realmLDAPModel) toUpdateRequest(state *realmLDAPModel) *access.RealmUpd
 
 func (m *realmLDAPModel) fromAPIResponse(data *access.RealmGetResponseData) {
 	// Preserve existing realm and ID, as Proxmox may not echo the realm name
-	if (m.ID.IsNull() || m.ID.ValueString() == "") && !m.Realm.IsNull() && m.Realm.ValueString() != "" {
+if m.ID.ValueString() == "" && m.Realm.ValueString() != "" {
 		m.ID = m.Realm
 	}
 
