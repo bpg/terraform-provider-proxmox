@@ -11,7 +11,7 @@ resource "proxmox_virtual_environment_realm_ldap" "example" {
 
   # Bind credentials (optional but recommended)
   bind_dn       = "cn=admin,dc=example,dc=com"
-  bind_password = "secure-password"
+  bind_password = var.ldap_bind_password
 
   # SSL/TLS configuration
   mode   = "ldap+starttls"
