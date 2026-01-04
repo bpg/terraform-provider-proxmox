@@ -62,7 +62,7 @@ type RealmUpdateRequestBody struct {
 	// Note: Realm and Type are not included (part of URL path)
 	Server1          *string           `json:"server1,omitempty"               url:"server1,omitempty"`
 	Server2          *string           `json:"server2,omitempty"               url:"server2,omitempty"`
-	Port             *int              `json:"port,omitempty"                  url:"port,omitempty,int"`
+	Port             *int              `json:"port,omitempty"                  url:"port,omitempty"`
 	BaseDN           *string           `json:"base_dn,omitempty"               url:"base_dn,omitempty"`
 	BindDN           *string           `json:"bind_dn,omitempty"               url:"bind_dn,omitempty"`
 	BindPassword     *string           `json:"password,omitempty"              url:"password,omitempty"`
