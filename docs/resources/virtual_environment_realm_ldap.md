@@ -53,24 +53,24 @@ resource "proxmox_virtual_environment_realm_ldap" "secure_example" {
 
 ```hcl
 resource "proxmox_virtual_environment_realm_ldap" "sync_example" {
-  realm     = "lab.example.com"
-  server1   = "ldap.example.com"
-  base_dn   = "cn=users,cn=accounts,dc=lab,dc=example,dc=com"
-  bind_dn   = "uid=ldapread,cn=users,cn=accounts,dc=lab,dc=example,dc=com"
-  bind_password = var.ldap_password
-  user_attr = "uid"
+  realm                 = "lab.example.com"
+  server1               = "ldap.example.com"
+  base_dn               = "cn=users,cn=accounts,dc=lab,dc=example,dc=com"
+  bind_dn               = "uid=ldapread,cn=users,cn=accounts,dc=lab,dc=example,dc=com"
+  bind_password         = var.ldap_password
+  user_attr             = "uid"
   
   # Sync configuration
   sync_attributes       = "email=mail,firstname=givenName,lastname=sn"
   sync_defaults_options = "scope=users,enable-new=1"
   
   # Group configuration
-  group_dn          = "cn=groups,cn=accounts,dc=lab,dc=example,dc=com"
-  group_filter      = "(objectClass=groupOfNames)"
-  group_name_attr   = "cn"
+  group_dn              = "cn=groups,cn=accounts,dc=lab,dc=example,dc=com"
+  group_filter          = "(objectClass=groupOfNames)"
+  group_name_attr       = "cn"
   
-  secure  = true
-  comment = "LDAP realm with user/group synchronization"
+  secure                = true
+  comment               = "LDAP realm with user/group synchronization"
 }
 ```
 
