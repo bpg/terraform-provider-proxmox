@@ -8,13 +8,13 @@ package access
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -27,6 +27,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 var (
@@ -253,9 +254,9 @@ func (r *realmLDAPResource) Create(
 	// Read back the created resource
 	plan.ID = plan.Realm
 
-	r.read(ctx, &plan, &resp.Diagnostics)
-
-	if resp.Diagnostics.HasError() {
+	err = r.read(ctx, &plan)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading LDAP realm after creation", err.Error())
 		return
 	}
 
@@ -275,9 +276,13 @@ func (r *realmLDAPResource) Read(
 		return
 	}
 
-	r.read(ctx, &state, &resp.Diagnostics)
-
-	if resp.Diagnostics.HasError() {
+	err := r.read(ctx, &state)
+	if err != nil {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("Error reading LDAP realm", err.Error())
 		return
 	}
 
@@ -287,12 +292,10 @@ func (r *realmLDAPResource) Read(
 func (r *realmLDAPResource) read(
 	ctx context.Context,
 	model *realmLDAPModel,
-	diags *diag.Diagnostics,
-) {
+) error {
 	realmData, err := r.client.Access().GetRealm(ctx, model.Realm.ValueString())
 	if err != nil {
-		diags.AddError("Error reading LDAP realm", err.Error())
-		return
+		return err
 	}
 
 	// Preserve the bind password from the plan/state since it's not returned by the API
@@ -302,6 +305,8 @@ func (r *realmLDAPResource) read(
 
 	// Restore the bind password
 	model.BindPassword = bindPassword
+
+	return nil
 }
 
 func (r *realmLDAPResource) Update(
@@ -327,9 +332,9 @@ func (r *realmLDAPResource) Update(
 		return
 	}
 
-	r.read(ctx, &plan, &resp.Diagnostics)
-
-	if resp.Diagnostics.HasError() {
+	err = r.read(ctx, &plan)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading LDAP realm after update", err.Error())
 		return
 	}
 
@@ -351,6 +356,10 @@ func (r *realmLDAPResource) Delete(
 
 	err := r.client.Access().DeleteRealm(ctx, state.Realm.ValueString())
 	if err != nil {
+		// If already deleted, that's fine
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			return
+		}
 		resp.Diagnostics.AddError("Error deleting LDAP realm", err.Error())
 		return
 	}
