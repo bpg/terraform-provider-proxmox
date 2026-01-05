@@ -27,7 +27,7 @@ type realmSyncModel struct {
 func (m *realmSyncModel) toSyncRequest() *access.RealmSyncRequestBody {
 	body := &access.RealmSyncRequestBody{}
 
-	if !m.Scope.IsNull() && m.Scope.ValueString() != "" {
+	if !m.Scope.IsNull() {
 		body.Scope = m.Scope.ValueStringPointer()
 	}
 
