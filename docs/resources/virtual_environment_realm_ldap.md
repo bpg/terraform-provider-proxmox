@@ -133,8 +133,8 @@ resource "proxmox_virtual_environment_realm_ldap" "starttls_example" {
 - `sync_defaults_options` - (String) Default synchronization options. Format: `key=value,key=value`. Example: `"scope=users,enable-new=1"`. Valid keys:
   - `scope` - Sync scope: `users`, `groups`, or `both`
   - `enable-new` - Enable newly synced users: `1` or `0`
-  - `full` - (Deprecated by Proxmox) Perform full sync: `1` or `0`. Use `remove_vanished` instead.
-  - `purge` - (Deprecated by Proxmox) Purge removed entries: `1` or `0`. Use `remove_vanished` instead.
+  - `remove-vanished` - How to handle vanished entries (e.g. `entry;acl`).
+  - `full` / `purge` - (Deprecated by Proxmox) Use `remove_vanished` instead.
 
 #### General Settings
 
