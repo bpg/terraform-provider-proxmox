@@ -8,7 +8,9 @@ package access
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -21,6 +23,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 var (
@@ -161,7 +164,30 @@ func (r *realmSyncResource) Read(
 		return
 	}
 
-if state.ID.ValueString() == "" && state.Realm.ValueString() != "" {
+	// Verify the underlying realm still exists. If not, remove from state.
+	_, err := r.client.Access().GetRealm(ctx, state.Realm.ValueString())
+	if err != nil {
+		var httpErr *api.HTTPError
+		if errors.As(err, &httpErr) && httpErr.Code == http.StatusNotFound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		// Also check for the sentinel error
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		resp.Diagnostics.AddError(
+			"Error Reading Realm for Sync",
+			fmt.Sprintf("Could not verify existence of realm %q: %v", state.Realm.ValueString(), err),
+		)
+
+		return
+	}
+
+	if (state.ID.IsNull() || state.ID.ValueString() == "") && !state.Realm.IsNull() && state.Realm.ValueString() != "" {
 		state.ID = state.Realm
 	}
 
