@@ -46,6 +46,31 @@ type realmLDAPModel struct {
 	CaseSensitive       types.Bool   `tfsdk:"case_sensitive"`
 }
 
+// updateStringAttribute is a helper function for handling optional string attributes in updates.
+// It sets the request field if the value changed, or adds to the delete list if being unset.
+func updateStringAttribute(reqField **string, planVal, stateVal types.String, toDelete *[]string, apiName string) {
+	if attribute.IsDefined(planVal) {
+		if !planVal.Equal(stateVal) {
+			*reqField = planVal.ValueStringPointer()
+		}
+	} else {
+		attribute.CheckDelete(planVal, stateVal, toDelete, apiName)
+	}
+}
+
+// updateInt64Attribute is a helper function for handling optional int64 attributes in updates.
+// It sets the request field if the value changed, or adds to the delete list if being unset.
+func updateInt64Attribute(reqField **int, planVal, stateVal types.Int64, toDelete *[]string, apiName string) {
+	if attribute.IsDefined(planVal) {
+		if !planVal.Equal(stateVal) {
+			val := int(planVal.ValueInt64())
+			*reqField = &val
+		}
+	} else {
+		attribute.CheckDelete(planVal, stateVal, toDelete, apiName)
+	}
+}
+
 func (m *realmLDAPModel) toCreateRequest() *access.RealmCreateRequestBody {
 	req := &access.RealmCreateRequestBody{
 		Realm:   m.Realm.ValueString(),
@@ -164,47 +189,12 @@ func (m *realmLDAPModel) toUpdateRequest(state *realmLDAPModel) *access.RealmUpd
 	}
 
 	// Optional fields: support unsetting using the API's `delete` parameter.
-	if attribute.IsDefined(m.Server2) {
-		if !m.Server2.Equal(state.Server2) {
-			req.Server2 = m.Server2.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.Server2, state.Server2, &toDelete, "server2")
-	}
-
-	if attribute.IsDefined(m.BindDN) {
-		if !m.BindDN.Equal(state.BindDN) {
-			req.BindDN = m.BindDN.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.BindDN, state.BindDN, &toDelete, "bind_dn")
-	}
-
-	if attribute.IsDefined(m.BindPassword) {
-		if !m.BindPassword.Equal(state.BindPassword) {
-			req.BindPassword = m.BindPassword.ValueStringPointer()
-		}
-	} else {
-		// The API field name is `password`.
-		attribute.CheckDelete(m.BindPassword, state.BindPassword, &toDelete, "password")
-	}
-
-	if attribute.IsDefined(m.UserAttr) {
-		if !m.UserAttr.Equal(state.UserAttr) {
-			req.UserAttr = m.UserAttr.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.UserAttr, state.UserAttr, &toDelete, "user_attr")
-	}
-
-	if attribute.IsDefined(m.Port) {
-		if !m.Port.Equal(state.Port) {
-			port := int(m.Port.ValueInt64())
-			req.Port = &port
-		}
-	} else {
-		attribute.CheckDelete(m.Port, state.Port, &toDelete, "port")
-	}
+	updateStringAttribute(&req.Server2, m.Server2, state.Server2, &toDelete, "server2")
+	updateStringAttribute(&req.BindDN, m.BindDN, state.BindDN, &toDelete, "bind_dn")
+	// The API field name for BindPassword is `password`.
+	updateStringAttribute(&req.BindPassword, m.BindPassword, state.BindPassword, &toDelete, "password")
+	updateStringAttribute(&req.UserAttr, m.UserAttr, state.UserAttr, &toDelete, "user_attr")
+	updateInt64Attribute(&req.Port, m.Port, state.Port, &toDelete, "port")
 
 	// Booleans are sent on change (they are typically optional+computed).
 	// Note: Secure is deprecated by Proxmox in favor of Mode, but is still
@@ -217,117 +207,20 @@ func (m *realmLDAPModel) toUpdateRequest(state *realmLDAPModel) *access.RealmUpd
 		req.Verify = proxmoxtypes.CustomBoolPtr(m.Verify.ValueBoolPointer())
 	}
 
-	if attribute.IsDefined(m.CaPath) {
-		if !m.CaPath.Equal(state.CaPath) {
-			req.CaPath = m.CaPath.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.CaPath, state.CaPath, &toDelete, "capath")
-	}
-
-	if attribute.IsDefined(m.Cert) {
-		if !m.Cert.Equal(state.Cert) {
-			req.CertPath = m.Cert.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.Cert, state.Cert, &toDelete, "cert")
-	}
-
-	if attribute.IsDefined(m.CertKey) {
-		if !m.CertKey.Equal(state.CertKey) {
-			req.CertKeyPath = m.CertKey.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.CertKey, state.CertKey, &toDelete, "certkey")
-	}
-
-	if attribute.IsDefined(m.Filter) {
-		if !m.Filter.Equal(state.Filter) {
-			req.Filter = m.Filter.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.Filter, state.Filter, &toDelete, "filter")
-	}
-
-	if attribute.IsDefined(m.GroupDN) {
-		if !m.GroupDN.Equal(state.GroupDN) {
-			req.GroupDN = m.GroupDN.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.GroupDN, state.GroupDN, &toDelete, "group_dn")
-	}
-
-	if attribute.IsDefined(m.GroupFilter) {
-		if !m.GroupFilter.Equal(state.GroupFilter) {
-			req.GroupFilter = m.GroupFilter.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.GroupFilter, state.GroupFilter, &toDelete, "group_filter")
-	}
-
-	if attribute.IsDefined(m.GroupClasses) {
-		if !m.GroupClasses.Equal(state.GroupClasses) {
-			req.GroupClasses = m.GroupClasses.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.GroupClasses, state.GroupClasses, &toDelete, "group_classes")
-	}
-
-	if attribute.IsDefined(m.GroupNameAttr) {
-		if !m.GroupNameAttr.Equal(state.GroupNameAttr) {
-			req.GroupNameAttr = m.GroupNameAttr.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.GroupNameAttr, state.GroupNameAttr, &toDelete, "group_name_attr")
-	}
-
-	if attribute.IsDefined(m.Mode) {
-		if !m.Mode.Equal(state.Mode) {
-			req.Mode = m.Mode.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.Mode, state.Mode, &toDelete, "mode")
-	}
-
-	if attribute.IsDefined(m.SSLVersion) {
-		if !m.SSLVersion.Equal(state.SSLVersion) {
-			req.SSLVersion = m.SSLVersion.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.SSLVersion, state.SSLVersion, &toDelete, "sslversion")
-	}
-
-	if attribute.IsDefined(m.UserClasses) {
-		if !m.UserClasses.Equal(state.UserClasses) {
-			req.UserClasses = m.UserClasses.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.UserClasses, state.UserClasses, &toDelete, "user_classes")
-	}
-
-	if attribute.IsDefined(m.SyncAttributes) {
-		if !m.SyncAttributes.Equal(state.SyncAttributes) {
-			req.SyncAttributes = m.SyncAttributes.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.SyncAttributes, state.SyncAttributes, &toDelete, "sync_attributes")
-	}
-
-	if attribute.IsDefined(m.SyncDefaultsOptions) {
-		if !m.SyncDefaultsOptions.Equal(state.SyncDefaultsOptions) {
-			req.SyncDefaultsOpts = m.SyncDefaultsOptions.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.SyncDefaultsOptions, state.SyncDefaultsOptions, &toDelete, "sync-defaults-options")
-	}
-
-	if attribute.IsDefined(m.Comment) {
-		if !m.Comment.Equal(state.Comment) {
-			req.Comment = m.Comment.ValueStringPointer()
-		}
-	} else {
-		attribute.CheckDelete(m.Comment, state.Comment, &toDelete, "comment")
-	}
+	updateStringAttribute(&req.CaPath, m.CaPath, state.CaPath, &toDelete, "capath")
+	updateStringAttribute(&req.CertPath, m.Cert, state.Cert, &toDelete, "cert")
+	updateStringAttribute(&req.CertKeyPath, m.CertKey, state.CertKey, &toDelete, "certkey")
+	updateStringAttribute(&req.Filter, m.Filter, state.Filter, &toDelete, "filter")
+	updateStringAttribute(&req.GroupDN, m.GroupDN, state.GroupDN, &toDelete, "group_dn")
+	updateStringAttribute(&req.GroupFilter, m.GroupFilter, state.GroupFilter, &toDelete, "group_filter")
+	updateStringAttribute(&req.GroupClasses, m.GroupClasses, state.GroupClasses, &toDelete, "group_classes")
+	updateStringAttribute(&req.GroupNameAttr, m.GroupNameAttr, state.GroupNameAttr, &toDelete, "group_name_attr")
+	updateStringAttribute(&req.Mode, m.Mode, state.Mode, &toDelete, "mode")
+	updateStringAttribute(&req.SSLVersion, m.SSLVersion, state.SSLVersion, &toDelete, "sslversion")
+	updateStringAttribute(&req.UserClasses, m.UserClasses, state.UserClasses, &toDelete, "user_classes")
+	updateStringAttribute(&req.SyncAttributes, m.SyncAttributes, state.SyncAttributes, &toDelete, "sync_attributes")
+	updateStringAttribute(&req.SyncDefaultsOpts, m.SyncDefaultsOptions, state.SyncDefaultsOptions, &toDelete, "sync-defaults-options")
+	updateStringAttribute(&req.Comment, m.Comment, state.Comment, &toDelete, "comment")
 
 	if !m.Default.Equal(state.Default) {
 		req.Default = proxmoxtypes.CustomBoolPtr(m.Default.ValueBoolPointer())
