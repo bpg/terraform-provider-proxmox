@@ -130,10 +130,10 @@ resource "proxmox_virtual_environment_realm_ldap" "starttls_example" {
 #### Synchronization Settings
 
 - `sync_attributes` - (String) Comma-separated list of attributes to sync from LDAP to Proxmox (e.g., "email=mail,firstname=givenName,lastname=sn").
-- `sync_defaults_options` - (String) Default synchronization options. Format: `key=value,key=value`. Example: `"scope=users,enable-new=1"`. Valid keys:
-  - `scope` - Sync scope: `users`, `groups`, or `both`
-  - `enable-new` - Enable newly synced users: `1` or `0`
-  - `remove-vanished` - How to handle vanished entries (e.g. `entry;acl`).
+- `sync_defaults_options` - (String) Default synchronization options, passed as a comma-separated list of `key=value` pairs. Example: `"scope=users,enable-new=1,remove-vanished=entry;acl"`. Valid keys include:
+  - `scope` - The synchronization scope (`users`, `groups`, or `both`).
+  - `enable-new` - Whether to enable newly synced users (`1` or `0`).
+  - `remove-vanished` - A semicolon-separated list specifying how to handle entries that no longer exist in the LDAP directory (e.g., `entry;acl`).
   - `full` / `purge` - (Deprecated by Proxmox) Use `remove_vanished` instead.
 
 #### General Settings
