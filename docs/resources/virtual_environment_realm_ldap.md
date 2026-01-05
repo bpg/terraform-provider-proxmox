@@ -14,8 +14,8 @@ LDAP realms allow Proxmox to authenticate users against an LDAP directory servic
 ## Privileges Required
 
 | Path | Attribute |
-|---------------|----------------|
-| /access/realm | Realm.Allocate |
+|-----------------|----------------|
+| /access/domains | Realm.Allocate |
 
 ## Example Usage
 
