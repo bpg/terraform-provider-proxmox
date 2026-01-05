@@ -316,7 +316,11 @@ func (r *realmLDAPResource) read(
 	// Preserve the bind password from the plan/state since it's not returned by the API
 	bindPassword := model.BindPassword
 
-	model.fromAPIResponse(realmData)
+	model.fromAPIResponse(realmData, diags)
+
+	if diags.HasError() {
+		return
+	}
 
 	// Restore the bind password
 	model.BindPassword = bindPassword

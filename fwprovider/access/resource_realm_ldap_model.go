@@ -9,6 +9,7 @@ package access
 import (
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
@@ -238,23 +239,32 @@ func (m *realmLDAPModel) toUpdateRequest(state *realmLDAPModel) *access.RealmUpd
 	return req
 }
 
-func (m *realmLDAPModel) fromAPIResponse(data *access.RealmGetResponseData) {
-	if data.Server1 != nil {
-		m.Server1 = types.StringPointerValue(data.Server1)
-	} else {
-		m.Server1 = types.StringNull()
+func (m *realmLDAPModel) fromAPIResponse(data *access.RealmGetResponseData, diags *diag.Diagnostics) {
+	// Validate required fields
+	if data.Server1 == nil {
+		diags.AddError(
+			"Missing Required Field",
+			"API response is missing required field 'server1' for LDAP realm",
+		)
+		return
+	}
+	if data.BaseDN == nil {
+		diags.AddError(
+			"Missing Required Field",
+			"API response is missing required field 'base_dn' for LDAP realm",
+		)
+		return
 	}
 
+	// Set required fields
+	m.Server1 = types.StringPointerValue(data.Server1)
+	m.BaseDN = types.StringPointerValue(data.BaseDN)
+
+	// Set optional fields
 	if data.Server2 != nil {
 		m.Server2 = types.StringPointerValue(data.Server2)
 	} else {
 		m.Server2 = types.StringNull()
-	}
-
-	if data.BaseDN != nil {
-		m.BaseDN = types.StringPointerValue(data.BaseDN)
-	} else {
-		m.BaseDN = types.StringNull()
 	}
 
 	if data.BindDN != nil {
