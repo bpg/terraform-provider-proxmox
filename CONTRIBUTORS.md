@@ -226,6 +226,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/jmsnll"><img src="https://avatars.githubusercontent.com/u/895886?v=4?s=100" width="100px;" alt="James Neill"/><br /><sub><b>James Neill</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=jmsnll" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hurack3034217"><img src="https://avatars.githubusercontent.com/u/243273987?v=4?s=100" width="100px;" alt="hurack"/><br /><sub><b>hurack</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=hurack3034217" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/lonelysadness"><img src="https://avatars.githubusercontent.com/u/145705478?v=4?s=100" width="100px;" alt="lonelysadness"/><br /><sub><b>lonelysadness</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=lonelysadness" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.dannyvelasquez.com"><img src="https://avatars.githubusercontent.com/u/42185968?v=4?s=100" width="100px;" alt="Daniel Velasquez"/><br /><sub><b>Daniel Velasquez</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=dannyvelas" title="Documentation">📖</a></td>
     </tr>
   </tbody>
   <tfoot>
