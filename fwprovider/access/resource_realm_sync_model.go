@@ -31,7 +31,7 @@ func (m *realmSyncModel) toSyncRequest() *access.RealmSyncRequestBody {
 		body.Scope = m.Scope.ValueStringPointer()
 	}
 
-	if !m.RemoveVanished.IsNull() && m.RemoveVanished.ValueString() != "" {
+	if !m.RemoveVanished.IsNull() {
 		body.RemoveVanished = m.RemoveVanished.ValueStringPointer()
 	}
 

@@ -99,6 +99,9 @@ func (r *realmLDAPResource) Schema(
 				Description: "Password for the bind DN. Note: stored in Proxmox but not returned by API.",
 				Optional:    true,
 				Sensitive:   true,
+				Validators: []validator.String{
+					stringvalidator.AlsoRequires(path.MatchRoot("bind_dn")),
+				},
 			},
 			"user_attr": schema.StringAttribute{
 				Description: "LDAP attribute representing the username.",
@@ -136,10 +139,16 @@ func (r *realmLDAPResource) Schema(
 			"cert": schema.StringAttribute{
 				Description: "Path to client certificate for SSL authentication.",
 				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.AlsoRequires(path.MatchRoot("certkey")),
+				},
 			},
 			"certkey": schema.StringAttribute{
 				Description: "Path to client certificate key.",
 				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.AlsoRequires(path.MatchRoot("cert")),
+				},
 			},
 			"filter": schema.StringAttribute{
 				Description: "LDAP filter for user searches.",
@@ -277,8 +286,8 @@ func (r *realmLDAPResource) Read(
 		return
 	}
 
-	// Verify the realm still exists. If not, remove from state.
-	_, err := r.client.Access().GetRealm(ctx, state.Realm.ValueString())
+	// Get realm data from API
+	realmData, err := r.client.Access().GetRealm(ctx, state.Realm.ValueString())
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.State.RemoveResource(ctx)
@@ -287,17 +296,24 @@ func (r *realmLDAPResource) Read(
 
 		resp.Diagnostics.AddError(
 			"Error Reading LDAP Realm",
-			fmt.Sprintf("Could not verify existence of realm %q: %v", state.Realm.ValueString(), err),
+			fmt.Sprintf("Could not read realm %q: %v", state.Realm.ValueString(), err),
 		)
 
 		return
 	}
 
-	r.read(ctx, &state, &resp.Diagnostics)
+	// Preserve the bind password from state since it's not returned by the API
+	bindPassword := state.BindPassword
+
+	// Populate model from API response
+	state.fromAPIResponse(realmData, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Restore the bind password
+	state.BindPassword = bindPassword
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
