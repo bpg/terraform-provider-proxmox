@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -167,13 +166,6 @@ func (r *realmSyncResource) Read(
 	// Verify the underlying realm still exists. If not, remove from state.
 	_, err := r.client.Access().GetRealm(ctx, state.Realm.ValueString())
 	if err != nil {
-		var httpErr *api.HTTPError
-		if errors.As(err, &httpErr) && httpErr.Code == http.StatusNotFound {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-
-		// Also check for the sentinel error
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.State.RemoveResource(ctx)
 			return
