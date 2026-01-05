@@ -187,10 +187,6 @@ func (r *realmSyncResource) Read(
 		return
 	}
 
-	if (state.ID.IsNull() || state.ID.ValueString() == "") && !state.Realm.IsNull() && state.Realm.ValueString() != "" {
-		state.ID = state.Realm
-	}
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
