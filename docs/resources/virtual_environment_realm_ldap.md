@@ -156,7 +156,7 @@ LDAP realms can be imported using the realm identifier:
 terraform import proxmox_virtual_environment_realm_ldap.example example.com
 ```
 
-**Note:** When importing, the `bind_password` attribute cannot be imported since it's not returned by the Proxmox API. You'll need to set it in your configuration and mark it as ignored in ImportStateVerifyIgnore for acceptance tests.
+**Note:** When importing, the `bind_password` attribute cannot be imported since it's not returned by the Proxmox API. You'll need to set this attribute in your Terraform configuration after the import to manage it with Terraform.
 
 ## Notes
 
