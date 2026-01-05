@@ -186,7 +186,7 @@ func (r *realmSyncResource) Read(
 
 		return
 	}
-}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
