@@ -85,6 +85,13 @@ func AssertExactlyOneOfArguments(t *testing.T, s map[string]*schema.Schema, fiel
 
 	for fieldName, exactlyOneOf := range fields {
 		require.NotNil(t, s[fieldName], "Error in Schema: Missing definition for \"%s\"", fieldName)
-		assert.Equal(t, exactlyOneOf, s[fieldName].ExactlyOneOf, "Error in Schema: Argument or attribute \"%s\" was expected to have \"ExactlyOneOf\" value of \"%v\"", fieldName, exactlyOneOf)
+		assert.Equal(
+			t,
+			exactlyOneOf,
+			s[fieldName].ExactlyOneOf,
+			"Error in Schema: Argument or attribute \"%s\" was expected to have \"ExactlyOneOf\" value of \"%v\"",
+			fieldName,
+			exactlyOneOf,
+		)
 	}
 }
