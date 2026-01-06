@@ -393,7 +393,9 @@ func (r *realmLDAPResource) Delete(
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			return
 		}
+
 		resp.Diagnostics.AddError("Error deleting LDAP realm", err.Error())
+
 		return
 	}
 }

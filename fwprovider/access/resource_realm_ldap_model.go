@@ -246,13 +246,16 @@ func (m *realmLDAPModel) fromAPIResponse(data *access.RealmGetResponseData, diag
 			"Missing Required Field",
 			"API response is missing required field 'server1' for LDAP realm",
 		)
+
 		return
 	}
+
 	if data.BaseDN == nil {
 		diags.AddError(
 			"Missing Required Field",
 			"API response is missing required field 'base_dn' for LDAP realm",
 		)
+
 		return
 	}
 
