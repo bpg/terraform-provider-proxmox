@@ -12,9 +12,6 @@ exclude = [
     "https://.*:8006/"  # Exclude Proxmox server URLs
 ]
 
-# Base directory for relative paths
-base = "."
-
 # Enable verbose output
 verbose = "warn"
 
