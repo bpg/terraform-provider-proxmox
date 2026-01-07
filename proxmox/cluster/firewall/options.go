@@ -24,7 +24,7 @@ type Options interface {
 func (c *Client) SetGlobalOptions(ctx context.Context, d *OptionsPutRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPut, "cluster/firewall/options", d, nil)
 	if err != nil {
-		return fmt.Errorf("error setting optionss: %w", err)
+		return fmt.Errorf("error setting options: %w", err)
 	}
 
 	return nil

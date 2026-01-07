@@ -1458,6 +1458,28 @@ func TestAccResourceFirewallOptionsImport(t *testing.T) {
 				ExpectError:       regexp.MustCompile("expected: 'vm/<node_name>/<vm_id>' or 'container/<node_name>/<container_id>'"),
 			},
 		}},
+		{"missing vm_id and container_id", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_options" "test" {
+					node_name = "{{.NodeName}}"
+					enabled   = true
+				}`),
+				ExpectError: regexp.MustCompile("one of `container_id,vm_id` must be specified"),
+			},
+		}},
+		{"both vm_id and container_id specified", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_options" "test" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = 10001
+					container_id = 10002
+					enabled      = true
+				}`),
+				ExpectError: regexp.MustCompile("only one of `container_id,vm_id` can be specified"),
+			},
+		}},
 	}
 
 	for _, tt := range tests {

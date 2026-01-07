@@ -28,6 +28,8 @@ func TestOptionsSchema(t *testing.T) {
 	s := Options().Schema
 
 	test.AssertOptionalArguments(t, s, []string{
+		mkSelectorVMID,
+		mkSelectorContainerID,
 		mkDHCP,
 		mkEnabled,
 		mkIPFilter,
@@ -41,15 +43,22 @@ func TestOptionsSchema(t *testing.T) {
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkDHCP:        schema.TypeBool,
-		mkEnabled:     schema.TypeBool,
-		mkIPFilter:    schema.TypeBool,
-		mkLogLevelIN:  schema.TypeString,
-		mkLogLevelOUT: schema.TypeString,
-		mkMACFilter:   schema.TypeBool,
-		mkNDP:         schema.TypeBool,
-		mkPolicyIn:    schema.TypeString,
-		mkPolicyOut:   schema.TypeString,
-		mkRadv:        schema.TypeBool,
+		mkSelectorVMID:        schema.TypeInt,
+		mkSelectorContainerID: schema.TypeInt,
+		mkDHCP:                schema.TypeBool,
+		mkEnabled:             schema.TypeBool,
+		mkIPFilter:            schema.TypeBool,
+		mkLogLevelIN:          schema.TypeString,
+		mkLogLevelOUT:         schema.TypeString,
+		mkMACFilter:           schema.TypeBool,
+		mkNDP:                 schema.TypeBool,
+		mkPolicyIn:            schema.TypeString,
+		mkPolicyOut:           schema.TypeString,
+		mkRadv:                schema.TypeBool,
+	})
+
+	test.AssertExactlyOneOfArguments(t, s, map[string][]string{
+		mkSelectorVMID:        {mkSelectorVMID, mkSelectorContainerID},
+		mkSelectorContainerID: {mkSelectorVMID, mkSelectorContainerID},
 	})
 }
