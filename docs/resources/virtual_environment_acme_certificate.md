@@ -105,6 +105,6 @@ terraform import proxmox_virtual_environment_acme_certificate.example pve
 
 ## Related Resources
 
-- [`proxmox_virtual_environment_acme_account`](virtual_environment_acme_account) - Manages ACME accounts
-- [`proxmox_virtual_environment_acme_dns_plugin`](virtual_environment_acme_dns_plugin) - Manages ACME DNS plugins for DNS-01 challenges
-- [`proxmox_virtual_environment_certificate`](virtual_environment_certificate) - Manages custom SSL/TLS certificates (non-ACME)
+- [`proxmox_virtual_environment_acme_account`](virtual_environment_acme_account.md) - Manages ACME accounts
+- [`proxmox_virtual_environment_acme_dns_plugin`](virtual_environment_acme_dns_plugin.md) - Manages ACME DNS plugins for DNS-01 challenges
+- [`proxmox_virtual_environment_certificate`](virtual_environment_certificate.md) - Manages custom SSL/TLS certificates (non-ACME)
