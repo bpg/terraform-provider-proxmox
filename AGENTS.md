@@ -26,12 +26,12 @@ Universal instructions for AI agents working on this Terraform Provider for Prox
 
 ```bash
 make build              # Build provider binary
-make lint               # Run linter (use --fix for auto-fix)
+make lint               # Run linter (it will auto-fix most issues)
 make test               # Run unit tests
 make docs               # Generate documentation
 ./testacc TestName      # Run specific acceptance test
-./testacc --all         # Run all acceptance tests
-make example            # Validate with example configs
+./testacc --all         # Run all acceptance tests (only for massive changes, as old tests are fragile and prone to breaking)
+make example            # Validate with example configs (mostly for for SDKv2 provider changes)
 ```
 
 ### Production Readiness Checklist
@@ -151,7 +151,7 @@ Terraform/OpenTofu provider for Proxmox VE 9.x using dual-provider architecture:
 | Validation  | `int64validator.Between()`     | `validation.IntBetween()`   |
 | Errors      | `resp.Diagnostics.AddError()`  | `diag.FromErr()`            |
 
-**Important:** When fixing validation issues, update BOTH providers to maintain consistency.
+**Important:** When fixing validation issues, update BOTH providers where applicable to maintain consistency.
 
 ### API Client
 
@@ -184,12 +184,13 @@ proxmox.Client
 
 ### Adding Features
 
-1. Check if feature exists in the other provider
-2. Follow existing patterns in codebase
-3. Add validation (same ranges in both providers)
-4. Create acceptance tests
-5. Update documentation: `make docs`
-6. Complete production readiness checklist
+1. Check if feature exists in the other provider. New features should only be implemented in the Framework provider. Consider the existing SDKv2 provider to be feature-frozen.
+2. Follow existing patterns in codebase.
+3. When adding new resource(s), consider adding matching datasource(s).
+4. Add validation to resource schema.
+5. Create acceptance tests.
+6. Update documentation: `make docs`.
+7. Complete production readiness checklist.
 
 ### Framework Resource Structure
 
