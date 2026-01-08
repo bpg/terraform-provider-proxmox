@@ -35,6 +35,7 @@ For common issues during development, see [Development Troubleshooting](docs/gui
 - [Commit message conventions](#commit-message-conventions)
 - [Developer Certificate of Origin (DCO)](#developer-certificate-of-origin-dco)
 - [Submitting changes](#submitting-changes)
+- [Using AI assistants and LLM agents](#using-ai-assistants-and-llm-agents)
 - [Releasing](#releasing)
 
 ## Build the provider
@@ -296,11 +297,52 @@ Guidelines:
 - **Do not mix concerns**: avoid combining formatting-only changes, refactors, and behavior changes in the same PR.
 - **Iterate quickly**: open a draft/WIP PR early if you want feedback on approach before polishing edge cases.
 
+### Proof of work
+
+**Proof of work is mandatory for all code changes.** Every PR must include evidence that the change works as expected:
+
+- Test output (unit tests, acceptance tests)
+- Logs, screenshots, or terminal output demonstrating the fix/feature
+- Any other relevant information that demonstrates the change works as expected
+
+> [!WARNING]
+> PRs without proof of work may be rejected. Trivial changes (typo fixes, documentation-only updates that don't affect code behavior) are exempt from this requirement.
+
 ### How to submit
 
 1. Create a new PR against the `main` branch using the project's [pull request template](.github/PULL_REQUEST_TEMPLATE.md).
 2. Ensure your PR title follows the Conventional Commits specification (we use this as the squash commit message).
-3. All commits in a PR are typically squashed on merge.
+3. **Include proof of work** in the PR description (test results, logs, screenshots).
+4. All commits in a PR are typically squashed on merge.
+
+## Using AI assistants and LLM agents
+
+We welcome contributions that use AI assistants, LLM agents, or AI-powered coding tools. These tools can help with code generation, testing, documentation, and other development tasks.
+
+### Guidelines
+
+**Allowed and encouraged:**
+
+- Using AI assistants (GitHub Copilot, Cursor, Claude, ChatGPT, etc.) to help write code
+- Using LLM agents to automate repetitive tasks
+- Leveraging AI for test generation, documentation, or debugging
+- Any tool that helps you complete the task effectively
+
+**Contributor responsibility:**
+
+While AI tools can assist with contributions, **the person submitting the change is fully responsible** for:
+
+1. **Code quality and correctness** — Review all AI-generated code carefully. You are accountable for what you submit.
+2. **DCO sign-off** — By signing off (`git commit -s`), you personally certify that you have the right to submit the code under the project's license, regardless of how it was generated.
+3. **Reproducible proof of work** — See [Proof of work](#proof-of-work) requirements above.
+4. **Understanding the change** — Be prepared to explain and defend your contribution during code review.
+
+> [!IMPORTANT]
+> The DCO sign-off is a legal certification. When you sign off on a commit, you are affirming that you wrote or have the right to submit the code, and that you agree to license it under the project's terms. This applies equally to human-written and AI-assisted code.
+
+### Agent instructions
+
+For AI agents working on this repository, see [AGENTS.md](AGENTS.md) for detailed development guidelines, coding conventions, and workflow instructions.
 
 ## Releasing
 

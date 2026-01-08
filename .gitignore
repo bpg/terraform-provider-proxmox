@@ -54,6 +54,12 @@ terraform-provider-proxmox*
 .claude/
 coverage.out
 
-# local-only progress/report notes (keep out of git)
+# local-only progress/report/session notes (keep out of git)
 *_PROGRESS.md
 *_REPORT.md
+*_PLAN.md
+*_SESSION_STATE.md
+
+# Python cache
+__pycache__/
+*.pyc
