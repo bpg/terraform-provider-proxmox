@@ -263,7 +263,7 @@ func RulesImport(_ context.Context, d *schema.ResourceData, m any) ([]*schema.Re
 		return nil, fmt.Errorf("invalid import ID: %s (expected: 'cluster', 'vm/<node_name>/<vm_id>', or 'container/<node_name>/<container_id>')", id)
 	}
 
-	api, err := firewallApiFor(d, m)
+	api, err := firewallAPIFor(d, m)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go/v5"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -213,7 +213,12 @@ func (r *acmeCertificateResource) waitForCertificateAvailable(
 ) (*[]nodes.CertificateListResponseData, error) {
 	var certificates *[]nodes.CertificateListResponseData
 
-	err := retry.Do(
+	err := retry.New(
+		retry.Attempts(12),
+		retry.Delay(5*time.Second),
+		retry.DelayType(retry.FixedDelay),
+		retry.Context(ctx),
+	).Do(
 		func() error {
 			certs, err := nodeClient.ListCertificates(ctx)
 			if err != nil {
@@ -228,10 +233,6 @@ func (r *acmeCertificateResource) waitForCertificateAvailable(
 
 			return nil
 		},
-		retry.Attempts(12),
-		retry.Delay(5*time.Second),
-		retry.DelayType(retry.FixedDelay),
-		retry.Context(ctx),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("waiting for certificate availability: %w", err)

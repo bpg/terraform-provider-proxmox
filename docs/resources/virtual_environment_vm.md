@@ -305,7 +305,7 @@ output "ubuntu_vm_public_key" {
           `proxmox_virtual_environment_download_file` resource. Prefer `import_from` for uncompressed images.
           Use `file_id` when working with compressed cloud images (e.g., `.qcow2.xz`) that were downloaded
           with `content_type = "iso"` and `decompression_algorithm` set. See the
-          [Create a VM from a Cloud Image](../guides/cloud-image) guide for examples.
+          [Create a VM from a Cloud Image](../guides/cloud-image.md) guide for examples.
     - `import_from` - (Optional) The file ID for a disk image to import into VM. The image must be of `import` content type
        (uncompressed images only). The ID format is `<datastore_id>:import/<file_name>`, for example `local:import/centos8.qcow2`.
        Can be also taken from `proxmox_virtual_environment_download_file` resource. Note: compressed images downloaded with

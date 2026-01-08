@@ -123,16 +123,11 @@ func (m *PBSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 		m.Shared = types.BoolValue(*datastore.Shared.PointerBool())
 	}
 
-	if datastore.MaxProtectedBackups != nil || (datastore.PruneBackups != nil && *datastore.PruneBackups != "") {
-		if m.Backups == nil {
-			m.Backups = &BackupModel{}
-		}
-
+	// only populate backups if user has configured it to avoid "was absent, but now present" error
+	if m.Backups != nil {
 		if err := m.Backups.fromAPI(datastore.MaxProtectedBackups, datastore.PruneBackups); err != nil {
 			return err
 		}
-	} else {
-		m.Backups = nil
 	}
 
 	return nil

@@ -5658,16 +5658,16 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA, false)
 
 		coresOrSocketsIncreased := (cpuCores > oldCPUCores) || (cpuSockets > oldCPUSockets)
+		hotpluggedChanged := d.HasChange(mkCPU + ".0." + mkCPUHotplugged)
 		noNonHotpluggableChanges := cpuCores >= oldCPUCores && cpuSockets >= oldCPUSockets &&
 			cpuType == oldCPUType && cpuArchitecture == oldCPUArchitecture &&
 			bool(cpuNUMA) == oldCPUNUMA &&
 			!d.HasChange(mkCPU+".0."+mkCPUFlags) &&
 			!d.HasChange(mkCPU+".0."+mkCPUAffinity) &&
-			!d.HasChange(mkCPU+".0."+mkCPUHotplugged) &&
 			!d.HasChange(mkCPU+".0."+mkCPULimit) &&
 			!d.HasChange(mkCPU+".0."+mkCPUUnits)
 
-		onlyHotpluggableChange := coresOrSocketsIncreased && noNonHotpluggableChanges
+		onlyHotpluggableChange := (coresOrSocketsIncreased || hotpluggedChanged) && noNonHotpluggableChanges
 
 		if err = setCPUArchitecture(ctx, cpuArchitecture, client, updateBody); err != nil {
 			return diag.FromErr(err)

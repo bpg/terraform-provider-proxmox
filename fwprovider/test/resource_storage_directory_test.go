@@ -253,3 +253,70 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourceStorageDirectoryRemoveBackups tests removing backups block from storage directory.
+// Regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2463
+func TestAccResourceStorageDirectoryRemoveBackups(t *testing.T) {
+	te := InitEnvironment(t)
+
+	storageID := fmt.Sprintf("dir-%s-%d", strings.ToLower(gofakeit.Word()), time.Now().UnixNano())
+	dirPath := utils.GetAnyStringEnv("PROXMOX_VE_ACC_STORAGE_DIR_PATH")
+	if dirPath == "" {
+		dirPath = "/var/lib/vz"
+	}
+
+	te.AddTemplateVars(map[string]any{
+		"StorageID": storageID,
+		"DirPath":   dirPath,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			// create with backups block
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_storage_directory" "test" {
+					id      = "{{.StorageID}}"
+					path    = "{{.DirPath}}"
+					content = ["backup", "iso", "snippets", "vztmpl"]
+					shared  = false
+					disable = false
+
+					backups {
+						keep_all = true
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_storage_directory.test", map[string]string{
+						"id":               storageID,
+						"path":             dirPath,
+						"shared":           "false",
+						"disable":          "false",
+						"backups.keep_all": "true",
+					}),
+				),
+			},
+			// remove backups block - should not cause "was absent, but now present" error
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_storage_directory" "test" {
+					id      = "{{.StorageID}}"
+					path    = "{{.DirPath}}"
+					content = ["backup", "iso", "snippets", "vztmpl"]
+					shared  = false
+					disable = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_storage_directory.test", map[string]string{
+						"id": storageID,
+					}),
+					resource.TestCheckNoResourceAttr(
+						"proxmox_virtual_environment_storage_directory.test",
+						"backups",
+					),
+				),
+			},
+		},
+	})
+}
