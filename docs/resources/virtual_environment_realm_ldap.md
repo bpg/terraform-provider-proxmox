@@ -63,10 +63,10 @@ resource "proxmox_virtual_environment_realm_ldap" "example" {
 
 - `bind_dn` (String) LDAP bind DN for authentication (e.g., 'cn=admin,dc=example,dc=com').
 - `bind_password` (String, Sensitive) Password for the bind DN. Note: stored in Proxmox but not returned by API.
-- `capath` (String) Path to CA certificate file for SSL verification.
+- `ca_path` (String) Path to CA certificate file for SSL verification.
 - `case_sensitive` (Boolean) Enable case-sensitive username matching.
-- `cert` (String) Path to client certificate for SSL authentication.
-- `certkey` (String) Path to client certificate key.
+- `cert_key_path` (String) Path to client certificate key.
+- `cert_path` (String) Path to client certificate for SSL authentication.
 - `comment` (String) Description of the realm.
 - `default` (Boolean) Use this realm as the default for login.
 - `filter` (String) LDAP filter for user searches.
@@ -78,7 +78,7 @@ resource "proxmox_virtual_environment_realm_ldap" "example" {
 - `port` (Number) LDAP server port. Default: 389 (LDAP) or 636 (LDAPS).
 - `secure` (Boolean, Deprecated) Use LDAPS (LDAP over SSL/TLS) instead of plain LDAP.
 - `server2` (String) Fallback LDAP server hostname or IP address.
-- `sslversion` (String) SSL/TLS version (tlsv1, tlsv1_1, tlsv1_2, tlsv1_3).
+- `ssl_version` (String) SSL/TLS version (tlsv1, tlsv1_1, tlsv1_2, tlsv1_3).
 - `sync_attributes` (String) Comma-separated list of attributes to sync (e.g., 'email=mail,firstname=givenName').
 - `sync_defaults_options` (String) Default synchronization options. Format: comma-separated 'key=value' pairs. Valid keys: 'scope' (users/groups/both), 'enable-new' (1/0), 'remove-vanished' (semicolon-separated: entry/acl/properties), 'full' (deprecated), 'purge' (deprecated). Example: 'scope=users,enable-new=1,remove-vanished=entry;acl'.
 - `user_attr` (String) LDAP attribute representing the username.
@@ -145,7 +145,7 @@ resource "proxmox_virtual_environment_realm_ldap" "secure" {
   bind_password = var.ldap_password
   mode          = "ldaps"
   verify        = true
-  capath        = "/etc/pve/priv/ca.crt"
+  ca_path       = "/etc/pve/priv/ca.crt"
 }
 ```
 

@@ -29,16 +29,16 @@ type realmLDAPModel struct {
 	Port                types.Int64  `tfsdk:"port"`
 	Secure              types.Bool   `tfsdk:"secure"`
 	Verify              types.Bool   `tfsdk:"verify"`
-	CaPath              types.String `tfsdk:"capath"`
-	Cert                types.String `tfsdk:"cert"`
-	CertKey             types.String `tfsdk:"certkey"`
+	CaPath              types.String `tfsdk:"ca_path"`
+	CertPath            types.String `tfsdk:"cert_path"`
+	CertKeyPath         types.String `tfsdk:"cert_key_path"`
 	Filter              types.String `tfsdk:"filter"`
 	GroupDN             types.String `tfsdk:"group_dn"`
 	GroupFilter         types.String `tfsdk:"group_filter"`
 	GroupClasses        types.String `tfsdk:"group_classes"`
 	GroupNameAttr       types.String `tfsdk:"group_name_attr"`
 	Mode                types.String `tfsdk:"mode"`
-	SSLVersion          types.String `tfsdk:"sslversion"`
+	SSLVersion          types.String `tfsdk:"ssl_version"`
 	UserClasses         types.String `tfsdk:"user_classes"`
 	SyncAttributes      types.String `tfsdk:"sync_attributes"`
 	SyncDefaultsOptions types.String `tfsdk:"sync_defaults_options"`
@@ -113,12 +113,12 @@ func (m *realmLDAPModel) toCreateRequest() *access.RealmCreateRequestBody {
 		req.CaPath = m.CaPath.ValueStringPointer()
 	}
 
-	if !m.Cert.IsNull() {
-		req.CertPath = m.Cert.ValueStringPointer()
+	if !m.CertPath.IsNull() {
+		req.CertPath = m.CertPath.ValueStringPointer()
 	}
 
-	if !m.CertKey.IsNull() {
-		req.CertKeyPath = m.CertKey.ValueStringPointer()
+	if !m.CertKeyPath.IsNull() {
+		req.CertKeyPath = m.CertKeyPath.ValueStringPointer()
 	}
 
 	if !m.Filter.IsNull() {
@@ -209,8 +209,8 @@ func (m *realmLDAPModel) toUpdateRequest(state *realmLDAPModel) *access.RealmUpd
 	}
 
 	updateStringAttribute(&req.CaPath, m.CaPath, state.CaPath, &toDelete, "capath")
-	updateStringAttribute(&req.CertPath, m.Cert, state.Cert, &toDelete, "cert")
-	updateStringAttribute(&req.CertKeyPath, m.CertKey, state.CertKey, &toDelete, "certkey")
+	updateStringAttribute(&req.CertPath, m.CertPath, state.CertPath, &toDelete, "cert")
+	updateStringAttribute(&req.CertKeyPath, m.CertKeyPath, state.CertKeyPath, &toDelete, "certkey")
 	updateStringAttribute(&req.Filter, m.Filter, state.Filter, &toDelete, "filter")
 	updateStringAttribute(&req.GroupDN, m.GroupDN, state.GroupDN, &toDelete, "group_dn")
 	updateStringAttribute(&req.GroupFilter, m.GroupFilter, state.GroupFilter, &toDelete, "group_filter")
@@ -309,15 +309,15 @@ func (m *realmLDAPModel) fromAPIResponse(data *access.RealmGetResponseData, diag
 	}
 
 	if data.CertPath != nil {
-		m.Cert = types.StringPointerValue(data.CertPath)
+		m.CertPath = types.StringPointerValue(data.CertPath)
 	} else {
-		m.Cert = types.StringNull()
+		m.CertPath = types.StringNull()
 	}
 
 	if data.CertKeyPath != nil {
-		m.CertKey = types.StringPointerValue(data.CertKeyPath)
+		m.CertKeyPath = types.StringPointerValue(data.CertKeyPath)
 	} else {
-		m.CertKey = types.StringNull()
+		m.CertKeyPath = types.StringNull()
 	}
 
 	if data.Filter != nil {

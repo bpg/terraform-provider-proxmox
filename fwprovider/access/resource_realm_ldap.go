@@ -132,22 +132,22 @@ func (r *realmLDAPResource) Schema(
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
-			"capath": schema.StringAttribute{
+			"ca_path": schema.StringAttribute{
 				Description: "Path to CA certificate file for SSL verification.",
 				Optional:    true,
 			},
-			"cert": schema.StringAttribute{
+			"cert_path": schema.StringAttribute{
 				Description: "Path to client certificate for SSL authentication.",
 				Optional:    true,
 				Validators: []validator.String{
-					stringvalidator.AlsoRequires(path.MatchRoot("certkey")),
+					stringvalidator.AlsoRequires(path.MatchRoot("cert_key_path")),
 				},
 			},
-			"certkey": schema.StringAttribute{
+			"cert_key_path": schema.StringAttribute{
 				Description: "Path to client certificate key.",
 				Optional:    true,
 				Validators: []validator.String{
-					stringvalidator.AlsoRequires(path.MatchRoot("cert")),
+					stringvalidator.AlsoRequires(path.MatchRoot("cert_path")),
 				},
 			},
 			"filter": schema.StringAttribute{
@@ -178,7 +178,7 @@ func (r *realmLDAPResource) Schema(
 					stringvalidator.ConflictsWith(path.MatchRoot("secure")),
 				},
 			},
-			"sslversion": schema.StringAttribute{
+			"ssl_version": schema.StringAttribute{
 				Description: "SSL/TLS version (tlsv1, tlsv1_1, tlsv1_2, tlsv1_3).",
 				Optional:    true,
 				Validators: []validator.String{

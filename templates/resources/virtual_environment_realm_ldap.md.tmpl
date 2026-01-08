@@ -79,7 +79,7 @@ resource "proxmox_virtual_environment_realm_ldap" "secure" {
   bind_password = var.ldap_password
   mode          = "ldaps"
   verify        = true
-  capath        = "/etc/pve/priv/ca.crt"
+  ca_path       = "/etc/pve/priv/ca.crt"
 }
 ```
 
