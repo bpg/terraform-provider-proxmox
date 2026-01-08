@@ -102,6 +102,9 @@ func (r *realmLDAPResource) Schema(
 				Validators: []validator.String{
 					stringvalidator.AlsoRequires(path.MatchRoot("bind_dn")),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"user_attr": schema.StringAttribute{
 				Description: "LDAP attribute representing the username.",
@@ -304,18 +307,12 @@ func (r *realmLDAPResource) Read(
 		return
 	}
 
-	// Preserve the bind password from state since it's not returned by the API
-	bindPassword := state.BindPassword
-
 	// Populate model from API response
 	state.fromAPIResponse(realmData, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	// Restore the bind password
-	state.BindPassword = bindPassword
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
@@ -331,17 +328,7 @@ func (r *realmLDAPResource) read(
 		return
 	}
 
-	// Preserve the bind password from the plan/state since it's not returned by the API
-	bindPassword := model.BindPassword
-
 	model.fromAPIResponse(realmData, diags)
-
-	if diags.HasError() {
-		return
-	}
-
-	// Restore the bind password
-	model.BindPassword = bindPassword
 }
 
 func (r *realmLDAPResource) Update(
