@@ -194,8 +194,10 @@ func (r *realmLDAPResource) Schema(
 				Optional:    true,
 			},
 			"sync_defaults_options": schema.StringAttribute{
-				Description: "Default sync options (e.g., 'scope=users,enable-new=1').",
-				Optional:    true,
+				Description: "Default synchronization options. Format: comma-separated 'key=value' pairs. " +
+					"Valid keys: 'scope' (users/groups/both), 'enable-new' (1/0), 'remove-vanished' (semicolon-separated: entry/acl/properties), " +
+					"'full' (deprecated), 'purge' (deprecated). Example: 'scope=users,enable-new=1,remove-vanished=entry;acl'.",
+				Optional: true,
 			},
 			"comment": schema.StringAttribute{
 				Description: "Description of the realm.",
