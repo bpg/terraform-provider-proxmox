@@ -6579,7 +6579,7 @@ func getDiskDatastores(vm *vms.GetResponseData) []string {
 		datastoresSet[fileIDParts[0]] = 1
 	}
 
-	var datastores []string //nolint: prealloc
+	datastores := make([]string, 0, len(datastoresSet))
 	for datastore := range datastoresSet {
 		datastores = append(datastores, datastore)
 	}
