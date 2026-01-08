@@ -46,7 +46,7 @@ func (c *Client) GetTaskStatus(ctx context.Context, upid string) (*GetTaskStatus
 func (c *Client) GetTaskLog(ctx context.Context, upid string) ([]string, error) {
 	resBody := &GetTaskLogResponseBody{}
 
-	var lines []string //nolint: prealloc
+	var lines []string
 
 	path, err := c.BuildPath(upid, "log")
 	if err != nil {

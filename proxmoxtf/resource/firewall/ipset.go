@@ -261,7 +261,6 @@ func ipSetRead(ctx context.Context, api firewall.API, d *schema.ResourceData) di
 		return diags
 	}
 
-	//nolint:prealloc
 	var entries []any
 
 	for key := range ipSet {
