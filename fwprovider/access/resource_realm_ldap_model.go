@@ -264,17 +264,8 @@ func (m *realmLDAPModel) fromAPIResponse(data *access.RealmGetResponseData, diag
 	m.BaseDN = types.StringPointerValue(data.BaseDN)
 
 	// Set optional fields
-	if data.Server2 != nil {
-		m.Server2 = types.StringPointerValue(data.Server2)
-	} else {
-		m.Server2 = types.StringNull()
-	}
-
-	if data.BindDN != nil {
-		m.BindDN = types.StringPointerValue(data.BindDN)
-	} else {
-		m.BindDN = types.StringNull()
-	}
+	m.Server2 = types.StringPointerValue(data.Server2)
+	m.BindDN = types.StringPointerValue(data.BindDN)
 
 	// Note: bind_password is never returned by the API, preserve from state
 
@@ -302,89 +293,20 @@ func (m *realmLDAPModel) fromAPIResponse(data *access.RealmGetResponseData, diag
 		m.Verify = types.BoolValue(false)
 	}
 
-	if data.CaPath != nil {
-		m.CaPath = types.StringPointerValue(data.CaPath)
-	} else {
-		m.CaPath = types.StringNull()
-	}
-
-	if data.CertPath != nil {
-		m.CertPath = types.StringPointerValue(data.CertPath)
-	} else {
-		m.CertPath = types.StringNull()
-	}
-
-	if data.CertKeyPath != nil {
-		m.CertKeyPath = types.StringPointerValue(data.CertKeyPath)
-	} else {
-		m.CertKeyPath = types.StringNull()
-	}
-
-	if data.Filter != nil {
-		m.Filter = types.StringPointerValue(data.Filter)
-	} else {
-		m.Filter = types.StringNull()
-	}
-
-	if data.GroupDN != nil {
-		m.GroupDN = types.StringPointerValue(data.GroupDN)
-	} else {
-		m.GroupDN = types.StringNull()
-	}
-
-	if data.GroupFilter != nil {
-		m.GroupFilter = types.StringPointerValue(data.GroupFilter)
-	} else {
-		m.GroupFilter = types.StringNull()
-	}
-
-	if data.GroupClasses != nil {
-		m.GroupClasses = types.StringPointerValue(data.GroupClasses)
-	} else {
-		m.GroupClasses = types.StringNull()
-	}
-
-	if data.GroupNameAttr != nil {
-		m.GroupNameAttr = types.StringPointerValue(data.GroupNameAttr)
-	} else {
-		m.GroupNameAttr = types.StringNull()
-	}
-
-	if data.Mode != nil {
-		m.Mode = types.StringPointerValue(data.Mode)
-	} else {
-		m.Mode = types.StringNull()
-	}
-
-	if data.SSLVersion != nil {
-		m.SSLVersion = types.StringPointerValue(data.SSLVersion)
-	} else {
-		m.SSLVersion = types.StringNull()
-	}
-
-	if data.UserClasses != nil {
-		m.UserClasses = types.StringPointerValue(data.UserClasses)
-	} else {
-		m.UserClasses = types.StringNull()
-	}
-
-	if data.SyncAttributes != nil {
-		m.SyncAttributes = types.StringPointerValue(data.SyncAttributes)
-	} else {
-		m.SyncAttributes = types.StringNull()
-	}
-
-	if data.SyncDefaultsOpts != nil {
-		m.SyncDefaultsOptions = types.StringPointerValue(data.SyncDefaultsOpts)
-	} else {
-		m.SyncDefaultsOptions = types.StringNull()
-	}
-
-	if data.Comment != nil {
-		m.Comment = types.StringPointerValue(data.Comment)
-	} else {
-		m.Comment = types.StringNull()
-	}
+	m.CaPath = types.StringPointerValue(data.CaPath)
+	m.CertPath = types.StringPointerValue(data.CertPath)
+	m.CertKeyPath = types.StringPointerValue(data.CertKeyPath)
+	m.Filter = types.StringPointerValue(data.Filter)
+	m.GroupDN = types.StringPointerValue(data.GroupDN)
+	m.GroupFilter = types.StringPointerValue(data.GroupFilter)
+	m.GroupClasses = types.StringPointerValue(data.GroupClasses)
+	m.GroupNameAttr = types.StringPointerValue(data.GroupNameAttr)
+	m.Mode = types.StringPointerValue(data.Mode)
+	m.SSLVersion = types.StringPointerValue(data.SSLVersion)
+	m.UserClasses = types.StringPointerValue(data.UserClasses)
+	m.SyncAttributes = types.StringPointerValue(data.SyncAttributes)
+	m.SyncDefaultsOptions = types.StringPointerValue(data.SyncDefaultsOpts)
+	m.Comment = types.StringPointerValue(data.Comment)
 
 	if data.Default != nil {
 		m.Default = types.BoolValue(bool(*data.Default))
