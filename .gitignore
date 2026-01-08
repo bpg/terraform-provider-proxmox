@@ -50,7 +50,6 @@ terraform-provider-proxmox*
 # VScode / Cursor / Claude
 .vscode/settings.json
 .cursor/
-.cursorrules
 .claude/
 coverage.out
 
