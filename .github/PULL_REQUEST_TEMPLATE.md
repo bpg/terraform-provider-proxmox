@@ -3,22 +3,25 @@
 Please mark the following items with an [x] if they apply to your PR.
 Leave the [ ] if they are not applicable, or if you have not completed the item.
 --->
-- [ ] I have added / updated documentation in `/docs` for any user-facing features or additions.
-- [ ] I have added / updated acceptance tests in `/fwprovider/tests` for any new or updated resources / data sources.
-- [ ] I have ran `make example` to verify that the change works as expected.
+- [ ] I have run `make lint` and fixed any issues.
+- [ ] I have updated documentation (FWK: schema descriptions + `make docs`; SDK: manual `/docs/` edits).
+- [ ] I have added / updated acceptance tests for any new or updated resources / data sources.
+- [ ] I have run `make example` to verify the change works (mainly for SDK / provider config changes).
 
 <!---
 You can find more information about coding conventions and local testing in the [CONTRIBUTING.md](https://github.com/bpg/terraform-provider-proxmox/blob/main/CONTRIBUTING.md) file.
 
 If you are unsure how to run `make example`, see [Deploying the example resources](https://github.com/bpg/terraform-provider-proxmox?tab=readme-ov-file#deploying-the-example-resources) section in README.
+
+**PR Title:** Must follow [Conventional Commits](https://www.conventionalcommits.org/) format (e.g., `feat(vm): add clone support`). This becomes the squash commit message.
 --->
 
 <!--
-*IF* your code contains breaking changes make sure to add `!` to the end of commit type, e.g.:
+*IF* your code contains breaking changes, add `!` before the colon in the PR title, e.g.:
 ```
-    feat(vm)!: add support for new feature 
+feat(vm)!: add support for new feature
 ```
-Also, uncomment the section just below, and add a description of the breaking change. 
+Also, uncomment the section just below and add a description of the breaking change.
 --->
 
 <!---
