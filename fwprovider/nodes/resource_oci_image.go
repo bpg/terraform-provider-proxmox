@@ -46,7 +46,6 @@ const ociSizeRequiresReplaceDescription = "Triggers resource force replacement i
 
 type ociSizeRequiresReplaceModifier struct{}
 
-//nolint:dupl // shared plan modifier logic reused across resources
 func (r ociSizeRequiresReplaceModifier) PlanModifyInt64(
 	ctx context.Context,
 	req planmodifier.Int64Request,

@@ -32,17 +32,41 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
+// fallback URLs for when TestFileServer is not available (PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set)
 const (
-	fakeFileISO   = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
-	fakeFileQCOW2 = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
+	fallbackFakeFileISO   = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
+	fallbackFakeFileQCOW2 = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
+	// SHA256 checksums for the fallback files (content: "asd" = 3 bytes)
+	fallbackChecksum = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
 )
 
 func TestAccResourceDownloadFile(t *testing.T) {
 	te := test.InitEnvironment(t)
 
+	// Try to use local test server, fall back to external URLs if not configured
+	fileServer := test.NewTestFileServer(t)
+
+	var fakeFileISO, fakeFileQCOW2, checksum string
+
+	if fileServer != nil {
+		// Use local test server - independent of external resources
+		content := []byte("asd") // 3 bytes, same as the original fake files
+		fakeFileISO = fileServer.AddFile("/fake_file.iso", "fake_file.iso", content)
+		fakeFileQCOW2 = fileServer.AddFile("/fake_file.qcow2", "fake_file.qcow2", content)
+		checksum = fileServer.GetFileSHA256("/fake_file.iso")
+		t.Logf("Using local test file server at %s", fileServer.URL())
+	} else {
+		// Fall back to external URLs
+		fakeFileISO = fallbackFakeFileISO
+		fakeFileQCOW2 = fallbackFakeFileQCOW2
+		checksum = fallbackChecksum
+		t.Log("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - using external URLs")
+	}
+
 	te.AddTemplateVars(map[string]interface{}{
 		"FakeFileISO":   fakeFileISO,
 		"FakeFileQCOW2": fakeFileQCOW2,
+		"Checksum":      checksum,
 	})
 
 	tests := []struct {
@@ -68,7 +92,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					datastore_id       = "{{.DatastoreID}}"
 					file_name          = "fake_qcow2_file.img"
 					url                =  "{{.FakeFileQCOW2}}"
-					checksum           = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
+					checksum           = "{{.Checksum}}"
 					checksum_algorithm = "sha256"
 					overwrite_unmanaged = true
 				  }`),
@@ -83,7 +107,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					"upload_timeout":     "600",
 					"size":               "3",
 					"verify":             "true",
-					"checksum":           "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6",
+					"checksum":           checksum,
 					"checksum_algorithm": "sha256",
 				}),
 				test.NoResourceAttributesSet("proxmox_virtual_environment_download_file.qcow2_image", []string{
@@ -99,7 +123,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					datastore_id       = "{{.DatastoreID}}"
 					file_name          = "fake_qcow2_file.qcow2"
 					url                =  "{{.FakeFileQCOW2}}"
-					checksum           = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
+					checksum           = "{{.Checksum}}"
 					checksum_algorithm = "sha256"
 					overwrite_unmanaged = true
 				  }`),
