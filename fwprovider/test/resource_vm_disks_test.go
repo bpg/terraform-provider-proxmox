@@ -1493,3 +1493,93 @@ func TestAccResourceVMDiskRemovalReuseIssue2218(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourceVMDiskSpeedPerDisk tests that each disk gets its own speed settings.
+// This validates that speed settings are correctly applied per-disk during creation,
+// not incorrectly copied from the first disk to all subsequent disks.
+func TestAccResourceVMDiskSpeedPerDisk(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create VM with two disks, each with different speed settings
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_speed" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-speed"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						speed {
+							iops_read           = 100
+							iops_write          = 200
+							iops_read_burstable = 1000
+							iops_write_burstable = 2000
+							read                = 10
+							write               = 20
+							read_burstable      = 100
+							write_burstable     = 200
+						}
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+						speed {
+							iops_read           = 300
+							iops_write          = 400
+							iops_read_burstable = 3000
+							iops_write_burstable = 4000
+							read                = 30
+							write               = 40
+							read_burstable      = 300
+							write_burstable     = 400
+						}
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi2"
+						size         = 8
+						# no speed settings
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					// Verify scsi0 has its speed settings
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed", map[string]string{
+						"disk.0.interface":                    "scsi0",
+						"disk.0.speed.0.iops_read":            "100",
+						"disk.0.speed.0.iops_write":           "200",
+						"disk.0.speed.0.iops_read_burstable":  "1000",
+						"disk.0.speed.0.iops_write_burstable": "2000",
+						"disk.0.speed.0.read":                 "10",
+						"disk.0.speed.0.write":                "20",
+						"disk.0.speed.0.read_burstable":       "100",
+						"disk.0.speed.0.write_burstable":      "200",
+					}),
+					// Verify scsi1 has DIFFERENT speed settings (not scsi0's)
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed", map[string]string{
+						"disk.1.interface":                    "scsi1",
+						"disk.1.speed.0.iops_read":            "300",
+						"disk.1.speed.0.iops_write":           "400",
+						"disk.1.speed.0.iops_read_burstable":  "3000",
+						"disk.1.speed.0.iops_write_burstable": "4000",
+						"disk.1.speed.0.read":                 "30",
+						"disk.1.speed.0.write":                "40",
+						"disk.1.speed.0.read_burstable":       "300",
+						"disk.1.speed.0.write_burstable":      "400",
+					}),
+					// Verify scsi2 has no speed settings
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed", map[string]string{
+						"disk.2.interface": "scsi2",
+						"disk.2.speed.#":   "0",
+					}),
+				),
+			},
+		},
+	})
+}
