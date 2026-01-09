@@ -216,6 +216,49 @@ When writing a new resource or data source, use these files as templates:
 | Full CRUD resource with plan modifiers, validators, diagnostics, and Proxmox client orchestration | `fwprovider/nodes/resource_oci_image.go`   |
 | SDN-backed resource with SDN-specific validators, delete handling, and import                     | `fwprovider/cluster/sdn/vnet/resource.go`  |
 
+### Documentation workflow
+
+Documentation for Framework resources is **auto-generated** from schema definitions:
+
+1. **Write descriptive schema attributes** — Add `Description` and/or `MarkdownDescription` fields to your schema attributes. These become the docs.
+2. **Optional: Create a template** — For custom formatting, create a template in `/templates/resources/` or `/templates/data-sources/`.
+3. **Add a `go:generate` directive** — For new resources/data sources, add a `cp` command in `main.go` to copy the generated doc from `build/docs-gen/` to `docs/`.
+4. **Run `make docs`** — This generates documentation in `/docs/` from schemas and templates.
+
+> [!IMPORTANT]
+> Do **not** manually edit files in `/docs/` for Framework resources. Your changes will be overwritten by `make docs`. Edit schema descriptions or templates instead.
+
+**Description vs MarkdownDescription:**
+
+| Field                   | Format     | Used for                                      |
+| ----------------------- | ---------- | --------------------------------------------- |
+| `Description`           | Plain text | CLI help, simple tooltips                     |
+| `MarkdownDescription`   | Markdown   | Registry docs, rich formatting                |
+
+- If only one is set, it's used for both purposes.
+- Use `MarkdownDescription` when you need inline code (backticks), links, or HTML (`<br>`).
+- Keep descriptions concise: explain what the attribute does, valid values, and defaults.
+
+Example:
+
+```go
+schema.StringAttribute{
+    Description:         "The name of the VM.",
+    MarkdownDescription: "The name of the VM. Must be a valid DNS name (`[a-zA-Z0-9-]+`).",
+    Optional:            true,
+}
+```
+
+**When to use templates:**
+
+- Adding usage examples beyond auto-generated ones
+- Custom warnings, notes, or formatting
+- Import instructions with specific syntax
+
+See existing templates in `/templates/` for examples.
+
+For more details, see the [Terraform Plugin Framework documentation on descriptions](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/attributes#description).
+
 ### Best practices
 
 - Keep validation logic consistent across framework components.

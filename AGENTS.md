@@ -31,7 +31,7 @@ make test               # Run unit tests
 make docs               # Generate documentation
 ./testacc TestName      # Run specific acceptance test
 ./testacc --all         # Run all acceptance tests (only for massive changes, as old tests are fragile and prone to breaking)
-make example            # Validate with example configs (mostly for for SDKv2 provider changes)
+make example            # Validate with example configs (mostly for SDKv2 provider changes)
 ```
 
 ### Production Readiness Checklist
@@ -46,30 +46,11 @@ make example            # Validate with example configs (mostly for for SDKv2 pr
 6. `make docs` — Regenerate if schema changed
 7. `make example` — Must complete without errors
 
-### Commit Format
+### Commit & PR Guidelines
 
-```text
-type(scope): description
+See [CONTRIBUTING.md](CONTRIBUTING.md#commit-message-conventions) for commit format and [Submitting changes](CONTRIBUTING.md#submitting-changes) for PR requirements.
 
-Body explaining what and why.
-
-Signed-off-by: Name <email>
-```
-
-**Types:** `feat`, `fix`, `chore`, `docs`, `ci`
-
-**Scopes:** `vm`, `lxc`, `provider`, `core`, `docs`, `ci`
-
-**Rules:** Lowercase, no period, under 72 chars, NO issue numbers
-
-### Pull Request Submission
-
-When submitting PRs:
-
-1. **Follow the PR template** at `.github/PULL_REQUEST_TEMPLATE.md`
-2. **Include proof of work** — Test results, logs, screenshots showing the change works
-3. **Keep PRs focused** — One fix/feature per PR
-4. **Title follows conventional commits** — Used as squash commit message
+**Key rules:** Lowercase, no period, under 72 chars, NO issue numbers. Include proof of work.
 
 ---
 
@@ -184,80 +165,35 @@ proxmox.Client
 
 ### Adding Features
 
-1. Check if feature exists in the other provider. New features should only be implemented in the Framework provider. Consider the existing SDKv2 provider to be feature-frozen.
-2. Follow existing patterns in codebase.
-3. When adding new resource(s), consider adding matching datasource(s).
-4. Add validation to resource schema.
-5. Create acceptance tests.
-6. Update documentation: `make docs`.
-7. Complete production readiness checklist.
+1. New features go in Framework provider only (`fwprovider/`). SDK is feature-frozen.
+2. Follow existing patterns; consider adding matching datasource(s).
+3. Add validation, acceptance tests, and documentation.
+4. Complete production readiness checklist.
 
-### Framework Resource Structure
-
-New resources go in `fwprovider/` with this structure:
-
-```text
-fwprovider/nodes/myresource/
-├── resource.go           # Resource interface implementation
-├── resource_schema.go    # Schema definition
-├── model.go              # Go structs with tfsdk tags
-├── datasource.go         # Optional
-└── datasource_schema.go  # Optional
-```
-
-Register in `fwprovider/provider.go`:
-
-```go
-func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
-    return []func() resource.Resource{
-        myresource.NewResource,
-        // ...
-    }
-}
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md#provider-implementation-guidance) for reference implementations, documentation workflow, and best practices.
 
 ---
 
 ## Testing
 
-### Configuration
+See [CONTRIBUTING.md](CONTRIBUTING.md#testing) for full testing documentation.
 
-Create `testacc.env` in project root:
-
-```bash
-TF_ACC=1
-PROXMOX_VE_API_TOKEN="root@pam!terraform=<token>"
-PROXMOX_VE_ENDPOINT="https://pve.example.com:8006/"
-PROXMOX_VE_SSH_AGENT="true"
-PROXMOX_VE_SSH_USERNAME="root"
-```
-
-### Running Tests
+### Quick Commands
 
 ```bash
-# Single test
-./testacc TestAccResourceVM2CPU
-
-# With extra flags
-./testacc TestAccResourceVM2CPU -- -timeout 10m -count 1
-
-# All tests
-./testacc --all
-
-# Without proxy (if HTTP_PROXY set)
-./testacc --no-proxy TestAccResourceVM2CPU
+./testacc TestAccResourceVM2CPU              # Single test
+./testacc TestAccResourceVM2CPU -- -count 1  # With flags
+./testacc --all                              # All tests (use sparingly)
+./testacc --no-proxy TestName                # Without proxy
 ```
 
-### Test Requirements
+### Agent-Specific Notes
 
-- Test VMs with `started = true` MUST have boot disk with cloud image
-- Use `stop_on_destroy = true` when qemu-guest-agent not installed
-- Do NOT use issue numbers in test names or VM names
-- Include: boot disk, CPU/memory config, initialization block, network_device
+- **Test requirements:** VMs with `started = true` need boot disk with cloud image; use `stop_on_destroy = true` without qemu-guest-agent
+- **Naming:** Do NOT use issue numbers in test names or VM names
+- **Sandbox:** Tests may fail due to restricted filesystem access. Request "all" permissions or set `GOCACHE`/`GOMODCACHE` inside workspace.
 
 ### Stuck VM Cleanup
-
-If test VMs get stuck (SSH to PVE node):
 
 ```bash
 qm set <vmid> --onboot 0 --skiplock
@@ -265,10 +201,6 @@ kill -9 $(cat /var/run/qemu-server/<vmid>.pid)
 rm -f /var/lock/qemu-server/lock-<vmid>.conf
 qm destroy <vmid> --purge --skiplock
 ```
-
-### Sandbox Limitations
-
-Acceptance tests may fail in sandboxed environments due to restricted filesystem access. Request "all" permissions or set `GOCACHE`/`GOMODCACHE` to workspace-local paths.
 
 ---
 
@@ -478,6 +410,7 @@ After updating any markdown file:
 
 ## References
 
+- **Contributing Guide:** [CONTRIBUTING.md](CONTRIBUTING.md) — Single source of truth for development workflow
 - **Debugging Guide:** [.dev/DEBUGGING.md](.dev/DEBUGGING.md)
 - **Session Template:** [.dev/SESSION_STATE_TEMPLATE.md](.dev/SESSION_STATE_TEMPLATE.md)
 - **Proxmox API:** <https://pve.proxmox.com/pve-docs/api-viewer/>
@@ -485,4 +418,4 @@ After updating any markdown file:
 
 ---
 
-*This document is the canonical source for agent instructions. Keep it updated as the project evolves.*
+*This document contains agent-specific instructions. For general development workflow, see [CONTRIBUTING.md](CONTRIBUTING.md).*
