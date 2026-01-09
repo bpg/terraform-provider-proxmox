@@ -308,15 +308,13 @@ func (m *realmLDAPModel) fromAPIResponse(data *access.RealmGetResponseData, diag
 	m.SyncDefaultsOptions = types.StringPointerValue(data.SyncDefaultsOpts)
 	m.Comment = types.StringPointerValue(data.Comment)
 
-	if data.Default != nil {
-		m.Default = types.BoolValue(bool(*data.Default))
-	} else {
+	m.Default = types.BoolPointerValue(data.Default.PointerBool())
+	if m.Default.IsNull() {
 		m.Default = types.BoolValue(false)
 	}
 
-	if data.CaseSensitive != nil {
-		m.CaseSensitive = types.BoolValue(bool(*data.CaseSensitive))
-	} else {
-		m.CaseSensitive = types.BoolValue(true) // default value
+	m.CaseSensitive = types.BoolPointerValue(data.CaseSensitive.PointerBool())
+	if m.CaseSensitive.IsNull() {
+		m.CaseSensitive = types.BoolValue(true)
 	}
 }
