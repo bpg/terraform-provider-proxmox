@@ -71,3 +71,14 @@ type HAResourceUpdateRequestBody struct {
 	// Settings that must be deleted from the resource's configuration
 	Delete []string `url:"delete,omitempty,comma"`
 }
+
+// HAResourceMigrateRequestBody contains data for the HA resource migrate request.
+type HAResourceMigrateRequestBody struct {
+	// Target node for the migration.
+	Node string `url:"node"`
+}
+
+// HAResourceMigrateResponseBody contains the body from an HA resource migrate response.
+type HAResourceMigrateResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}

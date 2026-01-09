@@ -5410,16 +5410,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 		oldNodeNameValue, _ := d.GetChange(mkNodeName)
 		oldNodeName := oldNodeNameValue.(string)
-		vmAPI := client.Node(oldNodeName).VM(vmID)
 
-		trueValue := types.CustomBool(true)
-		migrateBody := &vms.MigrateRequestBody{
-			TargetNode:      nodeName,
-			WithLocalDisks:  &trueValue,
-			OnlineMigration: &trueValue,
-		}
-
-		err := vmAPI.MigrateVM(migrateCtx, migrateBody)
+		err := migrateVM(migrateCtx, client, vmID, oldNodeName, nodeName)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -6714,4 +6706,118 @@ func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (strin
 	}
 
 	return "", nil
+}
+
+// migrateVM migrates a VM to a new node, handling HA-managed VMs appropriately.
+// For HA-managed VMs, it uses the HA migrate endpoint which properly sequences the migration.
+// For non-HA VMs, it uses the standard VM migrate endpoint.
+func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode, targetNode string) error {
+	// construct the HA resource ID for this VM
+	haResourceID := types.HAResourceID{
+		Type: types.HAResourceTypeVM,
+		Name: strconv.Itoa(vmID),
+	}
+
+	// check if this VM is managed by HA
+	isHAManaged, err := client.Cluster().HA().Resources().Exists(ctx, haResourceID)
+	if err != nil {
+		return fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err)
+	}
+
+	if isHAManaged {
+		return migrateHAVM(ctx, client, vmID, haResourceID, targetNode)
+	}
+
+	return migrateNonHAVM(ctx, client, vmID, sourceNode, targetNode)
+}
+
+// migrateHAVM migrates an HA-managed VM using the HA resource migrate endpoint.
+func migrateHAVM(
+	ctx context.Context,
+	client proxmox.Client,
+	vmID int,
+	haResourceID types.HAResourceID,
+	targetNode string,
+) error {
+	tflog.Info(ctx, "VM is HA-managed, using HA migration endpoint", map[string]any{
+		"vm_id":       vmID,
+		"target_node": targetNode,
+	})
+
+	taskID, err := client.Cluster().HA().Resources().Migrate(ctx, haResourceID, targetNode)
+	if err != nil {
+		return fmt.Errorf("failed to initiate HA migration for VM %d: %w", vmID, err)
+	}
+
+	// wait for the HA migration task to complete
+	if taskID != nil {
+		err = client.Node(targetNode).Tasks().WaitForTask(ctx, *taskID)
+		if err != nil {
+			return fmt.Errorf("HA migration task failed for VM %d: %w", vmID, err)
+		}
+	}
+
+	// after HA migration, poll until the VM is accessible on the target node
+	err = waitForVMOnNode(ctx, client, vmID, targetNode)
+	if err != nil {
+		return fmt.Errorf("VM %d not accessible on target node %s after HA migration: %w", vmID, targetNode, err)
+	}
+
+	return nil
+}
+
+// migrateNonHAVM migrates a non-HA VM using the standard VM migrate endpoint.
+func migrateNonHAVM(
+	ctx context.Context,
+	client proxmox.Client,
+	vmID int,
+	sourceNode, targetNode string,
+) error {
+	vmAPI := client.Node(sourceNode).VM(vmID)
+
+	trueValue := types.CustomBool(true)
+	migrateBody := &vms.MigrateRequestBody{
+		TargetNode:      targetNode,
+		WithLocalDisks:  &trueValue,
+		OnlineMigration: &trueValue,
+	}
+
+	return vmAPI.MigrateVM(ctx, migrateBody)
+}
+
+// waitForVMOnNode polls until the VM is accessible on the specified node.
+// This is needed after HA migrations because the hamigrate task completes
+// before the actual qmigrate task finishes.
+func waitForVMOnNode(ctx context.Context, client proxmox.Client, vmID int, targetNode string) error {
+	vmAPI := client.Node(targetNode).VM(vmID)
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("waiting for VM on node: %w", ctx.Err())
+		case <-ticker.C:
+			_, err := vmAPI.GetVMStatus(ctx)
+			if err == nil {
+				tflog.Debug(ctx, "VM is now accessible on target node", map[string]any{
+					"vm_id":       vmID,
+					"target_node": targetNode,
+				})
+
+				return nil
+			}
+
+			if !errors.Is(err, api.ErrResourceDoesNotExist) {
+				// unexpected error, not just "VM not found yet"
+				return err
+			}
+
+			tflog.Debug(ctx, "VM not yet accessible on target node, waiting...", map[string]any{
+				"vm_id":       vmID,
+				"target_node": targetNode,
+			})
+		}
+	}
 }
