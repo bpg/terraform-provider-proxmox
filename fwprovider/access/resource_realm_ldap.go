@@ -28,7 +28,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	proxmoxaccess "github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
@@ -270,7 +269,7 @@ func (r *realmLDAPResource) Create(
 	// Read back the created resource
 	plan.ID = plan.Realm
 
-	_, err = r.read(ctx, &plan, &resp.Diagnostics)
+	err = r.read(ctx, &plan, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading LDAP realm after create", err.Error())
 		return
@@ -296,7 +295,7 @@ func (r *realmLDAPResource) Read(
 		return
 	}
 
-	_, err := r.read(ctx, &state, &resp.Diagnostics)
+	err := r.read(ctx, &state, &resp.Diagnostics)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.State.RemoveResource(ctx)
@@ -322,14 +321,15 @@ func (r *realmLDAPResource) read(
 	ctx context.Context,
 	model *realmLDAPModel,
 	diags *diag.Diagnostics,
-) (*proxmoxaccess.RealmGetResponseData, error) {
+) error {
 	realmData, err := r.client.Access().GetRealm(ctx, model.Realm.ValueString())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	model.fromAPIResponse(realmData, diags)
-	return realmData, nil
+
+	return nil
 }
 
 func (r *realmLDAPResource) Update(
@@ -355,7 +355,7 @@ func (r *realmLDAPResource) Update(
 		return
 	}
 
-	_, err = r.read(ctx, &plan, &resp.Diagnostics)
+	err = r.read(ctx, &plan, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading LDAP realm after update", err.Error())
 		return
