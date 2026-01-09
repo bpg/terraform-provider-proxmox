@@ -1583,3 +1583,60 @@ func TestAccResourceVMDiskSpeedPerDisk(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourceVMDiskSpeedUpdate tests that disk speed changes are detected and applied.
+func TestAccResourceVMDiskSpeedUpdate(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create VM with disk speed settings
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_speed_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-speed-update"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						speed {
+							iops_read = 100
+						}
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed_update", map[string]string{
+						"disk.0.speed.0.iops_read": "100",
+					}),
+				),
+			},
+			{
+				// Step 2: Update speed settings - this should detect a change
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_speed_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-speed-update"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						speed {
+							iops_read = 500
+						}
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed_update", map[string]string{
+						"disk.0.speed.0.iops_read": "500",
+					}),
+				),
+			},
+		},
+	})
+}
