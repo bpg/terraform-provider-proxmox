@@ -24,7 +24,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -148,7 +147,7 @@ func DigitPrefix(s string) string {
 // GetDiskDeviceObjects returns a map of disk devices for a VM.
 func GetDiskDeviceObjects(
 	d *schema.ResourceData,
-	resource *schema.Resource,
+	_ *schema.Resource,
 	disks []any,
 ) (vms.CustomStorageDevices, error) {
 	var diskDevices []any
@@ -186,15 +185,13 @@ func GetDiskDeviceObjects(
 		size, _ := block[mkDiskSize].(int)
 		ssd := types.CustomBool(block[mkDiskSSD].(bool))
 
-		speedBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{MkDisk, mkDiskSpeed},
-			0,
-			false,
-		)
-		if err != nil {
-			return diskDeviceObjects, fmt.Errorf("error getting disk speed block: %w", err)
+		// get speed block directly from the current disk entry
+		var speedBlock map[string]any
+
+		if speedList, ok := block[mkDiskSpeed].([]any); ok && len(speedList) > 0 {
+			if sb, ok := speedList[0].(map[string]any); ok {
+				speedBlock = sb
+			}
 		}
 
 		if pathInDatastore != "" {
