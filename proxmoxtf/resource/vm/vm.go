@@ -4757,7 +4757,27 @@ func vmReadCustom(
 
 	//nolint:gocritic
 	if len(clone) > 0 {
-		if len(currentInitialization) > 0 {
+		if len(currentInitialization) > 0 && currentInitialization[0] != nil {
+			currentInitializationBlock := currentInitialization[0].(map[string]any)
+
+			// for cloned VMs, only include initialization sub-blocks if the user specified them in config
+			// this prevents drift when the template has settings the user didn't define
+
+			currentInitializationUserAccount := currentInitializationBlock[mkInitializationUserAccount].([]any)
+			if len(currentInitializationUserAccount) == 0 {
+				delete(initialization, mkInitializationUserAccount)
+			}
+
+			currentInitializationDNS := currentInitializationBlock[mkInitializationDNS].([]any)
+			if len(currentInitializationDNS) == 0 {
+				delete(initialization, mkInitializationDNS)
+			}
+
+			currentInitializationIPConfig := currentInitializationBlock[mkInitializationIPConfig].([]any)
+			if len(currentInitializationIPConfig) == 0 {
+				delete(initialization, mkInitializationIPConfig)
+			}
+
 			if len(initialization) > 0 {
 				err := d.Set(mkInitialization, []any{initialization})
 				diags = append(diags, diag.FromErr(err)...)

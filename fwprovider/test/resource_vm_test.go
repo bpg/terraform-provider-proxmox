@@ -1500,6 +1500,76 @@ func TestAccResourceVMClone(t *testing.T) {
 				}),
 			),
 		}}},
+		// test for user_account drift after clone: template has user_account,
+		// cloned VM has only ip_config, subsequent apply should show no changes
+		{"clone user_account drift", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_user_account" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					initialization {
+						user_account {
+							username = "testuser"
+							keys     = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGqBd4Zt0epWwHwL7z6UU8FZOAOLJb8ycaHWRkEDkhrN testkey"]
+						}
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone_user_account" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template_user_account.vm_id
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.clone_user_account", map[string]string{
+						"initialization.0.ip_config.0.ipv4.0.address": "dhcp",
+					}),
+					NoResourceAttributesSet("proxmox_virtual_environment_vm.clone_user_account", []string{
+						"initialization.0.user_account.0.username",
+						"initialization.0.user_account.0.keys.0",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_user_account" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					initialization {
+						user_account {
+							username = "testuser"
+							keys     = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGqBd4Zt0epWwHwL7z6UU8FZOAOLJb8ycaHWRkEDkhrN testkey"]
+						}
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone_user_account" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template_user_account.vm_id
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+				}`),
+				PlanOnly: true,
+			},
+		}},
 	}
 
 	for _, tt := range tests {
