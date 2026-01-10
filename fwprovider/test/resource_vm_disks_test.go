@@ -658,6 +658,86 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"disk resize with cdrom in boot order", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_resize_with_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-resize-cdrom"
+					
+					boot_order = ["scsi0", "ide2"]
+					
+					cdrom {
+						file_id   = "none"
+						interface = "ide2"
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_resize_with_cdrom", map[string]string{
+					"disk.0.interface":  "scsi0",
+					"disk.0.size":       "8",
+					"disk.1.interface":  "scsi1",
+					"disk.1.size":       "8",
+					"cdrom.0.interface": "ide2",
+					"boot_order.0":      "scsi0",
+					"boot_order.1":      "ide2",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_resize_with_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-resize-cdrom"
+					
+					boot_order = ["scsi0", "ide2"]
+					
+					cdrom {
+						file_id   = "none"
+						interface = "ide2"
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 16
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_resize_with_cdrom", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_resize_with_cdrom", map[string]string{
+					"disk.0.interface":  "scsi0",
+					"disk.0.size":       "8",
+					"disk.1.interface":  "scsi1",
+					"disk.1.size":       "16",
+					"cdrom.0.interface": "ide2",
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		{"issue #2172 exact bug scenario", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
