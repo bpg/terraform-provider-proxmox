@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1109,6 +1110,19 @@ func VM() *schema.Resource {
 			Optional:         true,
 			Computed:         true,
 			ValidateDiagFunc: HotplugValidator(),
+			DiffSuppressFunc: func(_, oldValue, newValue string, _ *schema.ResourceData) bool {
+				if oldValue == "0" || oldValue == "1" || newValue == "0" || newValue == "1" {
+					return oldValue == newValue
+				}
+
+				oldParts := strings.Split(oldValue, ",")
+				newParts := strings.Split(newValue, ",")
+
+				slices.Sort(oldParts)
+				slices.Sort(newParts)
+
+				return slices.Equal(oldParts, newParts)
+			},
 		},
 		mkKeyboardLayout: {
 			Type:             schema.TypeString,
@@ -5499,7 +5513,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	if d.HasChange(mkHotplug) {
 		hotplug := d.Get(mkHotplug).(string)
-		updateBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplug, ","))
+		if hotplug != "" {
+			updateBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplug, ","))
+		} else {
+			del = append(del, mkHotplug)
+		}
 	}
 
 	if d.HasChange(mkKeyboardLayout) {
