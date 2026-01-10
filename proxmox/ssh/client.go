@@ -42,7 +42,11 @@ const (
 		`}; ` +
 		`try_sudo(){ ` +
 		`_try_sudo_check; ` +
-		`if [ "$_try_sudo_use_sudo" = "1" ]; then sudo $1; else $1; fi ` +
+		`if [ "$_try_sudo_use_sudo" = "1" ]; then ` +
+		`sudo "$@"; ` +
+		`else ` +
+		`"$@"; ` +
+		`fi; ` +
 		`}`
 )
 
@@ -493,7 +497,7 @@ func (c *client) uploadFile(
 
 	sshSession.Stdin = req.File
 
-	cmd := fmt.Sprintf(`%s%s; try_sudo "/usr/bin/tee %s"`, sudoEnv, TrySudo, remoteFilePath)
+	cmd := fmt.Sprintf(`%s%s; try_sudo /usr/bin/tee %s`, sudoEnv, TrySudo, remoteFilePath)
 
 	output, err := sshSession.CombinedOutput(cmd)
 	if err != nil {
