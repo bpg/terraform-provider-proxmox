@@ -42,7 +42,11 @@ const (
 		`}; ` +
 		`try_sudo(){ ` +
 		`_try_sudo_check; ` +
-		`if [ "$_try_sudo_use_sudo" = "1" ]; then sudo $1; else $1; fi ` +
+		`if [ "$_try_sudo_use_sudo" = "1" ]; then ` +
+		`sudo "$@"; ` +
+		`else ` +
+		`"$@"; ` +
+		`fi; ` +
 		`}`
 )
 
@@ -155,8 +159,8 @@ func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool
 	}
 
 	checkCmd := `if [ "$(id -u)" = "0" ]; then echo "0"; ` +
-		`elif [ $(sudo -n /sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ] ` +
-		`|| sudo -n /sbin/qm --help >/dev/null 2>&1; then echo "1"; else echo "0"; fi`
+		`elif [ $(sudo -n /usr/sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ] ` +
+		`|| sudo -n /usr/sbin/qm --help >/dev/null 2>&1; then echo "1"; else echo "0"; fi`
 
 	node, err := c.nodeResolver.Resolve(ctx, nodeName)
 	if err != nil {
@@ -493,7 +497,9 @@ func (c *client) uploadFile(
 
 	sshSession.Stdin = req.File
 
-	cmd := fmt.Sprintf(`%s%s; try_sudo "/usr/bin/tee %s"`, sudoEnv, TrySudo, remoteFilePath)
+	script := fmt.Sprintf(`%s%s; try_sudo /usr/bin/tee %s`, sudoEnv, TrySudo, remoteFilePath)
+	// wrap in bash for shell compatibility (works regardless of user's default shell)
+	cmd := fmt.Sprintf(`/bin/bash -c '%s'`, strings.ReplaceAll(script, `'`, `'"'"'`))
 
 	output, err := sshSession.CombinedOutput(cmd)
 	if err != nil {

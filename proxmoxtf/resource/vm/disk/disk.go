@@ -325,16 +325,16 @@ func createCustomDisk(
 	commands := []string{
 		`set -e`,
 		ssh.TrySudo,
-		fmt.Sprintf(`file_id="%s"`, *disk.FileID),
-		fmt.Sprintf(`file_format="%s"`, fileFormat),
-		fmt.Sprintf(`datastore_id_target="%s"`, *disk.DatastoreID),
-		fmt.Sprintf(`vm_id="%d"`, vmID),
-		fmt.Sprintf(`disk_options="%s"`, disk.EncodeOptions()),
-		fmt.Sprintf(`disk_interface="%s"`, iface),
-		`source_image=$(try_sudo "pvesm path $file_id")`,
-		`imported_disk="$(try_sudo "qm disk import $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
-		`disk_id="${datastore_id_target}:$imported_disk,${disk_options}"`,
-		`try_sudo "qm set $vm_id -${disk_interface} $disk_id"`,
+		`file_id=` + *disk.FileID,
+		`file_format=` + fileFormat,
+		`datastore_id_target=` + *disk.DatastoreID,
+		fmt.Sprintf(`vm_id=%d`, vmID),
+		fmt.Sprintf(`disk_options=%s`, disk.EncodeOptions()),
+		fmt.Sprintf(`disk_interface=%s`, iface),
+		`source_image=$(try_sudo /usr/sbin/pvesm path $file_id)`,
+		`imported_disk=$(try_sudo /usr/sbin/qm disk import $vm_id $source_image $datastore_id_target -format $file_format | grep unused0 | cut -d : -f 3 | cut -d \' -f 1)`,
+		`disk_id=${datastore_id_target}:$imported_disk,$disk_options`,
+		`try_sudo /usr/sbin/qm set $vm_id -${disk_interface} $disk_id`,
 	}
 
 	out, err := client.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
