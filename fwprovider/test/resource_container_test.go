@@ -339,6 +339,120 @@ func TestAccResourceContainerMountOptions(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerDiskResize(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Create container with 4GB disk
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-disk-resize"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"disk.0.size": "4",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.RootFS, "rootfs should not be nil")
+						require.NotNil(te.t, ctInfo.RootFS.Size, "rootfs size should not be nil")
+						require.Equal(te.t, int64(4), ctInfo.RootFS.Size.InGigabytes(), "disk size should be 4GB")
+
+						te.t.Logf("Container created with rootFS volume: %s, size: %s", ctInfo.RootFS.Volume, ctInfo.RootFS.Size)
+
+						return nil
+					},
+				),
+			},
+			{
+				// Resize disk to 6GB (should update in-place, not recreate)
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 6
+					}
+					initialization {
+						hostname = "test-disk-resize"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"disk.0.size": "6",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.RootFS, "rootfs should not be nil")
+						require.NotNil(te.t, ctInfo.RootFS.Size, "rootfs size should not be nil")
+						require.Equal(te.t, int64(6), ctInfo.RootFS.Size.InGigabytes(), "disk size should be 6GB after resize")
+
+						te.t.Logf("After resize, rootFS volume: %s, size: %s", ctInfo.RootFS.Volume, ctInfo.RootFS.Size)
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerClone(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)

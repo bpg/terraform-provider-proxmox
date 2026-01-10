@@ -377,7 +377,7 @@ When migrating from legacy VM resource (`proxmox_virtual_environment_vm`) with c
 
 ## State Migration
 
-**Important**: Changing from legacy VM resource (`proxmox_virtual_environment_vm`) to `cloned_vm` requires recreating the VM. Terraform will:
+~> Changing from legacy VM resource (`proxmox_virtual_environment_vm`) to `cloned_vm` requires recreating the VM. Terraform will:
 
 1. Create the new cloned VM
 2. Destroy the old legacy VM resource

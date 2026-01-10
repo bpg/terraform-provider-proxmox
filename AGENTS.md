@@ -45,6 +45,18 @@ make example            # Validate with example configs (mostly for SDKv2 provid
 5. Verify API calls with mitmproxy (see [Debugging](#debugging))
 6. `make docs` — Regenerate if schema changed
 7. `make example` — Must complete without errors
+8. Create proof of work document (see below)
+
+### Proof of Work Document
+
+After completing work, create `.dev/<FEATURE>_PROOF_REPORT.md` with:
+
+1. **Summary** — Brief description of changes
+2. **Acceptance tests** — Test names with PASS/FAIL status
+3. **API verification** — if relevant, mitmproxy output showing parameters sent correctly,
+4. **Test coverage** — Table of tests and what they verify
+
+The `*_REPORT.md` pattern is gitignored. Use this document as proof of work in PR descriptions.
 
 ### Commit & PR Guidelines
 
@@ -388,6 +400,26 @@ After updating any markdown file:
 2. Fix spelling, structural issues
 3. Verify links work
 4. Maintain consistent heading levels
+
+### Documentation Admonitions
+
+Use Terraform registry admonition syntax in `/docs/` files:
+
+| Symbol | Type   | Usage                              |
+|--------|--------|------------------------------------|
+| `->`   | Note   | General information, tips          |
+| `~>`   | Warning| Cautions, important caveats        |
+| `!>`   | Danger | Critical warnings, "do not use"    |
+
+**Examples:**
+
+```markdown
+-> Consider using `proxmox_virtual_environment_download_file` resource instead.
+
+~> Never commit proxy configurations or credentials to the repository.
+
+!> **DO NOT USE** — This resource is experimental and will change.
+```
 
 ---
 
