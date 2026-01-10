@@ -529,6 +529,49 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		{"hotplug", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "disk,usb"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug", map[string]string{
+						"hotplug": "disk,usb",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "network,disk,usb,memory"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug", map[string]string{
+						"hotplug": "network,disk,usb,memory",
+					}),
+				),
+			},
+		}},
+		{"hotplug disabled", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug_disabled" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "0"
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug_disabled", map[string]string{
+					"hotplug": "0",
+				}),
+			),
+		}}},
 	}
 
 	for _, tt := range tests {

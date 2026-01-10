@@ -372,7 +372,9 @@ output "ubuntu_vm_public_key" {
         is a relative path under `/usr/share/kvm/`.
     - `xvga` - (Optional) Marks the PCI(e) device as the primary GPU of the VM.
         With this enabled the `vga` configuration argument will be ignored.
-- `hotplug` - (Optional) Selectively enable hotplug features
+- `hotplug` - (Optional) Selectively enable hotplug features. Supported values
+    are `cpu`, `disk`, `memory`, `network`, and `usb`. Use `0` to disable all,
+    or `1` to enable all. If not set, PVE defaults to `network,disk,usb`.
 - `usb` - (Optional) A host USB device mapping (multiple blocks supported).
     - `host` - (Optional) The Host USB device or port or the value `spice`. Use either this or `mapping`.
     - `mapping` - (Optional) The cluster-wide resource mapping name of the device, for example "usbdevice". Use either this or `host`.

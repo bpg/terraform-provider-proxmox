@@ -164,6 +164,14 @@ func AMDSEVTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"std", "es", "snp"}, false))
 }
 
+// HotplugValidator is a schema validation function for hotplug features.
+func HotplugValidator() schema.SchemaValidateDiagFunc {
+	r := regexp.MustCompile(`^(0|1|((cpu|disk|memory|network|usb)(,(cpu|disk|memory|network|usb))*))$`)
+
+	return validation.ToDiagFunc(validation.StringMatch(r,
+		"must be 0, 1, or comma-separated list of: cpu, disk, memory, network, usb"))
+}
+
 // KeyboardLayoutValidator is a schema validation function for keyboard layouts.
 func KeyboardLayoutValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{

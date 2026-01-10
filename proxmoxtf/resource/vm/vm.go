@@ -1104,10 +1104,11 @@ func VM() *schema.Resource {
 			},
 		},
 		mkHotplug: {
-			Type:        schema.TypeString,
-			Description: "Selectively enable hotplug features",
-			Optional:    true,
-			Default:     "network,disk,usb",
+			Type:             schema.TypeString,
+			Description:      "Selectively enable hotplug features. Use `0` to disable, `1` to enable all.",
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: HotplugValidator(),
 		},
 		mkKeyboardLayout: {
 			Type:             schema.TypeString,
@@ -2325,6 +2326,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 	}
 
+	// Only set hotplug if explicitly configured, otherwise let PVE use its default
+	if hotplugValue, ok := d.GetOk(mkHotplug); ok {
+		updateBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplugValue.(string), ","))
+	}
+
 	if keyboardLayout != dvKeyboardLayout {
 		updateBody.KeyboardLayout = &keyboardLayout
 	}
@@ -2991,6 +2997,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 
 	if cpuHotplugged > 0 {
 		createBody.VirtualCPUCount = ptr.Ptr(int64(cpuHotplugged))
+	}
+
+	// Only set hotplug if explicitly configured, otherwise let PVE use its default
+	if hotplugValue, ok := d.GetOk(mkHotplug); ok {
+		createBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplugValue.(string), ","))
 	}
 
 	if cpuLimit > 0 {
@@ -5250,6 +5261,12 @@ func vmReadPrimitiveValues(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	// Read hotplug from API - with Computed: true, we store whatever PVE returns
+	if vmConfig.Hotplug != nil {
+		err = d.Set(mkHotplug, strings.Join(*vmConfig.Hotplug, ","))
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	currentKeyboardLayout := d.Get(mkKeyboardLayout).(string)
 
 	if len(clone) == 0 || currentKeyboardLayout != dvKeyboardLayout {
@@ -5478,6 +5495,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	if d.HasChange(mkTags) {
 		tagString := vmGetTagsString(d)
 		updateBody.Tags = &tagString
+	}
+
+	if d.HasChange(mkHotplug) {
+		hotplug := d.Get(mkHotplug).(string)
+		updateBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplug, ","))
 	}
 
 	if d.HasChange(mkKeyboardLayout) {
