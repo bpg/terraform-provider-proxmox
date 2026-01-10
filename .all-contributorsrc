@@ -1619,6 +1619,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "diskwarrior",
+      "name": "Dan Harris",
+      "avatar_url": "https://avatars.githubusercontent.com/u/48100115?v=4",
+      "profile": "https://github.com/diskwarrior",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
