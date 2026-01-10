@@ -1628,6 +1628,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ops4cloud",
+      "name": "Greg O'Toole",
+      "avatar_url": "https://avatars.githubusercontent.com/u/78908638?v=4",
+      "profile": "https://github.com/ops4cloud",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
