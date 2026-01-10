@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"regexp"
 	"slices"
 	"sort"
@@ -1056,64 +1055,20 @@ func Container() *schema.Resource {
 					return strconv.Itoa(newValue.(int)) != d.Id()
 				},
 			),
-			// create a customdiff that checks each mount point
-			customdiff.ForceNewIf(
-				mkMountPoint,
-				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-					oldRaw, newRaw := d.GetChange(mkMountPoint)
-					// compare all oldRaw and newRaw entries
-					oldList, _ := oldRaw.([]interface{})
-					newList, _ := newRaw.([]interface{})
-
-					if oldList == nil {
-						oldList = []interface{}{}
-					}
-					if newList == nil {
-						newList = []interface{}{}
-					}
-
-					for i := 0; i < len(oldList); i++ {
-						if len(newList)-1 < i {
-							return true
-						}
-						// compare old and new list entries and call ForceNew on the correspondig string
-						// make a deep comparison
-						oldMap, _ := oldList[i].(map[string]interface{})
-						// the volume entry of oldMap does containe the storage volume PLUS the identifier, which we have to strip
-						volumeEntry, ok := oldMap["volume"]
-						if ok {
-							volumeParts := strings.Split(volumeEntry.(string), ":")
-							if len(volumeParts) >= 1 {
-								oldMap["volume"] = volumeParts[0]
-							}
-						}
-
-						newMap, _ := newList[i].(map[string]interface{})
-						// deep compare
-						if !reflect.DeepEqual(oldMap, newMap) {
-							// get key that is different and call ForceNew
-							for _, v := range oldMap {
-								d.ForceNew(fmt.Sprintf("%s.%d.%s", mkMountPoint, i, v))
-							}
-							return true
-						}
-					}
-					return false
-
-				},
-			),
+			// Force recreation if disk is being shrunk (shrinking not supported, only growing)
 			customdiff.ForceNewIf(
 				mkDisk,
-				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
 					oldRaw, newRaw := d.GetChange(mkDisk)
-					oldList, _ := oldRaw.([]interface{})
-					newList, _ := newRaw.([]interface{})
+					oldList, _ := oldRaw.([]any)
+					newList, _ := newRaw.([]any)
 
 					if oldList == nil {
-						oldList = []interface{}{}
+						oldList = []any{}
 					}
+
 					if newList == nil {
-						newList = []interface{}{}
+						newList = []any{}
 					}
 
 					minDrives := min(len(oldList), len(newList))
@@ -1121,8 +1076,9 @@ func Container() *schema.Resource {
 					for i := range minDrives {
 						oldSize := dvDiskSize
 						newSize := dvDiskSize
+
 						if i < len(oldList) && oldList[i] != nil {
-							if om, ok := oldList[i].(map[string]interface{}); ok {
+							if om, ok := oldList[i].(map[string]any); ok {
 								if v, ok := om[mkDiskSize].(int); ok {
 									oldSize = v
 								}
@@ -1130,7 +1086,7 @@ func Container() *schema.Resource {
 						}
 
 						if i < len(newList) && newList[i] != nil {
-							if nm, ok := newList[i].(map[string]interface{}); ok {
+							if nm, ok := newList[i].(map[string]any); ok {
 								if v, ok := nm[mkDiskSize].(int); ok {
 									newSize = v
 								}
@@ -1138,7 +1094,7 @@ func Container() *schema.Resource {
 						}
 
 						if oldSize > newSize {
-							_ = d.ForceNew(fmt.Sprintf("%s.%d.%s", mkDisk, i, mkDiskSize))
+							// Shrinking is not supported, force recreation
 							return true
 						}
 					}
@@ -3115,9 +3071,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 		oldSize := containerConfig.RootFS.Size
 		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
-		// we should never reach this point. The `plan` should recreate the container, not update it, if the old size is larger.
-		if *oldSize > *size {
-			return diag.Errorf("New disk size (%s) has to be greater the current disk (%s)!", oldSize, size)
+		// We should never reach this point. The `plan` should recreate the container, not update it, if the old size is larger.
+		if oldSize != nil && *oldSize > *size {
+			return diag.Errorf("new disk size (%s) has to be greater than the current disk (%s)", size, oldSize)
 		}
 
 		if !ptr.Eq(oldSize, size) {
@@ -3147,12 +3103,16 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		// To compare contents regardless of order, we can sort them.
 		// The schema already uses a suppress func for order, so we should be consistent.
 		sort.Strings(mountOptionsStrings)
+
 		currentMountOptions := containerConfig.RootFS.MountOptions
+
 		currentMountOptionsSorted := []string{}
 		if currentMountOptions != nil {
 			currentMountOptionsSorted = append(currentMountOptionsSorted, *currentMountOptions...)
 		}
+
 		sort.Strings(currentMountOptionsSorted)
+
 		if !slices.Equal(mountOptionsStrings, currentMountOptionsSorted) {
 			rebootRequired = true
 		}
