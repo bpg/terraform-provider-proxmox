@@ -146,5 +146,4 @@ To inspect Proxmox API calls:
 
 3. Run your Terraform commands and inspect traffic in mitmproxy.
 
-> [!WARNING]
-> Never commit proxy configurations, captured traffic, or credentials to the repository.
+~> Never commit proxy configurations, captured traffic, or credentials to the repository.

@@ -389,6 +389,26 @@ After updating any markdown file:
 3. Verify links work
 4. Maintain consistent heading levels
 
+### Documentation Admonitions
+
+Use Terraform registry admonition syntax in `/docs/` files:
+
+| Symbol | Type   | Usage                              |
+|--------|--------|------------------------------------|
+| `->`   | Note   | General information, tips          |
+| `~>`   | Warning| Cautions, important caveats        |
+| `!>`   | Danger | Critical warnings, "do not use"    |
+
+**Examples:**
+
+```markdown
+-> Consider using `proxmox_virtual_environment_download_file` resource instead.
+
+~> Never commit proxy configurations or credentials to the repository.
+
+!> **DO NOT USE** — This resource is experimental and will change.
+```
+
 ---
 
 ## Proxmox VE Compatibility
