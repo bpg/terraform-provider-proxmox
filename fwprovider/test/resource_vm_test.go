@@ -529,6 +529,119 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		{"hotplug", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "disk,usb"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug", map[string]string{
+						"hotplug": "disk,usb",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "network,disk,usb,memory"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug", map[string]string{
+						"hotplug": "network,disk,usb,memory",
+					}),
+				),
+			},
+		}},
+		{"hotplug disabled", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug_disabled" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "0"
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug_disabled", map[string]string{
+					"hotplug": "0",
+				}),
+			),
+		}}},
+		{"hotplug order insensitive", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug_order" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "disk,usb,network"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug_order", map[string]string{
+						"hotplug": "disk,usb,network",
+					}),
+				),
+			}, {
+				// change order but same values - should not cause update
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug_order" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "network,disk,usb"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug_order", map[string]string{
+						"hotplug": "disk,usb,network",
+					}),
+				),
+			},
+		}},
+		{"hotplug duplicate rejected", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug_dup" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "cpu,cpu"
+				}`),
+			ExpectError: regexp.MustCompile(`duplicate hotplug feature "cpu"`),
+		}}},
+		{"hotplug explicit reset", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug_reset" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "cpu,disk"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug_reset", map[string]string{
+						"hotplug": "cpu,disk",
+					}),
+				),
+			}, {
+				// explicitly set to different value
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_hotplug_reset" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					hotplug = "network,disk,usb"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug_reset", map[string]string{
+						"hotplug": "network,disk,usb",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
@@ -1343,6 +1456,49 @@ func TestAccResourceVMClone(t *testing.T) {
 					}
 				}`),
 			ExpectError: regexp.MustCompile(`storage 'doesnotexist' does not exist`),
+		}}},
+		{"clone hotplug inherited", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_hotplug" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					hotplug   = "cpu,disk"
+				}
+				resource "proxmox_virtual_environment_vm" "clone_hotplug_inherit" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template_hotplug.vm_id
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.clone_hotplug_inherit", map[string]string{
+					"hotplug": "cpu,disk",
+				}),
+			),
+		}}},
+		{"clone hotplug override", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_hotplug2" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					hotplug   = "cpu,disk"
+				}
+				resource "proxmox_virtual_environment_vm" "clone_hotplug_override" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template_hotplug2.vm_id
+					}
+					hotplug = "network,usb"
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.clone_hotplug_override", map[string]string{
+					"hotplug": "network,usb",
+				}),
+			),
 		}}},
 	}
 

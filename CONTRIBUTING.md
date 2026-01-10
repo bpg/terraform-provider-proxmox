@@ -370,6 +370,7 @@ Guidelines:
 
 > [!WARNING]
 > PRs without proof of work may be rejected. Trivial changes (typo fixes, documentation-only updates that don't affect code behavior) are exempt from this requirement.
+If you use AI assistants, they are expected to generate a proof of work document as a `.dev/*_REPORT.md` file. Review this file and use its contents when completing the PR template.
 
 ### How to submit
 

@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -222,6 +223,7 @@ const (
 	mkHostPCIDeviceROMBAR               = "rombar"
 	mkHostPCIDeviceROMFile              = "rom_file"
 	mkHostPCIDeviceXVGA                 = "xvga"
+	mkHotplug                           = "hotplug"
 	mkInitialization                    = "initialization"
 	mkInitializationDatastoreID         = "datastore_id"
 	mkInitializationInterface           = "interface"
@@ -1100,6 +1102,26 @@ func VM() *schema.Resource {
 						Optional:    true,
 					},
 				},
+			},
+		},
+		mkHotplug: {
+			Type:             schema.TypeString,
+			Description:      "Selectively enable hotplug features. Use `0` to disable, `1` to enable all.",
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: HotplugValidator(),
+			DiffSuppressFunc: func(_, oldValue, newValue string, _ *schema.ResourceData) bool {
+				if oldValue == "0" || oldValue == "1" || newValue == "0" || newValue == "1" {
+					return oldValue == newValue
+				}
+
+				oldParts := strings.Split(oldValue, ",")
+				newParts := strings.Split(newValue, ",")
+
+				slices.Sort(oldParts)
+				slices.Sort(newParts)
+
+				return slices.Equal(oldParts, newParts)
 			},
 		},
 		mkKeyboardLayout: {
@@ -2318,6 +2340,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 	}
 
+	// Only set hotplug if explicitly configured, otherwise let PVE use its default
+	if hotplugValue, ok := d.GetOk(mkHotplug); ok {
+		updateBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplugValue.(string), ","))
+	}
+
 	if keyboardLayout != dvKeyboardLayout {
 		updateBody.KeyboardLayout = &keyboardLayout
 	}
@@ -2984,6 +3011,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 
 	if cpuHotplugged > 0 {
 		createBody.VirtualCPUCount = ptr.Ptr(int64(cpuHotplugged))
+	}
+
+	// Only set hotplug if explicitly configured, otherwise let PVE use its default
+	if hotplugValue, ok := d.GetOk(mkHotplug); ok {
+		createBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplugValue.(string), ","))
 	}
 
 	if cpuLimit > 0 {
@@ -5243,6 +5275,12 @@ func vmReadPrimitiveValues(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	// Read hotplug from API - with Computed: true, we store whatever PVE returns
+	if vmConfig.Hotplug != nil {
+		err = d.Set(mkHotplug, strings.Join(*vmConfig.Hotplug, ","))
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	currentKeyboardLayout := d.Get(mkKeyboardLayout).(string)
 
 	if len(clone) == 0 || currentKeyboardLayout != dvKeyboardLayout {
@@ -5471,6 +5509,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	if d.HasChange(mkTags) {
 		tagString := vmGetTagsString(d)
 		updateBody.Tags = &tagString
+	}
+
+	if d.HasChange(mkHotplug) {
+		hotplug := d.Get(mkHotplug).(string)
+		if hotplug != "" {
+			updateBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplug, ","))
+		} else {
+			del = append(del, mkHotplug)
+		}
 	}
 
 	if d.HasChange(mkKeyboardLayout) {

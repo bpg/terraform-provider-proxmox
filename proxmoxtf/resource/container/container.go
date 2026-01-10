@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -337,7 +338,6 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The disks",
 				Optional:    true,
-				ForceNew:    true,
 				DefaultFunc: func() (any, error) {
 					return []any{
 						map[string]any{
@@ -378,7 +378,6 @@ func Container() *schema.Resource {
 							Type:             schema.TypeInt,
 							Description:      "The rootfs size in gigabytes",
 							Optional:         true,
-							ForceNew:         true,
 							Default:          dvDiskSize,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
 						},
@@ -676,6 +675,7 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "A mount point",
 				Optional:    true,
+				ForceNew:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkMountPointACL: {
@@ -735,12 +735,14 @@ func Container() *schema.Resource {
 							Description:      "Volume size (only used for volume mount points)",
 							Optional:         true,
 							Default:          dvMountPointSize,
+							ForceNew:         true,
 							ValidateDiagFunc: validators.FileSize(),
 						},
 						mkMountPointVolume: {
 							Type:        schema.TypeString,
 							Description: "Volume, device or directory to mount into the container",
 							Required:    true,
+							ForceNew:    true,
 							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
 								// For *new* volume mounts PVE returns an actual volume ID which is saved in the stare,
 								// so on reapply the provider will try override it:"
@@ -1059,6 +1061,53 @@ func Container() *schema.Resource {
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
 					// (automatic fix from -1 to actual vm_id must not re-create VM)
 					return strconv.Itoa(newValue.(int)) != d.Id()
+				},
+			),
+			// Force recreation if disk is being shrunk (shrinking not supported, only growing)
+			customdiff.ForceNewIf(
+				mkDisk,
+				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
+					oldRaw, newRaw := d.GetChange(mkDisk)
+					oldList, _ := oldRaw.([]any)
+					newList, _ := newRaw.([]any)
+
+					if oldList == nil {
+						oldList = []any{}
+					}
+
+					if newList == nil {
+						newList = []any{}
+					}
+
+					minDrives := min(len(oldList), len(newList))
+
+					for i := range minDrives {
+						oldSize := dvDiskSize
+						newSize := dvDiskSize
+
+						if i < len(oldList) && oldList[i] != nil {
+							if om, ok := oldList[i].(map[string]any); ok {
+								if v, ok := om[mkDiskSize].(int); ok {
+									oldSize = v
+								}
+							}
+						}
+
+						if i < len(newList) && newList[i] != nil {
+							if nm, ok := newList[i].(map[string]any); ok {
+								if v, ok := nm[mkDiskSize].(int); ok {
+									newSize = v
+								}
+							}
+						}
+
+						if oldSize > newSize {
+							// Shrinking is not supported, force recreation
+							return true
+						}
+					}
+
+					return false
 				},
 			),
 		),
@@ -3059,7 +3108,23 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		mountOptions := diskBlock[mkDiskMountOptions].([]any)
 		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
+
+		oldSize := containerConfig.RootFS.Size
 		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
+		// We should never reach this point. The `plan` should recreate the container, not update it, if the old size is larger.
+		if oldSize != nil && *oldSize > *size {
+			return diag.Errorf("new disk size (%s) has to be greater than the current disk (%s)", size, oldSize)
+		}
+
+		if !ptr.Eq(oldSize, size) {
+			err = containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
+				Disk: "rootfs",
+				Size: size.String(),
+			})
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
 
 		rootFS.ACL = &acl
 		rootFS.Quota = &quota
@@ -3069,15 +3134,30 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		mountOptionsStrings := make([]string, 0, len(mountOptions))
 
 		for _, option := range mountOptions {
-			mountOptionsStrings = append(mountOptionsStrings, option.(string))
+			optionString := option.(string)
+			mountOptionsStrings = append(mountOptionsStrings, optionString)
 		}
-
 		// Always set, including empty, to allow clearing mount options
 		rootFS.MountOptions = &mountOptionsStrings
 
-		updateBody.RootFS = rootFS
+		// To compare contents regardless of order, we can sort them.
+		// The schema already uses a suppress func for order, so we should be consistent.
+		sort.Strings(mountOptionsStrings)
 
-		rebootRequired = true
+		currentMountOptions := containerConfig.RootFS.MountOptions
+
+		currentMountOptionsSorted := []string{}
+		if currentMountOptions != nil {
+			currentMountOptionsSorted = append(currentMountOptionsSorted, *currentMountOptions...)
+		}
+
+		sort.Strings(currentMountOptionsSorted)
+
+		if !slices.Equal(mountOptionsStrings, currentMountOptionsSorted) {
+			rebootRequired = true
+		}
+
+		updateBody.RootFS = rootFS
 	}
 
 	if d.HasChange(mkEnvironmentVariables) {

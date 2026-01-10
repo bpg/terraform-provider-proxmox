@@ -478,3 +478,13 @@ func (c *Client) WaitForContainerConfigUnlock(ctx context.Context, ignoreErrorRe
 
 	return nil
 }
+
+// ResizeContainerDisk resizes a container disk.
+func (c *Client) ResizeContainerDisk(ctx context.Context, d *ResizeRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("resize"), d, nil)
+	if err != nil {
+		return fmt.Errorf("error resizing container disk: %w", err)
+	}
+
+	return nil
+}
