@@ -164,6 +164,41 @@ func AMDSEVTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"std", "es", "snp"}, false))
 }
 
+// HotplugValidator is a schema validation function for hotplug features.
+func HotplugValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i any, k string) ([]string, []error) {
+		v, ok := i.(string)
+		if !ok {
+			return nil, []error{fmt.Errorf("expected type of %s to be string", k)}
+		}
+
+		// allow empty string (for removing the attribute), 0 (disable all), 1 (enable all)
+		if v == "" || v == "0" || v == "1" {
+			return nil, nil
+		}
+
+		validFeatures := map[string]struct{}{
+			"cpu": {}, "disk": {}, "memory": {}, "network": {}, "usb": {},
+		}
+		seen := make(map[string]struct{})
+
+		for part := range strings.SplitSeq(v, ",") {
+			if _, isValid := validFeatures[part]; !isValid {
+				return nil, []error{fmt.Errorf(
+					"%s: %q is not a valid hotplug feature (must be cpu, disk, memory, network, usb, 0, or 1)", k, part)}
+			}
+
+			if _, duplicate := seen[part]; duplicate {
+				return nil, []error{fmt.Errorf("%s: duplicate hotplug feature %q", k, part)}
+			}
+
+			seen[part] = struct{}{}
+		}
+
+		return nil, nil
+	})
+}
+
 // KeyboardLayoutValidator is a schema validation function for keyboard layouts.
 func KeyboardLayoutValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
