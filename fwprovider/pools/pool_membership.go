@@ -11,15 +11,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
-
-	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -27,6 +18,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 var (
@@ -40,7 +39,7 @@ type poolMembershipResource struct {
 	client proxmox.Client
 }
 
-func (r *poolMembershipResource) ConfigValidators(context.Context) []resource.ConfigValidator {
+func (r *poolMembershipResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
 	return []resource.ConfigValidator{
 		resourcevalidator.Conflicting(
 			path.MatchRoot("vm_id"),

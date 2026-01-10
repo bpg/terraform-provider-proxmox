@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0
 
@@ -40,8 +40,8 @@ jobs:
 
       - name: Lint code
         if: ${{ steps.filter.outputs.go == 'true' || steps.filter.outputs.linter == 'true'}}
-        uses: golangci/golangci-lint-action@e7fa5ac41e1cf5b7d48e45e42232ce7ada589601 # v9
+        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9
         with: 
-          version: v2.6.2 # renovate: depName=golangci/golangci-lint datasource=github-releases
+          version: v2.8.0 # renovate: depName=golangci/golangci-lint datasource=github-releases
           skip-cache: true
           args: -v --timeout=10m

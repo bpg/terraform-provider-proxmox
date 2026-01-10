@@ -25,6 +25,11 @@ func attributeTypes() map[string]attr.Type {
 	}
 }
 
+// NullValue returns a properly typed null Value.
+func NullValue() Value {
+	return types.MapNull(types.ObjectType{}.WithAttributeTypes(attributeTypes()))
+}
+
 func (m *Model) exportToCustomStorageDevice() vms.CustomStorageDevice {
 	return vms.CustomStorageDevice{
 		FileVolume: m.FileID.ValueString(),

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go/v5"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/utils/ip"
@@ -169,7 +169,26 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ifaces, err := retry.DoWithData(
+	ifaces, err := retry.NewWithData[[]GetNetworkInterfacesData](
+		retry.Context(ctxWithTimeout),
+		retry.RetryIf(func(err error) bool {
+			var target *api.HTTPError
+			if errors.As(err, &target) {
+				if target.Code == http.StatusBadRequest {
+					// this is a special case to account for eventual consistency
+					// when creating a task -- the task may not be available via status API
+					// immediately after creation
+					return true
+				}
+			}
+
+			return errors.Is(err, api.ErrNoDataObjectInResponse) || errors.Is(err, errNoIPsYet)
+		}),
+		retry.LastErrorOnly(true),
+		retry.UntilSucceeded(),
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(time.Second),
+	).Do(
 		func() ([]GetNetworkInterfacesData, error) {
 			ifaces, err := c.GetContainerNetworkInterfaces(ctx)
 			if err != nil {
@@ -207,24 +226,6 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 			// all required IP types are available
 			return ifaces, nil
 		},
-		retry.Context(ctxWithTimeout),
-		retry.RetryIf(func(err error) bool {
-			var target *api.HTTPError
-			if errors.As(err, &target) {
-				if target.Code == http.StatusBadRequest {
-					// this is a special case to account for eventual consistency
-					// when creating a task -- the task may not be available via status API
-					// immediately after creation
-					return true
-				}
-			}
-
-			return errors.Is(err, api.ErrNoDataObjectInResponse) || errors.Is(err, errNoIPsYet)
-		}),
-		retry.LastErrorOnly(true),
-		retry.UntilSucceeded(),
-		retry.DelayType(retry.FixedDelay),
-		retry.Delay(time.Second),
 	)
 	if errors.Is(err, context.DeadlineExceeded) {
 		return nil, errors.New("timeout while waiting for container IP addresses")
@@ -408,7 +409,15 @@ func (c *Client) WaitForContainerStatus(ctx context.Context, status string) erro
 
 	unexpectedStatus := fmt.Errorf("unexpected status %q", status)
 
-	err := retry.Do(
+	err := retry.New(
+		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			return errors.Is(err, unexpectedStatus)
+		}),
+		retry.UntilSucceeded(),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+	).Do(
 		func() error {
 			data, err := c.GetContainerStatus(ctx)
 			if err != nil {
@@ -421,13 +430,6 @@ func (c *Client) WaitForContainerStatus(ctx context.Context, status string) erro
 
 			return nil
 		},
-		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
-			return errors.Is(err, unexpectedStatus)
-		}),
-		retry.UntilSucceeded(),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
 	)
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for container %d to enter the status %q", c.VMID, status)
@@ -444,7 +446,15 @@ func (c *Client) WaitForContainerStatus(ctx context.Context, status string) erro
 func (c *Client) WaitForContainerConfigUnlock(ctx context.Context, ignoreErrorResponse bool) error {
 	stillLocked := errors.New("still locked")
 
-	err := retry.Do(
+	err := retry.New(
+		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			return errors.Is(err, stillLocked) || ignoreErrorResponse
+		}),
+		retry.UntilSucceeded(),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+	).Do(
 		func() error {
 			data, err := c.GetContainerStatus(ctx)
 			if err != nil {
@@ -457,13 +467,6 @@ func (c *Client) WaitForContainerConfigUnlock(ctx context.Context, ignoreErrorRe
 
 			return nil
 		},
-		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
-			return errors.Is(err, stillLocked) || ignoreErrorResponse
-		}),
-		retry.UntilSucceeded(),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
 	)
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for container %d configuration to become unlocked", c.VMID)

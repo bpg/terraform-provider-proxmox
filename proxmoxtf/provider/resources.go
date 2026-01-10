@@ -7,13 +7,13 @@
 package provider
 
 import (
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/pool"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/cluster/firewall"
 	container "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/container"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/pool"
 	vm "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm"
 )
 

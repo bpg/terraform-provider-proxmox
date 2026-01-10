@@ -12,12 +12,14 @@
             "prerelease": false,
             "extra-files": [
                 "Makefile",
+                "examples/guides/clone-vm/provider.tf",
+                "examples/guides/cloned-vm/provider.tf",
                 "examples/guides/cloud-image/centos-qcow2/provider.tf",
+                "examples/guides/cloud-image/coreos-xz/provider.tf",
                 "examples/guides/cloud-image/debian-from-storage/provider.tf",
                 "examples/guides/cloud-image/ubuntu-img/provider.tf",
                 "examples/guides/cloud-init/custom/provider.tf",
-                "examples/guides/cloud-init/native/provider.tf",
-                "examples/guides/clone-vm/provider.tf"
+                "examples/guides/cloud-init/native/provider.tf"
             ],
             "changelog-sections": [
                 {

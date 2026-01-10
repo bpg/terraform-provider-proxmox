@@ -266,7 +266,7 @@ output "ubuntu_vm_public_key" {
             See <https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels>
         - `custom-<model>` - Custom CPU model. All `custom-<model>` values
             should be defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
-    - `units` - (Optional) The CPU units (defaults to `1024`).
+    - `units` - (Optional) The CPU units. PVE default is `1024` for cgroups v1 and `100` for cgroups v2.
     - `affinity` - (Optional) The CPU cores that are used to run the VM’s vCPU. The
         value is a list of CPU IDs, separated by commas. The CPU IDs are zero-based.
         For example, `0,1,2,3` (which also can be shortened to `0-3`) means that the VM’s vCPUs are run on the first four
@@ -302,10 +302,14 @@ output "ubuntu_vm_public_key" {
         - `vmdk` - VMware Disk Image.
     - `file_id` - (Optional) The file ID for a disk image when importing a disk into VM. The ID format is
           `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`. Can be also taken from
-          `proxmox_virtual_environment_download_file` resource. *Deprecated*, use `import_from` instead.
-    - `import_from` - (Optional) The file ID for a disk image to import into VM. The image must be of `import` content type.
-       The ID format is `<datastore_id>:import/<file_name>`, for example `local:import/centos8.qcow2`. Can be also taken from
-       `proxmox_virtual_environment_download_file` resource.
+          `proxmox_virtual_environment_download_file` resource. Prefer `import_from` for uncompressed images.
+          Use `file_id` when working with compressed cloud images (e.g., `.qcow2.xz`) that were downloaded
+          with `content_type = "iso"` and `decompression_algorithm` set. See the
+          [Create a VM from a Cloud Image](../guides/cloud-image.md) guide for examples.
+    - `import_from` - (Optional) The file ID for a disk image to import into VM. The image must be of `import` content type
+       (uncompressed images only). The ID format is `<datastore_id>:import/<file_name>`, for example `local:import/centos8.qcow2`.
+       Can be also taken from `proxmox_virtual_environment_download_file` resource. Note: compressed images downloaded with
+       `decompression_algorithm` cannot use `import_from`; use `file_id` instead.
     - `interface` - (Required) The disk interface for Proxmox, currently `scsi`,
         `sata` and `virtio` interfaces are supported. Append the disk index at
         the end, for example, `virtio0` for the first virtio disk, `virtio1` for
@@ -342,7 +346,10 @@ output "ubuntu_vm_public_key" {
         distribution-specific and Microsoft Standard keys enrolled, if used with
         EFI type=`4m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
         to `false`).
-- `tpm_state` - (Optional) The TPM state device.
+- `tpm_state` - (Optional) The TPM state device. The VM must be stopped before
+    adding, removing, or moving a TPM state device; the provider automatically
+    handles the shutdown/start cycle. Changing `version` requires recreating the
+    VM because Proxmox only supports setting the TPM version at creation time.
     - `datastore_id` (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
     - `version` (Optional) TPM state device version. Can be `v1.2` or `v2.0`.
@@ -377,6 +384,10 @@ output "ubuntu_vm_public_key" {
         image to. Must be one of `ide0..3`, `sata0..5`, `scsi0..30`. Will be
         detected if the setting is missing but a cloud-init image is present,
         otherwise defaults to `ide2`.
+    - `file_format` - (Optional) The file format.
+        - `qcow2` - QEMU Disk Image v2.
+        - `raw` - Raw Disk Image.
+        - `vmdk` - VMware Disk Image.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
         - `server` - (Optional) The DNS server. The `server` attribute is
@@ -507,8 +518,7 @@ output "ubuntu_vm_public_key" {
         - `win11` - Windows 11
         - `wvista` - Windows Vista.
         - `wxp` - Windows XP.
-- `pool_id` - (Optional, **Deprecated**) The identifier for a pool to assign the virtual machine to.
-  This field is deprecated and will be removed in a future release. To assign the VM to a pool, use the `proxmox_virtual_environment_pool_membership` resource instead.
+- `pool_id` - (Optional) The identifier for a pool to assign the virtual machine to.
 - `protection` - (Optional) Sets the protection flag of the VM. This will disable the remove VM and remove disk operations (defaults to `false`).
 - `reboot` - (Optional) Reboot the VM after initial creation (defaults to `false`).
 - `reboot_after_update` - (Optional) Reboot the VM after update if needed (defaults to `true`).

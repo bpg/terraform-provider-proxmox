@@ -30,13 +30,12 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 )
 
 var (
@@ -67,6 +66,7 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
+	// Check 1: detect if local file in datastore was modified outside of Terraform
 	originalStateSizeBytes, diags := req.Private.GetKey(ctx, "original_state_size")
 
 	resp.Diagnostics.Append(diags...)
@@ -94,6 +94,57 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 					"Previous size: %d saved in state does not match current size from datastore: %d. "+
 						"You can disable this behaviour by using overwrite=false",
 					originalStateSize,
+					state.Size.ValueInt64(),
+				),
+			)
+
+			return
+		}
+	}
+
+	// Check 2: detect if upstream file at URL has changed (e.g., new cloud image version)
+	urlSizeBytes, diags := req.Private.GetKey(ctx, "url_size")
+
+	resp.Diagnostics.Append(diags...)
+
+	if urlSizeBytes != nil && plan.URL.ValueString() == state.URL.ValueString() && plan.Overwrite.ValueBool() {
+		urlSize, err := strconv.ParseInt(string(urlSizeBytes), 10, 64)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to convert URL file size to int64",
+				"Unexpected error in parsing string to int64, key url_size. "+
+					"Please retry the operation or report this issue to the provider developers.\n\n"+
+					"Error: "+err.Error(),
+			)
+
+			return
+		}
+
+		// handle error case where URL metadata couldn't be fetched (url_size = -1)
+		if urlSize < 0 {
+			resp.Diagnostics.AddWarning(
+				"Could not read the file metadata from URL.",
+				fmt.Sprintf(
+					"The remote file at URL %q most likely doesn't exist or can't be accessed.\n"+
+						"To skip the remote file check, set `overwrite` to `false`.",
+					plan.URL.ValueString(),
+				),
+			)
+
+			return
+		}
+
+		if state.Size.ValueInt64() != urlSize {
+			resp.RequiresReplace = true
+			resp.PlanValue = types.Int64Value(urlSize)
+
+			resp.Diagnostics.AddWarning(
+				"The file size from URL has changed.",
+				fmt.Sprintf(
+					"Size %d from URL %q does not match size %d from datastore. "+
+						"You can disable this behaviour by using overwrite=false",
+					urlSize,
+					plan.URL.ValueString(),
 					state.Size.ValueInt64(),
 				),
 			)
@@ -278,8 +329,11 @@ func (r *downloadFileResource) Schema(
 				Default:     booldefault.StaticBool(true),
 			},
 			"overwrite": schema.BoolAttribute{
-				Description: "By default `true`. If `true` and file size has changed in the datastore, " +
-					"it will be replaced. If `false`, there will be no check.",
+				Description: "By default `true`. If `true`, the file will be replaced when either: " +
+					"(1) the file size in the datastore has changed outside of Terraform, or " +
+					"(2) the file size reported by the URL differs from the downloaded file " +
+					"(detecting upstream updates like new cloud image versions). " +
+					"If `false`, no size checks are performed and the file is never automatically replaced.",
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(true),
@@ -467,7 +521,9 @@ func (r *downloadFileResource) read(
 	nodesClient := r.client.Node(model.Node.ValueString())
 	storageClient := nodesClient.Storage(model.Storage.ValueString())
 
-	datastoresFiles, err := storageClient.ListDatastoreFiles(ctx)
+	contentType := model.ContentType.ValueString()
+
+	datastoresFiles, err := storageClient.ListDatastoreFiles(ctx, &contentType)
 	if err != nil {
 		return fmt.Errorf("unexpected error when listing datastore files: %w", err)
 	}
@@ -523,6 +579,22 @@ func (r *downloadFileResource) Read(
 		return
 	}
 
+	// check upstream URL for file size changes when overwrite is enabled
+	if state.Overwrite.ValueBool() {
+		urlMetadata, err := r.getURLMetadata(ctx, &state)
+		if err != nil {
+			tflog.Warn(ctx, "Could not get file metadata from url", map[string]any{
+				"error": err,
+				"url":   state.URL.ValueString(),
+			})
+			// set url_size to -1 to indicate error (used in plan modifier to show warning)
+			resp.Private.SetKey(ctx, "url_size", []byte("-1"))
+		} else if urlMetadata.Size != nil {
+			setValue := []byte(strconv.FormatInt(*urlMetadata.Size, 10))
+			resp.Private.SetKey(ctx, "url_size", setValue)
+		}
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
@@ -550,6 +622,8 @@ func (r *downloadFileResource) Update(
 }
 
 // Delete removes file resource.
+//
+//nolint:dupl // delete path mirrors OCI image resource implementation
 func (r *downloadFileResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,

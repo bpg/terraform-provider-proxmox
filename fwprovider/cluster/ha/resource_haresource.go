@@ -12,11 +12,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -28,6 +23,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // haResourceResource contains the resource's internal data.

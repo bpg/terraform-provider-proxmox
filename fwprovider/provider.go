@@ -12,8 +12,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -33,15 +31,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
 	sdnapplier "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/applier"
+	sdnfabric "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/fabric"
+	sdnfabricnode "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/fabric_node"
 	sdnsubnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/subnet"
 	sdnvnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/vnet"
 	sdnzone "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/zone"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/clonedvm"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
@@ -517,11 +520,14 @@ func (p *proxmoxProvider) Configure(
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		access.NewACLResource,
+		access.NewRealmLDAPResource,
+		access.NewRealmSyncResource,
 		access.NewUserTokenResource,
 		acme.NewACMEAccountResource,
 		acme.NewACMEPluginResource,
 		apt.NewRepositoryResource,
 		apt.NewStandardRepositoryResource,
+		clonedvm.NewResource,
 		ha.NewHAGroupResource,
 		ha.NewHAResourceResource,
 		hardwaremapping.NewDirResource,
@@ -530,18 +536,31 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		metrics.NewMetricsServerResource,
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
+		nodes.NewACMECertificateResource,
 		nodes.NewDownloadFileResource,
+		nodes.NewOCIImageResource,
 		options.NewClusterOptionsResource,
-		vm.NewResource,
+		pools.NewPoolMembershipResource,
+		sdnapplier.NewResource,
+		sdnsubnet.NewResource,
+		sdnvnet.NewResource,
+		sdnzone.NewEVPNResource,
+		sdnzone.NewQinQResource,
 		sdnzone.NewSimpleResource,
 		sdnzone.NewVLANResource,
-		sdnzone.NewQinQResource,
 		sdnzone.NewVXLANResource,
-		sdnzone.NewEVPNResource,
-		sdnvnet.NewResource,
-		sdnsubnet.NewResource,
-		sdnapplier.NewResource,
-		pools.NewPoolMembershipResource,
+		storage.NewCIFSStorageResource,
+		sdnfabric.NewOpenFabricResource,
+		sdnfabric.NewOSPFResource,
+		sdnfabricnode.NewOpenFabricResource,
+		sdnfabricnode.NewOSPFResource,
+		storage.NewDirectoryStorageResource,
+		storage.NewLVMPoolStorageResource,
+		storage.NewLVMThinPoolStorageResource,
+		storage.NewNFSStorageResource,
+		storage.NewProxmoxBackupServerStorageResource,
+		storage.NewZFSPoolStorageResource,
+		vm.NewResource,
 	}
 }
 
@@ -565,15 +584,19 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewUSBDataSource,
 		metrics.NewMetricsServerDatasource,
 		nodes.NewFileDataSource,
-		sdnzone.NewSimpleDataSource,
-		sdnzone.NewVLANDataSource,
-		sdnzone.NewQinQDataSource,
-		sdnzone.NewVXLANDataSource,
-		sdnzone.NewEVPNDataSource,
-		sdnzone.NewZonesDataSource,
 		sdnsubnet.NewDataSource,
 		sdnvnet.NewDataSource,
 		sdnvnet.NewVNetsDataSource,
+		sdnzone.NewEVPNDataSource,
+		sdnzone.NewQinQDataSource,
+		sdnzone.NewSimpleDataSource,
+		sdnzone.NewVLANDataSource,
+		sdnzone.NewVXLANDataSource,
+		sdnzone.NewZonesDataSource,
+		sdnfabric.NewOpenFabricDataSource,
+		sdnfabric.NewOSPFDataSource,
+		sdnfabricnode.NewOpenFabricDataSource,
+		sdnfabricnode.NewOSPFDataSource,
 		vm.NewDataSource,
 	}
 }

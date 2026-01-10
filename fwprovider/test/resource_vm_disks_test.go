@@ -14,6 +14,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 func TestAccResourceVMDisks(t *testing.T) {
@@ -841,6 +843,53 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"efi disk parameter change issue 1515", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_change" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-efi-disk-change-1515"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+						pre_enrolled_keys = false
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_change", map[string]string{
+						"efi_disk.0.datastore_id":      "local-lvm",
+						"efi_disk.0.type":              "4m",
+						"efi_disk.0.pre_enrolled_keys": "false",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_change" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-efi-disk-change-1515"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+						pre_enrolled_keys = true
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_change", map[string]string{
+						"efi_disk.0.pre_enrolled_keys": "true",
+					}),
+				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_efi_disk_change", plancheck.ResourceActionUpdate),
+					},
+				},
+			},
+		}},
 		{"ide disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -1249,4 +1298,345 @@ func TestAccResourceVMDisks(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestAccResourceVMDiskCloneNFSResize tests cloning a VM with disk resize to NFS storage.
+// This is a regression test for https://github.com/bpg/terraform-provider-proxmox/issues/1599
+// where disk resize fails on NFS storage with "volume does not exist" error due to
+// NFS storage sync timing issues after disk move.
+func TestAccResourceVMDiskCloneNFSResize(t *testing.T) {
+	nfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NFS_DATASTORE_ID")
+	if nfsDatastoreID == "" {
+		t.Skip("NFS storage is not available")
+	}
+
+	te := InitEnvironment(t)
+	te.AddTemplateVars(map[string]any{
+		"NFSDatastoreID": nfsDatastoreID,
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_nfs_resize" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-template-nfs-resize"
+					template  = true
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone_nfs_resize" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-clone-nfs-resize"
+
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template_nfs_resize.vm_id
+						full  = true
+					}
+
+					# Clone to NFS storage with disk resize - this is the scenario from issue #1599
+					# The disk needs to be moved from local-lvm to NFS storage and resized.
+					# On NFS storage, there can be a timing issue where the volume is not
+					# immediately available for resize after the move operation completes.
+					disk {
+						datastore_id = "{{.NFSDatastoreID}}"
+						interface    = "scsi0"
+						size         = 10
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.clone_nfs_resize", map[string]string{
+						"disk.0.datastore_id": nfsDatastoreID,
+						"disk.0.interface":    "scsi0",
+						"disk.0.size":         "10",
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceVMDiskRemovalReuseIssue2218(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 1
+						serial       = "test_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.size":      "1",
+						"disk.0.serial":    "os_disk",
+						"disk.1.interface": "scsi1",
+						"disk.1.size":      "1",
+						"disk.1.serial":    "test_disk",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.size":      "1",
+						"disk.0.serial":    "os_disk",
+						"disk.#":           "1",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 5
+						serial       = "different_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.size":      "1",
+						"disk.0.serial":    "os_disk",
+						"disk.1.interface": "scsi1",
+						"disk.1.size":      "5",
+						"disk.1.serial":    "different_disk",
+						"disk.#":           "2",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 5
+						serial       = "different_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.1.size": "5",
+					}),
+				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDiskSpeedPerDisk tests that each disk gets its own speed settings.
+// This validates that speed settings are correctly applied per-disk during creation,
+// not incorrectly copied from the first disk to all subsequent disks.
+func TestAccResourceVMDiskSpeedPerDisk(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create VM with two disks, each with different speed settings
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_speed" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-speed"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						speed {
+							iops_read           = 100
+							iops_write          = 200
+							iops_read_burstable = 1000
+							iops_write_burstable = 2000
+							read                = 10
+							write               = 20
+							read_burstable      = 100
+							write_burstable     = 200
+						}
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+						speed {
+							iops_read           = 300
+							iops_write          = 400
+							iops_read_burstable = 3000
+							iops_write_burstable = 4000
+							read                = 30
+							write               = 40
+							read_burstable      = 300
+							write_burstable     = 400
+						}
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi2"
+						size         = 8
+						# no speed settings
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					// Verify scsi0 has its speed settings
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed", map[string]string{
+						"disk.0.interface":                    "scsi0",
+						"disk.0.speed.0.iops_read":            "100",
+						"disk.0.speed.0.iops_write":           "200",
+						"disk.0.speed.0.iops_read_burstable":  "1000",
+						"disk.0.speed.0.iops_write_burstable": "2000",
+						"disk.0.speed.0.read":                 "10",
+						"disk.0.speed.0.write":                "20",
+						"disk.0.speed.0.read_burstable":       "100",
+						"disk.0.speed.0.write_burstable":      "200",
+					}),
+					// Verify scsi1 has DIFFERENT speed settings (not scsi0's)
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed", map[string]string{
+						"disk.1.interface":                    "scsi1",
+						"disk.1.speed.0.iops_read":            "300",
+						"disk.1.speed.0.iops_write":           "400",
+						"disk.1.speed.0.iops_read_burstable":  "3000",
+						"disk.1.speed.0.iops_write_burstable": "4000",
+						"disk.1.speed.0.read":                 "30",
+						"disk.1.speed.0.write":                "40",
+						"disk.1.speed.0.read_burstable":       "300",
+						"disk.1.speed.0.write_burstable":      "400",
+					}),
+					// Verify scsi2 has no speed settings
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed", map[string]string{
+						"disk.2.interface": "scsi2",
+						"disk.2.speed.#":   "0",
+					}),
+				),
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDiskSpeedUpdate tests that disk speed changes are detected and applied.
+func TestAccResourceVMDiskSpeedUpdate(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create VM with disk speed settings
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_speed_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-speed-update"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						speed {
+							iops_read = 100
+						}
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed_update", map[string]string{
+						"disk.0.speed.0.iops_read": "100",
+					}),
+				),
+			},
+			{
+				// Step 2: Update speed settings - this should detect a change
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_speed_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-speed-update"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						speed {
+							iops_read = 500
+						}
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_speed_update", map[string]string{
+						"disk.0.speed.0.iops_read": "500",
+					}),
+				),
+			},
+		},
+	})
 }

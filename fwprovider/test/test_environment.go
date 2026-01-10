@@ -11,11 +11,11 @@ import (
 	"fmt"
 	"maps"
 	"net/url"
+	"regexp"
+	"strings"
 	"sync"
 	"testing"
 	"text/template"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -31,6 +31,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -163,6 +164,7 @@ func InitEnvironment(t *testing.T) *Environment {
 			"DatastoreID":           datastoreID,
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
+			"TestName":              sanitizeTemplateName(t.Name()),
 		},
 		NodeName:              nodeName,
 		DatastoreID:           datastoreID,
@@ -171,6 +173,21 @@ func InitEnvironment(t *testing.T) *Environment {
 
 		AccProviders: muxProviders(t),
 	}
+}
+
+var nonAlnum = regexp.MustCompile(`[^a-zA-Z0-9]+`)
+
+func sanitizeTemplateName(name string) string {
+	sanitized := strings.Trim(nonAlnum.ReplaceAllString(name, "-"), "-")
+	if sanitized == "" {
+		return "test"
+	}
+
+	if len(sanitized) > 48 {
+		return sanitized[:48]
+	}
+
+	return sanitized
 }
 
 // AddTemplateVars adds the given variables to the template variables of the current test environment.

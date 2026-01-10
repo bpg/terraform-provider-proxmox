@@ -11,10 +11,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -22,6 +18,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 )
 
 var (
@@ -113,9 +114,9 @@ func (r *metricsServerResource) Schema(
 				Default:     nil,
 			},
 			"type": schema.StringAttribute{
-				Description: "Plugin type. Choice is between `graphite` | `influxdb`.",
+				Description: "Plugin type. Choice is between `graphite` | `influxdb` | `opentelemetry`.",
 				Required:    true,
-				Validators:  []validator.String{stringvalidator.OneOf("graphite", "influxdb")},
+				Validators:  []validator.String{stringvalidator.OneOf("graphite", "influxdb", "opentelemetry")},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -174,6 +175,18 @@ func (r *metricsServerResource) Schema(
 				Validators: []validator.String{stringvalidator.OneOf("udp", "tcp")},
 				Optional:   true,
 				Default:    nil,
+			},
+			"opentelemetry_proto": schema.StringAttribute{
+				Description: "Protocol for OpenTelemetry. Choice is between `http` | `https`. " +
+					"If not set, PVE default is `http`.",
+				Validators: []validator.String{stringvalidator.OneOf("http", "https")},
+				Optional:   true,
+				Default:    nil,
+			},
+			"opentelemetry_path": schema.StringAttribute{
+				Description: "OpenTelemetry endpoint path (e.g., `/v1/metrics`).",
+				Optional:    true,
+				Default:     nil,
 			},
 		},
 	}
@@ -277,6 +290,8 @@ func (r *metricsServerResource) Update(
 	attribute.CheckDelete(plan.InfluxVerify, state.InfluxVerify, &toDelete, "verify-certificate")
 	attribute.CheckDelete(plan.GraphitePath, state.GraphitePath, &toDelete, "path")
 	attribute.CheckDelete(plan.GraphiteProto, state.GraphiteProto, &toDelete, "proto")
+	attribute.CheckDelete(plan.OTelProto, state.OTelProto, &toDelete, "otel-protocol")
+	attribute.CheckDelete(plan.OTelPath, state.OTelPath, &toDelete, "otel-path")
 
 	reqData := plan.toAPIRequestBody()
 	reqData.Delete = &toDelete

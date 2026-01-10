@@ -30,6 +30,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
@@ -347,7 +348,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 	contentType, dg := fileGetContentType(ctx, d, capi)
 	diags = append(diags, dg...)
 
-	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
+	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx, contentType)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -566,7 +567,9 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
-		datastore, err2 := capi.Storage().GetDatastore(ctx, datastoreID)
+		req := &storage.DatastoreGetRequest{ID: &datastoreID}
+
+		datastore, err2 := capi.Storage().GetDatastore(ctx, req)
 		if err2 != nil {
 			return diag.Errorf("failed to get datastore: %s", err2)
 		}
@@ -575,15 +578,17 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 			return diag.Errorf("failed to determine the datastore path")
 		}
 
-		sort.Strings(datastore.Content)
+		contentTypes := []string(*datastore.ContentTypes)
 
-		_, found := slices.BinarySearch(datastore.Content, *contentType)
+		sort.Strings(contentTypes)
+
+		_, found := slices.BinarySearch(contentTypes, *contentType)
 		if !found {
 			diags = append(diags, diag.Diagnostics{
 				diag.Diagnostic{
 					Severity: diag.Warning,
 					Summary: fmt.Sprintf("the datastore %q does not support content type %q; supported content types are: %v",
-						*datastore.Storage, *contentType, datastore.Content,
+						*datastore.ID, *contentType, contentTypes,
 					),
 				},
 			}...)
@@ -738,7 +743,11 @@ func fileGetVolumeID(ctx context.Context, d *schema.ResourceData, c proxmox.Clie
 	}
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
+
 	contentType, diags := fileGetContentType(ctx, d, c)
+	if diags.HasError() {
+		return fileVolumeID{}, diags
+	}
 
 	return fileVolumeID{
 		datastoreID: datastoreID,
@@ -773,8 +782,15 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	contentTypeStr := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
 
-	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
+	// Filter by content type if available for better performance
+	var contentType *string
+	if contentTypeStr != "" {
+		contentType = &contentTypeStr
+	}
+
+	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx, contentType)
 	if err != nil {
 		return diag.FromErr(err)
 	}

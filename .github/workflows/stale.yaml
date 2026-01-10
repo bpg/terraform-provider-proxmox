@@ -12,7 +12,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Generate Short Lived OAuth App Token
-        uses: actions/create-github-app-token@7e473efe3cb98aa54f8d4bac15400b15fad77d94 # v2.2.0
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         id: app-token
         with:
           app-id: "${{ secrets.BOT_APP_ID }}"
@@ -21,7 +21,7 @@ jobs:
           repositories: "${{ github.event.repository.name }}"
 
       - name: Stale Issues and Pull Requests
-        uses: actions/stale@5f858e3efba33a5ca4407a664cc011ad407f2008 # v10
+        uses: actions/stale@997185467fa4f803885201cee163a9f38240193d # v10
         with:
           repo-token: "${{ steps.app-token.outputs.token }}"
           days-before-stale: 180

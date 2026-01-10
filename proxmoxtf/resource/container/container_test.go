@@ -9,10 +9,9 @@ package resource
 import (
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
@@ -41,6 +40,7 @@ func TestContainerSchema(t *testing.T) {
 		mkCPU,
 		mkDescription,
 		mkDisk,
+		mkEnvironmentVariables,
 		mkInitialization,
 		mkHookScriptFileID,
 		mkMemory,
@@ -59,24 +59,25 @@ func TestContainerSchema(t *testing.T) {
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkCPU:               schema.TypeList,
-		mkDescription:       schema.TypeString,
-		mkDisk:              schema.TypeList,
-		mkInitialization:    schema.TypeList,
-		mkHookScriptFileID:  schema.TypeString,
-		mkMemory:            schema.TypeList,
-		mkDevicePassthrough: schema.TypeList,
-		mkMountPoint:        schema.TypeList,
-		mkOperatingSystem:   schema.TypeList,
-		mkPoolID:            schema.TypeString,
-		mkProtection:        schema.TypeBool,
-		mkStarted:           schema.TypeBool,
-		mkTags:              schema.TypeList,
-		mkTemplate:          schema.TypeBool,
-		mkUnprivileged:      schema.TypeBool,
-		mkStartOnBoot:       schema.TypeBool,
-		mkFeatures:          schema.TypeList,
-		mkVMID:              schema.TypeInt,
+		mkCPU:                  schema.TypeList,
+		mkDescription:          schema.TypeString,
+		mkDisk:                 schema.TypeList,
+		mkEnvironmentVariables: schema.TypeMap,
+		mkInitialization:       schema.TypeList,
+		mkHookScriptFileID:     schema.TypeString,
+		mkMemory:               schema.TypeList,
+		mkDevicePassthrough:    schema.TypeList,
+		mkMountPoint:           schema.TypeList,
+		mkOperatingSystem:      schema.TypeList,
+		mkPoolID:               schema.TypeString,
+		mkProtection:           schema.TypeBool,
+		mkStarted:              schema.TypeBool,
+		mkTags:                 schema.TypeList,
+		mkTemplate:             schema.TypeBool,
+		mkUnprivileged:         schema.TypeBool,
+		mkStartOnBoot:          schema.TypeBool,
+		mkFeatures:             schema.TypeList,
+		mkVMID:                 schema.TypeInt,
 	})
 
 	cloneSchema := test.AssertNestedSchemaExistence(t, s, mkClone)

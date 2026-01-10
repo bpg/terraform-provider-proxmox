@@ -150,6 +150,22 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2353
+		{"create VM without cpu.units and verify no drift", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cpu_units" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					cpu {
+						cores = 2
+					}
+				}`),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		{"set cpu.architecture as non root is not supported", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -609,6 +625,49 @@ func TestAccResourceVMInitialization(t *testing.T) {
 		name string
 		step []resource.TestStep
 	}{
+		{"custom cloud-init drive file format", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit" {
+					node_name = "{{.NodeName}}"
+					started = false
+					cpu {
+						cores = 1
+					}
+					memory {
+						dedicated = 1024
+					}
+
+					initialization {
+						datastore_id = "local"
+						file_format = "raw"
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit", map[string]string{
+				"initialization.0.datastore_id": "local",
+				"initialization.0.file_format":  "raw",
+			}),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit" {
+					node_name = "{{.NodeName}}"
+					started = false
+					cpu {
+						cores = 1
+					}
+					memory {
+						dedicated = 1024
+					}
+
+					initialization {
+						datastore_id = "local"
+						file_format  = "qcow2"
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit", map[string]string{
+				"initialization.0.datastore_id": "local",
+				"initialization.0.file_format":  "qcow2",
+			}),
+		}}},
 		{"custom cloud-init: use SCSI interface", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "cloud_config" {
@@ -1297,4 +1356,84 @@ func TestAccResourceVMClone(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestAccResourceVMVirtioSCSISingleWithAgent(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "cloud_config" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name = "{{.NodeName}}"
+					source_raw {
+						data = <<-EOF
+						#cloud-config
+						runcmd:
+						  - apt update
+						  - apt install -y qemu-guest-agent
+						  - systemctl enable qemu-guest-agent
+						  - systemctl start qemu-guest-agent
+						EOF
+						file_name = "cloud-config.yaml"
+					}
+				}
+
+				resource "proxmox_virtual_environment_vm" "test_vm_scsi_single" {
+					node_name = "{{.NodeName}}"
+					started   = true
+					agent {
+						enabled = true
+					}
+					cpu {
+						cores = 2
+					}
+					memory {
+						dedicated = 2048
+					}
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+						interface    = "scsi0"
+						iothread     = true
+						discard      = "on"
+						size         = 20
+					}
+					scsi_hardware = "virtio-scsi-single"
+					initialization {
+						interface = "scsi1"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+						user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+
+				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
+					content_type = "iso"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+					overwrite_unmanaged = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm_scsi_single", map[string]string{
+						"scsi_hardware":             "virtio-scsi-single",
+						"agent.0.enabled":           "true",
+						"ipv4_addresses.#":          "2",
+						"network_interface_names.#": "2",
+					}),
+				),
+			},
+		},
+	})
 }

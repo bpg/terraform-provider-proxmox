@@ -59,9 +59,9 @@ make test
 
 Tests are limited to regression tests, ensuring backward compatibility.
 
-A limited number of acceptance tests are available in the `proxmoxtf/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
+A limited number of acceptance tests are available in the `fwprovider/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
 These tests are not run by default, as they require a Proxmox VE environment to be available.
-They can be run using `make testacc`. The Proxmox connection can be configured using environment variables; see the provider documentation for details.
+They can be run using `./testacc` (requires `testacc.env` in the project root). The Proxmox connection can be configured using environment variables; see the provider documentation for details.
 
 ## Deploying the Example Resources
 
@@ -86,7 +86,7 @@ virtual_environment_api_token                = "root@pam!terraform=00000000-0000
 
 Then run `make example` to deploy the example resources.
 
-If you don't have a free Proxmox cluster to play with, there is a dedicated [how-to tutorial](docs/guides/setup-proxmox-for-tests.md) on how to set up Proxmox inside a VM and run `make example` on it.
+If you don't have a free Proxmox cluster to play with, there is a dedicated [how-to tutorial](docs/guides/dev-proxmox-setup.md) on how to set up Proxmox inside a VM and run `make example` on it.
 
 ## Future Work
 
@@ -98,8 +98,6 @@ Work has started to migrate the provider to the new [Terraform Plugin Framework]
 ### Proxmox VE 9.x
 
 Proxmox VE 9.x has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
-
-`apt_*` resources / datasources do not support the new deb822 style format.
 
 ### HA VMs / containers
 
@@ -193,6 +191,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Radosław Szamszur](https://github.com/rszamszur)
 - [Marshall Ford](https://github.com/marshallford)
 - [Simon Caron](https://github.com/simoncaron)
+- [/ar/sh](https://github.com/0x0000ARSH)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 

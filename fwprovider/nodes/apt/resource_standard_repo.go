@@ -68,7 +68,8 @@ func (r *standardRepositoryResource) read(ctx context.Context, srp *modelStandar
 		}
 	}
 
-	srp.importFromAPI(ctx, data)
+	ver := getProxmoxVersion(ctx, r.client)
+	srp.importFromAPI(ctx, data, ver)
 
 	return true, nil
 }
@@ -242,10 +243,8 @@ func (r *standardRepositoryResource) Schema(
 			SchemaAttrNameStandardHandle: schema.StringAttribute{
 				CustomType:  customtypes.StandardRepoHandleType{},
 				Description: "The handle of the APT standard repository.",
-				MarkdownDescription: "The handle of the APT standard repository. Must be `ceph-quincy-enterprise` | " +
-					"`ceph-quincy-no-subscription` | `ceph-quincy-test` | `ceph-reef-enterprise` | `ceph-reef-no-subscription` " +
-					"| `ceph-reef-test` | `ceph-squid-enterprise` | `ceph-squid-no-subscription` | `ceph-squid-test` " +
-					"| `enterprise` | `no-subscription` | `test`.",
+				MarkdownDescription: "The handle of the APT standard repository. Must be `ceph-squid-enterprise` | " +
+					"`ceph-squid-no-subscription` | `ceph-squid-test` | `enterprise` | `no-subscription` | `test`.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

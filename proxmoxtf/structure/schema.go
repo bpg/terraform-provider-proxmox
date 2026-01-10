@@ -141,16 +141,13 @@ func SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(
 	keyAttr string,
 	ignoreKeys ...string,
 ) schema.SchemaDiffSuppressFunc {
-	// the attr is a path to the item's attribute, not the list itself, e.g. "numa.0.device"
+	// the attr is a path to the item's attribute, not the list itself, e.g. "disk.0.speed.0.iops_read"
+	// we need to extract the top-level list name (e.g., "disk") to compare entire list items
 	return func(attr, _, _ string, d *schema.ResourceData) bool {
-		lastDotIndex := strings.LastIndex(attr, ".")
-		if lastDotIndex != -1 {
-			attr = attr[:lastDotIndex]
-		}
-
-		lastDotIndex = strings.LastIndex(attr, ".")
-		if lastDotIndex != -1 {
-			attr = attr[:lastDotIndex]
+		// extract the top-level list name (first path component)
+		firstDotIndex := strings.Index(attr, ".")
+		if firstDotIndex != -1 {
+			attr = attr[:firstDotIndex]
 		}
 
 		oldData, newData := d.GetChange(attr)

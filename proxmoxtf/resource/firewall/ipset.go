@@ -97,7 +97,7 @@ func IPSet() *schema.Resource {
 }
 
 // ipSetImport imports IP sets.
-func ipSetImport(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
+func ipSetImport(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 	id := d.Id()
 
 	switch {
@@ -261,7 +261,6 @@ func ipSetRead(ctx context.Context, api firewall.API, d *schema.ResourceData) di
 		return diags
 	}
 
-	//nolint:prealloc
 	var entries []any
 
 	for key := range ipSet {

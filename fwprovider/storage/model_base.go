@@ -1,0 +1,136 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+package storage
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+)
+
+// modelBase contains the common fields for all storage models.
+type modelBase struct {
+	ID           types.String `tfsdk:"id"`
+	Nodes        types.Set    `tfsdk:"nodes"`
+	ContentTypes types.Set    `tfsdk:"content"`
+	Disable      types.Bool   `tfsdk:"disable"`
+	Shared       types.Bool   `tfsdk:"shared"`
+}
+
+// GetID returns the storage identifier from the base model.
+func (m *modelBase) GetID() types.String {
+	return m.ID
+}
+
+// populateBaseFromAPI is a helper to populate the common fields from an API response.
+func (m *modelBase) populateBaseFromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error {
+	m.ID = types.StringValue(*datastore.ID)
+
+	if datastore.Nodes != nil {
+		nodes, diags := types.SetValueFrom(ctx, types.StringType, *datastore.Nodes)
+		if diags.HasError() {
+			return fmt.Errorf("cannot parse nodes from datastore: %s", diags)
+		}
+
+		m.Nodes = nodes
+	} else {
+		m.Nodes = types.SetValueMust(types.StringType, []attr.Value{})
+	}
+
+	if datastore.ContentTypes != nil {
+		contentTypes, diags := types.SetValueFrom(ctx, types.StringType, *datastore.ContentTypes)
+		if diags.HasError() {
+			return fmt.Errorf("cannot parse content from datastore: %s", diags)
+		}
+
+		m.ContentTypes = contentTypes
+	} else {
+		m.ContentTypes = types.SetValueMust(types.StringType, []attr.Value{})
+	}
+
+	if datastore.Disable != nil {
+		m.Disable = datastore.Disable.ToValue()
+	} else {
+		m.Disable = types.BoolValue(false)
+	}
+
+	if datastore.Shared != nil {
+		m.Shared = datastore.Shared.ToValue()
+	} else {
+		m.Shared = types.BoolValue(false)
+	}
+
+	return nil
+}
+
+// populateCreateFields is a helper to populate the common fields for a create request.
+func (m *modelBase) populateCreateFields(
+	ctx context.Context,
+	immutableReq *storage.DataStoreCommonImmutableFields,
+	mutableReq *storage.DataStoreCommonMutableFields,
+) error {
+	immutableReq.ID = m.ID.ValueStringPointer()
+	mutableReq.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
+
+	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
+		var nodes proxmoxtypes.CustomCommaSeparatedList
+		if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
+			return fmt.Errorf("cannot convert nodes: %s", diags)
+		}
+
+		if len(nodes) > 0 {
+			mutableReq.Nodes = &nodes
+		}
+	}
+
+	if !m.ContentTypes.IsNull() && !m.ContentTypes.IsUnknown() {
+		var contentTypes proxmoxtypes.CustomCommaSeparatedList
+		if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
+			return fmt.Errorf("cannot convert content-types: %s", diags)
+		}
+
+		if len(contentTypes) > 0 {
+			mutableReq.ContentTypes = &contentTypes
+		}
+	}
+
+	return nil
+}
+
+// populateUpdateFields is a helper to populate the common fields for an update request.
+func (m *modelBase) populateUpdateFields(ctx context.Context, mutableReq *storage.DataStoreCommonMutableFields) error {
+	mutableReq.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
+
+	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
+		var nodes proxmoxtypes.CustomCommaSeparatedList
+		if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
+			return fmt.Errorf("cannot convert nodes: %s", diags)
+		}
+
+		if len(nodes) > 0 {
+			mutableReq.Nodes = &nodes
+		}
+	}
+
+	if !m.ContentTypes.IsNull() && !m.ContentTypes.IsUnknown() {
+		var contentTypes proxmoxtypes.CustomCommaSeparatedList
+		if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
+			return fmt.Errorf("cannot convert content-types: %s", diags)
+		}
+
+		if len(contentTypes) > 0 {
+			mutableReq.ContentTypes = &contentTypes
+		}
+	}
+
+	return nil
+}

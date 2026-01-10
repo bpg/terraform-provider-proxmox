@@ -141,6 +141,7 @@ output "ubuntu_container_public_key" {
         to `4`). When set to 0 a directory or zfs/btrfs subvolume will be created.
         Requires `datastore_id` to be set.
     - `mount_options` (Optional) List of extra mount options.
+- `environment_variables` - (Optional) A map of runtime environment variables for the container init process.
 - `initialization` - (Optional) The initialization configuration.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
@@ -225,8 +226,7 @@ output "ubuntu_container_public_key" {
         - `opensuse` - openSUSE.
         - `ubuntu` - Ubuntu.
         - `unmanaged` - Unmanaged.
-- `pool_id` - (Optional, **Deprecated**) The identifier for a pool to assign the container to.
-  This field is deprecated and will be removed in a future release. To assign the container to a pool, use the `proxmox_virtual_environment_pool_membership` resource instead. 
+- `pool_id` - (Optional) The identifier for a pool to assign the container to.
 - `protection` - (Optional) Whether to set the protection flag of the container (defaults to `false`). This will prevent the container itself and its disk for remove/update operations.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
 - `startup` - (Optional) Defines startup and shutdown behavior of the container.

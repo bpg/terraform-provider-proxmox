@@ -7,9 +7,9 @@
 package vnet
 
 import (
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/vnets"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/vnets"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 

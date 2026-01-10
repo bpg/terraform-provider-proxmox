@@ -24,14 +24,13 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-// GetInfo returns the disk information for a VM.
+// GetDiskInfoWithFileID returns the disk information for a VM.
 //
-// Deprecated: use vms.MapCustomStorageDevices from proxmox/nodes/vms instead.
-func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
+// Use only when you need to get the disk information with the file ID. Otherwise, use vmConfig.StorageDevices instead.
+func GetDiskInfoWithFileID(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
 	storageDevices := resp.StorageDevices
 
 	currentDisk := d.Get(MkDisk)
@@ -148,7 +147,7 @@ func DigitPrefix(s string) string {
 // GetDiskDeviceObjects returns a map of disk devices for a VM.
 func GetDiskDeviceObjects(
 	d *schema.ResourceData,
-	resource *schema.Resource,
+	_ *schema.Resource,
 	disks []any,
 ) (vms.CustomStorageDevices, error) {
 	var diskDevices []any
@@ -186,15 +185,13 @@ func GetDiskDeviceObjects(
 		size, _ := block[mkDiskSize].(int)
 		ssd := types.CustomBool(block[mkDiskSSD].(bool))
 
-		speedBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{MkDisk, mkDiskSpeed},
-			0,
-			false,
-		)
-		if err != nil {
-			return diskDeviceObjects, fmt.Errorf("error getting disk speed block: %w", err)
+		// get speed block directly from the current disk entry
+		var speedBlock map[string]any
+
+		if speedList, ok := block[mkDiskSpeed].([]any); ok && len(speedList) > 0 {
+			if sb, ok := speedList[0].(map[string]any); ok {
+				speedBlock = sb
+			}
 		}
 
 		if pathInDatastore != "" {
@@ -549,12 +546,18 @@ func Read(
 
 		if len(currentDiskList) > 0 {
 			currentDiskMap := utils.MapResourcesByAttribute(currentDiskList, mkDiskInterface)
-			// copy import_from from the current disk if it exists
+			// copy import_from and size from the current disk if it exists
 			for k, v := range currentDiskMap {
 				if disk, ok := v.(map[string]any); ok {
-					if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
-						if _, exists := diskMap[k]; exists {
+					if _, exists := diskMap[k]; exists {
+						if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
 							diskMap[k].(map[string]any)[mkDiskImportFrom] = importFrom
+						}
+						// preserve size from state when API returns zero size (for disks with import_from or file_id)
+						if currentSize, ok := disk[mkDiskSize].(int); ok && currentSize > 0 {
+							if apiSize, ok := diskMap[k].(map[string]any)[mkDiskSize].(int64); ok && apiSize == 0 {
+								diskMap[k].(map[string]any)[mkDiskSize] = currentSize
+							}
 						}
 					}
 				}
@@ -583,7 +586,7 @@ func Update(
 	planDisks vms.CustomStorageDevices,
 	currentDisks vms.CustomStorageDevices,
 	updateBody *vms.UpdateRequestBody,
-) (bool, error) {
+) (bool, bool, error) {
 	rebootRequired := false
 
 	if d.HasChange(MkDisk) {
@@ -596,7 +599,7 @@ func Update(
 					// only disks with defined file ID are custom image disks that need to be created via import.
 					err := createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)
 					if err != nil {
-						return false, fmt.Errorf("creating custom disk: %w", err)
+						return false, false, fmt.Errorf("creating custom disk: %w", err)
 					}
 				} else {
 					// otherwise this is a blank disk that can be added directly via update API
@@ -612,7 +615,7 @@ func Update(
 				tmp = currentDisks[iface]
 			default:
 				// something went wrong
-				return false, fmt.Errorf("missing device %s", iface)
+				return false, false, fmt.Errorf("missing device %s", iface)
 			}
 
 			if tmp == nil || disk == nil {
@@ -624,8 +627,8 @@ func Update(
 				tmp.AIO = disk.AIO
 			}
 
-			// Never send ImportFrom for existing disks - it triggers re-import which fails for boot disks
-			// ImportFrom is only for initial disk creation, not updates
+			// Never re-import existing disks - import_from is only for initial disk creation.
+			// See https://github.com/bpg/terraform-provider-proxmox/issues/2385
 
 			tmp.Backup = disk.Backup
 			tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
@@ -647,5 +650,5 @@ func Update(
 		}
 	}
 
-	return rebootRequired, nil
+	return false, rebootRequired, nil
 }

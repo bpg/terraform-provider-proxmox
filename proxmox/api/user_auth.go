@@ -116,6 +116,13 @@ func (t *userAuthenticator) authenticate(ctx context.Context) (*AuthenticationRe
 		return nil, errors.New("the server did not include the username in the authentication response")
 	}
 
+	if resBody.Data.NeedTFA != nil && *resBody.Data.NeedTFA == 1 {
+		return nil, errors.New(
+			"two-factor authentication is required for this account; " +
+				"please provide the 'otp' parameter in the provider configuration",
+		)
+	}
+
 	t.authData = resBody.Data
 
 	return resBody.Data, nil

@@ -84,6 +84,72 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
 }
 ```
 
+## Create a VM from a compressed cloud image
+
+Some distributions, like Fedora CoreOS, only provide cloud images in compressed formats (e.g., `.qcow2.xz`). Proxmox does not directly support XZ-compressed images, but its ZST decompression can handle XZ archives.
+
+~> **Important:** Compressed images cannot be used with `import_from`. You must use `file_id` with `content_type = "iso"` instead. This requires SSH configuration in the provider.
+
+Example of how to create a Fedora CoreOS VM from an XZ-compressed `qcow2` image. CoreOS images are available at [fedoraproject.org/coreos](https://fedoraproject.org/coreos/download):
+
+```terraform
+data "http" "coreos_stable_metadata" {
+  url = "https://builds.coreos.fedoraproject.org/streams/stable.json"
+}
+
+locals {
+  coreos_metadata     = jsondecode(data.http.coreos_stable_metadata.response_body)
+  coreos_qemu_stable  = local.coreos_metadata.architectures.x86_64.artifacts.qemu.formats["qcow2.xz"].disk
+  coreos_download_url = local.coreos_qemu_stable.location
+  coreos_checksum     = local.coreos_qemu_stable.sha256
+}
+
+resource "proxmox_virtual_environment_download_file" "coreos_image" {
+  content_type = "iso"
+  datastore_id = "local"
+  node_name    = "pve"
+
+  url                = local.coreos_download_url
+  checksum           = local.coreos_checksum
+  checksum_algorithm = "sha256"
+
+  # use zst decompression for xz-compressed images
+  decompression_algorithm = "zst"
+  # rename to .img to avoid Proxmox file extension validation errors
+  file_name = "fedora-coreos-stable-qemu.qcow2.img"
+}
+
+resource "proxmox_virtual_environment_vm" "coreos_vm" {
+  name      = "test-coreos"
+  node_name = "pve"
+
+  # CoreOS does not have qemu-guest-agent by default
+  stop_on_destroy = true
+
+  cpu {
+    cores = 2
+  }
+
+  memory {
+    dedicated = 2048
+  }
+
+  disk {
+    datastore_id = "local-lvm"
+    # use file_id instead of import_from for decompressed images
+    file_id   = proxmox_virtual_environment_download_file.coreos_image.id
+    interface = "virtio0"
+    iothread  = true
+    discard   = "on"
+    size      = 20
+  }
+
+  network_device {
+    bridge = "vmbr0"
+  }
+}
+```
+
 ## Create a VM from an existing image on Proxmox
 
 If you already have a cloud image on Proxmox, you can use it to create a VM:

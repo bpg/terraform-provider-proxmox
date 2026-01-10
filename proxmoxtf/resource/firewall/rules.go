@@ -188,7 +188,7 @@ func Rules() *schema.Resource {
 }
 
 // RulesImport imports firewall rules.
-func RulesImport(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
+func RulesImport(_ context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	id := d.Id()
 
 	switch {
@@ -263,7 +263,7 @@ func RulesImport(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.
 		return nil, fmt.Errorf("invalid import ID: %s (expected: 'cluster', 'vm/<node_name>/<vm_id>', or 'container/<node_name>/<container_id>')", id)
 	}
 
-	api, err := firewallApiFor(d, m)
+	api, err := firewallAPIFor(d, m)
 	if err != nil {
 		return nil, err
 	}

@@ -117,6 +117,7 @@ const (
 	mkDiskQuota                         = "quota"
 	mkDiskReplicate                     = "replicate"
 	mkDiskSize                          = "size"
+	mkEnvironmentVariables              = "environment_variables"
 	mkFeatures                          = "features"
 	mkFeaturesNesting                   = "nesting"
 	mkFeaturesKeyControl                = "keyctl"
@@ -395,6 +396,15 @@ func Container() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkEnvironmentVariables: {
+				Type:        schema.TypeMap,
+				Description: "The runtime environment variables for the container init process.",
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				ValidateDiagFunc: EnvironmentVariablesValidator(),
 			},
 			mkFeatures: {
 				Type:        schema.TypeList,
@@ -896,8 +906,6 @@ func Container() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Default:     dvPoolID,
-				Deprecated: "This field is deprecated and will be removed in a future release. " +
-					"To assign the container to a pool, use `proxmox_virtual_environment_pool_membership` resource instead",
 			},
 			mkProtection: {
 				Type: schema.TypeBool,
@@ -1530,10 +1538,11 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		updateBody.Tags = &tagString
 	}
 
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
+	template := d.Get(mkTemplate).(bool)
+	templateAttr := types.CustomBool(template)
 
 	if template {
-		updateBody.Template = &template
+		updateBody.Template = &templateAttr
 	}
 
 	err = containerAPI.UpdateContainer(ctx, updateBody)
@@ -1629,6 +1638,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 	}
 
 	diskDatastoreID := diskBlock[mkDiskDatastoreID].(string)
+
+	environmentVariables := containerGetEnvironmentVariables(d)
 
 	features, err := containerGetFeatures(container, d)
 	if err != nil {
@@ -1831,7 +1842,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	var rootFS *containers.CustomRootFS
 
-	diskMountOptions := []string{}
+	var diskMountOptions []string
 
 	if diskBlock[mkDiskMountOptions] != nil {
 		for _, opt := range diskBlock[mkDiskMountOptions].([]any) {
@@ -2027,6 +2038,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		createBody.Tags = &tagsString
 	}
 
+	if environmentVariables != nil {
+		createBody.EnvironmentVariables = environmentVariables
+	}
+
 	err = client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
 	if err != nil {
 		return diag.FromErr(err)
@@ -2068,6 +2083,20 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 	}
 
 	return containerRead(ctx, d, m)
+}
+
+func containerGetEnvironmentVariables(d *schema.ResourceData) *containers.CustomEnvironmentVariables {
+	envVarsRaw := d.Get(mkEnvironmentVariables).(map[string]any)
+	if len(envVarsRaw) == 0 {
+		return nil
+	}
+
+	envVars := make(containers.CustomEnvironmentVariables)
+	for k, v := range envVarsRaw {
+		envVars[k] = v.(string)
+	}
+
+	return &envVars
 }
 
 // NOTE: this function is NOT used in `read`!
@@ -2230,7 +2259,6 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		return diag.FromErr(e)
 	}
 
-	template := d.Get(mkTemplate).(bool)
 	nodeName := d.Get(mkNodeName).(string)
 
 	vmID, e := strconv.Atoi(d.Id())
@@ -2883,6 +2911,19 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		diags = append(diags, diag.FromErr(e)...)
 	}
 
+	envVarsMap := make(map[string]any)
+
+	if containerConfig.EnvironmentVariables != nil {
+		for k, v := range *containerConfig.EnvironmentVariables {
+			envVarsMap[k] = v
+		}
+	}
+
+	e = d.Set(mkEnvironmentVariables, envVarsMap)
+	diags = append(diags, diag.FromErr(e)...)
+
+	template := d.Get(mkTemplate).(bool)
+
 	if len(clone) == 0 || template {
 		if containerConfig.Template != nil {
 			e = d.Set(
@@ -2989,9 +3030,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.Description = &description
 	}
 
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
-
 	if d.HasChange(mkTemplate) {
+		template := types.CustomBool(d.Get(mkTemplate).(bool))
 		updateBody.Template = &template
 	}
 
@@ -3118,6 +3158,17 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		updateBody.RootFS = rootFS
+	}
+
+	if d.HasChange(mkEnvironmentVariables) {
+		environmentVariables := containerGetEnvironmentVariables(d)
+		if environmentVariables != nil {
+			updateBody.EnvironmentVariables = environmentVariables
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "env")
+		}
+
+		rebootRequired = true
 	}
 
 	if d.HasChange(mkFeatures) {
@@ -3511,8 +3562,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	// Determine if the state of the container needs to be changed.
 	started := d.Get(mkStarted).(bool)
+	template := d.Get(mkTemplate).(bool)
 
-	if d.HasChange(mkStarted) && !bool(template) {
+	if d.HasChange(mkStarted) && !template {
 		if started {
 			e = containerAPI.StartContainer(ctx)
 			if e != nil {
@@ -3545,7 +3597,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	// As a final step in the update procedure, we might need to reboot the container.
-	if !bool(template) && started && rebootRequired {
+	if !template && started && rebootRequired {
 		rebootTimeout := 300
 
 		e = containerAPI.RebootContainer(

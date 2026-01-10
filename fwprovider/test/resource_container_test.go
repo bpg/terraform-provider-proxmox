@@ -15,12 +15,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
-
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
 const (
@@ -1050,6 +1050,166 @@ func TestAccResourceContainerIpv4Ipv6(t *testing.T) {
 					type             = "alpine"
 				}
 			}`),
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-env-vars"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+					environment_variables = {
+						FOO = "bar"
+						BAZ = "qux"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-env-vars",
+						"environment_variables.FOO": "bar",
+						"environment_variables.BAZ": "qux",
+						"environment_variables.%":   "2",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.EnvironmentVariables, "environment_variables should not be nil")
+						require.Equal(te.t, "bar", (*ctInfo.EnvironmentVariables)["FOO"])
+						require.Equal(te.t, "qux", (*ctInfo.EnvironmentVariables)["BAZ"])
+
+						return nil
+					},
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-env-vars"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+					environment_variables = {
+						FOO = "updated"
+						NEW_VAR = "new_value"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"environment_variables.FOO":     "updated",
+						"environment_variables.NEW_VAR": "new_value",
+						"environment_variables.%":       "2",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.EnvironmentVariables, "environment_variables should not be nil")
+						require.Equal(te.t, "updated", (*ctInfo.EnvironmentVariables)["FOO"])
+						require.Equal(te.t, "new_value", (*ctInfo.EnvironmentVariables)["NEW_VAR"])
+						_, hasBaz := (*ctInfo.EnvironmentVariables)["BAZ"]
+						require.False(te.t, hasBaz, "BAZ should be removed")
+
+						return nil
+					},
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-env-vars"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"environment_variables.%": "0",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						if ctInfo.EnvironmentVariables != nil {
+							require.Empty(te.t, *ctInfo.EnvironmentVariables, "environment_variables should be empty")
+						}
+
+						return nil
+					},
+				),
 			},
 		},
 	})

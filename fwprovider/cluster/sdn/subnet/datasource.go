@@ -37,7 +37,7 @@ func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest,
 	resp.TypeName = req.ProviderTypeName + "_sdn_subnet"
 }
 
-func (d *DataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}

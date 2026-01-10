@@ -192,6 +192,7 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 }
 
 // TestDiskDevicesEqual tests the disk Equals method to ensure proper comparison.
+// noinspection:GoDfaNilDereference // verifying nil receiver handling
 func TestDiskDevicesEqual(t *testing.T) {
 	t.Parallel()
 
@@ -210,12 +211,15 @@ func TestDiskDevicesEqual(t *testing.T) {
 	size2 := types.DiskSizeFromGigabytes(10)
 	datastore1 := "local"
 	datastore2 := "local"
+	importFrom1 := "local:import/test.qcow2"
+	importFrom2 := "local:import/test.qcow2"
 
 	disk1 := &vms.CustomStorageDevice{
 		AIO:         &aio1,
 		Cache:       &cache1,
 		Size:        size1,
 		DatastoreID: &datastore1,
+		ImportFrom:  &importFrom1,
 	}
 
 	disk2 := &vms.CustomStorageDevice{
@@ -223,6 +227,7 @@ func TestDiskDevicesEqual(t *testing.T) {
 		Cache:       &cache2,
 		Size:        size2,
 		DatastoreID: &datastore2,
+		ImportFrom:  &importFrom2,
 	}
 
 	// Test identical disks
@@ -247,6 +252,17 @@ func TestDiskDevicesEqual(t *testing.T) {
 		DatastoreID: &datastore2,
 	}
 	require.False(t, disk1.Equals(disk2SizeChanged))
+
+	// Test different ImportFrom values
+	importFrom2Changed := "local:import/test2.qcow2"
+	disk2ImportFromChanged := &vms.CustomStorageDevice{
+		AIO:         &aio2,
+		Cache:       &cache2,
+		Size:        size2,
+		ImportFrom:  &importFrom2Changed,
+		DatastoreID: &datastore2,
+	}
+	require.False(t, disk1.Equals(disk2ImportFromChanged))
 }
 
 // TestDiskUpdateSkipsUnchangedDisks tests that the Update function only updates changed disks.
@@ -339,17 +355,100 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	require.NoError(t, err)
 
 	// Call the Update function
-	_, err = Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
+	shutdownBeforeUpdate, _, err := Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
 	require.NoError(t, err)
-
-	// Check that only the changed disk (scsi1) is in the update body
-	// scsi0 should NOT be in the update body since it hasn't changed
-	require.NotNil(t, updateBody)
+	require.False(t, shutdownBeforeUpdate)
 
 	// The update body should only contain scsi1, not scsi0
 	// This prevents the "can't unplug bootdisk 'scsi0'" error
-	// Note: We can't directly inspect the updateBody content in this test framework,
-	// but the fact that no error occurred means the logic worked correctly
+	require.Contains(t, updateBody.CustomStorageDevices, "scsi1", "Update body should contain the changed disk scsi1")
+	require.NotContains(t, updateBody.CustomStorageDevices, "scsi0", "Update body should not contain the unchanged disk scsi0")
+}
+
+// TestImportFromDiskNotReimportedOnSizeChange tests issue #2385:
+// when a disk with import_from is resized in Proxmox GUI, terraform should NOT
+// attempt to re-import the disk (which would fail with "cannot shrink" error).
+func TestImportFromDiskNotReimportedOnSizeChange(t *testing.T) {
+	t.Parallel()
+
+	diskSchema := Schema()
+
+	// Terraform config has a disk with import_from and size=20GB
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
+		MkDisk: []any{
+			map[string]any{
+				mkDiskInterface:   "scsi0",
+				mkDiskDatastoreID: "nfs-v3-tmp-01",
+				mkDiskSize:        20,
+				mkDiskImportFrom:  "nfs-v3-tmp-01:iso/ubuntu-22.04-cloud.qcow2",
+				mkDiskSpeed:       []any{},
+			},
+		},
+	})
+
+	resourceData.MarkNewResource()
+
+	// Proxmox currently has the disk at 30GB (resized via GUI)
+	// Note: PVE does NOT return import_from for existing disks
+	datastoreID := "nfs-v3-tmp-01"
+	currentDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(30), // larger than plan (resized in GUI)
+			DatastoreID: &datastoreID,
+			// ImportFrom is nil - PVE doesn't return this for existing disks
+		},
+	}
+
+	// Plan has the original size from terraform config
+	importFrom := "nfs-v3-tmp-01:iso/ubuntu-22.04-cloud.qcow2"
+	planDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20), // smaller than current
+			DatastoreID: &datastoreID,
+			ImportFrom:  &importFrom, // preserved from terraform config
+		},
+	}
+
+	updateBody := &vms.UpdateRequestBody{}
+	var client proxmox.Client
+
+	ctx := context.Background()
+	vmID := 1002
+	nodeName := "test-node"
+
+	// Force HasChange to return true
+	err := resourceData.Set(MkDisk, []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "nfs-v3-tmp-01",
+			mkDiskSize:        30, // current size
+			mkDiskSpeed:       []any{},
+		},
+	})
+	require.NoError(t, err)
+
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "nfs-v3-tmp-01",
+			mkDiskSize:        20, // plan size
+			mkDiskSpeed:       []any{},
+		},
+	})
+	require.NoError(t, err)
+
+	shutdownBeforeUpdate, _, err := Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
+	require.NoError(t, err)
+
+	// shutdownBeforeUpdate should be false - we should NOT shutdown VM to re-import
+	require.False(t, shutdownBeforeUpdate,
+		"should not shutdown VM for disk with import_from when size differs")
+
+	// the update body should NOT contain ImportFrom - we're updating existing disk, not re-importing
+	if updateBody.CustomStorageDevices != nil && updateBody.CustomStorageDevices["scsi0"] != nil {
+		require.Nil(t, updateBody.CustomStorageDevices["scsi0"].ImportFrom,
+			"should not set ImportFrom when updating existing disk")
+	}
 }
 
 func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
@@ -529,7 +628,7 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 
 	// Simulate the deletion detection logic that should happen in vmUpdate
 	// This is what should identify the disk for deletion
-	deletedInterfaces := []string{}
+	var deletedInterfaces []string
 
 	for oldIface := range oldDiskDevices {
 		if _, present := newDiskDevices[oldIface]; !present {
@@ -601,7 +700,7 @@ func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
 		},
 	}
 
-	deletedInterfaces := []string{}
+	var deletedInterfaces []string
 	bootDiskInDeletion := false
 
 	for currentInterface := range currentDisks {
@@ -717,4 +816,141 @@ func TestOriginalBugScenario(t *testing.T) {
 		require.Equal(t, originalDisk.Size, newDisk.Size, "Disk %s size should remain unchanged", iface)
 		require.Equal(t, originalDisk.DatastoreID, newDisk.DatastoreID, "Disk %s datastore should remain unchanged", iface)
 	}
+}
+
+// TestDiskSpeedSettingsPerDisk verifies that each disk gets its own speed settings
+// and not the speed settings from the first disk (fixes issue #2467).
+func TestDiskSpeedSettingsPerDisk(t *testing.T) {
+	t.Parallel()
+
+	diskSchema := Schema()
+	resource := &schema.Resource{Schema: diskSchema}
+
+	// create two disks with different speed settings
+	diskList := []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        50,
+			mkDiskAIO:         "io_uring",
+			mkDiskBackup:      true,
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSerial:      "",
+			mkDiskSSD:         false,
+			mkDiskSpeed: []any{
+				map[string]any{
+					mkDiskIopsRead:            100,
+					mkDiskIopsWrite:           200,
+					mkDiskIopsReadBurstable:   1000,
+					mkDiskIopsWriteBurstable:  2000,
+					mkDiskSpeedRead:           10,
+					mkDiskSpeedWrite:          20,
+					mkDiskSpeedReadBurstable:  100,
+					mkDiskSpeedWriteBurstable: 200,
+				},
+			},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        100,
+			mkDiskAIO:         "io_uring",
+			mkDiskBackup:      true,
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSerial:      "",
+			mkDiskSSD:         false,
+			mkDiskSpeed: []any{
+				map[string]any{
+					mkDiskIopsRead:            300,
+					mkDiskIopsWrite:           400,
+					mkDiskIopsReadBurstable:   3000,
+					mkDiskIopsWriteBurstable:  4000,
+					mkDiskSpeedRead:           30,
+					mkDiskSpeedWrite:          40,
+					mkDiskSpeedReadBurstable:  300,
+					mkDiskSpeedWriteBurstable: 400,
+				},
+			},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi2",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        200,
+			mkDiskAIO:         "io_uring",
+			mkDiskBackup:      true,
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSerial:      "",
+			mkDiskSSD:         false,
+			mkDiskSpeed:       []any{}, // no speed limits
+		},
+	}
+
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
+		MkDisk: diskList,
+	})
+
+	diskDevices, err := GetDiskDeviceObjects(resourceData, resource, diskList)
+	require.NoError(t, err)
+	require.Len(t, diskDevices, 3)
+
+	// verify scsi0 has its own speed settings
+	scsi0 := diskDevices["scsi0"]
+	require.NotNil(t, scsi0)
+	require.NotNil(t, scsi0.IopsRead, "scsi0 should have IopsRead")
+	require.Equal(t, 100, *scsi0.IopsRead)
+	require.NotNil(t, scsi0.IopsWrite, "scsi0 should have IopsWrite")
+	require.Equal(t, 200, *scsi0.IopsWrite)
+	require.NotNil(t, scsi0.MaxIopsRead, "scsi0 should have MaxIopsRead")
+	require.Equal(t, 1000, *scsi0.MaxIopsRead)
+	require.NotNil(t, scsi0.MaxIopsWrite, "scsi0 should have MaxIopsWrite")
+	require.Equal(t, 2000, *scsi0.MaxIopsWrite)
+	require.NotNil(t, scsi0.MaxReadSpeedMbps, "scsi0 should have MaxReadSpeedMbps")
+	require.Equal(t, 10, *scsi0.MaxReadSpeedMbps)
+	require.NotNil(t, scsi0.MaxWriteSpeedMbps, "scsi0 should have MaxWriteSpeedMbps")
+	require.Equal(t, 20, *scsi0.MaxWriteSpeedMbps)
+	require.NotNil(t, scsi0.BurstableReadSpeedMbps, "scsi0 should have BurstableReadSpeedMbps")
+	require.Equal(t, 100, *scsi0.BurstableReadSpeedMbps)
+	require.NotNil(t, scsi0.BurstableWriteSpeedMbps, "scsi0 should have BurstableWriteSpeedMbps")
+	require.Equal(t, 200, *scsi0.BurstableWriteSpeedMbps)
+
+	// verify scsi1 has DIFFERENT speed settings (not scsi0's)
+	scsi1 := diskDevices["scsi1"]
+	require.NotNil(t, scsi1)
+	require.NotNil(t, scsi1.IopsRead, "scsi1 should have IopsRead")
+	require.Equal(t, 300, *scsi1.IopsRead, "scsi1 IopsRead should be 300, not 100 from scsi0")
+	require.NotNil(t, scsi1.IopsWrite, "scsi1 should have IopsWrite")
+	require.Equal(t, 400, *scsi1.IopsWrite, "scsi1 IopsWrite should be 400, not 200 from scsi0")
+	require.NotNil(t, scsi1.MaxIopsRead, "scsi1 should have MaxIopsRead")
+	require.Equal(t, 3000, *scsi1.MaxIopsRead, "scsi1 MaxIopsRead should be 3000, not 1000 from scsi0")
+	require.NotNil(t, scsi1.MaxIopsWrite, "scsi1 should have MaxIopsWrite")
+	require.Equal(t, 4000, *scsi1.MaxIopsWrite, "scsi1 MaxIopsWrite should be 4000, not 2000 from scsi0")
+	require.NotNil(t, scsi1.MaxReadSpeedMbps, "scsi1 should have MaxReadSpeedMbps")
+	require.Equal(t, 30, *scsi1.MaxReadSpeedMbps, "scsi1 MaxReadSpeedMbps should be 30, not 10 from scsi0")
+	require.NotNil(t, scsi1.MaxWriteSpeedMbps, "scsi1 should have MaxWriteSpeedMbps")
+	require.Equal(t, 40, *scsi1.MaxWriteSpeedMbps, "scsi1 MaxWriteSpeedMbps should be 40, not 20 from scsi0")
+	require.NotNil(t, scsi1.BurstableReadSpeedMbps, "scsi1 should have BurstableReadSpeedMbps")
+	require.Equal(t, 300, *scsi1.BurstableReadSpeedMbps, "scsi1 BurstableReadSpeedMbps should be 300, not 100 from scsi0")
+	require.NotNil(t, scsi1.BurstableWriteSpeedMbps, "scsi1 should have BurstableWriteSpeedMbps")
+	require.Equal(t, 400, *scsi1.BurstableWriteSpeedMbps, "scsi1 BurstableWriteSpeedMbps should be 400, not 200 from scsi0")
+
+	// verify scsi2 has NO speed settings (empty speed block)
+	scsi2 := diskDevices["scsi2"]
+	require.NotNil(t, scsi2)
+	require.Nil(t, scsi2.IopsRead, "scsi2 should NOT have IopsRead (empty speed block)")
+	require.Nil(t, scsi2.IopsWrite, "scsi2 should NOT have IopsWrite (empty speed block)")
+	require.Nil(t, scsi2.MaxIopsRead, "scsi2 should NOT have MaxIopsRead (empty speed block)")
+	require.Nil(t, scsi2.MaxIopsWrite, "scsi2 should NOT have MaxIopsWrite (empty speed block)")
+	require.Nil(t, scsi2.MaxReadSpeedMbps, "scsi2 should NOT have MaxReadSpeedMbps (empty speed block)")
+	require.Nil(t, scsi2.MaxWriteSpeedMbps, "scsi2 should NOT have MaxWriteSpeedMbps (empty speed block)")
+	require.Nil(t, scsi2.BurstableReadSpeedMbps, "scsi2 should NOT have BurstableReadSpeedMbps (empty speed block)")
+	require.Nil(t, scsi2.BurstableWriteSpeedMbps, "scsi2 should NOT have BurstableWriteSpeedMbps (empty speed block)")
 }
