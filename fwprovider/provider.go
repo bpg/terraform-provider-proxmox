@@ -520,6 +520,8 @@ func (p *proxmoxProvider) Configure(
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		access.NewACLResource,
+		access.NewRealmLDAPResource,
+		access.NewRealmSyncResource,
 		access.NewUserTokenResource,
 		acme.NewACMEAccountResource,
 		acme.NewACMEPluginResource,
