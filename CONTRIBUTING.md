@@ -257,6 +257,26 @@ schema.StringAttribute{
 
 See existing templates in `/templates/` for examples.
 
+**Admonitions in docs:**
+
+Use Terraform registry admonition syntax in `/docs/` files and templates:
+
+| Symbol | Type    | Usage                           |
+| ------ | ------- | ------------------------------- |
+| `->`   | Note    | General information, tips       |
+| `~>`   | Warning | Cautions, important caveats     |
+| `!>`   | Danger  | Critical warnings, "do not use" |
+
+Example:
+
+```markdown
+-> Consider using `proxmox_virtual_environment_download_file` resource instead.
+
+~> Never commit proxy configurations or credentials to the repository.
+
+!> **DO NOT USE** — This resource is experimental and will change.
+```
+
 For more details, see the [Terraform Plugin Framework documentation on descriptions](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/attributes#description).
 
 ### Best practices
