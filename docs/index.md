@@ -28,7 +28,7 @@ To use this provider, you only need:
   - [Security Best Practices](#security-best-practices)
   - [Environment Variables](#environment-variables)
   - [API Token Authentication](#api-token-authentication)
-  - [Pre-Authentication](#pre-authentication-or-passing-an-authentication-ticket-into-the-provider)
+  - [Pre-Authentication](#pre-authentication)
 - [SSH Connection](#ssh-connection) *(optional)*
   - [When is SSH Required?](#when-is-ssh-required)
   - [SSH Configuration](#ssh-configuration)
