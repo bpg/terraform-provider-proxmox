@@ -6,22 +6,32 @@ title: "Provider: Proxmox Virtual Environment"
 # Proxmox Provider
 
 This provider for [Terraform](https://www.terraform.io/) / [OpenTofu](https://opentofu.org/) is used for interacting with resources supported by [Proxmox VE](https://www.proxmox.com/en/products/proxmox-virtual-environment/overview).
-The provider needs to be configured with the proper endpoints and credentials before it can be used.
+The provider needs to be configured with the proper endpoint and credentials before it can be used.
 
 Use the navigation to the left to read about the available resources.
 
+## Getting Started
+
+To use this provider, you only need:
+
+1. **API access** to your Proxmox VE server (endpoint URL + username/password or API token)
+2. That's it for most use cases!
+
+-> **SSH access is optional.** Most resources work entirely through the Proxmox API. See [When is SSH Required?](#when-is-ssh-required) for specific cases that need SSH.
+
 ## Table of Contents
 
-- [Environment Variables Summary](#environment-variables-summary)
 - [Example Usage](#example-usage)
 - [Authentication](#authentication)
   - [Authentication Methods Comparison](#authentication-methods-comparison)
-  - [Static Credentials Examples](#static-credentials-examples)
+  - [Quick Examples](#quick-examples)
   - [Security Best Practices](#security-best-practices)
-  - [Environment variables](#environment-variables)
+  - [Environment Variables](#environment-variables)
   - [API Token Authentication](#api-token-authentication)
-  - [Pre-Authentication, or Passing an Authentication Ticket into the provider](#pre-authentication-or-passing-an-authentication-ticket-into-the-provider)
-- [SSH Connection](#ssh-connection)
+  - [Pre-Authentication](#pre-authentication-or-passing-an-authentication-ticket-into-the-provider)
+- [SSH Connection](#ssh-connection) *(optional)*
+  - [When is SSH Required?](#when-is-ssh-required)
+  - [SSH Configuration](#ssh-configuration)
   - [SSH Agent](#ssh-agent)
   - [SSH Private Key](#ssh-private-key)
   - [SSH User](#ssh-user)
@@ -29,35 +39,12 @@ Use the navigation to the left to read about the available resources.
   - [SSH Connection via SOCKS5 Proxy](#ssh-connection-via-socks5-proxy)
 - [VM and Container ID Assignment](#vm-and-container-id-assignment)
 - [Temporary Directory](#temporary-directory)
+- [Environment Variables Summary](#environment-variables-summary)
 - [Argument Reference](#argument-reference)
 
-## Environment Variables Summary
-
-| Environment Variable | Description | Required |
-|---------------------|-------------|-----------|
-| `PROXMOX_VE_ENDPOINT` | API endpoint URL | Yes |
-| `PROXMOX_VE_USERNAME` | Username with realm | Yes* |
-| `PROXMOX_VE_PASSWORD` | User password | Yes* |
-| `PROXMOX_VE_API_TOKEN` | API token | Yes* |
-| `PROXMOX_VE_AUTH_TICKET` | Auth ticket | Yes* |
-| `PROXMOX_VE_CSRF_PREVENTION_TOKEN` | CSRF prevention token | Yes* |
-| `PROXMOX_VE_INSECURE` | Skip TLS verification | No |
-| `PROXMOX_VE_SSH_USERNAME` | SSH username | No |
-| `PROXMOX_VE_SSH_PASSWORD` | SSH password | No |
-| `PROXMOX_VE_SSH_PRIVATE_KEY` | SSH private key | No |
-| `PROXMOX_VE_SSH_AGENT` | Use SSH agent for authentication | No |
-| `PROXMOX_VE_SSH_AUTH_SOCK` | SSH agent socket path | No |
-| `PROXMOX_VE_SSH_AGENT_FORWARDING` | Enable SSH agent forwarding | No |
-| `PROXMOX_VE_SSH_SOCKS5_SERVER` | SOCKS5 proxy server address | No |
-| `PROXMOX_VE_SSH_SOCKS5_USERNAME` | SOCKS5 proxy username | No |
-| `PROXMOX_VE_SSH_SOCKS5_PASSWORD` | SOCKS5 proxy password | No |
-| `PROXMOX_VE_MIN_TLS` | Minimum TLS version | No |
-| `PROXMOX_VE_OTP` | One-time password (deprecated) | No |
-| `PROXMOX_VE_TMPDIR` | Custom temporary directory | No |
-
-*One of these authentication methods is required
-
 ## Example Usage
+
+**Minimal configuration (no SSH):**
 
 ```hcl
 provider "proxmox" {
@@ -70,27 +57,34 @@ provider "proxmox" {
 
   # because self-signed TLS certificate is in use
   insecure = true
-  # uncomment (unless on Windows...)
-  # tmp_dir  = "/var/tmp"
+}
+```
+
+**With SSH access (only if needed for snippets or certain file uploads):**
+
+```hcl
+provider "proxmox" {
+  endpoint = "https://10.0.0.2:8006/"
+  username = "root@pam"
+  password = "the-password-set-during-installation-of-proxmox-ve"
+  insecure = true
 
   ssh {
     agent = true
-    # TODO: uncomment and configure if using api_token instead of password
-    # username = "root"
+    # username = "root"  # required when using api_token
   }
 }
 ```
 
 ## Authentication
 
-The Proxmox provider offers a flexible means of providing credentials for authentication.
-Static credentials and pre-authenticated session ticket can be provided to the `proxmox` block through one of the choices of arguments below, ordered by precedence:
+The provider supports three authentication methods (in order of precedence):
 
-- `api_token`
-- `auth_ticket` and `csrf_prevention_token`
-- `username` and `password`
+1. **API Token** — recommended for production and CI/CD
+2. **Auth Ticket** — for automated scripts with TOTP support
+3. **Username/Password** — simplest, good for development
 
-!> Hard-coding credentials into any Terraform configuration is not recommended, and risks secret leakage should this file ever be committed to a public version control system.
+!> Hard-coding credentials into any Terraform configuration is not recommended. Use environment variables or a `.tfvars` file (add to `.gitignore`) instead.
 
 ### Authentication Methods Comparison
 
@@ -100,9 +94,9 @@ Static credentials and pre-authenticated session ticket can be provided to the `
 | [Auth Ticket](#pre-authentication-or-passing-an-authentication-ticket-into-the-provider) | Automated scripts    | - Short-lived<br>- No password storage<br>- TOTP support          | - More complex setup<br>- Needs periodic renewal                  | High           |
 | Username/Password                                                                        | Development, Testing | - Full API support<br>- Simple setup                              | - Password in config/env<br>- Not revocable individually          | Medium         |
 
-### Static Credentials Examples
+### Quick Examples
 
-Credentials can be provided in-line in the Proxmox provider block. Here are examples for each authentication method:
+Here are examples for each authentication method:
 
 **API Token (Recommended for Production):**
 
@@ -134,7 +128,7 @@ provider "proxmox" {
 }
 ```
 
-A better approach is to extract these values into Terraform variables, and reference the variables instead:
+A better approach is to extract these values into Terraform variables and reference them instead:
 
 ```hcl
 provider "proxmox" {
@@ -151,36 +145,20 @@ provider "proxmox" {
 }
 ```
 
-The variable values can be provided via a separate `.tfvars` file that should be gitignored.
+The variable values can be provided via a separate `.tfvars` file (add it to `.gitignore`).
 See the [Terraform documentation](https://developer.hashicorp.com/terraform/language/values/variables#input-variables) for more information.
 
 ### Security Best Practices
 
-1. **API Token Usage:**
-   - Use API tokens in production environments
-   - Create tokens with minimal required permissions
-   - Rotate tokens periodically
+- **Use API tokens** in production — they're revocable and support fine-grained permissions
+- **Never commit credentials** to version control — use environment variables or `.tfvars` files (in `.gitignore`)
+- **Use HTTPS with valid certificates** — only set `insecure = true` in development environments
+- **Apply least privilege** — create tokens/users with minimal required permissions
+- **Rotate credentials** regularly
 
-2. **Password Authentication:**
-   - Limit to development/testing environments
-   - Never commit passwords to version control
-   - Use strong passwords
-   - Change passwords regularly
+### Environment Variables
 
-3. **Auth Ticket:**
-   - Implement proper token renewal mechanism
-   - Store tickets securely
-   - Use TOTP when available
-
-4. **General:**
-   - Use HTTPS with valid certificates
-   - Only set `insecure = true` in development
-   - Use separate credentials for different environments
-   - Implement proper secret rotation
-
-### Environment variables
-
-Instead of using static arguments, credentials can be handled through the use of environment variables.
+Credentials can also be provided via environment variables instead of static arguments.
 For example:
 
 ```hcl
@@ -199,10 +177,18 @@ See the [Argument Reference](#argument-reference) section for the supported vari
 
 ### API Token Authentication
 
-API Token authentication can be used to authenticate with the Proxmox API without the need to provide a password.
-In combination with the `ssh` block and SSH agent support, this allows for a fully password-less authentication.
+API tokens allow password-less authentication with the Proxmox API. If you already have a token, use it like this:
 
-You can create an API Token for a user via the Proxmox UI, or via the command line on the Proxmox host or cluster:
+```hcl
+provider "proxmox" {
+  endpoint  = "https://10.0.0.2:8006/"
+  api_token = "user@realm!tokenid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+}
+```
+
+#### Creating an API Token on the Proxmox Server
+
+You can create an API Token via the Proxmox UI or the command line on the Proxmox host:
 
 - Create a user:
 
@@ -216,7 +202,7 @@ You can create an API Token for a user via the Proxmox UI, or via the command li
     pveum role add Terraform -privs "Realm.AllocateUser, VM.PowerMgmt, VM.GuestAgent.Unrestricted, Sys.Console, Sys.Audit, Sys.AccessNetwork, VM.Config.Cloudinit, VM.Replicate, Pool.Allocate, SDN.Audit, Realm.Allocate, SDN.Use, Mapping.Modify, VM.Config.Memory, VM.GuestAgent.FileSystemMgmt, VM.Allocate, SDN.Allocate, VM.Console, VM.Clone, VM.Backup, Datastore.AllocateTemplate, VM.Snapshot, VM.Config.Network, Sys.Incoming, Sys.Modify, VM.Snapshot.Rollback, VM.Config.Disk, Datastore.Allocate, VM.Config.CPU, VM.Config.CDROM, Group.Allocate, Datastore.Audit, VM.Migrate, VM.GuestAgent.FileWrite, Mapping.Use, Datastore.AllocateSpace, Sys.Syslog, VM.Config.Options, Pool.Audit, User.Modify, VM.Config.HWType, VM.Audit, Sys.PowerMgmt, VM.GuestAgent.Audit, Mapping.Audit, VM.GuestAgent.FileRead, Permissions.Modify"
     ```
 
-  ~> The list of available privileges has been changed in PVE 9.0, and the above list is only an example (and most likely too excessive for most use cases), please review it and adjust to your needs.
+  ~> The list of available privileges has changed in PVE 9.0. The above list is only an example (and likely too permissive for most use cases). Please review and adjust to your needs.
   Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
 
 - Assign the role to the previously created user:
@@ -233,9 +219,9 @@ You can create an API Token for a user via the Proxmox UI, or via the command li
 
     -> Make sure you copy the token value, as it will not be displayed again.
 
-Refer to the upstream docs as needed for additional details concerning [PVE User Management](https://pve.proxmox.com/wiki/User_Management).
+Refer to the [PVE User Management](https://pve.proxmox.com/wiki/User_Management) documentation for more details.
 
-Generating the token will output a table containing the token's ID and secret which are meant to be concatenated into a single string for use with either the `api_token` field of the `provider` block (fine for testing but should be avoided) or sourced from the `PROXMOX_VE_API_TOKEN` environment variable.
+The command outputs a table with the token ID and secret. Concatenate them into a single string (e.g., `user@realm!tokenid=secret`) for the `api_token` field or the `PROXMOX_VE_API_TOKEN` environment variable:
 
 ```hcl
 provider "proxmox" {
@@ -302,15 +288,30 @@ terraform plan
 
 ## SSH Connection
 
-~> Please read if you are using VMs with custom disk images, or uploading snippets.
+-> **SSH is optional for most users.** The provider primarily uses the Proxmox API. SSH is only needed for specific edge cases listed below.
 
-The Proxmox provider can connect to a Proxmox node via SSH.
-This is used in the `proxmox_virtual_environment_vm` or `proxmox_virtual_environment_file` resource to execute commands on the node to perform actions that are not supported by the Proxmox API.
-For example, to import VM disks in certain cases, or for uploading certain types of resources, such as snippets.
+### When is SSH Required?
 
-~> Note that the SSH connection is not used when VM disk is imported using `import_from` attribute. It also is not used to _manage_ VMs or Containers, and is not required for most operations.
+SSH connection is **only** required for these specific operations:
 
-The SSH connection configuration is provided via the optional `ssh` block in the `provider` block:
+| Operation | Resource | Why SSH is needed |
+| --------- | -------- | ----------------- |
+| Upload snippets | `proxmox_virtual_environment_file` | Proxmox API doesn't support snippet uploads |
+| Upload certain file types | `proxmox_virtual_environment_file` | Some content types require direct node access |
+| Import disks via `source_file.path` | `proxmox_virtual_environment_vm` | Local file transfer to node |
+
+**SSH is NOT required for:**
+
+- Creating, modifying, or deleting VMs and Containers
+- Managing storage, networks, pools, users, or any other resources
+- Importing disks using `import_from` attribute (uses API)
+- Downloading files using `proxmox_virtual_environment_download_file` (uses API)
+
+If you don't need the operations listed above, you can skip the SSH configuration entirely.
+
+### SSH Configuration
+
+If you need SSH access, the connection is configured via the optional `ssh` block in the `provider` block:
 
 ```hcl
 provider "proxmox" {
@@ -341,8 +342,7 @@ The SSH agent authentication takes precedence over the `private_key` and `passwo
 
 ### SSH Private Key
 
-In some cases where SSH agent is not available, for example when using a CI/CD pipeline that does not support SSH agent forwarding,
-you can use the `private_key` argument in the `ssh` block (or alternatively `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable) to provide the private key for the SSH connection.
+When an SSH agent is not available (for example, in CI/CD pipelines without SSH agent forwarding), you can use the `private_key` argument in the `ssh` block (or the `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable) to provide the private key directly.
 
 The private key must not be encrypted, and must be in PEM format.
 
@@ -358,8 +358,7 @@ provider "proxmox" {
 }
 ```
 
-Alternatively, although not recommended due to the increased risk of exposing an unprotected key, heredoc syntax can be used to supply the private key as a string.
-Note that the content of the private key is injected using `<<-` format to ignore indentation:
+Alternatively, heredoc syntax can supply the private key as a string (not recommended due to security risks). The `<<-` format ignores indentation:
 
 ```hcl
 provider "proxmox" {
@@ -444,11 +443,11 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
 
   You should be able to connect to the target node and see the output containing `APIVER <number>` on the screen without being prompted for your password.
 
-Alternatively if `pam_ssh_agent_auth` is configured on the target node the SSH Config option `agent_forwarding` may be used to forward the SSH agent that was used for the connection to the remote server. This can allow `sudo` without a password which validates public SSH key configured for `pam_ssh_agent_auth`.
+Alternatively, if `pam_ssh_agent_auth` is configured on the target node, the `agent_forwarding` option can forward the SSH agent to the remote server. This allows `sudo` without a password by validating the public SSH key configured for `pam_ssh_agent_auth`.
 
 ### Node IP address used for SSH connection
 
-In order to make the SSH connection, the provider needs to be able to resolve the target node name to an IP.
+To make the SSH connection, the provider needs to resolve the target node name to an IP address.
 The following methods are used to resolve the node name, in the specified order:
 
 1. Enumerate the node's network interfaces via the Proxmox API, and identify the first interface that:
@@ -457,7 +456,7 @@ The following methods are used to resolve the node name, in the specified order:
    3. Has an IPv4 address
 2. Resolve the Proxmox node name (usually a shortname) via DNS using the system DNS resolver of the machine running Terraform.
 
-In some cases this may not be the desired behavior, for example, when the node has multiple network interfaces, and the one that should be used for SSH is not the first one.
+In some cases, this may not be the desired behavior — for example, when the node has multiple network interfaces and the one that should be used for SSH is not the first one.
 
 To override the node IP address used for SSH connection, you can use the optional `node` blocks in the `ssh` block, and specify the desired IP address (or FQDN) for each node.
 For example:
@@ -483,7 +482,7 @@ provider "proxmox" {
 
 The provider supports SSH connection to the target node via a SOCKS5 proxy.
 
-To enable the SOCKS5 proxy, you need to configure the `ssh` block in the `provider` block, and specify the `socks5_server` argument:
+To enable the SOCKS5 proxy, specify the `socks5_server` argument in the `ssh` block:
 
 ```hcl
 provider "proxmox" {
@@ -501,23 +500,65 @@ If enabled, this method will be used for all SSH connections to the target nodes
 
 ## VM and Container ID Assignment
 
-When creating VMs and Containers, you can specify the optional `vm_id` attribute to set the ID of the VM or Container. However, the ID is a mandatory attribute in the Proxmox API and must be unique within the cluster. If the `vm_id` attribute is not specified, the provider will generate a unique ID and assign it to the resource.
+When creating VMs and Containers, you can specify the optional `vm_id` attribute to set the ID. If omitted, the provider generates a unique ID automatically.
 
-The Proxmox API provides a helper function to retrieve the "next available" unique ID in the cluster, but there is no option to reserve an ID before a resource is created. Instead, the provider uses a file-based locking technique to reserve retrieved sequential IDs and prevent duplicates. However, conflicts cannot be fully avoided, especially when multiple resources are created simultaneously by different provider instances.
+The Proxmox API requires unique IDs within the cluster but doesn't support reserving IDs before resource creation. The provider uses file-based locking to prevent duplicates, but conflicts can still occur when multiple provider instances create resources simultaneously.
 
-To mitigate this issue, you can set the `random_vm_ids` attribute to `true` in the `provider` block. This will generate a random ID for each VM or Container when the `vm_id` attribute is not specified. The generated ID is checked for uniqueness through the Proxmox API before resource creation, significantly reducing the risk of conflicts.
+To reduce conflicts, set `random_vm_ids = true` in the provider block. This generates random IDs (checked for uniqueness via the API) instead of sequential ones.
 
 ## Temporary Directory
 
-Using `proxmox_virtual_environment_file` with `.iso` files or disk images can require a large amount of space in the temporary directory of the computer running terraform.
+Using `proxmox_virtual_environment_file` with `.iso` files or disk images can require a large amount of space in the temporary directory of the computer running Terraform.
 
 Consider pointing `tmp_dir` to a directory with enough space, especially if the default temporary directory is limited by the system memory (e.g. `tmpfs` mounted on `/tmp`).
 
-A better approach is to use `proxmox_virtual_environment_download_file` resource to download the file directly to the target node, without buffering to the local machine.
+A better approach is to use the `proxmox_virtual_environment_download_file` resource to download files directly to the target node without buffering to the local machine.
+
+## Environment Variables Summary
+
+All provider arguments can be configured via environment variables. This is the recommended approach for credentials.
+
+**API Connection (required):**
+
+| Environment Variable | Description |
+| -------------------- | ----------- |
+| `PROXMOX_VE_ENDPOINT` | API endpoint URL (e.g., `https://pve.example.com:8006/`) |
+
+**Authentication (one method required):**
+
+| Environment Variable | Description |
+| -------------------- | ----------- |
+| `PROXMOX_VE_API_TOKEN` | API token (recommended for production) |
+| `PROXMOX_VE_USERNAME` | Username with realm (e.g., `root@pam`) |
+| `PROXMOX_VE_PASSWORD` | Password for username/password auth |
+| `PROXMOX_VE_AUTH_TICKET` | Pre-authenticated session ticket |
+| `PROXMOX_VE_CSRF_PREVENTION_TOKEN` | CSRF token (used with auth ticket) |
+
+**API Options (optional):**
+
+| Environment Variable | Description |
+| -------------------- | ----------- |
+| `PROXMOX_VE_INSECURE` | Skip TLS verification (`true`/`false`) |
+| `PROXMOX_VE_MIN_TLS` | Minimum TLS version (`1.0`, `1.1`, `1.2`, `1.3`) |
+| `PROXMOX_VE_TMPDIR` | Custom temporary directory |
+
+**SSH Connection (optional — only if [SSH is required](#when-is-ssh-required)):**
+
+| Environment Variable | Description |
+| -------------------- | ----------- |
+| `PROXMOX_VE_SSH_USERNAME` | SSH username |
+| `PROXMOX_VE_SSH_PASSWORD` | SSH password |
+| `PROXMOX_VE_SSH_PRIVATE_KEY` | SSH private key (PEM format) |
+| `PROXMOX_VE_SSH_AGENT` | Use SSH agent (`true`/`false`) |
+| `PROXMOX_VE_SSH_AUTH_SOCK` | SSH agent socket path |
+| `PROXMOX_VE_SSH_AGENT_FORWARDING` | Enable SSH agent forwarding |
+| `PROXMOX_VE_SSH_SOCKS5_SERVER` | SOCKS5 proxy server address |
+| `PROXMOX_VE_SSH_SOCKS5_USERNAME` | SOCKS5 proxy username |
+| `PROXMOX_VE_SSH_SOCKS5_PASSWORD` | SOCKS5 proxy password |
 
 ## Argument Reference
 
-In addition to [generic provider arguments](https://developer.hashicorp.com/terraform/language/providers/configuration#provider-configuration-1) ( e.g. `alias` and `version`), the following arguments are supported in the Proxmox `provider` block:
+In addition to [generic provider arguments](https://developer.hashicorp.com/terraform/language/providers/configuration#provider-configuration-1) (e.g. `alias` and `version`), the following arguments are supported in the Proxmox `provider` block:
 
 - `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is `https://<your-cluster-endpoint>:8006/`. **Do not** include `/api2/json` at the end.
 - `insecure` - (Optional) Whether to skip the TLS verification step (can also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults to `false`.
