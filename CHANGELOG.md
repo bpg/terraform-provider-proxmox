@@ -5,8 +5,9 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **file:** With overwrite=true (default), the resource now checks the upstream URL's Content-Length during every refresh. This restores the original behavior from v0.33.0 that was accidentally removed in v0.78.2. Users who want to disable upstream checking should set overwrite=false.
-* **firewall:** make `vm_id`/`container_id` required in VM/Container -level firewall options ([#2453](https://github.com/bpg/terraform-provider-proxmox/issues/2453))
+* The `proxmox_virtual_environment_download_file` resource now checks the upstream URL's Content-Length during every refresh with `overwrite=true` (default). This restores the original behavior from v0.33.0 that was accidentally removed in v0.78.2. Users who want to disable upstream checking should set `overwrite=false`.
+
+* The `proxmox_virtual_environment_firewall_options` resource now requires exactly one of `vm_id` or `container_id` to be specified. Previously, configurations with only `node_name` would pass validation but fail at runtime. This change enforces the requirement at validation time.
 
 ### Features
 
