@@ -8,6 +8,7 @@ package resources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -89,4 +90,39 @@ func (c *Client) Delete(ctx context.Context, id types.HAResourceID) error {
 	}
 
 	return nil
+}
+
+// Exists checks if a HA resource exists. Returns true if it exists, false otherwise.
+func (c *Client) Exists(ctx context.Context, id types.HAResourceID) (bool, error) {
+	_, err := c.Get(ctx, id)
+	if err != nil {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}
+
+// Migrate requests an HA-aware migration of the resource to the target node.
+// This uses the HA manager's migrate endpoint which properly sequences the HA state
+// change and the actual VM migration.
+// In PVE 9.x, this initiates an asynchronous migration managed by the HA manager.
+// Returns the response data containing the resource ID and requested node.
+func (c *Client) Migrate(ctx context.Context, id types.HAResourceID, targetNode string) (*HAResourceMigrateResponseData, error) {
+	reqBody := &HAResourceMigrateRequestBody{
+		Node: targetNode,
+	}
+	resBody := &HAResourceMigrateResponseBody{}
+
+	path := c.ExpandPath(fmt.Sprintf("%s/migrate", url.PathEscape(id.String())))
+
+	err := c.DoRequest(ctx, http.MethodPost, path, reqBody, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error migrating HA resource %v: %w", id, err)
+	}
+
+	return resBody.Data, nil
 }

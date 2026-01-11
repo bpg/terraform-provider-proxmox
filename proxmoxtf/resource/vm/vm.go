@@ -30,6 +30,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
+	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
@@ -5468,16 +5469,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 		oldNodeNameValue, _ := d.GetChange(mkNodeName)
 		oldNodeName := oldNodeNameValue.(string)
-		vmAPI := client.Node(oldNodeName).VM(vmID)
 
-		trueValue := types.CustomBool(true)
-		migrateBody := &vms.MigrateRequestBody{
-			TargetNode:      nodeName,
-			WithLocalDisks:  &trueValue,
-			OnlineMigration: &trueValue,
-		}
-
-		err := vmAPI.MigrateVM(migrateCtx, migrateBody)
+		err := migrateVM(migrateCtx, client, vmID, oldNodeName, nodeName)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -6793,4 +6786,276 @@ func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (strin
 	}
 
 	return "", nil
+}
+
+// migrateVM migrates a VM to a new node, handling HA-managed VMs appropriately.
+// For running HA-managed VMs, it uses the HA migrate endpoint which properly sequences the migration.
+// For stopped HA-managed VMs, it temporarily removes from HA, migrates, then re-adds to HA
+// because Proxmox HA migration for stopped VMs only sets a preference without actually moving.
+func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode, targetNode string) error {
+	vmAPI := client.Node(sourceNode).VM(vmID)
+
+	// check if VM is running
+	vmStatus, err := vmAPI.GetVMStatus(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get VM %d status: %w", vmID, err)
+	}
+
+	isRunning := vmStatus.Status == "running"
+
+	// check if VM is HA-managed
+	haResourceID := types.HAResourceID{
+		Type: types.HAResourceTypeVM,
+		Name: strconv.Itoa(vmID),
+	}
+
+	isHAManaged, err := client.Cluster().HA().Resources().Exists(ctx, haResourceID)
+	if err != nil {
+		return fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err)
+	}
+
+	// for running HA-managed VMs, use HA migration
+	if isRunning && isHAManaged {
+		return migrateHAVM(ctx, client, vmID, haResourceID, targetNode)
+	}
+
+	// for stopped HA-managed VMs, temporarily remove from HA to allow standard migration
+	// (Proxmox intercepts standard migrate for HA VMs and only sets a preference)
+	if !isRunning && isHAManaged {
+		return migrateStoppedHAVM(ctx, client, vmID, haResourceID, sourceNode, targetNode)
+	}
+
+	// for non-HA VMs (running or stopped), use standard migration
+	return migrateNonHAVM(ctx, client, vmID, sourceNode, targetNode)
+}
+
+// migrateHAVM migrates an HA-managed VM using the HA resource migrate endpoint.
+// In PVE 9.x, this initiates an asynchronous migration managed by the HA manager.
+// The function polls until the VM is accessible on the target node.
+func migrateHAVM(
+	ctx context.Context,
+	client proxmox.Client,
+	vmID int,
+	haResourceID types.HAResourceID,
+	targetNode string,
+) error {
+	tflog.Info(ctx, "VM is HA-managed, using HA migration endpoint", map[string]any{
+		"vm_id":       vmID,
+		"target_node": targetNode,
+	})
+
+	resp, err := client.Cluster().HA().Resources().Migrate(ctx, haResourceID, targetNode)
+	if err != nil {
+		return fmt.Errorf("failed to initiate HA migration for VM %d: %w", vmID, err)
+	}
+
+	if resp != nil {
+		tflog.Debug(ctx, "HA migration request accepted", map[string]any{
+			"vm_id":          vmID,
+			"requested_node": resp.RequestedNode,
+		})
+	}
+
+	// poll until the VM is accessible on the target node
+	// the HA manager handles the actual migration asynchronously
+	err = waitForVMOnNode(ctx, client, vmID, targetNode)
+	if err != nil {
+		return fmt.Errorf("VM %d not accessible on target node %s after HA migration: %w", vmID, targetNode, err)
+	}
+
+	return nil
+}
+
+// migrateStoppedHAVM migrates a stopped HA-managed VM by temporarily removing it from HA.
+// This is necessary because Proxmox HA migration for stopped VMs only sets a node preference
+// without actually moving the VM configuration.
+func migrateStoppedHAVM(
+	ctx context.Context,
+	client proxmox.Client,
+	vmID int,
+	haResourceID types.HAResourceID,
+	sourceNode, targetNode string,
+) error {
+	tflog.Info(ctx, "migrating stopped HA-managed VM (temporarily removing from HA)", map[string]any{
+		"vm_id":       vmID,
+		"source_node": sourceNode,
+		"target_node": targetNode,
+	})
+
+	haClient := client.Cluster().HA().Resources()
+
+	// get current HA resource configuration to restore after migration
+	haConfig, err := haClient.Get(ctx, haResourceID)
+	if err != nil {
+		return fmt.Errorf("failed to get HA resource config for VM %d: %w", vmID, err)
+	}
+
+	// remove from HA
+	tflog.Debug(ctx, "removing VM from HA for migration", map[string]any{"vm_id": vmID})
+
+	err = haClient.Delete(ctx, haResourceID)
+	if err != nil {
+		return fmt.Errorf("failed to remove VM %d from HA: %w", vmID, err)
+	}
+
+	// perform standard migration
+	tflog.Debug(ctx, "performing standard migration", map[string]any{
+		"vm_id":       vmID,
+		"source_node": sourceNode,
+		"target_node": targetNode,
+	})
+
+	err = migrateNonHAVM(ctx, client, vmID, sourceNode, targetNode)
+	if err != nil {
+		// try to re-add to HA even if migration failed
+		if haErr := readdToHA(ctx, haClient, haResourceID, haConfig); haErr != nil {
+			tflog.Warn(ctx, "failed to re-add VM to HA after migration failure", map[string]any{
+				"vm_id": vmID,
+				"error": haErr.Error(),
+			})
+		}
+
+		return fmt.Errorf("failed to migrate VM %d: %w", vmID, err)
+	}
+
+	// re-add to HA with the same configuration
+	tflog.Debug(ctx, "re-adding VM to HA after migration", map[string]any{"vm_id": vmID})
+
+	err = readdToHA(ctx, haClient, haResourceID, haConfig)
+	if err != nil {
+		return fmt.Errorf("failed to re-add VM %d to HA after migration: %w", vmID, err)
+	}
+
+	return nil
+}
+
+// readdToHA re-adds a VM to HA with the given configuration.
+func readdToHA(
+	ctx context.Context,
+	haClient *haresources.Client,
+	haResourceID types.HAResourceID,
+	haConfig *haresources.HAResourceGetResponseData,
+) error {
+	createBody := &haresources.HAResourceCreateRequestBody{
+		ID: haResourceID,
+		HAResourceDataBase: haresources.HAResourceDataBase{
+			Comment:     haConfig.Comment,
+			Group:       haConfig.Group,
+			MaxRelocate: haConfig.MaxRelocate,
+			MaxRestart:  haConfig.MaxRestart,
+			State:       haConfig.State,
+		},
+	}
+
+	return haClient.Create(ctx, createBody)
+}
+
+// migrateNonHAVM migrates a non-HA VM using the standard VM migrate endpoint.
+func migrateNonHAVM(
+	ctx context.Context,
+	client proxmox.Client,
+	vmID int,
+	sourceNode, targetNode string,
+) error {
+	vmAPI := client.Node(sourceNode).VM(vmID)
+
+	trueValue := types.CustomBool(true)
+	migrateBody := &vms.MigrateRequestBody{
+		TargetNode:      targetNode,
+		WithLocalDisks:  &trueValue,
+		OnlineMigration: &trueValue,
+	}
+
+	return vmAPI.MigrateVM(ctx, migrateBody)
+}
+
+// waitForVMOnNode polls until the VM is located on the specified node and unlocked.
+// This uses the cluster resources API to find the VM's current location,
+// and then checks that the VM is not locked (e.g., from migration).
+// Maximum wait time is 5 minutes (150 attempts at 2-second intervals).
+func waitForVMOnNode(ctx context.Context, client proxmox.Client, vmID int, targetNode string) error {
+	const maxAttempts = 150 // 5 minutes max
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	var lastNode *string
+
+	onTargetNode := false
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("waiting for VM on node: %w", ctx.Err())
+		case <-ticker.C:
+			// use cluster resources API to find where the VM currently is
+			currentNode, err := client.Cluster().GetVMNodeName(ctx, vmID)
+			if err != nil {
+				tflog.Debug(ctx, "failed to get VM location, retrying...", map[string]any{
+					"vm_id":   vmID,
+					"attempt": attempt,
+					"error":   err.Error(),
+				})
+
+				continue
+			}
+
+			lastNode = currentNode
+
+			if currentNode != nil && *currentNode == targetNode {
+				onTargetNode = true
+
+				// also check that VM is unlocked before returning
+				vmAPI := client.Node(targetNode).VM(vmID)
+
+				status, err := vmAPI.GetVMStatus(ctx)
+				if err != nil {
+					tflog.Debug(ctx, "failed to get VM status, retrying...", map[string]any{
+						"vm_id":   vmID,
+						"attempt": attempt,
+						"error":   err.Error(),
+					})
+
+					continue
+				}
+
+				if status.Lock != nil && *status.Lock != "" {
+					tflog.Debug(ctx, "VM on target node but still locked, waiting...", map[string]any{
+						"vm_id":       vmID,
+						"target_node": targetNode,
+						"lock":        *status.Lock,
+						"attempt":     attempt,
+					})
+
+					continue
+				}
+
+				tflog.Debug(ctx, "VM is now on target node and unlocked", map[string]any{
+					"vm_id":       vmID,
+					"target_node": targetNode,
+					"attempts":    attempt,
+				})
+
+				return nil
+			}
+
+			tflog.Debug(ctx, "VM not yet on target node, waiting...", map[string]any{
+				"vm_id":        vmID,
+				"current_node": currentNode,
+				"target_node":  targetNode,
+				"attempt":      attempt,
+			})
+		}
+	}
+
+	lastNodeStr := "<unknown>"
+	if lastNode != nil {
+		lastNodeStr = *lastNode
+	}
+
+	if onTargetNode {
+		return fmt.Errorf("VM %d on node %s but still locked after timeout", vmID, targetNode)
+	}
+
+	return fmt.Errorf("VM %d did not migrate to node %s within timeout (last seen on %s)", vmID, targetNode, lastNodeStr)
 }

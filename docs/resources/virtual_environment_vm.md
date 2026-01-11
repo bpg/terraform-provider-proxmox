@@ -714,6 +714,20 @@ resource "proxmox_virtual_environment_haresource" "ubuntu_vm" {
 }
 ```
 
+### HA-Aware Migration
+
+When changing the `node_name` of an HA-managed VM, the provider automatically
+handles the migration in an HA-aware manner:
+
+- **Running HA VMs**: Uses the HA manager's migrate endpoint for live migration
+- **Stopped HA VMs**: Temporarily removes from HA, performs standard migration,
+  then re-adds to HA with the original configuration preserved
+
+~> **PVE 9.x Required**: HA-aware migration requires Proxmox VE 9.x due to API
+changes. On PVE 8.x, migrating HA-managed VMs will fail. As a workaround,
+manually remove the VM from HA before changing `node_name`, then re-add after
+apply.
+
 ## Important Notes
 
 ### `local-lvm` Datastore
