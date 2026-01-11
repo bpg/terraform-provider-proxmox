@@ -109,8 +109,9 @@ func (c *Client) Exists(ctx context.Context, id types.HAResourceID) (bool, error
 // Migrate requests an HA-aware migration of the resource to the target node.
 // This uses the HA manager's migrate endpoint which properly sequences the HA state
 // change and the actual VM migration.
-// Returns the task ID of the migration operation.
-func (c *Client) Migrate(ctx context.Context, id types.HAResourceID, targetNode string) (*string, error) {
+// In PVE 9.x, this initiates an asynchronous migration managed by the HA manager.
+// Returns the response data containing the resource ID and requested node.
+func (c *Client) Migrate(ctx context.Context, id types.HAResourceID, targetNode string) (*HAResourceMigrateResponseData, error) {
 	reqBody := &HAResourceMigrateRequestBody{
 		Node: targetNode,
 	}

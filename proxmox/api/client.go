@@ -364,7 +364,10 @@ func validateResponseCode(res *http.Response) error {
 		}
 
 		if res.StatusCode == http.StatusNotFound ||
-			(res.StatusCode == http.StatusInternalServerError && strings.Contains(res.Status, "does not exist")) {
+			(res.StatusCode == http.StatusInternalServerError &&
+				(strings.Contains(res.Status, "does not exist") ||
+					strings.Contains(msg, "does not exist") ||
+					strings.Contains(msg, "no such resource"))) {
 			return errors.Join(ErrResourceDoesNotExist, httpError)
 		}
 

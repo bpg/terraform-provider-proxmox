@@ -131,8 +131,12 @@ func TestClient_Migrate_SendsCorrectRequest(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 
+		// PVE 9.x response format
 		resp := HAResourceMigrateResponseBody{
-			Data: ptrString("UPID:pve:00001234:00000001:12345678:hamigrate:vm%3A100:root@pam:"),
+			Data: &HAResourceMigrateResponseData{
+				SID:           "vm:100",
+				RequestedNode: "pve2",
+			},
 		}
 		writeJSON(w, resp)
 	})
@@ -142,16 +146,13 @@ func TestClient_Migrate_SendsCorrectRequest(t *testing.T) {
 
 	haResourceID := types.HAResourceID{Type: types.HAResourceTypeVM, Name: "100"}
 
-	taskID, err := client.Migrate(t.Context(), haResourceID, "pve2")
+	resp, err := client.Migrate(t.Context(), haResourceID, "pve2")
 
 	require.NoError(t, err)
-	assert.NotNil(t, taskID)
-	assert.Contains(t, *taskID, "hamigrate")
+	assert.NotNil(t, resp)
+	assert.Equal(t, "vm:100", resp.SID)
+	assert.Equal(t, "pve2", resp.RequestedNode)
 	assert.Equal(t, http.MethodPost, capturedMethod)
 	assert.Contains(t, capturedPath, "/cluster/ha/resources/vm:100/migrate")
 	assert.Contains(t, capturedBody, "node=pve2")
-}
-
-func ptrString(s string) *string {
-	return &s
 }
