@@ -1,0 +1,45 @@
+---
+layout: page
+title: {{.Name}}
+parent: Resources
+subcategory: Virtual Environment
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}}: {{.Name}}
+
+{{ .Description | trimspace }}
+
+This resource wraps the `/access/domains/{realm}/sync` API and is intended to be
+used alongside realm configuration resources such as
+`proxmox_virtual_environment_realm_ldap`.
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ codefile "terraform" .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}
+{{- if .HasImport }}
+
+## Import
+
+Import is supported using the following syntax:
+
+{{ codefile "shell" .ImportFile }}
+
+Importing only populates the `realm` and `id` attributes; other fields must
+be set in configuration.
+{{- end }}
+
+## Behavior Notes
+
+- The sync operation is **one-shot**: applying the resource runs the sync
+  with the specified options. Proxmox does not expose a persistent sync
+  object, so this resource only records the last requested sync
+  configuration in Terraform state.
+- Destroying the resource does **not** undo any previously performed sync;
+  it simply removes the resource from Terraform state.
+

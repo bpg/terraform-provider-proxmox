@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.92.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.91.0...v0.92.0) (2026-01-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* The `proxmox_virtual_environment_download_file` resource now checks the upstream URL's Content-Length during every refresh with `overwrite=true` (default). This restores the original behavior from v0.33.0 that was accidentally removed in v0.78.2. Users who want to disable upstream checking should set `overwrite=false`.
+
+* The `proxmox_virtual_environment_firewall_options` resource now requires exactly one of `vm_id` or `container_id` to be specified. Previously, configurations with only `node_name` would pass validation but fail at runtime. This change enforces the requirement at validation time.
+
+### Features
+
+* **access:** add LDAP realm and sync resources ([#2454](https://github.com/bpg/terraform-provider-proxmox/issues/2454)) ([085b73b](https://github.com/bpg/terraform-provider-proxmox/commit/085b73b91d5049be878a83dce67059a7bb4ba9c7)), closes [#1871](https://github.com/bpg/terraform-provider-proxmox/issues/1871)
+* **docs:** add universal LLM Agent instructions and contribution guidelines ([#2473](https://github.com/bpg/terraform-provider-proxmox/issues/2473)) ([16abacc](https://github.com/bpg/terraform-provider-proxmox/commit/16abacc4da7c1075b0bd4f8fb7dbb044ee6bfa01))
+
+
+### Bug Fixes
+
+* **api:** detect TFA requirement and return clear error message ([#2477](https://github.com/bpg/terraform-provider-proxmox/issues/2477)) ([876849d](https://github.com/bpg/terraform-provider-proxmox/commit/876849dda5e8340a09028cc9a15dc2880f6c2a41))
+* **docs:** clarify documentation workflow for FWK resources ([#2475](https://github.com/bpg/terraform-provider-proxmox/issues/2475)) ([7bd295a](https://github.com/bpg/terraform-provider-proxmox/commit/7bd295ab26022621216085eb63295f876722bcd5))
+* **docs:** fix broken links in docs ([#2464](https://github.com/bpg/terraform-provider-proxmox/issues/2464)) ([cdeddf8](https://github.com/bpg/terraform-provider-proxmox/commit/cdeddf86c63231dbc31c5c177f5b2c1430f21326))
+* **docs:** update reference to setting up proxmox ([#2455](https://github.com/bpg/terraform-provider-proxmox/issues/2455)) ([3c11ffd](https://github.com/bpg/terraform-provider-proxmox/commit/3c11ffdbb64981eb1330c197530b6f3a13858381))
+* **file:** restore upstream URL change detection in `download_file` ([#2474](https://github.com/bpg/terraform-provider-proxmox/issues/2474)) ([ad181ee](https://github.com/bpg/terraform-provider-proxmox/commit/ad181ee835eeecc496fce529ac0f89e09501a277)), closes [#2470](https://github.com/bpg/terraform-provider-proxmox/issues/2470)
+* **firewall:** make `vm_id`/`container_id` required in VM/Container -level firewall options ([#2453](https://github.com/bpg/terraform-provider-proxmox/issues/2453)) ([5ded5d4](https://github.com/bpg/terraform-provider-proxmox/commit/5ded5d48a16eb001994e1a3c735428a1530e45c8))
+* **storage:** prevent "was absent, but now present" error for backups block ([#2465](https://github.com/bpg/terraform-provider-proxmox/issues/2465)) ([501c09b](https://github.com/bpg/terraform-provider-proxmox/commit/501c09b58678c3a51d89285f2af3e4f3fd8b9f20))
+* **vm:** allow vcpus hotplug without reboot ([#2466](https://github.com/bpg/terraform-provider-proxmox/issues/2466)) ([f864d36](https://github.com/bpg/terraform-provider-proxmox/commit/f864d36a557f1883e0823e15f6b37826683c5ba2))
+* **vm:** correct disk speed settings for multiple disks and update detection ([#2478](https://github.com/bpg/terraform-provider-proxmox/issues/2478)) ([0889c74](https://github.com/bpg/terraform-provider-proxmox/commit/0889c74019c7711616e586a38bcc0e5a98f3d496))
+
+
+### Miscellaneous
+
+* **deps:** update golangci/golangci-lint (v2.7.2 → v2.8.0) ([#2472](https://github.com/bpg/terraform-provider-proxmox/issues/2472)) ([5009161](https://github.com/bpg/terraform-provider-proxmox/commit/5009161379f9cb5ef1fa156a22ed262184c1b45b))
+* **deps:** Update module github.com/avast/retry-go/v4 (v4.7.0 → v5.0.0) ([#2452](https://github.com/bpg/terraform-provider-proxmox/issues/2452)) ([1f664be](https://github.com/bpg/terraform-provider-proxmox/commit/1f664bed9fc5c15099983728bc5d3068aab0d03a))
+* **docs:** remove outdated Ceph handles from `apt_standard_repository` docs ([#2471](https://github.com/bpg/terraform-provider-proxmox/issues/2471)) ([ccbaabd](https://github.com/bpg/terraform-provider-proxmox/commit/ccbaabd28d67596e047478f6518501b645c41fce)), closes [#2421](https://github.com/bpg/terraform-provider-proxmox/issues/2421)
+* **docs:** update terraform proxmox (0.90.0 → 0.91.0) ([#2459](https://github.com/bpg/terraform-provider-proxmox/issues/2459)) ([d175ef0](https://github.com/bpg/terraform-provider-proxmox/commit/d175ef0dccb529983e1eccf156aabaf38d828445))
+
 ## [0.91.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.90.0...v0.91.0) (2026-01-03)
 
 

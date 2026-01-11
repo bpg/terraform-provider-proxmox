@@ -102,7 +102,7 @@ resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc
 - `checksum_algorithm` (String) The algorithm to calculate the checksum of the file. Must be `md5` | `sha1` | `sha224` | `sha256` | `sha384` | `sha512`.
 - `decompression_algorithm` (String) Decompress the downloaded file using the specified compression algorithm. Must be one of `gz` | `lzo` | `zst` | `bz2`.
 - `file_name` (String) The file name. If not provided, it is calculated using `url`. PVE will raise 'wrong file extension' error for some popular extensions file `.raw` or `.qcow2` on PVE versions prior to 8.4. Workaround is to use e.g. `.img` instead.
-- `overwrite` (Boolean) By default `true`. If `true` and file size has changed in the datastore, it will be replaced. If `false`, there will be no check.
+- `overwrite` (Boolean) By default `true`. If `true`, the file will be replaced when either: (1) the file size in the datastore has changed outside of Terraform, or (2) the file size reported by the URL differs from the downloaded file (detecting upstream updates like new cloud image versions). If `false`, no size checks are performed and the file is never automatically replaced.
 - `overwrite_unmanaged` (Boolean) If `true` and a file with the same name already exists in the datastore, it will be deleted and the new file will be downloaded. If `false` and the file already exists, an error will be returned.
 - `upload_timeout` (Number) The file download timeout seconds. Default is 600 (10min).
 - `verify` (Boolean) By default `true`. If `false`, no SSL/TLS certificates will be verified.

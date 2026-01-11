@@ -24,7 +24,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -148,7 +147,7 @@ func DigitPrefix(s string) string {
 // GetDiskDeviceObjects returns a map of disk devices for a VM.
 func GetDiskDeviceObjects(
 	d *schema.ResourceData,
-	resource *schema.Resource,
+	_ *schema.Resource,
 	disks []any,
 ) (vms.CustomStorageDevices, error) {
 	var diskDevices []any
@@ -186,15 +185,13 @@ func GetDiskDeviceObjects(
 		size, _ := block[mkDiskSize].(int)
 		ssd := types.CustomBool(block[mkDiskSSD].(bool))
 
-		speedBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{MkDisk, mkDiskSpeed},
-			0,
-			false,
-		)
-		if err != nil {
-			return diskDeviceObjects, fmt.Errorf("error getting disk speed block: %w", err)
+		// get speed block directly from the current disk entry
+		var speedBlock map[string]any
+
+		if speedList, ok := block[mkDiskSpeed].([]any); ok && len(speedList) > 0 {
+			if sb, ok := speedList[0].(map[string]any); ok {
+				speedBlock = sb
+			}
 		}
 
 		if pathInDatastore != "" {
@@ -328,16 +325,16 @@ func createCustomDisk(
 	commands := []string{
 		`set -e`,
 		ssh.TrySudo,
-		fmt.Sprintf(`file_id="%s"`, *disk.FileID),
-		fmt.Sprintf(`file_format="%s"`, fileFormat),
-		fmt.Sprintf(`datastore_id_target="%s"`, *disk.DatastoreID),
-		fmt.Sprintf(`vm_id="%d"`, vmID),
-		fmt.Sprintf(`disk_options="%s"`, disk.EncodeOptions()),
-		fmt.Sprintf(`disk_interface="%s"`, iface),
-		`source_image=$(try_sudo "pvesm path $file_id")`,
-		`imported_disk="$(try_sudo "qm disk import $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
-		`disk_id="${datastore_id_target}:$imported_disk,${disk_options}"`,
-		`try_sudo "qm set $vm_id -${disk_interface} $disk_id"`,
+		`file_id=` + *disk.FileID,
+		`file_format=` + fileFormat,
+		`datastore_id_target=` + *disk.DatastoreID,
+		fmt.Sprintf(`vm_id=%d`, vmID),
+		fmt.Sprintf(`disk_options=%s`, disk.EncodeOptions()),
+		fmt.Sprintf(`disk_interface=%s`, iface),
+		`source_image=$(try_sudo /usr/sbin/pvesm path $file_id)`,
+		`imported_disk=$(try_sudo /usr/sbin/qm disk import $vm_id $source_image $datastore_id_target -format $file_format | grep unused0 | cut -d : -f 3 | cut -d \' -f 1)`,
+		`disk_id=${datastore_id_target}:$imported_disk,$disk_options`,
+		`try_sudo /usr/sbin/qm set $vm_id -${disk_interface} $disk_id`,
 	}
 
 	out, err := client.SSH().ExecuteNodeCommands(ctx, nodeName, commands)

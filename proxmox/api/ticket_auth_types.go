@@ -31,6 +31,7 @@ type AuthenticationResponseData struct {
 	ClusterName         *string                             `json:"clustername,omitempty"`
 	CSRFPreventionToken *string                             `json:"CSRFPreventionToken,omitempty"`
 	Capabilities        *AuthenticationResponseCapabilities `json:"cap,omitempty"`
+	NeedTFA             *int                                `json:"NeedTFA,omitempty"`
 	Ticket              *string                             `json:"ticket,omitempty"`
 	Username            string                              `json:"username"`
 }

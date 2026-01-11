@@ -257,6 +257,26 @@ schema.StringAttribute{
 
 See existing templates in `/templates/` for examples.
 
+**Admonitions in docs:**
+
+Use Terraform registry admonition syntax in `/docs/` files and templates:
+
+| Symbol | Type    | Usage                           |
+| ------ | ------- | ------------------------------- |
+| `->`   | Note    | General information, tips       |
+| `~>`   | Warning | Cautions, important caveats     |
+| `!>`   | Danger  | Critical warnings, "do not use" |
+
+Example:
+
+```markdown
+-> Consider using `proxmox_virtual_environment_download_file` resource instead.
+
+~> Never commit proxy configurations or credentials to the repository.
+
+!> **DO NOT USE** — This resource is experimental and will change.
+```
+
 For more details, see the [Terraform Plugin Framework documentation on descriptions](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/attributes#description).
 
 ### Best practices
@@ -350,6 +370,7 @@ Guidelines:
 
 > [!WARNING]
 > PRs without proof of work may be rejected. Trivial changes (typo fixes, documentation-only updates that don't affect code behavior) are exempt from this requirement.
+If you use AI assistants, they are expected to generate a proof of work document as a `.dev/*_REPORT.md` file. Review this file and use its contents when completing the PR template.
 
 ### How to submit
 

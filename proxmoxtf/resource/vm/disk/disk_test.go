@@ -817,3 +817,140 @@ func TestOriginalBugScenario(t *testing.T) {
 		require.Equal(t, originalDisk.DatastoreID, newDisk.DatastoreID, "Disk %s datastore should remain unchanged", iface)
 	}
 }
+
+// TestDiskSpeedSettingsPerDisk verifies that each disk gets its own speed settings
+// and not the speed settings from the first disk (fixes issue #2467).
+func TestDiskSpeedSettingsPerDisk(t *testing.T) {
+	t.Parallel()
+
+	diskSchema := Schema()
+	resource := &schema.Resource{Schema: diskSchema}
+
+	// create two disks with different speed settings
+	diskList := []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        50,
+			mkDiskAIO:         "io_uring",
+			mkDiskBackup:      true,
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSerial:      "",
+			mkDiskSSD:         false,
+			mkDiskSpeed: []any{
+				map[string]any{
+					mkDiskIopsRead:            100,
+					mkDiskIopsWrite:           200,
+					mkDiskIopsReadBurstable:   1000,
+					mkDiskIopsWriteBurstable:  2000,
+					mkDiskSpeedRead:           10,
+					mkDiskSpeedWrite:          20,
+					mkDiskSpeedReadBurstable:  100,
+					mkDiskSpeedWriteBurstable: 200,
+				},
+			},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        100,
+			mkDiskAIO:         "io_uring",
+			mkDiskBackup:      true,
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSerial:      "",
+			mkDiskSSD:         false,
+			mkDiskSpeed: []any{
+				map[string]any{
+					mkDiskIopsRead:            300,
+					mkDiskIopsWrite:           400,
+					mkDiskIopsReadBurstable:   3000,
+					mkDiskIopsWriteBurstable:  4000,
+					mkDiskSpeedRead:           30,
+					mkDiskSpeedWrite:          40,
+					mkDiskSpeedReadBurstable:  300,
+					mkDiskSpeedWriteBurstable: 400,
+				},
+			},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi2",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        200,
+			mkDiskAIO:         "io_uring",
+			mkDiskBackup:      true,
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSerial:      "",
+			mkDiskSSD:         false,
+			mkDiskSpeed:       []any{}, // no speed limits
+		},
+	}
+
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
+		MkDisk: diskList,
+	})
+
+	diskDevices, err := GetDiskDeviceObjects(resourceData, resource, diskList)
+	require.NoError(t, err)
+	require.Len(t, diskDevices, 3)
+
+	// verify scsi0 has its own speed settings
+	scsi0 := diskDevices["scsi0"]
+	require.NotNil(t, scsi0)
+	require.NotNil(t, scsi0.IopsRead, "scsi0 should have IopsRead")
+	require.Equal(t, 100, *scsi0.IopsRead)
+	require.NotNil(t, scsi0.IopsWrite, "scsi0 should have IopsWrite")
+	require.Equal(t, 200, *scsi0.IopsWrite)
+	require.NotNil(t, scsi0.MaxIopsRead, "scsi0 should have MaxIopsRead")
+	require.Equal(t, 1000, *scsi0.MaxIopsRead)
+	require.NotNil(t, scsi0.MaxIopsWrite, "scsi0 should have MaxIopsWrite")
+	require.Equal(t, 2000, *scsi0.MaxIopsWrite)
+	require.NotNil(t, scsi0.MaxReadSpeedMbps, "scsi0 should have MaxReadSpeedMbps")
+	require.Equal(t, 10, *scsi0.MaxReadSpeedMbps)
+	require.NotNil(t, scsi0.MaxWriteSpeedMbps, "scsi0 should have MaxWriteSpeedMbps")
+	require.Equal(t, 20, *scsi0.MaxWriteSpeedMbps)
+	require.NotNil(t, scsi0.BurstableReadSpeedMbps, "scsi0 should have BurstableReadSpeedMbps")
+	require.Equal(t, 100, *scsi0.BurstableReadSpeedMbps)
+	require.NotNil(t, scsi0.BurstableWriteSpeedMbps, "scsi0 should have BurstableWriteSpeedMbps")
+	require.Equal(t, 200, *scsi0.BurstableWriteSpeedMbps)
+
+	// verify scsi1 has DIFFERENT speed settings (not scsi0's)
+	scsi1 := diskDevices["scsi1"]
+	require.NotNil(t, scsi1)
+	require.NotNil(t, scsi1.IopsRead, "scsi1 should have IopsRead")
+	require.Equal(t, 300, *scsi1.IopsRead, "scsi1 IopsRead should be 300, not 100 from scsi0")
+	require.NotNil(t, scsi1.IopsWrite, "scsi1 should have IopsWrite")
+	require.Equal(t, 400, *scsi1.IopsWrite, "scsi1 IopsWrite should be 400, not 200 from scsi0")
+	require.NotNil(t, scsi1.MaxIopsRead, "scsi1 should have MaxIopsRead")
+	require.Equal(t, 3000, *scsi1.MaxIopsRead, "scsi1 MaxIopsRead should be 3000, not 1000 from scsi0")
+	require.NotNil(t, scsi1.MaxIopsWrite, "scsi1 should have MaxIopsWrite")
+	require.Equal(t, 4000, *scsi1.MaxIopsWrite, "scsi1 MaxIopsWrite should be 4000, not 2000 from scsi0")
+	require.NotNil(t, scsi1.MaxReadSpeedMbps, "scsi1 should have MaxReadSpeedMbps")
+	require.Equal(t, 30, *scsi1.MaxReadSpeedMbps, "scsi1 MaxReadSpeedMbps should be 30, not 10 from scsi0")
+	require.NotNil(t, scsi1.MaxWriteSpeedMbps, "scsi1 should have MaxWriteSpeedMbps")
+	require.Equal(t, 40, *scsi1.MaxWriteSpeedMbps, "scsi1 MaxWriteSpeedMbps should be 40, not 20 from scsi0")
+	require.NotNil(t, scsi1.BurstableReadSpeedMbps, "scsi1 should have BurstableReadSpeedMbps")
+	require.Equal(t, 300, *scsi1.BurstableReadSpeedMbps, "scsi1 BurstableReadSpeedMbps should be 300, not 100 from scsi0")
+	require.NotNil(t, scsi1.BurstableWriteSpeedMbps, "scsi1 should have BurstableWriteSpeedMbps")
+	require.Equal(t, 400, *scsi1.BurstableWriteSpeedMbps, "scsi1 BurstableWriteSpeedMbps should be 400, not 200 from scsi0")
+
+	// verify scsi2 has NO speed settings (empty speed block)
+	scsi2 := diskDevices["scsi2"]
+	require.NotNil(t, scsi2)
+	require.Nil(t, scsi2.IopsRead, "scsi2 should NOT have IopsRead (empty speed block)")
+	require.Nil(t, scsi2.IopsWrite, "scsi2 should NOT have IopsWrite (empty speed block)")
+	require.Nil(t, scsi2.MaxIopsRead, "scsi2 should NOT have MaxIopsRead (empty speed block)")
+	require.Nil(t, scsi2.MaxIopsWrite, "scsi2 should NOT have MaxIopsWrite (empty speed block)")
+	require.Nil(t, scsi2.MaxReadSpeedMbps, "scsi2 should NOT have MaxReadSpeedMbps (empty speed block)")
+	require.Nil(t, scsi2.MaxWriteSpeedMbps, "scsi2 should NOT have MaxWriteSpeedMbps (empty speed block)")
+	require.Nil(t, scsi2.BurstableReadSpeedMbps, "scsi2 should NOT have BurstableReadSpeedMbps (empty speed block)")
+	require.Nil(t, scsi2.BurstableWriteSpeedMbps, "scsi2 should NOT have BurstableWriteSpeedMbps (empty speed block)")
+}
