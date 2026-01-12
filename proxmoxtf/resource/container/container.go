@@ -1814,17 +1814,20 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 			mountPointObject.Shared = &shared
 		}
 
-		if len(size) > 0 {
-			var ds types.DiskSize
+		mountPointObject.Volume = volume
 
-			ds, err = types.ParseDiskSize(size)
+		if len(size) > 0 {
+			ds, err := types.ParseDiskSize(size)
 			if err != nil {
 				return diag.Errorf("invalid disk size: %s", err.Error())
 			}
 
-			mountPointObject.Volume = fmt.Sprintf("%s:%d", volume, ds.InGigabytes())
-		} else {
-			mountPointObject.Volume = volume
+			if !strings.Contains(volume, ":") {
+				mountPointObject.Volume = fmt.Sprintf("%s:%d", volume, ds.InGigabytes())
+			} else {
+				dsStr := ds.String()
+				mountPointObject.DiskSize = &dsStr
+			}
 		}
 
 		if len(mountOptions) > 0 {
