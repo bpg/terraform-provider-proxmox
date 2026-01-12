@@ -75,13 +75,16 @@ The following assumptions are made about the test environment:
 - The node has local storages named `local` and `local-lvm`
 - The "Snippets" and "Import" content types are enabled in the `local` storage
 - Default Linux Bridge "vmbr0" is VLAN aware (datacenter -> pve -> network -> edit & apply)
+- The directory `/mnt/bindmounts/shared` exists
+- An API token, which you can get by going to datacenter -> permissions -> API Tokens.
 
 Create `example/terraform.tfvars` with the following variables:
 
 ```sh
-virtual_environment_endpoint                 = "https://pve.example.com:8006/"
-virtual_environment_ssh_username             = "terraform"
-virtual_environment_api_token                = "root@pam!terraform=00000000-0000-0000-0000-000000000000"
+virtual_environment_endpoint      = "https://pve.example.com:8006/"
+virtual_environment_ssh_username  = "terraform"
+virtual_environment_api_token     = "terraform@pve!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+virtual_environment_root_password = "your-root-password"
 ```
 
 Then run `make example` to deploy the example resources.
