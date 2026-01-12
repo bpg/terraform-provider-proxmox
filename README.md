@@ -81,10 +81,10 @@ The following assumptions are made about the test environment:
 Create `example/terraform.tfvars` with the following variables:
 
 ```sh
-virtual_environment_ssh_username = "your-ssh-username"
-virtual_environment_endpoint     = "https://192.168.122.43:8006/"
-virtual_environment_password     = "your-password"
-virtual_environment_api_token    = "root@pam!<token>=<value>"
+virtual_environment_endpoint      = "https://pve.example.com:8006/"
+virtual_environment_ssh_username  = "terraform"
+virtual_environment_api_token     = "terraform@pve!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+virtual_environment_root_password = "your-root-password"
 ```
 
 Then run `make example` to deploy the example resources.

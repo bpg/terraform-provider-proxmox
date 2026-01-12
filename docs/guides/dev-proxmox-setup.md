@@ -52,18 +52,27 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
 
    You can also access the web console at `https://192.168.122.43:8006`.
 
+## Proxmox configuration
+
+Before running examples, ensure the following on your Proxmox node:
+
+1. Enable "Snippets" and "Import" content types in the `local` storage (Datacenter -> Storage -> local -> Edit)
+2. Make the default Linux Bridge "vmbr0" VLAN aware (Datacenter -> pve -> Network -> vmbr0 -> Edit)
+3. Create the bind mount directory: `mkdir -p /mnt/bindmounts/shared`
+4. Create an API token (Datacenter -> Permissions -> API Tokens)
+
 ## Configuring the provider
 
 Create a `terraform.tfvars` file in the `example/` directory (this file is git-ignored):
 
 ```hcl
-virtual_environment_ssh_username = "your-ssh-username"
-virtual_environment_endpoint     = "https://192.168.122.43:8006/"
-virtual_environment_password     = "your-password"
-virtual_environment_api_token    = "root@pam!<token>=<value>"
+virtual_environment_endpoint      = "https://192.168.122.43:8006/"
+virtual_environment_ssh_username  = "root"
+virtual_environment_api_token     = "terraform@pve!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+virtual_environment_root_password = "your-root-password"
 ```
 
-Replace the IP address and password with your actual values.
+Replace the IP address, token, and password with your actual values.
 
 ## Running examples
 

@@ -9,11 +9,10 @@ variable "virtual_environment_username" {
   default     = "root@pam"
 }
 
-variable "virtual_environment_password" {
-  description = "Password for Proxmox API User"
+variable "virtual_environment_root_password" {
+  description = "Password for root@pam user (required for bind mounts in LXC containers)"
   type        = string
   sensitive   = true
-  default     = "don not use default passwords!"
 }
 
 variable "virtual_environment_api_token" {

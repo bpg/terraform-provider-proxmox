@@ -12,6 +12,6 @@ provider "proxmox" {
   alias    = "root"
   endpoint = var.virtual_environment_endpoint
   username = "root@pam"
-  password = var.virtual_environment_password
+  password = var.virtual_environment_root_password
   insecure = true
 }
