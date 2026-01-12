@@ -77,6 +77,13 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
     path   = "/mnt/data"
   }
 
+  # To reference a mount point volume from another resource, use path_in_datastore:
+  # mount_point {
+  #   volume = other_container.mount_point[0].path_in_datastore
+  #   size   = "10G"
+  #   path   = "/mnt/shared"
+  # }
+
   startup {
     order      = "3"
     up_delay   = "60"
@@ -148,6 +155,8 @@ output "ubuntu_container_public_key" {
         to `4`). When set to 0 a directory or zfs/btrfs subvolume will be created.
         Requires `datastore_id` to be set.
     - `mount_options` (Optional) List of extra mount options.
+    - `path_in_datastore` (Computed) The in-datastore path to the disk image.
+        Use this attribute for cross-resource references.
 - `environment_variables` - (Optional) A map of runtime environment variables for the container init process.
 - `initialization` - (Optional) The initialization configuration.
     - `dns` - (Optional) The DNS configuration.
@@ -195,6 +204,8 @@ output "ubuntu_container_public_key" {
         Can be specified with a unit suffix (e.g. `10G`).
     - `volume` (Required) Volume, device or directory to mount into the
         container.
+    - `path_in_datastore` (Computed) The in-datastore path to the mount point volume.
+        Use this attribute for cross-resource references instead of `volume`.
 - `device_passthrough` - (Optional) Device to pass through to the container (multiple blocks supported).
     - `deny_write` - (Optional) Deny the container to write to the device (defaults to `false`).
     - `gid` - (Optional) Group ID to be assigned to the device node.

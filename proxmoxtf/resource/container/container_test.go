@@ -118,7 +118,8 @@ func TestContainerSchema(t *testing.T) {
 	})
 
 	test.AssertValueTypes(t, diskSchema, map[string]schema.ValueType{
-		mkDiskDatastoreID: schema.TypeString,
+		mkDiskDatastoreID:     schema.TypeString,
+		mkDiskPathInDatastore: schema.TypeString,
 	})
 
 	featuresSchema := test.AssertNestedSchemaExistence(t, s, mkFeatures)
@@ -284,16 +285,17 @@ func TestContainerSchema(t *testing.T) {
 	})
 
 	test.AssertValueTypes(t, mountPointSchema, map[string]schema.ValueType{
-		mkMountPointACL:          schema.TypeBool,
-		mkMountPointBackup:       schema.TypeBool,
-		mkMountPointMountOptions: schema.TypeList,
-		mkMountPointPath:         schema.TypeString,
-		mkMountPointQuota:        schema.TypeBool,
-		mkMountPointReadOnly:     schema.TypeBool,
-		mkMountPointReplicate:    schema.TypeBool,
-		mkMountPointShared:       schema.TypeBool,
-		mkMountPointSize:         schema.TypeString,
-		mkMountPointVolume:       schema.TypeString,
+		mkMountPointACL:             schema.TypeBool,
+		mkMountPointBackup:          schema.TypeBool,
+		mkMountPointMountOptions:    schema.TypeList,
+		mkMountPointPath:            schema.TypeString,
+		mkMountPointQuota:           schema.TypeBool,
+		mkMountPointReadOnly:        schema.TypeBool,
+		mkMountPointReplicate:       schema.TypeBool,
+		mkMountPointShared:          schema.TypeBool,
+		mkMountPointSize:            schema.TypeString,
+		mkMountPointVolume:          schema.TypeString,
+		mkMountPointPathInDatastore: schema.TypeString,
 	})
 
 	networkInterfaceSchema := test.AssertNestedSchemaExistence(

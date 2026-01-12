@@ -117,6 +117,7 @@ const (
 	mkDiskQuota                         = "quota"
 	mkDiskReplicate                     = "replicate"
 	mkDiskSize                          = "size"
+	mkDiskPathInDatastore               = "path_in_datastore"
 	mkEnvironmentVariables              = "environment_variables"
 	mkFeatures                          = "features"
 	mkFeaturesNesting                   = "nesting"
@@ -154,6 +155,7 @@ const (
 	mkMountPointShared                  = "shared"
 	mkMountPointSize                    = "size"
 	mkMountPointVolume                  = "volume"
+	mkMountPointPathInDatastore         = "path_in_datastore"
 	mkDevicePassthroughDenyWrite        = "deny_write"
 	mkDevicePassthrough                 = "device_passthrough" // #nosec G101
 	mkDevicePassthroughPath             = "path"
@@ -391,6 +393,11 @@ func Container() *schema.Resource {
 							},
 							DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
 							DiffSuppressOnRefresh: true,
+						},
+						mkDiskPathInDatastore: {
+							Type:        schema.TypeString,
+							Description: "The in-datastore path to the disk image",
+							Computed:    true,
 						},
 					},
 				},
@@ -744,8 +751,8 @@ func Container() *schema.Resource {
 							Required:    true,
 							ForceNew:    true,
 							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
-								// For *new* volume mounts PVE returns an actual volume ID which is saved in the stare,
-								// so on reapply the provider will try override it:"
+								// For *new* volume mounts PVE returns an actual volume ID which is saved in the state,
+								// so on reapply the provider will try override it:
 								//   "local-lvm" -> "local-lvm:vm-101-disk-1"
 								//   "local-lvm:8" -> "local-lvm:vm-101-disk-1"
 								// There is also an option to mount an existing volume, so
@@ -753,6 +760,11 @@ func Container() *schema.Resource {
 								// which is a valid case.
 								return oldVal == newVal || strings.HasPrefix(oldVal, strings.Split(newVal, ":")[0]+":")
 							},
+						},
+						mkMountPointPathInDatastore: {
+							Type:        schema.TypeString,
+							Description: "The in-datastore path to the mount point volume",
+							Computed:    true,
 						},
 					},
 				},
@@ -2401,6 +2413,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		disk[mkDiskReplicate] = containerConfig.RootFS.Replicate
 		disk[mkDiskQuota] = containerConfig.RootFS.Quota
 		disk[mkDiskDatastoreID] = volumeParts[0]
+		disk[mkDiskPathInDatastore] = containerConfig.RootFS.Volume
 
 		disk[mkDiskSize] = containerConfig.RootFS.Size.InGigabytes()
 		if containerConfig.RootFS.MountOptions != nil {
@@ -2413,6 +2426,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		disk[mkDiskDatastoreID] = "local"
 		disk[mkDiskSize] = dvDiskSize
 		disk[mkDiskMountOptions] = []string{}
+		disk[mkDiskPathInDatastore] = ""
 	}
 
 	currentDisk := d.Get(mkDisk).([]any)
@@ -2618,6 +2632,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		mountPoint[mkMountPointVolume] = mp.Volume
+		mountPoint[mkMountPointPathInDatastore] = mp.Volume
 
 		mountPointsMap[key] = mountPoint
 	}
