@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.93.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.92.0...v0.93.0) (2026-01-12)
+
+
+### Features
+
+* **lxc:** add `path_in_datastore` computed attribute for cross-resource refs ([#2493](https://github.com/bpg/terraform-provider-proxmox/issues/2493)) ([616ec37](https://github.com/bpg/terraform-provider-proxmox/commit/616ec379f2052bd1a512e123c0c363ee2cb894aa))
+* **lxc:** enable root disk resize without recreate ([#2321](https://github.com/bpg/terraform-provider-proxmox/issues/2321)) ([581782c](https://github.com/bpg/terraform-provider-proxmox/commit/581782c4b12a6e9d35b2734194ee6c05d52c79d8))
+* **vm:** add ha-aware migration for ha-managed vms ([#2476](https://github.com/bpg/terraform-provider-proxmox/issues/2476)) ([4f5b4fb](https://github.com/bpg/terraform-provider-proxmox/commit/4f5b4fb27865f1acdd884a040ad8c686a64d5036))
+* **vm:** add support for `hotplug` parameter ([#2356](https://github.com/bpg/terraform-provider-proxmox/issues/2356)) ([891fd41](https://github.com/bpg/terraform-provider-proxmox/commit/891fd4185f7dad1d022c90bda137b9aa9c179106))
+
+
+### Bug Fixes
+
+* **docs:** improve provider documentation readability and structure ([#2487](https://github.com/bpg/terraform-provider-proxmox/issues/2487)) ([b9457fa](https://github.com/bpg/terraform-provider-proxmox/commit/b9457fa9b3b30c8d5535bedfba40d81dc7a527e2))
+* **example:** make lxc container use root provider so it works ([#2458](https://github.com/bpg/terraform-provider-proxmox/issues/2458)) ([7e1a379](https://github.com/bpg/terraform-provider-proxmox/commit/7e1a3796855e390d4afb2885b8d7c8ae10b7ef42))
+* **lxc:** allow mounting existing subvol with size argument ([#2491](https://github.com/bpg/terraform-provider-proxmox/issues/2491)) ([0b9e1e0](https://github.com/bpg/terraform-provider-proxmox/commit/0b9e1e08999f044a1613107c3f8eadef60512267))
+* **ssh:** harden try_sudo for PVE 9, improve shell compatibility ([#2480](https://github.com/bpg/terraform-provider-proxmox/issues/2480)) ([f3dd703](https://github.com/bpg/terraform-provider-proxmox/commit/f3dd703f398697f88db5ea369a2b9355d25fdf1a))
+* **vm:** prevent initialization drift when cloning VM with user_account ([#2486](https://github.com/bpg/terraform-provider-proxmox/issues/2486)) ([dbd4fd5](https://github.com/bpg/terraform-provider-proxmox/commit/dbd4fd50526393ae3f1d9dd50ea7ba4439bb6c31))
+* **vm:** resizing disk deletes cdrom / cloud-init ([#2484](https://github.com/bpg/terraform-provider-proxmox/issues/2484)) ([ae17149](https://github.com/bpg/terraform-provider-proxmox/commit/ae171496250f17c67436f22aaeccdf975f205c4c))
+
+
+### Miscellaneous
+
+* **docs:** minor docs fixes and improvements ([#2481](https://github.com/bpg/terraform-provider-proxmox/issues/2481)) ([b52af8d](https://github.com/bpg/terraform-provider-proxmox/commit/b52af8d7948ebbf3d268699f17fc0d7fcc62eafe))
+
 ## [0.92.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.91.0...v0.92.0) (2026-01-10)
 
 
