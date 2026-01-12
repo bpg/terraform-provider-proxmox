@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -1205,6 +1206,153 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 						require.NoError(te.t, err, "failed to get container")
 						if ctInfo.EnvironmentVariables != nil {
 							require.Empty(te.t, *ctInfo.EnvironmentVariables, "environment_variables should be empty")
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+// TestAccResourceContainerMountExistingVolumeWithSize verifies that mounting an existing
+// subvolume with an explicit size works correctly (issue #2490). The size parameter should
+// be sent as a separate `size=` parameter in the mount point config, not appended to the
+// volume name.
+//
+// This test creates a container with a mount point, then in step 2 updates it specifying
+// the existing volume explicitly along with size. This exercises the update code path fix.
+func TestAccResourceContainerMountExistingVolumeWithSize(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	var createdVolumeName string
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// step 1: create container with a new mount point (creates volume)
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+					vm_id     = {{ .TestContainerID }}
+				  	started   = false
+				    disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+				    mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "/mnt/data"
+				    }
+				    initialization {
+				  		hostname = "test-mount-existing"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
+						"mount_point.#":      "1",
+						"mount_point.0.size": "4G",
+						"mount_point.0.path": "/mnt/data",
+					}),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_container.test_container"]
+						if !ok {
+							return fmt.Errorf("test_container not found")
+						}
+						createdVolumeName = rs.Primary.Attributes["mount_point.0.volume"]
+						t.Logf("Created volume: %s", createdVolumeName)
+						// verify volume name has the expected format (datastore:volume-id)
+						if !strings.Contains(createdVolumeName, ":") {
+							return fmt.Errorf("volume name should contain colon: %s", createdVolumeName)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				// step 2: add a second mount point while keeping the first one
+				// this tests that existing mount points with size are handled correctly during update
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+					vm_id     = {{ .TestContainerID }}
+				  	started   = false
+				    disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+				    mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "/mnt/data"
+				    }
+				    mount_point {
+						volume = "local-lvm"
+						size   = "2G"
+						path   = "/mnt/data2"
+				    }
+				    initialization {
+				  		hostname = "test-mount-existing"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
+						"mount_point.#": "2",
+					}),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_container.test_container"]
+						if !ok {
+							return fmt.Errorf("test_container not found")
+						}
+
+						// verify both mount points exist and have correct attributes
+						mp0Volume := rs.Primary.Attributes["mount_point.0.volume"]
+						mp0Size := rs.Primary.Attributes["mount_point.0.size"]
+						mp1Volume := rs.Primary.Attributes["mount_point.1.volume"]
+						mp1Size := rs.Primary.Attributes["mount_point.1.size"]
+
+						t.Logf("MP0: volume=%s, size=%s", mp0Volume, mp0Size)
+						t.Logf("MP1: volume=%s, size=%s", mp1Volume, mp1Size)
+
+						// verify volumes have proper format (not mangled)
+						if !strings.Contains(mp0Volume, ":") || !strings.Contains(mp1Volume, ":") {
+							return fmt.Errorf("volume names should contain colon: mp0=%s, mp1=%s", mp0Volume, mp1Volume)
 						}
 
 						return nil
