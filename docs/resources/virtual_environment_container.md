@@ -70,6 +70,13 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
     path   = "/mnt/volume"
   }
 
+  mount_point {
+    # volume mount, an existing volume will be mounted
+    volume = "local-lvm:subvol-108-disk-101"
+    size   = "10G"
+    path   = "/mnt/data"
+  }
+
   startup {
     order      = "3"
     up_delay   = "60"
