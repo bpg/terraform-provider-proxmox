@@ -1363,6 +1363,132 @@ func TestAccResourceContainerMountExistingVolumeWithSize(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerMountPointVolumeReference verifies that the mount_point.volume
+// attribute can be referenced by another resource without causing "inconsistent final plan"
+// errors. This requires mount_point.volume to be marked as Computed in the schema.
+func TestAccResourceContainerMountPointVolumeReference(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID1 := 100000 + rand.Intn(99999)
+	accTestContainerID2 := accTestContainerID1 + 1
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":    imageFileName,
+		"TestContainerID1": accTestContainerID1,
+		"TestContainerID2": accTestContainerID2,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// create two containers where the second references the first's mount_point volume
+				// this tests that mount_point.volume is properly marked as Computed
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "source" {
+				    node_name = "{{.NodeName}}"
+					vm_id     = {{ .TestContainerID1 }}
+				  	started   = false
+				    disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+				    mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "/mnt/data"
+				    }
+				    initialization {
+				  		hostname = "source"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}
+
+				resource "proxmox_virtual_environment_container" "target" {
+				    node_name  = "{{.NodeName}}"
+					vm_id      = {{ .TestContainerID2 }}
+				  	started    = false
+					depends_on = [proxmox_virtual_environment_container.source]
+				    disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					# reference the path_in_datastore from source container (computed attribute for cross-resource refs)
+				    mount_point {
+						volume = proxmox_virtual_environment_container.source.mount_point[0].path_in_datastore
+						size   = "4G"
+						path   = "/mnt/shared"
+				    }
+				    initialization {
+				  		hostname = "target"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.source", map[string]string{
+						"mount_point.#": "1",
+					}),
+					ResourceAttributes("proxmox_virtual_environment_container.target", map[string]string{
+						"mount_point.#": "1",
+					}),
+					func(s *terraform.State) error {
+						rs1, ok := s.RootModule().Resources["proxmox_virtual_environment_container.source"]
+						if !ok {
+							return fmt.Errorf("source container not found")
+						}
+						rs2, ok := s.RootModule().Resources["proxmox_virtual_environment_container.target"]
+						if !ok {
+							return fmt.Errorf("target container not found")
+						}
+
+						sourcePath := rs1.Primary.Attributes["mount_point.0.path_in_datastore"]
+						targetPath := rs2.Primary.Attributes["mount_point.0.path_in_datastore"]
+
+						t.Logf("Source path_in_datastore: %s", sourcePath)
+						t.Logf("Target path_in_datastore: %s", targetPath)
+
+						// verify both containers reference the same volume
+						if sourcePath != targetPath {
+							return fmt.Errorf("path_in_datastore don't match: source=%s, target=%s", sourcePath, targetPath)
+						}
+
+						// verify the path_in_datastore has the expected format (datastore:volume-id)
+						if !strings.Contains(sourcePath, ":") {
+							return fmt.Errorf("source path_in_datastore should have format datastore:id, got: %s", sourcePath)
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
 	t.Helper()
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
