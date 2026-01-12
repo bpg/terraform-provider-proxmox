@@ -1822,8 +1822,12 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 				return diag.Errorf("invalid disk size: %s", err.Error())
 			}
 
-			if !strings.Contains(volume, ":") {
-				mountPointObject.Volume = fmt.Sprintf("%s:%d", volume, ds.InGigabytes())
+			parts := strings.SplitN(volume, ":", 2)
+			isExistingVolume := len(parts) == 2 && parts[1] != ""
+
+			if !isExistingVolume {
+				datastore := parts[0]
+				mountPointObject.Volume = fmt.Sprintf("%s:%d", datastore, ds.InGigabytes())
 			} else {
 				dsStr := ds.String()
 				mountPointObject.DiskSize = &dsStr
