@@ -82,3 +82,8 @@ func (r *VLANResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 func (m *vlanModel) getGenericModel() *genericModel {
 	return &m.genericModel
 }
+
+func (m *vlanModel) checkDeletedFields(state zoneModel) []string {
+	vlanState := state.(*vlanModel)
+	return m.genericModel.checkDeletedFields(&vlanState.genericModel)
+}

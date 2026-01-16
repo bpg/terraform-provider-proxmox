@@ -103,3 +103,8 @@ func (r *QinQResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 func (m *qinqModel) getGenericModel() *genericModel {
 	return &m.genericModel
 }
+
+func (m *qinqModel) checkDeletedFields(state zoneModel) []string {
+	qinqState := state.(*qinqModel)
+	return m.genericModel.checkDeletedFields(&qinqState.genericModel)
+}

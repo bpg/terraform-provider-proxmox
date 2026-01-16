@@ -86,3 +86,8 @@ func (r *SimpleResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 func (m *simpleModel) getGenericModel() *genericModel {
 	return &m.genericModel
 }
+
+func (m *simpleModel) checkDeletedFields(state zoneModel) []string {
+	simpleState := state.(*simpleModel)
+	return m.genericModel.checkDeletedFields(&simpleState.genericModel)
+}

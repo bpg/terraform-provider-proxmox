@@ -108,7 +108,7 @@ func NewValueList(items []string, diags *diag.Diagnostics) Value {
 
 // NewValueString converts a string of items to a new string set value.
 func NewValueString(str *string, diags *diag.Diagnostics, opts ...Option) Value {
-	if str == nil || *str == "" {
+	if str == nil || *str == "" || *str == "deleted" {
 		return Value{types.SetValueMust(types.StringType, []attr.Value{})}
 	}
 
