@@ -7,12 +7,11 @@
 package attribute
 
 import (
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 )
 
 // ResourceID generates an attribute definition suitable for the always-present resource `id` attribute.
@@ -44,7 +43,6 @@ func IsDefined(v attr.Value) bool {
 
 // CheckDelete adds an API field name to the delete list if the plan field is null but the state field is not null.
 // This is used to handle attribute deletion in API calls.
-// For stringset.Value, also treats empty sets as null.
 func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName string) {
 	planIsEmpty := planField.IsNull()
 	stateIsEmpty := stateField.IsNull()
@@ -52,10 +50,6 @@ func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName s
 	// Special handling for stringset.Value: treat empty set as null
 	if planSet, ok := planField.(stringset.Value); ok {
 		planIsEmpty = planIsEmpty || len(planSet.Elements()) == 0
-	}
-
-	if stateSet, ok := stateField.(stringset.Value); ok {
-		stateIsEmpty = stateIsEmpty || len(stateSet.Elements()) == 0
 	}
 
 	if planIsEmpty && !stateIsEmpty {

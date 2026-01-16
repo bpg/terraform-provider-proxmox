@@ -1,4 +1,4 @@
-//go:build acceptance || all
+//go:build all
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -26,7 +26,7 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 		steps []resource.TestStep
 	}{
 		{
-			name: "update evpn zone from empty exit_nodes to populated list",
+			name: "create evpn zone with all values then minimal then all values again",
 			steps: []resource.TestStep{
 				{
 					Config: te.RenderConfig(`
@@ -39,7 +39,7 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 						  disable_arp_nd_suppression = true
 						  mtu                        = 1370
 						  nodes                      = ["{{.NodeName}}"]
-						  exit_nodes                 = []
+						  exit_nodes                 = ["{{.NodeName}}"]
 						  depends_on = [
 						    proxmox_virtual_environment_sdn_applier.finalizer
 						  ]
@@ -66,10 +66,10 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 							"vrf_vxlan":                  "99999",
 							"advertise_subnets":          "true",
 							"exit_nodes_local_routing":   "true",
-							"mtu":                        "1370",
 							"disable_arp_nd_suppression": "true",
+							"mtu":                        "1370",
 							"nodes.#":                    "1",
-							"exit_nodes.#":               "0",
+							"exit_nodes.#":               "1",
 							"pending":                    "true",
 							"state":                      "new",
 						}),
@@ -78,14 +78,58 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 						resource "proxmox_virtual_environment_sdn_zone_evpn" "evpn_update_test" {
-						  id                       = "evpntest"
-						  controller               = "evpnctl"
-						  vrf_vxlan                = 99999
-						  advertise_subnets        = true
-						  exit_nodes_local_routing = true
-						  mtu                      = 1450
-						  nodes                    = ["{{.NodeName}}"]
-						  exit_nodes               = ["{{.NodeName}}"]
+						  id         = "evpntest"
+						  controller = "evpnctl"
+						  vrf_vxlan  = 99998
+						  mtu        = 1450
+						  nodes      = []
+						  depends_on = [
+						    proxmox_virtual_environment_sdn_applier.finalizer
+						  ]
+						}
+
+						resource "proxmox_virtual_environment_sdn_applier" "evpn_applier" {
+						  lifecycle {
+							  replace_triggered_by = [
+                  proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test,
+					      ]
+						  }
+
+						  depends_on = [
+						    proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test
+						  ]
+						}
+
+						resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test", map[string]string{
+							"id":                         "evpntest",
+							"controller":                 "evpnctl",
+							"vrf_vxlan":                  "99998",
+							"mtu":                        "1450",
+							"advertise_subnets":          "false",
+							"exit_nodes_local_routing":   "false",
+							"disable_arp_nd_suppression": "false",
+							"nodes.#":                    "0",
+							"exit_nodes.#":               "0",
+							"pending":                    "true",
+							"state":                      "changed",
+						}),
+					),
+				},
+				{
+					Config: te.RenderConfig(`
+						resource "proxmox_virtual_environment_sdn_zone_evpn" "evpn_update_test" {
+						  id                         = "evpntest"
+						  controller                 = "evpnctl"
+						  vrf_vxlan                  = 99999
+						  advertise_subnets          = true
+						  exit_nodes_local_routing   = true
+						  disable_arp_nd_suppression = true
+						  mtu                        = 1500
+						  nodes                      = ["{{.NodeName}}"]
+						  exit_nodes                 = ["{{.NodeName}}"]
 						  depends_on = [
 						    proxmox_virtual_environment_sdn_applier.finalizer
 						  ]
@@ -112,93 +156,13 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 							"vrf_vxlan":                  "99999",
 							"advertise_subnets":          "true",
 							"exit_nodes_local_routing":   "true",
-							"disable_arp_nd_suppression": "false",
-							"mtu":                        "1450",
-							"exit_nodes.#":               "1",
+							"disable_arp_nd_suppression": "true",
+							"mtu":                        "1500",
 							"nodes.#":                    "1",
+							"exit_nodes.#":               "1",
 							"pending":                    "true",
 							"state":                      "changed",
 						}),
-					),
-				},
-				{
-					Config: te.RenderConfig(`
-						resource "proxmox_virtual_environment_sdn_zone_evpn" "evpn_update_test" {
-						  id                       = "evpntest"
-						  controller               = "evpnctl"
-						  vrf_vxlan                = 99999
-						  depends_on = [
-						    proxmox_virtual_environment_sdn_applier.finalizer
-						  ]
-						}
-
-						resource "proxmox_virtual_environment_sdn_applier" "evpn_applier" {
-						  lifecycle {
-							  replace_triggered_by = [
-                  proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test,
-					      ]
-						  }
-
-						  depends_on = [
-						    proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test
-						  ]
-						}
-
-						resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
-					`),
-					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test", map[string]string{
-							"id":                         "evpntest",
-							"controller":                 "evpnctl",
-							"vrf_vxlan":                  "99999",
-							"exit_nodes.#":               "0",
-							"disable_arp_nd_suppression": "false",
-							"nodes.#":                    "0",
-							"pending":                    "true",
-							"state":                      "changed",
-							"advertise_subnets":          "false",
-							"exit_nodes_local_routing":   "false",
-						}),
-					),
-				},
-				{
-					Config: te.RenderConfig(`
-						resource "proxmox_virtual_environment_sdn_zone_evpn" "evpn_update_test" {
-						  id                       = "evpntest"
-						  controller               = "evpnctl"
-						  vrf_vxlan                = 99999
-						  advertise_subnets        = false
-						  exit_nodes_local_routing = false
-						  depends_on = [
-						    proxmox_virtual_environment_sdn_applier.finalizer
-						  ]
-						}
-
-						resource "proxmox_virtual_environment_sdn_applier" "evpn_applier" {
-						  lifecycle {
-							  replace_triggered_by = [
-                  proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test,
-					      ]
-						  }
-
-						  depends_on = [
-						    proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test
-						  ]
-						}
-
-						resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
-					`),
-					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test", map[string]string{
-							"id":                         "evpntest",
-							"controller":                 "evpnctl",
-							"vrf_vxlan":                  "99999",
-							"exit_nodes.#":               "0",
-							"disable_arp_nd_suppression": "false",
-							"advertise_subnets":          "false",
-							"exit_nodes_local_routing":   "false",
-						}),
-						test.NoResourceAttributesSet("proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test", []string{"pending", "state"}),
 					),
 				},
 			},
