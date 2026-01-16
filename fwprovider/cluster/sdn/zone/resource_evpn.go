@@ -50,25 +50,28 @@ func (m *evpnModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagn
 	m.DisableARPNDSuppression = types.BoolPointerValue(data.DisableARPNDSuppression.PointerBool())
 	m.ExitNodes = stringset.NewValueString(data.ExitNodes, diags, stringset.WithSeparator(","))
 	m.ExitNodesLocalRouting = types.BoolPointerValue(data.ExitNodesLocalRouting.PointerBool())
-	m.PrimaryExitNode = m.genericModel.handleDeletedValue(data.ExitNodesPrimary)
-	m.RouteTargetImport = m.genericModel.handleDeletedValue(data.RouteTargetImport)
+	m.PrimaryExitNode = types.StringPointerValue(data.ExitNodesPrimary)
+	m.RouteTargetImport = types.StringPointerValue(data.RouteTargetImport)
 	m.VRFVXLANID = types.Int64PointerValue(data.VRFVXLANID)
 
 	if data.Pending != nil {
 		hasPendingChanges := false
 
 		if data.Pending.AdvertiseSubnets != nil {
-			m.genericModel.applyPendingBool(data.Pending.AdvertiseSubnets, &m.AdvertiseSubnets)
+			m.applyPendingBool(data.Pending.AdvertiseSubnets, &m.AdvertiseSubnets)
+
 			hasPendingChanges = true
 		}
 
 		if data.Pending.Controller != nil && *data.Pending.Controller != "" {
-			m.genericModel.applyPendingString(data.Pending.Controller, &m.Controller)
+			m.applyPendingString(data.Pending.Controller, &m.Controller)
+
 			hasPendingChanges = true
 		}
 
 		if data.Pending.DisableARPNDSuppression != nil {
-			m.genericModel.applyPendingBool(data.Pending.DisableARPNDSuppression, &m.DisableARPNDSuppression)
+			m.applyPendingBool(data.Pending.DisableARPNDSuppression, &m.DisableARPNDSuppression)
+
 			hasPendingChanges = true
 		}
 
@@ -78,17 +81,20 @@ func (m *evpnModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagn
 		}
 
 		if data.Pending.ExitNodesLocalRouting != nil {
-			m.genericModel.applyPendingBool(data.Pending.ExitNodesLocalRouting, &m.ExitNodesLocalRouting)
+			m.applyPendingBool(data.Pending.ExitNodesLocalRouting, &m.ExitNodesLocalRouting)
+
 			hasPendingChanges = true
 		}
 
 		if data.Pending.ExitNodesPrimary != nil && *data.Pending.ExitNodesPrimary != "" {
-			m.genericModel.applyPendingString(data.Pending.ExitNodesPrimary, &m.PrimaryExitNode)
+			m.applyPendingString(data.Pending.ExitNodesPrimary, &m.PrimaryExitNode)
+
 			hasPendingChanges = true
 		}
 
 		if data.Pending.RouteTargetImport != nil && *data.Pending.RouteTargetImport != "" {
-			m.genericModel.applyPendingString(data.Pending.RouteTargetImport, &m.RouteTargetImport)
+			m.applyPendingString(data.Pending.RouteTargetImport, &m.RouteTargetImport)
+
 			hasPendingChanges = true
 		}
 
@@ -119,7 +125,6 @@ func (m *evpnModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Z
 }
 
 func (m *evpnModel) checkDeletedFields(state zoneModel) []string {
-	// Get generic deleted fields first
 	evpnState := state.(*evpnModel)
 	toDelete := m.genericModel.checkDeletedFields(&evpnState.genericModel)
 
