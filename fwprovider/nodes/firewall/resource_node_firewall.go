@@ -304,7 +304,7 @@ func (r *nodeFirewallOptionsResource) read(
 ) {
 	nodeName := model.NodeName.ValueString()
 
-	options, err := r.client.Node(nodeName).Firewall().(*nodefirewall.Client).GetNodeOptions(ctx)
+	options, err := r.client.Node(nodeName).Firewall().GetNodeOptions(ctx)
 	if err != nil {
 		diags.AddError(
 			"Error getting node firewall options",
@@ -364,7 +364,9 @@ func (r *nodeFirewallOptionsResource) Update(
 
 	var toDelete []string
 	attribute.CheckDeleteComputed(plan.NFConntrackMax, state.NFConntrackMax, &toDelete, "nf_conntrack_max")
-	attribute.CheckDeleteComputed(plan.NFConntrackTCPTimeoutEstablished, state.NFConntrackMax, &toDelete, "nf_conntrack_tcp_timeout_established")
+	attribute.CheckDeleteComputed(
+		plan.NFConntrackTCPTimeoutEstablished, state.NFConntrackTCPTimeoutEstablished, &toDelete, "nf_conntrack_tcp_timeout_established",
+	)
 
 	body.Delete = &toDelete
 

@@ -16,8 +16,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-const accTestNodeFirewallOptionsName = "proxmox_node_firewall_options.test"
-
 func TestAccResourceNodeFirewallOptions(t *testing.T) {
 	t.Parallel()
 
