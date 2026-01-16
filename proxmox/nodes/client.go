@@ -71,7 +71,7 @@ func (c *Client) Tasks() *tasks.Client {
 }
 
 // Firewall returns a client for managing the node firewall.
-func (c *Client) Firewall() firewall.API {
+func (c *Client) Firewall() nodefirewall.API {
 	return &nodefirewall.Client{
 		Client: firewall.Client{Client: c},
 	}
