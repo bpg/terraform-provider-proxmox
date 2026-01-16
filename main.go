@@ -78,6 +78,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_metrics_server.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_bridge.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_vlan.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_node_firewall.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_oci_image.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_pool_membership.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_realm_ldap.md ./docs/resources/

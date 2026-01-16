@@ -47,3 +47,11 @@ func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName s
 		*toDelete = append(*toDelete, apiName)
 	}
 }
+
+// CheckDeleteComputed adds an API field name to the delete list if the plan field is null but the state field is not null.
+// This is used to handle attribute deletion in API calls but for Computed fields.
+func CheckDeleteComputed(planField, stateField attr.Value, toDelete *[]string, apiName string) {
+	if (planField.IsNull() || planField.IsUnknown()) && !stateField.IsNull() {
+		*toDelete = append(*toDelete, apiName)
+	}
+}

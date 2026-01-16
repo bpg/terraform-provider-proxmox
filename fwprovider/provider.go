@@ -41,6 +41,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/clonedvm"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
+	nodefirewall "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/firewall"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
@@ -539,6 +540,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		nodes.NewACMECertificateResource,
 		nodes.NewDownloadFileResource,
 		nodes.NewOCIImageResource,
+		nodefirewall.NewNodeFirewallOptionsResource,
 		options.NewClusterOptionsResource,
 		pools.NewPoolMembershipResource,
 		sdnapplier.NewResource,
