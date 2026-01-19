@@ -586,7 +586,7 @@ func Update(
 	planDisks vms.CustomStorageDevices,
 	currentDisks vms.CustomStorageDevices,
 	updateBody *vms.UpdateRequestBody,
-) (bool, bool, error) {
+) (bool, error) {
 	rebootRequired := false
 
 	if d.HasChange(MkDisk) {
@@ -599,7 +599,7 @@ func Update(
 					// only disks with defined file ID are custom image disks that need to be created via import.
 					err := createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)
 					if err != nil {
-						return false, false, fmt.Errorf("creating custom disk: %w", err)
+						return false, fmt.Errorf("creating custom disk: %w", err)
 					}
 				} else {
 					// otherwise this is a blank disk that can be added directly via update API
@@ -615,7 +615,7 @@ func Update(
 				tmp = currentDisks[iface]
 			default:
 				// something went wrong
-				return false, false, fmt.Errorf("missing device %s", iface)
+				return false, fmt.Errorf("missing device %s", iface)
 			}
 
 			if tmp == nil || disk == nil {
@@ -650,5 +650,5 @@ func Update(
 		}
 	}
 
-	return false, rebootRequired, nil
+	return rebootRequired, nil
 }
