@@ -30,7 +30,12 @@ Proxmox supports hotplugging some attributes while a VM is running. Other change
 
 ### Hotplug vs reboot vs recreate
 
-When `reboot_after_update = true` (default), Terraform automatically reboots the VM when a non-hotpluggable attribute changes. Set it to `false` if you prefer to schedule reboots manually — Terraform will log a warning instead.
+When `reboot_after_update = true` (default), Terraform automatically reboots or powers off the VM during update operations when required to apply changes. Set it to `false` if you prefer to keep the VM online unless you intervene manually.
+
+With `reboot_after_update = false`, there are two outcomes:
+
+- If the change was applied successfully but the guest still needs a later reboot to fully pick it up, Terraform completes the apply and emits a warning.
+- If the change cannot be applied at all without taking the VM offline first, Terraform fails the apply with an error instead of powering the VM off automatically.
 
 | Change | Behavior |
 | ------ | -------- |
@@ -39,10 +44,10 @@ When `reboot_after_update = true` (default), Terraform automatically reboots the
 | `cpu.cores`, `cpu.sockets` | Requires reboot |
 | `cpu.type` | Requires reboot |
 | `machine`, `bios` | Requires reboot |
-| `disk.size` (increase) | Applied online, no reboot |
+| `disk.size` (increase) | Applied online when possible; may still require manual reboot later for non-hotpluggable disk setups |
 | `disk.size` (decrease) | **Error** — disks can only grow |
 | `disk.interface` | Deletes old disk, creates new (data-destructive, not VM recreation) |
-| `template` | Forces recreation |
+| `template` | `false -> true` converts in place; `true -> false` is unsupported |
 
 -> **Tip:** Run `terraform plan` after changing VM attributes. The plan output will indicate whether a change triggers an in-place update or forces replacement.
 

@@ -9,6 +9,7 @@
 package test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -148,6 +149,60 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 				}),
 			),
 		}}},
+		{"cannot convert template back to regular VM", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "virtio0"
+						size         = 20
+					}
+
+					cpu {
+						cores = 2
+					}
+
+					memory {
+						dedicated = 2048
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.template_vm", map[string]string{
+						"template": "true",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = false
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "virtio0"
+						size         = 20
+					}
+
+					cpu {
+						cores = 2
+					}
+
+					memory {
+						dedicated = 2048
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`Cannot convert a template back to a regular VM`),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
