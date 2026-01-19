@@ -1967,6 +1967,145 @@ func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag
 	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
 }
 
+type vmPowerTracker struct {
+	// VM was stopped during the update by the provider
+	stoppedByProvider bool
+}
+
+// Ensure the VM is stopped. If it's running, shut it down.
+func (t *vmPowerTracker) EnsureStopped(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
+	vmStatus, err := vmAPI.GetVMStatus(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if vmStatus == nil || vmStatus.Status == "stopped" {
+		return nil
+	}
+
+	agentEnabled, diags := isAgentEnabled(ctx, vmAPI)
+	if diags != nil {
+		return diags
+	}
+
+	if agentEnabled {
+		if e := vmShutdown(ctx, vmAPI, d); e != nil {
+			return e
+		}
+	} else {
+		if e := vmStop(ctx, vmAPI, d); e != nil {
+			return e
+		}
+	}
+
+	t.stoppedByProvider = true
+
+	return nil
+}
+
+// Ensure the VM is running. If it's stopped, start it.
+func (t *vmPowerTracker) EnsureRunning(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
+	vmStatus, err := vmAPI.GetVMStatus(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if vmStatus == nil || vmStatus.Status != "stopped" {
+		return nil
+	}
+
+	if diags := vmStart(ctx, vmAPI, d); diags != nil {
+		return diags
+	}
+
+	return nil
+}
+
+// Finalize the VM power state after all update operations are done.
+// - If the VM is stopped, but should be started, we start it.
+// - If a restart is required and the VM stayed running the entire time, we reboot it.
+func vmFinalizePowerState(
+	ctx context.Context,
+	vmAPI *vms.Client,
+	d *schema.ResourceData,
+	template bool,
+	startedDesired bool,
+	restartRequired bool,
+	power *vmPowerTracker,
+	startedChanged bool,
+) diag.Diagnostics {
+	// Templates must be stopped.
+	if template {
+		if diags := power.EnsureStopped(ctx, vmAPI, d); diags != nil {
+			return diags
+		}
+
+		return nil
+	}
+
+	vmStatus, err := vmAPI.GetVMStatus(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	currentlyStopped := vmStatus != nil && vmStatus.Status == "stopped"
+	wasStoppedAtAnyPoint := power.stoppedByProvider || currentlyStopped
+
+	if startedDesired {
+		if currentlyStopped {
+			if diags := vmStart(ctx, vmAPI, d); diags != nil {
+				return diags
+			}
+
+			return nil
+		}
+	} else {
+		if startedChanged && !currentlyStopped {
+			return power.EnsureStopped(ctx, vmAPI, d)
+		}
+
+		return nil
+	}
+
+	// VM is running and should remain running.
+	// Only reboot if the VM stayed running while applying changes.
+	if restartRequired && !wasStoppedAtAnyPoint {
+		canReboot := d.Get(mkRebootAfterUpdate).(bool)
+		if !canReboot {
+			return []diag.Diagnostic{{
+				Severity: diag.Warning,
+				Summary: "a reboot is required to apply configuration changes, but automatic " +
+					"reboots are disabled by 'reboot_after_update = false'. Please reboot the VM manually.",
+			}}
+		}
+
+		agentEnabled, diags := isAgentEnabled(ctx, vmAPI)
+		if diags != nil {
+			return diags
+		}
+
+		if agentEnabled {
+			rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
+
+			if e := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); e != nil {
+				return diag.FromErr(e)
+			}
+		} else {
+			if diags := vmStop(ctx, vmAPI, d); diags != nil {
+				return diags
+			}
+
+			power.stoppedByProvider = true
+
+			if diags := vmStart(ctx, vmAPI, d); diags != nil {
+				return diags
+			}
+		}
+	}
+
+	return nil
+}
+
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	cloneTimeoutSec := d.Get(mkTimeoutClone).(int)
 
@@ -3138,8 +3277,10 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 	vmAPI := client.Node(nodeName).VM(vmID)
 
+	power := &vmPowerTracker{}
+
 	// Start the virtual machine and wait for it to reach a running state before continuing.
-	if diags := vmStart(ctx, vmAPI, d); diags != nil {
+	if diags := power.EnsureRunning(ctx, vmAPI, d); diags != nil {
 		return diags
 	}
 
@@ -5455,6 +5596,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(e)
 	}
 
+	power := &vmPowerTracker{}
+
 	e = vmUpdatePool(ctx, d, client.Pool(), vmID)
 	if e != nil {
 		return diag.FromErr(e)
@@ -5823,15 +5966,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		}
 	}
 
-	stoppedBeforeUpdate, rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
+	rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
-	}
-
-	if stoppedBeforeUpdate {
-		if er := vmShutdown(ctx, vmAPI, d); er != nil {
-			return er
-		}
 	}
 
 	rebootRequired = rebootRequired || rr
@@ -5847,12 +5984,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	// Prepare the new tpm state configuration.
 	if d.HasChange(mkTPMState) {
-		if !stoppedBeforeUpdate {
-			if er := vmShutdown(ctx, vmAPI, d); er != nil {
-				return er
-			}
-
-			stoppedBeforeUpdate = true
+		if diags := power.EnsureStopped(ctx, vmAPI, d); diags != nil {
+			return diags
 		}
 
 		tpmState := vmGetTPMState(d, nil)
@@ -5930,17 +6063,14 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			if mustChangeInterface || mustChangeDatastore || mustChangeFileFormat || existingInterface == "" {
 				// CloudInit must be moved, either from a device to another or from a datastore
 				// to another (or both). This requires the VM to be stopped.
-				if !stoppedBeforeUpdate {
-					if er := vmShutdown(ctx, vmAPI, d); er != nil {
-						return er
-					}
+				if diags := power.EnsureStopped(ctx, vmAPI, d); diags != nil {
+					return diags
 				}
 
 				if er := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); er != nil {
 					return er
 				}
 
-				stoppedBeforeUpdate = true
 				fileVolume = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 			} else {
 				fileVolume = existingDevice.FileVolume
@@ -6224,7 +6354,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			if status != nil && status.Status != "stopped" {
 				tflog.Info(ctx, fmt.Sprintf("Stopping VM %d before converting to template", vmID))
 
-				if diags := vmStop(ctx, vmAPI, d); diags != nil {
+				if diags := power.EnsureStopped(ctx, vmAPI, d); diags != nil {
 					return diags
 				}
 			}
@@ -6242,21 +6372,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	// Determine if the state of the virtual machine state needs to be changed.
 	template := d.Get(mkTemplate).(bool)
-	//nolint: nestif
-	if (d.HasChange(mkStarted) || stoppedBeforeUpdate) && !template {
-		started := d.Get(mkStarted).(bool)
-		if started {
-			if diags := vmStart(ctx, vmAPI, d); diags != nil {
-				return diags
-			}
-		} else if !stoppedBeforeUpdate {
-			if er := vmShutdown(ctx, vmAPI, d); er != nil {
-				return er
-			}
-
-			rebootRequired = false
-		}
-	}
+	started := d.Get(mkStarted).(bool)
 
 	if cloudInitRebuildRequired {
 		if er := vmAPI.RebuildCloudInitDisk(ctx); er != nil {
@@ -6265,19 +6381,32 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	}
 
 	// Change the disk locations and/or sizes, if necessary.
-	return vmUpdateDiskLocationAndSize(
+	if diags := vmUpdateDiskLocationAndSize(ctx, d, m, power); diags != nil {
+		return diags
+	}
+
+	// Finalize power state
+	if diags := vmFinalizePowerState(
 		ctx,
+		vmAPI,
 		d,
-		m,
+		template,
+		started,
 		!template && rebootRequired,
-	)
+		power,
+		d.HasChange(mkStarted),
+	); diags != nil {
+		return diags
+	}
+
+	return vmRead(ctx, d, m)
 }
 
 func vmUpdateDiskLocationAndSize(
 	ctx context.Context,
 	d *schema.ResourceData,
 	m any,
-	reboot bool,
+	power *vmPowerTracker,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
@@ -6287,7 +6416,6 @@ func vmUpdateDiskLocationAndSize(
 	}
 
 	nodeName := d.Get(mkNodeName).(string)
-	started := d.Get(mkStarted).(bool)
 	template := d.Get(mkTemplate).(bool)
 
 	vmID, err := strconv.Atoi(d.Id())
@@ -6470,8 +6598,8 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		if shutdownForDisksRequired && !template {
-			if e := vmShutdown(ctx, vmAPI, d); e != nil {
-				return e
+			if diags := power.EnsureStopped(ctx, vmAPI, d); diags != nil {
+				return diags
 			}
 		}
 
@@ -6488,57 +6616,9 @@ func vmUpdateDiskLocationAndSize(
 				return diag.FromErr(err)
 			}
 		}
-
-		if shutdownForDisksRequired && started && !template {
-			if diags := vmStart(ctx, vmAPI, d); diags != nil {
-				return diags
-			}
-
-			// This concludes an equivalent of a reboot, avoid doing another.
-			reboot = false
-		}
 	}
 
-	// Perform a regular reboot in case it's necessary and haven't already been done.
-	if reboot {
-		canReboot := d.Get(mkRebootAfterUpdate).(bool)
-		if !canReboot {
-			return []diag.Diagnostic{{
-				Severity: diag.Warning,
-				Summary: "a reboot is required to apply configuration changes, but automatic " +
-					"reboots are disabled by 'reboot_after_update = false'. Please reboot the VM manually.",
-			}}
-		}
-
-		vmStatus, err := vmAPI.GetVMStatus(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		if vmStatus.Status != "stopped" {
-			agentEnabled, diags := isAgentEnabled(ctx, vmAPI)
-			if diags != nil {
-				return diags
-			}
-
-			if agentEnabled {
-				rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
-				if e := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); e != nil {
-					return diag.FromErr(e)
-				}
-			} else {
-				if e := vmStop(ctx, vmAPI, d); e != nil {
-					return e
-				}
-
-				if diags := vmStart(ctx, vmAPI, d); diags != nil {
-					return diags
-				}
-			}
-		}
-	}
-
-	return vmRead(ctx, d, m)
+	return nil
 }
 
 func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -6548,6 +6628,8 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	if shutdownTimeout > timeout {
 		timeout = shutdownTimeout
 	}
+
+	power := &vmPowerTracker{}
 
 	// reset the default timeout for the delete operation
 	ctx = context.WithoutCancel(ctx)
@@ -6586,19 +6668,8 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 				return e
 			}
 		} else {
-			agentEnabled, diags := isAgentEnabled(ctx, vmAPI)
-			if diags != nil {
+			if diags := power.EnsureStopped(ctx, vmAPI, d); diags != nil {
 				return diags
-			}
-
-			if agentEnabled {
-				if e := vmShutdown(ctx, vmAPI, d); e != nil {
-					return e
-				}
-			} else {
-				if e := vmStop(ctx, vmAPI, d); e != nil {
-					return e
-				}
 			}
 		}
 	}
