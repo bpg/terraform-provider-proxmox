@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	networkReloadTimeout = 10 * time.Second
+	networkReloadTimeout = 100 * time.Second
 )
 
 // reloadLock is used to prevent concurrent network reloads.
@@ -76,8 +76,9 @@ func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
 
 	err := retry.New(
 		retry.Context(ctx),
-		retry.Delay(1*time.Second),
+		retry.Delay(10*time.Second),
 		retry.Attempts(3),
+		retry.DelayType(retry.BackOffDelay),
 		retry.RetryIf(func(err error) bool {
 			return strings.Contains(err.Error(), "exit code 89")
 		}),
