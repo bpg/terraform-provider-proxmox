@@ -50,8 +50,8 @@ resource "proxmox_virtual_environment_node_firewall" "pve2" {
 - `log_level_in` (String) Log level for incoming traffic. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` (defaults to `nolog`).
 - `log_level_out` (String) Log level for outgoing traffic. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` (defaults to `nolog`).
 - `ndp` (Boolean) Enable NDP - Neighbor Discovery Protocol (defaults to `true`).
-- `nf_conntrack_max` (Number) Maximum number of tracked connections (defaults to `262144`). Allowed values are between (`32768`, N) where N means unbound represented by `999999999` (Each conntrack entry costs roughly 300-400 bytes of kernel memory).
-- `nf_conntrack_tcp_timeout_established` (Number) Conntrack established timeout in seconds (defaults to `432000` - 5 days). Allowed values are between (`7875`, N) where N means unbound represented by `999999999`.
+- `nf_conntrack_max` (Number) Maximum number of tracked connections (defaults to `262144`). Minimum value is `32768`.
+- `nf_conntrack_tcp_timeout_established` (Number) Conntrack established timeout in seconds (defaults to `432000` - 5 days). Minimum value is `7875`.
 - `nftables` (Boolean) Enable nftables based firewall (tech preview, defaults to `false`).
 - `nosmurfs` (Boolean) Enable SMURFS filter (defaults to `true`).
 - `smurf_log_level` (String) Log level for SMURFS filter. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` (defaults to `nolog`).

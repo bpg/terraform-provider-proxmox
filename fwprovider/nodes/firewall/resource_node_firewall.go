@@ -206,23 +206,22 @@ func (r *nodeFirewallOptionsResource) Schema(
 				Default:     booldefault.StaticBool(true),
 			},
 			"nf_conntrack_max": schema.Int64Attribute{
-				Description: "Maximum number of tracked connections (defaults to `262144`). Allowed values are " +
-					"between (`32768`, N) where N means unbound represented by `999999999` (Each conntrack " +
-					"entry costs roughly 300-400 bytes of kernel memory).",
+				Description: "Maximum number of tracked connections (defaults to `262144`). Minimum value " +
+					"is `32768`.",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.Int64{
-					int64validator.Between(32768, 999999999),
+					int64validator.AtLeast(32768),
 				},
 				Default: int64default.StaticInt64(262144),
 			},
 			"nf_conntrack_tcp_timeout_established": schema.Int64Attribute{
 				Description: "Conntrack established timeout in seconds (defaults to `432000` - 5 days). " +
-					"Allowed values are between (`7875`, N) where N means unbound represented by `999999999`.",
+					"Minimum value is `7875`.",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.Int64{
-					int64validator.Between(7875, 999999999),
+					int64validator.AtLeast(7875),
 				},
 				Default: int64default.StaticInt64(432000),
 			},
