@@ -15,6 +15,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -136,97 +141,126 @@ func (r *nodeFirewallOptionsResource) Schema(
 ) {
 	resp.Schema = schema.Schema{
 		Description: "Manages Proxmox VE Node Firewall options.",
+		MarkdownDescription: "Manages Proxmox VE Node Firewall options.\n\n" +
+			"~> This resource in fact updates existing node firewall configuration created by PVE on bootstrap. " +
+			"All optional attributes have explicit defaults for deterministic behavior (PVE may change defaults in the future). " +
+			"See [API documentation](https://pve.proxmox.com/pve-docs/api-viewer/index.html#/nodes/{node}/firewall/options).",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"node_name": schema.StringAttribute{
 				Description: "The cluster node name.",
 				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Enable host firewall rules.",
+				Description: "Enable host firewall rules (defaults to `true`).",
 				Optional:    true,
 				Computed:    true,
+				Default:     booldefault.StaticBool(true),
 			},
 			"log_level_in": schema.StringAttribute{
 				Description: "Log level for incoming traffic.",
 				MarkdownDescription: "Log level for incoming traffic. Must be one of: " +
-					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.",
+					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` " +
+					"(defaults to `nolog`).",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "nolog"),
 				},
+				Default: stringdefault.StaticString("nolog"),
 			},
 			"log_level_out": schema.StringAttribute{
 				Description: "Log level for outgoing traffic.",
 				MarkdownDescription: "Log level for outgoing traffic. Must be one of: " +
-					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.",
+					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` " +
+					"(defaults to `nolog`).",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "nolog"),
 				},
+				Default: stringdefault.StaticString("nolog"),
 			},
 			"log_level_forward": schema.StringAttribute{
 				Description: "Log level for forwarded traffic.",
 				MarkdownDescription: "Log level for forwarded traffic. Must be one of: " +
-					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.",
+					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` " +
+					"(defaults to `nolog`).",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "nolog"),
 				},
+				Default: stringdefault.StaticString("nolog"),
 			},
 			"ndp": schema.BoolAttribute{
-				Description: "Enable NDP (Neighbor Discovery Protocol).",
+				Description: "Enable NDP - Neighbor Discovery Protocol (defaults to `true`).",
 				Optional:    true,
 				Computed:    true,
+				Default:     booldefault.StaticBool(true),
 			},
 			"nf_conntrack_max": schema.Int64Attribute{
-				Description: "Maximum number of tracked connections.",
-				Optional:    true,
-				Computed:    true,
+				Description: "Maximum number of tracked connections (defaults to `262144`). Allowed values are " +
+					"between (`32768`, N) where N means unbound represented by `999999999` (Each conntrack " +
+					"entry costs roughly 300-400 bytes of kernel memory).",
+				Optional: true,
+				Computed: true,
 				Validators: []validator.Int64{
 					int64validator.Between(32768, 999999999),
 				},
+				Default: int64default.StaticInt64(262144),
 			},
 			"nf_conntrack_tcp_timeout_established": schema.Int64Attribute{
-				Description: "Conntrack established timeout.",
-				Optional:    true,
-				Computed:    true,
+				Description: "Conntrack established timeout in seconds (defaults to `432000` - 5 days). " +
+					"Allowed values are between (`7875`, N) where N means unbound represented by `999999999`.",
+				Optional: true,
+				Computed: true,
 				Validators: []validator.Int64{
 					int64validator.Between(7875, 999999999),
 				},
+				Default: int64default.StaticInt64(432000),
 			},
 			"nftables": schema.BoolAttribute{
-				Description: "Enable nftables based firewall (tech preview).",
+				Description: "Enable nftables based firewall (tech preview, defaults to `false`).",
 				Optional:    true,
 				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"nosmurfs": schema.BoolAttribute{
-				Description: "Enable SMURFS filter.",
+				Description: "Enable SMURFS filter (defaults to `true`).",
 				Optional:    true,
 				Computed:    true,
+				Default:     booldefault.StaticBool(true),
 			},
 			"smurf_log_level": schema.StringAttribute{
 				Description: "Log level for SMURFS filter.",
 				MarkdownDescription: "Log level for SMURFS filter. Must be one of: " +
-					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.",
+					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` " +
+					"(defaults to `nolog`).",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "nolog"),
 				},
+				Default: stringdefault.StaticString("nolog"),
 			},
 			"tcp_flags_log_level": schema.StringAttribute{
 				Description: "Log level for illegal tcp flags filter.",
 				MarkdownDescription: "Log level for illegal tcp flags filter. Must be one of: " +
-					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.",
+					"`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` " +
+					"(defaults to `nolog`).",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "nolog"),
 				},
+				Default: stringdefault.StaticString("nolog"),
 			},
 		},
 	}
@@ -359,16 +393,7 @@ func (r *nodeFirewallOptionsResource) Update(
 	}
 
 	body := plan.toOptionsRequestBody()
-
 	nodeName := plan.NodeName.ValueString()
-
-	var toDelete []string
-	attribute.CheckDeleteComputed(plan.NFConntrackMax, state.NFConntrackMax, &toDelete, "nf_conntrack_max")
-	attribute.CheckDeleteComputed(
-		plan.NFConntrackTCPTimeoutEstablished, state.NFConntrackTCPTimeoutEstablished, &toDelete, "nf_conntrack_tcp_timeout_established",
-	)
-
-	body.Delete = &toDelete
 
 	err := r.client.Node(nodeName).Firewall().SetNodeOptions(ctx, body)
 	if err != nil {
@@ -391,15 +416,34 @@ func (r *nodeFirewallOptionsResource) Update(
 
 // Delete deletes node firewall options.
 func (r *nodeFirewallOptionsResource) Delete(
-	_ context.Context,
-	_ resource.DeleteRequest,
+	ctx context.Context,
+	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
-	resp.Diagnostics.AddWarning(
-		"Node firewall options cannot be deleted",
-		"Node firewall options are a configuration of the node and cannot be deleted. "+
-			"The resource will be removed from the Terraform state only.",
-	)
+	var state nodeFirewallOptionsModel
+
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+
+	nodeName := state.NodeName.ValueString()
+
+	toDelete := []string{
+		"enable", "log_level_in", "log_level_out", "log_level_forward",
+		"ndp", "nf_conntrack_max", "nf_conntrack_tcp_timeout_established", "nftables",
+		"nosmurfs", "smurf_log_level", "tcp_flags_log_level",
+	}
+
+	body := &nodefirewall.OptionsPutRequestBody{
+		Delete: &toDelete,
+	}
+
+	err := r.client.Node(nodeName).Firewall().SetNodeOptions(ctx, body)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error deleting node firewall options",
+			"Could not delete node firewall options, unexpected error: "+err.Error(),
+		)
+	}
 }
 
 // ImportState imports node firewall options.

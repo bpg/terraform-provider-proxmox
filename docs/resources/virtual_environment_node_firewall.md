@@ -5,11 +5,14 @@ parent: Resources
 subcategory: Virtual Environment
 description: |-
   Manages Proxmox VE Node Firewall options.
+  ~> This resource in fact updates existing node firewall configuration created by PVE on bootstrap. All optional attributes have explicit defaults for deterministic behavior (PVE may change defaults in the future). See API documentation https://pve.proxmox.com/pve-docs/api-viewer/index.html#/nodes/{node}/firewall/options.
 ---
 
 # Resource: proxmox_virtual_environment_node_firewall
 
 Manages Proxmox VE Node Firewall options.
+
+~> This resource in fact updates existing node firewall configuration created by PVE on bootstrap. All optional attributes have explicit defaults for deterministic behavior (PVE may change defaults in the future). See [API documentation](https://pve.proxmox.com/pve-docs/api-viewer/index.html#/nodes/{node}/firewall/options).
 
 ## Example Usage
 
@@ -42,17 +45,17 @@ resource "proxmox_virtual_environment_node_firewall" "pve2" {
 
 ### Optional
 
-- `enabled` (Boolean) Enable host firewall rules.
-- `log_level_forward` (String) Log level for forwarded traffic. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.
-- `log_level_in` (String) Log level for incoming traffic. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.
-- `log_level_out` (String) Log level for outgoing traffic. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.
-- `ndp` (Boolean) Enable NDP (Neighbor Discovery Protocol).
-- `nf_conntrack_max` (Number) Maximum number of tracked connections.
-- `nf_conntrack_tcp_timeout_established` (Number) Conntrack established timeout.
-- `nftables` (Boolean) Enable nftables based firewall (tech preview).
-- `nosmurfs` (Boolean) Enable SMURFS filter.
-- `smurf_log_level` (String) Log level for SMURFS filter. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.
-- `tcp_flags_log_level` (String) Log level for illegal tcp flags filter. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`.
+- `enabled` (Boolean) Enable host firewall rules (defaults to `true`).
+- `log_level_forward` (String) Log level for forwarded traffic. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` (defaults to `nolog`).
+- `log_level_in` (String) Log level for incoming traffic. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` (defaults to `nolog`).
+- `log_level_out` (String) Log level for outgoing traffic. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` (defaults to `nolog`).
+- `ndp` (Boolean) Enable NDP - Neighbor Discovery Protocol (defaults to `true`).
+- `nf_conntrack_max` (Number) Maximum number of tracked connections (defaults to `262144`). Allowed values are between (`32768`, N) where N means unbound represented by `999999999` (Each conntrack entry costs roughly 300-400 bytes of kernel memory).
+- `nf_conntrack_tcp_timeout_established` (Number) Conntrack established timeout in seconds (defaults to `432000` - 5 days). Allowed values are between (`7875`, N) where N means unbound represented by `999999999`.
+- `nftables` (Boolean) Enable nftables based firewall (tech preview, defaults to `false`).
+- `nosmurfs` (Boolean) Enable SMURFS filter (defaults to `true`).
+- `smurf_log_level` (String) Log level for SMURFS filter. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` (defaults to `nolog`).
+- `tcp_flags_log_level` (String) Log level for illegal tcp flags filter. Must be one of: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog` (defaults to `nolog`).
 
 ### Read-Only
 
