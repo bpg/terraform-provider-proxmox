@@ -39,7 +39,11 @@ func newStorageSchemaFactory() *schemaFactory {
 				Computed:    true,
 			},
 			"content": schema.SetAttribute{
-				Description: "The content types that can be stored on this storage.",
+				Description: "The content types that can be stored on this storage. " +
+					"Valid values: `backup` (VM backups), `images` (VM disk images), " +
+					"`import` (VM disk images for import), `iso` (ISO images), " +
+					"`rootdir` (container root directories), `snippets` (cloud-init, hook scripts, etc.), " +
+					"`vztmpl` (container templates).",
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
