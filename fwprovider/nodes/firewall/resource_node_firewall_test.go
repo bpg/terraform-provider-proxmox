@@ -30,6 +30,21 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 							node_name      = "{{.NodeName}}"
 						}
 					`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_node_firewall.test", map[string]string{
+						"enabled":                              "true",
+						"log_level_in":                         "nolog",
+						"log_level_out":                        "nolog",
+						"log_level_forward":                    "nolog",
+						"ndp":                                  "true",
+						"nf_conntrack_max":                     "262144",
+						"nf_conntrack_tcp_timeout_established": "432000",
+						"nftables":                             "false",
+						"nosmurfs":                             "true",
+						"smurf_log_level":                      "nolog",
+						"tcp_flags_log_level":                  "nolog",
+					}),
+				),
 			},
 			{
 				Config: te.RenderConfig(`
@@ -90,6 +105,28 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 						"nosmurfs":            "true",
 						"smurf_log_level":     "alert",
 						"tcp_flags_log_level": "alert",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+						resource "proxmox_virtual_environment_node_firewall" "test" {
+							node_name      = "{{.NodeName}}"
+						}
+					`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_node_firewall.test", map[string]string{
+						"enabled":                              "true",
+						"log_level_in":                         "nolog",
+						"log_level_out":                        "nolog",
+						"log_level_forward":                    "nolog",
+						"ndp":                                  "true",
+						"nf_conntrack_max":                     "262144",
+						"nf_conntrack_tcp_timeout_established": "432000",
+						"nftables":                             "false",
+						"nosmurfs":                             "true",
+						"smurf_log_level":                      "nolog",
+						"tcp_flags_log_level":                  "nolog",
 					}),
 				),
 			},

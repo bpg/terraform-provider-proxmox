@@ -55,49 +55,17 @@ type nodeFirewallOptionsModel struct {
 func (m *nodeFirewallOptionsModel) toOptionsRequestBody() *nodefirewall.OptionsPutRequestBody {
 	body := &nodefirewall.OptionsPutRequestBody{}
 
-	if !m.Enable.IsUnknown() {
-		body.Enable = proxmoxtypes.CustomBoolPtr(m.Enable.ValueBoolPointer())
-	}
-
-	if !m.LogLevelIn.IsUnknown() {
-		body.LogLevelIn = m.LogLevelIn.ValueStringPointer()
-	}
-
-	if !m.LogLevelOut.IsUnknown() {
-		body.LogLevelOut = m.LogLevelOut.ValueStringPointer()
-	}
-
-	if !m.LogLevelForward.IsUnknown() {
-		body.LogLevelForward = m.LogLevelForward.ValueStringPointer()
-	}
-
-	if !m.NDP.IsUnknown() {
-		body.NDP = proxmoxtypes.CustomBoolPtr(m.NDP.ValueBoolPointer())
-	}
-
-	if !m.NFConntrackMax.IsUnknown() && !m.NFConntrackMax.IsNull() {
-		body.NFConntrackMax = m.NFConntrackMax.ValueInt64Pointer()
-	}
-
-	if !m.NFConntrackTCPTimeoutEstablished.IsUnknown() && !m.NFConntrackTCPTimeoutEstablished.IsNull() {
-		body.NFConntrackTCPTimeoutEstablished = m.NFConntrackTCPTimeoutEstablished.ValueInt64Pointer()
-	}
-
-	if !m.NFTables.IsUnknown() {
-		body.NFTables = proxmoxtypes.CustomBoolPtr(m.NFTables.ValueBoolPointer())
-	}
-
-	if !m.NoSMURFs.IsUnknown() {
-		body.NoSMURFs = proxmoxtypes.CustomBoolPtr(m.NoSMURFs.ValueBoolPointer())
-	}
-
-	if !m.SMURFLogLevel.IsUnknown() {
-		body.SMURFLogLevel = m.SMURFLogLevel.ValueStringPointer()
-	}
-
-	if !m.TCPFlagsLogLevel.IsUnknown() {
-		body.TCPFlagsLogLevel = m.TCPFlagsLogLevel.ValueStringPointer()
-	}
+	body.Enable = proxmoxtypes.CustomBoolPtr(m.Enable.ValueBoolPointer())
+	body.LogLevelIn = m.LogLevelIn.ValueStringPointer()
+	body.LogLevelOut = m.LogLevelOut.ValueStringPointer()
+	body.LogLevelForward = m.LogLevelForward.ValueStringPointer()
+	body.NDP = proxmoxtypes.CustomBoolPtr(m.NDP.ValueBoolPointer())
+	body.NFConntrackMax = m.NFConntrackMax.ValueInt64Pointer()
+	body.NFConntrackTCPTimeoutEstablished = m.NFConntrackTCPTimeoutEstablished.ValueInt64Pointer()
+	body.NFTables = proxmoxtypes.CustomBoolPtr(m.NFTables.ValueBoolPointer())
+	body.NoSMURFs = proxmoxtypes.CustomBoolPtr(m.NoSMURFs.ValueBoolPointer())
+	body.SMURFLogLevel = m.SMURFLogLevel.ValueStringPointer()
+	body.TCPFlagsLogLevel = m.TCPFlagsLogLevel.ValueStringPointer()
 
 	return body
 }
