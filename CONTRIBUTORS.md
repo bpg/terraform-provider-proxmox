@@ -232,6 +232,7 @@
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/sebiklamar"><img src="https://avatars.githubusercontent.com/u/53593629?v=4?s=100" width="100px;" alt="Sebastian Klamar"/><br /><sub><b>Sebastian Klamar</b></sub></a><br /><a href="#financial-sebiklamar" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Renerick"><img src="https://avatars.githubusercontent.com/u/20725046?v=4?s=100" width="100px;" alt="Denis Palashevskii"/><br /><sub><b>Denis Palashevskii</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3ARenerick" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
   <tfoot>
