@@ -1,4 +1,4 @@
-FROM golang:1.25.5@sha256:8bbd14091f2c61916134fa6aeb8f76b18693fcb29a39ec6d8be9242c0a7e9260
+FROM golang:1.25.6@sha256:ce63a16e0f7063787ebb4eb28e72d477b00b4726f79874b3205a965ffd797ab2
 
 ARG GOLANGCI_LINT_VERSION=2.8.0 # renovate: depName=golangci/golangci-lint datasource=github-releases
 
