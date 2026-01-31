@@ -1637,6 +1637,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "sebiklamar",
+      "name": "Sebastian Klamar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/53593629?v=4",
+      "profile": "https://github.com/sebiklamar",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,

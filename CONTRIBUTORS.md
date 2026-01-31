@@ -230,6 +230,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/diskwarrior"><img src="https://avatars.githubusercontent.com/u/48100115?v=4?s=100" width="100px;" alt="Dan Harris"/><br /><sub><b>Dan Harris</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=diskwarrior" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ops4cloud"><img src="https://avatars.githubusercontent.com/u/78908638?v=4?s=100" width="100px;" alt="Greg O'Toole"/><br /><sub><b>Greg O'Toole</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ops4cloud" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/sebiklamar"><img src="https://avatars.githubusercontent.com/u/53593629?v=4?s=100" width="100px;" alt="Sebastian Klamar"/><br /><sub><b>Sebastian Klamar</b></sub></a><br /><a href="#financial-sebiklamar" title="Financial">💵</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
