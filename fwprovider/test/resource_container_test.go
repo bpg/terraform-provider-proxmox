@@ -557,54 +557,56 @@ func TestAccResourceContainerCloneMountPoint(t *testing.T) {
 		"TestContainerIDClone": accTestContainerIDClone,
 	})
 
+	config := te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container_mp" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{.TestContainerID}}
+			template  = true
+			disk {
+				datastore_id = "local-lvm"
+				size         = 4
+			}
+			initialization {
+				hostname = "test"
+				ip_config {
+					ipv4 {
+					  address = "dhcp"
+					}
+				}
+			}
+			network_interface {
+				name = "vmbr0"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}
+		resource "proxmox_virtual_environment_container" "test_container_clone_mp" {
+			depends_on = [proxmox_virtual_environment_container.test_container_mp]
+			node_name  = "{{.NodeName}}"
+			vm_id      = {{.TestContainerIDClone}}
+
+			clone {
+				vm_id = proxmox_virtual_environment_container.test_container_mp.id
+			}
+
+			mount_point {
+				volume = "local-lvm"
+				size   = "4G"
+				path   = "/mnt/data"
+			}
+
+			initialization {
+				hostname = "test-clone"
+			}
+		}`, WithRootUser())
+
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_container" "test_container_mp" {
-				node_name = "{{.NodeName}}"
-				vm_id     = {{.TestContainerID}}
-				template  = true
-				disk {
-					datastore_id = "local-lvm"
-					size         = 4
-				}
-				initialization {
-					hostname = "test"
-					ip_config {
-						ipv4 {
-						  address = "dhcp"
-						}
-					}
-				}
-				network_interface {
-					name = "vmbr0"
-				}
-				operating_system {
-					template_file_id = "local:vztmpl/{{.ImageFileName}}"
-					type             = "alpine"
-				}
-			}
-			resource "proxmox_virtual_environment_container" "test_container_clone_mp" {
-				depends_on = [proxmox_virtual_environment_container.test_container_mp]
-				node_name  = "{{.NodeName}}"
-				vm_id      = {{.TestContainerIDClone}}
-
-				clone {
-					vm_id = proxmox_virtual_environment_container.test_container_mp.id
-				}
-
-				mount_point {
-					volume = "local-lvm"
-					size   = "4G"
-					path   = "/mnt/data"
-				}
-
-				initialization {
-					hostname = "test-clone"
-				}
-			}`, WithRootUser()),
+				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					func(*terraform.State) error {
 						ct := te.NodeClient().Container(accTestContainerIDClone)
@@ -620,6 +622,11 @@ func TestAccResourceContainerCloneMountPoint(t *testing.T) {
 						return nil
 					},
 				),
+			},
+			// Step 2: Re-apply same config - verifies no replacement triggered (#2507)
+			{
+				Config:   config,
+				PlanOnly: true,
 			},
 		},
 	})
