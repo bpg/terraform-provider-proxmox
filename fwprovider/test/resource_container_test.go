@@ -541,6 +541,90 @@ func TestAccResourceContainerClone(t *testing.T) {
 	})
 }
 
+// Test that mount_point blocks specified in clone config are provisioned
+// See https://github.com/bpg/terraform-provider-proxmox/issues/2518
+func TestAccResourceContainerCloneMountPoint(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDClone := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":        imageFileName,
+		"TestContainerID":      accTestContainerID,
+		"TestContainerIDClone": accTestContainerIDClone,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container_mp" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				template  = true
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test"
+					ip_config {
+						ipv4 {
+						  address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+			resource "proxmox_virtual_environment_container" "test_container_clone_mp" {
+				depends_on = [proxmox_virtual_environment_container.test_container_mp]
+				node_name  = "{{.NodeName}}"
+				vm_id      = {{.TestContainerIDClone}}
+
+				clone {
+					vm_id = proxmox_virtual_environment_container.test_container_mp.id
+				}
+
+				mount_point {
+					volume = "local-lvm"
+					size   = "4G"
+					path   = "/mnt/data"
+				}
+
+				initialization {
+					hostname = "test-clone"
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerIDClone)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						mp0, ok := ctInfo.MountPoints["mp0"]
+						require.True(te.t, ok, `"mp0" mount point not found`)
+						require.NotNil(te.t, mp0, `"mp0" mount point is <nil>`)
+						require.Equal(te.t, "/mnt/data", mp0.MountPoint)
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerDnsBlock(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
