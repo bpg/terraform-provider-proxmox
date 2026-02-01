@@ -11,6 +11,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/backup"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
@@ -84,4 +85,9 @@ func (c *Client) SDNFabricNodes(fabricID, protocol string) *fabric_nodes.Client 
 // SDNApplier returns a client for applying the SDN's configuration.
 func (c *Client) SDNApplier() *applier.Client {
 	return &applier.Client{Client: c}
+}
+
+// Backup returns a client for managing cluster backup jobs.
+func (c *Client) Backup() *backup.Client {
+	return &backup.Client{Client: c}
 }
