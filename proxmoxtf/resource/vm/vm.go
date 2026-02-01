@@ -5715,15 +5715,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			oldCPUBlock = oldCPU.([]any)[0].(map[string]any)
 		}
 
-		oldCPUCores := getIntFromBlock(oldCPUBlock, mkCPUCores, 0)
-		oldCPUSockets := getIntFromBlock(oldCPUBlock, mkCPUSockets, 0)
 		oldCPUType := getStringFromBlock(oldCPUBlock, mkCPUType, "")
 		oldCPUArchitecture := getStringFromBlock(oldCPUBlock, mkCPUArchitecture, "")
 		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA, false)
 
-		coresOrSocketsIncreased := (cpuCores > oldCPUCores) || (cpuSockets > oldCPUSockets)
+		// Only vcpus (hotplugged) changes are truly hotpluggable for CPU.
+		// Changing cores or sockets always requires a reboot.
 		hotpluggedChanged := d.HasChange(mkCPU + ".0." + mkCPUHotplugged)
-		noNonHotpluggableChanges := cpuCores >= oldCPUCores && cpuSockets >= oldCPUSockets &&
+		noOtherChanges := !d.HasChange(mkCPU+".0."+mkCPUCores) &&
+			!d.HasChange(mkCPU+".0."+mkCPUSockets) &&
 			cpuType == oldCPUType && cpuArchitecture == oldCPUArchitecture &&
 			bool(cpuNUMA) == oldCPUNUMA &&
 			!d.HasChange(mkCPU+".0."+mkCPUFlags) &&
@@ -5731,7 +5731,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			!d.HasChange(mkCPU+".0."+mkCPULimit) &&
 			!d.HasChange(mkCPU+".0."+mkCPUUnits)
 
-		onlyHotpluggableChange := (coresOrSocketsIncreased || hotpluggedChanged) && noNonHotpluggableChanges
+		onlyHotpluggableChange := hotpluggedChanged && noOtherChanges
 
 		if err = setCPUArchitecture(ctx, cpuArchitecture, client, updateBody); err != nil {
 			return diag.FromErr(err)
