@@ -35,7 +35,7 @@ resource "proxmox_virtual_environment_storage_lvm" "example" {
 
 ### Optional
 
-- `content` (Set of String) The content types that can be stored on this storage.
+- `content` (Set of String) The content types that can be stored on this storage. Valid values: `backup` (VM backups), `images` (VM disk images), `import` (VM disk images for import), `iso` (ISO images), `rootdir` (container root directories), `snippets` (cloud-init, hook scripts, etc.), `vztmpl` (container templates).
 - `disable` (Boolean) Whether the storage is disabled.
 - `nodes` (Set of String) A list of nodes where this storage is available.
 - `shared` (Boolean) Whether the storage is shared across all nodes.

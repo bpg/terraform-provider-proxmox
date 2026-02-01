@@ -44,7 +44,7 @@ resource "proxmox_virtual_environment_storage_pbs" "example" {
 ### Optional
 
 - `backups` (Block, Optional) Configure backup retention settings for the storage type. (see [below for nested schema](#nestedblock--backups))
-- `content` (Set of String) The content types that can be stored on this storage.
+- `content` (Set of String) The content types that can be stored on this storage. Valid values: `backup` (VM backups), `images` (VM disk images), `import` (VM disk images for import), `iso` (ISO images), `rootdir` (container root directories), `snippets` (cloud-init, hook scripts, etc.), `vztmpl` (container templates).
 - `disable` (Boolean) Whether the storage is disabled.
 - `encryption_key` (String, Sensitive) An existing encryption key for the datastore. This is a sensitive value. Conflicts with `generate_encryption_key`.
 - `fingerprint` (String) The SHA256 fingerprint of the Proxmox Backup Server's certificate.

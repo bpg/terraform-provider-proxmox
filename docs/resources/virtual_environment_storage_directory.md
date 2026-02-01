@@ -41,7 +41,7 @@ resource "proxmox_virtual_environment_storage_directory" "example" {
 ### Optional
 
 - `backups` (Block, Optional) Configure backup retention settings for the storage type. (see [below for nested schema](#nestedblock--backups))
-- `content` (Set of String) The content types that can be stored on this storage.
+- `content` (Set of String) The content types that can be stored on this storage. Valid values: `backup` (VM backups), `images` (VM disk images), `import` (VM disk images for import), `iso` (ISO images), `rootdir` (container root directories), `snippets` (cloud-init, hook scripts, etc.), `vztmpl` (container templates).
 - `disable` (Boolean) Whether the storage is disabled.
 - `nodes` (Set of String) A list of nodes where this storage is available.
 - `preallocation` (String) The preallocation mode for raw and qcow2 images.

@@ -36,7 +36,7 @@ resource "proxmox_virtual_environment_storage_zfspool" "example" {
 ### Optional
 
 - `blocksize` (String) Block size for newly created volumes (e.g. `4k`, `8k`, `16k`). Larger values may improve throughput for large I/O, while smaller values optimize space efficiency.
-- `content` (Set of String) The content types that can be stored on this storage.
+- `content` (Set of String) The content types that can be stored on this storage. Valid values: `backup` (VM backups), `images` (VM disk images), `import` (VM disk images for import), `iso` (ISO images), `rootdir` (container root directories), `snippets` (cloud-init, hook scripts, etc.), `vztmpl` (container templates).
 - `disable` (Boolean) Whether the storage is disabled.
 - `nodes` (Set of String) A list of nodes where this storage is available.
 - `thin_provision` (Boolean) Whether to enable thin provisioning (`on` or `off`). Thin provisioning allows flexible disk allocation without pre-allocating full space.
