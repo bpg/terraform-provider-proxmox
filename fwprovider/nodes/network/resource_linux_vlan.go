@@ -11,12 +11,15 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -48,6 +51,7 @@ type linuxVLANResourceModel struct {
 	Autostart types.Bool              `tfsdk:"autostart"`
 	MTU       types.Int64             `tfsdk:"mtu"`
 	Comment   types.String            `tfsdk:"comment"`
+	Timeout   types.Int64             `tfsdk:"timeout_reload"`
 	// Linux VLAN attributes
 	Interface types.String `tfsdk:"interface"`
 	VLAN      types.Int64  `tfsdk:"vlan"`
@@ -197,6 +201,15 @@ func (r *linuxVLANResource) Schema(
 				Description: "Comment for the interface.",
 				Optional:    true,
 			},
+			"timeout_reload": schema.Int64Attribute{
+				Description: "Timeout for network reload operations in seconds (defaults to `100`).",
+				Optional:    true,
+				Computed:    true,
+				Default:     int64default.StaticInt64(defaultNetworkReloadTimeoutSeconds),
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
+				},
+			},
 			// Linux VLAN attributes
 			"interface": schema.StringAttribute{
 				Description: "The VLAN raw device. See also `name`.",
@@ -280,7 +293,10 @@ func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateReque
 	resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 
-	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(ctx)
+	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+	defer cancel()
+
+	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reloading network configuration",
@@ -394,12 +410,15 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
-	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(ctx)
+	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+	defer cancel()
+
+	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reloading network configuration",
 			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				state.NodeName.ValueString(), err.Error()),
+				plan.NodeName.ValueString(), err.Error()),
 		)
 	}
 }
@@ -436,7 +455,10 @@ func (r *linuxVLANResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(ctx)
+	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(state.Timeout.ValueInt64())*time.Second)
+	defer cancel()
+
+	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reloading network configuration",

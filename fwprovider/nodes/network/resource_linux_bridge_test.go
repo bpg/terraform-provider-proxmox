@@ -39,17 +39,19 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					mtu = 1499
 					name = "%s"
 					node_name = "{{.NodeName}}"
+					timeout_reload = 60
 					vlan_aware = true
 				}
 				`, ipV4cidr1, iface)),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
-						"address":    ipV4cidr1,
-						"autostart":  "true",
-						"comment":    "created by terraform",
-						"mtu":        "1499",
-						"name":       iface,
-						"vlan_aware": "true",
+						"address":        ipV4cidr1,
+						"autostart":      "true",
+						"comment":        "created by terraform",
+						"mtu":            "1499",
+						"name":           iface,
+						"timeout_reload": "60",
+						"vlan_aware":     "true",
 					}),
 					test.ResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
 						"id",
@@ -67,16 +69,18 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					mtu = null
 					name = "%s"
 					node_name = "{{.NodeName}}"
+					timeout_reload = 60
 					vlan_aware = false
 				}`, ipV4cidr2, ipV6cidr, iface)),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
-						"address":    ipV4cidr2,
-						"address6":   ipV6cidr,
-						"autostart":  "false",
-						"comment":    "",
-						"name":       iface,
-						"vlan_aware": "false",
+						"address":        ipV4cidr2,
+						"address6":       ipV6cidr,
+						"autostart":      "false",
+						"comment":        "",
+						"name":           iface,
+						"timeout_reload": "60",
+						"vlan_aware":     "false",
 					}),
 					test.NoResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
 						"mtu",
@@ -93,6 +97,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"comment", // "" comments translates to null in the PVE, but nulls are not imported as empty strings.
+					"timeout_reload",
 				},
 			},
 		},
