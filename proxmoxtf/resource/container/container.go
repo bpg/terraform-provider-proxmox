@@ -2557,16 +2557,19 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 	currentDisk := d.Get(mkDisk).([]any)
 
-	// Preserve disk_size from state if user had configured it
-	// When disk_size is configured, also set size to the default to avoid drift with the deprecated attribute
+	// Handle disk_size vs size to avoid perpetual diff
 	if len(currentDisk) > 0 && currentDisk[0] != nil {
-		if diskSizeStr, ok := currentDisk[0].(map[string]any)[mkDiskSizeStr].(string); ok && diskSizeStr != "" {
+		currentDiskMap := currentDisk[0].(map[string]any)
+		if diskSizeStr, ok := currentDiskMap[mkDiskSizeStr].(string); ok && diskSizeStr != "" {
+			// User configured disk_size, preserve it and set deprecated size to default
 			disk[mkDiskSizeStr] = diskSizeStr
-			// Set deprecated size to default when disk_size is used, to avoid perpetual diff
 			disk[mkDiskSize] = int64(dvDiskSize)
+		} else {
+			// User is using deprecated size, clear disk_size to avoid diff
+			disk[mkDiskSizeStr] = ""
 		}
 		// Preserve mount_options from config to avoid diff between nil and empty slice
-		if configMountOptions := currentDisk[0].(map[string]any)[mkDiskMountOptions]; configMountOptions == nil {
+		if configMountOptions := currentDiskMap[mkDiskMountOptions]; configMountOptions == nil {
 			disk[mkDiskMountOptions] = nil
 		}
 	}
