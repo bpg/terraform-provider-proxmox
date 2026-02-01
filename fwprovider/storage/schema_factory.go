@@ -10,12 +10,16 @@ import (
 	"maps"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
 type schemaFactory struct {
@@ -39,7 +43,8 @@ func newStorageSchemaFactory() *schemaFactory {
 				Computed:    true,
 			},
 			"content": schema.SetAttribute{
-				Description: "The content types that can be stored on this storage. " +
+				Description: "The content types that can be stored on this storage",
+				MarkdownDescription: "The content types that can be stored on this storage. " +
 					"Valid values: `backup` (VM backups), `images` (VM disk images), " +
 					"`import` (VM disk images for import), `iso` (ISO images), " +
 					"`rootdir` (container root directories), `snippets` (cloud-init, hook scripts, etc.), " +
@@ -47,6 +52,11 @@ func newStorageSchemaFactory() *schemaFactory {
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
+				Validators: []validator.Set{
+					setvalidator.ValueStringsAre(
+						stringvalidator.OneOf(storage.ValidContentTypes()...),
+					),
+				},
 			},
 			"disable": schema.BoolAttribute{
 				Description: "Whether the storage is disabled.",

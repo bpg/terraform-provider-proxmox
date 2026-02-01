@@ -19,8 +19,8 @@ const (
 	ContentTypeVZTmpl   = "vztmpl"   // Container templates
 )
 
-// validContentTypes returns all valid content type values.
-func validContentTypes() []string {
+// ValidContentTypes returns all valid content type values.
+func ValidContentTypes() []string {
 	return []string{
 		ContentTypeBackup,
 		ContentTypeImages,
@@ -34,7 +34,7 @@ func validContentTypes() []string {
 
 // IsValidContentType checks if the given content type is valid.
 func IsValidContentType(contentType string) bool {
-	return slices.Contains(validContentTypes(), contentType)
+	return slices.Contains(ValidContentTypes(), contentType)
 }
 
 // DatastoreFileListRequestBody contains the request parameters for listing datastore files.
