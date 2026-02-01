@@ -1596,3 +1596,94 @@ func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileNa
 		require.NoError(t, e)
 	})
 }
+
+// TestAccResourceContainerDiskSizeWithUnits tests the disk_size attribute with unit formats.
+func TestAccResourceContainerDiskSizeWithUnits(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Create container with disk_size using "G" units
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_disk_size" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						disk_size    = "8G"
+					}
+					initialization {
+						hostname = "test-disk-size"
+						ip_config {
+							ipv4 {
+							  address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_disk_size", map[string]string{
+						"disk.0.disk_size": "8G",
+						"disk.0.size":      "8",
+					}),
+				),
+			},
+			{
+				// Resize disk using disk_size
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_disk_size" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						disk_size    = "10G"
+					}
+					initialization {
+						hostname = "test-disk-size"
+						ip_config {
+							ipv4 {
+							  address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_disk_size", map[string]string{
+						"disk.0.disk_size": "10G",
+						"disk.0.size":      "10",
+					}),
+				),
+			},
+		},
+	})
+}

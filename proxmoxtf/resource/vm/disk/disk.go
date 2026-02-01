@@ -182,8 +182,22 @@ func GetDiskDeviceObjects(
 		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
 		replicate := types.CustomBool(block[mkDiskReplicate].(bool))
 		serial := block[mkDiskSerial].(string)
-		size, _ := block[mkDiskSize].(int)
 		ssd := types.CustomBool(block[mkDiskSSD].(bool))
+
+		// Handle disk size: prefer disk_size (string with units) over deprecated size (int in GB)
+		var diskSize *types.DiskSize
+
+		if diskSizeStr, ok := block[MkDiskSizeStr].(string); ok && diskSizeStr != "" {
+			ds, err := types.ParseDiskSize(diskSizeStr)
+			if err != nil {
+				return diskDeviceObjects, fmt.Errorf("invalid disk_size %q: %w", diskSizeStr, err)
+			}
+
+			diskSize = &ds
+		} else {
+			size, _ := block[mkDiskSize].(int)
+			diskSize = types.DiskSizeFromGigabytes(int64(size))
+		}
 
 		// get speed block directly from the current disk entry
 		var speedBlock map[string]any
@@ -202,7 +216,7 @@ func GetDiskDeviceObjects(
 				diskDevice.FileVolume = pathInDatastore
 			}
 		} else {
-			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, diskSize.InGigabytes())
 		}
 
 		diskDevice.AIO = &aio
@@ -214,7 +228,7 @@ func GetDiskDeviceObjects(
 		diskDevice.ImportFrom = &importFrom
 		diskDevice.Replicate = &replicate
 		diskDevice.Serial = &serial
-		diskDevice.Size = types.DiskSizeFromGigabytes(int64(size))
+		diskDevice.Size = diskSize
 
 		if fileFormat != "" {
 			diskDevice.Format = &fileFormat
@@ -426,6 +440,7 @@ func Read(
 
 		disk[mkDiskInterface] = di
 		disk[mkDiskSize] = dd.Size.InGigabytes()
+		disk[MkDiskSizeStr] = dd.Size.String()
 
 		if dd.AIO != nil {
 			disk[mkDiskAIO] = *dd.AIO
@@ -557,6 +572,12 @@ func Read(
 						if currentSize, ok := disk[mkDiskSize].(int); ok && currentSize > 0 {
 							if apiSize, ok := diskMap[k].(map[string]any)[mkDiskSize].(int64); ok && apiSize == 0 {
 								diskMap[k].(map[string]any)[mkDiskSize] = currentSize
+							}
+						}
+						// preserve disk_size from state when API returns zero size
+						if currentDiskSize, ok := disk[MkDiskSizeStr].(string); ok && currentDiskSize != "" {
+							if apiDiskSize, ok := diskMap[k].(map[string]any)[MkDiskSizeStr].(string); ok && apiDiskSize == "" {
+								diskMap[k].(map[string]any)[MkDiskSizeStr] = currentDiskSize
 							}
 						}
 					}

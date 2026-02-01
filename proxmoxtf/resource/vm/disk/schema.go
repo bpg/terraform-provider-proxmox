@@ -46,6 +46,7 @@ const (
 	mkDiskReplicate           = "replicate"
 	mkDiskSerial              = "serial"
 	mkDiskSize                = "size"
+	MkDiskSizeStr             = "disk_size"
 	mkDiskSpeed               = "speed"
 	mkDiskSpeedRead           = "read"
 	mkDiskSpeedReadBurstable  = "read_burstable"
@@ -149,17 +150,24 @@ func Schema() map[string]*schema.Schema {
 					},
 					mkDiskSerial: {
 						Type:             schema.TypeString,
-						Description:      "The drive’s reported serial number",
+						Description:      "The drive's reported serial number",
 						Optional:         true,
 						Default:          "",
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 20)),
 					},
 					mkDiskSize: {
 						Type:             schema.TypeInt,
-						Description:      "The disk size in gigabytes",
+						Description:      "The disk size in gigabytes (deprecated, use disk_size instead).",
 						Optional:         true,
 						Default:          dvDiskSize,
+						Deprecated:       "use disk_size instead",
 						ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
+					},
+					MkDiskSizeStr: {
+						Type:             schema.TypeString,
+						Description:      "The disk size with unit (K, M, G, T). Supports formats like '512M', '8G', '1T'.",
+						Optional:         true,
+						ValidateDiagFunc: validators.FileSize(),
 					},
 					mkDiskIOThread: {
 						Type:        schema.TypeBool,
@@ -187,7 +195,7 @@ func Schema() map[string]*schema.Schema {
 					},
 					mkDiskCache: {
 						Type:        schema.TypeString,
-						Description: "The drive’s cache mode",
+						Description: "The drive's cache mode",
 						Optional:    true,
 						Default:     dvDiskCache,
 						ValidateDiagFunc: validation.ToDiagFunc(

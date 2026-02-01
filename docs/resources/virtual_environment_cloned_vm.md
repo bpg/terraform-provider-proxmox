@@ -355,7 +355,8 @@ Optional:
 - `media` (String) Disk media (e.g., disk, cdrom).
 - `replicate` (Boolean) Consider disk for replication.
 - `serial` (String) Disk serial number.
-- `size_gb` (Number) Disk size (GiB) when creating new disks. **Note:** Disk shrinking is not supported. Attempting to set `size_gb` to a value smaller than the current disk size will result in an error. Only disk expansion is allowed.
+- `size` (String) Disk size with unit (K, M, G, T). Supports formats like `512M`, `8G`, `1T`. **Note:** Disk shrinking is not supported. Only disk expansion is allowed.
+- `size_gb` (Number, Deprecated) Disk size (GiB) when creating new disks (deprecated, use `disk_size` instead). **Note:** Disk shrinking is not supported. Attempting to set `size_gb` to a value smaller than the current disk size will result in an error. Only disk expansion is allowed.
 - `ssd` (Boolean) Mark disk as SSD.
 
 

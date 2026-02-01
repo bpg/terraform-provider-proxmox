@@ -78,6 +78,7 @@ type DiskModel struct {
 	File        types.String `tfsdk:"file"`
 	DatastoreID types.String `tfsdk:"datastore_id"`
 	SizeGB      types.Int64  `tfsdk:"size_gb"`
+	Size        types.String `tfsdk:"size"`
 	Format      types.String `tfsdk:"format"`
 	AIO         types.String `tfsdk:"aio"`
 	Backup      types.Bool   `tfsdk:"backup"`

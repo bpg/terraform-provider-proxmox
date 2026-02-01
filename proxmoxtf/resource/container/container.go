@@ -117,6 +117,7 @@ const (
 	mkDiskQuota                         = "quota"
 	mkDiskReplicate                     = "replicate"
 	mkDiskSize                          = "size"
+	mkDiskSizeStr                       = "disk_size"
 	mkDiskPathInDatastore               = "path_in_datastore"
 	mkEnvironmentVariables              = "environment_variables"
 	mkFeatures                          = "features"
@@ -378,10 +379,17 @@ func Container() *schema.Resource {
 						},
 						mkDiskSize: {
 							Type:             schema.TypeInt,
-							Description:      "The rootfs size in gigabytes",
+							Description:      "The rootfs size in gigabytes (deprecated, use disk_size instead).",
 							Optional:         true,
 							Default:          dvDiskSize,
+							Deprecated:       "use disk_size instead",
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+						},
+						mkDiskSizeStr: {
+							Type:             schema.TypeString,
+							Description:      "The rootfs size with unit (K, M, G, T). Supports formats like '512M', '8G', '1T'.",
+							Optional:         true,
+							ValidateDiagFunc: validators.FileSize(),
 						},
 						mkDiskMountOptions: {
 							Type:        schema.TypeList,
@@ -1880,12 +1888,25 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		}
 	}
 
-	diskSize := diskBlock[mkDiskSize].(int)
-	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0 || len(diskMountOptions) > 0) {
+	// Handle disk size: prefer disk_size (string with units) over deprecated size (int in GB)
+	var diskSizeGB int64
+
+	if diskSizeStr, ok := diskBlock[mkDiskSizeStr].(string); ok && diskSizeStr != "" {
+		ds, err := types.ParseDiskSize(diskSizeStr)
+		if err != nil {
+			return diag.Errorf("invalid disk_size %q: %v", diskSizeStr, err)
+		}
+
+		diskSizeGB = ds.InGigabytes()
+	} else {
+		diskSizeGB = int64(diskBlock[mkDiskSize].(int))
+	}
+
+	if diskDatastoreID != "" && (diskSizeGB != int64(dvDiskSize) || len(mountPoints) > 0 || len(diskMountOptions) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
-			Volume:       fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
+			Volume:       fmt.Sprintf("%s:%d", diskDatastoreID, diskSizeGB),
 			MountOptions: &diskMountOptions,
 		}
 	}
@@ -2488,6 +2509,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		disk[mkDiskPathInDatastore] = containerConfig.RootFS.Volume
 
 		disk[mkDiskSize] = containerConfig.RootFS.Size.InGigabytes()
+
+		disk[mkDiskSizeStr] = containerConfig.RootFS.Size.String()
 		if containerConfig.RootFS.MountOptions != nil {
 			disk[mkDiskMountOptions] = *containerConfig.RootFS.MountOptions
 		} else {
@@ -2497,11 +2520,19 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkDiskDatastoreID] = "local"
 		disk[mkDiskSize] = dvDiskSize
+		disk[mkDiskSizeStr] = ""
 		disk[mkDiskMountOptions] = []string{}
 		disk[mkDiskPathInDatastore] = ""
 	}
 
 	currentDisk := d.Get(mkDisk).([]any)
+
+	// Preserve disk_size from state if user had configured it
+	if len(currentDisk) > 0 && currentDisk[0] != nil {
+		if diskSizeStr, ok := currentDisk[0].(map[string]any)[mkDiskSizeStr].(string); ok && diskSizeStr != "" {
+			disk[mkDiskSizeStr] = diskSizeStr
+		}
+	}
 
 	if len(clone) > 0 {
 		if len(currentDisk) > 0 && currentDisk[0] != nil {
@@ -3204,7 +3235,21 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
 
 		oldSize := containerConfig.RootFS.Size
-		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
+
+		// Handle disk size: prefer disk_size (string with units) over deprecated size (int in GB)
+		var size *types.DiskSize
+
+		if diskSizeStr, ok := diskBlock[mkDiskSizeStr].(string); ok && diskSizeStr != "" {
+			ds, err := types.ParseDiskSize(diskSizeStr)
+			if err != nil {
+				return diag.Errorf("invalid disk_size %q: %v", diskSizeStr, err)
+			}
+
+			size = &ds
+		} else {
+			size = types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
+		}
+
 		// We should never reach this point. The `plan` should recreate the container, not update it, if the old size is larger.
 		if oldSize != nil && *oldSize > *size {
 			return diag.Errorf("new disk size (%s) has to be greater than the current disk (%s)", size, oldSize)
