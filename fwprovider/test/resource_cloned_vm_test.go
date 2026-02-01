@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-// TestAccResourceClonedVMDiskSize tests the disk size attribute with string units.
+// TestAccResourceClonedVMDiskSize tests the disk_size attribute with string units.
 func TestAccResourceClonedVMDiskSize(t *testing.T) {
 	t.Parallel()
 
@@ -48,13 +48,13 @@ func TestAccResourceClonedVMDiskSize(t *testing.T) {
 					disk = {
 						scsi0 = {
 							datastore_id = "local-lvm"
-							size         = "10G"
+							disk_size    = "10G"
 						}
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_cloned_vm.clone", map[string]string{
-						"disk.scsi0.size": "10G",
+						"disk.scsi0.disk_size": "10G",
 					}),
 				),
 			},
@@ -96,13 +96,13 @@ func TestAccResourceClonedVMDiskSizeResize(t *testing.T) {
 					disk = {
 						scsi0 = {
 							datastore_id = "local-lvm"
-							size         = "10G"
+							disk_size    = "10G"
 						}
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_cloned_vm.clone", map[string]string{
-						"disk.scsi0.size": "10G",
+						"disk.scsi0.disk_size": "10G",
 					}),
 				),
 			},
@@ -131,13 +131,13 @@ func TestAccResourceClonedVMDiskSizeResize(t *testing.T) {
 					disk = {
 						scsi0 = {
 							datastore_id = "local-lvm"
-							size         = "15G"
+							disk_size    = "15G"
 						}
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_cloned_vm.clone", map[string]string{
-						"disk.scsi0.size": "15G",
+						"disk.scsi0.disk_size": "15G",
 					}),
 				),
 			},

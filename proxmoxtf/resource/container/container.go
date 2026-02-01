@@ -2557,7 +2557,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 	currentDisk := d.Get(mkDisk).([]any)
 
-	// Handle disk_size vs size to avoid perpetual diff
+	// Handle disk_size vs size to avoid perpetual diff.
+	// Note: DiffSuppressFunc alone doesn't work for container disk block due to block-level comparison,
+	// so we must modify state to match config. When disk_size is used, size is set to default;
+	// when deprecated size is used, disk_size is cleared.
 	if len(currentDisk) > 0 && currentDisk[0] != nil {
 		currentDiskMap := currentDisk[0].(map[string]any)
 		if diskSizeStr, ok := currentDiskMap[mkDiskSizeStr].(string); ok && diskSizeStr != "" {

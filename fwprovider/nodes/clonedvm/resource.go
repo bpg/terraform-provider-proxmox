@@ -661,13 +661,13 @@ func applyDisks(
 			device.FileVolume = currentDevice.FileVolume
 		}
 
-		// Parse disk size once: prefer size (string with units) over deprecated size_gb (int)
+		// Parse disk size once: prefer disk_size (string with units) over deprecated size_gb (int)
 		var desiredSize *proxmoxtypes.DiskSize
 
-		if !cfg.Size.IsUnknown() && !cfg.Size.IsNull() && cfg.Size.ValueString() != "" {
-			ds, err := proxmoxtypes.ParseDiskSize(cfg.Size.ValueString())
+		if !cfg.DiskSize.IsUnknown() && !cfg.DiskSize.IsNull() && cfg.DiskSize.ValueString() != "" {
+			ds, err := proxmoxtypes.ParseDiskSize(cfg.DiskSize.ValueString())
 			if err != nil {
-				diags.AddError("Invalid size", fmt.Sprintf("Disk %q: invalid size %q: %v", slot, cfg.Size.ValueString(), err))
+				diags.AddError("Invalid disk_size", fmt.Sprintf("Disk %q: invalid disk_size %q: %v", slot, cfg.DiskSize.ValueString(), err))
 				return nil
 			}
 
@@ -678,12 +678,12 @@ func applyDisks(
 
 		if device.FileVolume == "" {
 			if cfg.DatastoreID.IsUnknown() || cfg.DatastoreID.IsNull() {
-				diags.AddError("Missing datastore_id", fmt.Sprintf("Disk %q requires either file or datastore_id+size", slot))
+				diags.AddError("Missing datastore_id", fmt.Sprintf("Disk %q requires either file or datastore_id+disk_size", slot))
 				return nil
 			}
 
 			if desiredSize == nil {
-				diags.AddError("Missing disk size", fmt.Sprintf("Disk %q requires size or size_gb when file is not provided", slot))
+				diags.AddError("Missing disk size", fmt.Sprintf("Disk %q requires disk_size or size_gb when file is not provided", slot))
 				return nil
 			}
 
@@ -893,8 +893,8 @@ func readDiskSlot(config *vms.GetResponseData, slot string, current DiskModel) D
 		dm.SizeGB = types.Int64Value(device.Size.InGigabytes())
 	}
 
-	if !dm.Size.IsUnknown() && !dm.Size.IsNull() && device.Size != nil {
-		dm.Size = types.StringValue(device.Size.String())
+	if !dm.DiskSize.IsUnknown() && !dm.DiskSize.IsNull() && device.Size != nil {
+		dm.DiskSize = types.StringValue(device.Size.String())
 	}
 
 	if !dm.Format.IsUnknown() && !dm.Format.IsNull() && device.Format != nil {
