@@ -236,6 +236,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/acsezen"><img src="https://avatars.githubusercontent.com/u/101647922?v=4?s=100" width="100px;" alt="Ahmet Sezen"/><br /><sub><b>Ahmet Sezen</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Aacsezen" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://samueldowling.com"><img src="https://avatars.githubusercontent.com/u/36361864?v=4?s=100" width="100px;" alt="Samuel Dowling"/><br /><sub><b>Samuel Dowling</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Asamuel-emrys" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/bacikp-rxi"><img src="https://avatars.githubusercontent.com/u/253043257?v=4?s=100" width="100px;" alt="bacikp-rxi"/><br /><sub><b>bacikp-rxi</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Abacikp-rxi" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/JamesMConroy"><img src="https://avatars.githubusercontent.com/u/23198389?v=4?s=100" width="100px;" alt="James Conroy"/><br /><sub><b>James Conroy</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=JamesMConroy" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
