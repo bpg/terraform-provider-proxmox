@@ -574,11 +574,16 @@ func Read(
 								diskMap[k].(map[string]any)[mkDiskSize] = currentSize
 							}
 						}
-						// preserve disk_size from state when API returns zero size
-						if currentDiskSize, ok := disk[MkDiskSizeStr].(string); ok && currentDiskSize != "" {
+						// Handle disk_size: only preserve if user configured it
+						currentDiskSize, hasDiskSize := disk[MkDiskSizeStr].(string)
+						if hasDiskSize && currentDiskSize != "" {
+							// User configured disk_size, preserve from state if API returns empty
 							if apiDiskSize, ok := diskMap[k].(map[string]any)[MkDiskSizeStr].(string); ok && apiDiskSize == "" {
 								diskMap[k].(map[string]any)[MkDiskSizeStr] = currentDiskSize
 							}
+						} else {
+							// User didn't configure disk_size (used deprecated size instead), clear it to avoid diff
+							diskMap[k].(map[string]any)[MkDiskSizeStr] = ""
 						}
 					}
 				}

@@ -350,6 +350,24 @@ func Container() *schema.Resource {
 						},
 					}, nil
 				},
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					// Suppress size diff when disk_size is configured
+					if strings.HasSuffix(k, "."+mkDiskSize) {
+						prefix := k[:len(k)-len(mkDiskSize)]
+
+						diskSizeKey := prefix + mkDiskSizeStr
+						if diskSize, ok := d.GetOk(diskSizeKey); ok && diskSize.(string) != "" {
+							return true
+						}
+					}
+					// Suppress mount_options diff between nil and empty slice
+					if strings.HasSuffix(k, "."+mkDiskMountOptions+".#") {
+						return oldValue == "0" && newValue == "0" || oldValue == "" && newValue == "0"
+					}
+
+					return false
+				},
+				DiffSuppressOnRefresh: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkDiskACL: {
@@ -384,6 +402,18 @@ func Container() *schema.Resource {
 							Default:          dvDiskSize,
 							Deprecated:       "use disk_size instead",
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+							DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+								// Suppress diff on 'size' when 'disk_size' is configured
+								// Extract the prefix from the key (e.g., "disk.0.size" -> "disk.0.")
+								prefix := k[:len(k)-len("size")]
+
+								diskSizeKey := prefix + mkDiskSizeStr
+								if diskSize, ok := d.GetOk(diskSizeKey); ok && diskSize.(string) != "" {
+									return true
+								}
+
+								return false
+							},
 						},
 						mkDiskSizeStr: {
 							Type:             schema.TypeString,
@@ -2528,9 +2558,16 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	currentDisk := d.Get(mkDisk).([]any)
 
 	// Preserve disk_size from state if user had configured it
+	// When disk_size is configured, also set size to the default to avoid drift with the deprecated attribute
 	if len(currentDisk) > 0 && currentDisk[0] != nil {
 		if diskSizeStr, ok := currentDisk[0].(map[string]any)[mkDiskSizeStr].(string); ok && diskSizeStr != "" {
 			disk[mkDiskSizeStr] = diskSizeStr
+			// Set deprecated size to default when disk_size is used, to avoid perpetual diff
+			disk[mkDiskSize] = int64(dvDiskSize)
+		}
+		// Preserve mount_options from config to avoid diff between nil and empty slice
+		if configMountOptions := currentDisk[0].(map[string]any)[mkDiskMountOptions]; configMountOptions == nil {
+			disk[mkDiskMountOptions] = nil
 		}
 	}
 

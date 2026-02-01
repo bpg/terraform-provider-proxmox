@@ -38,10 +38,10 @@ func TestAccResourceClonedVMDiskSize(t *testing.T) {
 					}
 				}
 
-				resource "proxmox_cloned_vm" "clone" {
+				resource "proxmox_virtual_environment_cloned_vm" "clone" {
 					node_name = "{{.NodeName}}"
 
-					clone {
+					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template.vm_id
 					}
 
@@ -53,7 +53,7 @@ func TestAccResourceClonedVMDiskSize(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_cloned_vm.clone", map[string]string{
+					ResourceAttributes("proxmox_virtual_environment_cloned_vm.clone", map[string]string{
 						"disk.scsi0.size": "10G",
 					}),
 				),
@@ -86,10 +86,10 @@ func TestAccResourceClonedVMDiskSizeResize(t *testing.T) {
 					}
 				}
 
-				resource "proxmox_cloned_vm" "clone" {
+				resource "proxmox_virtual_environment_cloned_vm" "clone" {
 					node_name = "{{.NodeName}}"
 
-					clone {
+					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template.vm_id
 					}
 
@@ -101,7 +101,7 @@ func TestAccResourceClonedVMDiskSizeResize(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_cloned_vm.clone", map[string]string{
+					ResourceAttributes("proxmox_virtual_environment_cloned_vm.clone", map[string]string{
 						"disk.scsi0.size": "10G",
 					}),
 				),
@@ -121,10 +121,10 @@ func TestAccResourceClonedVMDiskSizeResize(t *testing.T) {
 					}
 				}
 
-				resource "proxmox_cloned_vm" "clone" {
+				resource "proxmox_virtual_environment_cloned_vm" "clone" {
 					node_name = "{{.NodeName}}"
 
-					clone {
+					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template.vm_id
 					}
 
@@ -136,7 +136,7 @@ func TestAccResourceClonedVMDiskSizeResize(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_cloned_vm.clone", map[string]string{
+					ResourceAttributes("proxmox_virtual_environment_cloned_vm.clone", map[string]string{
 						"disk.scsi0.size": "15G",
 					}),
 				),

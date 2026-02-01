@@ -1645,7 +1645,6 @@ func TestAccResourceContainerDiskSizeWithUnits(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_container.test_disk_size", map[string]string{
 						"disk.0.disk_size": "8G",
-						"disk.0.size":      "8",
 					}),
 				),
 			},
@@ -1680,7 +1679,6 @@ func TestAccResourceContainerDiskSizeWithUnits(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_container.test_disk_size", map[string]string{
 						"disk.0.disk_size": "10G",
-						"disk.0.size":      "10",
 					}),
 				),
 			},

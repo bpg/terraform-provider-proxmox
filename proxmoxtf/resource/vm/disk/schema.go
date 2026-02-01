@@ -162,6 +162,18 @@ func Schema() map[string]*schema.Schema {
 						Default:          dvDiskSize,
 						Deprecated:       "use disk_size instead",
 						ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
+						DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+							// Suppress diff on 'size' when 'disk_size' is configured
+							// Extract the disk index from the key (e.g., "disk.0.size" -> "disk.0")
+							prefix := k[:len(k)-len("size")]
+
+							diskSizeKey := prefix + MkDiskSizeStr
+							if diskSize, ok := d.GetOk(diskSizeKey); ok && diskSize.(string) != "" {
+								return true
+							}
+
+							return false
+						},
 					},
 					MkDiskSizeStr: {
 						Type:             schema.TypeString,

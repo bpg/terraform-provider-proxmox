@@ -661,52 +661,37 @@ func applyDisks(
 			device.FileVolume = currentDevice.FileVolume
 		}
 
-		if device.FileVolume == "" {
-			if cfg.DatastoreID.IsUnknown() || cfg.DatastoreID.IsNull() {
-				diags.AddError("Missing datastore_id", fmt.Sprintf("Disk %q requires either file or datastore_id+disk_size", slot))
-				return nil
-			}
-
-			// Prefer disk_size (string with units) over deprecated size_gb (int)
-			var sizeGB int64
-
-			if !cfg.Size.IsUnknown() && !cfg.Size.IsNull() && cfg.Size.ValueString() != "" {
-				ds, err := proxmoxtypes.ParseDiskSize(cfg.Size.ValueString())
-				if err != nil {
-					diags.AddError("Invalid disk_size", fmt.Sprintf("Disk %q: invalid disk_size %q: %v", slot, cfg.Size.ValueString(), err))
-					return nil
-				}
-
-				sizeGB = ds.InGigabytes()
-			} else if !cfg.SizeGB.IsUnknown() && !cfg.SizeGB.IsNull() {
-				sizeGB = cfg.SizeGB.ValueInt64()
-			}
-
-			if sizeGB == 0 {
-				diags.AddError("Missing disk size", fmt.Sprintf("Disk %q requires disk_size or size_gb when file is not provided", slot))
-				return nil
-			}
-
-			device.FileVolume = fmt.Sprintf("%s:%d", cfg.DatastoreID.ValueString(), sizeGB)
-		}
-
-		if !cfg.AIO.IsUnknown() && !cfg.AIO.IsNull() {
-			device.AIO = cfg.AIO.ValueStringPointer()
-		}
-
-		// Handle disk size: prefer disk_size (string with units) over deprecated size_gb (int)
+		// Parse disk size once: prefer size (string with units) over deprecated size_gb (int)
 		var desiredSize *proxmoxtypes.DiskSize
 
 		if !cfg.Size.IsUnknown() && !cfg.Size.IsNull() && cfg.Size.ValueString() != "" {
 			ds, err := proxmoxtypes.ParseDiskSize(cfg.Size.ValueString())
 			if err != nil {
-				diags.AddError("Invalid disk_size", fmt.Sprintf("Disk %q: invalid disk_size %q: %v", slot, cfg.Size.ValueString(), err))
+				diags.AddError("Invalid size", fmt.Sprintf("Disk %q: invalid size %q: %v", slot, cfg.Size.ValueString(), err))
 				return nil
 			}
 
 			desiredSize = &ds
 		} else if !cfg.SizeGB.IsUnknown() && !cfg.SizeGB.IsNull() && cfg.SizeGB.ValueInt64() > 0 {
 			desiredSize = proxmoxtypes.DiskSizeFromGigabytes(cfg.SizeGB.ValueInt64())
+		}
+
+		if device.FileVolume == "" {
+			if cfg.DatastoreID.IsUnknown() || cfg.DatastoreID.IsNull() {
+				diags.AddError("Missing datastore_id", fmt.Sprintf("Disk %q requires either file or datastore_id+size", slot))
+				return nil
+			}
+
+			if desiredSize == nil {
+				diags.AddError("Missing disk size", fmt.Sprintf("Disk %q requires size or size_gb when file is not provided", slot))
+				return nil
+			}
+
+			device.FileVolume = fmt.Sprintf("%s:%d", cfg.DatastoreID.ValueString(), desiredSize.InGigabytes())
+		}
+
+		if !cfg.AIO.IsUnknown() && !cfg.AIO.IsNull() {
+			device.AIO = cfg.AIO.ValueStringPointer()
 		}
 
 		if desiredSize != nil {

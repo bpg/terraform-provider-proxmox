@@ -322,11 +322,11 @@ func diskAttribute() schema.Attribute {
 					Optional:    true,
 				},
 				"size_gb": schema.Int64Attribute{
-					Description: "Disk size (GiB) when creating new disks (deprecated, use `disk_size` instead). " +
+					Description: "Disk size (GiB) when creating new disks (deprecated, use `size` instead). " +
 						"**Note:** Disk shrinking is not supported. Attempting to set `size_gb` to a value smaller " +
 						"than the current disk size will result in an error. Only disk expansion is allowed.",
 					Optional:           true,
-					DeprecationMessage: "Use disk_size instead, which supports size units (K, M, G, T).",
+					DeprecationMessage: "Use size instead, which supports size units (K, M, G, T).",
 					Validators: []validator.Int64{
 						int64validator.Between(1, 10240),
 					},
