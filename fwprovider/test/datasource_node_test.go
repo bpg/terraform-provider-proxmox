@@ -27,6 +27,7 @@ func TestAccDatasourceNode(t *testing.T) {
 			Config: te.RenderConfig(`data "proxmox_virtual_environment_node" "test" { node_name = "{{.NodeName}}" }`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributesSet("data.proxmox_virtual_environment_node.test", []string{
+					"cpu_cores",
 					"cpu_count",
 					"cpu_sockets",
 					"cpu_model",

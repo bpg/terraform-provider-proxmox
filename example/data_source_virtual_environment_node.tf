@@ -2,6 +2,10 @@ data "proxmox_virtual_environment_node" "example" {
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
 }
 
+output "data_proxmox_virtual_environment_node_example_cpu_cores" {
+  value = data.proxmox_virtual_environment_node.example.cpu_cores
+}
+
 output "data_proxmox_virtual_environment_node_example_cpu_count" {
   value = data.proxmox_virtual_environment_node.example.cpu_count
 }

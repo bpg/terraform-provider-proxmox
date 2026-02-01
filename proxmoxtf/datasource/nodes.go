@@ -31,10 +31,11 @@ const (
 // Nodes returns a resource for the Proxmox nodes.
 func Nodes() *schema.Resource {
 	return &schema.Resource{
+		Description: "Retrieves information about all available Proxmox VE nodes.",
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentNodesCPUCount: {
 				Type:        schema.TypeList,
-				Description: "The CPU count for each node",
+				Description: "The total number of logical CPUs on each node",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},

@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentNodeCPUCores        = "cpu_count"
+	mkDataSourceVirtualEnvironmentNodeCPUCores        = "cpu_cores"
+	mkDataSourceVirtualEnvironmentNodeCPUCount        = "cpu_count"
 	mkDataSourceVirtualEnvironmentNodeCPUSockets      = "cpu_sockets"
 	mkDataSourceVirtualEnvironmentNodeCPUModel        = "cpu_model"
 	mkDataSourceVirtualEnvironmentNodeMemoryAvailable = "memory_available"
@@ -29,15 +30,21 @@ const (
 // Node returns a resource for the Proxmox node.
 func Node() *schema.Resource {
 	return &schema.Resource{
+		Description: "Retrieves information about a specific Proxmox VE node.",
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentNodeCPUCores: {
 				Type:        schema.TypeInt,
-				Description: "The CPU count on the node",
+				Description: "The number of physical CPU cores per socket on the node",
+				Computed:    true,
+			},
+			mkDataSourceVirtualEnvironmentNodeCPUCount: {
+				Type:        schema.TypeInt,
+				Description: "The total number of logical CPUs on the node (sockets * cores * threads)",
 				Computed:    true,
 			},
 			mkDataSourceVirtualEnvironmentNodeCPUSockets: {
 				Type:        schema.TypeInt,
-				Description: "The CPU sockets on the node",
+				Description: "The number of CPU sockets on the node",
 				Computed:    true,
 			},
 			mkDataSourceVirtualEnvironmentNodeCPUModel: {
@@ -98,6 +105,14 @@ func nodeRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		err = d.Set(mkDataSourceVirtualEnvironmentNodeCPUCores, *node.CPUInfo.CPUCores)
 	} else {
 		err = d.Set(mkDataSourceVirtualEnvironmentNodeCPUCores, 1)
+	}
+
+	diags = append(diags, diag.FromErr(err)...)
+
+	if node.CPUInfo.CPUCount != nil {
+		err = d.Set(mkDataSourceVirtualEnvironmentNodeCPUCount, *node.CPUInfo.CPUCount)
+	} else {
+		err = d.Set(mkDataSourceVirtualEnvironmentNodeCPUCount, 1)
 	}
 
 	diags = append(diags, diag.FromErr(err)...)

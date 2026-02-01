@@ -43,6 +43,7 @@ type GetInfoResponseBody struct {
 type GetInfoResponseData struct {
 	CPUInfo struct {
 		CPUCores   *int    `json:"cores,omitempty"`
+		CPUCount   *int    `json:"cpus,omitempty"`
 		CPUSockets *int    `json:"sockets,omitempty"`
 		CPUModel   *string `json:"model"`
 	} `json:"cpuinfo"`
