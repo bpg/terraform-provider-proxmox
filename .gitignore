@@ -1,6 +1,8 @@
 /example/terraform-provider-*
 /pkg/
 /test/
+/tmp/
+/temp/
 /website/.vagrant
 /website/.bundle
 /website/build

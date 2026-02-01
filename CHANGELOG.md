@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.93.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.93.0...v0.93.1) (2026-01-31)
+
+
+### Bug Fixes
+
+* **docs:** prevent path traversal in sudoers tee configuration ([#2524](https://github.com/bpg/terraform-provider-proxmox/issues/2524)) ([bd604c4](https://github.com/bpg/terraform-provider-proxmox/commit/bd604c41a31e2a55dd6acc01b0608be3ea49c023))
+
+
+### Miscellaneous
+
+* **ci:** update actions/checkout action (v6.0.1 → v6.0.2) ([#2521](https://github.com/bpg/terraform-provider-proxmox/issues/2521)) ([84e0b97](https://github.com/bpg/terraform-provider-proxmox/commit/84e0b97aa0d2fbc111e1db5432a97f98ed25ca6b))
+* **ci:** update actions/setup-go digest (4dc6199 → 7a3fe6c) ([#2520](https://github.com/bpg/terraform-provider-proxmox/issues/2520)) ([1a1174c](https://github.com/bpg/terraform-provider-proxmox/commit/1a1174c73ce6089af1c66f006a51ff1acb99699f))
+* **deps:** update image golang (1.25.5 → 1.25.6) ([#2504](https://github.com/bpg/terraform-provider-proxmox/issues/2504)) ([3e75bbb](https://github.com/bpg/terraform-provider-proxmox/commit/3e75bbb41f3b967f7602bb38182052518bcedbfd))
+* **deps:** update image golang (6cc2338 → 8bbd140) ([#2503](https://github.com/bpg/terraform-provider-proxmox/issues/2503)) ([d087c97](https://github.com/bpg/terraform-provider-proxmox/commit/d087c97870d992711a6131ac1913e19af2f936b1))
+* **deps:** update module golang.org/x/net (v0.48.0 → v0.49.0) ([#2506](https://github.com/bpg/terraform-provider-proxmox/issues/2506)) ([9fe808a](https://github.com/bpg/terraform-provider-proxmox/commit/9fe808adc8fb8aadf1d68a7540b7a9b205f123b3))
+* **docs:** update terraform local (2.6.1 → 2.6.2) ([#2522](https://github.com/bpg/terraform-provider-proxmox/issues/2522)) ([8c64b5e](https://github.com/bpg/terraform-provider-proxmox/commit/8c64b5e0199eb9aad85d41739e3b0d2ef0134f18))
+* **docs:** update terraform tls (4.1.0 → 4.2.1) ([#2523](https://github.com/bpg/terraform-provider-proxmox/issues/2523)) ([94d9dd3](https://github.com/bpg/terraform-provider-proxmox/commit/94d9dd3feca1a8ff285de92b58601ff2261b74a3))
+
 ## [0.93.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.92.0...v0.93.0) (2026-01-12)
 
 

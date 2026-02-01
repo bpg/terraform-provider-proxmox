@@ -1550,6 +1550,17 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		updateBody.Tags = &tagString
 	}
 
+	// Handle mount points for cloned containers
+	mountPoint := d.Get(mkMountPoint).([]any)
+	if len(mountPoint) > 0 {
+		mountPointsMap, err := containerGetMountPointsMap(mountPoint)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		updateBody.MountPoints = mountPointsMap
+	}
+
 	template := d.Get(mkTemplate).(bool)
 	templateAttr := types.CustomBool(template)
 
@@ -2192,6 +2203,67 @@ func containerGetTagsString(d *schema.ResourceData) string {
 	sort.Strings(sanitizedTags)
 
 	return strings.Join(sanitizedTags, ";")
+}
+
+func containerGetMountPointsMap(mountPoint []any) (containers.CustomMountPoints, error) {
+	mountPointsMap := make(containers.CustomMountPoints, len(mountPoint))
+
+	for i, mp := range mountPoint {
+		mountPointMap := mp.(map[string]any)
+		mountPointObject := containers.CustomMountPoint{}
+
+		acl := types.CustomBool(mountPointMap[mkMountPointACL].(bool))
+		backup := types.CustomBool(mountPointMap[mkMountPointBackup].(bool))
+		mountOptions := mountPointMap[mkMountPointMountOptions].([]any)
+		path := mountPointMap[mkMountPointPath].(string)
+		quota := types.CustomBool(mountPointMap[mkMountPointQuota].(bool))
+		readOnly := types.CustomBool(mountPointMap[mkMountPointReadOnly].(bool))
+		replicate := types.CustomBool(mountPointMap[mkMountPointReplicate].(bool))
+		shared := types.CustomBool(mountPointMap[mkMountPointShared].(bool))
+		size := mountPointMap[mkMountPointSize].(string)
+		volume := mountPointMap[mkMountPointVolume].(string)
+
+		mountPointObject.ACL = &acl
+		mountPointObject.Backup = &backup
+		mountPointObject.MountPoint = path
+		mountPointObject.Quota = &quota
+		mountPointObject.ReadOnly = &readOnly
+		mountPointObject.Replicate = &replicate
+		mountPointObject.Shared = &shared
+		mountPointObject.Volume = volume
+
+		if len(size) > 0 {
+			ds, err := types.ParseDiskSize(size)
+			if err != nil {
+				return nil, fmt.Errorf("invalid disk size: %w", err)
+			}
+
+			parts := strings.SplitN(volume, ":", 2)
+			isExistingVolume := len(parts) == 2 && parts[1] != ""
+
+			if !isExistingVolume {
+				datastore := parts[0]
+				mountPointObject.Volume = fmt.Sprintf("%s:%d", datastore, ds.InGigabytes())
+			} else {
+				dsStr := ds.String()
+				mountPointObject.DiskSize = &dsStr
+			}
+		}
+
+		if len(mountOptions) > 0 {
+			mountOptionsArray := make([]string, 0, len(mountOptions))
+
+			for _, option := range mountOptions {
+				mountOptionsArray = append(mountOptionsArray, option.(string))
+			}
+
+			mountPointObject.MountOptions = &mountOptionsArray
+		}
+
+		mountPointsMap[fmt.Sprintf("mp%d", i)] = &mountPointObject
+	}
+
+	return mountPointsMap, nil
 }
 
 func containerGetStartupBehavior(d *schema.ResourceData) *containers.CustomStartupBehavior {
@@ -3374,67 +3446,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		_, newMountPoints := d.GetChange(mkMountPoint)
 
 		mountPoints := newMountPoints.([]any)
-		mountPointsMap := make(
-			containers.CustomMountPoints,
-			len(mountPoints),
-		)
 
-		for i, mp := range mountPoints {
-			mountPointMap := mp.(map[string]any)
-			mountPointObject := containers.CustomMountPoint{}
-
-			acl := types.CustomBool(mountPointMap[mkMountPointACL].(bool))
-			backup := types.CustomBool(mountPointMap[mkMountPointBackup].(bool))
-			mountOptions := mountPointMap[mkMountPointMountOptions].([]any)
-			path := mountPointMap[mkMountPointPath].(string)
-			quota := types.CustomBool(mountPointMap[mkMountPointQuota].(bool))
-			readOnly := types.CustomBool(mountPointMap[mkMountPointReadOnly].(bool))
-			replicate := types.CustomBool(mountPointMap[mkMountPointReplicate].(bool))
-			shared := types.CustomBool(mountPointMap[mkMountPointShared].(bool))
-			size := mountPointMap[mkMountPointSize].(string)
-			volume := mountPointMap[mkMountPointVolume].(string)
-
-			mountPointObject.ACL = &acl
-			mountPointObject.Backup = &backup
-			mountPointObject.MountPoint = path
-			mountPointObject.Quota = &quota
-			mountPointObject.ReadOnly = &readOnly
-			mountPointObject.Replicate = &replicate
-			mountPointObject.Shared = &shared
-			mountPointObject.Volume = volume
-
-			if len(size) > 0 {
-				ds, err := types.ParseDiskSize(size)
-				if err != nil {
-					return diag.Errorf("invalid disk size: %s", err.Error())
-				}
-
-				// determine if the mount point is new or existing during container update:
-				// existing storage-backed MP has volume format "storage:disk", e.g. `local-lvm:vm-123-disk-1`
-				// new storage-backed MP has just datastore name, e.g. `local-lvm`
-				parts := strings.SplitN(volume, ":", 2)
-				isExistingVolume := len(parts) == 2 && parts[1] != ""
-
-				if !isExistingVolume {
-					datastore := parts[0]
-					mountPointObject.Volume = fmt.Sprintf("%s:%d", datastore, ds.InGigabytes())
-				} else {
-					dsStr := ds.String()
-					mountPointObject.DiskSize = &dsStr
-				}
-			}
-
-			if len(mountOptions) > 0 {
-				mountOptionsArray := make([]string, 0, len(mountPoints))
-
-				for _, option := range mountOptions {
-					mountOptionsArray = append(mountOptionsArray, option.(string))
-				}
-
-				mountPointObject.MountOptions = &mountOptionsArray
-			}
-
-			mountPointsMap[fmt.Sprintf("mp%d", i)] = &mountPointObject
+		mountPointsMap, err := containerGetMountPointsMap(mountPoints)
+		if err != nil {
+			return diag.FromErr(err)
 		}
 
 		updateBody.MountPoints = mountPointsMap

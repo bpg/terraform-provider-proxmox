@@ -422,16 +422,18 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
     ```text
     terraform ALL=(root) NOPASSWD: /usr/sbin/pvesm
     terraform ALL=(root) NOPASSWD: /usr/sbin/qm
-    terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/*
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
     ```
 
   If you're using a different datastore for snippets, not the default `local`, you should add the datastore's mount point to the sudoers file as well, for example:
-  
+
     ```text
-    terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/*
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
     ```
 
   You can find the mount point of the datastore by running `pvesh get /storage/<name>` on the Proxmox node.
+
+  ~> **Security Warning:** Do not use wildcard patterns like `/var/lib/vz/*` in sudoers rules for `tee`. Such patterns allow path traversal attacks (e.g., `/var/lib/vz/../../../etc/sudoers.d/malicious`) that can lead to privilege escalation. Always restrict to specific subdirectories with strict filename patterns as shown above.
 
 - Copy your SSH public key to the `~/.ssh/authorized_keys` file of the `terraform` user on the target node.
 

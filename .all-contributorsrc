@@ -1637,6 +1637,42 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "sebiklamar",
+      "name": "Sebastian Klamar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/53593629?v=4",
+      "profile": "https://github.com/sebiklamar",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "Renerick",
+      "name": "Denis Palashevskii",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20725046?v=4",
+      "profile": "https://github.com/Renerick",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "acsezen",
+      "name": "Ahmet Sezen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/101647922?v=4",
+      "profile": "https://github.com/acsezen",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "samuel-emrys",
+      "name": "Samuel Dowling",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36361864?v=4",
+      "profile": "http://samueldowling.com",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,

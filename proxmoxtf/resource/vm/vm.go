@@ -3240,6 +3240,10 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 	initializationConfig.IPConfig = make([]vms.CustomCloudInitIPConfig, len(initializationIPConfig))
 
 	for i, c := range initializationIPConfig {
+		if c == nil {
+			continue
+		}
+
 		configBlock := c.(map[string]any)
 		ipv4 := configBlock[mkInitializationIPConfigIPv4].([]any)
 

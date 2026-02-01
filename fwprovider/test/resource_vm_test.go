@@ -1570,6 +1570,44 @@ func TestAccResourceVMClone(t *testing.T) {
 				PlanOnly: true,
 			},
 		}},
+		// test for panic when cloning with empty ip_config block (no ipv4/ipv6)
+		// see https://github.com/bpg/terraform-provider-proxmox/issues/2517
+		{"clone with empty ip_config block", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_multi_nic" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone_empty_ip_config" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template_multi_nic.vm_id
+					}
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.clone_empty_ip_config", map[string]string{
+					"initialization.0.ip_config.#":                "2",
+					"initialization.0.ip_config.1.ipv4.0.address": "dhcp",
+				}),
+			),
+		}}},
 	}
 
 	for _, tt := range tests {
