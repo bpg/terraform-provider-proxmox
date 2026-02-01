@@ -789,13 +789,13 @@ resource "proxmox_virtual_environment_vm" "data_vm" {
   disk {
     datastore_id = "local-zfs"
     interface    = "scsi0"
-    size         = 1
+    disk_size    = "1G"
   }
 
   disk {
     datastore_id = "local-zfs"
     interface    = "scsi1"
-    size         = 4
+    disk_size    = "4G"
   }
 }
 
@@ -804,7 +804,7 @@ resource "proxmox_virtual_environment_vm" "data_user_vm" {
   disk {
     datastore_id = "local-zfs"
     interface    = "scsi0"
-    size         = 8
+    disk_size    = "8G"
   }
 
   # attached disks from data_vm

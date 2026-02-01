@@ -34,7 +34,7 @@ func TestAccResourceClonedVMDiskSize(t *testing.T) {
 					disk {
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
-						size         = 8
+						disk_size    = "8G"
 					}
 				}
 
@@ -82,7 +82,7 @@ func TestAccResourceClonedVMDiskSizeResize(t *testing.T) {
 					disk {
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
-						size         = 8
+						disk_size    = "8G"
 					}
 				}
 
@@ -117,7 +117,7 @@ func TestAccResourceClonedVMDiskSizeResize(t *testing.T) {
 					disk {
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
-						size         = 8
+						disk_size    = "8G"
 					}
 				}
 

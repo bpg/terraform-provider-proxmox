@@ -88,7 +88,7 @@ resource "proxmox_virtual_environment_cloned_vm" "disk_managed" {
     scsi0 = {
       # Resize the cloned boot disk
       datastore_id = "local-lvm"
-      size_gb      = 50
+      disk_size    = "50G"
       discard      = "on"
       ssd          = true
     }
@@ -96,7 +96,7 @@ resource "proxmox_virtual_environment_cloned_vm" "disk_managed" {
     scsi1 = {
       # Add a new data disk
       datastore_id = "local-lvm"
-      size_gb      = 100
+      disk_size    = "100G"
       backup       = false
     }
   }
@@ -166,7 +166,7 @@ resource "proxmox_virtual_environment_cloned_vm" "full_featured" {
   disk = {
     scsi0 = {
       datastore_id = "local-lvm"
-      size_gb      = 100
+      disk_size    = "100G"
       discard      = "on"
       iothread     = true
       ssd          = true
