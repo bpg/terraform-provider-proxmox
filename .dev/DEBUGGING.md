@@ -252,8 +252,8 @@ The provider uses `terraform-plugin-log` for structured logging. Logs are visibl
 
 ## References
 
-- [Mitmproxy Documentation](https://docs.mitmproxy.org/)
-- [Mitmproxy Script API](https://docs.mitmproxy.org/stable/addons-overview/)
+- [Mitmproxy Documentation](https://docs.mitmproxy.org/stable/)
+- [Mitmproxy Script API](https://docs.mitmproxy.org/stable/addons/overview/)
 - [Terraform Plugin Development](https://developer.hashicorp.com/terraform/plugin)
 - [Proxmox VE API Documentation](https://pve.proxmox.com/pve-docs/api-viewer/)
 
