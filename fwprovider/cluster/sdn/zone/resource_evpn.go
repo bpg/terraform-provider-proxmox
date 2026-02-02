@@ -14,9 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -53,14 +55,57 @@ func (m *evpnModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagn
 	m.VRFVXLANID = types.Int64PointerValue(data.VRFVXLANID)
 
 	if data.Pending != nil {
-		m.AdvertiseSubnets = types.BoolPointerValue(data.Pending.AdvertiseSubnets.PointerBool())
-		m.Controller = types.StringPointerValue(data.Pending.Controller)
-		m.DisableARPNDSuppression = types.BoolPointerValue(data.Pending.DisableARPNDSuppression.PointerBool())
-		m.ExitNodes = stringset.NewValueString(data.Pending.ExitNodes, diags, stringset.WithSeparator(","))
-		m.ExitNodesLocalRouting = types.BoolPointerValue(data.Pending.ExitNodesLocalRouting.PointerBool())
-		m.PrimaryExitNode = types.StringPointerValue(data.Pending.ExitNodesPrimary)
-		m.RouteTargetImport = types.StringPointerValue(data.Pending.RouteTargetImport)
-		m.VRFVXLANID = types.Int64PointerValue(data.Pending.VRFVXLANID)
+		hasPendingChanges := false
+
+		if data.Pending.AdvertiseSubnets != nil {
+			m.applyPendingBool(data.Pending.AdvertiseSubnets, &m.AdvertiseSubnets)
+
+			hasPendingChanges = true
+		}
+
+		if data.Pending.Controller != nil && *data.Pending.Controller != "" {
+			m.applyPendingString(data.Pending.Controller, &m.Controller)
+
+			hasPendingChanges = true
+		}
+
+		if data.Pending.DisableARPNDSuppression != nil {
+			m.applyPendingBool(data.Pending.DisableARPNDSuppression, &m.DisableARPNDSuppression)
+
+			hasPendingChanges = true
+		}
+
+		if data.Pending.ExitNodes != nil && *data.Pending.ExitNodes != "" {
+			m.ExitNodes = stringset.NewValueString(data.Pending.ExitNodes, diags, stringset.WithSeparator(","))
+			hasPendingChanges = true
+		}
+
+		if data.Pending.ExitNodesLocalRouting != nil {
+			m.applyPendingBool(data.Pending.ExitNodesLocalRouting, &m.ExitNodesLocalRouting)
+
+			hasPendingChanges = true
+		}
+
+		if data.Pending.ExitNodesPrimary != nil && *data.Pending.ExitNodesPrimary != "" {
+			m.applyPendingString(data.Pending.ExitNodesPrimary, &m.PrimaryExitNode)
+
+			hasPendingChanges = true
+		}
+
+		if data.Pending.RouteTargetImport != nil && *data.Pending.RouteTargetImport != "" {
+			m.applyPendingString(data.Pending.RouteTargetImport, &m.RouteTargetImport)
+
+			hasPendingChanges = true
+		}
+
+		if data.Pending.VRFVXLANID != nil && *data.Pending.VRFVXLANID != 0 {
+			m.VRFVXLANID = types.Int64Value(*data.Pending.VRFVXLANID)
+			hasPendingChanges = true
+		}
+
+		if hasPendingChanges {
+			m.Pending = types.BoolValue(true)
+		}
 	}
 }
 
@@ -77,6 +122,21 @@ func (m *evpnModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Z
 	data.VRFVXLANID = m.VRFVXLANID.ValueInt64Pointer()
 
 	return data
+}
+
+func (m *evpnModel) checkDeletedFields(state zoneModel) []string {
+	evpnState := state.(*evpnModel)
+	toDelete := m.genericModel.checkDeletedFields(evpnState.getGenericModel())
+
+	// Add EVPN-specific deleted fields
+	attribute.CheckDelete(m.AdvertiseSubnets, evpnState.AdvertiseSubnets, &toDelete, "advertise-subnets")
+	attribute.CheckDelete(m.DisableARPNDSuppression, evpnState.DisableARPNDSuppression, &toDelete, "disable-arp-nd-suppression")
+	attribute.CheckDelete(m.ExitNodes, evpnState.ExitNodes, &toDelete, "exitnodes")
+	attribute.CheckDelete(m.ExitNodesLocalRouting, evpnState.ExitNodesLocalRouting, &toDelete, "exitnodes-local-routing")
+	attribute.CheckDelete(m.PrimaryExitNode, evpnState.PrimaryExitNode, &toDelete, "exitnodes-primary")
+	attribute.CheckDelete(m.RouteTargetImport, evpnState.RouteTargetImport, &toDelete, "rt-import")
+
+	return toDelete
 }
 
 type EVPNResource struct {
@@ -102,6 +162,8 @@ func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"advertise_subnets": schema.BoolAttribute{
 				Description: "Enable subnet advertisement for EVPN.",
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"controller": schema.StringAttribute{
 				Description: "EVPN controller address.",
@@ -110,11 +172,15 @@ func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"disable_arp_nd_suppression": schema.BoolAttribute{
 				Description: "Disable ARP/ND suppression for EVPN.",
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"exit_nodes": stringset.ResourceAttribute("List of exit nodes for EVPN.", ""),
 			"exit_nodes_local_routing": schema.BoolAttribute{
 				Description: "Enable local routing for EVPN exit nodes.",
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"primary_exit_node": schema.StringAttribute{
 				Description: "Primary exit node for EVPN.",

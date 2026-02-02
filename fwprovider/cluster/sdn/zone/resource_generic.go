@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -142,16 +143,23 @@ func (m *genericModel) applyPendingString(pendingValue *string, target *types.St
 	}
 }
 
-func checkDeletedFields(state, plan *genericModel) []string {
+func (m *genericModel) applyPendingBool(pendingValue *proxmoxtypes.CustomBool, target *types.Bool) {
+	if pendingValue != nil {
+		*target = types.BoolPointerValue(pendingValue.PointerBool())
+	}
+}
+
+func (m *genericModel) checkDeletedFields(state *genericModel) []string {
 	var toDelete []string
 
-	attribute.CheckDelete(plan.IPAM, state.IPAM, &toDelete, "ipam")
-	attribute.CheckDelete(plan.DNS, state.DNS, &toDelete, "dns")
-	attribute.CheckDelete(plan.ReverseDNS, state.ReverseDNS, &toDelete, "reversedns")
-	attribute.CheckDelete(plan.DNSZone, state.DNSZone, &toDelete, "dnszone")
-	attribute.CheckDelete(plan.MTU, state.MTU, &toDelete, "mtu")
-	attribute.CheckDelete(plan.Nodes, state.Nodes, &toDelete, "nodes")
-	attribute.CheckDelete(plan.State, state.State, &toDelete, "state")
+	attribute.CheckDelete(m.IPAM, state.IPAM, &toDelete, "ipam")
+	attribute.CheckDelete(m.DNS, state.DNS, &toDelete, "dns")
+	attribute.CheckDelete(m.ReverseDNS, state.ReverseDNS, &toDelete, "reversedns")
+	attribute.CheckDelete(m.DNSZone, state.DNSZone, &toDelete, "dnszone")
+	// Note: MTU intentionally omitted - cannot be unset once configured due to Proxmox API limitation
+	// (pending object returns "deleted" string which cannot unmarshal to int64)
+	attribute.CheckDelete(m.Nodes, state.Nodes, &toDelete, "nodes")
+	attribute.CheckDelete(m.State, state.State, &toDelete, "state")
 
 	return toDelete
 }
@@ -182,8 +190,13 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 			Optional:    true,
 		},
 		"mtu": schema.Int64Attribute{
-			Description: "MTU value for the zone.",
-			Optional:    true,
+			Description: "MTU value for the zone. There is no support to reset this value back to PVE default " +
+				"once set due to API limitation.",
+			Optional: true,
+			Computed: true,
+			PlanModifiers: []planmodifier.Int64{
+				int64planmodifier.UseNonNullStateForUnknown(),
+			},
 		},
 		"nodes": stringset.ResourceAttribute("The Proxmox nodes which the zone and associated VNets should be deployed on", "", stringset.WithOptional()),
 		"pending": schema.BoolAttribute{
@@ -213,6 +226,7 @@ type zoneModel interface {
 	toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone
 	getID() string
 	getGenericModel() *genericModel
+	checkDeletedFields(state zoneModel) []string
 }
 
 type zoneResourceConfig struct {
@@ -314,7 +328,7 @@ func (r *genericZoneResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	toDelete := checkDeletedFields(state.getGenericModel(), plan.getGenericModel())
+	toDelete := plan.checkDeletedFields(state)
 	update := &zones.ZoneUpdate{
 		Zone:   *updateZone,
 		Delete: toDelete,
