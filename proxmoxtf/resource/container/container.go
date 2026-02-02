@@ -48,7 +48,7 @@ const (
 	dvInitializationIPConfigIPv6Gateway = ""
 	dvInitializationHostname            = ""
 	dvInitializationUserAccountPassword = ""
-	dvInitializationEntrypoint          = "/sbin/init"
+	dvInitializationEntrypoint          = ""
 	dvCPUArchitecture                   = "amd64"
 	dvCPUCores                          = 1
 	dvCPUUnits                          = 1024
@@ -2623,7 +2623,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		entrypoint := *containerConfig.Entrypoint
 		initialization[mkInitializationEntrypoint] = entrypoint
 	} else {
-		initialization[mkInitializationEntrypoint] = dvInitializationEntrypoint
+		// Default value of "entrypoint" is "/sbin/init" according to the API documentation.
+		initialization[mkInitializationEntrypoint] = "/sbin/init"
 	}
 
 	passthroughDevicesMap := make(map[string]any, len(containerConfig.PassthroughDevices))
