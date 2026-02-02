@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.94.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.93.1...v0.94.0) (2026-02-02)
+
+
+### Features
+
+* **firewall:** add `proxmox_virtual_environment_node_firewall` ([#2502](https://github.com/bpg/terraform-provider-proxmox/issues/2502)) ([d45f269](https://github.com/bpg/terraform-provider-proxmox/commit/d45f26920e7ff8266793d885c7ff3dddd6a6651f))
+
+
+### Bug Fixes
+
+* **lxc:** provision mount points when cloning containers ([#2529](https://github.com/bpg/terraform-provider-proxmox/issues/2529)) ([67990d7](https://github.com/bpg/terraform-provider-proxmox/commit/67990d72c664a46c496097946ee48eddac29ae1a)), closes [#2518](https://github.com/bpg/terraform-provider-proxmox/issues/2518) [#2507](https://github.com/bpg/terraform-provider-proxmox/issues/2507)
+* **network:** update reload timeout and retry ([#2510](https://github.com/bpg/terraform-provider-proxmox/issues/2510)) ([f66b9dd](https://github.com/bpg/terraform-provider-proxmox/commit/f66b9dde260d740415990b7fc275f6564fecf712))
+* **sdn:** correct EVPN resource handling and improvements to base zone ([#2501](https://github.com/bpg/terraform-provider-proxmox/issues/2501)) ([c159715](https://github.com/bpg/terraform-provider-proxmox/commit/c159715e4341e87168d73f1cc58e9ead2a15be82))
+* **storage:** add validator for acceptable values for storage content and update docs ([#2519](https://github.com/bpg/terraform-provider-proxmox/issues/2519)) ([fc8b018](https://github.com/bpg/terraform-provider-proxmox/commit/fc8b0181b87e9c2dcb148fb2c81d92562e6e3230))
+* **vm:** add missing cpu types ([#2499](https://github.com/bpg/terraform-provider-proxmox/issues/2499)) ([f51c8df](https://github.com/bpg/terraform-provider-proxmox/commit/f51c8dfd08360808d41201bb81fd2db1896a1238))
+* **vm:** handle nil `ip_config` block in cloud-init during clone ([#2527](https://github.com/bpg/terraform-provider-proxmox/issues/2527)) ([4ed5433](https://github.com/bpg/terraform-provider-proxmox/commit/4ed543348ea5357874d8d4415252ceb8c835c3bb))
+* **vm:** require reboot for CPU core or socket changes ([#2534](https://github.com/bpg/terraform-provider-proxmox/issues/2534)) ([3ca754c](https://github.com/bpg/terraform-provider-proxmox/commit/3ca754cf73439a9b0e817b07926e91806a42603a)), closes [#2516](https://github.com/bpg/terraform-provider-proxmox/issues/2516)
+
 ## [0.93.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.93.0...v0.93.1) (2026-01-31)
 
 
