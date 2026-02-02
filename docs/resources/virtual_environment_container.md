@@ -166,6 +166,7 @@ output "ubuntu_container_public_key" {
             the `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers.
     - `hostname` - (Optional) The hostname.
+    - `entrypoint` - (Optional) The entrypoint script path.
     - `ip_config` - (Optional) The IP configuration (one block per network
         device).
         - `ipv4` - (Optional) The IPv4 configuration.
