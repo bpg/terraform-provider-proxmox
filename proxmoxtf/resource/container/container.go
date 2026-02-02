@@ -3411,7 +3411,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	if d.HasChange(mkInitialization + ".0." + mkInitializationEntrypoint) {
-		updateBody.Entrypoint = &initializationEntrypoint
+		if initializationEntrypoint != "" {
+			updateBody.Entrypoint = &initializationEntrypoint
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "entrypoint")
+		}
+
 		rebootRequired = true
 	}
 
