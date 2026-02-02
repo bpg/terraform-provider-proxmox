@@ -37,7 +37,7 @@ Reference: [DEBUGGING.md](../../.dev/DEBUGGING.md)
 Check mitmproxy is available:
 
 ```bash
-which mitmdump || echo "ERROR: mitmproxy not installed. Run: `brew install mitmproxy` (macOS) or `pip install mitmproxy`"
+which mitmdump || echo "ERROR: mitmproxy not installed. Run: 'brew install mitmproxy' (macOS) or 'pip install mitmproxy'"
 ```
 
 Check no existing proxy is running:
