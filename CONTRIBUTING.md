@@ -406,7 +406,13 @@ While AI tools can assist with contributions, **the person submitting the change
 
 ### Agent instructions
 
-For AI agents working on this repository, see [AGENTS.md](AGENTS.md) for detailed development guidelines, coding conventions, and workflow instructions.
+For AI agents working on this repository:
+
+- **[CLAUDE.md](CLAUDE.md)** — Development guidelines and critical rules
+- **[GEMINI.md](GEMINI.md)** — PR review instructions
+- **[.dev/README.md](.dev/README.md#working-with-llm-agents)** — Detailed workflow with skills (`/start-issue`, `/ready`, `/debug-api`, `/proof-report`, `/resume`)
+
+The skills automate common workflows like setting up branches, running checklists, and generating proof of work documents.
 
 ## Releasing
 
