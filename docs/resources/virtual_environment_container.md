@@ -165,7 +165,7 @@ output "ubuntu_container_public_key" {
             The `server` attribute is deprecated and will be removed in a future release. Please use
             the `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers.
-    - `entrypoint` - (Optional) The entrypoint script path.
+    - `entrypoint` - (Optional) Command to run as init, optionally with arguments. It may start with an absolute path, relative path, or a binary in `$PATH`.
     - `hostname` - (Optional) The hostname. Must be a valid DNS name.
     - `ip_config` - (Optional) The IP configuration (one block per network
         device).
