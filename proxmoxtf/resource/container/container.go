@@ -48,7 +48,7 @@ const (
 	dvInitializationIPConfigIPv6Gateway = ""
 	dvInitializationHostname            = ""
 	dvInitializationUserAccountPassword = ""
-	dvInitializationEntrypoint          = ""
+	dvInitializationEntrypoint          = "/sbin/init"
 	dvCPUArchitecture                   = "amd64"
 	dvCPUCores                          = 1
 	dvCPUUnits                          = 1024
