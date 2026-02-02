@@ -23,5 +23,46 @@ jobs:
 
       - name: Create / Update Release PR
         uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
+        id: release
         with:
           token: "${{ steps.app-token.outputs.token }}"
+
+      - name: Checkout
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Add contributors to release
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          TAG="${{ steps.release.outputs.tag_name }}"
+          PREV_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found, skipping contributors"
+            exit 0
+          fi
+
+          # Get PR numbers from commits between tags
+          PR_NUMBERS=$(git log ${PREV_TAG}..${TAG} --oneline | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+
+          # Get unique contributors from PRs (excluding bots), sorted alphabetically
+          CONTRIBUTORS=$(for pr in $PR_NUMBERS; do
+            gh pr view $pr --json author -q '.author.login' 2>/dev/null
+          done | sort -u | grep -v 'bot' | grep -v '^app/' | grep -v '^$')
+
+          if [ -z "$CONTRIBUTORS" ]; then
+            echo "No contributors found"
+            exit 0
+          fi
+
+          # Format as bullet point list
+          LINKS=$(echo "$CONTRIBUTORS" | sed 's/.*/* [@&](https:\/\/github.com\/&)/')
+
+          # Append contributors to release body
+          gh release view "$TAG" --json body -q .body > /tmp/body.md
+          printf '\n### Contributors\n\n%s\n' "$LINKS" >> /tmp/body.md
+          gh release edit "$TAG" --notes-file /tmp/body.md
