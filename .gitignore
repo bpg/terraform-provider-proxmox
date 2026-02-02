@@ -49,10 +49,9 @@ id_rsa.pub
 # Binary
 terraform-provider-proxmox*
 
-# VScode / Cursor / Claude
+# VScode / Cursor 
 .vscode/settings.json
 .cursor/
-.claude/
 coverage.out
 
 # local-only progress/report/session notes (keep out of git)
