@@ -2622,6 +2622,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if containerConfig.Entrypoint != nil {
 		entrypoint := *containerConfig.Entrypoint
 		initialization[mkInitializationEntrypoint] = entrypoint
+	} else {
+		initialization[mkInitializationEntrypoint] = dvInitializationEntrypoint
 	}
 
 	passthroughDevicesMap := make(map[string]any, len(containerConfig.PassthroughDevices))
