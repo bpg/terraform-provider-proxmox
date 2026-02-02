@@ -23,7 +23,7 @@ Template for maintaining context across multi-step tasks. Use this when:
 
 **Usage:**
 
-1. Copy to `.dev/<TASK>_SESSION_STATE.md` (e.g., `CLONED_VM_SESSION_STATE.md`)
+1. Copy to `.dev/<ISSUE_NUMBER>_SESSION_STATE.md` (e.g., `1234_SESSION_STATE.md`)
 2. Files matching `*_SESSION_STATE.md` are auto-ignored by `.gitignore`
 3. Update after each meaningful phase
 
@@ -86,8 +86,20 @@ pkill -f mitmdump
 
 ## Related Documentation
 
-- **Agent Instructions:** [AGENTS.md](../AGENTS.md) — Primary guidelines for all development
+- **Agent Instructions:** [CLAUDE.md](../CLAUDE.md) — Primary guidelines for AI-assisted development
 - **Debugging Details:** [DEBUGGING.md](DEBUGGING.md) — In-depth debugging guide
+
+## Available Skills
+
+Skills automate common workflows. Use them with `/skill-name`:
+
+| Skill | Purpose |
+| ----- | ------- |
+| `/start-issue` | Start work on a GitHub issue (branch + session state) |
+| `/resume` | Resume work from a previous session |
+| `/ready` | Run production readiness checklist |
+| `/debug-api` | Debug API calls with mitmproxy |
+| `/proof-report` | Generate proof of work document |
 
 ## Contributing
 
@@ -95,4 +107,4 @@ When adding new tools or scripts to this directory:
 
 1. Document the tool in this README
 2. Reference it from DEBUGGING.md if applicable
-3. Update AGENTS.md if it's a commonly-used workflow
+3. Update CLAUDE.md if it's a commonly-used workflow

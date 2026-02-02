@@ -406,7 +406,7 @@ While AI tools can assist with contributions, **the person submitting the change
 
 ### Agent instructions
 
-For AI agents working on this repository, see [AGENTS.md](AGENTS.md) for detailed development guidelines, coding conventions, and workflow instructions.
+For AI agents working on this repository, see [CLAUDE.md](CLAUDE.md) for development guidelines, or [GEMINI.md](GEMINI.md) for PR review instructions.
 
 ## Releasing
 
