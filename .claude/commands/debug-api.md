@@ -153,9 +153,13 @@ If no traffic was captured, check:
 ## Step 6: Stop Mitmproxy
 
 ```bash
-pkill -f mitmdump
+kill "${PROXY_PID}"
 sleep 1
-pgrep -f mitmdump && echo "WARNING: Proxy still running" || echo "OK: Proxy stopped"
+if ps -p "${PROXY_PID}" > /dev/null 2>&1; then
+    echo "WARNING: Proxy with PID ${PROXY_PID} is still running"
+else
+    echo "OK: Proxy stopped"
+fi
 ```
 
 ## Step 7: Analyze API Traffic
