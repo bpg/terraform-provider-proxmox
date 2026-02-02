@@ -221,8 +221,10 @@ POST /api2/json/path             OK
 
 ## Quick Start Commands
 
+> **Using an LLM agent?** Run `/resume` to automatically load this session state.
+
 ```bash
-# Resume work
+# Resume work (manual)
 cd /path/to/terraform-provider-proxmox
 git checkout branch-name
 cat .dev/NUMBER_SESSION_STATE.md
@@ -244,16 +246,16 @@ make docs  # if schema changed
 
 ## Verification Checklist
 
-Before marking complete:
+Before marking complete (or run `/ready` to automate):
 
 - [ ] GitHub issue exists and is referenced
 - [ ] All acceptance tests pass
-- [ ] Mitmproxy verification done
+- [ ] Mitmproxy verification done (use `/debug-api`)
 - [ ] `make lint` passes
 - [ ] `make docs` run (if schema changed)
 - [ ] No secrets in files
 - [ ] Session state file excluded from commit
-- [ ] Proof report created: `.dev/NUMBER_PROOF_REPORT.md`
+- [ ] Proof report created: `.dev/NUMBER_PROOF_REPORT.md` (use `/proof-report`)
 
 ---
 

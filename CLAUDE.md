@@ -317,6 +317,8 @@ For multi-step work, maintain session state using [.dev/SESSION_STATE_TEMPLATE.m
 | `/debug-api` | Debug API calls with mitmproxy |
 | `/proof-report` | Generate proof of work document |
 
+See [.dev/README.md](.dev/README.md#working-with-llm-agents) for detailed workflow documentation and how skills connect together.
+
 ---
 
 ## References

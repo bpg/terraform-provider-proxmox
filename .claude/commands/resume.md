@@ -1,7 +1,7 @@
 ---
 name: resume
 description: Resume work from a previous session
-argument-hint: [issue-number]
+argument-hint: \[issue-number\]
 allowed-tools:
   - Read
   - Bash
@@ -35,11 +35,22 @@ Session files location: `.dev/*_SESSION_STATE.md`
 
 ## Step 1: Find Session State Files
 
+**Check `.dev/` directory exists:**
+
+```bash
+if [ ! -d ".dev" ]; then
+  echo "No .dev/ directory found. No sessions to resume."
+  echo "To start work on an issue, use: /start-issue <issue-number>"
+  exit 0
+fi
+```
+
 If `$ARGUMENTS` provided, look for that specific issue:
 
 ```bash
 SESSION_FILE=".dev/${ARGUMENTS}_SESSION_STATE.md"
 if [ -f "$SESSION_FILE" ]; then
+  ISSUE_NUM="${ARGUMENTS}"
   # Found it, proceed to Step 3
 else
   echo "No session file found for issue #${ARGUMENTS}"
@@ -55,7 +66,7 @@ ls -t .dev/*_SESSION_STATE.md 2>/dev/null | head -10
 
 If no session files found:
 
-```
+```text
 No active session state files found.
 
 To start work on an issue, use: /start-issue <issue-number>
@@ -67,7 +78,7 @@ If multiple sessions exist, extract key info from each:
 
 ```bash
 for file in .dev/*_SESSION_STATE.md; do
-  # Extract issue number from filename
+  # Extract issue number from filename (format: {issue}_SESSION_STATE.md)
   ISSUE=$(basename "$file" | grep -oE '^[0-9]+')
   # Extract status
   STATUS=$(grep -m1 "Status:" "$file" | sed 's/.*Status:[[:space:]]*//')
@@ -79,18 +90,20 @@ for file in .dev/*_SESSION_STATE.md; do
 done
 ```
 
-Present options:
+Present options (dynamically built from found sessions):
 
-```
+```text
 AskUserQuestion(
   header: "Select Session",
   question: "Which session would you like to resume?",
   options: [
-    { label: "#1234", description: "In Progress - fix/1234-clone-timeout" },
-    { label: "#5678", description: "Blocked - feat/5678-new-feature" }
+    { label: "#{ISSUE_1}", description: "{STATUS_1} - {TITLE_1}" },
+    { label: "#{ISSUE_2}", description: "{STATUS_2} - {TITLE_2}" }
   ]
 )
 ```
+
+Replace `{ISSUE_N}`, `{STATUS_N}`, `{TITLE_N}` with actual values from the session files.
 
 ## Step 3: Load Session Context
 
@@ -115,18 +128,26 @@ Check current git state matches session:
 ```bash
 CURRENT_BRANCH=$(git branch --show-current)
 EXPECTED_BRANCH=$(grep "Current Branch:" "$SESSION_FILE" | sed 's/.*`\(.*\)`.*/\1/')
+echo "Current: $CURRENT_BRANCH, Expected: $EXPECTED_BRANCH"
+```
 
-if [ "$CURRENT_BRANCH" != "$EXPECTED_BRANCH" ]; then
-  echo "WARNING: Current branch ($CURRENT_BRANCH) differs from session ($EXPECTED_BRANCH)"
-  AskUserQuestion(
-    header: "Branch Mismatch",
-    question: "Switch to the session's branch?",
-    options: [
-      { label: "Yes", description: "Checkout $EXPECTED_BRANCH" },
-      { label: "No", description: "Stay on current branch" }
-    ]
-  )
-fi
+If branches don't match, ask user:
+
+```text
+AskUserQuestion(
+  header: "Branch Mismatch",
+  question: "Current branch ({CURRENT_BRANCH}) differs from session ({EXPECTED_BRANCH}). Switch?",
+  options: [
+    { label: "Yes", description: "Checkout the session's branch" },
+    { label: "No", description: "Stay on current branch" }
+  ]
+)
+```
+
+If "Yes", checkout the expected branch:
+
+```bash
+git checkout "$EXPECTED_BRANCH"
 ```
 
 Check for uncommitted changes:
@@ -137,30 +158,41 @@ git status --porcelain
 
 ## Step 5: Display Context
 
-```
-=== RESUMING ISSUE #${ISSUE_NUM} ===
+Present the loaded context to the user. Replace placeholders with actual values from the session file:
 
-${QUICK_CONTEXT_RESTORE_SECTION}
+```text
+=== RESUMING ISSUE #{ISSUE_NUM} ===
+
+{QUICK_CONTEXT_RESTORE_SECTION}
 
 --- Git State ---
-Branch: ${CURRENT_BRANCH}
-Uncommitted: ${UNCOMMITTED_COUNT} files
+Branch: {CURRENT_BRANCH}
+Uncommitted: {UNCOMMITTED_COUNT} files
 
 --- User Decisions (already made) ---
-${USER_DECISIONS_TABLE}
+{USER_DECISIONS_TABLE}
 
 --- Unverified Assumptions ---
-${UNVERIFIED_ASSUMPTIONS}
+{UNVERIFIED_ASSUMPTIONS}
 
 --- Immediate Next Action ---
-${IMMEDIATE_NEXT_ACTION}
+{IMMEDIATE_NEXT_ACTION}
 
-Session file: .dev/${ISSUE_NUM}_SESSION_STATE.md
+Session file: .dev/{ISSUE_NUM}_SESSION_STATE.md
 ```
+
+**Check for existing log files from previous runs:**
+
+```bash
+[ -f /tmp/testacc.log ] && echo "Found test log: /tmp/testacc.log"
+[ -f /tmp/api_debug.log ] && echo "Found API debug log: /tmp/api_debug.log"
+```
+
+These logs may contain useful output from previous `/ready` or `/debug-api` runs.
 
 ## Step 6: Offer Actions
 
-```
+```text
 AskUserQuestion(
   header: "Ready",
   question: "How would you like to proceed?",
@@ -172,25 +204,32 @@ AskUserQuestion(
 )
 ```
 
+If "Continue work": Begin working on the immediate next action from the session state.
 If "View full session": Display the entire session state file.
-If "Check issue": Run `gh issue view ${ISSUE_NUM}`.
+If "Check issue": Run `gh issue view {ISSUE_NUM}` to see any updates.
 
 </process>
 
 <success_criteria>
 
+- [ ] `.dev/` directory exists
 - [ ] Session state files listed (or specific one found)
 - [ ] Session selected (if multiple)
 - [ ] Context loaded and displayed
-- [ ] Git state verified
+- [ ] Git state verified (branch matches)
+- [ ] Existing log files noted
 - [ ] Immediate next action shown
 - [ ] Ready to continue work
 
 </success_criteria>
 
 <tips>
+
 - Session files are sorted by modification time (most recent first)
 - Always verify git state matches session before continuing
 - If assumptions are marked "Unverified", prioritize verifying them
 - Update session state after completing the immediate next action
+- Check for existing `/tmp/testacc.log` and `/tmp/api_debug.log` from previous runs
+- These logs can save time if tests don't need to be re-run
+
 </tips>

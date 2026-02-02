@@ -1,7 +1,7 @@
 ---
 name: debug-api
 description: Debug Proxmox API calls using mitmproxy to verify parameters are sent correctly
-argument-hint: [TestName] [param-to-verify]
+argument-hint: \[TestName\] \[param-to-verify\]
 allowed-tools:
   - Read
   - Bash
@@ -15,7 +15,7 @@ Debug API interactions between the Terraform provider and Proxmox VE using mitmp
 
 Use this skill when:
 
-- Implementing new API parameters and need to verify they're sent
+- Implementing new API parameters and need to verify they're sent in correct API calls with expected values
 - Debugging API errors or unexpected behavior
 - Verifying a fix sends correct parameters before marking work complete
 - Tests pass but you suspect API calls might be wrong
@@ -37,7 +37,7 @@ Reference: [DEBUGGING.md](../../.dev/DEBUGGING.md)
 Check mitmproxy is available:
 
 ```bash
-which mitmdump || echo "ERROR: mitmproxy not installed. Run: brew install mitmproxy (macOS) or pip install mitmproxy"
+which mitmdump || echo "ERROR: mitmproxy not installed. Run: `brew install mitmproxy` (macOS) or `pip install mitmproxy`"
 ```
 
 Check no existing proxy is running:
@@ -46,7 +46,13 @@ Check no existing proxy is running:
 pgrep -f mitmdump && echo "WARNING: mitmproxy already running" || echo "OK: No existing proxy"
 ```
 
-If proxy already running, ask user:
+Check port 8080 is available:
+
+```bash
+lsof -i :8080 && echo "WARNING: Port 8080 in use by process above" || echo "OK: Port 8080 available"
+```
+
+If proxy already running or port in use, ask user:
 
 - "Stop existing proxy and start fresh?"
 - "Use existing proxy?"
@@ -112,11 +118,13 @@ Report to user: "Mitmproxy started on port 8080. Log file: /tmp/api_debug.log"
 
 ## Step 4: Run the Test
 
-Execute the acceptance test:
+Execute the acceptance test with proxy and TLS environment variables set explicitly:
 
 ```bash
-./testacc ${TEST_NAME}
+HTTP_PROXY=http://127.0.0.1:8080 HTTPS_PROXY=http://127.0.0.1:8080 PROXMOX_VE_INSECURE=true ./testacc ${TEST_NAME}
 ```
+
+Note: `PROXMOX_VE_INSECURE=true` is required because mitmproxy presents its own certificate when intercepting HTTPS traffic.
 
 Capture the exit code:
 
@@ -130,7 +138,19 @@ Report test result to user:
 - Exit 0: "Test PASSED"
 - Exit non-zero: "Test FAILED (exit code: $TEST_EXIT)"
 
-## Step 5: Stop Mitmproxy
+## Step 5: Verify Traffic Was Captured
+
+```bash
+[ -s /tmp/api_debug.log ] && echo "OK: Traffic captured ($(wc -l < /tmp/api_debug.log) lines)" || echo "WARNING: No traffic captured - proxy may not be working"
+```
+
+If no traffic was captured, check:
+
+- Was the proxy running during the test?
+- Are `HTTP_PROXY` and `HTTPS_PROXY` set correctly?
+- Is `PROXMOX_VE_INSECURE=true` set?
+
+## Step 6: Stop Mitmproxy
 
 ```bash
 pkill -f mitmdump
@@ -138,7 +158,7 @@ sleep 1
 pgrep -f mitmdump && echo "WARNING: Proxy still running" || echo "OK: Proxy stopped"
 ```
 
-## Step 6: Analyze API Traffic
+## Step 7: Analyze API Traffic
 
 **If specific parameter was requested:**
 
@@ -161,7 +181,7 @@ echo "=== Error Responses ==="
 grep -E "400|401|403|404|500|502|503" /tmp/api_debug.log | head -10
 ```
 
-## Step 7: Present Findings
+## Step 8: Present Findings
 
 Summarize findings for user:
 
@@ -182,7 +202,7 @@ Summarize findings for user:
    - If parameter NOT found: "WARNING: Parameter `{param}` not found in API traffic. Check implementation."
    - If errors: "API errors detected. Review the error responses above."
 
-## Step 8: Offer Next Steps
+## Step 9: Offer Next Steps
 
 ```text
 AskUserQuestion(
@@ -210,6 +230,7 @@ If "Run another test": Loop back to Step 2.
 
 - [ ] Mitmproxy started successfully
 - [ ] Test executed
+- [ ] Traffic capture verified
 - [ ] Proxy stopped cleanly
 - [ ] API traffic analyzed
 - [ ] Parameter presence verified (if specified)
