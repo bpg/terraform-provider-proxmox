@@ -166,7 +166,7 @@ output "ubuntu_container_public_key" {
             the `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers.
     - `hostname` - (Optional) The hostname.
-    - `entrypoint` - (Optional) The entrypoint script path.
+    - `entrypoint` - (Optional) Command to run as init, optionally with arguments. It may start with an absolute path, relative path, or a binary in `$PATH`.
     - `ip_config` - (Optional) The IP configuration (one block per network
         device).
         - `ipv4` - (Optional) The IPv4 configuration.
