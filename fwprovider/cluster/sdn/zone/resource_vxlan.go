@@ -86,5 +86,7 @@ func (m *vxlanModel) getGenericModel() *genericModel {
 
 func (m *vxlanModel) checkDeletedFields(state zoneModel) []string {
 	vxlanState := state.(*vxlanModel)
-	return m.genericModel.checkDeletedFields(&vxlanState.genericModel)
+	toDelete := m.genericModel.checkDeletedFields(vxlanState.getGenericModel())
+
+	return toDelete
 }

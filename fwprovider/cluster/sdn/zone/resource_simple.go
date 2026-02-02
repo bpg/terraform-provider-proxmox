@@ -90,9 +90,9 @@ func (m *simpleModel) getGenericModel() *genericModel {
 
 func (m *simpleModel) checkDeletedFields(state zoneModel) []string {
 	simpleState := state.(*simpleModel)
-	toDelete := m.genericModel.checkDeletedFields(&simpleState.genericModel)
+	toDelete := m.genericModel.checkDeletedFields(simpleState.getGenericModel())
 
 	attribute.CheckDelete(m.DHCP, simpleState.DHCP, &toDelete, "dhcp")
 
-	return m.genericModel.checkDeletedFields(&simpleState.genericModel)
+	return toDelete
 }

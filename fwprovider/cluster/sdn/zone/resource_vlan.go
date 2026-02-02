@@ -85,5 +85,7 @@ func (m *vlanModel) getGenericModel() *genericModel {
 
 func (m *vlanModel) checkDeletedFields(state zoneModel) []string {
 	vlanState := state.(*vlanModel)
-	return m.genericModel.checkDeletedFields(&vlanState.genericModel)
+	toDelete := m.genericModel.checkDeletedFields(vlanState.getGenericModel())
+
+	return toDelete
 }

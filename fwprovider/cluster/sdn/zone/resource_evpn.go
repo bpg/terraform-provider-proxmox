@@ -126,7 +126,7 @@ func (m *evpnModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Z
 
 func (m *evpnModel) checkDeletedFields(state zoneModel) []string {
 	evpnState := state.(*evpnModel)
-	toDelete := m.genericModel.checkDeletedFields(&evpnState.genericModel)
+	toDelete := m.genericModel.checkDeletedFields(evpnState.getGenericModel())
 
 	// Add EVPN-specific deleted fields
 	attribute.CheckDelete(m.AdvertiseSubnets, evpnState.AdvertiseSubnets, &toDelete, "advertise-subnets")

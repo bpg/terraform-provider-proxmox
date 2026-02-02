@@ -109,5 +109,7 @@ func (m *qinqModel) getGenericModel() *genericModel {
 
 func (m *qinqModel) checkDeletedFields(state zoneModel) []string {
 	qinqState := state.(*qinqModel)
-	return m.genericModel.checkDeletedFields(&qinqState.genericModel)
+	toDelete := m.genericModel.checkDeletedFields(qinqState.getGenericModel())
+
+	return toDelete
 }
