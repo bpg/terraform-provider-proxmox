@@ -2,6 +2,8 @@
 
 This guide covers debugging techniques for developing and testing the Terraform Proxmox Provider.
 
+> **Using an LLM agent?** The `/debug-api` skill automates most of this workflow. See [README.md](README.md#working-with-llm-agents) for details.
+
 ## Using Mitmproxy to Debug API Calls
 
 Mitmproxy is an essential tool for intercepting and analyzing HTTP/HTTPS traffic between the provider and Proxmox VE API. It helps you verify that API calls are correct, debug issues, and understand provider behavior.
@@ -64,6 +66,7 @@ pkill -f mitmdump
 ```
 
 The script provides:
+
 - 🔍 Filtered output (only Proxmox API calls)
 - 🎯 Highlighted query parameters (especially `content` type)
 - 📊 Item counts for list responses
@@ -74,7 +77,7 @@ The script provides:
 
 When debugging the content type filtering feature, mitmproxy captured:
 
-```
+```text
 127.0.0.1:58448: GET https://pve.bpghome.net:8006/api2/json/nodes/pve/storage/local/content?content=import
     Host: pve.bpghome.net:8006
     User-Agent: Go-http-client/1.1
@@ -83,6 +86,7 @@ When debugging the content type filtering feature, mitmproxy captured:
 ```
 
 This confirmed:
+
 - ✅ Query parameter `?content=import` was correctly sent
 - ✅ API accepted the request (200 OK)
 - ✅ Empty result (11 bytes) as expected for non-existent file
