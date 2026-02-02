@@ -40,7 +40,7 @@ resource "proxmox_virtual_environment_sdn_zone_simple" "example" {
 - `dns` (String) DNS API server address.
 - `dns_zone` (String) DNS domain name. Used to register hostnames, such as `<hostname>.<domain>`. The DNS zone must already exist on the DNS server.
 - `ipam` (String) IP Address Management system.
-- `mtu` (Number) MTU value for the zone.
+- `mtu` (Number) MTU value for the zone. There is no support to reset this value back to PVE default once set due to API limitation.
 - `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `reverse_dns` (String) Reverse DNS API server address.
 

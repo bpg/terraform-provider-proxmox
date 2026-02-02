@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 )
 
@@ -85,4 +86,13 @@ func (r *SimpleResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 
 func (m *simpleModel) getGenericModel() *genericModel {
 	return &m.genericModel
+}
+
+func (m *simpleModel) checkDeletedFields(state zoneModel) []string {
+	simpleState := state.(*simpleModel)
+	toDelete := m.genericModel.checkDeletedFields(simpleState.getGenericModel())
+
+	attribute.CheckDelete(m.DHCP, simpleState.DHCP, &toDelete, "dhcp")
+
+	return toDelete
 }

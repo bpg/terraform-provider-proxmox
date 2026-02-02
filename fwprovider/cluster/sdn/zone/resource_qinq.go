@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -95,6 +96,8 @@ func (r *QinQResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 					stringvalidator.OneOf("802.1ad", "802.1q"),
 				},
 				Optional: true,
+				Computed: true,
+				Default:  stringdefault.StaticString("802.1q"),
 			},
 		}),
 	}
@@ -102,4 +105,11 @@ func (r *QinQResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 
 func (m *qinqModel) getGenericModel() *genericModel {
 	return &m.genericModel
+}
+
+func (m *qinqModel) checkDeletedFields(state zoneModel) []string {
+	qinqState := state.(*qinqModel)
+	toDelete := m.genericModel.checkDeletedFields(qinqState.getGenericModel())
+
+	return toDelete
 }

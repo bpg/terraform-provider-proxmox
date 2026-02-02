@@ -83,3 +83,10 @@ func (r *VXLANResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 func (m *vxlanModel) getGenericModel() *genericModel {
 	return &m.genericModel
 }
+
+func (m *vxlanModel) checkDeletedFields(state zoneModel) []string {
+	vxlanState := state.(*vxlanModel)
+	toDelete := m.genericModel.checkDeletedFields(vxlanState.getGenericModel())
+
+	return toDelete
+}
