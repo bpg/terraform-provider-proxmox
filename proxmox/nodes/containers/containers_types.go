@@ -64,6 +64,7 @@ type CreateRequestBody struct {
 	DNSServer            *string                     `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
 	EnvironmentVariables *CustomEnvironmentVariables `json:"env,omitempty"                  url:"env,omitempty"`
 	Features             *CustomFeatures             `json:"features,omitempty"             url:"features,omitempty"`
+	Entrypoint           *string                     `json:"entrypoint,omitempty"           url:"entrypoint,omitempty"`
 	Force                *types.CustomBool           `json:"force,omitempty"                url:"force,omitempty,int"`
 	HookScript           *string                     `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
 	Hostname             *string                     `json:"hostname,omitempty"             url:"hostname,omitempty"`
@@ -206,6 +207,7 @@ type GetResponseData struct {
 	DNSDomain            *string                     `json:"searchdomain,omitempty"`
 	DNSServer            *string                     `json:"nameserver,omitempty"`
 	EnvironmentVariables *CustomEnvironmentVariables `json:"env,omitempty"`
+	Entrypoint           *string                     `json:"entrypoint,omitempty"`
 	Features             *CustomFeatures             `json:"features,omitempty"`
 	HookScript           *string                     `json:"hookscript,omitempty"`
 	Hostname             *string                     `json:"hostname,omitempty"`

@@ -48,6 +48,7 @@ const (
 	dvInitializationIPConfigIPv6Gateway = ""
 	dvInitializationHostname            = ""
 	dvInitializationUserAccountPassword = ""
+	dvInitializationEntrypoint          = ""
 	dvCPUArchitecture                   = "amd64"
 	dvCPUCores                          = 1
 	dvCPUUnits                          = 1024
@@ -141,6 +142,7 @@ const (
 	mkInitializationUserAccount         = "user_account"
 	mkInitializationUserAccountKeys     = "keys"
 	mkInitializationUserAccountPassword = "password"
+	mkInitializationEntrypoint          = "entrypoint"
 	mkMemory                            = "memory"
 	mkMemoryDedicated                   = "dedicated"
 	mkMemorySwap                        = "swap"
@@ -619,6 +621,15 @@ func Container() *schema.Resource {
 							},
 							MaxItems: 1,
 							MinItems: 0,
+						},
+						mkInitializationEntrypoint: {
+							Type:        schema.TypeString,
+							Description: "Command to run as init, optionally with arguments; may start with an absolute path, relative path, or a binary in $PATH.",
+							Optional:    true,
+							Default:     dvInitializationEntrypoint,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(
+								regexp.MustCompile(`^[^\x00-\x08\x10-\x1F\x7F]+$`), "Disallow Invalid Characters",
+							)),
 						},
 					},
 				},
@@ -1686,6 +1697,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	initializationUserAccountKeys := containers.CustomSSHKeys{}
 	initializationUserAccountPassword := dvInitializationUserAccountPassword
+	initializationEntrypoint := dvInitializationEntrypoint
 
 	if len(initialization) > 0 && initialization[0] != nil {
 		initializationBlock := initialization[0].(map[string]any)
@@ -1772,6 +1784,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 			initializationUserAccountPassword = initializationUserAccountBlock[mkInitializationUserAccountPassword].(string)
 		}
+
+		initializationEntrypoint = initializationBlock[mkInitializationEntrypoint].(string)
 	}
 
 	memoryBlock, err := structure.GetSchemaBlock(
@@ -2057,6 +2071,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	if initializationUserAccountPassword != "" {
 		createBody.Password = &initializationUserAccountPassword
+	}
+
+	if initializationEntrypoint != "" {
+		createBody.Entrypoint = &initializationEntrypoint
 	}
 
 	if poolID != "" {
@@ -2599,6 +2617,11 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		initialization[mkInitializationHostname] = *containerConfig.Hostname
 	} else {
 		initialization[mkInitializationHostname] = ""
+	}
+
+	if containerConfig.Entrypoint != nil {
+		entrypoint := *containerConfig.Entrypoint
+		initialization[mkInitializationEntrypoint] = entrypoint
 	}
 
 	passthroughDevicesMap := make(map[string]any, len(containerConfig.PassthroughDevices))
@@ -3288,6 +3311,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	initializationDNSDomain := dvInitializationDNSDomain
 	initializationDNSServer := dvInitializationDNSServer
 	initializationHostname := dvInitializationHostname
+	initializationEntrypoint := dvInitializationEntrypoint
 
 	var initializationIPConfigIPv4Address []string
 
@@ -3316,6 +3340,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		initializationHostname = initializationBlock[mkInitializationHostname].(string)
+		initializationEntrypoint = initializationBlock[mkInitializationEntrypoint].(string)
 		initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]any)
 
 		for _, c := range initializationIPConfig {
@@ -3382,6 +3407,11 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	if d.HasChange(mkInitialization + ".0." + mkInitializationHostname) {
 		updateBody.Hostname = &initializationHostname
+		rebootRequired = true
+	}
+
+	if d.HasChange(mkInitialization + ".0." + mkInitializationEntrypoint) {
+		updateBody.Entrypoint = &initializationEntrypoint
 		rebootRequired = true
 	}
 
