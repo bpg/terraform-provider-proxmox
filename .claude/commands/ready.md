@@ -96,16 +96,41 @@ If failed, stop and report. Do not continue.
 
 ## Step 2: Lint Check
 
+### Go Lint
+
 ```bash
-echo "=== Step 2: Lint ==="
+echo "=== Step 2a: Go Lint ==="
 make lint
 LINT_EXIT=$?
 ```
 
 **Result:**
 
-- "0 issues": "LINT PASSED"
-- Issues found: "LINT FAILED — Run `make lint` to auto-fix, then review changes"
+- "0 issues": "GO LINT PASSED"
+- Issues found: "GO LINT FAILED — Run `make lint` to auto-fix, then review changes"
+
+If failed, stop and report. Do not continue.
+
+### Markdown Lint
+
+Find changed markdown files and lint them:
+
+```bash
+echo "=== Step 2b: Markdown Lint ==="
+MD_FILES=$(git diff --name-only main...HEAD | grep -E '\.md$')
+if [ -n "$MD_FILES" ]; then
+  npx --yes markdownlint-cli2 --fix $MD_FILES
+  MD_LINT_EXIT=$?
+else
+  echo "No markdown files changed"
+  MD_LINT_EXIT=0
+fi
+```
+
+**Result:**
+
+- Exit 0: "MARKDOWN LINT PASSED"
+- Issues found: "MARKDOWN LINT FAILED — Review and fix remaining issues"
 
 If failed, stop and report. Do not continue.
 
@@ -309,7 +334,8 @@ This allows `/proof-report` to pull results without re-running checks.
 - [ ] Issue number determined
 - [ ] Session state checked for context
 - [ ] Build passes
-- [ ] Lint shows 0 issues
+- [ ] Go lint shows 0 issues
+- [ ] Markdown lint passes on changed `.md` files
 - [ ] Unit tests pass
 - [ ] Acceptance tests pass (or explicitly skipped)
 - [ ] API verification done (or explicitly skipped for non-API changes)

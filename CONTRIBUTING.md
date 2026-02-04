@@ -209,12 +209,15 @@ New resources and data sources **must** be implemented using the Terraform Plugi
 
 ### Reference implementations
 
-When writing a new resource or data source, use these files as templates:
+See [docs/adr/reference-examples.md](docs/adr/reference-examples.md) for annotated walkthroughs and a new-resource checklist. Quick summary:
 
-| Use case                                                                                          | Reference file                             |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| Full CRUD resource with plan modifiers, validators, diagnostics, and Proxmox client orchestration | `fwprovider/nodes/resource_oci_image.go`   |
-| SDN-backed resource with SDN-specific validators, delete handling, and import                     | `fwprovider/cluster/sdn/vnet/resource.go`  |
+| Complexity | Reference | When to use |
+| ---------- | --------- | ----------- |
+| Basic CRUD | SDN VNet (`fwprovider/cluster/sdn/vnet/`) | Start here for any new resource |
+| Many optional fields | Metrics Server (`fwprovider/cluster/metrics/`) | Sensitive attributes, bool-to-int conversion |
+| Cross-field validation | ACL (`fwprovider/access/`) | `ConfigValidators`, custom import ID parsing |
+
+Architecture decisions are documented in [docs/adr/](docs/adr/README.md).
 
 ### Documentation workflow
 
@@ -289,11 +292,8 @@ For more details, see the [Terraform Plugin Framework documentation on descripti
 
 We expect all code contributions to follow these guidelines:
 
-1. Code must be formatted using `gofmt`
-   - Run `make fmt` to format your code.
-
-2. Code must pass linting with `golangci-lint`
-   - Run `make lint` to lint your code.
+1. Code must pass linting with `golangci-lint`
+   - Run `make lint` to format and lint your code (includes formatting via `golangci-lint fmt`).
    - The project uses `.golangci.yml` for linting configuration.
 
 ## Commit message conventions

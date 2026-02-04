@@ -1,11 +1,16 @@
+### What does this PR do?
+<!--- Clearly state the problem and how this PR solves it. -->
+
 ### Contributor's Note
-<!--- 
+<!---
 Please mark the following items with an [x] if they apply to your PR.
 Leave the [ ] if they are not applicable, or if you have not completed the item.
 --->
 - [ ] I have run `make lint` and fixed any issues.
 - [ ] I have updated documentation (FWK: schema descriptions + `make docs`; SDK: manual `/docs/` edits).
-- [ ] I have added / updated acceptance tests for any new or updated resources / data sources.
+- [ ] I have added / updated acceptance tests (**required** for new resources and bug fixes — see [ADR-006](docs/adr/006-testing-requirements.md)).
+- [ ] I have considered backward compatibility (no breaking schema changes without `!` in PR title).
+- [ ] For new resources: I followed the [reference examples](docs/adr/reference-examples.md) (3-file pattern, model conversion, error format).
 - [ ] I have run `make example` to verify the change works (mainly for SDK / provider config changes).
 
 <!---
@@ -31,8 +36,14 @@ Also, uncomment the section just below and add a description of the breaking cha
 --->
 
 ### Proof of Work
-<!--- 
-Please add screenshots, logs, or other relevant information that demonstrates the change works as expected.
+<!---
+REQUIRED for code changes. Include at minimum:
+- Acceptance test output (`./testacc TestAccYourResource`)
+- For bug fixes: test output showing the fix works
+- For API changes: either mitmproxy logs showing correct API calls,
+  or terraform/tofu output showing successful resource creation/update
+  together with the test resource configuration used
+Empty proof of work will delay review.
 --->
 
 <!--- Please keep this note for the community --->
