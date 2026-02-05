@@ -117,9 +117,11 @@ Find changed markdown files and lint them:
 
 ```bash
 echo "=== Step 2b: Markdown Lint ==="
-MD_FILES=$(git diff --name-only main...HEAD | grep -E '\.md$')
-if [ -n "$MD_FILES" ]; then
-  npx --yes markdownlint-cli2 --fix $MD_FILES
+MD_FILES_TO_LINT=()
+while IFS= read -r file; do MD_FILES_TO_LINT+=("$file"); done < <(git diff --name-only main...HEAD | grep -E '\.md$')
+
+if [ ${#MD_FILES_TO_LINT[@]} -gt 0 ]; then
+  npx --yes markdownlint-cli2 --fix "${MD_FILES_TO_LINT[@]}"
   MD_LINT_EXIT=$?
 else
   echo "No markdown files changed"
