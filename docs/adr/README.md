@@ -13,6 +13,18 @@ This directory contains Architecture Decision Records (ADRs) for terraform-provi
 | [005](005-error-handling.md)             | Error Handling             | `"Unable to [Action] [Resource]"` format, 3-layer error architecture, retry policies |
 | [006](006-testing-requirements.md)       | Testing Requirements       | Acceptance tests required, table-driven structure, test helpers                      |
 
+## Reading Order for New Resource Implementation
+
+When implementing a new resource, read the ADRs in this order:
+
+1. **[ADR-001](001-use-plugin-framework.md)** — Confirms you're using the right framework
+2. **[ADR-003](003-resource-file-organization.md)** — Where to put files and what to name them
+3. **[ADR-002](002-api-client-structure.md)** — How to access the Proxmox API
+4. **[ADR-004](004-schema-design-conventions.md)** — Schema attributes, model conversion, field deletion
+5. **[ADR-005](005-error-handling.md)** — Error message format and sentinel error handling
+6. **[ADR-006](006-testing-requirements.md)** — Acceptance test structure and helpers
+7. **[reference-examples.md](reference-examples.md)** — Copy-from code walkthroughs and checklist
+
 ## Reference Examples
 
 The [reference-examples.md](reference-examples.md) document provides annotated walkthroughs of three real resources at increasing complexity:

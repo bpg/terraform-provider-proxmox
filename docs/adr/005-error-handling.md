@@ -6,7 +6,7 @@ Accepted
 
 ## Date
 
-2026-02-04
+2026-02-04 (retroactive documentation)
 
 ## Context
 
@@ -18,13 +18,15 @@ Additionally, retry behavior for transient failures, async task polling, and res
 
 ### Error Message Format
 
-User-facing diagnostic summaries (the first argument to `resp.Diagnostics.AddError`) use the format:
+User-facing diagnostic summaries (the first argument to `resp.Diagnostics.AddError`) **must** use the format:
 
 ```text
 "Unable to [Action] [Resource]"
 ```
 
 Where `[Action]` is a CRUD verb and `[Resource]` identifies the Proxmox object.
+
+> **Note:** Legacy resources still use other prefixes ("Error", "Failed to", "Could not"). All **new code** must use the `"Unable to"` format. Legacy resources will be migrated over time.
 
 Standard summaries for the resource lifecycle:
 
@@ -127,11 +129,11 @@ Use standard Go error inspection:
 
 ### Retry Policies
 
-| Scenario                                          | Strategy | Attempts      | Backoff                                 |
-|---------------------------------------------------|----------|---------------|-----------------------------------------|
-| Transient errors (network issues, 5xx responses)  | Retry    | Up to 3       | Linear                                  |
-| Async task status checks                          | Retry    | Up to 5       | Exponential, with configurable timeout  |
-| Resource state polling (creation/deletion)        | Poll     | Until timeout | Configurable interval and timeout       |
+| Scenario                                         | Strategy | Attempts      | Backoff                           |
+|--------------------------------------------------|----------|---------------|-----------------------------------|
+| Transient errors (network issues, 5xx responses) | Retry    | Up to 3       | Linear                            |
+| Async task status checks                         | Retry    | Up to 5       | Linear, with configurable timeout |
+| Resource state polling (creation/deletion)       | Poll     | Until timeout | Configurable interval and timeout |
 
 Do not retry on:
 
@@ -153,9 +155,18 @@ Do not retry on:
 - Existing resources using other formats ("Error", "Failed to", etc.) should be migrated over time
 - The `errors.Join` pattern for not-found detection relies on string matching in the HTTP layer for 500 responses
 
+### Common Mistakes
+
+- Using string matching (`strings.Contains(err.Error(), "not found")`) instead of `errors.Is(err, api.ErrResourceDoesNotExist)`.
+- Returning errors from Delete when the resource is already gone — check `errors.Is(err, api.ErrResourceDoesNotExist)` first.
+- Using `"Error"`, `"Failed to"`, or `"Could not"` prefixes in new code — use `"Unable to [Action] [Resource]"`.
+- Wrapping errors with `fmt.Errorf("...: %v", err)` instead of `%w` — breaks error chain inspection.
+- Forgetting `resp.State.RemoveResource(ctx)` in Read when the resource no longer exists.
+
 ## References
 
 - [Reference Examples](reference-examples.md) — error handling in CRUD methods
+- [ADR-002: API Client Structure](002-api-client-structure.md) — domain client layer errors
 - [ADR-004: Schema Design Conventions](004-schema-design-conventions.md) — model conversion patterns
 - `proxmox/api/errors.go` — sentinel error definitions
 - `proxmox/api/client.go` — HTTP error wrapping

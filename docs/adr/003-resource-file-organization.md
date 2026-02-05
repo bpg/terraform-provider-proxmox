@@ -47,9 +47,9 @@ Each resource package contains a minimum of three files:
 
 | File     | Purpose                                        | Naming                                          |
 |----------|------------------------------------------------|-------------------------------------------------|
-| Tests    | Acceptance tests                               | `resource_test.go` or `resource_{name}_test.go` |
 | Resource | CRUD operations, schema, constructor           | `resource.go` or `resource_{name}.go`           |
-| Model    | Terraform model struct, `toAPI()`, `fromAPI()` | `model.go` or `{name}_model.go`                 |
+| Model    | Terraform model struct, `toAPI()`, `fromAPI()` | `model.go` or `model_{name}.go`                 |
+| Tests    | Acceptance tests                               | `resource_test.go` or `resource_{name}_test.go` |
 
 Use the short form (`resource.go`, `model.go`) when the package contains a single resource. Use the qualified form (`resource_{name}.go`) when multiple resources share a package.
 
@@ -63,14 +63,14 @@ Optional additional files:
 
 ### Naming Conventions
 
-| Element                   | Convention                                    | Example                                             |
-|---------------------------|-----------------------------------------------|-----------------------------------------------------|
-| Package names             | Lowercase, singular noun matching API domain  | `zone`, `vnet`, `subnet`                            |
-| Terraform attribute names | `snake_case`                                  | `isolate_ports`, `vlan_aware`                       |
-| Go struct fields          | PascalCase with `tfsdk` tag                   | `IsolatePorts types.Bool \`tfsdk:"isolate_ports"\`` |
-| Resource type names       | `proxmox_virtual_environment_{domain}_{name}` | `proxmox_virtual_environment_sdn_vnet`              |
-| Test function names       | `TestAcc{Resource}{Scenario}`                 | `TestAccResourceSDNVNet`                            |
-| Constructor functions     | `NewResource()`, `NewDataSource()`            | —                                                   |
+| Element                   | Convention                                    | Example                                                 |
+|---------------------------|-----------------------------------------------|---------------------------------------------------------|
+| Package names             | Lowercase, singular noun matching API domain  | `zone`, `vnet`, `subnet`, multi-word: `hardwaremapping` |
+| Terraform attribute names | `snake_case`                                  | `isolate_ports`, `vlan_aware`                           |
+| Go struct fields          | PascalCase with `tfsdk` tag                   | `IsolatePorts types.Bool \`tfsdk:"isolate_ports"\``     |
+| Resource type names       | `proxmox_virtual_environment_{domain}_{name}` | `proxmox_virtual_environment_sdn_vnet`                  |
+| Test function names       | `TestAcc{Resource}{Scenario}`                 | `TestAccResourceSDNVNet`                                |
+| Constructor functions     | `NewResource()`, `NewDataSource()`            | —                                                       |
 
 ### Test Colocation
 
@@ -101,8 +101,17 @@ Each resource package in `fwprovider/` typically has a corresponding client pack
 - Deeply nested domains (e.g., SDN subnets) create deep directory trees
 - Single-resource packages may feel like overhead for very simple resources
 
+### Common Mistakes
+
+- Placing new resources in `proxmoxtf/` instead of `fwprovider/`.
+- Using `resource_{name}_model.go` or `{name}_model.go` instead of `model_{name}.go` for model files.
+- Forgetting to register the resource in `fwprovider/provider.go`.
+- Creating flat directory structures when the API path has nesting (e.g., `sdn_vnet.go` instead of `sdn/vnet/resource.go`).
+
 ## References
 
 - [ADR-001: Use Plugin Framework](001-use-plugin-framework.md)
 - [ADR-002: API Client Structure](002-api-client-structure.md)
+- [ADR-004: Schema Design Conventions](004-schema-design-conventions.md) — schema and model patterns
+- [ADR-006: Testing Requirements](006-testing-requirements.md) — test file placement and structure
 - [Reference Examples](reference-examples.md) — annotated walkthrough of the 3-file pattern

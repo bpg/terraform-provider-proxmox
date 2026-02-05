@@ -10,7 +10,7 @@ Leave the [ ] if they are not applicable, or if you have not completed the item.
 - [ ] I have updated documentation (FWK: schema descriptions + `make docs`; SDK: manual `/docs/` edits).
 - [ ] I have added / updated acceptance tests (**required** for new resources and bug fixes — see [ADR-006](docs/adr/006-testing-requirements.md)).
 - [ ] I have considered backward compatibility (no breaking schema changes without `!` in PR title).
-- [ ] For new resources: I followed the [reference examples](docs/adr/reference-examples.md) (3-file pattern, model conversion, error format).
+- [ ] For new resources: I followed the [reference examples](docs/adr/reference-examples.md).
 - [ ] I have run `make example` to verify the change works (mainly for SDK / provider config changes).
 
 <!---

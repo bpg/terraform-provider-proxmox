@@ -40,9 +40,11 @@ Never use raw Go types (`string`, `bool`, `int`) for optional fields. The `types
 
 Use `Optional + Computed` when the Proxmox API supplies a default value for an omitted field. This allows Terraform to show the server-assigned value in state without requiring the user to specify it.
 
+Try to avoid setting `Computed: true` with Default values in the schema. This can lead to unexpected behavior if the default changes on the server side.
+
 ### Immutable Fields
 
-Fields that cannot be changed after creation must use `RequiresReplace()`:
+Fields that cannot be changed after resource creation must use `RequiresReplace()`:
 
 ```go
 "id": schema.StringAttribute{
@@ -122,9 +124,12 @@ func (m *model) toAPI() *vnets.VNet {
     data.Zone = m.Zone.ValueStringPointer()
     data.Alias = m.Alias.ValueStringPointer()
     data.Tag = m.Tag.ValueInt64Pointer()
+    data.IsolatePorts = proxmoxtypes.CustomBoolPtr(m.IsolatePorts.ValueBoolPointer())
     return data
 }
 ```
+
+For `CustomBool` fields (API uses `0`/`1` integers for booleans), use `proxmoxtypes.CustomBoolPtr()` which converts `*bool` → `*CustomBool`.
 
 **`fromAPI()`** — API response to Terraform model. Use `types.*PointerValue()` so `nil` maps to null:
 
@@ -134,8 +139,11 @@ func (m *model) fromAPI(id string, data *vnets.VNetData) {
     m.Zone = types.StringPointerValue(data.Zone)
     m.Alias = types.StringPointerValue(data.Alias)
     m.Tag = types.Int64PointerValue(data.Tag)
+    m.IsolatePorts = types.BoolPointerValue(data.IsolatePorts.PointerBool())
 }
 ```
+
+For `CustomBool` fields, use `.PointerBool()` to convert `*CustomBool` → `*bool`, then `types.BoolPointerValue()` handles `nil` naturally — consistent with the other pointer value conversions.
 
 ### Field Deletion on Update
 
@@ -164,17 +172,6 @@ The project provides custom attribute types in `fwprovider/types/`:
 | `customtypes.IPAddrValue` | `fwprovider/types/`           | IP address validation                              |
 | `customtypes.IPCIDRValue` | `fwprovider/types/`           | CIDR block validation                              |
 
-### Bool-to-Int Conversion
-
-Some Proxmox API fields represent booleans as `0`/`1` integers. Use conversion helpers when the API struct uses `*int64` for a boolean concept:
-
-```go
-func boolToInt64Ptr(b *bool) *int64 { ... }
-func int64ToBoolPtr(i *int64) *bool { ... }
-```
-
-Expose these as `types.Bool` in the Terraform schema — users should not see the underlying integer representation.
-
 ## Consequences
 
 ### Positive
@@ -189,8 +186,17 @@ Expose these as `types.Bool` in the Terraform schema — users should not see th
 - Boilerplate for `toAPI`/`fromAPI` and `CheckDelete` on every optional field
 - Custom types add a learning curve for new contributors
 
+### Common Mistakes
+
+- Using raw Go types (`string`, `bool`, `int`) for optional model fields — use `types.*` wrappers.
+- Using `types.StringValue("")` instead of `types.StringNull()` for absent values — empty string and null are different in Terraform.
+- Forgetting `CheckDelete` calls in Update for optional fields — the Proxmox API won't clear the field.
+- Using the Terraform attribute name instead of the Proxmox API parameter name in `CheckDelete`.
+- Setting `Computed: true` with `Default` — leads to unexpected behavior when server defaults change.
+
 ## References
 
 - [Reference Examples](reference-examples.md) — annotated code for all patterns above
+- [ADR-005: Error Handling](005-error-handling.md) — error patterns in CRUD methods
 - [Terraform Plugin Framework: Schemas](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/schemas)
 - [Terraform Plugin Framework: Attributes](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/attributes)

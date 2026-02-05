@@ -6,7 +6,7 @@ Accepted
 
 ## Date
 
-2026-02-04
+2026-02-04 (retroactive documentation)
 
 ## Context
 
@@ -16,11 +16,11 @@ Contributions need clear testing expectations. Without documented requirements, 
 
 ### Test Coverage Requirements
 
-| Test Type              | Requirement                                      | Purpose                                    |
-|------------------------|--------------------------------------------------|--------------------------------------------|
-| Acceptance tests       | **Required** for all new resources and bug fixes | Verify real API behavior end-to-end        |
-| Unit tests             | **Recommended** for complex logic                | Test parsing, validation, model conversion |
-| Example configurations | **Optional**                                     | User-facing examples in `example/`         |
+| Test Type              | Requirement                                      | Purpose                                             |
+|------------------------|--------------------------------------------------|-----------------------------------------------------|
+| Acceptance tests       | **Required** for all new resources and bug fixes | Verify real API behavior end-to-end                 |
+| Unit tests             | **Recommended** for complex logic                | Test parsing, validation, model conversion          |
+| Example configurations | **Optional**                                     | Legacy tests and user-facing examples in `example/` |
 
 ### Acceptance Test Structure
 
@@ -152,7 +152,7 @@ func TestAccMyResource_Validators(t *testing.T) {
 
 ### API Verification
 
-Tests passing does not guarantee correct API calls. After tests pass, verify API calls with mitmproxy using the `/debug-api` workflow. See [DEBUGGING.md](../../.dev/DEBUGGING.md).
+Tests passing does not guarantee correct API calls. After tests pass, verify API calls with mitmproxy using the "debug API" workflow. See [DEBUGGING.md](../../.dev/DEBUGGING.md).
 
 ## Consequences
 
@@ -169,8 +169,17 @@ Tests passing does not guarantee correct API calls. After tests pass, verify API
 - Tests add to PR review scope
 - Parallel test execution requires careful resource naming to avoid collisions
 
+### Common Mistakes
+
+- Forgetting `//go:build acceptance || all` build tag — test won't run in CI.
+- Using `resource.Test` instead of `resource.ParallelTest` — slows test suite.
+- Using `t.Run` without `t.Parallel()` at the top-level test function.
+- Including issue numbers in test names or resource names.
+- Assuming passing tests means correct API behavior — always verify with mitmproxy.
+
 ## References
 
-- [ADR-003: Resource File Organization](003-resource-file-organization.md)
+- [ADR-003: Resource File Organization](003-resource-file-organization.md) — file placement
+- [ADR-005: Error Handling](005-error-handling.md) — error patterns tested by acceptance tests
 - [Reference Examples](reference-examples.md) — acceptance test walkthrough
 - [Terraform Plugin Testing](https://developer.hashicorp.com/terraform/plugin/testing)

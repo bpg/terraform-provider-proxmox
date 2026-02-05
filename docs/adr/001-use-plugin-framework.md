@@ -72,9 +72,18 @@ The following SDKv2 resources are prioritized for migration to Plugin Framework:
 5. **Client Access**: Use `config.Resource` or `config.DataSource` from configure methods
 6. **Reference Examples**: See [reference-examples.md](reference-examples.md) for annotated walkthroughs
 
+### Common Mistakes
+
+- Adding new resources in `proxmoxtf/` (SDKv2) instead of `fwprovider/` (Framework).
+- Importing `github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema` in new code — use `github.com/hashicorp/terraform-plugin-framework/resource/schema` instead.
+
 ## References
 
 - [Terraform Plugin Framework documentation](https://developer.hashicorp.com/terraform/plugin/framework)
 - [Migration guide](https://developer.hashicorp.com/terraform/plugin/framework/migrating)
+- [ADR-002: API Client Structure](002-api-client-structure.md) — domain client hierarchy
 - [ADR-003: Resource File Organization](003-resource-file-organization.md) — file naming and placement
+- [ADR-004: Schema Design Conventions](004-schema-design-conventions.md) — attributes, validators, model conversion
+- [ADR-005: Error Handling](005-error-handling.md) — error message format and sentinel errors
+- [ADR-006: Testing Requirements](006-testing-requirements.md) — acceptance test structure
 - [Reference Examples](reference-examples.md) — annotated walkthroughs

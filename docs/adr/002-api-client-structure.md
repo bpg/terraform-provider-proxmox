@@ -176,6 +176,9 @@ type Bar struct {
     Name string `json:"name"`
 }
 
+// Domain client errors use lowercase fmt.Errorf with context.
+// The "Unable to [Action] [Resource]" format (ADR-005) is for
+// resource-layer Terraform diagnostics only, not domain clients.
 func (c *Client) GetBar(ctx context.Context, id string) (*Bar, error) {
     var result Bar
     err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(id), nil, &result)
@@ -193,6 +196,12 @@ func (c *Client) Foo() *foo.Client {
     return &foo.Client{Client: c.Client}
 }
 ```
+
+### Common Mistakes
+
+- Calling the base HTTP API directly from resource code instead of through domain clients.
+- Hardcoding API paths instead of using `ExpandPath()`.
+- Forgetting to wrap errors with `%w` — breaks `errors.Is()` checks in the resource layer.
 
 ## References
 

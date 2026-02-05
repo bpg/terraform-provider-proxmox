@@ -48,7 +48,6 @@ Every resource file starts with compile-time interface checks. These ensure your
 satisfies all required interfaces before runtime.
 
 ```go
-// resource.go:30-34
 var (
     _ resource.Resource                = &Resource{}
     _ resource.ResourceWithConfigure   = &Resource{}
@@ -66,7 +65,6 @@ The struct holds the typed API client. The constructor returns the zero-value st
 (the client is injected later via `Configure`).
 
 ```go
-// resource.go:36-42
 type Resource struct {
     client *cluster.Client
 }
@@ -81,7 +79,6 @@ func NewResource() resource.Resource {
 Extracts `config.Resource` from provider data and stores the typed client.
 
 ```go
-// resource.go:52-68
 func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     if req.ProviderData == nil {
         return
@@ -109,7 +106,6 @@ Key points:
 ### Schema Definition
 
 ```go
-// resource.go:70-112
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
         Description: "Manages Proxmox VE SDN VNet.",
@@ -150,7 +146,6 @@ Patterns to note:
 The full create flow: plan -> toAPI -> API call -> read back -> set state.
 
 ```go
-// resource.go:114-142
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
     var plan model
 
@@ -186,7 +181,6 @@ Always read back after create. The API may normalize values or populate computed
 ### Read (with not-found handling)
 
 ```go
-// resource.go:144-169
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
     var state model
 
@@ -219,7 +213,6 @@ Terraform. This triggers a plan to recreate it.
 ### Update (with CheckDelete for optional fields)
 
 ```go
-// resource.go:171-213
 func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
     var plan model
     var state model
@@ -255,7 +248,6 @@ is not. This tells the Proxmox API to remove the field. The third argument is th
 ### Delete (ignore not-found)
 
 ```go
-// resource.go:215-228
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
     var state model
 
@@ -277,7 +269,6 @@ is the desired end state.
 ### ImportState
 
 ```go
-// resource.go:230-247
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     data, err := r.client.SDNVnets(req.ID).GetVnet(ctx)
     if err != nil {
@@ -303,7 +294,6 @@ pattern is sufficient. For composite IDs, see [ACL's custom parsing](#custom-imp
 ### Model Struct (model.go)
 
 ```go
-// model.go:16-23
 type model struct {
     ID           types.String `tfsdk:"id"`
     Zone         types.String `tfsdk:"zone"`
@@ -323,7 +313,6 @@ Rules for model structs:
 ### toAPI Method
 
 ```go
-// model.go:69-79
 func (m *model) toAPI() *vnets.VNet {
     data := &vnets.VNet{}
 
@@ -344,7 +333,6 @@ struct uses pointer fields to distinguish "not set" from zero values.
 ### fromAPI Method
 
 ```go
-// model.go:25-55
 func (m *model) fromAPI(id string, data *vnets.VNetData) {
     m.ID = types.StringValue(id)
 
@@ -369,18 +357,16 @@ and pending-state handling are domain-specific; most resources will not need the
 
 The datasource (`datasource.go`) follows the same structure but uses:
 
-- `config.DataSource` instead of `config.Resource` in Configure (line 51).
-- `datasource.Schema` with all non-ID attributes set to `Computed: true` (lines 64-93).
-- Only a `Read` method (line 96), reading from `req.Config` instead of `req.State`.
+- `config.DataSource` instead of `config.Resource` in Configure.
+- `datasource.Schema` with all non-ID attributes set to `Computed: true`.
+- Only a `Read` method, reading from `req.Config` instead of `req.State`.
 
 ```go
-// datasource.go:22-24
 var _ datasource.DataSource = &DataSource{}
 var _ datasource.DataSourceWithConfigure = &DataSource{}
 ```
 
 ```go
-// datasource.go:96-121
 func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
     var readModel model
 
@@ -412,7 +398,6 @@ from state, because a datasource that cannot find its target is a configuration 
 ### Acceptance Tests
 
 ```go
-// resource_test.go:19-22
 func TestAccResourceSDNVNet(t *testing.T) {
     t.Parallel()
 
@@ -429,7 +414,6 @@ The test environment (`fwprovider/test/test_environment.go`) provides:
 #### Table-driven test structure
 
 ```go
-// resource_test.go:24-27
 tests := []struct {
     name  string
     steps []resource.TestStep
@@ -442,7 +426,6 @@ run sequentially (create, then update, then import).
 #### Multi-step test with import verification
 
 ```go
-// resource_test.go:28-78
 {"create and update vnet with simple zone", []resource.TestStep{
     {
         Config: te.RenderConfig(`
@@ -474,7 +457,6 @@ run sequentially (create, then update, then import).
 #### Running tests with ParallelTest
 
 ```go
-// resource_test.go:449-456
 for _, tt := range tests {
     t.Run(tt.name, func(t *testing.T) {
         resource.ParallelTest(t, resource.TestCase{
@@ -506,7 +488,6 @@ The Metrics Server schema marks secret fields as sensitive so Terraform redacts 
 from plan output and state display:
 
 ```go
-// resource_metrics_server.go:159
 "influx_token": schema.StringAttribute{
     Sensitive: true,
     // ...
@@ -515,14 +496,14 @@ from plan output and state display:
 
 ### Validator Combinations
 
-The Metrics Server schema (`resource_metrics_server.go:79-193`) shows 18 attributes
-including fields specific to different backend types (InfluxDB, Graphite, OpenTelemetry).
+The Metrics Server schema shows 18 attributes including fields specific to different
+backend types (InfluxDB, Graphite, OpenTelemetry).
 
 Notable patterns:
 
-- `int64validator.Between(512, 65536)` for numeric range validation (line 98).
-- `stringvalidator.OneOf("graphite", "influxdb", "opentelemetry")` for enum fields (line 119).
-- Multiple `RequiresReplace()` fields (lines 86-88 for `name`, lines 120-122 for `type`).
+- `int64validator.Between(512, 65536)` for numeric range validation.
+- `stringvalidator.OneOf("graphite", "influxdb", "opentelemetry")` for enum fields.
+- Multiple `RequiresReplace()` fields (on `name` and `type`).
 
 ### Extensive CheckDelete in Update
 
@@ -530,7 +511,6 @@ When a resource has many optional fields, the Update method needs a `CheckDelete
 for each one:
 
 ```go
-// resource_metrics_server.go:279-294
 var toDelete []string
 
 attribute.CheckDelete(plan.Disable, state.Disable, &toDelete, "disable")
@@ -550,7 +530,6 @@ The Proxmox API uses `int64` values (0/1) to represent booleans for some fields.
 Metrics Server model handles this conversion with helper functions:
 
 ```go
-// metrics_server_model.go:37-67
 func boolToInt64Ptr(boolPtr *bool) *int64 {
     if boolPtr != nil {
         var result int64
@@ -588,10 +567,10 @@ These are used in the model's `importFromAPI` and `toAPIRequestBody` methods to 
 between Terraform's `types.Bool` and the API's `int64` representation:
 
 ```go
-// metrics_server_model.go:100
+// toAPI
 data.Disable = boolToInt64Ptr(m.Disable.ValueBoolPointer())
 
-// metrics_server_model.go:75
+// fromAPI
 m.Disable = types.BoolPointerValue(int64ToBoolPtr(data.Disable))
 ```
 
@@ -600,7 +579,6 @@ Use this pattern when the Proxmox API represents a boolean concept as 0/1 intege
 ### Test: Verifying Unset Attributes
 
 ```go
-// resource_metrics_server_test.go:45-59
 test.NoResourceAttributesSet(
     "proxmox_virtual_environment_metrics_server.acc_influxdb_server",
     []string{
@@ -632,7 +610,6 @@ The ACL resource implements `ResourceWithConfigValidators` to enforce that `grou
 `token_id`, and `user_id` are mutually exclusive:
 
 ```go
-// resource_acl.go:28-33
 var (
     _ resource.Resource                     = (*aclResource)(nil)
     _ resource.ResourceWithConfigure        = (*aclResource)(nil)
@@ -642,7 +619,6 @@ var (
 ```
 
 ```go
-// resource_acl.go:97-105
 func (r *aclResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
     return []resource.ConfigValidator{
         resourcevalidator.Conflicting(
@@ -664,7 +640,6 @@ When the import ID is a composite string (not a simple API identifier), parse it
 `ImportState`:
 
 ```go
-// resource_acl.go:255-267
 func (r *aclResource) ImportState(
     ctx context.Context,
     req resource.ImportStateRequest,
@@ -681,14 +656,11 @@ func (r *aclResource) ImportState(
 }
 ```
 
-The parsing function (`resource_acl_model.go:38-68`) splits the composite ID and
-populates the model:
+The parsing function splits the composite ID and populates the model:
 
 ```go
-// resource_acl_model.go:30
 const aclIDFormat = "{path}?{group|user@realm|user@realm!token}?{role}"
 
-// resource_acl_model.go:38-68
 func parseACLResourceModelFromID(id string) (*aclResourceModel, error) {
     parts := strings.Split(id, "?")
     if len(parts) != 3 {
@@ -730,7 +702,6 @@ The ACL test file includes a dedicated validation test that verifies cross-field
 constraints without making API calls:
 
 ```go
-// resource_acl_test.go:100-152
 func TestAccAcl_Validators(t *testing.T) {
     t.Parallel()
 
