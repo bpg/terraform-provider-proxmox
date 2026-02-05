@@ -179,7 +179,10 @@ type Bar struct {
 func (c *Client) GetBar(ctx context.Context, id string) (*Bar, error) {
     var result Bar
     err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(id), nil, &result)
-    return &result, err
+    if err != nil {
+        return nil, fmt.Errorf("error getting bar with id %s: %w", id, err)
+    }
+    return &result, nil
 }
 ```
 
