@@ -56,6 +56,7 @@ Then offer to help create one:
 | Artifact | Format | Example |
 | -------- | ------ | ------- |
 | Branch | `{type}/{issue}-{desc}` | `fix/1234-clone-timeout` |
+| Plans | `.dev/YYYY-MM-DD-{feature}.md` | `.dev/2026-02-03-reference-examples.md` |
 | Proof report | `.dev/{issue}_PROOF_REPORT.md` | `.dev/1234_PROOF_REPORT.md` |
 | Session state | `.dev/{issue}_SESSION_STATE.md` | `.dev/1234_SESSION_STATE.md` |
 | Test names | Descriptive, NO issue numbers | `TestAccResourceVMClone` |
@@ -70,10 +71,41 @@ Then offer to help create one:
 
 ```bash
 make build              # Build provider binary
-make lint               # Run linter (auto-fixes most issues)
+make lint               # Run Go linter (auto-fixes formatting and most issues)
 make test               # Run unit tests
 make docs               # Generate documentation
 ./testacc TestName      # Run specific acceptance test
+npx --yes markdownlint-cli2 --fix "path/to/*.md"  # Lint markdown files
+```
+
+### Linting Rules
+
+**Never manually format or lint code. Always use the appropriate linter tool.**
+
+| File type  | Linter command                                  | When to run                     |
+|------------|------------------------------------------------ |---------------------------------|
+| Go (`.go`) | `make lint`                                     | After editing any `.go` file    |
+| Markdown   | `npx --yes markdownlint-cli2 --fix "file.md"`  | After editing any `.md` file    |
+
+### Acceptance Test Script (`./testacc`)
+
+```bash
+./testacc TestAccResourceVM           # Run single test
+./testacc "TestAccResource.*"         # Run tests matching pattern
+./testacc --no-proxy TestName         # Run without mitmproxy
+./testacc --verbose TestName          # Verbose output
+./testacc TestName -- -v              # Pass flags through to go test
+```
+
+Requires `testacc.env` with:
+
+```bash
+TF_ACC=1
+PROXMOX_VE_API_TOKEN="root@pam!<token>=<value>"
+PROXMOX_VE_ENDPOINT="https://<host>:8006/"
+PROXMOX_VE_SSH_AGENT="true"
+PROXMOX_VE_SSH_USERNAME="root"
+# Optional: PROXMOX_VE_ACC_NODE_NAME, PROXMOX_VE_ACC_NODE_SSH_ADDRESS, etc.
 ```
 
 ### Production Readiness Checklist
@@ -90,7 +122,13 @@ make docs               # Generate documentation
 
 ### Commit Guidelines
 
-See [CONTRIBUTING.md](CONTRIBUTING.md#commit-message-conventions). Key rules: lowercase, no period, under 72 chars, NO issue numbers.
+See [CONTRIBUTING.md](CONTRIBUTING.md#commit-message-conventions). Key rules:
+
+- Format: `{type}({scope}): {description}`
+- **Types:** `feat`, `fix`, `chore`
+- **Scopes:** `vm`, `lxc`, `provider`, `core`, `docs`, `ci`
+- Lowercase, no period, under 72 chars, NO issue numbers
+- **DCO sign-off required:** use `git commit -s` (adds `Signed-off-by` line)
 
 ---
 
@@ -182,7 +220,14 @@ When handing off work:
 
 ## Project Architecture
 
+### Prerequisites
+
 - **Go 1.25+** required
+- **golangci-lint 2.8.0** — installed automatically by `make lint`
+- **Line length limit:** 150 characters (enforced by linter)
+
+### Overview
+
 - **Dual-provider:** SDK v2 (`proxmoxtf/`) and Plugin Framework (`fwprovider/`)
 - **New features:** Framework only; SDK is feature-frozen
 
@@ -191,8 +236,15 @@ When handing off work:
 ```text
 ├── proxmox/           # Shared API client
 ├── fwprovider/        # Framework provider ← NEW CODE HERE
+│   ├── test/          # Shared test utilities and acceptance tests
+│   ├── config/        # Provider configuration types (Resource, DataSource)
+│   ├── attribute/     # Attribute helpers (ResourceID, CheckDelete, IsDefined)
+│   ├── types/         # Custom attribute types (stringset, etc.)
+│   └── validators/    # Custom validators
 ├── proxmoxtf/         # Legacy SDK provider (feature-frozen)
-├── .dev/              # Development tools and session files
+├── utils/             # Shared utilities (maps, sets, strings, IP)
+├── .dev/              # Development tools, plans, and session files
+├── example/           # Example Terraform configurations
 └── docs/              # Auto-generated documentation
 ```
 
@@ -203,7 +255,9 @@ proxmox.Client
 ├── Node(name) → nodes.Client
 ├── Cluster() → cluster.Client
 ├── Access() → access.Client
+├── Pool() → pools.Client
 ├── Storage() → storage.Client
+├── Version() → version.Client
 ├── API() → api.Client (raw HTTP)
 └── SSH() → ssh.Client
 ```
@@ -240,6 +294,8 @@ proxmox.Client
 
 ### Framework (fwprovider/)
 
+Each resource has 3 files: `resource_*.go` (CRUD), `*_model.go` (API mapping), `resource_*_test.go` (acceptance tests). Client access flows through `config.Resource` → `cfg.Client.Domain().SubClient()`.
+
 ```go
 schema.StringAttribute{
     Required: true,
@@ -247,7 +303,7 @@ schema.StringAttribute{
         stringvalidator.OneOf("a", "b"),
     },
 }
-resp.Diagnostics.AddError("Summary", "Detail")
+resp.Diagnostics.AddError("Unable to Create Resource", err.Error())
 ```
 
 ### SDK (proxmoxtf/) — Legacy Only
@@ -324,6 +380,7 @@ See [.dev/README.md](.dev/README.md#working-with-llm-agents) for detailed workfl
 ## References
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Contributing guide
+- [docs/adr/](docs/adr/README.md) — Architecture Decision Records and reference examples
 - [.dev/DEBUGGING.md](.dev/DEBUGGING.md) — Debugging guide
 - [.dev/SESSION_STATE_TEMPLATE.md](.dev/SESSION_STATE_TEMPLATE.md) — Session template
 - [Proxmox API](https://pve.proxmox.com/pve-docs/api-viewer/)
