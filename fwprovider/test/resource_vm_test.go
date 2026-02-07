@@ -1701,3 +1701,71 @@ func TestAccResourceVMVirtioSCSISingleWithAgent(t *testing.T) {
 		},
 	})
 }
+
+func TestAccResourceVMUpdateWhileStopped(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+
+	var vmID string
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_update_while_stopped" {
+						node_name = "{{.NodeName}}"
+						started   = false
+
+						cpu {
+							cores = 2
+							type  = "kvm64"
+						}
+
+						memory {
+							dedicated = 1024
+						}
+					}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrWith(
+						"proxmox_virtual_environment_vm.test_update_while_stopped",
+						"vm_id",
+						func(v string) error {
+							vmID = v
+							return nil
+						},
+					),
+				),
+			},
+			{
+				PreConfig: func() {
+					if vmID == "" {
+						t.Fatalf("vm_id was not captured from state")
+					}
+					err := te.StopVM(te.NodeName, vmID)
+					if err != nil {
+						t.Fatalf("failed to stop VM out-of-band: %v", err)
+					}
+					te.WaitForVMStopped(te.NodeName, vmID)
+				},
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_update_while_stopped" {
+						node_name = "{{.NodeName}}"
+						started   = true
+
+						cpu {
+							cores = 2
+							type  = "host"
+						}
+
+						memory {
+							dedicated = 1024
+						}
+					}
+				`),
+			},
+		},
+	})
+}
