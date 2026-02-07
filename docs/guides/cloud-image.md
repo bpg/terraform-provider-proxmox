@@ -34,7 +34,7 @@ resource "proxmox_virtual_environment_vm" "centos_vm" {
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
-    size         = 20
+    disk_size    = "20G"
   }
 }
 
@@ -70,7 +70,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
-    size         = 20
+    disk_size    = "20G"
   }
 }
 
@@ -141,7 +141,7 @@ resource "proxmox_virtual_environment_vm" "coreos_vm" {
     interface = "virtio0"
     iothread  = true
     discard   = "on"
-    size      = 20
+    disk_size = "20G"
   }
 
   network_device {
@@ -178,7 +178,7 @@ resource "proxmox_virtual_environment_vm" "debian_vm" {
     interface = "virtio0"
     iothread  = true
     discard   = "on"
-    size      = 20
+    disk_size = "20G"
   }
 }
 ```

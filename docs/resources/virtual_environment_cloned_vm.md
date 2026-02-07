@@ -88,7 +88,7 @@ resource "proxmox_virtual_environment_cloned_vm" "disk_managed" {
     scsi0 = {
       # Resize the cloned boot disk
       datastore_id = "local-lvm"
-      size_gb      = 50
+      disk_size    = "50G"
       discard      = "on"
       ssd          = true
     }
@@ -96,7 +96,7 @@ resource "proxmox_virtual_environment_cloned_vm" "disk_managed" {
     scsi1 = {
       # Add a new data disk
       datastore_id = "local-lvm"
-      size_gb      = 100
+      disk_size    = "100G"
       backup       = false
     }
   }
@@ -166,7 +166,7 @@ resource "proxmox_virtual_environment_cloned_vm" "full_featured" {
   disk = {
     scsi0 = {
       datastore_id = "local-lvm"
-      size_gb      = 100
+      disk_size    = "100G"
       discard      = "on"
       iothread     = true
       ssd          = true
@@ -355,7 +355,8 @@ Optional:
 - `media` (String) Disk media (e.g., disk, cdrom).
 - `replicate` (Boolean) Consider disk for replication.
 - `serial` (String) Disk serial number.
-- `size_gb` (Number) Disk size (GiB) when creating new disks. **Note:** Disk shrinking is not supported. Attempting to set `size_gb` to a value smaller than the current disk size will result in an error. Only disk expansion is allowed.
+- `disk_size` (String) Disk size with unit (K, M, G, T). Supports formats like `512M`, `8G`, `1T`. **Note:** Disk shrinking is not supported. Only disk expansion is allowed.
+- `size_gb` (Number, Deprecated) Disk size (GiB) when creating new disks (deprecated, use `disk_size` instead). **Note:** Disk shrinking is not supported. Attempting to set `size_gb` to a value smaller than the current disk size will result in an error. Only disk expansion is allowed.
 - `ssd` (Boolean) Mark disk as SSD.
 
 

@@ -9,7 +9,7 @@ resource "proxmox_virtual_environment_container" "example_template" {
 
   disk {
     datastore_id = var.virtual_environment_storage
-    size         = 4
+    disk_size    = "4G"
   }
 
   mount_point {

@@ -70,7 +70,7 @@ resource "proxmox_virtual_environment_vm" "example" {
   disk {
     datastore_id = "local-lvm"
     file_format  = "qcow2"
-    size         = 20
+    disk_size    = "20G"
   }
 
   network_device {

@@ -213,13 +213,13 @@ resource "proxmox_virtual_environment_vm" "old" {
   disk {
     interface    = "scsi0"
     datastore_id = "local-lvm"
-    size         = 50
+    disk_size    = "50G"
   }
 
   disk {
     interface    = "scsi1"
     datastore_id = "local-lvm"
-    size         = 100
+    disk_size    = "100G"
   }
 }
 ```
@@ -237,12 +237,12 @@ resource "proxmox_virtual_environment_cloned_vm" "new" {
   disk = {
     scsi0 = {
       datastore_id = "local-lvm"
-      size_gb      = 50  # size renamed to size_gb
+      disk_size    = "50G"
     }
 
     scsi1 = {
       datastore_id = "local-lvm"
-      size_gb      = 100
+      disk_size    = "100G"
     }
   }
 }
@@ -369,7 +369,7 @@ When migrating from legacy VM resource (`proxmox_virtual_environment_vm`) with c
   - [ ] Convert `vlan_id` attribute to `tag`
 - [ ] Convert disk devices from `disk` blocks to `disk` map
   - [ ] Determine slot names (`scsi0`, `virtio0`, etc.)
-  - [ ] Use `size_gb` instead of `size`
+  - [ ] Use `disk_size` instead of `size` (e.g., `disk_size = "50G"`)
 - [ ] Decide which inherited devices to manage vs. preserve
 - [ ] Add `delete` block if you need to remove inherited devices
 - [ ] Test in a non-production environment first

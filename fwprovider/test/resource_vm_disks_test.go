@@ -1720,3 +1720,138 @@ func TestAccResourceVMDiskSpeedUpdate(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourceVMDiskSizeWithUnits tests the disk_size attribute with various unit formats.
+func TestAccResourceVMDiskSizeWithUnits(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create VM with disk_size using "G" units
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_size_units" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-size-units"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						disk_size    = "8G"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_size_units", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.disk_size": "8G",
+						"disk.0.size":      "8",
+					}),
+				),
+			},
+			{
+				// Step 2: Resize disk using disk_size
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_size_units" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-size-units"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						disk_size    = "10G"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_size_units", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.disk_size": "10G",
+						"disk.0.size":      "10",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDiskSizePrecedence tests that disk_size takes precedence over size when both are specified.
+func TestAccResourceVMDiskSizePrecedence(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// When both size and disk_size are specified, disk_size should take precedence
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_precedence" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-prec"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						disk_size    = "12G"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_precedence", map[string]string{
+						"disk.0.disk_size": "12G",
+					}),
+				),
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDiskSizeMultipleUnits tests disk_size with various unit formats.
+func TestAccResourceVMDiskSizeMultipleUnits(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Create disks with different unit formats
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_units" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-units"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						disk_size    = "8G"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						disk_size    = "1T"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_units", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.disk_size": "8G",
+						"disk.1.interface": "scsi1",
+						"disk.1.disk_size": "1T",
+					}),
+				),
+			},
+		},
+	})
+}
