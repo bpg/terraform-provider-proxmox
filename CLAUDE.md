@@ -57,7 +57,7 @@ Then offer to help create one:
 | -------- | ------ | ------- |
 | Branch | `{type}/{issue}-{desc}` | `fix/1234-clone-timeout` |
 | Plans | `.dev/YYYY-MM-DD-{feature}.md` | `.dev/2026-02-03-reference-examples.md` |
-| Proof report | `.dev/{issue}_PROOF_REPORT.md` | `.dev/1234_PROOF_REPORT.md` |
+| PR body | `.dev/{issue}_PR_BODY.md` | `.dev/1234_PR_BODY.md` |
 | Session state | `.dev/{issue}_SESSION_STATE.md` | `.dev/1234_SESSION_STATE.md` |
 | Test names | Descriptive, NO issue numbers | `TestAccResourceVMClone` |
 | VM names | Descriptive, NO issue numbers | `test-vm-clone` |
@@ -118,7 +118,7 @@ PROXMOX_VE_SSH_USERNAME="root"
 4. `./testacc TestAccYourFeature` — Acceptance tests pass
 5. `/debug-api` — Verify API calls with mitmproxy
 6. `make docs` — Regenerate if schema changed
-7. `/proof-report` — Create `.dev/{issue}_PROOF_REPORT.md`
+7. `/prepare-pr` — Generate PR body from template
 
 ### Commit Guidelines
 
@@ -188,7 +188,7 @@ LLMs have no memory between sessions. Externalize state to files:
 
 - "Tests pass" ≠ correct behavior
 - Always verify with mitmproxy
-- Include evidence in proof reports
+- Include evidence in PR proof of work section
 
 ### Context Window Management
 
@@ -213,7 +213,7 @@ When things go wrong:
 When handing off work:
 
 - **To another agent** — Ensure "Quick Context Restore" is complete and current
-- **To human** — Create PR draft with proof report content, reference session state location
+- **To human** — Create PR using `/prepare-pr`, reference session state location
 - **From human** — Use `/resume`, ask about any "Unverified" assumptions
 
 ---
@@ -371,7 +371,7 @@ For multi-step work, maintain session state using [.dev/SESSION_STATE_TEMPLATE.m
 | `/resume` | Resume work from a previous session |
 | `/ready` | Run production readiness checklist |
 | `/debug-api` | Debug API calls with mitmproxy |
-| `/proof-report` | Generate proof of work document |
+| `/prepare-pr` | Prepare PR body from template with proof of work |
 
 See [.dev/README.md](.dev/README.md#working-with-llm-agents) for detailed workflow documentation and how skills connect together.
 

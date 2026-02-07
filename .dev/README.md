@@ -84,13 +84,12 @@ This section documents how to effectively use LLM agents (like Claude Code) for 
          │
          ▼
   ┌─────────────┐     Creates:
-  │/proof-report│────→ • .dev/1234_PROOF_REPORT.md
-  └──────┬──────┘      • Test output evidence
-         │             • API verification evidence
+  │/prepare-pr  │────→ • .dev/1234_PR_BODY.md
+  └──────┬──────┘      • Filled PR template with proof of work
          │
          ▼
   ┌─────────────┐
-  │  Submit PR  │  ← Use proof report content in PR description
+  │  Submit PR  │  ← gh pr create --body-file .dev/1234_PR_BODY.md
   └─────────────┘
 
 
@@ -200,32 +199,32 @@ Agent: Starts proxy, runs test, shows API calls containing "content" parameter
 
 ```text
 You: /ready TestAccResourceVMClone
-Agent: Runs all checks, reports status, suggests /proof-report if all pass
+Agent: Runs all checks, reports status, suggests /prepare-pr if all pass
 ```
 
-#### `/proof-report [issue-number]`
+#### `/prepare-pr [issue-number]`
 
 **When to use:**
 
 - After `/ready` passes all checks
 - Before submitting a PR
-- When asked to document the work
 
 **What it does:**
 
-1. Gathers test results from `/tmp/testacc.log`
-2. Gathers API verification from `/tmp/api_debug.log`
-3. Pulls context from session state
-4. Verifies checklist items
-5. Creates `.dev/{issue}_PROOF_REPORT.md`
+1. Reads `.github/PULL_REQUEST_TEMPLATE.md`
+2. Fills "What does this PR do?" from commits and session state
+3. Verifies and checks Contributor's Note items
+4. Builds Proof of Work section from `/tmp/testacc.log` and `/tmp/api_debug.log`
+5. Sets issue link (Closes/Relates)
+6. Writes filled template to `.dev/{issue}_PR_BODY.md`
 
-**Output format matches PR template:** Summary, test output, test coverage table, API verification, checklist.
+**Output is ready for `gh pr create --body-file`.**
 
 **Example:**
 
 ```text
-You: /proof-report 1234
-Agent: Creates .dev/1234_PROOF_REPORT.md with full evidence, ready for PR description
+You: /prepare-pr 1234
+Agent: Creates .dev/1234_PR_BODY.md, provides gh pr create command
 ```
 
 ### Common Scenarios
@@ -237,8 +236,8 @@ Agent: Creates .dev/1234_PROOF_REPORT.md with full evidence, ready for PR descri
 2. [Investigate and implement fix]
 3. /debug-api TestAccBugFix    ← Verify API calls
 4. /ready TestAccBugFix        ← Run full checklist
-5. /proof-report 1234          ← Generate evidence
-6. [Create PR using proof report content]
+5. /prepare-pr 1234            ← Generate PR body
+6. gh pr create --body-file .dev/1234_PR_BODY.md
 ```
 
 #### Scenario 2: Resume After Break
@@ -264,7 +263,7 @@ When the agent's context fills up during long work:
 
 ```text
 1. /start-issue 1234           ← Work on first issue
-2. [Complete work, /ready, /proof-report]
+2. [Complete work, /ready, /prepare-pr]
 3. /start-issue 5678           ← Start second issue (clears logs)
 4. [Work on second issue]
 ```
@@ -275,13 +274,13 @@ The skills share state through files:
 
 | File | Written By | Read By |
 | ---- | ---------- | ------- |
-| `.dev/{issue}_SESSION_STATE.md` | `/start-issue`, all skills update | `/resume`, `/ready`, `/proof-report` |
-| `/tmp/testacc.log` | `/ready`, `/debug-api` | `/proof-report`, `/resume` |
-| `/tmp/api_debug.log` | `/debug-api` | `/proof-report`, `/resume` |
+| `.dev/{issue}_SESSION_STATE.md` | `/start-issue`, all skills update | `/resume`, `/ready`, `/prepare-pr` |
+| `/tmp/testacc.log` | `/ready`, `/debug-api` | `/prepare-pr`, `/resume` |
+| `/tmp/api_debug.log` | `/debug-api` | `/prepare-pr`, `/resume` |
 
 This allows:
 
-- `/proof-report` to use test results from `/ready` without re-running
+- `/prepare-pr` to use test results from `/ready` without re-running
 - `/resume` to note existing logs from previous runs
 - Session state to accumulate context across the workflow
 
@@ -295,7 +294,7 @@ This allows:
 
 4. **Don't skip `/ready`** — The checklist exists because each item has caught real bugs
 
-5. **Keep proof reports** — They're gitignored but useful for PR descriptions and future reference
+5. **Use `/prepare-pr`** — Generates PR body with proof of work, ready for `gh pr create`
 
 6. **Resume, don't restart** — After breaks, use `/resume` instead of re-explaining context
 
