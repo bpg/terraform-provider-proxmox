@@ -255,7 +255,7 @@ Before marking complete (or run `/ready` to automate):
 - [ ] `make docs` run (if schema changed)
 - [ ] No secrets in files
 - [ ] Session state file excluded from commit
-- [ ] Proof report created: `.dev/NUMBER_PROOF_REPORT.md` (use `/proof-report`)
+- [ ] PR body prepared: `.dev/NUMBER_PR_BODY.md` (use `/prepare-pr`)
 
 ---
 

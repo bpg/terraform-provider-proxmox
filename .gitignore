@@ -59,6 +59,7 @@ coverage.out
 *_REPORT.md
 *_PLAN.md
 *_SESSION_STATE.md
+*_PR_BODY.md
 
 # Python cache
 __pycache__/

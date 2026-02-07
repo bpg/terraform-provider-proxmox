@@ -73,7 +73,7 @@ If no test name provided via `$ARGUMENTS`, detect from changes:
 git diff --name-only main...HEAD | grep -E "\.go$" | head -10
 ```
 
-Store issue number for proof report generation.
+Store issue number for PR preparation.
 
 ---
 
@@ -207,7 +207,7 @@ else
 fi
 ```
 
-The test output is saved to `/tmp/testacc.log` for use in the proof report.
+The test output is saved to `/tmp/testacc.log` for use in `/prepare-pr`.
 
 **Result:**
 
@@ -299,8 +299,8 @@ If all passed:
 ```text
 All checks passed.
 
-Next step: Create proof of work report.
-Run: /proof-report ${ISSUE_NUM}
+Next step: Prepare PR body.
+Run: /prepare-pr ${ISSUE_NUM}
 ```
 
 If any failed:
@@ -327,7 +327,7 @@ If `.dev/${ISSUE_NUM}_SESSION_STATE.md` exists, update it with:
 - Test log location (`/tmp/testacc.log`)
 - Timestamp of this run
 
-This allows `/proof-report` to pull results without re-running checks.
+This allows `/prepare-pr` to pull results without re-running checks.
 
 </process>
 
@@ -350,6 +350,6 @@ This allows `/proof-report` to pull results without re-running checks.
 - If you're unsure which acceptance tests to run, look for tests matching the resource/datasource name
 - Schema changes = any modification to attribute definitions, validators, or type definitions
 - The checklist is designed to catch issues before PR review, saving time for everyone
-- Test output is saved to `/tmp/testacc.log` - this persists for `/proof-report` to use
-- If session state exists, update it with results so `/proof-report` can skip re-verification
+- Test output is saved to `/tmp/testacc.log` - this persists for `/prepare-pr` to use
+- If session state exists, update it with results so `/prepare-pr` can skip re-verification
 </tips>
