@@ -14,6 +14,8 @@ Manages files upload using PVE download-url API. It can be fully compatible and 
 ~> Besides the `Datastore.AllocateTemplate` privilege, this resource requires both the `Sys.Audit` and `Sys.Modify` privileges.<br><br>
 For more details, see the [`download-url`](https://pve.proxmox.com/pve-docs/api-viewer/index.html#/nodes/{node}/storage/{storage}/download-url) API documentation under the "Required permissions" section.
 
+-> Importing Disks is not enabled by default in new Proxmox installations. You need to enable them in the 'Datacenter>Storage' section of the Proxmox interface before first using this resource with `content_type = "import"`.
+
 ## Example Usage
 
 ```terraform
