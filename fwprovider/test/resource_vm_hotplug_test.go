@@ -800,7 +800,7 @@ func TestAccResourceVMHotplug(t *testing.T) {
 		})
 	})
 
-	t.Run("change CPU hotplugged vcpus without reboot", func(t *testing.T) {
+	t.Run("change CPU hotplugged vcpus without hotplug requires reboot", func(t *testing.T) {
 		t.Parallel()
 
 		te := InitEnvironment(t)
@@ -814,10 +814,11 @@ func TestAccResourceVMHotplug(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_vm" "test_hotplug" {
-						node_name       = "{{.NodeName}}"
-						started         = true
-						stop_on_destroy = true
-						name            = "test-hotplug-vcpus"
+						node_name           = "{{.NodeName}}"
+						started             = true
+						stop_on_destroy     = true
+						reboot_after_update = true
+						name                = "test-reboot-vcpus"
 
 						cpu {
 							cores      = 4
@@ -882,10 +883,171 @@ func TestAccResourceVMHotplug(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_vm" "test_hotplug" {
-						node_name       = "{{.NodeName}}"
-						started         = true
-						stop_on_destroy = true
-						name            = "test-hotplug-vcpus"
+						node_name           = "{{.NodeName}}"
+						started             = true
+						stop_on_destroy     = true
+						reboot_after_update = true
+						name                = "test-reboot-vcpus"
+
+						cpu {
+							cores      = 4
+							hotplugged = 3
+						}
+						memory {
+							dedicated = 2048
+						}
+						disk {
+							datastore_id = "local-lvm"
+							file_id      = "{{.ImageFileID}}"
+							interface    = "scsi0"
+							size         = 20
+						}
+						initialization {
+							ip_config {
+								ipv4 {
+									address = "dhcp"
+								}
+							}
+						}
+						network_device {
+							bridge = "vmbr0"
+						}
+					}`),
+					Check: resource.ComposeTestCheckFunc(
+						ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug", map[string]string{
+							"cpu.0.cores":      "4",
+							"cpu.0.hotplugged": "3",
+						}),
+						func(s *terraform.State) error {
+							rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_hotplug"]
+							if !ok {
+								return fmt.Errorf("resource not found")
+							}
+
+							vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+							if err != nil {
+								return fmt.Errorf("failed to parse vm_id: %w", err)
+							}
+
+							ctx := context.Background()
+
+							status, err := te.NodeClient().VM(vmID).GetVMStatus(ctx)
+							if err != nil {
+								return fmt.Errorf("failed to get VM status: %w", err)
+							}
+
+							if status.Uptime == nil {
+								return fmt.Errorf("VM uptime is nil")
+							}
+
+							// uptime should be reset (reboot happened) - new uptime should be less than captured
+							if *status.Uptime >= capturedUptime {
+								return fmt.Errorf("VM was NOT rebooted: uptime before=%d, after=%d (expected reboot)", capturedUptime, *status.Uptime)
+							}
+
+							return nil
+						},
+					),
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_hotplug", plancheck.ResourceActionUpdate),
+						},
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("change CPU hotplugged vcpus with hotplug enabled skips reboot", func(t *testing.T) {
+		t.Parallel()
+
+		te := InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+		var capturedUptime int
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_hotplug" {
+						node_name           = "{{.NodeName}}"
+						started             = true
+						stop_on_destroy     = true
+						reboot_after_update = true
+						hotplug             = "cpu"
+						name                = "test-hotplug-vcpus-enabled"
+
+						cpu {
+							cores      = 4
+							hotplugged = 2
+						}
+						memory {
+							dedicated = 2048
+						}
+						disk {
+							datastore_id = "local-lvm"
+							file_id      = "{{.ImageFileID}}"
+							interface    = "scsi0"
+							size         = 20
+						}
+						initialization {
+							ip_config {
+								ipv4 {
+									address = "dhcp"
+								}
+							}
+						}
+						network_device {
+							bridge = "vmbr0"
+						}
+					}`),
+					Check: resource.ComposeTestCheckFunc(
+						ResourceAttributes("proxmox_virtual_environment_vm.test_hotplug", map[string]string{
+							"cpu.0.cores":      "4",
+							"cpu.0.hotplugged": "2",
+						}),
+						func(s *terraform.State) error {
+							rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_hotplug"]
+							if !ok {
+								return fmt.Errorf("resource not found")
+							}
+
+							vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+							if err != nil {
+								return fmt.Errorf("failed to parse vm_id: %w", err)
+							}
+
+							// wait a bit for uptime to accumulate
+							time.Sleep(5 * time.Second)
+
+							ctx := context.Background()
+
+							status, err := te.NodeClient().VM(vmID).GetVMStatus(ctx)
+							if err != nil {
+								return fmt.Errorf("failed to get VM status: %w", err)
+							}
+
+							if status.Uptime == nil || *status.Uptime < 3 {
+								return fmt.Errorf("VM uptime too low, expected >= 3 seconds, got %v", status.Uptime)
+							}
+
+							capturedUptime = *status.Uptime
+
+							return nil
+						},
+					),
+				},
+				{
+					Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_hotplug" {
+						node_name           = "{{.NodeName}}"
+						started             = true
+						stop_on_destroy     = true
+						reboot_after_update = true
+						hotplug             = "cpu"
+						name                = "test-hotplug-vcpus-enabled"
 
 						cpu {
 							cores      = 4
@@ -940,7 +1102,7 @@ func TestAccResourceVMHotplug(t *testing.T) {
 
 							// uptime should have increased (no reboot), allow some tolerance
 							if *status.Uptime < capturedUptime {
-								return fmt.Errorf("VM was rebooted: uptime before=%d, after=%d", capturedUptime, *status.Uptime)
+								return fmt.Errorf("VM was rebooted: uptime before=%d, after=%d (expected no reboot)", capturedUptime, *status.Uptime)
 							}
 
 							return nil

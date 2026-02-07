@@ -5751,8 +5751,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		oldCPUArchitecture := getStringFromBlock(oldCPUBlock, mkCPUArchitecture, "")
 		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA, false)
 
-		// Only vcpus (hotplugged) changes are truly hotpluggable for CPU.
-		// Changing cores or sockets always requires a reboot.
+		// Only vcpus (hotplugged) changes are hotpluggable for CPU, and only when
+		// "cpu" is in the VM's hotplug setting. Changing cores or sockets always requires a reboot.
 		hotpluggedChanged := d.HasChange(mkCPU + ".0." + mkCPUHotplugged)
 		noOtherChanges := !d.HasChange(mkCPU+".0."+mkCPUCores) &&
 			!d.HasChange(mkCPU+".0."+mkCPUSockets) &&
@@ -5763,7 +5763,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			!d.HasChange(mkCPU+".0."+mkCPULimit) &&
 			!d.HasChange(mkCPU+".0."+mkCPUUnits)
 
-		onlyHotpluggableChange := hotpluggedChanged && noOtherChanges
+		onlyHotpluggableChange := hotpluggedChanged && noOtherChanges && isHotpluggable(d, "cpu")
 
 		if err = setCPUArchitecture(ctx, cpuArchitecture, client, updateBody); err != nil {
 			return diag.FromErr(err)
