@@ -1106,8 +1106,10 @@ func VM() *schema.Resource {
 			},
 		},
 		mkHotplug: {
-			Type:             schema.TypeString,
-			Description:      "Selectively enable hotplug features. Use `0` to disable, `1` to enable all.",
+			Type: schema.TypeString,
+			Description: "Selectively enable hotplug features. Use `0` to disable, `1` to enable all. " +
+				"Valid features: `disk`, `network`, `usb`, `memory`, `cpu`. " +
+				"Memory hotplug requires NUMA to be enabled.",
 			Optional:         true,
 			Computed:         true,
 			ValidateDiagFunc: HotplugValidator(),
@@ -3813,6 +3815,36 @@ func getBoolFromBlock(block map[string]any, key string, defaultValue bool) bool 
 	return defaultValue
 }
 
+// hotplugContains checks whether a specific feature is enabled in a hotplug setting string.
+// Handles special values: "" and "0" mean nothing is hotpluggable, "1" means everything is.
+func hotplugContains(hotplug, feature string) bool {
+	if hotplug == "" || hotplug == "0" {
+		return false
+	}
+
+	if hotplug == "1" {
+		return true
+	}
+
+	for f := range strings.SplitSeq(hotplug, ",") {
+		if strings.TrimSpace(f) == feature {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isHotpluggable reads the hotplug setting from resource data and checks whether a feature is enabled.
+func isHotpluggable(d *schema.ResourceData, feature string) bool {
+	hotplug, ok := d.GetOk(mkHotplug)
+	if !ok {
+		return false
+	}
+
+	return hotplugContains(hotplug.(string), feature)
+}
+
 func isAgentEnabled(ctx context.Context, vmAPI *vms.Client) (bool, diag.Diagnostics) {
 	vmConfig, err := vmAPI.GetVM(ctx)
 	if err != nil {
@@ -6037,7 +6069,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			!d.HasChange(mkMemory+".0."+mkMemoryHugepages) &&
 			!d.HasChange(mkMemory+".0."+mkMemoryKeepHugepages)
 
-		onlyHotpluggableChange := memoryIncreased && noNonHotpluggableChanges
+		onlyHotpluggableChange := memoryIncreased && noNonHotpluggableChanges && isHotpluggable(d, "memory")
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.FloatingMemory = &memoryFloating
