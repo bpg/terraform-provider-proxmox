@@ -416,6 +416,37 @@ func TestVMSchema(t *testing.T) {
 	})
 }
 
+func TestHotplugContains(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		hotplug string
+		feature string
+		want    bool
+	}{
+		{"empty string disables all", "", "memory", false},
+		{"zero disables all", "0", "memory", false},
+		{"one enables all", "1", "memory", true},
+		{"one enables cpu", "1", "cpu", true},
+		{"feature present", "disk,network,memory", "memory", true},
+		{"feature absent", "disk,network,usb", "memory", false},
+		{"single feature match", "memory", "memory", true},
+		{"single feature no match", "cpu", "memory", false},
+		{"default proxmox value", "disk,network,usb", "cpu", false},
+		{"cpu in list", "disk,cpu,network", "cpu", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := hotplugContains(tt.hotplug, tt.feature)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func Test_parseImportIDWIthNodeName(t *testing.T) {
 	t.Parallel()
 
