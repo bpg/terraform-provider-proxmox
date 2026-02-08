@@ -3912,16 +3912,6 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics
 	return vmReadCustom(ctx, d, m, vmID, vmConfig, vmStatus)
 }
 
-func setDefaultIfNotSet(d *schema.ResourceData, diags diag.Diagnostics, key string, value any) diag.Diagnostics {
-	if _, ok := d.GetOk(key); !ok {
-		if err := d.Set(key, value); err != nil {
-			return append(diags, diag.FromErr(err)...)
-		}
-	}
-
-	return diags
-}
-
 func setDefaultIfNotExists(d *schema.ResourceData, diags diag.Diagnostics, key string, value any) diag.Diagnostics {
 	//nolint:staticcheck
 	if _, ok := d.GetOkExists(key); !ok {
@@ -5216,14 +5206,14 @@ func vmReadCustom(
 	diags = append(diags, diag.FromErr(e)...)
 
 	diags = setDefaultIfNotExists(d, diags, mkMigrate, dvMigrate)
-	diags = setDefaultIfNotSet(d, diags, mkTimeoutClone, dvTimeoutClone)
-	diags = setDefaultIfNotSet(d, diags, mkTimeoutCreate, dvTimeoutCreate)
-	diags = setDefaultIfNotSet(d, diags, mkTimeoutMigrate, dvTimeoutMigrate)
-	diags = setDefaultIfNotSet(d, diags, mkTimeoutReboot, dvTimeoutReboot)
-	diags = setDefaultIfNotSet(d, diags, mkTimeoutShutdownVM, dvTimeoutShutdownVM)
-	diags = setDefaultIfNotSet(d, diags, mkTimeoutStartVM, dvTimeoutStartVM)
-	diags = setDefaultIfNotSet(d, diags, mkTimeoutStopVM, dvTimeoutStopVM)
-	diags = setDefaultIfNotSet(d, diags, mkTimeoutMoveDisk, dvTimeoutMoveDisk)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutClone, dvTimeoutClone)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutCreate, dvTimeoutCreate)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutMigrate, dvTimeoutMigrate)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutReboot, dvTimeoutReboot)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutShutdownVM, dvTimeoutShutdownVM)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutStartVM, dvTimeoutStartVM)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutStopVM, dvTimeoutStopVM)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutMoveDisk, dvTimeoutMoveDisk)
 	diags = setDefaultIfNotExists(d, diags, mkStopOnDestroy, dvStopOnDestroy)
 	diags = setDefaultIfNotExists(d, diags, mkPurgeOnDestroy, dvPurgeOnDestroy)
 	diags = setDefaultIfNotExists(d, diags, mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
@@ -5476,6 +5466,9 @@ func vmUpdatePool(
 }
 
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+	// reset the default timeout for the update operation
+	ctx = context.WithoutCancel(ctx)
+
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, e := config.GetClient()
