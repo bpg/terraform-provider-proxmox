@@ -1,10 +1,13 @@
 # Lychee configuration file
 # Exclude specific files from link checking
+# Note: PR template uses repo-root-relative links that GitHub resolves correctly,
+# but lychee resolves them relative to .github/ directory.
 exclude_path = [
     "CONTRIBUTORS.md",
     "CHANGELOG.md",
     "cache",
-    ".terraform"
+    ".terraform",
+    ".github/PULL_REQUEST_TEMPLATE.md"
 ]
 
 # Exclude URL patterns (regex)
