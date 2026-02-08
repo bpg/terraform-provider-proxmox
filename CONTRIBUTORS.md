@@ -239,6 +239,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/JamesMConroy"><img src="https://avatars.githubusercontent.com/u/23198389?v=4?s=100" width="100px;" alt="James Conroy"/><br /><sub><b>James Conroy</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=JamesMConroy" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/paydaycay"><img src="https://avatars.githubusercontent.com/u/8417078?v=4?s=100" width="100px;" alt="paydaycay"/><br /><sub><b>paydaycay</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=paydaycay" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Romloader"><img src="https://avatars.githubusercontent.com/u/37718731?v=4?s=100" width="100px;" alt="Romloader"/><br /><sub><b>Romloader</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Romloader" title="Documentation">📖</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
