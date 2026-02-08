@@ -33,7 +33,7 @@ resource "proxmox_virtual_environment_file" "backup" {
 
 -> Consider using `proxmox_virtual_environment_download_file` resource instead. Using this resource for images is less efficient (requires to transfer uploaded image to node) though still supported.
 
--> Importing Disks is not enabled by default in new Proxmox installations. You need to enable them in the 'Datacenter>Storage' section of the Proxmox interface before first using this resource with `content_type = "import"`.
+-> The `import` content type is not enabled by default on Proxmox VE storages. To use this resource with `content_type = "import"`, first add `Import` to the allowed content types on the target storage under 'Datacenter > Storage' in the Proxmox web interface.
 
 ```hcl
 resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
