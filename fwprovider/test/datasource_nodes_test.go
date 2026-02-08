@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccDatasourceNode(t *testing.T) {
+func TestAccDatasourceNodes(t *testing.T) {
 	t.Parallel()
 
 	te := InitEnvironment(t)
@@ -23,18 +23,17 @@ func TestAccDatasourceNode(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"read node attributes", []resource.TestStep{{
-			Config: te.RenderConfig(`data "proxmox_virtual_environment_node" "test" { node_name = "{{.NodeName}}" }`),
+		{"read nodes attributes", []resource.TestStep{{
+			Config: `data "proxmox_virtual_environment_nodes" "test" {}`,
 			Check: resource.ComposeTestCheckFunc(
-				ResourceAttributesSet("data.proxmox_virtual_environment_node.test", []string{
-					"cpu_cores",
-					"cpu_count",
-					"cpu_sockets",
-					"cpu_model",
-					"memory_available",
-					"memory_used",
-					"memory_total",
-					"uptime",
+				ResourceAttributesSet("data.proxmox_virtual_environment_nodes.test", []string{
+					"cpu_count.0",
+					"cpu_utilization.0",
+					"memory_available.0",
+					"memory_used.0",
+					"names.0",
+					"online.0",
+					"uptime.0",
 				}),
 			),
 		}}},
