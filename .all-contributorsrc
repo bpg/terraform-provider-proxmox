@@ -1701,6 +1701,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Romloader",
+      "name": "Romloader",
+      "avatar_url": "https://avatars.githubusercontent.com/u/37718731?v=4",
+      "profile": "https://github.com/Romloader",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
