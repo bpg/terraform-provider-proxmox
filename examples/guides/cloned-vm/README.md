@@ -130,8 +130,8 @@ resource "proxmox_virtual_environment_cloned_vm" "full_management" {
 ```terraform
 resource "proxmox_virtual_environment_cloned_vm" "disk_management" {
   disk = {
-    virtio0 = { size_gb = 50 }  # Resize from 20GB
-    virtio1 = { size_gb = 100 } # Add new disk
+    virtio0 = { disk_size = "50G" }  # Resize from 20GB
+    virtio1 = { disk_size = "100G" } # Add new disk
   }
 }
 ```

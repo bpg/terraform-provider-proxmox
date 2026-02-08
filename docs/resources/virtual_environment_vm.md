@@ -318,7 +318,8 @@ output "ubuntu_vm_public_key" {
         to `false`).
     - `replicate` - (Optional) Whether the drive should be considered for replication jobs (defaults to `true`).
     - `serial` - (Optional) The serial number of the disk, up to 20 bytes long.
-    - `size` - (Optional) The disk size in gigabytes (defaults to `8`).
+    - `size` - (Optional, **Deprecated**: use `disk_size` instead) The disk size in gigabytes (defaults to `8`).
+    - `disk_size` - (Optional) The disk size with unit (K, M, G, T). Supports formats like `512M`, `8G`, `1T`.
     - `speed` - (Optional) The speed limits.
         - `iops_read` - (Optional) The maximum read I/O in operations per second.
         - `iops_read_burstable` - (Optional) The maximum unthrottled read I/O pool in operations per second.
@@ -789,13 +790,13 @@ resource "proxmox_virtual_environment_vm" "data_vm" {
   disk {
     datastore_id = "local-zfs"
     interface    = "scsi0"
-    size         = 1
+    disk_size    = "1G"
   }
 
   disk {
     datastore_id = "local-zfs"
     interface    = "scsi1"
-    size         = 4
+    disk_size    = "4G"
   }
 }
 
@@ -804,7 +805,7 @@ resource "proxmox_virtual_environment_vm" "data_user_vm" {
   disk {
     datastore_id = "local-zfs"
     interface    = "scsi0"
-    size         = 8
+    disk_size    = "8G"
   }
 
   # attached disks from data_vm

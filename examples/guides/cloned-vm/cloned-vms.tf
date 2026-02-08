@@ -102,7 +102,7 @@ resource "proxmox_virtual_environment_cloned_vm" "disk_management" {
     # Resize the boot disk inherited from template
     virtio0 = {
       datastore_id = var.datastore_id
-      size_gb      = 50 # Expand from 20GB to 50GB
+      disk_size    = "50G" # Expand from 20GB to 50GB
       discard      = "on"
       iothread     = true
       ssd          = true
@@ -111,7 +111,7 @@ resource "proxmox_virtual_environment_cloned_vm" "disk_management" {
     # Add a new data disk
     virtio1 = {
       datastore_id = var.datastore_id
-      size_gb      = 100
+      disk_size    = "100G"
       backup       = false # Don't include in backups
       cache        = "writethrough"
     }

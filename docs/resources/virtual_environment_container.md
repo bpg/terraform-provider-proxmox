@@ -47,7 +47,7 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
 
   disk {
     datastore_id = "local-lvm"
-    size         = 4
+    disk_size    = "4G"
   }
   
   operating_system {
@@ -151,9 +151,10 @@ output "ubuntu_container_public_key" {
 - `disk` - (Optional) The disk configuration.
     - `datastore_id` - (Optional) The identifier for the datastore to create the
         disk in (defaults to `local`).
-    - `size` - (Optional) The size of the root filesystem in gigabytes (defaults
+    - `size` - (Optional, **Deprecated**: use `disk_size` instead) The size of the root filesystem in gigabytes (defaults
         to `4`). When set to 0 a directory or zfs/btrfs subvolume will be created.
         Requires `datastore_id` to be set.
+    - `disk_size` - (Optional) The rootfs size with unit (K, M, G, T). Supports formats like `512M`, `8G`, `1T`.
     - `mount_options` (Optional) List of extra mount options.
     - `path_in_datastore` (Computed) The in-datastore path to the disk image.
         Use this attribute for cross-resource references.

@@ -661,43 +661,56 @@ func applyDisks(
 			device.FileVolume = currentDevice.FileVolume
 		}
 
+		// Parse disk size once: prefer disk_size (string with units) over deprecated size_gb (int)
+		var desiredSize *proxmoxtypes.DiskSize
+
+		if !cfg.DiskSize.IsUnknown() && !cfg.DiskSize.IsNull() && cfg.DiskSize.ValueString() != "" {
+			ds, err := proxmoxtypes.ParseDiskSize(cfg.DiskSize.ValueString())
+			if err != nil {
+				diags.AddError("Invalid disk_size", fmt.Sprintf("Disk %q: invalid disk_size %q: %v", slot, cfg.DiskSize.ValueString(), err))
+				return nil
+			}
+
+			desiredSize = &ds
+		} else if !cfg.SizeGB.IsUnknown() && !cfg.SizeGB.IsNull() && cfg.SizeGB.ValueInt64() > 0 {
+			desiredSize = proxmoxtypes.DiskSizeFromGigabytes(cfg.SizeGB.ValueInt64())
+		}
+
 		if device.FileVolume == "" {
 			if cfg.DatastoreID.IsUnknown() || cfg.DatastoreID.IsNull() {
-				diags.AddError("Missing datastore_id", fmt.Sprintf("Disk %q requires either file or datastore_id+size_gb", slot))
+				diags.AddError("Missing datastore_id", fmt.Sprintf("Disk %q requires either file or datastore_id+disk_size", slot))
 				return nil
 			}
 
-			if cfg.SizeGB.IsUnknown() || cfg.SizeGB.IsNull() || cfg.SizeGB.ValueInt64() == 0 {
-				diags.AddError("Missing size_gb", fmt.Sprintf("Disk %q requires size_gb when file is not provided", slot))
+			if desiredSize == nil {
+				diags.AddError("Missing disk size", fmt.Sprintf("Disk %q requires disk_size or size_gb when file is not provided", slot))
 				return nil
 			}
 
-			device.FileVolume = fmt.Sprintf("%s:%d", cfg.DatastoreID.ValueString(), cfg.SizeGB.ValueInt64())
+			device.FileVolume = fmt.Sprintf("%s:%d", cfg.DatastoreID.ValueString(), desiredSize.InGigabytes())
 		}
 
 		if !cfg.AIO.IsUnknown() && !cfg.AIO.IsNull() {
 			device.AIO = cfg.AIO.ValueStringPointer()
 		}
 
-		if !cfg.SizeGB.IsUnknown() && !cfg.SizeGB.IsNull() && cfg.SizeGB.ValueInt64() > 0 {
-			desiredGB := cfg.SizeGB.ValueInt64()
+		if desiredSize != nil {
 			if isNewDisk {
-				device.Size = proxmoxtypes.DiskSizeFromGigabytes(desiredGB)
+				device.Size = desiredSize
 			} else if currentDevice.Size != nil {
-				currentGB := currentDevice.Size.InGigabytes()
-				if desiredGB < currentGB {
+				if *desiredSize < *currentDevice.Size {
 					diags.AddError(
 						"Disk resize failure",
-						fmt.Sprintf("Disk %q: requested size_gb (%d) is lower than current size_gb (%d)", slot, desiredGB, currentGB),
+						fmt.Sprintf("Disk %q: requested size (%s) is lower than current size (%s)", slot, desiredSize, currentDevice.Size),
 					)
 
 					return nil
 				}
 
-				if desiredGB > currentGB {
+				if *desiredSize > *currentDevice.Size {
 					resizes = append(resizes, &vms.ResizeDiskRequestBody{
 						Disk: slot,
-						Size: *proxmoxtypes.DiskSizeFromGigabytes(desiredGB),
+						Size: *desiredSize,
 					})
 				}
 			}
@@ -878,6 +891,10 @@ func readDiskSlot(config *vms.GetResponseData, slot string, current DiskModel) D
 
 	if !dm.SizeGB.IsUnknown() && !dm.SizeGB.IsNull() && device.Size != nil {
 		dm.SizeGB = types.Int64Value(device.Size.InGigabytes())
+	}
+
+	if !dm.DiskSize.IsUnknown() && !dm.DiskSize.IsNull() && device.Size != nil {
+		dm.DiskSize = types.StringValue(device.Size.String())
 	}
 
 	if !dm.Format.IsUnknown() && !dm.Format.IsNull() && device.Format != nil {

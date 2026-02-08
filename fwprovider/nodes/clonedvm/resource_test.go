@@ -615,7 +615,7 @@ func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
 			disk = {
 				virtio0 = {
 					datastore_id = "local-lvm"
-					size_gb      = 32
+					disk_size    = "32G"
 				}
 			}
 		}
@@ -633,14 +633,14 @@ func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
 			disk = {
 				virtio0 = {
 					datastore_id = "local-lvm"
-					size_gb      = 64
+					disk_size    = "64G"
 					discard      = "on"
 					ssd          = true
 				}
 
 				scsi1 = {
 					datastore_id = "local-lvm"
-					size_gb      = 20
+					disk_size    = "20G"
 				}
 			}
 		}
@@ -658,7 +658,7 @@ func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
 			disk = {
 				virtio0 = {
 					datastore_id = "local-lvm"
-					size_gb      = 64
+					disk_size    = "64G"
 				}
 			}
 
