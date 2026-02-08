@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.95.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.94.0...v0.95.0) (2026-02-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **node:** correct `cpu_count` inconsistency between `_node` and `_nodes` data sources ([#2559](https://github.com/bpg/terraform-provider-proxmox/issues/2559))
+
+### Bug Fixes
+
+* **node:** correct `cpu_count` inconsistency between `_node` and `_nodes` data sources ([#2559](https://github.com/bpg/terraform-provider-proxmox/issues/2559)) ([c4d8d6b](https://github.com/bpg/terraform-provider-proxmox/commit/c4d8d6b17d7140fcd21e901a817d2688111dd6bf))
+* **vm:** correctly update hotpluggable devices ([#2556](https://github.com/bpg/terraform-provider-proxmox/issues/2556)) ([9d4155a](https://github.com/bpg/terraform-provider-proxmox/commit/9d4155aeafad16b31f728df30649c79879685e61))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/checkout action (v4.2.2 → v6.0.2) ([#2554](https://github.com/bpg/terraform-provider-proxmox/issues/2554)) ([9262783](https://github.com/bpg/terraform-provider-proxmox/commit/9262783b80d08a3bd40d81aeaa9d00a37ff02c32))
+* **ci:** update actions/checkout digest (8e8c483 → de0fac2) ([#2557](https://github.com/bpg/terraform-provider-proxmox/issues/2557)) ([db2bba1](https://github.com/bpg/terraform-provider-proxmox/commit/db2bba15922b54f28ed06efa4b5d84e41f2e0e13))
+* **deps:** update image golang (1.25.6 → 1.25.7) ([#2552](https://github.com/bpg/terraform-provider-proxmox/issues/2552)) ([d148eb0](https://github.com/bpg/terraform-provider-proxmox/commit/d148eb08d3a7fcc26ae02e59058f98e28181d7fe))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.38.1 → v2.38.2) ([#2553](https://github.com/bpg/terraform-provider-proxmox/issues/2553)) ([aa1b8ce](https://github.com/bpg/terraform-provider-proxmox/commit/aa1b8cea32ee5f8c86109f49654c5c8528ed49ca))
+* **dev:** update templates and define skills for LLM agent flows ([#2542](https://github.com/bpg/terraform-provider-proxmox/issues/2542)) ([615c670](https://github.com/bpg/terraform-provider-proxmox/commit/615c6705b20d8743ff81f440a89f55ed7a5728aa))
+* **docs:** add Architecture Decision Records for the dev process ([#2546](https://github.com/bpg/terraform-provider-proxmox/issues/2546)) ([97317f6](https://github.com/bpg/terraform-provider-proxmox/commit/97317f6ef11a02d13fbdeec447cc48c6f87cbafd))
+* **docs:** fix links in DEBUGGING.md ([8beb699](https://github.com/bpg/terraform-provider-proxmox/commit/8beb699d395d135283874852288335ecc633cdbd))
+
 ## [0.94.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.93.1...v0.94.0) (2026-02-02)
 
 
