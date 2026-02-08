@@ -69,11 +69,13 @@ For common issues during development, see [Development Troubleshooting](docs/gui
 
   The compiled binaries will be placed in the `dist` directory.
 
-- A portion of the documentation is generated from the source code. To update the documentation, run:
+- Documentation for **Framework** resources and data sources is auto-generated from schema definitions. To regenerate it, run:
 
   ```sh
   make docs
   ```
+
+  > **Note:** `make docs` does not affect SDK resource docs (`proxmoxtf/`), which are manually maintained in `docs/`.
 
 ## IDE support
 
@@ -221,7 +223,7 @@ Architecture decisions are documented in [docs/adr/](docs/adr/README.md).
 
 ### Documentation workflow
 
-Documentation for Framework resources is **auto-generated** from schema definitions:
+Documentation for **Framework** resources and data sources is **auto-generated** from schema definitions:
 
 1. **Write descriptive schema attributes** — Add `Description` and/or `MarkdownDescription` fields to your schema attributes. These become the docs.
 2. **Optional: Create a template** — For custom formatting, create a template in `/templates/resources/` or `/templates/data-sources/`.
@@ -230,6 +232,8 @@ Documentation for Framework resources is **auto-generated** from schema definiti
 
 > [!IMPORTANT]
 > Do **not** manually edit files in `/docs/` for Framework resources. Your changes will be overwritten by `make docs`. Edit schema descriptions or templates instead.
+
+Documentation for **SDK** resources (`proxmoxtf/`) is **manually maintained** — edit the `docs/` files directly. These are not affected by `make docs`.
 
 **Description vs MarkdownDescription:**
 
