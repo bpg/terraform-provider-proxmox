@@ -1580,6 +1580,160 @@ func TestAccResourceContainerMountPointVolumeReference(t *testing.T) {
 	})
 }
 
+// Test that start_on_boot and features are applied on cloned containers and can be updated.
+// See https://github.com/bpg/terraform-provider-proxmox/issues/794
+func TestAccResourceContainerCloneStartOnBoot(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDClone := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":        imageFileName,
+		"TestContainerID":      accTestContainerID,
+		"TestContainerIDClone": accTestContainerIDClone,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create a template and clone it with start_on_boot=true and features.nesting=true
+				Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				template  = true
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test"
+					ip_config {
+						ipv4 {
+						  address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+			resource "proxmox_virtual_environment_container" "test_container_clone" {
+				depends_on = [proxmox_virtual_environment_container.test_container]
+				node_name  = "{{.NodeName}}"
+				vm_id      = {{.TestContainerIDClone}}
+				start_on_boot = true
+
+				features {
+					nesting = true
+				}
+
+				clone {
+					vm_id = proxmox_virtual_environment_container.test_container.id
+				}
+
+				initialization {
+					hostname = "test-clone"
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_container_clone", map[string]string{
+						"start_on_boot":      "true",
+						"features.0.nesting": "true",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerIDClone)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						require.NotNil(te.t, ctInfo.StartOnBoot, "start_on_boot should not be nil")
+						require.True(te.t, bool(*ctInfo.StartOnBoot), "start_on_boot should be true in Proxmox")
+
+						require.NotNil(te.t, ctInfo.Features, "features should not be nil")
+						require.NotNil(te.t, ctInfo.Features.Nesting, "features.nesting should not be nil")
+						require.True(te.t, bool(*ctInfo.Features.Nesting), "features.nesting should be true in Proxmox")
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 2: Update start_on_boot to false
+				Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				template  = true
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test"
+					ip_config {
+						ipv4 {
+						  address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+			resource "proxmox_virtual_environment_container" "test_container_clone" {
+				depends_on = [proxmox_virtual_environment_container.test_container]
+				node_name  = "{{.NodeName}}"
+				vm_id      = {{.TestContainerIDClone}}
+				start_on_boot = false
+
+				features {
+					nesting = true
+				}
+
+				clone {
+					vm_id = proxmox_virtual_environment_container.test_container.id
+				}
+
+				initialization {
+					hostname = "test-clone"
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_container_clone", map[string]string{
+						"start_on_boot": "false",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerIDClone)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						// Proxmox may return nil for onboot when it's false (default), or explicitly false
+						if ctInfo.StartOnBoot != nil {
+							require.False(te.t, bool(*ctInfo.StartOnBoot), "start_on_boot should be false in Proxmox")
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
 	t.Helper()
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{

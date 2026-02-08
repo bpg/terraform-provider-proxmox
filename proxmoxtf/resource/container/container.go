@@ -1247,6 +1247,13 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 	startOnBoot := types.CustomBool(d.Get(mkStartOnBoot).(bool))
 	updateBody.StartOnBoot = &startOnBoot
 
+	features, err := containerGetFeatures(Container(), d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	updateBody.Features = features
+
 	protection := types.CustomBool(d.Get(mkProtection).(bool))
 	updateBody.Protection = &protection
 
@@ -3580,6 +3587,11 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	if d.HasChange(mkProtection) {
 		protection := types.CustomBool(d.Get(mkProtection).(bool))
 		updateBody.Protection = &protection
+	}
+
+	if d.HasChange(mkStartOnBoot) {
+		startOnBoot := types.CustomBool(d.Get(mkStartOnBoot).(bool))
+		updateBody.StartOnBoot = &startOnBoot
 	}
 
 	if d.HasChange(mkTags) {
