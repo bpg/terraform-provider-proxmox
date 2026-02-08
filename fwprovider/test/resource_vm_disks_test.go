@@ -1720,3 +1720,96 @@ func TestAccResourceVMDiskSpeedUpdate(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourceVMDiskResizeWithOptionChange tests that resizing a disk while also changing
+// disk options (cache, aio) does not revert the resize via pending changes.
+// The VM must be started with reboot_after_update=true to reproduce the bug: when running,
+// option changes create "pending" entries in Proxmox that include the old disk size,
+// and on reboot the pending change would revert the resize.
+// Regression test for https://github.com/bpg/terraform-provider-proxmox/issues/1909
+func TestAccResourceVMDiskResizeWithOptionChange(t *testing.T) {
+	te := InitEnvironment(t)
+
+	imageFileID := downloadCloudImage(t, te)
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create a running VM with disk using default cache/aio
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_resize_options" {
+					node_name           = "{{.NodeName}}"
+					started             = true
+					stop_on_destroy     = true
+					reboot_after_update = true
+					name                = "test-disk-resize-opts"
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "scsi0"
+						size         = 8
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_resize_options", map[string]string{
+					"disk.0.size":  "8",
+					"disk.0.cache": "none",
+					"disk.0.aio":   "io_uring",
+				}),
+			},
+			{
+				// Step 2: Resize the disk AND change cache/aio at the same time.
+				// Before the fix, the UpdateVM call would create a pending change with
+				// the old size (8), and after reboot the resize would be reverted.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_resize_options" {
+					node_name           = "{{.NodeName}}"
+					started             = true
+					stop_on_destroy     = true
+					reboot_after_update = true
+					name                = "test-disk-resize-opts"
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "scsi0"
+						size         = 16
+						cache        = "writeback"
+						aio          = "threads"
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_resize_options", map[string]string{
+					"disk.0.size":  "16",
+					"disk.0.cache": "writeback",
+					"disk.0.aio":   "threads",
+				}),
+			},
+			{
+				// Step 3: Refresh state to verify size persists after reboot
+				RefreshState: true,
+			},
+		},
+	})
+}
