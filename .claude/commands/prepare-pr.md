@@ -93,7 +93,7 @@ The PR title becomes the squash commit message on merge. It must follow conventi
 - **Scopes:** `vm`, `lxc`, `provider`, `core`, `docs`, `ci`
 - Lowercase description, no period at the end, under 72 characters
 - No issue numbers in the title
-- For breaking changes, add bang before colon: feat(vm)!: remove legacy clone
+- For breaking changes, add bang before colon, e.g. feat{scope}bang: description
 
 Infer type from branch prefix (`fix/` or `feat/`), scope from changed files, and description from the commit history and diff.
 
@@ -228,12 +228,12 @@ Keep all HTML comments from the template. Keep the Community Note section verbat
 
 ### Contributor's Note
 
-- [{LINT}] I have run `make lint` and fixed any issues.
-- [{DOCS}] I have updated documentation (FWK: schema descriptions + `make docs`; SDK: manual `/docs/` edits).
-- [{TESTS}] I have added / updated acceptance tests (**required** for new resources and bug fixes — see [ADR-006](docs/adr/006-testing-requirements.md)).
-- [{COMPAT}] I have considered backward compatibility (no breaking schema changes without `!` in PR title).
-- [{REFERENCE}] For new resources: I followed the [reference examples](docs/adr/reference-examples.md).
-- [{EXAMPLE}] I have run `make example` to verify the change works (mainly for SDK / provider config changes).
+- [{LINT}] I have run make lint and fixed any issues.
+- [{DOCS}] I have updated documentation — Framework: schema descriptions + make docs; SDK: manual docs/ edits.
+- [{TESTS}] I have added or updated acceptance tests as required — see docs/adr/006-testing-requirements.md.
+- [{COMPAT}] I have considered backward compatibility — no breaking schema changes without bang in PR title.
+- [{REFERENCE}] For new resources: I followed the reference examples in docs/adr/reference-examples.md.
+- [{EXAMPLE}] I have run make example to verify the change works — mainly for SDK / provider config changes.
 
 {BREAKING_CHANGES_SECTION_IF_APPLICABLE}
 
