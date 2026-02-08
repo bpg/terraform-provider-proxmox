@@ -6326,6 +6326,8 @@ func vmUpdateDiskLocationAndSize(
 
 	vmAPI := client.Node(nodeName).VM(vmID)
 
+	var diskResizeBodies []*vms.ResizeDiskRequestBody
+
 	// Determine if any of the disks are changing location and/or size, and initiate the necessary actions.
 	//nolint: nestif
 	if d.HasChange(disk.MkDisk) {
@@ -6403,8 +6405,6 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		var diskMoveBodies []*vms.MoveDiskRequestBody
-
-		var diskResizeBodies []*vms.ResizeDiskRequestBody
 
 		shutdownForDisksRequired := false
 
@@ -6511,13 +6511,6 @@ func vmUpdateDiskLocationAndSize(
 			}
 		}
 
-		for _, reqBody := range diskResizeBodies {
-			err = vmAPI.ResizeVMDisk(ctx, reqBody)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-		}
-
 		if shutdownForDisksRequired && started && !template {
 			if diags := vmStart(ctx, vmAPI, d); diags != nil {
 				return diags
@@ -6529,6 +6522,12 @@ func vmUpdateDiskLocationAndSize(
 	}
 
 	// Perform a regular reboot in case it's necessary and haven't already been done.
+	// This must happen BEFORE disk resize to avoid pending changes (from UpdateVM) reverting the
+	// resize. When disk options like cache/aio change on a running VM, Proxmox stores them as
+	// pending changes that include the current disk size. If we resize first and then reboot,
+	// the pending change overwrites the config with the old (pre-resize) size.
+	// By rebooting first, pending changes are applied (with the old size, which is still current),
+	// and then the resize sets the new size without any pending entry to conflict.
 	if reboot {
 		canReboot := d.Get(mkRebootAfterUpdate).(bool)
 		if !canReboot {
@@ -6564,6 +6563,15 @@ func vmUpdateDiskLocationAndSize(
 					return diags
 				}
 			}
+		}
+	}
+
+	// Resize disks AFTER reboot so that pending changes from UpdateVM (which may include the
+	// old disk size) are applied before the resize takes effect.
+	for _, reqBody := range diskResizeBodies {
+		err = vmAPI.ResizeVMDisk(ctx, reqBody)
+		if err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
