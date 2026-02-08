@@ -642,6 +642,45 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		{"timeout persistence across updates", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_timeout" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					cpu {
+						cores = 1
+					}
+
+					timeout_shutdown_vm = 60
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_timeout", map[string]string{
+						"timeout_shutdown_vm": "60",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_timeout" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					cpu {
+						cores = 2
+					}
+
+					timeout_shutdown_vm = 60
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_timeout", map[string]string{
+						"timeout_shutdown_vm": "60",
+						"cpu.0.cores":         "2",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
