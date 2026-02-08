@@ -121,7 +121,7 @@ func nodesRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnost
 		if v.CPUCount != nil {
 			cpuCount[i] = v.CPUCount
 		} else {
-			cpuCount[i] = 0
+			cpuCount[i] = 1
 		}
 
 		if v.CPUUtilization != nil {

@@ -39,7 +39,7 @@ output "data_proxmox_virtual_environment_node" {
 
 ### Read-Only
 
-- `cpu_cores` (Number) The number of physical CPU cores per socket on the node
+- `cpu_cores` (Number) The total number of physical CPU cores on the node
 - `cpu_count` (Number) The total number of logical CPUs on the node (sockets * cores * threads)
 - `cpu_model` (String) The CPU model on the node
 - `cpu_sockets` (Number) The number of CPU sockets on the node

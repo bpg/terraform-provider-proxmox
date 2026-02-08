@@ -34,7 +34,7 @@ func Node() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentNodeCPUCores: {
 				Type:        schema.TypeInt,
-				Description: "The number of physical CPU cores per socket on the node",
+				Description: "The total number of physical CPU cores on the node",
 				Computed:    true,
 			},
 			mkDataSourceVirtualEnvironmentNodeCPUCount: {
