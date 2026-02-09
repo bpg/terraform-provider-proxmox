@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	retry "github.com/avast/retry-go/v5"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -616,9 +617,32 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 
 	d.SetId(volID.String())
 
-	diags = append(diags, fileRead(ctx, d, m)...)
+	// Retry with backoff: distributed storage (Ceph) may not list the file immediately after upload.
+	errNotFound := errors.New("file not yet visible in datastore listing")
 
-	if d.Id() == "" {
+	err = retry.New(
+		retry.Context(ctx),
+		retry.Attempts(5),
+		retry.Delay(200*time.Millisecond),
+		retry.DelayType(retry.BackOffDelay),
+		retry.LastErrorOnly(true),
+		retry.OnRetry(func(n uint, err error) {
+			tflog.Warn(ctx, "file not yet visible in datastore listing after upload, retrying",
+				map[string]any{"attempt": n + 1})
+		}),
+	).Do(func() error {
+		diags = append(diags[:0], fileRead(ctx, d, m)...)
+		if diags.HasError() {
+			return nil // real error, stop retrying
+		}
+
+		if d.Id() == "" {
+			return errNotFound
+		}
+
+		return nil
+	})
+	if err != nil {
 		diags = append(diags, diag.Errorf("failed to read file from %q", volID.String())...)
 	}
 
