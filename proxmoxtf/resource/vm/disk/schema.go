@@ -140,8 +140,9 @@ func Schema() map[string]*schema.Schema {
 						ValidateDiagFunc: validators.FileID(),
 					},
 					mkDiskImportFrom: {
-						Type:             schema.TypeString,
-						Description:      "The file id of a disk image to import from storage.",
+						Type: schema.TypeString,
+						Description: "The file id of a disk image to import from storage." +
+							" Only used during initial creation; changes after creation are ignored.",
 						Optional:         true,
 						ForceNew:         false,
 						Default:          "",
