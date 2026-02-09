@@ -616,7 +616,27 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 
 	d.SetId(volID.String())
 
-	diags = append(diags, fileRead(ctx, d, m)...)
+	// Retry with backoff: distributed storage (Ceph) may not list the file immediately after upload.
+	retries := 5
+	for i := range retries {
+		diags = append(diags[:0], fileRead(ctx, d, m)...)
+
+		if d.Id() != "" || diags.HasError() {
+			break
+		}
+
+		if i < retries-1 {
+			delay := time.Duration(1<<i) * 200 * time.Millisecond // 200ms, 400ms, 800ms, 1.6s, ...
+			tflog.Warn(ctx, "file not yet visible in datastore listing after upload, retrying",
+				map[string]any{"delay": delay.String(), "attempt": i + 1})
+
+			select {
+			case <-ctx.Done():
+				return diag.FromErr(ctx.Err())
+			case <-time.After(delay):
+			}
+		}
+	}
 
 	if d.Id() == "" {
 		diags = append(diags, diag.Errorf("failed to read file from %q", volID.String())...)

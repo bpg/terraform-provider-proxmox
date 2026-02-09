@@ -476,7 +476,31 @@ func (r *downloadFileResource) Create(
 	plan.ID = types.StringValue(plan.Storage.ValueString() + ":" +
 		plan.ContentType.ValueString() + "/" + plan.FileName.ValueString())
 
-	err = r.read(ctx, &plan)
+	// Retry with backoff: distributed storage (Ceph) may not list the file immediately after download.
+	retries := 5
+	for i := range retries {
+		err = r.read(ctx, &plan)
+		if err == nil {
+			break
+		}
+
+		if i < retries-1 {
+			delay := time.Duration(1<<i) * 200 * time.Millisecond // 200ms, 400ms, 800ms, 1.6s, ...
+			tflog.Warn(ctx, "file not yet visible in datastore listing after download, retrying",
+				map[string]any{"delay": delay.String(), "attempt": i + 1})
+
+			select {
+			case <-ctx.Done():
+				resp.Diagnostics.AddError(
+					"Error when reading file from datastore", ctx.Err().Error(),
+				)
+
+				return
+			case <-time.After(delay):
+			}
+		}
+	}
+
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error when reading file from datastore", err.Error(),
