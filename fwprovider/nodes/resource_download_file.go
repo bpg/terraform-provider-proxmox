@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	retry "github.com/avast/retry-go/v5"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -477,30 +478,19 @@ func (r *downloadFileResource) Create(
 		plan.ContentType.ValueString() + "/" + plan.FileName.ValueString())
 
 	// Retry with backoff: distributed storage (Ceph) may not list the file immediately after download.
-	retries := 5
-	for i := range retries {
-		err = r.read(ctx, &plan)
-		if err == nil {
-			break
-		}
-
-		if i < retries-1 {
-			delay := time.Duration(1<<i) * 200 * time.Millisecond // 200ms, 400ms, 800ms, 1.6s, ...
+	err = retry.New(
+		retry.Context(ctx),
+		retry.Attempts(5),
+		retry.Delay(200*time.Millisecond),
+		retry.DelayType(retry.BackOffDelay),
+		retry.LastErrorOnly(true),
+		retry.OnRetry(func(n uint, err error) {
 			tflog.Warn(ctx, "file not yet visible in datastore listing after download, retrying",
-				map[string]any{"delay": delay.String(), "attempt": i + 1})
-
-			select {
-			case <-ctx.Done():
-				resp.Diagnostics.AddError(
-					"Error when reading file from datastore", ctx.Err().Error(),
-				)
-
-				return
-			case <-time.After(delay):
-			}
-		}
-	}
-
+				map[string]any{"attempt": n + 1})
+		}),
+	).Do(func() error {
+		return r.read(ctx, &plan)
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error when reading file from datastore", err.Error(),
