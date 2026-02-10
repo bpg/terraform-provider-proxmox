@@ -207,7 +207,7 @@ else
 fi
 ```
 
-The test output is saved to `/tmp/testacc.log` for use in `/prepare-pr`.
+The test output is saved to `/tmp/testacc.log` for use in `/bpg:prepare-pr`.
 
 **Result:**
 
@@ -236,7 +236,7 @@ AskUserQuestion(
 
 If "Yes":
 
-- Suggest: "Run `/debug-api {test_name}` to verify API calls"
+- Suggest: "Run `/bpg:debug-api {test_name}` to verify API calls"
 - Or run inline mitmproxy check (abbreviated version)
 
 If "No" or "Already done": Record as skipped/completed.
@@ -310,24 +310,18 @@ CHECKLIST INCOMPLETE
 
 Failed steps: ${FAILED_STEPS}
 
-Fix the issues above and run /ready again.
+Fix the issues above and run /bpg:ready again.
 ```
 
-**Update session state:**
+## Step 8: Update Session State
 
-Ensure `.dev/` directory exists:
+Detect issue number and update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read and Edit tools:
 
-```bash
-mkdir -p .dev
-```
-
-If `.dev/${ISSUE_NUM}_SESSION_STATE.md` exists, update it with:
-
-- Checklist results (which steps passed/failed)
-- Test log location (`/tmp/testacc.log`)
-- Timestamp of this run
-
-This allows `/prepare-pr` to pull results without re-running checks.
+- `Last Updated:` → current date
+- `Current state:` → checklist results summary (e.g., "All checks passed" or "Blocked on failing lint")
+- `Immediate next action:` → if all passed: "Prepare PR with `/bpg:prepare-pr`"; if failed: description of what to fix
+- Add/update a **Verification Results** section with the checklist table from Step 7
+- `Status:` → "Ready for PR" if all passed, keep "In Progress" if any failed
 
 </process>
 
@@ -350,6 +344,6 @@ This allows `/prepare-pr` to pull results without re-running checks.
 - If you're unsure which acceptance tests to run, look for tests matching the resource/datasource name
 - Schema changes = any modification to attribute definitions, validators, or type definitions
 - The checklist is designed to catch issues before PR review, saving time for everyone
-- Test output is saved to `/tmp/testacc.log` - this persists for `/prepare-pr` to use
-- If session state exists, update it with results so `/prepare-pr` can skip re-verification
+- Test output is saved to `/tmp/testacc.log` - this persists for `/bpg:prepare-pr` to use
+- If session state exists, update it with results so `/bpg:prepare-pr` can skip re-verification
 </tips>

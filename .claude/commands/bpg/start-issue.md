@@ -243,8 +243,17 @@ Labels: {LABELS}
 1. Review the full issue: gh issue view {ISSUE_NUM}
 2. Update session state as you work
 3. Create acceptance test BEFORE implementing fix
-4. Run /ready before completing work
+4. Run /bpg:ready before completing work
 ```
+
+## Step 7: Update Session State
+
+Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` with:
+
+- `Status:` → "In Progress"
+- `Last Updated:` → current date
+- `Current state:` → "Branch created, ready to implement"
+- `Immediate next action:` → "Create acceptance test that reproduces the issue"
 
 </process>
 
@@ -260,6 +269,7 @@ Labels: {LABELS}
 - [ ] Session state populated with issue context
 - [ ] Stale log files cleared
 - [ ] Issue context displayed to user
+- [ ] Session state updated with current status
 
 </success_criteria>
 
@@ -270,6 +280,6 @@ Labels: {LABELS}
 - Session state file is gitignored, so it won't be committed
 - Always create the acceptance test before implementing the fix
 - Stale `/tmp/testacc.log` and `/tmp/api_debug.log` are cleared to ensure clean slate
-- Use `/resume` to continue work if you need to come back later
+- Use `/bpg:resume` to continue work if you need to come back later
 
 </tips>

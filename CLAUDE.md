@@ -110,15 +110,15 @@ PROXMOX_VE_SSH_USERNAME="root"
 
 ### Production Readiness Checklist
 
-**Run `/ready` to execute automatically.**
+**Run `/bpg:ready` to execute automatically.**
 
 1. `make build` — Must pass
 2. `make lint` — Must show 0 issues
 3. `make test` — All unit tests pass
 4. `./testacc TestAccYourFeature` — Acceptance tests pass
-5. `/debug-api` — Verify API calls with mitmproxy
+5. `/bpg:debug-api` — Verify API calls with mitmproxy
 6. `make docs` — Regenerate Framework docs if schema changed
-7. `/prepare-pr` — Generate PR body from template
+7. `/bpg:prepare-pr` — Generate PR body from template
 
 ### Commit Guidelines
 
@@ -197,7 +197,7 @@ For long-running tasks:
 - **Checkpoint frequently** — Update session state after every successful test run
 - **Summarize completed work** — Don't keep raw exploration in context; distill findings
 - **Chunk large changes** — Break into atomic commits to create resume points
-- **Use `/resume`** — Start new sessions by loading session state, not from memory
+- **Use `/bpg:resume`** — Start new sessions by loading session state, not from memory
 
 ### Error Recovery
 
@@ -205,7 +205,7 @@ When things go wrong:
 
 - **Test failures** — Record in session state, add to "Hypotheses Tested", don't mark complete
 - **API errors** — Capture in mitmproxy log, document in session state
-- **Context loss** — Always resume from session state file using `/resume`
+- **Context loss** — Always resume from session state file using `/bpg:resume`
 - **Blocked work** — Update session status to "Blocked", document blocker, move to next task
 
 ### Session Handoff
@@ -213,8 +213,8 @@ When things go wrong:
 When handing off work:
 
 - **To another agent** — Ensure "Quick Context Restore" is complete and current
-- **To human** — Create PR using `/prepare-pr`, reference session state location
-- **From human** — Use `/resume`, ask about any "Unverified" assumptions
+- **To human** — Create PR using `/bpg:prepare-pr`, reference session state location
+- **From human** — Use `/bpg:resume`, ask about any "Unverified" assumptions
 
 ---
 
@@ -326,7 +326,7 @@ When fixing validation issues, update BOTH providers where applicable.
 
 - **VMs with `started = true`** need boot disk with cloud image; use `stop_on_destroy = true`
 - **Naming:** Descriptive names only, NO issue numbers
-- **API verification:** Use `/debug-api` for mitmproxy workflow
+- **API verification:** Use `/bpg:debug-api` for mitmproxy workflow
 
 ---
 
@@ -386,11 +386,11 @@ For multi-step work, maintain session state using [.dev/SESSION_STATE_TEMPLATE.m
 
 | Skill | Purpose |
 | ----- | ------- |
-| `/start-issue` | Start work on a GitHub issue (branch + session state) |
-| `/resume` | Resume work from a previous session |
-| `/ready` | Run production readiness checklist |
-| `/debug-api` | Debug API calls with mitmproxy |
-| `/prepare-pr` | Prepare PR body from template with proof of work |
+| `/bpg:start-issue` | Start work on a GitHub issue (branch + session state) |
+| `/bpg:resume` | Resume work from a previous session |
+| `/bpg:ready` | Run production readiness checklist |
+| `/bpg:debug-api` | Debug API calls with mitmproxy |
+| `/bpg:prepare-pr` | Prepare PR body from template with proof of work |
 
 See [.dev/README.md](.dev/README.md#working-with-llm-agents) for detailed workflow documentation and how skills connect together.
 

@@ -414,7 +414,7 @@ For AI agents working on this repository:
 
 - **[CLAUDE.md](CLAUDE.md)** — Development guidelines and critical rules
 - **[GEMINI.md](GEMINI.md)** — PR review instructions
-- **[.dev/README.md](.dev/README.md#working-with-llm-agents)** — Detailed workflow with skills (`/start-issue`, `/ready`, `/debug-api`, `/prepare-pr`, `/resume`)
+- **[.dev/README.md](.dev/README.md#working-with-llm-agents)** — Detailed workflow with skills (`/bpg:start-issue`, `/bpg:ready`, `/bpg:debug-api`, `/bpg:prepare-pr`, `/bpg:resume`)
 
 The skills automate common workflows like setting up branches, running checklists, and preparing PR submissions.
 

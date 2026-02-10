@@ -60,7 +60,7 @@ This section documents how to effectively use LLM agents (like Claude Code) for 
          │
          ▼
   ┌─────────────┐     Creates:
-  │/start-issue │────→ • Branch: fix/1234-description
+  │/bpg:start-issue │────→ • Branch: fix/1234-description
   └──────┬──────┘      • Session state: .dev/1234_SESSION_STATE.md
          │             • Clears stale logs
          │
@@ -72,19 +72,19 @@ This section documents how to effectively use LLM agents (like Claude Code) for 
   └──────┬──────┘
          │
          │ ┌─────────────┐
-         ├─┤ /debug-api  │  ← Use during development to verify
+         ├─┤ /bpg:debug-api  │  ← Use during development to verify
          │ └─────────────┘    API calls are correct
          │
          ▼
   ┌─────────────┐     Runs:
-  │   /ready    │────→ • make build, lint, test
+  │   /bpg:ready    │────→ • make build, lint, test
   └──────┬──────┘      • Acceptance tests (with logging)
          │             • API verification prompt
          │             • Documentation check
          │
          ▼
   ┌─────────────┐     Creates:
-  │/prepare-pr  │────→ • .dev/1234_PR_BODY.md
+  │/bpg:prepare-pr  │────→ • .dev/1234_PR_BODY.md
   └──────┬──────┘      • Filled PR template with proof of work
          │
          ▼
@@ -98,7 +98,7 @@ This section documents how to effectively use LLM agents (like Claude Code) for 
   RESUMING WORK (after break, context loss, or new session):
 
   ┌─────────────┐     Loads:
-  │  /resume    │────→ • Session state context
+  │  /bpg:resume    │────→ • Session state context
   └──────┬──────┘      • Git state verification
          │             • Existing log files
          │             • Immediate next action
@@ -108,7 +108,7 @@ This section documents how to effectively use LLM agents (like Claude Code) for 
 
 ### Skills Reference
 
-#### `/start-issue [issue-number]`
+#### `/bpg:start-issue [issue-number]`
 
 **When to use:** Beginning work on any GitHub issue.
 
@@ -124,11 +124,11 @@ This section documents how to effectively use LLM agents (like Claude Code) for 
 **Example:**
 
 ```text
-You: /start-issue 1234
+You: /bpg:start-issue 1234
 Agent: Creates fix/1234-vm-clone-timeout branch, session state, displays issue summary
 ```
 
-#### `/resume [issue-number]`
+#### `/bpg:resume [issue-number]`
 
 **When to use:**
 
@@ -147,11 +147,11 @@ Agent: Creates fix/1234-vm-clone-timeout branch, session state, displays issue s
 **Example:**
 
 ```text
-You: /resume
+You: /bpg:resume
 Agent: Shows available sessions, loads context, displays "Immediate Next Action: Verify test passes after fix"
 ```
 
-#### `/debug-api [TestName] [parameter]`
+#### `/bpg:debug-api [TestName] [parameter]`
 
 **When to use:**
 
@@ -171,13 +171,13 @@ Agent: Shows available sessions, loads context, displays "Immediate Next Action:
 **Example:**
 
 ```text
-You: /debug-api TestAccResourceVM content
+You: /bpg:debug-api TestAccResourceVM content
 Agent: Starts proxy, runs test, shows API calls containing "content" parameter
 ```
 
 **Key insight:** Tests passing ≠ correct API calls. Always verify with mitmproxy for API changes.
 
-#### `/ready [TestName]`
+#### `/bpg:ready [TestName]`
 
 **When to use:**
 
@@ -198,15 +198,15 @@ Agent: Starts proxy, runs test, shows API calls containing "content" parameter
 **Example:**
 
 ```text
-You: /ready TestAccResourceVMClone
-Agent: Runs all checks, reports status, suggests /prepare-pr if all pass
+You: /bpg:ready TestAccResourceVMClone
+Agent: Runs all checks, reports status, suggests /bpg:prepare-pr if all pass
 ```
 
-#### `/prepare-pr [issue-number]`
+#### `/bpg:prepare-pr [issue-number]`
 
 **When to use:**
 
-- After `/ready` passes all checks
+- After `/bpg:ready` passes all checks
 - Before submitting a PR
 
 **What it does:**
@@ -223,7 +223,7 @@ Agent: Runs all checks, reports status, suggests /prepare-pr if all pass
 **Example:**
 
 ```text
-You: /prepare-pr 1234
+You: /bpg:prepare-pr 1234
 Agent: Creates .dev/1234_PR_BODY.md, provides gh pr create command
 ```
 
@@ -232,18 +232,18 @@ Agent: Creates .dev/1234_PR_BODY.md, provides gh pr create command
 #### Scenario 1: Fix a Bug
 
 ```text
-1. /start-issue 1234           ← Setup branch and session
+1. /bpg:start-issue 1234           ← Setup branch and session
 2. [Investigate and implement fix]
-3. /debug-api TestAccBugFix    ← Verify API calls
-4. /ready TestAccBugFix        ← Run full checklist
-5. /prepare-pr 1234            ← Generate PR body
+3. /bpg:debug-api TestAccBugFix    ← Verify API calls
+4. /bpg:ready TestAccBugFix        ← Run full checklist
+5. /bpg:prepare-pr 1234            ← Generate PR body
 6. gh pr create --body-file .dev/1234_PR_BODY.md
 ```
 
 #### Scenario 2: Resume After Break
 
 ```text
-1. /resume 1234                ← Load context
+1. /bpg:resume 1234                ← Load context
 2. [Agent shows: "Next action: Run tests after implementing fix"]
 3. [Continue from where you left off]
 ```
@@ -255,16 +255,16 @@ When the agent's context fills up during long work:
 ```text
 1. Agent updates session state before context loss
 2. [New conversation]
-3. /resume 1234                ← Restore full context
+3. /bpg:resume 1234                ← Restore full context
 4. [Continue seamlessly]
 ```
 
 #### Scenario 4: Multiple Issues
 
 ```text
-1. /start-issue 1234           ← Work on first issue
-2. [Complete work, /ready, /prepare-pr]
-3. /start-issue 5678           ← Start second issue (clears logs)
+1. /bpg:start-issue 1234           ← Work on first issue
+2. [Complete work, /bpg:ready, /bpg:prepare-pr]
+3. /bpg:start-issue 5678           ← Start second issue (clears logs)
 4. [Work on second issue]
 ```
 
@@ -274,29 +274,29 @@ The skills share state through files:
 
 | File | Written By | Read By |
 | ---- | ---------- | ------- |
-| `.dev/{issue}_SESSION_STATE.md` | `/start-issue`, all skills update | `/resume`, `/ready`, `/prepare-pr` |
-| `/tmp/testacc.log` | `/ready`, `/debug-api` | `/prepare-pr`, `/resume` |
-| `/tmp/api_debug.log` | `/debug-api` | `/prepare-pr`, `/resume` |
+| `.dev/{issue}_SESSION_STATE.md` | `/bpg:start-issue`, all skills update | `/bpg:resume`, `/bpg:ready`, `/bpg:prepare-pr` |
+| `/tmp/testacc.log` | `/bpg:ready`, `/bpg:debug-api` | `/bpg:prepare-pr`, `/bpg:resume` |
+| `/tmp/api_debug.log` | `/bpg:debug-api` | `/bpg:prepare-pr`, `/bpg:resume` |
 
 This allows:
 
-- `/prepare-pr` to use test results from `/ready` without re-running
-- `/resume` to note existing logs from previous runs
+- `/bpg:prepare-pr` to use test results from `/bpg:ready` without re-running
+- `/bpg:resume` to note existing logs from previous runs
 - Session state to accumulate context across the workflow
 
 ### Tips for Effective Agent-Assisted Development
 
-1. **Always start with `/start-issue`** — Sets up proper branch naming and session tracking
+1. **Always start with `/bpg:start-issue`** — Sets up proper branch naming and session tracking
 
 2. **Update session state frequently** — The agent will do this, but remind it before long operations
 
-3. **Use `/debug-api` liberally** — API verification catches bugs that tests miss
+3. **Use `/bpg:debug-api` liberally** — API verification catches bugs that tests miss
 
-4. **Don't skip `/ready`** — The checklist exists because each item has caught real bugs
+4. **Don't skip `/bpg:ready`** — The checklist exists because each item has caught real bugs
 
-5. **Use `/prepare-pr`** — Generates PR body with proof of work, ready for `gh pr create`
+5. **Use `/bpg:prepare-pr`** — Generates PR body with proof of work, ready for `gh pr create`
 
-6. **Resume, don't restart** — After breaks, use `/resume` instead of re-explaining context
+6. **Resume, don't restart** — After breaks, use `/bpg:resume` instead of re-explaining context
 
 7. **Trust but verify** — Review the agent's work, especially for complex logic
 
