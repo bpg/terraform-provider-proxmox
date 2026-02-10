@@ -4,6 +4,7 @@ description: Resume work from a previous session
 argument-hint: \[issue-number\]
 allowed-tools:
   - Read
+  - Edit
   - Bash
   - Grep
   - Glob
@@ -40,7 +41,7 @@ Session files location: `.dev/*_SESSION_STATE.md`
 ```bash
 if [ ! -d ".dev" ]; then
   echo "No .dev/ directory found. No sessions to resume."
-  echo "To start work on an issue, use: /start-issue <issue-number>"
+  echo "To start work on an issue, use: /bpg:start-issue <issue-number>"
   exit 0
 fi
 ```
@@ -69,7 +70,7 @@ If no session files found:
 ```text
 No active session state files found.
 
-To start work on an issue, use: /start-issue <issue-number>
+To start work on an issue, use: /bpg:start-issue <issue-number>
 ```
 
 ## Step 2: Select Session
@@ -188,7 +189,7 @@ Session file: .dev/{ISSUE_NUM}_SESSION_STATE.md
 [ -f /tmp/api_debug.log ] && echo "Found API debug log: /tmp/api_debug.log"
 ```
 
-These logs may contain useful output from previous `/ready` or `/debug-api` runs.
+These logs may contain useful output from previous `/bpg:ready` or `/bpg:debug-api` runs.
 
 ## Step 6: Offer Actions
 
@@ -208,6 +209,13 @@ If "Continue work": Begin working on the immediate next action from the session 
 If "View full session": Display the entire session state file.
 If "Check issue": Run `gh issue view {ISSUE_NUM}` to see any updates.
 
+## Step 7: Update Session State
+
+Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read and Edit tools:
+
+- `Last Updated:` → current date
+- Note session was resumed (append to context or current state)
+
 </process>
 
 <success_criteria>
@@ -220,6 +228,7 @@ If "Check issue": Run `gh issue view {ISSUE_NUM}` to see any updates.
 - [ ] Existing log files noted
 - [ ] Immediate next action shown
 - [ ] Ready to continue work
+- [ ] Session state updated with resume timestamp
 
 </success_criteria>
 

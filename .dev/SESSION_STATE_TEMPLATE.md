@@ -221,7 +221,7 @@ POST /api2/json/path             OK
 
 ## Quick Start Commands
 
-> **Using an LLM agent?** Run `/resume` to automatically load this session state.
+> **Using an LLM agent?** Run `/bpg:resume` to automatically load this session state.
 
 ```bash
 # Resume work (manual)
@@ -246,16 +246,16 @@ make docs  # if schema changed
 
 ## Verification Checklist
 
-Before marking complete (or run `/ready` to automate):
+Before marking complete (or run `/bpg:ready` to automate):
 
 - [ ] GitHub issue exists and is referenced
 - [ ] All acceptance tests pass
-- [ ] Mitmproxy verification done (use `/debug-api`)
+- [ ] Mitmproxy verification done (use `/bpg:debug-api`)
 - [ ] `make lint` passes
 - [ ] `make docs` run (if schema changed)
 - [ ] No secrets in files
 - [ ] Session state file excluded from commit
-- [ ] PR body prepared: `.dev/NUMBER_PR_BODY.md` (use `/prepare-pr`)
+- [ ] PR body prepared: `.dev/NUMBER_PR_BODY.md` (use `/bpg:prepare-pr`)
 
 ---
 

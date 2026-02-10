@@ -2,7 +2,7 @@
 
 This guide covers debugging techniques for developing and testing the Terraform Proxmox Provider.
 
-> **Using an LLM agent?** The `/debug-api` skill automates most of this workflow. See [README.md](README.md#working-with-llm-agents) for details.
+> **Using an LLM agent?** The `/bpg:debug-api` skill automates most of this workflow. See [README.md](README.md#working-with-llm-agents) for details.
 
 ## Using Mitmproxy to Debug API Calls
 

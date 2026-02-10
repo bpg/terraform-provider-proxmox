@@ -4,6 +4,7 @@ description: Debug Proxmox API calls using mitmproxy to verify parameters are se
 argument-hint: \[TestName\] \[param-to-verify\]
 allowed-tools:
   - Read
+  - Edit
   - Bash
   - Grep
   - Glob
@@ -228,6 +229,20 @@ cat /tmp/api_debug.log
 
 If "Run another test": Loop back to Step 2.
 
+## Step 10: Update Session State
+
+Detect issue number from branch and update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read and Edit tools:
+
+```bash
+ISSUE_NUM=$(git branch --show-current | grep -oE '(fix|feat)/[0-9]+' | grep -oE '[0-9]+')
+```
+
+Update:
+
+- `Last Updated:` → current date
+- `Current state:` → "API verification complete" with summary of findings
+- Add/update an **API Verification** entry noting: test run, parameter checked, result (verified/not found/errors)
+
 </process>
 
 <success_criteria>
@@ -239,6 +254,7 @@ If "Run another test": Loop back to Step 2.
 - [ ] API traffic analyzed
 - [ ] Parameter presence verified (if specified)
 - [ ] Findings presented to user
+- [ ] Session state updated with API verification results
 </success_criteria>
 
 <tips>

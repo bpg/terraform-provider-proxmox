@@ -17,7 +17,7 @@ Generate a filled-out PR body based on `.github/PULL_REQUEST_TEMPLATE.md` and sa
 Use this skill when:
 
 - Preparing to submit a PR
-- After running `/ready` checklist
+- After running `/bpg:ready` checklist
 - User asks to "prepare PR" or "create PR body"
 
 The output file can be used directly with `gh pr create --body-file`.
@@ -274,7 +274,14 @@ To preview:
 
 Ask if the user wants to view the generated body.
 
-</process>
+## Step 11: Update Session State
+
+Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read and Edit tools:
+
+- `Last Updated:` → current date
+- `Status:` → "PR Prepared"
+- `Current state:` → "PR body generated, ready to create PR"
+- `Immediate next action:` → "Create PR with `gh pr create --title '${PR_TITLE}' --body-file .dev/${ISSUE_NUM}_PR_BODY.md`"
 
 <success_criteria>
 
@@ -288,10 +295,11 @@ Ask if the user wants to view the generated body.
 - [ ] Breaking changes section included if applicable
 - [ ] PR body written to `.dev/{ISSUE}_PR_BODY.md` with title on first line
 - [ ] PR creation command provided to user (with `--title` and `--body-file`)
+- [ ] Session state updated with PR preparation status
 </success_criteria>
 
 <tips>
-- Run `/ready` first to ensure all checks pass and test output is captured
+- Run `/bpg:ready` first to ensure all checks pass and test output is captured
 - The proof of work section is what reviewers check first — make it thorough
 - Keep test output trimmed: RUN/PASS/FAIL lines + summary, not full terraform noise
 - The output file works directly with `gh pr create --body-file`
