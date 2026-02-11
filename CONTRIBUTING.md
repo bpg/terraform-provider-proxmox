@@ -137,6 +137,7 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
    PROXMOX_VE_ACC_NODE_SSH_ADDRESS="10.0.0.11"
    PROXMOX_VE_ACC_NODE_SSH_PORT="22"
    PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
+   PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
    ```
 
 #### Running acceptance tests

@@ -53,6 +53,8 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_metrics_server.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_node.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_nodes.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_replication.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_replications.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_subnet.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_vnet.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_vnets.md ./docs/data-sources/
@@ -85,6 +87,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_pool_membership.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_realm_ldap.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_realm_sync.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_replication.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_applier.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_subnet.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_vnet.md ./docs/resources/
