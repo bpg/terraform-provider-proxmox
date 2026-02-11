@@ -41,10 +41,12 @@ import (
 
 // Environment is a test environment for acceptance tests.
 type Environment struct {
-	t            *testing.T
-	templateVars map[string]any
-	NodeName     string
-	DatastoreID  string
+	t              *testing.T
+	templateVars   map[string]any
+	NodeName       string
+	Node2Name      string
+	DatastoreID    string
+	ZfsDatastoreID string
 
 	AccProviders          map[string]func() (tfprotov6.ProviderServer, error)
 	once                  sync.Once
@@ -148,7 +150,11 @@ func InitEnvironment(t *testing.T) *Environment {
 		nodeName = "pve"
 	}
 
+	node2Name := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NODE_2_NAME")
+
 	const datastoreID = "local"
+
+	zfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_ZFS_DATASTORE_ID")
 
 	cloudImagesServer := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CLOUD_IMAGES_SERVER")
 	if cloudImagesServer == "" {
@@ -164,13 +170,17 @@ func InitEnvironment(t *testing.T) *Environment {
 		t: t,
 		templateVars: map[string]any{
 			"NodeName":              nodeName,
+			"Node2Name":             node2Name,
 			"DatastoreID":           datastoreID,
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
 			"TestName":              sanitizeTemplateName(t.Name()),
+			"ZfsDatastoreID":        zfsDatastoreID,
 		},
 		NodeName:              nodeName,
+		Node2Name:             node2Name,
 		DatastoreID:           datastoreID,
+		ZfsDatastoreID:        zfsDatastoreID,
 		CloudImagesServer:     cloudImagesServer,
 		ContainerImagesServer: containerImagesServer,
 
