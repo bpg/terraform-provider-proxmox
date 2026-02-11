@@ -151,6 +151,17 @@ type CustomPassthroughDevice struct {
 	Mode      *string           `json:"mode,omitempty"       url:"mode,omitempty"`
 }
 
+// CustomIDMaps represents UID/GID mapping entries for unprivileged containers.
+type CustomIDMaps []CustomIDMapEntry
+
+// CustomIDMapEntry represents a single lxc.idmap entry with typed fields.
+type CustomIDMapEntry struct {
+	Type        string // "uid" or "gid"
+	ContainerID int    // ID in the container namespace
+	HostID      int    // ID in the host namespace
+	Size        int    // Number of IDs to map
+}
+
 // CustomNetworkInterfaces is a map of CustomNetworkInterface per network interface ID (i.e. `net0`).
 type CustomNetworkInterfaces map[string]*CustomNetworkInterface
 
@@ -210,7 +221,7 @@ type GetResponseData struct {
 	HookScript           *string                     `json:"hookscript,omitempty"`
 	Hostname             *string                     `json:"hostname,omitempty"`
 	Lock                 *types.CustomBool           `json:"lock,omitempty"`
-	LXCConfiguration     *[][2]string                `json:"lxc,omitempty"`
+	IDMaps               CustomIDMaps                `json:"lxc,omitempty"`
 	MountPoints          CustomMountPoints           `json:"mp,omitempty"`
 	PassthroughDevices   CustomPassthroughDevices    `json:"dev,omitempty"`
 	NetworkInterfaces    CustomNetworkInterfaces     `json:"net,omitempty"`
@@ -384,6 +395,65 @@ func (r CustomPassthroughDevices) EncodeValues(
 		if err := d.EncodeValues(key, v); err != nil {
 			return fmt.Errorf("failed to encode CustomPassthroughDevices: %w", err)
 		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON parses the API response [][2]string format, extracting only lxc.idmap entries.
+func (r *CustomIDMaps) UnmarshalJSON(b []byte) error {
+	var raw [][2]string
+
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return fmt.Errorf("unable to unmarshal CustomIDMaps: %w", err)
+	}
+
+	for _, pair := range raw {
+		if pair[0] != "lxc.idmap" {
+			continue
+		}
+
+		value := pair[1]
+
+		fields := strings.Fields(value)
+		if len(fields) != 4 {
+			return fmt.Errorf("unable to parse idmap value %q: expected 4 fields, got %d", value, len(fields))
+		}
+
+		typeChar := fields[0]
+
+		containerID, err := strconv.Atoi(fields[1])
+		if err != nil {
+			return fmt.Errorf("unable to parse container_id in idmap value %q: %w", value, err)
+		}
+
+		hostID, err := strconv.Atoi(fields[2])
+		if err != nil {
+			return fmt.Errorf("unable to parse host_id in idmap value %q: %w", value, err)
+		}
+
+		size, err := strconv.Atoi(fields[3])
+		if err != nil {
+			return fmt.Errorf("unable to parse size in idmap value %q: %w", value, err)
+		}
+
+		var idType string
+
+		switch typeChar {
+		case "u":
+			idType = "uid"
+		case "g":
+			idType = "gid"
+		default:
+			return fmt.Errorf("unknown idmap type %q in value %q", typeChar, value)
+		}
+
+		*r = append(*r, CustomIDMapEntry{
+			Type:        idType,
+			ContainerID: containerID,
+			HostID:      hostID,
+			Size:        size,
+		})
 	}
 
 	return nil

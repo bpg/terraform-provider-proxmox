@@ -23,9 +23,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
@@ -162,6 +164,11 @@ const (
 	mkDevicePassthroughUID              = "uid"
 	mkDevicePassthroughGID              = "gid"
 	mkDevicePassthroughMode             = "mode"
+	mkIDMap                             = "idmap"
+	mkIDMapType                         = "type"
+	mkIDMapContainerID                  = "container_id"
+	mkIDMapHostID                       = "host_id"
+	mkIDMapSize                         = "size"
 	mkNetworkInterface                  = "network_interface"
 	mkNetworkInterfaceBridge            = "bridge"
 	mkNetworkInterfaceEnabled           = "enabled"
@@ -770,6 +777,39 @@ func Container() *schema.Resource {
 				},
 				MaxItems: maxMountPoints,
 				MinItems: 0,
+			},
+			mkIDMap: {
+				Type:        schema.TypeList,
+				Description: "UID/GID mapping for unprivileged containers",
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkIDMapType: {
+							Type:             schema.TypeString,
+							Description:      "Mapping type (uid or gid)",
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"uid", "gid"}, false)),
+						},
+						mkIDMapContainerID: {
+							Type:             schema.TypeInt,
+							Description:      "Starting ID in the container namespace",
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+						},
+						mkIDMapHostID: {
+							Type:             schema.TypeInt,
+							Description:      "Starting ID in the host namespace",
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+						},
+						mkIDMapSize: {
+							Type:             schema.TypeInt,
+							Description:      "Number of IDs to map",
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
+						},
+					},
+				},
 			},
 			mkDevicePassthrough: {
 				Type:        schema.TypeList,
@@ -1453,6 +1493,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 
 	updateBody.PassthroughDevices = passthroughDevices
 
+	idmaps := containerGetIDMaps(d.Get(mkIDMap).([]any))
+
 	networkInterface := d.Get(mkNetworkInterface).([]any)
 
 	if len(networkInterface) == 0 {
@@ -1578,6 +1620,13 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 	err = containerAPI.UpdateContainer(ctx, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// Apply idmap configuration via SSH (the API does not support lxc[n] parameters).
+	if len(idmaps) > 0 {
+		if err := containerSetIDMaps(ctx, client, nodeName, vmID, idmaps); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Wait for the container's lock to be released.
@@ -1989,6 +2038,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		passthroughDevices[fmt.Sprintf("dev%d", di)] = &devicePassthroughObject
 	}
 
+	idmaps := containerGetIDMaps(d.Get(mkIDMap).([]any))
+
 	operatingSystem := d.Get(mkOperatingSystem).([]any)
 
 	if len(operatingSystem) == 0 || operatingSystem[0] == nil {
@@ -2085,6 +2136,13 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 	}
 
 	d.SetId(strconv.Itoa(vmID))
+
+	// Apply idmap configuration via SSH (the API does not support lxc[n] parameters).
+	if len(idmaps) > 0 {
+		if err := containerSetIDMaps(ctx, client, nodeName, vmID, idmaps); err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	return containerCreateStart(ctx, d, m)
 }
@@ -2345,6 +2403,56 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 	}
 
 	return &features, nil
+}
+
+func containerGetIDMaps(list []any) containers.CustomIDMaps {
+	idmaps := make(containers.CustomIDMaps, len(list))
+
+	for i, entry := range list {
+		entryMap := entry.(map[string]any)
+		idmaps[i] = containers.CustomIDMapEntry{
+			Type:        entryMap[mkIDMapType].(string),
+			ContainerID: entryMap[mkIDMapContainerID].(int),
+			HostID:      entryMap[mkIDMapHostID].(int),
+			Size:        entryMap[mkIDMapSize].(int),
+		}
+	}
+
+	return idmaps
+}
+
+func containerSetIDMaps(
+	ctx context.Context,
+	client proxmox.Client,
+	nodeName string,
+	vmID int,
+	idmaps containers.CustomIDMaps,
+) error {
+	configFile := fmt.Sprintf("/etc/pve/lxc/%d.conf", vmID)
+
+	commands := make([]string, 0, 3+len(idmaps))
+	commands = append(commands,
+		`set -e`,
+		ssh.TrySudo,
+		fmt.Sprintf(`try_sudo sed -i '/^lxc\.idmap:/d' %s`, configFile),
+	)
+
+	for _, entry := range idmaps {
+		typeChar := "u"
+		if entry.Type == "gid" {
+			typeChar = "g"
+		}
+
+		line := fmt.Sprintf("lxc.idmap: %s %d %d %d", typeChar, entry.ContainerID, entry.HostID, entry.Size)
+		commands = append(commands, fmt.Sprintf(`echo '%s' | try_sudo tee -a %s > /dev/null`, line, configFile))
+	}
+
+	_, err := client.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
+	if err != nil {
+		return fmt.Errorf("setting idmap entries via SSH: %w", err)
+	}
+
+	return nil
 }
 
 func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -2654,6 +2762,19 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		err := d.Set(mkDevicePassthrough, passthroughDevices)
 		diags = append(diags, diag.FromErr(err)...)
 	}
+
+	idmapList := make([]map[string]any, len(containerConfig.IDMaps))
+	for i, entry := range containerConfig.IDMaps {
+		idmapList[i] = map[string]any{
+			mkIDMapType:        entry.Type,
+			mkIDMapContainerID: entry.ContainerID,
+			mkIDMapHostID:      entry.HostID,
+			mkIDMapSize:        entry.Size,
+		}
+	}
+
+	err := d.Set(mkIDMap, idmapList)
+	diags = append(diags, diag.FromErr(err)...)
 
 	mountPointsMap := make(map[string]any, len(containerConfig.MountPoints))
 
@@ -3448,6 +3569,18 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		rebootRequired = true
 	}
 
+	// Prepare the new idmap configuration via SSH (the API does not support lxc[n] parameters).
+	if d.HasChange(mkIDMap) {
+		_, newIDMap := d.GetChange(mkIDMap)
+		idmaps := containerGetIDMaps(newIDMap.([]any))
+
+		if err := containerSetIDMaps(ctx, client, nodeName, vmID, idmaps); err != nil {
+			return diag.FromErr(err)
+		}
+
+		rebootRequired = true
+	}
+
 	// Prepare the new mount point configuration.
 	if d.HasChange(mkMountPoint) {
 		_, newMountPoints := d.GetChange(mkMountPoint)
@@ -3600,9 +3733,11 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	// Update the configuration now that everything has been prepared.
-	e = containerAPI.UpdateContainer(ctx, &updateBody)
-	if e != nil {
-		return diag.FromErr(e)
+	if len(updateBody.Delete) > 0 || d.HasChangesExcept(mkIDMap) {
+		e = containerAPI.UpdateContainer(ctx, &updateBody)
+		if e != nil {
+			return diag.FromErr(e)
+		}
 	}
 
 	// Wait for the container's lock to be released.

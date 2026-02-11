@@ -41,6 +41,7 @@ func TestContainerSchema(t *testing.T) {
 		mkDescription,
 		mkDisk,
 		mkEnvironmentVariables,
+		mkIDMap,
 		mkInitialization,
 		mkHookScriptFileID,
 		mkMemory,
@@ -63,6 +64,7 @@ func TestContainerSchema(t *testing.T) {
 		mkDescription:          schema.TypeString,
 		mkDisk:                 schema.TypeList,
 		mkEnvironmentVariables: schema.TypeMap,
+		mkIDMap:                schema.TypeList,
 		mkInitialization:       schema.TypeList,
 		mkHookScriptFileID:     schema.TypeString,
 		mkMemory:               schema.TypeList,
@@ -248,6 +250,22 @@ func TestContainerSchema(t *testing.T) {
 	test.AssertValueTypes(t, memorySchema, map[string]schema.ValueType{
 		mkMemoryDedicated: schema.TypeInt,
 		mkMemorySwap:      schema.TypeInt,
+	})
+
+	idmapSchema := test.AssertNestedSchemaExistence(t, s, mkIDMap)
+
+	test.AssertRequiredArguments(t, idmapSchema, []string{
+		mkIDMapType,
+		mkIDMapContainerID,
+		mkIDMapHostID,
+		mkIDMapSize,
+	})
+
+	test.AssertValueTypes(t, idmapSchema, map[string]schema.ValueType{
+		mkIDMapType:        schema.TypeString,
+		mkIDMapContainerID: schema.TypeInt,
+		mkIDMapHostID:      schema.TypeInt,
+		mkIDMapSize:        schema.TypeInt,
 	})
 
 	devicePassthroughSchema := test.AssertNestedSchemaExistence(t, s, mkDevicePassthrough)

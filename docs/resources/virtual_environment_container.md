@@ -206,6 +206,14 @@ output "ubuntu_container_public_key" {
         container.
     - `path_in_datastore` (Computed) The in-datastore path to the mount point volume.
         Use this attribute for cross-resource references instead of `volume`.
+- `idmap` - (Optional) UID/GID mapping for unprivileged containers (multiple
+    blocks supported). These are written as `lxc.idmap` entries in the container
+    configuration file via SSH, since the Proxmox API does not support writing
+    `lxc[n]` parameters.
+    - `type` - (Required) Mapping type (`uid` or `gid`).
+    - `container_id` - (Required) Starting ID in the container namespace.
+    - `host_id` - (Required) Starting ID in the host namespace.
+    - `size` - (Required) Number of IDs to map (must be at least `1`).
 - `device_passthrough` - (Optional) Device to pass through to the container (multiple blocks supported).
     - `deny_write` - (Optional) Deny the container to write to the device (defaults to `false`).
     - `gid` - (Optional) Group ID to be assigned to the device node.
