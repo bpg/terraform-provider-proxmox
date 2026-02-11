@@ -1710,6 +1710,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "TheR1D",
+      "name": "Farkhod Sadykov",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16740832?v=4",
+      "profile": "http://sadykov.dev",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
