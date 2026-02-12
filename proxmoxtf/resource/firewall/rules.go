@@ -379,27 +379,31 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 
 // RulesUpdate updates rules.
 func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
-	diags := diag.Diagnostics{}
+	var diags diag.Diagnostics
 
 	oldRules, newRules := d.GetChange(MkRule)
-
 	oldRulesList := oldRules.([]any)
 	newRulesList := newRules.([]any)
 
-	if len(oldRulesList) < len(newRulesList) {
-		// create new rules
-		rulesToCreate := newRulesList[len(oldRulesList):]
+	// build signature maps to identify which rules are new, existing, or removed
+	oldSigToPos := make(map[string]int)             // signature -> position
+	oldSigToRule := make(map[string]map[string]any) // signature -> rule map
+	newSigs := make(map[string]bool)                // used to check for necessary deletion of rules
 
-		maxPos := -1
+	for _, rule := range oldRulesList {
+		ruleMap := rule.(map[string]any)
+		sig := computeRuleSignature(rule)
+		oldSigToPos[sig] = ruleMap[mkRulePos].(int)
+		oldSigToRule[sig] = ruleMap
+	}
 
-		for _, rule := range oldRulesList {
-			ruleMap := rule.(map[string]any)
-			maxPos = max(maxPos, ruleMap[mkRulePos].(int))
-		}
+	for _, rule := range newRulesList {
+		sig := computeRuleSignature(rule)
+		newSigs[sig] = true
+		ruleMap := rule.(map[string]any)
 
-		for _, rule := range rulesToCreate {
-			ruleMap := rule.(map[string]any)
-
+		// if signature not in old rules, it's a new rule
+		if _, exists := oldSigToPos[sig]; !exists {
 			ruleBody, err := mapToRuleCreateRequestBody(ruleMap)
 			if err != nil {
 				diags = append(diags, diag.Errorf("Could not create rule: %v", err)...)
@@ -411,64 +415,101 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 				diags = append(diags, diag.Errorf("Could not create rule: %v", err)...)
 				return diags
 			}
+		}
+	}
 
-			maxPos++
-			moveTo := maxPos + 1
+	// reposition all rules to target positions
+	// re-read current state from API to get actual positions after creates
+	currentRules, err := api.ListRules(ctx)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+		return diags
+	}
 
-			err = api.UpdateRule(ctx, 0, &firewall.RuleUpdateRequestBody{
-				MoveTo: &moveTo,
+	// build position map: signature -> current position
+	currentPositionMap := make(map[string]int)
+
+	for _, currentRule := range currentRules {
+		rule, err := api.GetRule(ctx, currentRule.Pos)
+		if err != nil {
+			continue
+		}
+
+		sig := computeRuleSignatureFromAPI(rule)
+		currentPositionMap[sig] = currentRule.Pos
+	}
+
+	// move rules from end to start to avoid position conflicts
+	for i := len(newRulesList) - 1; i >= 0; i-- {
+		rule := newRulesList[i]
+		sig := computeRuleSignature(rule)
+
+		currentPos, exists := currentPositionMap[sig]
+		if !exists {
+			continue
+		}
+
+		targetPos := i
+
+		if currentPos != targetPos {
+			err := api.UpdateRule(ctx, currentPos, &firewall.RuleUpdateRequestBody{
+				MoveTo: &targetPos,
 			})
 			if err != nil {
-				diags = append(diags, diag.Errorf("Could not move the created rule to the end of the rule list: %v", err)...)
+				diags = append(diags, diag.Errorf("Could not move rule from pos %d to %d: %v", currentPos, targetPos, err)...)
 				return diags
+			}
+
+			// update position map for subsequent moves
+			currentPositionMap[sig] = targetPos
+
+			// when moving, other rules shift positions
+			for otherSig, otherPos := range currentPositionMap {
+				if otherSig == sig {
+					continue // already updated above
+				}
+
+				if currentPos > targetPos {
+					// moving UP: rules between targetPos and currentPos-1 shift DOWN
+					if otherPos >= targetPos && otherPos < currentPos {
+						currentPositionMap[otherSig] = otherPos + 1
+					}
+				} else {
+					// moving DOWN: rules between currentPos+1 and targetPos shift UP
+					if otherPos > currentPos && otherPos <= targetPos {
+						currentPositionMap[otherSig] = otherPos - 1
+					}
+				}
 			}
 		}
 	}
 
-	if len(oldRulesList) > len(newRulesList) {
-		// delete old rules
-		rulesToDelete := oldRulesList[len(newRulesList):]
+	// update non-positional attributes
+	// all rules are at correct positions, update their attributes
+	for i, newRule := range newRulesList {
+		newRuleMap := newRule.(map[string]any)
+		sig := computeRuleSignature(newRule)
 
-		sort.Slice(rulesToDelete, func(i, j int) bool {
-			ruleI := rulesToDelete[i].(map[string]any)
-			ruleJ := rulesToDelete[j].(map[string]any)
-
-			return ruleI[mkRulePos].(int) > ruleJ[mkRulePos].(int)
-		})
-
-		for _, rule := range rulesToDelete {
-			ruleMap := rule.(map[string]any)
-			pos := ruleMap[mkRulePos].(int)
-
-			err := api.DeleteRule(ctx, pos)
-			if err != nil {
-				diags = append(diags, diag.Errorf("Could not delete rule at pos %d: %v", pos, err)...)
-				return diags
-			}
+		// find corresponding old rule by signature
+		oldRuleMap, exists := oldSigToRule[sig]
+		if !exists {
+			continue
 		}
-	}
-
-	for i := min(len(oldRulesList), len(newRulesList)) - 1; i >= 0; i-- {
-		newRule := newRulesList[i].(map[string]any)
-		oldRule := oldRulesList[i].(map[string]any)
-
-		pos := oldRule[mkRulePos].(int)
 
 		ruleBody := firewall.RuleUpdateRequestBody{
-			BaseRule: *mapToBaseRule(newRule),
-			Pos:      &pos,
+			BaseRule: *mapToBaseRule(newRuleMap),
 		}
 
-		if action := newRule[mkRuleAction].(string); action != "" {
+		if action := newRuleMap[mkRuleAction].(string); action != "" {
 			ruleBody.Action = &action
 		}
 
-		if rType := newRule[mkRuleType].(string); rType != "" {
+		if rType := newRuleMap[mkRuleType].(string); rType != "" {
 			ruleBody.Type = &rType
 		}
 
+		// determine fields to delete
 		var fieldsToDelete []string
-
 		fields := []string{
 			mkRuleComment,
 			mkRuleDPort,
@@ -482,7 +523,7 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		}
 
 		for _, field := range fields {
-			if newRule[field].(string) == "" && oldRule[field].(string) != "" {
+			if newRuleMap[field].(string) == "" && oldRuleMap[field].(string) != "" {
 				fieldsToDelete = append(fieldsToDelete, field)
 			}
 		}
@@ -491,9 +532,30 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 			ruleBody.Delete = fieldsToDelete
 		}
 
+		pos := i
+
 		err := api.UpdateRule(ctx, pos, &ruleBody)
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	var toDelete []int
+
+	for sig, pos := range oldSigToPos {
+		if !newSigs[sig] {
+			toDelete = append(toDelete, pos)
+		}
+	}
+
+	sort.Sort(sort.Reverse(sort.IntSlice(toDelete)))
+
+	// delete in reverse order
+	for _, pos := range toDelete {
+		err := api.DeleteRule(ctx, pos)
+		if err != nil {
+			diags = append(diags, diag.Errorf("Could not delete rule at pos %d: %v", pos, err)...)
+			return diags
 		}
 	}
 
@@ -673,6 +735,63 @@ func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]any
 	if baseRule.IFace != nil {
 		rule[mkRuleIFace] = *baseRule.IFace
 	}
+}
+
+// computeRuleSignature generates a unique signature for a rule based on its identity fields.
+// updateable fields (comment, enabled, log) are excluded from the signature.
+func computeRuleSignature(rule any) string {
+	ruleMap := rule.(map[string]any)
+
+	// security group rules
+	// identified by group name and interface
+	if sg := ruleMap[mkSecurityGroup].(string); sg != "" {
+		return strings.Join([]string{"group", sg, ruleMap[mkRuleIFace].(string)}, ":")
+	}
+
+	fields := []string{
+		"rule",
+		ruleMap[mkRuleType].(string),
+		ruleMap[mkRuleAction].(string),
+		ruleMap[mkRuleDest].(string),
+		ruleMap[mkRuleDPort].(string),
+		ruleMap[mkRuleSource].(string),
+		ruleMap[mkRuleSPort].(string),
+		ruleMap[mkRuleProto].(string),
+		ruleMap[mkRuleMacro].(string),
+		ruleMap[mkRuleIFace].(string),
+	}
+
+	return strings.Join(fields, ":")
+}
+
+func strOrEmpty(s *string) string {
+	if s != nil {
+		return *s
+	}
+
+	return ""
+}
+
+// computeRuleSignatureFromAPI generates signature from API response.
+func computeRuleSignatureFromAPI(rule *firewall.RuleGetResponseData) string {
+	if rule.Type == "group" {
+		return strings.Join([]string{"group", rule.Action, strOrEmpty(rule.IFace)}, ":")
+	}
+
+	fields := []string{
+		"rule",
+		rule.Type,
+		rule.Action,
+		strOrEmpty(rule.Dest),
+		strOrEmpty(rule.DPort),
+		strOrEmpty(rule.Source),
+		strOrEmpty(rule.SPort),
+		strOrEmpty(rule.Proto),
+		strOrEmpty(rule.Macro),
+		strOrEmpty(rule.IFace),
+	}
+
+	return strings.Join(fields, ":")
 }
 
 func invokeRuleAPI(
