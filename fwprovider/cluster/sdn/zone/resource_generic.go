@@ -116,7 +116,9 @@ func (m *genericModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zone
 	data.ReverseDNS = m.ReverseDNS.ValueStringPointer()
 	data.DNSZone = m.DNSZone.ValueStringPointer()
 	data.Nodes = m.Nodes.ValueStringPointer(ctx, diags, stringset.WithSeparator(","))
-	data.MTU = m.MTU.ValueInt64Pointer()
+	if !m.MTU.IsUnknown() {
+		data.MTU = m.MTU.ValueInt64Pointer()
+	}
 
 	return data
 }
