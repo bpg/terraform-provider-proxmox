@@ -8,7 +8,36 @@ package backup
 
 import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
+
+// stringPtrOr converts a *string to a types.String, returning def when nil.
+func stringPtrOr(p *string, def types.String) types.String {
+	if p != nil {
+		return types.StringPointerValue(p)
+	}
+
+	return def
+}
+
+// customBoolPtrOr converts a *CustomBool to a types.Bool, returning BoolValue(def) when nil.
+func customBoolPtrOr(p *proxmoxtypes.CustomBool, def bool) types.Bool {
+	if p != nil {
+		return types.BoolValue(bool(*p))
+	}
+
+	return types.BoolValue(def)
+}
+
+// intPtrOr converts a *int to a types.Int64, returning def when nil.
+func intPtrOr(p *int, def types.Int64) types.Int64 {
+	if p != nil {
+		return types.Int64Value(int64(*p))
+	}
+
+	return def
+}
 
 // BackupJobModel maps the resource schema data.
 type BackupJobModel struct {

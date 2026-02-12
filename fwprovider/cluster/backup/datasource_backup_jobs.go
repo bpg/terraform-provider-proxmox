@@ -201,81 +201,26 @@ func (d *backupJobsDataSource) Read(ctx context.Context, req datasource.ReadRequ
 
 	for i, job := range jobsData {
 		jobModels[i] = BackupJobDataModel{
-			ID:       types.StringValue(job.ID),
-			Schedule: types.StringValue(job.Schedule),
-			Storage:  types.StringValue(job.Storage),
-		}
-
-		if job.Enabled != nil {
-			jobModels[i].Enabled = types.BoolValue(bool(*job.Enabled))
-		} else {
-			jobModels[i].Enabled = types.BoolValue(true)
-		}
-
-		if job.Node != nil {
-			jobModels[i].Node = types.StringPointerValue(job.Node)
-		} else {
-			jobModels[i].Node = types.StringValue("")
-		}
-
-		if job.VMID != nil {
-			jobModels[i].VMID = types.StringPointerValue(job.VMID)
-		} else {
-			jobModels[i].VMID = types.StringValue("")
-		}
-
-		if job.All != nil {
-			jobModels[i].All = types.BoolValue(bool(*job.All))
-		} else {
-			jobModels[i].All = types.BoolValue(false)
-		}
-
-		if job.Mode != nil {
-			jobModels[i].Mode = types.StringPointerValue(job.Mode)
-		} else {
-			jobModels[i].Mode = types.StringValue("")
-		}
-
-		if job.Compress != nil {
-			jobModels[i].Compress = types.StringPointerValue(job.Compress)
-		} else {
-			jobModels[i].Compress = types.StringValue("")
-		}
-
-		if job.MailTo != nil {
-			jobModels[i].MailTo = types.StringPointerValue(job.MailTo)
-		} else {
-			jobModels[i].MailTo = types.StringValue("")
-		}
-
-		if job.MailNotification != nil {
-			jobModels[i].MailNotification = types.StringPointerValue(job.MailNotification)
-		} else {
-			jobModels[i].MailNotification = types.StringValue("")
+			ID:               types.StringValue(job.ID),
+			Schedule:         types.StringValue(job.Schedule),
+			Storage:          types.StringValue(job.Storage),
+			Enabled:          customBoolPtrOr(job.Enabled, true),
+			Node:             stringPtrOr(job.Node, types.StringValue("")),
+			VMID:             stringPtrOr(job.VMID, types.StringValue("")),
+			All:              customBoolPtrOr(job.All, false),
+			Mode:             stringPtrOr(job.Mode, types.StringValue("")),
+			Compress:         stringPtrOr(job.Compress, types.StringValue("")),
+			MailTo:           stringPtrOr(job.MailTo, types.StringValue("")),
+			MailNotification: stringPtrOr(job.MailNotification, types.StringValue("")),
+			NotesTemplate:    stringPtrOr(job.NotesTemplate, types.StringValue("")),
+			Protected:        customBoolPtrOr(job.Protected, false),
+			Pool:             stringPtrOr(job.Pool, types.StringValue("")),
 		}
 
 		if job.PruneBackups != nil {
 			jobModels[i].PruneBackups = types.StringPointerValue(job.PruneBackups.Pointer())
 		} else {
 			jobModels[i].PruneBackups = types.StringValue("")
-		}
-
-		if job.NotesTemplate != nil {
-			jobModels[i].NotesTemplate = types.StringPointerValue(job.NotesTemplate)
-		} else {
-			jobModels[i].NotesTemplate = types.StringValue("")
-		}
-
-		if job.Protected != nil {
-			jobModels[i].Protected = types.BoolValue(bool(*job.Protected))
-		} else {
-			jobModels[i].Protected = types.BoolValue(false)
-		}
-
-		if job.Pool != nil {
-			jobModels[i].Pool = types.StringPointerValue(job.Pool)
-		} else {
-			jobModels[i].Pool = types.StringValue("")
 		}
 	}
 

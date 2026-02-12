@@ -104,8 +104,8 @@ func (r *backupJobResource) Schema(
 			},
 			"schedule": schema.StringAttribute{
 				Description: "The schedule for the backup job in systemd calendar event format.",
-				MarkdownDescription: "The schedule for the backup job in systemd calendar event format. Examples: `0 2 * * *` (daily at 2 AM), " +
-					"`0 */4 * * *` (every 4 hours), `*:0/30` (every 30 minutes).",
+				MarkdownDescription: "The schedule for the backup job in systemd calendar event format. Examples: `02:00`, `sun 03:00`, " +
+					"`0 2 * * *` (daily at 2 AM), `0 */4 * * *` (every 4 hours), `*:0/30` (every 30 minutes).",
 				Required: true,
 			},
 			"storage": schema.StringAttribute{
@@ -496,180 +496,13 @@ func (r *backupJobResource) planToAPICreate(ctx context.Context, plan *BackupJob
 		Storage:  plan.Storage.ValueString(),
 	}
 
-	if !plan.Enabled.IsNull() && !plan.Enabled.IsUnknown() {
-		enabled := proxmoxtypes.CustomBool(plan.Enabled.ValueBool())
-		reqBody.Enabled = &enabled
-	}
-
-	if !plan.Node.IsNull() {
-		reqBody.Node = plan.Node.ValueStringPointer()
-	}
-
-	if !plan.VMID.IsNull() {
-		reqBody.VMID = plan.VMID.ValueStringPointer()
-	}
-
-	if !plan.All.IsNull() && !plan.All.IsUnknown() {
-		all := proxmoxtypes.CustomBool(plan.All.ValueBool())
-		reqBody.All = &all
-	}
-
-	if !plan.Mode.IsNull() {
-		reqBody.Mode = plan.Mode.ValueStringPointer()
-	}
-
-	if !plan.Compress.IsNull() {
-		reqBody.Compress = plan.Compress.ValueStringPointer()
-	}
-
-	if !plan.StartTime.IsNull() {
-		reqBody.StartTime = plan.StartTime.ValueStringPointer()
-	}
-
-	if !plan.MaxFiles.IsNull() {
-		maxfiles := int(plan.MaxFiles.ValueInt64())
-		reqBody.MaxFiles = &maxfiles
-	}
-
-	if !plan.MailTo.IsNull() {
-		reqBody.MailTo = plan.MailTo.ValueStringPointer()
-	}
-
-	if !plan.MailNotification.IsNull() {
-		reqBody.MailNotification = plan.MailNotification.ValueStringPointer()
-	}
-
-	if !plan.BwLimit.IsNull() {
-		bwlimit := int(plan.BwLimit.ValueInt64())
-		reqBody.BwLimit = &bwlimit
-	}
-
-	if !plan.IONice.IsNull() {
-		ionice := int(plan.IONice.ValueInt64())
-		reqBody.IONice = &ionice
-	}
-
-	if !plan.Pigz.IsNull() {
-		pigz := int(plan.Pigz.ValueInt64())
-		reqBody.Pigz = &pigz
-	}
-
-	if !plan.Zstd.IsNull() {
-		zstd := int(plan.Zstd.ValueInt64())
-		reqBody.Zstd = &zstd
-	}
-
-	if !plan.PruneBackups.IsNull() {
-		reqBody.PruneBackups = plan.PruneBackups.ValueStringPointer()
-	}
-
-	if !plan.Remove.IsNull() && !plan.Remove.IsUnknown() {
-		remove := proxmoxtypes.CustomBool(plan.Remove.ValueBool())
-		reqBody.Remove = &remove
-	}
-
-	if !plan.NotesTemplate.IsNull() {
-		reqBody.NotesTemplate = plan.NotesTemplate.ValueStringPointer()
-	}
-
-	if !plan.Protected.IsNull() && !plan.Protected.IsUnknown() {
-		protected := proxmoxtypes.CustomBool(plan.Protected.ValueBool())
-		reqBody.Protected = &protected
-	}
-
-	if !plan.RepeatMissed.IsNull() && !plan.RepeatMissed.IsUnknown() {
-		repeatMissed := proxmoxtypes.CustomBool(plan.RepeatMissed.ValueBool())
-		reqBody.RepeatMissed = &repeatMissed
-	}
-
-	if !plan.Script.IsNull() {
-		reqBody.Script = plan.Script.ValueStringPointer()
-	}
-
-	if !plan.StdExcludes.IsNull() && !plan.StdExcludes.IsUnknown() {
-		stdExcludes := proxmoxtypes.CustomBool(plan.StdExcludes.ValueBool())
-		reqBody.StdExcludes = &stdExcludes
-	}
-
-	if !plan.ExcludePath.IsNull() && !plan.ExcludePath.IsUnknown() {
-		var excludePath []string
-		plan.ExcludePath.ElementsAs(ctx, &excludePath, false)
-
-		if len(excludePath) > 0 {
-			commaSepList := proxmoxtypes.CustomCommaSeparatedList(excludePath)
-			reqBody.ExcludePath = &commaSepList
-		}
-	}
-
-	if !plan.Pool.IsNull() {
-		reqBody.Pool = plan.Pool.ValueStringPointer()
-	}
-
-	if !plan.Fleecing.IsNull() && !plan.Fleecing.IsUnknown() {
-		var fleecingModel FleecingModel
-		plan.Fleecing.As(ctx, &fleecingModel, basetypes.ObjectAsOptions{})
-
-		fleecing := &backupAPI.FleecingConfig{}
-
-		if !fleecingModel.Enabled.IsNull() {
-			enabled := proxmoxtypes.CustomBool(fleecingModel.Enabled.ValueBool())
-			fleecing.Enabled = &enabled
-		}
-
-		if !fleecingModel.Storage.IsNull() {
-			fleecing.Storage = fleecingModel.Storage.ValueStringPointer()
-		}
-
-		reqBody.Fleecing = fleecing
-	}
-
-	if !plan.Performance.IsNull() && !plan.Performance.IsUnknown() {
-		var perfModel PerformanceModel
-		plan.Performance.As(ctx, &perfModel, basetypes.ObjectAsOptions{})
-
-		perf := &backupAPI.PerformanceConfig{}
-
-		if !perfModel.MaxWorkers.IsNull() {
-			maxWorkers := int(perfModel.MaxWorkers.ValueInt64())
-			perf.MaxWorkers = &maxWorkers
-		}
-
-		if !perfModel.PBSEntriesMax.IsNull() {
-			pbsMax := int(perfModel.PBSEntriesMax.ValueInt64())
-			perf.PBSEntriesMax = &pbsMax
-		}
-
-		reqBody.Performance = perf
-	}
-
-	if !plan.PBSChangeDetectionMode.IsNull() {
-		reqBody.PBSChangeDetectionMode = plan.PBSChangeDetectionMode.ValueStringPointer()
-	}
-
-	if !plan.LockWait.IsNull() {
-		lockWait := int(plan.LockWait.ValueInt64())
-		reqBody.LockWait = &lockWait
-	}
-
-	if !plan.StopWait.IsNull() {
-		stopWait := int(plan.StopWait.ValueInt64())
-		reqBody.StopWait = &stopWait
-	}
-
-	if !plan.TmpDir.IsNull() {
-		reqBody.TmpDir = plan.TmpDir.ValueStringPointer()
-	}
+	r.populateCommonFields(ctx, plan, &reqBody.RequestBodyCommon)
 
 	return reqBody
 }
 
 func (r *backupJobResource) planToAPIUpdate(ctx context.Context, plan *BackupJobModel) *backupAPI.UpdateRequestBody {
 	reqBody := &backupAPI.UpdateRequestBody{}
-
-	if !plan.Enabled.IsNull() && !plan.Enabled.IsUnknown() {
-		enabled := proxmoxtypes.CustomBool(plan.Enabled.ValueBool())
-		reqBody.Enabled = &enabled
-	}
 
 	if !plan.Schedule.IsNull() {
 		reqBody.Schedule = plan.Schedule.ValueStringPointer()
@@ -679,94 +512,106 @@ func (r *backupJobResource) planToAPIUpdate(ctx context.Context, plan *BackupJob
 		reqBody.Storage = plan.Storage.ValueStringPointer()
 	}
 
+	r.populateCommonFields(ctx, plan, &reqBody.RequestBodyCommon)
+
+	return reqBody
+}
+
+//nolint:cyclop
+func (r *backupJobResource) populateCommonFields(ctx context.Context, plan *BackupJobModel, common *backupAPI.RequestBodyCommon) {
+	if !plan.Enabled.IsNull() && !plan.Enabled.IsUnknown() {
+		enabled := proxmoxtypes.CustomBool(plan.Enabled.ValueBool())
+		common.Enabled = &enabled
+	}
+
 	if !plan.Node.IsNull() {
-		reqBody.Node = plan.Node.ValueStringPointer()
+		common.Node = plan.Node.ValueStringPointer()
 	}
 
 	if !plan.VMID.IsNull() {
-		reqBody.VMID = plan.VMID.ValueStringPointer()
+		common.VMID = plan.VMID.ValueStringPointer()
 	}
 
 	if !plan.All.IsNull() && !plan.All.IsUnknown() {
 		all := proxmoxtypes.CustomBool(plan.All.ValueBool())
-		reqBody.All = &all
+		common.All = &all
 	}
 
 	if !plan.Mode.IsNull() {
-		reqBody.Mode = plan.Mode.ValueStringPointer()
+		common.Mode = plan.Mode.ValueStringPointer()
 	}
 
 	if !plan.Compress.IsNull() {
-		reqBody.Compress = plan.Compress.ValueStringPointer()
+		common.Compress = plan.Compress.ValueStringPointer()
 	}
 
 	if !plan.StartTime.IsNull() {
-		reqBody.StartTime = plan.StartTime.ValueStringPointer()
+		common.StartTime = plan.StartTime.ValueStringPointer()
 	}
 
 	if !plan.MaxFiles.IsNull() {
 		maxfiles := int(plan.MaxFiles.ValueInt64())
-		reqBody.MaxFiles = &maxfiles
+		common.MaxFiles = &maxfiles
 	}
 
 	if !plan.MailTo.IsNull() {
-		reqBody.MailTo = plan.MailTo.ValueStringPointer()
+		common.MailTo = plan.MailTo.ValueStringPointer()
 	}
 
 	if !plan.MailNotification.IsNull() {
-		reqBody.MailNotification = plan.MailNotification.ValueStringPointer()
+		common.MailNotification = plan.MailNotification.ValueStringPointer()
 	}
 
 	if !plan.BwLimit.IsNull() {
 		bwlimit := int(plan.BwLimit.ValueInt64())
-		reqBody.BwLimit = &bwlimit
+		common.BwLimit = &bwlimit
 	}
 
 	if !plan.IONice.IsNull() {
 		ionice := int(plan.IONice.ValueInt64())
-		reqBody.IONice = &ionice
+		common.IONice = &ionice
 	}
 
 	if !plan.Pigz.IsNull() {
 		pigz := int(plan.Pigz.ValueInt64())
-		reqBody.Pigz = &pigz
+		common.Pigz = &pigz
 	}
 
 	if !plan.Zstd.IsNull() {
 		zstd := int(plan.Zstd.ValueInt64())
-		reqBody.Zstd = &zstd
+		common.Zstd = &zstd
 	}
 
 	if !plan.PruneBackups.IsNull() {
-		reqBody.PruneBackups = plan.PruneBackups.ValueStringPointer()
+		common.PruneBackups = plan.PruneBackups.ValueStringPointer()
 	}
 
 	if !plan.Remove.IsNull() && !plan.Remove.IsUnknown() {
 		remove := proxmoxtypes.CustomBool(plan.Remove.ValueBool())
-		reqBody.Remove = &remove
+		common.Remove = &remove
 	}
 
 	if !plan.NotesTemplate.IsNull() {
-		reqBody.NotesTemplate = plan.NotesTemplate.ValueStringPointer()
+		common.NotesTemplate = plan.NotesTemplate.ValueStringPointer()
 	}
 
 	if !plan.Protected.IsNull() && !plan.Protected.IsUnknown() {
 		protected := proxmoxtypes.CustomBool(plan.Protected.ValueBool())
-		reqBody.Protected = &protected
+		common.Protected = &protected
 	}
 
 	if !plan.RepeatMissed.IsNull() && !plan.RepeatMissed.IsUnknown() {
 		repeatMissed := proxmoxtypes.CustomBool(plan.RepeatMissed.ValueBool())
-		reqBody.RepeatMissed = &repeatMissed
+		common.RepeatMissed = &repeatMissed
 	}
 
 	if !plan.Script.IsNull() {
-		reqBody.Script = plan.Script.ValueStringPointer()
+		common.Script = plan.Script.ValueStringPointer()
 	}
 
 	if !plan.StdExcludes.IsNull() && !plan.StdExcludes.IsUnknown() {
 		stdExcludes := proxmoxtypes.CustomBool(plan.StdExcludes.ValueBool())
-		reqBody.StdExcludes = &stdExcludes
+		common.StdExcludes = &stdExcludes
 	}
 
 	if !plan.ExcludePath.IsNull() && !plan.ExcludePath.IsUnknown() {
@@ -775,12 +620,12 @@ func (r *backupJobResource) planToAPIUpdate(ctx context.Context, plan *BackupJob
 
 		if len(excludePath) > 0 {
 			commaSepList := proxmoxtypes.CustomCommaSeparatedList(excludePath)
-			reqBody.ExcludePath = &commaSepList
+			common.ExcludePath = &commaSepList
 		}
 	}
 
 	if !plan.Pool.IsNull() {
-		reqBody.Pool = plan.Pool.ValueStringPointer()
+		common.Pool = plan.Pool.ValueStringPointer()
 	}
 
 	if !plan.Fleecing.IsNull() && !plan.Fleecing.IsUnknown() {
@@ -798,7 +643,7 @@ func (r *backupJobResource) planToAPIUpdate(ctx context.Context, plan *BackupJob
 			fleecing.Storage = fleecingModel.Storage.ValueStringPointer()
 		}
 
-		reqBody.Fleecing = fleecing
+		common.Fleecing = fleecing
 	}
 
 	if !plan.Performance.IsNull() && !plan.Performance.IsUnknown() {
@@ -817,159 +662,57 @@ func (r *backupJobResource) planToAPIUpdate(ctx context.Context, plan *BackupJob
 			perf.PBSEntriesMax = &pbsMax
 		}
 
-		reqBody.Performance = perf
+		common.Performance = perf
 	}
 
 	if !plan.PBSChangeDetectionMode.IsNull() {
-		reqBody.PBSChangeDetectionMode = plan.PBSChangeDetectionMode.ValueStringPointer()
+		common.PBSChangeDetectionMode = plan.PBSChangeDetectionMode.ValueStringPointer()
 	}
 
 	if !plan.LockWait.IsNull() {
 		lockWait := int(plan.LockWait.ValueInt64())
-		reqBody.LockWait = &lockWait
+		common.LockWait = &lockWait
 	}
 
 	if !plan.StopWait.IsNull() {
 		stopWait := int(plan.StopWait.ValueInt64())
-		reqBody.StopWait = &stopWait
+		common.StopWait = &stopWait
 	}
 
 	if !plan.TmpDir.IsNull() {
-		reqBody.TmpDir = plan.TmpDir.ValueStringPointer()
+		common.TmpDir = plan.TmpDir.ValueStringPointer()
 	}
-
-	return reqBody
 }
 
 func (r *backupJobResource) apiToModel(data *backupAPI.GetResponseData, model *BackupJobModel) {
 	model.ID = types.StringValue(data.ID)
 	model.Schedule = types.StringValue(data.Schedule)
 	model.Storage = types.StringValue(data.Storage)
-
-	if data.Enabled != nil {
-		model.Enabled = types.BoolValue(bool(*data.Enabled))
-	} else {
-		model.Enabled = types.BoolValue(true)
-	}
-
-	if data.Node != nil {
-		model.Node = types.StringPointerValue(data.Node)
-	} else {
-		model.Node = types.StringNull()
-	}
-
-	if data.VMID != nil {
-		model.VMID = types.StringPointerValue(data.VMID)
-	} else {
-		model.VMID = types.StringNull()
-	}
-
-	if data.All != nil {
-		model.All = types.BoolValue(bool(*data.All))
-	} else {
-		model.All = types.BoolValue(false)
-	}
-
-	if data.Mode != nil {
-		model.Mode = types.StringPointerValue(data.Mode)
-	} else {
-		model.Mode = types.StringValue("snapshot")
-	}
-
-	if data.Compress != nil {
-		model.Compress = types.StringPointerValue(data.Compress)
-	} else {
-		model.Compress = types.StringValue("0")
-	}
-
-	if data.StartTime != nil {
-		model.StartTime = types.StringPointerValue(data.StartTime)
-	} else {
-		model.StartTime = types.StringNull()
-	}
-
-	if data.MaxFiles != nil {
-		model.MaxFiles = types.Int64Value(int64(*data.MaxFiles))
-	} else {
-		model.MaxFiles = types.Int64Null()
-	}
-
-	if data.MailTo != nil {
-		model.MailTo = types.StringPointerValue(data.MailTo)
-	} else {
-		model.MailTo = types.StringNull()
-	}
-
-	if data.MailNotification != nil {
-		model.MailNotification = types.StringPointerValue(data.MailNotification)
-	} else {
-		model.MailNotification = types.StringValue("always")
-	}
-
-	if data.BwLimit != nil {
-		model.BwLimit = types.Int64Value(int64(*data.BwLimit))
-	} else {
-		model.BwLimit = types.Int64Value(0)
-	}
-
-	if data.IONice != nil {
-		model.IONice = types.Int64Value(int64(*data.IONice))
-	} else {
-		model.IONice = types.Int64Value(7)
-	}
-
-	if data.Pigz != nil {
-		model.Pigz = types.Int64Value(int64(*data.Pigz))
-	} else {
-		model.Pigz = types.Int64Null()
-	}
-
-	if data.Zstd != nil {
-		model.Zstd = types.Int64Value(int64(*data.Zstd))
-	} else {
-		model.Zstd = types.Int64Null()
-	}
+	model.Enabled = customBoolPtrOr(data.Enabled, true)
+	model.Node = stringPtrOr(data.Node, types.StringNull())
+	model.VMID = stringPtrOr(data.VMID, types.StringNull())
+	model.All = customBoolPtrOr(data.All, false)
+	model.Mode = stringPtrOr(data.Mode, types.StringValue("snapshot"))
+	model.Compress = stringPtrOr(data.Compress, types.StringValue("0"))
+	model.StartTime = stringPtrOr(data.StartTime, types.StringNull())
+	model.MaxFiles = intPtrOr(data.MaxFiles, types.Int64Null())
+	model.MailTo = stringPtrOr(data.MailTo, types.StringNull())
+	model.MailNotification = stringPtrOr(data.MailNotification, types.StringValue("always"))
+	model.BwLimit = intPtrOr(data.BwLimit, types.Int64Value(0))
+	model.IONice = intPtrOr(data.IONice, types.Int64Value(7))
+	model.Pigz = intPtrOr(data.Pigz, types.Int64Null())
+	model.Zstd = intPtrOr(data.Zstd, types.Int64Null())
+	model.Remove = customBoolPtrOr(data.Remove, true)
+	model.NotesTemplate = stringPtrOr(data.NotesTemplate, types.StringNull())
+	model.Protected = customBoolPtrOr(data.Protected, false)
+	model.RepeatMissed = customBoolPtrOr(data.RepeatMissed, false)
+	model.Script = stringPtrOr(data.Script, types.StringNull())
+	model.StdExcludes = customBoolPtrOr(data.StdExcludes, true)
 
 	if data.PruneBackups != nil {
 		model.PruneBackups = types.StringPointerValue(data.PruneBackups.Pointer())
 	} else {
 		model.PruneBackups = types.StringValue("keep-all=1")
-	}
-
-	if data.Remove != nil {
-		model.Remove = types.BoolValue(bool(*data.Remove))
-	} else {
-		model.Remove = types.BoolValue(true)
-	}
-
-	if data.NotesTemplate != nil {
-		model.NotesTemplate = types.StringPointerValue(data.NotesTemplate)
-	} else {
-		model.NotesTemplate = types.StringNull()
-	}
-
-	if data.Protected != nil {
-		model.Protected = types.BoolValue(bool(*data.Protected))
-	} else {
-		model.Protected = types.BoolValue(false)
-	}
-
-	if data.RepeatMissed != nil {
-		model.RepeatMissed = types.BoolValue(bool(*data.RepeatMissed))
-	} else {
-		model.RepeatMissed = types.BoolValue(false)
-	}
-
-	if data.Script != nil {
-		model.Script = types.StringPointerValue(data.Script)
-	} else {
-		model.Script = types.StringNull()
-	}
-
-	if data.StdExcludes != nil {
-		model.StdExcludes = types.BoolValue(bool(*data.StdExcludes))
-	} else {
-		model.StdExcludes = types.BoolValue(true)
 	}
 
 	if data.ExcludePath != nil && len(*data.ExcludePath) > 0 {
@@ -983,11 +726,7 @@ func (r *backupJobResource) apiToModel(data *backupAPI.GetResponseData, model *B
 		model.ExcludePath = types.ListNull(types.StringType)
 	}
 
-	if data.Pool != nil {
-		model.Pool = types.StringPointerValue(data.Pool)
-	} else {
-		model.Pool = types.StringNull()
-	}
+	model.Pool = stringPtrOr(data.Pool, types.StringNull())
 
 	if data.Fleecing != nil {
 		fleecingAttrTypes := map[string]attr.Type{
@@ -1043,27 +782,8 @@ func (r *backupJobResource) apiToModel(data *backupAPI.GetResponseData, model *B
 		})
 	}
 
-	if data.PBSChangeDetectionMode != nil {
-		model.PBSChangeDetectionMode = types.StringPointerValue(data.PBSChangeDetectionMode)
-	} else {
-		model.PBSChangeDetectionMode = types.StringNull()
-	}
-
-	if data.LockWait != nil {
-		model.LockWait = types.Int64Value(int64(*data.LockWait))
-	} else {
-		model.LockWait = types.Int64Null()
-	}
-
-	if data.StopWait != nil {
-		model.StopWait = types.Int64Value(int64(*data.StopWait))
-	} else {
-		model.StopWait = types.Int64Null()
-	}
-
-	if data.TmpDir != nil {
-		model.TmpDir = types.StringPointerValue(data.TmpDir)
-	} else {
-		model.TmpDir = types.StringNull()
-	}
+	model.PBSChangeDetectionMode = stringPtrOr(data.PBSChangeDetectionMode, types.StringNull())
+	model.LockWait = intPtrOr(data.LockWait, types.Int64Null())
+	model.StopWait = intPtrOr(data.StopWait, types.Int64Null())
+	model.TmpDir = stringPtrOr(data.TmpDir, types.StringNull())
 }

@@ -42,9 +42,11 @@ func (p *PruneBackupsString) UnmarshalJSON(data []byte) error {
 
 		for k, v := range objStr {
 			var val int
-			if _, err := fmt.Sscanf(v, "%d", &val); err == nil {
-				objInt[k] = val
+			if _, err := fmt.Sscanf(v, "%d", &val); err != nil {
+				return fmt.Errorf("could not parse value %q for key %q in prune-backups: %w", v, k, err)
 			}
+
+			objInt[k] = val
 		}
 
 		*p = formatPruneBackups(objInt)
@@ -134,12 +136,9 @@ type GetResponseData struct {
 	TmpDir                 *string                         `json:"tmpdir,omitempty"`
 }
 
-// CreateRequestBody contains the request body for creating a backup job.
-type CreateRequestBody struct {
-	ID                     string                          `json:"id"                                  url:"id"`
+// RequestBodyCommon contains optional fields shared between create and update request bodies.
+type RequestBodyCommon struct {
 	Enabled                *types.CustomBool               `json:"enabled,omitempty"                   url:"enabled,omitempty,int"`
-	Schedule               string                          `json:"schedule"                            url:"schedule"`
-	Storage                string                          `json:"storage"                             url:"storage"`
 	Node                   *string                         `json:"node,omitempty"                      url:"node,omitempty"`
 	VMID                   *string                         `json:"vmid,omitempty"                      url:"vmid,omitempty"`
 	All                    *types.CustomBool               `json:"all,omitempty"                       url:"all,omitempty,int"`
@@ -170,40 +169,22 @@ type CreateRequestBody struct {
 	TmpDir                 *string                         `json:"tmpdir,omitempty"                    url:"tmpdir,omitempty"`
 }
 
+// CreateRequestBody contains the request body for creating a backup job.
+type CreateRequestBody struct {
+	RequestBodyCommon
+
+	ID       string `json:"id"       url:"id"`
+	Schedule string `json:"schedule" url:"schedule"`
+	Storage  string `json:"storage"  url:"storage"`
+}
+
 // UpdateRequestBody contains the request body for updating a backup job.
 type UpdateRequestBody struct {
-	Enabled                *types.CustomBool               `json:"enabled,omitempty"                   url:"enabled,omitempty,int"`
-	Schedule               *string                         `json:"schedule,omitempty"                  url:"schedule,omitempty"`
-	Storage                *string                         `json:"storage,omitempty"                   url:"storage,omitempty"`
-	Node                   *string                         `json:"node,omitempty"                      url:"node,omitempty"`
-	VMID                   *string                         `json:"vmid,omitempty"                      url:"vmid,omitempty"`
-	All                    *types.CustomBool               `json:"all,omitempty"                       url:"all,omitempty,int"`
-	Mode                   *string                         `json:"mode,omitempty"                      url:"mode,omitempty"`
-	Compress               *string                         `json:"compress,omitempty"                  url:"compress,omitempty"`
-	StartTime              *string                         `json:"starttime,omitempty"                 url:"starttime,omitempty"`
-	MaxFiles               *int                            `json:"maxfiles,omitempty"                  url:"maxfiles,omitempty"`
-	MailTo                 *string                         `json:"mailto,omitempty"                    url:"mailto,omitempty"`
-	MailNotification       *string                         `json:"mailnotification,omitempty"          url:"mailnotification,omitempty"`
-	BwLimit                *int                            `json:"bwlimit,omitempty"                   url:"bwlimit,omitempty"`
-	IONice                 *int                            `json:"ionice,omitempty"                    url:"ionice,omitempty"`
-	Pigz                   *int                            `json:"pigz,omitempty"                      url:"pigz,omitempty"`
-	Zstd                   *int                            `json:"zstd,omitempty"                      url:"zstd,omitempty"`
-	PruneBackups           *string                         `json:"prune-backups,omitempty"             url:"prune-backups,omitempty"`
-	Remove                 *types.CustomBool               `json:"remove,omitempty"                    url:"remove,omitempty,int"`
-	NotesTemplate          *string                         `json:"notes-template,omitempty"            url:"notes-template,omitempty"`
-	Protected              *types.CustomBool               `json:"protected,omitempty"                 url:"protected,omitempty,int"`
-	RepeatMissed           *types.CustomBool               `json:"repeat-missed,omitempty"             url:"repeat-missed,omitempty,int"`
-	Script                 *string                         `json:"script,omitempty"                    url:"script,omitempty"`
-	StdExcludes            *types.CustomBool               `json:"stdexcludes,omitempty"               url:"stdexcludes,omitempty,int"`
-	ExcludePath            *types.CustomCommaSeparatedList `json:"exclude-path,omitempty"              url:"exclude-path,omitempty,comma"`
-	Pool                   *string                         `json:"pool,omitempty"                      url:"pool,omitempty"`
-	Fleecing               *FleecingConfig                 `json:"fleecing,omitempty"                  url:"fleecing,omitempty"`
-	Performance            *PerformanceConfig              `json:"performance,omitempty"               url:"performance,omitempty"`
-	PBSChangeDetectionMode *string                         `json:"pbs-change-detection-mode,omitempty" url:"pbs-change-detection-mode,omitempty"`
-	LockWait               *int                            `json:"lockwait,omitempty"                  url:"lockwait,omitempty"`
-	StopWait               *int                            `json:"stopwait,omitempty"                  url:"stopwait,omitempty"`
-	TmpDir                 *string                         `json:"tmpdir,omitempty"                    url:"tmpdir,omitempty"`
-	Delete                 *string                         `json:"delete,omitempty"                    url:"delete,omitempty"`
+	RequestBodyCommon
+
+	Schedule *string `json:"schedule,omitempty" url:"schedule,omitempty"`
+	Storage  *string `json:"storage,omitempty"  url:"storage,omitempty"`
+	Delete   *string `json:"delete,omitempty"   url:"delete,omitempty"`
 }
 
 // FleecingConfig contains backup fleecing configuration.

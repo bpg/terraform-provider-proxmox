@@ -17,7 +17,7 @@ Manages a Proxmox VE cluster backup job. Backup jobs are scheduled tasks that au
 # Simple daily backup job for specific VMs
 resource "proxmox_virtual_environment_backup_job" "daily_vm_backup" {
   id       = "daily-vm-backup"
-  schedule = "0 2 * * *"
+  schedule = "02:00"
   storage  = "local"
   vmid     = "100,101,102"
   mode     = "snapshot"
@@ -28,7 +28,7 @@ resource "proxmox_virtual_environment_backup_job" "daily_vm_backup" {
 # Weekly backup of all VMs in a pool with retention policy
 resource "proxmox_virtual_environment_backup_job" "weekly_pool_backup" {
   id            = "weekly-pool-backup"
-  schedule      = "0 3 * * 0"
+  schedule      = "sun 03:00"
   storage       = "pbs"
   pool          = "production"
   mode          = "snapshot"
@@ -41,7 +41,7 @@ resource "proxmox_virtual_environment_backup_job" "weekly_pool_backup" {
 # Backup all VMs on a specific node
 resource "proxmox_virtual_environment_backup_job" "node_backup" {
   id       = "node-backup"
-  schedule = "0 1 * * *"
+  schedule = "01:00"
   storage  = "local"
   node     = "pve"
   all      = true
@@ -56,7 +56,7 @@ resource "proxmox_virtual_environment_backup_job" "node_backup" {
 ### Required
 
 - `id` (String) The unique identifier of the backup job. This will be used as the job ID in Proxmox VE.
-- `schedule` (String) The schedule for the backup job in systemd calendar event format. Examples: `0 2 * * *` (daily at 2 AM), `0 */4 * * *` (every 4 hours), `*:0/30` (every 30 minutes).
+- `schedule` (String) The schedule for the backup job in systemd calendar event format. Examples: `02:00`, `sun 03:00`, `0 2 * * *` (daily at 2 AM), `0 */4 * * *` (every 4 hours), `*:0/30` (every 30 minutes).
 - `storage` (String) The storage identifier where backups will be stored (e.g., `local`, `pbs`).
 
 ### Optional
