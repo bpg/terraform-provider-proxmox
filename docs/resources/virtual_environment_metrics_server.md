@@ -61,8 +61,14 @@ resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server" {
 - `influx_token` (String, Sensitive) The InfluxDB access token. Only necessary when using the http v2 api. If the v2 compatibility api is used, use `user:password` instead.
 - `influx_verify` (Boolean) Set to `false` to disable certificate verification for https endpoints.
 - `mtu` (Number) MTU (maximum transmission unit) for metrics transmission over UDP. If not set, PVE default is `1500` (allowed `512` - `65536`).
+- `opentelemetry_compression` (String) OpenTelemetry compression algorithm for requests. Choice is between `none` | `gzip`. If not set, PVE default is `gzip`.
+- `opentelemetry_headers` (String) OpenTelemetry custom HTTP headers as JSON, base64 encoded.
+- `opentelemetry_max_body_size` (Number) OpenTelemetry maximum request body size in bytes. If not set, PVE default is `10000000`.
 - `opentelemetry_path` (String) OpenTelemetry endpoint path (e.g., `/v1/metrics`).
 - `opentelemetry_proto` (String) Protocol for OpenTelemetry. Choice is between `http` | `https`. If not set, PVE default is `http`.
+- `opentelemetry_resource_attributes` (String) OpenTelemetry additional resource attributes as JSON, base64 encoded.
+- `opentelemetry_timeout` (Number) OpenTelemetry HTTP request timeout in seconds. If not set, PVE default is `5`.
+- `opentelemetry_verify_ssl` (Boolean) OpenTelemetry verify SSL certificates. If not set, PVE default is `true`.
 - `timeout` (Number) TCP socket timeout in seconds. If not set, PVE default is `1`.
 
 ### Read-Only

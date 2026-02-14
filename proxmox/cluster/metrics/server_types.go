@@ -30,8 +30,14 @@ type ServerData struct {
 	Proto *string `json:"proto,omitempty" url:"proto,omitempty"`
 
 	// opentelemetry only options
-	OTelProto *string `json:"otel-protocol,omitempty" url:"otel-protocol,omitempty"`
-	OTelPath  *string `json:"otel-path,omitempty"     url:"otel-path,omitempty"`
+	OTelProto              *string `json:"otel-protocol,omitempty"            url:"otel-protocol,omitempty"`
+	OTelPath               *string `json:"otel-path,omitempty"                url:"otel-path,omitempty"`
+	OTelTimeout            *int64  `json:"otel-timeout,omitempty"             url:"otel-timeout,omitempty"`
+	OTelHeaders            *string `json:"otel-headers,omitempty"             url:"otel-headers,omitempty"`
+	OTelVerifySSL          *int64  `json:"otel-verify-ssl,omitempty"          url:"otel-verify-ssl,omitempty"`
+	OTelMaxBodySize        *int64  `json:"otel-max-body-size,omitempty"       url:"otel-max-body-size,omitempty"`
+	OTelResourceAttributes *string `json:"otel-resource-attributes,omitempty" url:"otel-resource-attributes,omitempty"`
+	OTelCompression        *string `json:"otel-compression,omitempty"         url:"otel-compression,omitempty"`
 }
 
 // ServerResponseBody contains the body from a metrics server response.
