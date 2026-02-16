@@ -35,10 +35,6 @@ import (
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
-const (
-	defaultNetworkReloadTimeoutSeconds int64 = 100
-)
-
 var (
 	_ resource.Resource                = &linuxBridgeResource{}
 	_ resource.ResourceWithConfigure   = &linuxBridgeResource{}
@@ -238,9 +234,9 @@ func (r *linuxBridgeResource) Schema(
 				Description: "Timeout for network reload operations in seconds (defaults to `100`).",
 				Optional:    true,
 				Computed:    true,
-				Default:     int64default.StaticInt64(defaultNetworkReloadTimeoutSeconds),
+				Default:     int64default.StaticInt64(int64(nodes.NetworkReloadTimeout.Seconds())),
 				Validators: []validator.Int64{
-					int64validator.AtLeast(1),
+					int64validator.AtLeast(5),
 				},
 			},
 			// Linux Bridge attributes
@@ -546,6 +542,7 @@ func (r *linuxBridgeResource) ImportState(
 		ID:       types.StringValue(req.ID),
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),
+		Timeout:  types.Int64Value(int64(nodes.NetworkReloadTimeout.Seconds())),
 	}
 	found := r.read(ctx, &state, &resp.Diagnostics)
 

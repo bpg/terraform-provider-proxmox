@@ -205,9 +205,9 @@ func (r *linuxVLANResource) Schema(
 				Description: "Timeout for network reload operations in seconds (defaults to `100`).",
 				Optional:    true,
 				Computed:    true,
-				Default:     int64default.StaticInt64(defaultNetworkReloadTimeoutSeconds),
+				Default:     int64default.StaticInt64(int64(nodes.NetworkReloadTimeout.Seconds())),
 				Validators: []validator.Int64{
-					int64validator.AtLeast(1),
+					int64validator.AtLeast(5),
 				},
 			},
 			// Linux VLAN attributes
@@ -490,6 +490,7 @@ func (r *linuxVLANResource) ImportState(
 		ID:       types.StringValue(req.ID),
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),
+		Timeout:  types.Int64Value(int64(nodes.NetworkReloadTimeout.Seconds())),
 	}
 	found := r.read(ctx, &state, &resp.Diagnostics)
 
