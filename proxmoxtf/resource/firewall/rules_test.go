@@ -268,3 +268,67 @@ func TestMapToBaseRuleWithNonEmptyValues(t *testing.T) {
 	require.Equal(t, "192.168.1.0/24", *baseRule.Source)
 	require.Equal(t, "8080", *baseRule.SPort)
 }
+
+// TestComputeRuleSignature tests the signature computation for rules.
+func TestComputeRuleSignature(t *testing.T) {
+	t.Parallel()
+
+	regularRule := map[string]any{
+		mkRuleAction:    "ACCEPT",
+		mkRuleType:      "in",
+		mkRuleDest:      "192.168.1.0/24",
+		mkRuleDPort:     "80",
+		mkRuleSource:    "10.0.0.0/8",
+		mkRuleSPort:     "1024",
+		mkRuleProto:     "tcp",
+		mkRuleMacro:     "",
+		mkRuleIFace:     "net0",
+		mkSecurityGroup: "",
+		mkRuleComment:   "Test comment", // should be excluded
+		mkRuleEnabled:   true,           // should be excluded
+		mkRuleLog:       "info",         // should be excluded
+	}
+
+	sig1 := computeRuleSignature(regularRule)
+	require.NotEmpty(t, sig1)
+	require.Contains(t, sig1, "rule:")
+	require.Contains(t, sig1, "ACCEPT")
+	require.Contains(t, sig1, "in")
+
+	regularRule[mkRuleComment] = "Different comment"
+	sig2 := computeRuleSignature(regularRule)
+	require.Equal(t, sig1, sig2, "Signature should not change when only comment changes")
+
+	regularRule[mkRuleAction] = "DROP"
+	sig3 := computeRuleSignature(regularRule)
+	require.NotEqual(t, sig1, sig3, "Signature should change when action changes")
+
+	groupRule := map[string]any{
+		mkSecurityGroup: "foo",
+		mkRuleIFace:     "net0",
+		mkRuleComment:   "Group comment",
+		mkRuleEnabled:   true,
+		mkRuleAction:    "",
+		mkRuleType:      "",
+		mkRuleDest:      "",
+		mkRuleDPort:     "",
+		mkRuleSource:    "",
+		mkRuleSPort:     "",
+		mkRuleProto:     "",
+		mkRuleMacro:     "",
+		mkRuleLog:       "",
+	}
+
+	groupSig1 := computeRuleSignature(groupRule)
+	require.NotEmpty(t, groupSig1)
+	require.Contains(t, groupSig1, "group:")
+	require.Contains(t, groupSig1, "foo")
+
+	groupRule[mkRuleComment] = "Different group comment"
+	groupSig2 := computeRuleSignature(groupRule)
+	require.Equal(t, groupSig1, groupSig2, "Group signature should not change when only comment changes")
+
+	groupRule[mkSecurityGroup] = "bar"
+	groupSig3 := computeRuleSignature(groupRule)
+	require.NotEqual(t, groupSig1, groupSig3, "Group signature should change when group name changes")
+}
