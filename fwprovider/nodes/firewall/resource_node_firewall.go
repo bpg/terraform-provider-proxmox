@@ -401,7 +401,7 @@ func (r *nodeFirewallOptionsResource) Delete(
 	}
 
 	body := &nodefirewall.OptionsPutRequestBody{
-		Delete: &toDelete,
+		Delete: toDelete,
 	}
 
 	err := r.client.Node(nodeName).Firewall().SetNodeOptions(ctx, body)

@@ -482,9 +482,8 @@ func (r *acmeCertificateResource) Delete(
 	}
 
 	// Clean up the ACME configuration from the node
-	toDelete := "acme,acmedomain0,acmedomain1,acmedomain2,acmedomain3,acmedomain4"
 	configUpdate := &nodes.ConfigUpdateRequestBody{
-		Delete: &toDelete,
+		Delete: []string{"acme", "acmedomain0", "acmedomain1", "acmedomain2", "acmedomain3", "acmedomain4"},
 	}
 
 	if err := nodeClient.UpdateConfig(ctx, configUpdate); err != nil {
@@ -675,8 +674,7 @@ func (r *acmeCertificateResource) configureNodeACME(
 	}
 
 	if len(toDelete) > 0 {
-		deleteValue := strings.Join(toDelete, ",")
-		configUpdate.Delete = &deleteValue
+		configUpdate.Delete = toDelete
 	}
 
 	// Update the node configuration

@@ -85,15 +85,15 @@ type OptionsResponseData struct {
 type OptionsRequestData struct {
 	optionsBaseData
 
-	MaxWorkers                *int64  `json:"max_workers,omitempty"     url:"max_workers,omitempty"`
-	Delete                    *string `json:"delete,omitempty"          url:"delete,omitempty"`
-	ClusterResourceScheduling *string `json:"crs,omitempty"             url:"crs,omitempty"`
-	HASettings                *string `json:"ha,omitempty"              url:"ha,omitempty"`
-	TagStyle                  *string `json:"tag-style,omitempty"       url:"tag-style,omitempty"`
-	Migration                 *string `json:"migration,omitempty"       url:"migration,omitempty"`
-	Webauthn                  *string `json:"webauthn,omitempty"        url:"webauthn,omitempty"`
-	NextID                    *string `json:"next-id,omitempty"         url:"next-id,omitempty"`
-	Notify                    *string `json:"notify,omitempty"          url:"notify,omitempty"`
-	UserTagAccess             *string `json:"user-tag-access,omitempty" url:"user-tag-access,omitempty"`
-	RegisteredTags            *string `json:"registered-tags,omitempty" url:"registered-tags,omitempty"`
+	MaxWorkers                *int64   `json:"max_workers,omitempty"     url:"max_workers,omitempty"`
+	Delete                    []string `json:"delete,omitempty"          url:"delete,omitempty,comma"`
+	ClusterResourceScheduling *string  `json:"crs,omitempty"             url:"crs,omitempty"`
+	HASettings                *string  `json:"ha,omitempty"              url:"ha,omitempty"`
+	TagStyle                  *string  `json:"tag-style,omitempty"       url:"tag-style,omitempty"`
+	Migration                 *string  `json:"migration,omitempty"       url:"migration,omitempty"`
+	Webauthn                  *string  `json:"webauthn,omitempty"        url:"webauthn,omitempty"`
+	NextID                    *string  `json:"next-id,omitempty"         url:"next-id,omitempty"`
+	Notify                    *string  `json:"notify,omitempty"          url:"notify,omitempty"`
+	UserTagAccess             *string  `json:"user-tag-access,omitempty" url:"user-tag-access,omitempty"`
+	RegisteredTags            *string  `json:"registered-tags,omitempty" url:"registered-tags,omitempty"`
 }

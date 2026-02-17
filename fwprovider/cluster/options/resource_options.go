@@ -846,8 +846,7 @@ func (r *clusterOptionsResource) Update(
 	attribute.CheckDelete(plan.MaxWorkers, state.MaxWorkers, &toDelete, "max_workers")
 
 	if len(toDelete) > 0 {
-		d := strings.Join(toDelete, ",")
-		body.Delete = &d
+		body.Delete = toDelete
 	}
 
 	err := r.client.Cluster().CreateUpdateOptions(ctx, body)
@@ -941,9 +940,8 @@ func (r *clusterOptionsResource) Delete(
 	}
 
 	if len(toDelete) > 0 {
-		d := strings.Join(toDelete, ",")
 		body := &cluster.OptionsRequestData{
-			Delete: &d,
+			Delete: toDelete,
 		}
 
 		err := r.client.Cluster().CreateUpdateOptions(ctx, body)

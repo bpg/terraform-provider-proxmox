@@ -379,7 +379,7 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 	attribute.CheckDelete(plan.Gateway6, state.Gateway6, &toDelete, "gateway6")
 
 	if len(toDelete) > 0 {
-		body.Delete = &toDelete
+		body.Delete = toDelete
 	}
 
 	err := r.client.Node(plan.NodeName.ValueString()).UpdateNetworkInterface(ctx, plan.Name.ValueString(), body)

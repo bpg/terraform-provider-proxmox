@@ -421,7 +421,7 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	if len(toDelete) > 0 {
-		body.Delete = &toDelete
+		body.Delete = toDelete
 	}
 
 	err := r.client.Node(plan.NodeName.ValueString()).UpdateNetworkInterface(ctx, plan.Name.ValueString(), body)
