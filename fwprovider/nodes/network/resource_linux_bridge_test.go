@@ -90,6 +90,34 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					}),
 				),
 			},
+			// Update testing (remove v4 + v6)
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+							resource "proxmox_virtual_environment_network_linux_bridge" "test" {
+								autostart  = false
+								comment    = ""
+								mtu        = null
+								name       = "%s"
+								node_name  = "{{.NodeName}}"
+								vlan_aware = false
+							}`, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.NoResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+						"address",
+						"address6",
+						"mtu",
+					}),
+					test.ResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
+						"autostart":  "false",
+						"comment":    "",
+						"name":       iface,
+						"vlan_aware": "false",
+					}),
+					test.ResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+						"id",
+					}),
+				),
+			},
 			// ImportState testing
 			{
 				ResourceName:      "proxmox_virtual_environment_network_linux_bridge.test",

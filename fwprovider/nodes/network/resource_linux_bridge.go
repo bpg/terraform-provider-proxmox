@@ -408,6 +408,16 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 
 	var toDelete []string
 
+	if !plan.Address.Equal(state.Address) && plan.Address.IsNull() {
+		toDelete = append(toDelete, "cidr")
+		body.CIDR = nil
+	}
+
+	if !plan.Address6.Equal(state.Address6) && plan.Address6.IsNull() {
+		toDelete = append(toDelete, "cidr6")
+		body.CIDR6 = nil
+	}
+
 	if !plan.MTU.Equal(state.MTU) && plan.MTU.ValueInt64() == 0 {
 		toDelete = append(toDelete, "mtu")
 		body.MTU = nil
