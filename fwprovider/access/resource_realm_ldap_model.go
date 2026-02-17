@@ -7,8 +7,6 @@
 package access
 
 import (
-	"strings"
-
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -232,8 +230,7 @@ func (m *realmLDAPModel) toUpdateRequest(state *realmLDAPModel) *access.RealmUpd
 	}
 
 	if len(toDelete) > 0 {
-		deleteStr := strings.Join(toDelete, ",")
-		req.Delete = &deleteStr
+		req.Delete = toDelete
 	}
 
 	return req

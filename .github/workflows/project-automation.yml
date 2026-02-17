@@ -1,10 +1,11 @@
 name: Project Automation
 
 on:
-  issues:
-    types: [opened, labeled, closed, reopened]
-  pull_request:
-    types: [opened, closed]
+  # issues:
+  #   types: [opened, labeled, closed, reopened]
+  # pull_request:
+  #   types: [opened, closed]
+  workflow_dispatch:
 
 env:
   PROJECT_NUMBER: 4

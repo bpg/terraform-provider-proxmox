@@ -34,9 +34,11 @@ func ResourceAttributes(res string, attrs map[string]string) resource.TestCheckF
 				if err != nil {
 					return fmt.Errorf("error matching '%s': %w", v, err)
 				}
+
 				if !match {
 					return fmt.Errorf("expected '%s' to match '%s'", got, v)
 				}
+
 				return nil
 			})(s); err != nil {
 				return err

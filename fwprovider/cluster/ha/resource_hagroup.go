@@ -216,7 +216,7 @@ func (r *hagroupResource) Update(ctx context.Context, req resource.UpdateRequest
 	updateRequest.Restricted.FromValue(data.Restricted)
 
 	if updateRequest.Comment == nil && !state.Comment.IsNull() {
-		updateRequest.Delete = "comment"
+		updateRequest.Delete = []string{"comment"}
 	}
 
 	err := r.client.Update(ctx, state.Group.ValueString(), updateRequest)

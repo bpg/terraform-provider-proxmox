@@ -13,12 +13,15 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -50,6 +53,7 @@ type linuxBridgeResourceModel struct {
 	Autostart types.Bool              `tfsdk:"autostart"`
 	MTU       types.Int64             `tfsdk:"mtu"`
 	Comment   types.String            `tfsdk:"comment"`
+	Timeout   types.Int64             `tfsdk:"timeout_reload"`
 	// Linux bridge attributes
 	Ports     []types.String `tfsdk:"ports"`
 	VLANAware types.Bool     `tfsdk:"vlan_aware"`
@@ -226,6 +230,15 @@ func (r *linuxBridgeResource) Schema(
 				Description: "Comment for the interface.",
 				Optional:    true,
 			},
+			"timeout_reload": schema.Int64Attribute{
+				Description: "Timeout for network reload operations in seconds (defaults to `100`).",
+				Optional:    true,
+				Computed:    true,
+				Default:     int64default.StaticInt64(int64(nodes.NetworkReloadTimeout.Seconds())),
+				Validators: []validator.Int64{
+					int64validator.AtLeast(5),
+				},
+			},
 			// Linux Bridge attributes
 			"ports": schema.ListAttribute{
 				Description: "The interface bridge ports.",
@@ -308,7 +321,10 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 	resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 
-	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(ctx)
+	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+	defer cancel()
+
+	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reloading network configuration",
@@ -392,29 +408,20 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 
 	var toDelete []string
 
-	if !plan.MTU.Equal(state.MTU) && plan.MTU.ValueInt64() == 0 {
-		toDelete = append(toDelete, "mtu")
-		body.MTU = nil
-	}
+	attribute.CheckDelete(plan.Address, state.Address, &toDelete, "cidr")
+	attribute.CheckDelete(plan.Address6, state.Address6, &toDelete, "cidr6")
+	attribute.CheckDelete(plan.MTU, state.MTU, &toDelete, "mtu")
+	attribute.CheckDelete(plan.Gateway, state.Gateway, &toDelete, "gateway")
+	attribute.CheckDelete(plan.Gateway6, state.Gateway6, &toDelete, "gateway6")
 
-	if !plan.Gateway.Equal(state.Gateway) && plan.Gateway.ValueString() == "" {
-		toDelete = append(toDelete, "gateway")
-		body.Gateway = nil
-	}
-
-	if !plan.Gateway6.Equal(state.Gateway6) && plan.Gateway6.ValueString() == "" {
-		toDelete = append(toDelete, "gateway6")
-		body.Gateway6 = nil
-	}
-
-	// VLANAware is computed, will never be null
+	// VLANAware is computed with a default, will never be null
 	if !plan.VLANAware.Equal(state.VLANAware) && !plan.VLANAware.ValueBool() {
 		toDelete = append(toDelete, "bridge_vlan_aware")
 		body.BridgeVLANAware = nil
 	}
 
 	if len(toDelete) > 0 {
-		body.Delete = &toDelete
+		body.Delete = toDelete
 	}
 
 	err := r.client.Node(plan.NodeName.ValueString()).UpdateNetworkInterface(ctx, plan.Name.ValueString(), body)
@@ -446,12 +453,15 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
-	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(ctx)
+	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+	defer cancel()
+
+	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reloading network configuration",
 			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				state.NodeName.ValueString(), err.Error()),
+				plan.NodeName.ValueString(), err.Error()),
 		)
 	}
 }
@@ -488,7 +498,10 @@ func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteReq
 		return
 	}
 
-	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(ctx)
+	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(state.Timeout.ValueInt64())*time.Second)
+	defer cancel()
+
+	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reloading network configuration",
@@ -520,6 +533,7 @@ func (r *linuxBridgeResource) ImportState(
 		ID:       types.StringValue(req.ID),
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),
+		Timeout:  types.Int64Value(int64(nodes.NetworkReloadTimeout.Seconds())),
 	}
 	found := r.read(ctx, &state, &resp.Diagnostics)
 
