@@ -54,5 +54,5 @@ type ServersResponseBody struct {
 type ServerRequestData struct {
 	ServerData
 
-	Delete *[]string `url:"delete,omitempty"`
+	Delete []string `url:"delete,omitempty,comma"`
 }

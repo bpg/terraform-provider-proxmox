@@ -339,7 +339,7 @@ func (r *metricsServerResource) Update(
 	attribute.CheckDelete(plan.OTelCompression, state.OTelCompression, &toDelete, "otel-compression")
 
 	reqData := plan.toAPIRequestBody()
-	reqData.Delete = &toDelete
+	reqData.Delete = toDelete
 
 	err := r.client.UpdateServer(ctx, reqData)
 	if err != nil {

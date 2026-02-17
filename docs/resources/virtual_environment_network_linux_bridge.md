@@ -63,6 +63,7 @@ resource "proxmox_virtual_environment_network_linux_vlan" "vlan99" {
 - `gateway6` (String) Default IPv6 gateway address.
 - `mtu` (Number) The interface MTU.
 - `ports` (List of String) The interface bridge ports.
+- `timeout_reload` (Number) Timeout for network reload operations in seconds (defaults to `100`).
 - `vlan_aware` (Boolean) Whether the interface bridge is VLAN aware (defaults to `false`).
 
 ### Read-Only

@@ -76,7 +76,7 @@ type ACMEPluginsUpdateRequestBody struct {
 	// DNS plugin data. (base64 encoded)
 	Data *DNSPluginData `url:"data,omitempty"`
 	// A list of settings you want to delete.
-	Delete string `url:"delete,omitempty"`
+	Delete []string `url:"delete,omitempty,comma"`
 	// Flag to disable the config.
 	Disable bool `url:"disable,omitempty,int"`
 }

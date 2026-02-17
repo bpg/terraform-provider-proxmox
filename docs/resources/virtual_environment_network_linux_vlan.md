@@ -51,6 +51,7 @@ resource "proxmox_virtual_environment_network_linux_vlan" "vlan98" {
 - `gateway6` (String) Default IPv6 gateway address.
 - `interface` (String) The VLAN raw device. See also `name`.
 - `mtu` (Number) The interface MTU.
+- `timeout_reload` (Number) Timeout for network reload operations in seconds (defaults to `100`).
 - `vlan` (Number) The VLAN tag. See also `name`.
 
 ### Read-Only

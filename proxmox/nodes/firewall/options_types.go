@@ -41,5 +41,5 @@ type OptionsGetResponseData struct {
 type OptionsPutRequestBody struct {
 	OptionsGetResponseData
 
-	Delete *[]string `url:"delete,omitempty"`
+	Delete []string `url:"delete,omitempty,comma"`
 }

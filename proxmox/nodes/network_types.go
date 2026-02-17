@@ -66,7 +66,7 @@ type NetworkInterfaceCreateUpdateRequestBody struct {
 	Comments6          *string           `json:"comments6,omitempty"             url:"comments6,omitempty"`
 	Gateway            *string           `json:"gateway,omitempty"               url:"gateway,omitempty"`
 	Gateway6           *string           `json:"gateway6,omitempty"              url:"gateway6,omitempty"`
-	Delete             *[]string         `json:"delete,omitempty"                url:"delete,omitempty"`
+	Delete             []string          `json:"delete,omitempty"                url:"delete,omitempty,comma"`
 	MTU                *int64            `json:"mtu,omitempty"                   url:"mtu,omitempty"`
 	Netmask            *string           `json:"netmask,omitempty"               url:"netmask,omitempty"`
 	Netmask6           *string           `json:"netmask6,omitempty"              url:"netmask6,omitempty"`
