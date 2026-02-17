@@ -261,6 +261,15 @@ func (m *clusterOptionsModel) bandwidthData() string {
 	return ""
 }
 
+// checkCompositeDelete adds an API field name to the delete list if the plan's serialized value
+// is empty but the state's was not. This is the string-based equivalent of attribute.CheckDelete
+// for composite fields where multiple model fields serialize into a single API parameter.
+func checkCompositeDelete(planData, stateData string, toDelete *[]string, apiName string) {
+	if planData == "" && stateData != "" {
+		*toDelete = append(*toDelete, apiName)
+	}
+}
+
 func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData {
 	body := &cluster.OptionsRequestData{}
 
@@ -302,7 +311,7 @@ func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData
 		body.MacPrefix = m.MacPrefix.ValueStringPointer()
 	}
 
-	if !m.MacPrefix.IsUnknown() {
+	if !m.Description.IsUnknown() {
 		body.Description = m.Description.ValueStringPointer()
 	}
 
@@ -814,61 +823,25 @@ func (r *clusterOptionsResource) Update(
 
 	var toDelete []string
 
-	if !plan.Keyboard.Equal(state.Keyboard) && plan.Keyboard.ValueString() == "" {
-		toDelete = append(toDelete, "keyboard")
-	}
+	attribute.CheckDelete(plan.Keyboard, state.Keyboard, &toDelete, "keyboard")
 
-	if plan.bandwidthData() != state.bandwidthData() && plan.bandwidthData() == "" {
-		toDelete = append(toDelete, "bwlimit")
-	}
+	// Composite fields use checkCompositeDelete instead of attribute.CheckDelete because
+	// multiple model fields are serialized into a single API parameter string (e.g. "type=secure,network=10.0.0.0/8").
+	// attribute.CheckDelete expects attr.Value types, not serialized strings.
+	checkCompositeDelete(plan.bandwidthData(), state.bandwidthData(), &toDelete, "bwlimit")
+	checkCompositeDelete(plan.crsData(), state.crsData(), &toDelete, "crs")
+	checkCompositeDelete(plan.haData(), state.haData(), &toDelete, "ha")
+	checkCompositeDelete(plan.migrationData(), state.migrationData(), &toDelete, "migration")
+	checkCompositeDelete(plan.nextIDData(), state.nextIDData(), &toDelete, "next-id")
+	checkCompositeDelete(plan.notifyData(), state.notifyData(), &toDelete, "notify")
 
-	if plan.crsData() != state.crsData() && plan.crsData() == "" {
-		toDelete = append(toDelete, "crs")
-	}
-
-	if plan.haData() != state.haData() && plan.haData() == "" {
-		toDelete = append(toDelete, "ha")
-	}
-
-	if plan.migrationData() != state.migrationData() && plan.migrationData() == "" {
-		toDelete = append(toDelete, "migration")
-	}
-
-	if plan.nextIDData() != state.nextIDData() && plan.nextIDData() == "" {
-		toDelete = append(toDelete, "next-id")
-	}
-
-	if plan.notifyData() != state.notifyData() && plan.notifyData() == "" {
-		toDelete = append(toDelete, "notify")
-	}
-
-	if !plan.EmailFrom.Equal(state.EmailFrom) && plan.EmailFrom.ValueString() == "" {
-		toDelete = append(toDelete, "email_from")
-	}
-
-	if !plan.Language.Equal(state.Language) && plan.Language.ValueString() == "" {
-		toDelete = append(toDelete, "language")
-	}
-
-	if !plan.Console.Equal(state.Console) && plan.Console.ValueString() == "" {
-		toDelete = append(toDelete, "console")
-	}
-
-	if !plan.HTTPProxy.Equal(state.HTTPProxy) && plan.HTTPProxy.ValueString() == "" {
-		toDelete = append(toDelete, "http_proxy")
-	}
-
-	if !plan.MacPrefix.Equal(state.MacPrefix) && plan.MacPrefix.ValueString() == "" {
-		toDelete = append(toDelete, "mac_prefix")
-	}
-
-	if !plan.Description.Equal(state.Description) && plan.Description.ValueString() == "" {
-		toDelete = append(toDelete, "description")
-	}
-
-	if !plan.MaxWorkers.Equal(state.MaxWorkers) && plan.MaxWorkers.ValueInt64() == 0 {
-		toDelete = append(toDelete, "max_workers")
-	}
+	attribute.CheckDelete(plan.EmailFrom, state.EmailFrom, &toDelete, "email_from")
+	attribute.CheckDelete(plan.Language, state.Language, &toDelete, "language")
+	attribute.CheckDelete(plan.Console, state.Console, &toDelete, "console")
+	attribute.CheckDelete(plan.HTTPProxy, state.HTTPProxy, &toDelete, "http_proxy")
+	attribute.CheckDelete(plan.MacPrefix, state.MacPrefix, &toDelete, "mac_prefix")
+	attribute.CheckDelete(plan.Description, state.Description, &toDelete, "description")
+	attribute.CheckDelete(plan.MaxWorkers, state.MaxWorkers, &toDelete, "max_workers")
 
 	if len(toDelete) > 0 {
 		d := strings.Join(toDelete, ",")

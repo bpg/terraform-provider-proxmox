@@ -55,6 +55,7 @@ func testAccResourceClusterOptionsCreatedConfig() string {
 	resource "proxmox_virtual_environment_cluster_options" "test_options" {
 		bandwidth_limit_default   = 666666
 		bandwidth_limit_migration = 555554
+		console                   = "html5"
 		crs_ha                    = "static"
 		email_from                = "example@example.com"
 		ha_shutdown_policy        = "freeze"
@@ -89,6 +90,7 @@ func testAccResourceClusterOptionsCreatedCheck() resource.TestCheckFunc {
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "bandwidth_limit_default", "666666"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "bandwidth_limit_migration", "555554"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "bandwidth_limit_restore", "777777"),
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "console", "html5"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "crs_ha", "static"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "email_from", "example@example.com"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "ha_shutdown_policy", "freeze"),
@@ -126,7 +128,6 @@ func testAccResourceClusterOptionsUpdatedConfig() string {
     bandwidth_limit_migration = 111111
     email_from                = "ged@gont.earthsea"
     language                  = "en"
-    max_workers               = 6
     migration_cidr            = "10.0.0.1/8"
     migration_type            = "secure"
 		next_id = {
@@ -152,7 +153,6 @@ func testAccResourceClusterOptionsUpdatedCheck() resource.TestCheckFunc {
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "email_from", "ged@gont.earthsea"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "id", "cluster"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "language", "en"),
-		resource.TestCheckResourceAttr(accTestClusterOptionsName, "max_workers", "6"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "migration_cidr", "10.0.0.1/8"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "migration_type", "secure"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "next_id.lower", "555"),
@@ -164,9 +164,12 @@ func testAccResourceClusterOptionsUpdatedCheck() resource.TestCheckFunc {
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "notify.replication", "never"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "notify.replication_target", "custom-matcher"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "bandwidth_limit_move"),
+		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "bandwidth_limit_restore"),
+		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "console"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "crs_ha"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "ha_shutdown_policy"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "http_proxy"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "keyboard"),
+		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "max_workers"),
 	)
 }
