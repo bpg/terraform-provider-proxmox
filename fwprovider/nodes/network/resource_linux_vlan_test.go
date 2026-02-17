@@ -170,6 +170,8 @@ func testAccResourceLinuxVLANAddressRemovedCheck(iface string, vlan int) resourc
 		test.NoResourceAttributesSet(accTestLinuxVLANName, []string{
 			"address",
 			"address6",
+			"gateway",
+			"gateway6",
 			"mtu",
 		}),
 		test.ResourceAttributes(accTestLinuxVLANName, map[string]string{
