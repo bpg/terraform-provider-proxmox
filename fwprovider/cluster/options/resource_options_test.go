@@ -124,6 +124,7 @@ func testAccResourceClusterOptionsCreatedCheck() resource.TestCheckFunc {
 func testAccResourceClusterOptionsUpdatedConfig() string {
 	return `
   resource "proxmox_virtual_environment_cluster_options" "test_options" {
+    bandwidth_limit_clone     = 0
     bandwidth_limit_default   = 333333
     bandwidth_limit_migration = 111111
     email_from                = "ged@gont.earthsea"
@@ -148,6 +149,7 @@ func testAccResourceClusterOptionsUpdatedConfig() string {
 
 func testAccResourceClusterOptionsUpdatedCheck() resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "bandwidth_limit_clone", "0"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "bandwidth_limit_default", "333333"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "bandwidth_limit_migration", "111111"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "email_from", "ged@gont.earthsea"),

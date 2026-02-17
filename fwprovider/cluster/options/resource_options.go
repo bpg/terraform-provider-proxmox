@@ -95,7 +95,7 @@ type clusterOptionsNotifyModel struct {
 func (m *clusterOptionsModel) haData() string {
 	var haDataParams []string
 
-	if !m.HAShutdownPolicy.IsNull() && m.HAShutdownPolicy.ValueString() != "" {
+	if !m.HAShutdownPolicy.IsNull() {
 		haDataParams = append(haDataParams, fmt.Sprintf("shutdown_policy=%s", m.HAShutdownPolicy.ValueString()))
 	}
 
@@ -111,11 +111,11 @@ func (m *clusterOptionsModel) haData() string {
 func (m *clusterOptionsModel) migrationData() string {
 	var migrationDataParams []string
 
-	if !m.MigrationType.IsNull() && m.MigrationType.ValueString() != "" {
+	if !m.MigrationType.IsNull() {
 		migrationDataParams = append(migrationDataParams, fmt.Sprintf("type=%s", m.MigrationType.ValueString()))
 	}
 
-	if !m.MigrationNetwork.IsNull() && m.MigrationNetwork.ValueString() != "" {
+	if !m.MigrationNetwork.IsNull() {
 		migrationDataParams = append(migrationDataParams, fmt.Sprintf("network=%s", m.MigrationNetwork.ValueString()))
 	}
 
@@ -207,7 +207,7 @@ func (m *clusterOptionsModel) notifyData() string {
 func (m *clusterOptionsModel) crsData() string {
 	var crsDataParams []string
 
-	if !m.CrsHA.IsNull() && m.CrsHA.ValueString() != "" {
+	if attribute.IsDefined(m.CrsHA) {
 		crsDataParams = append(crsDataParams, fmt.Sprintf("ha=%s", m.CrsHA.ValueString()))
 	}
 
@@ -234,23 +234,23 @@ func (m *clusterOptionsModel) crsData() string {
 func (m *clusterOptionsModel) bandwidthData() string {
 	var bandwidthParams []string
 
-	if !m.BandwidthLimitClone.IsNull() && m.BandwidthLimitClone.ValueInt64() != 0 {
+	if !m.BandwidthLimitClone.IsNull() {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("clone=%d", m.BandwidthLimitClone.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitDefault.IsNull() && m.BandwidthLimitDefault.ValueInt64() != 0 {
+	if !m.BandwidthLimitDefault.IsNull() {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("default=%d", m.BandwidthLimitDefault.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitMigration.IsNull() && m.BandwidthLimitMigration.ValueInt64() != 0 {
+	if !m.BandwidthLimitMigration.IsNull() {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("migration=%d", m.BandwidthLimitMigration.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitMove.IsNull() && m.BandwidthLimitMove.ValueInt64() != 0 {
+	if !m.BandwidthLimitMove.IsNull() {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("move=%d", m.BandwidthLimitMove.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitRestore.IsNull() && m.BandwidthLimitRestore.ValueInt64() != 0 {
+	if !m.BandwidthLimitRestore.IsNull() {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("restore=%d", m.BandwidthLimitRestore.ValueInt64()))
 	}
 
@@ -878,9 +878,11 @@ func (r *clusterOptionsResource) Delete(
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
+	// Delete() has no plan — we simply clear all fields that have values in state.
+	// attribute.CheckDelete cannot be used here because it compares plan vs state.
 	var toDelete []string
 
-	if !state.Keyboard.IsNull() && state.Keyboard.ValueString() != "" {
+	if attribute.IsDefined(state.Keyboard) {
 		toDelete = append(toDelete, "keyboard")
 	}
 
@@ -908,31 +910,31 @@ func (r *clusterOptionsResource) Delete(
 		toDelete = append(toDelete, "notify")
 	}
 
-	if !state.EmailFrom.IsNull() && state.EmailFrom.ValueString() != "" {
+	if attribute.IsDefined(state.EmailFrom) {
 		toDelete = append(toDelete, "email_from")
 	}
 
-	if !state.Language.IsNull() && state.Language.ValueString() != "" {
+	if attribute.IsDefined(state.Language) {
 		toDelete = append(toDelete, "language")
 	}
 
-	if !state.Console.IsNull() && state.Console.ValueString() != "" {
+	if attribute.IsDefined(state.Console) {
 		toDelete = append(toDelete, "console")
 	}
 
-	if !state.HTTPProxy.IsNull() && state.HTTPProxy.ValueString() != "" {
+	if attribute.IsDefined(state.HTTPProxy) {
 		toDelete = append(toDelete, "http_proxy")
 	}
 
-	if !state.MacPrefix.IsNull() && state.MacPrefix.ValueString() != "" {
+	if attribute.IsDefined(state.MacPrefix) {
 		toDelete = append(toDelete, "mac_prefix")
 	}
 
-	if !state.Description.IsNull() && state.Description.ValueString() != "" {
+	if attribute.IsDefined(state.Description) {
 		toDelete = append(toDelete, "description")
 	}
 
-	if !state.MaxWorkers.IsNull() && state.MaxWorkers.ValueInt64() != 0 {
+	if attribute.IsDefined(state.MaxWorkers) {
 		toDelete = append(toDelete, "max_workers")
 	}
 
