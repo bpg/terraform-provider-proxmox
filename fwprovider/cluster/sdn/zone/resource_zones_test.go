@@ -89,6 +89,35 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 			// ImportState:       true,
 			// ImportStateVerify: true,
 		}}},
+		{"create zone without mtu", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_no_mtu" {
+				  id  = "zoneNM"
+				  nodes = ["{{.NodeName}}"]
+				  depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "zone_no_mtu_applier" {
+				  depends_on = [
+					proxmox_virtual_environment_sdn_zone_simple.zone_no_mtu
+				  ]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_simple.zone_no_mtu", map[string]string{
+					"id":      "zoneNM",
+					"pending": "true",
+					"state":   "new",
+				}),
+				test.NoResourceAttributesSet("proxmox_virtual_environment_sdn_zone_simple.zone_no_mtu", []string{
+					"mtu",
+				}),
+			),
+		}}},
 		{"create zones with empty nodes", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple2" {

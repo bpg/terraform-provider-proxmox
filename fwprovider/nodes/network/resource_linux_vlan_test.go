@@ -50,6 +50,9 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 				ResourceName:      accTestLinuxVLANName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"timeout_reload",
+				},
 			},
 			// Create and Read with a custom name
 			{
@@ -76,6 +79,7 @@ func testAccResourceLinuxVLANCreatedConfig(iface string, vlan int) string {
 		mtu = 1499
 		name = "%s.%d"
 		node_name = "{{.NodeName}}"
+		timeout_reload = 60
 	}
 	`, iface, vlan)
 }
@@ -86,6 +90,7 @@ func testAccResourceLinuxVLANCreatedCheck(iface string, vlan int) resource.TestC
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "interface", iface),
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "name", fmt.Sprintf("%s.%d", iface, vlan)),
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "vlan", strconv.Itoa(vlan)),
+		resource.TestCheckResourceAttr(accTestLinuxVLANName, "timeout_reload", "60"),
 		resource.TestCheckResourceAttrSet(accTestLinuxVLANName, "id"),
 	)
 }
@@ -98,6 +103,7 @@ func testAccResourceLinuxVLANCustomNameCreatedConfig(name string, iface string, 
 		mtu = 1499
 		name = "%s"
 		node_name = "{{.NodeName}}"
+		timeout_reload = 60
 		vlan = %d
 	}
 	`, name, iface, name, vlan)
@@ -111,6 +117,7 @@ func testAccResourceLinuxVLANCustomNameCreatedCheck(name string, iface string, v
 		resource.TestCheckResourceAttr(resourceName, "interface", iface),
 		resource.TestCheckResourceAttr(resourceName, "name", name),
 		resource.TestCheckResourceAttr(resourceName, "vlan", strconv.Itoa(vlan)),
+		resource.TestCheckResourceAttr(resourceName, "timeout_reload", "60"),
 		resource.TestCheckResourceAttrSet(resourceName, "id"),
 	)
 }
@@ -123,6 +130,7 @@ func testAccResourceLinuxVLANUpdatedConfig(iface string, vlan int, ipV4cidr stri
 		comment = "updated by terraform"
 		name = "%s.%d"
 		node_name = "{{.NodeName}}"
+		timeout_reload = 60
 	}
 	`, ipV4cidr, iface, vlan)
 }
@@ -135,6 +143,7 @@ func testAccResourceLinuxVLANUpdatedCheck(iface string, vlan int, ipV4cidr strin
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "interface", iface),
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "name", fmt.Sprintf("%s.%d", iface, vlan)),
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "vlan", strconv.Itoa(vlan)),
+		resource.TestCheckResourceAttr(accTestLinuxVLANName, "timeout_reload", "60"),
 		resource.TestCheckNoResourceAttr(accTestLinuxVLANName, "mtu"),
 		resource.TestCheckResourceAttrSet(accTestLinuxVLANName, "id"),
 	)

@@ -502,15 +502,19 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 				if got.Server == nil || *got.Server != "127.0.0.1" {
 					return "unexpected server"
 				}
+
 				if got.Export == nil || *got.Export != "/export" {
 					return "unexpected export"
 				}
+
 				if got.Preallocation == nil || *got.Preallocation != "metadata" {
 					return "unexpected preallocation"
 				}
+
 				if got.SnapshotsAsVolumeChain == nil || !bool(*got.SnapshotsAsVolumeChain) {
 					return "unexpected snapshot-as-volume-chain"
 				}
+
 				return ""
 			},
 		},
@@ -521,15 +525,19 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 				if got.Domain == nil || *got.Domain != "WORKGROUP" {
 					return "unexpected domain"
 				}
+
 				if got.SubDirectory == nil || *got.SubDirectory != "subdir" {
 					return "unexpected subdir"
 				}
+
 				if got.Preallocation == nil || *got.Preallocation != "metadata" {
 					return "unexpected preallocation"
 				}
+
 				if got.SnapshotsAsVolumeChain == nil || !bool(*got.SnapshotsAsVolumeChain) {
 					return "unexpected snapshot-as-volume-chain"
 				}
+
 				return ""
 			},
 		},
@@ -540,9 +548,11 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 				if got.Path == nil || *got.Path != "/var/lib/vz" {
 					return "unexpected path"
 				}
+
 				if got.Preallocation == nil || *got.Preallocation != "metadata" {
 					return "unexpected preallocation"
 				}
+
 				return ""
 			},
 		},
@@ -553,9 +563,11 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 				if got.VolumeGroup == nil || *got.VolumeGroup != "vg0" {
 					return "unexpected vgname"
 				}
+
 				if got.WipeRemovedVolumes == nil || bool(*got.WipeRemovedVolumes) {
 					return "unexpected saferemove"
 				}
+
 				return ""
 			},
 		},
@@ -566,9 +578,11 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 				if got.VolumeGroup == nil || *got.VolumeGroup != "vg0" {
 					return "unexpected vgname"
 				}
+
 				if got.ThinPool == nil || *got.ThinPool != "data" {
 					return "unexpected thinpool"
 				}
+
 				return ""
 			},
 		},
@@ -579,12 +593,15 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 				if got.ZFSPool == nil || *got.ZFSPool != "rpool/data" {
 					return "unexpected pool"
 				}
+
 				if got.Blocksize == nil || *got.Blocksize != "64k" {
 					return "unexpected blocksize"
 				}
+
 				if got.ThinProvision == nil || !bool(*got.ThinProvision) {
 					return "unexpected sparse"
 				}
+
 				return ""
 			},
 		},
