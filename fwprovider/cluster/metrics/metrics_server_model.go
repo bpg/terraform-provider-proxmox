@@ -137,14 +137,20 @@ func (m *metricsServerModel) toAPIRequestBody() *metrics.ServerRequestData {
 }
 
 type metricsServerDatasourceModel struct {
-	ID        types.String `tfsdk:"id"`
-	Name      types.String `tfsdk:"name"`
-	Disable   types.Bool   `tfsdk:"disable"`
-	Port      types.Int64  `tfsdk:"port"`
-	Server    types.String `tfsdk:"server"`
-	Type      types.String `tfsdk:"type"`
-	OTelProto types.String `tfsdk:"opentelemetry_proto"`
-	OTelPath  types.String `tfsdk:"opentelemetry_path"`
+	ID                     types.String `tfsdk:"id"`
+	Name                   types.String `tfsdk:"name"`
+	Disable                types.Bool   `tfsdk:"disable"`
+	Port                   types.Int64  `tfsdk:"port"`
+	Server                 types.String `tfsdk:"server"`
+	Type                   types.String `tfsdk:"type"`
+	OTelProto              types.String `tfsdk:"opentelemetry_proto"`
+	OTelPath               types.String `tfsdk:"opentelemetry_path"`
+	OTelTimeout            types.Int64  `tfsdk:"opentelemetry_timeout"`
+	OTelHeaders            types.String `tfsdk:"opentelemetry_headers"`
+	OTelVerifySSL          types.Bool   `tfsdk:"opentelemetry_verify_ssl"`
+	OTelMaxBodySize        types.Int64  `tfsdk:"opentelemetry_max_body_size"`
+	OTelResourceAttributes types.String `tfsdk:"opentelemetry_resource_attributes"`
+	OTelCompression        types.String `tfsdk:"opentelemetry_compression"`
 }
 
 // importFromAPI takes data from metrics server PVE API response and set fields based on it.
@@ -159,4 +165,10 @@ func (m *metricsServerDatasourceModel) importFromAPI(name string, data *metrics.
 	m.Type = types.StringPointerValue(data.Type)
 	m.OTelProto = types.StringPointerValue(data.OTelProto)
 	m.OTelPath = types.StringPointerValue(data.OTelPath)
+	m.OTelTimeout = types.Int64PointerValue(data.OTelTimeout)
+	m.OTelHeaders = types.StringPointerValue(data.OTelHeaders)
+	m.OTelVerifySSL = types.BoolPointerValue(int64ToBoolPtr(data.OTelVerifySSL))
+	m.OTelMaxBodySize = types.Int64PointerValue(data.OTelMaxBodySize)
+	m.OTelResourceAttributes = types.StringPointerValue(data.OTelResourceAttributes)
+	m.OTelCompression = types.StringPointerValue(data.OTelCompression)
 }

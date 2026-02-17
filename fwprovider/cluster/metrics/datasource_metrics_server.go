@@ -101,6 +101,31 @@ func (r *metricsServerDatasource) Schema(
 				Description: "OpenTelemetry endpoint path (e.g., `/v1/metrics`).",
 				Computed:    true,
 			},
+			"opentelemetry_timeout": schema.Int64Attribute{
+				Description: "OpenTelemetry HTTP request timeout in seconds.",
+				Computed:    true,
+			},
+			"opentelemetry_headers": schema.StringAttribute{
+				Description: "OpenTelemetry custom HTTP headers as JSON, base64 encoded.",
+				Computed:    true,
+				Sensitive:   true,
+			},
+			"opentelemetry_verify_ssl": schema.BoolAttribute{
+				Description: "OpenTelemetry verify SSL certificates.",
+				Computed:    true,
+			},
+			"opentelemetry_max_body_size": schema.Int64Attribute{
+				Description: "OpenTelemetry maximum request body size in bytes.",
+				Computed:    true,
+			},
+			"opentelemetry_resource_attributes": schema.StringAttribute{
+				Description: "OpenTelemetry additional resource attributes as JSON, base64 encoded.",
+				Computed:    true,
+			},
+			"opentelemetry_compression": schema.StringAttribute{
+				Description: "OpenTelemetry compression algorithm for requests.",
+				Computed:    true,
+			},
 		},
 	}
 }

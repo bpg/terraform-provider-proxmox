@@ -37,8 +37,14 @@ output "data_proxmox_virtual_environment_metrics_server" {
 
 - `disable` (Boolean) Indicates if the metric server is disabled.
 - `id` (String) The unique identifier of this resource.
+- `opentelemetry_compression` (String) OpenTelemetry compression algorithm for requests.
+- `opentelemetry_headers` (String, Sensitive) OpenTelemetry custom HTTP headers as JSON, base64 encoded.
+- `opentelemetry_max_body_size` (Number) OpenTelemetry maximum request body size in bytes.
 - `opentelemetry_path` (String) OpenTelemetry endpoint path (e.g., `/v1/metrics`).
 - `opentelemetry_proto` (String) Protocol for OpenTelemetry. Choice is between `http` | `https`.
+- `opentelemetry_resource_attributes` (String) OpenTelemetry additional resource attributes as JSON, base64 encoded.
+- `opentelemetry_timeout` (Number) OpenTelemetry HTTP request timeout in seconds.
+- `opentelemetry_verify_ssl` (Boolean) OpenTelemetry verify SSL certificates.
 - `port` (Number) Server network port.
 - `server` (String) Server dns name or IP address.
 - `type` (String) Plugin type. Either `graphite`, `influxdb`, or `opentelemetry`.

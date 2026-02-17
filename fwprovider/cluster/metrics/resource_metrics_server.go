@@ -178,7 +178,7 @@ func (r *metricsServerResource) Schema(
 			},
 			"opentelemetry_proto": schema.StringAttribute{
 				Description: "Protocol for OpenTelemetry. Choice is between `http` | `https`. " +
-					"If not set, PVE default is `http`.",
+					"If not set, PVE default is `https`.",
 				Validators: []validator.String{stringvalidator.OneOf("http", "https")},
 				Optional:   true,
 				Default:    nil,
@@ -199,6 +199,7 @@ func (r *metricsServerResource) Schema(
 				Description: "OpenTelemetry custom HTTP headers as JSON, base64 encoded.",
 				Validators:  []validator.String{stringvalidator.LengthAtMost(1024)},
 				Optional:    true,
+				Sensitive:   true,
 				Default:     nil,
 			},
 			"opentelemetry_verify_ssl": schema.BoolAttribute{
