@@ -243,6 +243,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Romloader"><img src="https://avatars.githubusercontent.com/u/37718731?v=4?s=100" width="100px;" alt="Romloader"/><br /><sub><b>Romloader</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Romloader" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://sadykov.dev"><img src="https://avatars.githubusercontent.com/u/16740832?v=4?s=100" width="100px;" alt="Farkhod Sadykov"/><br /><sub><b>Farkhod Sadykov</b></sub></a><br /><a href="#financial-TheR1D" title="Financial">💵</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://tom-siouan.com"><img src="https://avatars.githubusercontent.com/u/102312082?v=4?s=100" width="100px;" alt="Tom Siouan"/><br /><sub><b>Tom Siouan</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=tomsiouan" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/PendaGTP"><img src="https://avatars.githubusercontent.com/u/38917281?v=4?s=100" width="100px;" alt="Clément"/><br /><sub><b>Clément</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=PendaGTP" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
