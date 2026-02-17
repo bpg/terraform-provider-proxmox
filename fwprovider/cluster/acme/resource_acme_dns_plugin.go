@@ -250,7 +250,7 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	if len(toDelete) > 0 {
-		updateRequest.Delete = strings.Join(toDelete, ",")
+		updateRequest.Delete = toDelete
 	}
 
 	err := r.client.Update(ctx, plan.Plugin.ValueString(), updateRequest)

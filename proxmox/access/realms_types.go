@@ -95,7 +95,7 @@ type RealmUpdateRequestBody struct {
 	TFA              *string           `json:"tfa,omitempty"                   url:"tfa,omitempty"`
 	CaseSensitive    *types.CustomBool `json:"case-sensitive,omitempty"        url:"case-sensitive,omitempty,int"`
 	Domain           *string           `json:"domain,omitempty"                url:"domain,omitempty"`
-	Delete           *string           `json:"delete,omitempty"                url:"delete,omitempty"` // Comma-separated list of properties to delete
+	Delete           []string          `json:"delete,omitempty"                url:"delete,omitempty,comma"`
 }
 
 // RealmGetResponseBody contains the response for GET /access/domains/{realm}.

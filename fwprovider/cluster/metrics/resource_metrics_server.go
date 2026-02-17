@@ -294,7 +294,7 @@ func (r *metricsServerResource) Update(
 	attribute.CheckDelete(plan.OTelPath, state.OTelPath, &toDelete, "otel-path")
 
 	reqData := plan.toAPIRequestBody()
-	reqData.Delete = &toDelete
+	reqData.Delete = toDelete
 
 	err := r.client.UpdateServer(ctx, reqData)
 	if err != nil {

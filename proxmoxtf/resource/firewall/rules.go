@@ -488,8 +488,7 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		}
 
 		if len(fieldsToDelete) > 0 {
-			deleteStr := strings.Join(fieldsToDelete, ",")
-			ruleBody.Delete = &deleteStr
+			ruleBody.Delete = fieldsToDelete
 		}
 
 		err := api.UpdateRule(ctx, pos, &ruleBody)

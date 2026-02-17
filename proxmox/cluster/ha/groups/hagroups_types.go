@@ -68,5 +68,5 @@ type HAGroupUpdateRequestBody struct {
 	HAGroupDataBase
 
 	// A list of settings to delete
-	Delete string `url:"delete"`
+	Delete []string `url:"delete,omitempty,comma"`
 }
