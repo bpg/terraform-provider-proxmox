@@ -13,25 +13,31 @@ import (
 )
 
 type metricsServerModel struct {
-	ID                  types.String `tfsdk:"id"`
-	Name                types.String `tfsdk:"name"`
-	Disable             types.Bool   `tfsdk:"disable"`
-	MTU                 types.Int64  `tfsdk:"mtu"`
-	Port                types.Int64  `tfsdk:"port"`
-	Server              types.String `tfsdk:"server"`
-	Timeout             types.Int64  `tfsdk:"timeout"`
-	Type                types.String `tfsdk:"type"`
-	InfluxAPIPathPrefix types.String `tfsdk:"influx_api_path_prefix"`
-	InfluxBucket        types.String `tfsdk:"influx_bucket"`
-	InfluxDBProto       types.String `tfsdk:"influx_db_proto"`
-	InfluxMaxBodySize   types.Int64  `tfsdk:"influx_max_body_size"`
-	InfluxOrganization  types.String `tfsdk:"influx_organization"`
-	InfluxToken         types.String `tfsdk:"influx_token"`
-	InfluxVerify        types.Bool   `tfsdk:"influx_verify"`
-	GraphitePath        types.String `tfsdk:"graphite_path"`
-	GraphiteProto       types.String `tfsdk:"graphite_proto"`
-	OTelProto           types.String `tfsdk:"opentelemetry_proto"`
-	OTelPath            types.String `tfsdk:"opentelemetry_path"`
+	ID                     types.String `tfsdk:"id"`
+	Name                   types.String `tfsdk:"name"`
+	Disable                types.Bool   `tfsdk:"disable"`
+	MTU                    types.Int64  `tfsdk:"mtu"`
+	Port                   types.Int64  `tfsdk:"port"`
+	Server                 types.String `tfsdk:"server"`
+	Timeout                types.Int64  `tfsdk:"timeout"`
+	Type                   types.String `tfsdk:"type"`
+	InfluxAPIPathPrefix    types.String `tfsdk:"influx_api_path_prefix"`
+	InfluxBucket           types.String `tfsdk:"influx_bucket"`
+	InfluxDBProto          types.String `tfsdk:"influx_db_proto"`
+	InfluxMaxBodySize      types.Int64  `tfsdk:"influx_max_body_size"`
+	InfluxOrganization     types.String `tfsdk:"influx_organization"`
+	InfluxToken            types.String `tfsdk:"influx_token"`
+	InfluxVerify           types.Bool   `tfsdk:"influx_verify"`
+	GraphitePath           types.String `tfsdk:"graphite_path"`
+	GraphiteProto          types.String `tfsdk:"graphite_proto"`
+	OTelProto              types.String `tfsdk:"opentelemetry_proto"`
+	OTelPath               types.String `tfsdk:"opentelemetry_path"`
+	OTelTimeout            types.Int64  `tfsdk:"opentelemetry_timeout"`
+	OTelHeaders            types.String `tfsdk:"opentelemetry_headers"`
+	OTelVerifySSL          types.Bool   `tfsdk:"opentelemetry_verify_ssl"`
+	OTelMaxBodySize        types.Int64  `tfsdk:"opentelemetry_max_body_size"`
+	OTelResourceAttributes types.String `tfsdk:"opentelemetry_resource_attributes"`
+	OTelCompression        types.String `tfsdk:"opentelemetry_compression"`
 }
 
 func boolToInt64Ptr(boolPtr *bool) *int64 {
@@ -89,6 +95,12 @@ func (m *metricsServerModel) importFromAPI(name string, data *metrics.ServerData
 	m.GraphiteProto = types.StringPointerValue(data.Proto)
 	m.OTelProto = types.StringPointerValue(data.OTelProto)
 	m.OTelPath = types.StringPointerValue(data.OTelPath)
+	m.OTelTimeout = types.Int64PointerValue(data.OTelTimeout)
+	m.OTelHeaders = types.StringPointerValue(data.OTelHeaders)
+	m.OTelVerifySSL = types.BoolPointerValue(int64ToBoolPtr(data.OTelVerifySSL))
+	m.OTelMaxBodySize = types.Int64PointerValue(data.OTelMaxBodySize)
+	m.OTelResourceAttributes = types.StringPointerValue(data.OTelResourceAttributes)
+	m.OTelCompression = types.StringPointerValue(data.OTelCompression)
 }
 
 // toAPIRequestBody creates metrics server request data for PUT and POST requests.
@@ -114,19 +126,31 @@ func (m *metricsServerModel) toAPIRequestBody() *metrics.ServerRequestData {
 	data.Proto = m.GraphiteProto.ValueStringPointer()
 	data.OTelProto = m.OTelProto.ValueStringPointer()
 	data.OTelPath = m.OTelPath.ValueStringPointer()
+	data.OTelTimeout = m.OTelTimeout.ValueInt64Pointer()
+	data.OTelHeaders = m.OTelHeaders.ValueStringPointer()
+	data.OTelVerifySSL = boolToInt64Ptr(m.OTelVerifySSL.ValueBoolPointer())
+	data.OTelMaxBodySize = m.OTelMaxBodySize.ValueInt64Pointer()
+	data.OTelResourceAttributes = m.OTelResourceAttributes.ValueStringPointer()
+	data.OTelCompression = m.OTelCompression.ValueStringPointer()
 
 	return data
 }
 
 type metricsServerDatasourceModel struct {
-	ID        types.String `tfsdk:"id"`
-	Name      types.String `tfsdk:"name"`
-	Disable   types.Bool   `tfsdk:"disable"`
-	Port      types.Int64  `tfsdk:"port"`
-	Server    types.String `tfsdk:"server"`
-	Type      types.String `tfsdk:"type"`
-	OTelProto types.String `tfsdk:"opentelemetry_proto"`
-	OTelPath  types.String `tfsdk:"opentelemetry_path"`
+	ID                     types.String `tfsdk:"id"`
+	Name                   types.String `tfsdk:"name"`
+	Disable                types.Bool   `tfsdk:"disable"`
+	Port                   types.Int64  `tfsdk:"port"`
+	Server                 types.String `tfsdk:"server"`
+	Type                   types.String `tfsdk:"type"`
+	OTelProto              types.String `tfsdk:"opentelemetry_proto"`
+	OTelPath               types.String `tfsdk:"opentelemetry_path"`
+	OTelTimeout            types.Int64  `tfsdk:"opentelemetry_timeout"`
+	OTelHeaders            types.String `tfsdk:"opentelemetry_headers"`
+	OTelVerifySSL          types.Bool   `tfsdk:"opentelemetry_verify_ssl"`
+	OTelMaxBodySize        types.Int64  `tfsdk:"opentelemetry_max_body_size"`
+	OTelResourceAttributes types.String `tfsdk:"opentelemetry_resource_attributes"`
+	OTelCompression        types.String `tfsdk:"opentelemetry_compression"`
 }
 
 // importFromAPI takes data from metrics server PVE API response and set fields based on it.
@@ -141,4 +165,10 @@ func (m *metricsServerDatasourceModel) importFromAPI(name string, data *metrics.
 	m.Type = types.StringPointerValue(data.Type)
 	m.OTelProto = types.StringPointerValue(data.OTelProto)
 	m.OTelPath = types.StringPointerValue(data.OTelPath)
+	m.OTelTimeout = types.Int64PointerValue(data.OTelTimeout)
+	m.OTelHeaders = types.StringPointerValue(data.OTelHeaders)
+	m.OTelVerifySSL = types.BoolPointerValue(int64ToBoolPtr(data.OTelVerifySSL))
+	m.OTelMaxBodySize = types.Int64PointerValue(data.OTelMaxBodySize)
+	m.OTelResourceAttributes = types.StringPointerValue(data.OTelResourceAttributes)
+	m.OTelCompression = types.StringPointerValue(data.OTelCompression)
 }

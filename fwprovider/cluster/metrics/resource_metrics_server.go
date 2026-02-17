@@ -178,7 +178,7 @@ func (r *metricsServerResource) Schema(
 			},
 			"opentelemetry_proto": schema.StringAttribute{
 				Description: "Protocol for OpenTelemetry. Choice is between `http` | `https`. " +
-					"If not set, PVE default is `http`.",
+					"If not set, PVE default is `https`.",
 				Validators: []validator.String{stringvalidator.OneOf("http", "https")},
 				Optional:   true,
 				Default:    nil,
@@ -187,6 +187,46 @@ func (r *metricsServerResource) Schema(
 				Description: "OpenTelemetry endpoint path (e.g., `/v1/metrics`).",
 				Optional:    true,
 				Default:     nil,
+			},
+			"opentelemetry_timeout": schema.Int64Attribute{
+				Description: "OpenTelemetry HTTP request timeout in seconds. " +
+					"If not set, PVE default is `5`.",
+				Validators: []validator.Int64{int64validator.Between(1, 10)},
+				Optional:   true,
+				Default:    nil,
+			},
+			"opentelemetry_headers": schema.StringAttribute{
+				Description: "OpenTelemetry custom HTTP headers as JSON, base64 encoded.",
+				Validators:  []validator.String{stringvalidator.LengthAtMost(1024)},
+				Optional:    true,
+				Sensitive:   true,
+				Default:     nil,
+			},
+			"opentelemetry_verify_ssl": schema.BoolAttribute{
+				Description: "OpenTelemetry verify SSL certificates. " +
+					"If not set, PVE default is `true`.",
+				Optional: true,
+				Default:  nil,
+			},
+			"opentelemetry_max_body_size": schema.Int64Attribute{
+				Description: "OpenTelemetry maximum request body size in bytes. " +
+					"If not set, PVE default is `10000000`.",
+				Validators: []validator.Int64{int64validator.AtLeast(1024)},
+				Optional:   true,
+				Default:    nil,
+			},
+			"opentelemetry_resource_attributes": schema.StringAttribute{
+				Description: "OpenTelemetry additional resource attributes as JSON, base64 encoded.",
+				Validators:  []validator.String{stringvalidator.LengthAtMost(1024)},
+				Optional:    true,
+				Default:     nil,
+			},
+			"opentelemetry_compression": schema.StringAttribute{
+				Description: "OpenTelemetry compression algorithm for requests. Choice is between `none` | `gzip`. " +
+					"If not set, PVE default is `gzip`.",
+				Validators: []validator.String{stringvalidator.OneOf("none", "gzip")},
+				Optional:   true,
+				Default:    nil,
 			},
 		},
 	}
@@ -292,6 +332,12 @@ func (r *metricsServerResource) Update(
 	attribute.CheckDelete(plan.GraphiteProto, state.GraphiteProto, &toDelete, "proto")
 	attribute.CheckDelete(plan.OTelProto, state.OTelProto, &toDelete, "otel-protocol")
 	attribute.CheckDelete(plan.OTelPath, state.OTelPath, &toDelete, "otel-path")
+	attribute.CheckDelete(plan.OTelTimeout, state.OTelTimeout, &toDelete, "otel-timeout")
+	attribute.CheckDelete(plan.OTelHeaders, state.OTelHeaders, &toDelete, "otel-headers")
+	attribute.CheckDelete(plan.OTelVerifySSL, state.OTelVerifySSL, &toDelete, "otel-verify-ssl")
+	attribute.CheckDelete(plan.OTelMaxBodySize, state.OTelMaxBodySize, &toDelete, "otel-max-body-size")
+	attribute.CheckDelete(plan.OTelResourceAttributes, state.OTelResourceAttributes, &toDelete, "otel-resource-attributes")
+	attribute.CheckDelete(plan.OTelCompression, state.OTelCompression, &toDelete, "otel-compression")
 
 	reqData := plan.toAPIRequestBody()
 	reqData.Delete = toDelete
