@@ -23,6 +23,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
@@ -70,7 +71,7 @@ type clusterOptionsModel struct {
 	Language                types.String               `tfsdk:"language"`
 	MacPrefix               types.String               `tfsdk:"mac_prefix"`
 	MaxWorkers              types.Int64                `tfsdk:"max_workers"`
-	MigrationNetwork        types.String               `tfsdk:"migration_cidr"`
+	MigrationNetwork        customtypes.IPCIDRValue    `tfsdk:"migration_cidr"`
 	MigrationType           types.String               `tfsdk:"migration_type"`
 	NextID                  *clusterOptionsNextIDModel `tfsdk:"next_id"`
 	Notify                  *clusterOptionsNotifyModel `tfsdk:"notify"`
@@ -95,7 +96,7 @@ type clusterOptionsNotifyModel struct {
 func (m *clusterOptionsModel) haData() string {
 	var haDataParams []string
 
-	if !m.HAShutdownPolicy.IsNull() && m.HAShutdownPolicy.ValueString() != "" {
+	if attribute.IsDefined(m.HAShutdownPolicy) {
 		haDataParams = append(haDataParams, fmt.Sprintf("shutdown_policy=%s", m.HAShutdownPolicy.ValueString()))
 	}
 
@@ -111,11 +112,11 @@ func (m *clusterOptionsModel) haData() string {
 func (m *clusterOptionsModel) migrationData() string {
 	var migrationDataParams []string
 
-	if !m.MigrationType.IsNull() && m.MigrationType.ValueString() != "" {
+	if attribute.IsDefined(m.MigrationType) {
 		migrationDataParams = append(migrationDataParams, fmt.Sprintf("type=%s", m.MigrationType.ValueString()))
 	}
 
-	if !m.MigrationNetwork.IsNull() && m.MigrationNetwork.ValueString() != "" {
+	if attribute.IsDefined(m.MigrationNetwork) {
 		migrationDataParams = append(migrationDataParams, fmt.Sprintf("network=%s", m.MigrationNetwork.ValueString()))
 	}
 
@@ -135,11 +136,11 @@ func (m *clusterOptionsModel) nextIDData() string {
 		return ""
 	}
 
-	if !m.NextID.Lower.IsNull() {
+	if attribute.IsDefined(m.NextID.Lower) {
 		nextIDDataParams = append(nextIDDataParams, fmt.Sprintf("lower=%d", m.NextID.Lower.ValueInt64()))
 	}
 
-	if !m.NextID.Upper.IsNull() {
+	if attribute.IsDefined(m.NextID.Upper) {
 		nextIDDataParams = append(nextIDDataParams, fmt.Sprintf("upper=%d", m.NextID.Upper.ValueInt64()))
 	}
 
@@ -159,36 +160,36 @@ func (m *clusterOptionsModel) notifyData() string {
 		return ""
 	}
 
-	if !m.Notify.HAFencingMode.IsNull() {
+	if attribute.IsDefined(m.Notify.HAFencingMode) {
 		notifyDataParams = append(notifyDataParams, fmt.Sprintf("fencing=%s", m.Notify.HAFencingMode.ValueString()))
 	}
 
-	if !m.Notify.HAFencingTarget.IsNull() {
+	if attribute.IsDefined(m.Notify.HAFencingTarget) {
 		notifyDataParams = append(
 			notifyDataParams,
 			fmt.Sprintf("target-fencing=%s", m.Notify.HAFencingTarget.ValueString()),
 		)
 	}
 
-	if !m.Notify.PackageUpdates.IsNull() {
+	if attribute.IsDefined(m.Notify.PackageUpdates) {
 		notifyDataParams = append(
 			notifyDataParams,
 			fmt.Sprintf("package-updates=%s", m.Notify.PackageUpdates.ValueString()),
 		)
 	}
 
-	if !m.Notify.PackageUpdatesTarget.IsNull() {
+	if attribute.IsDefined(m.Notify.PackageUpdatesTarget) {
 		notifyDataParams = append(
 			notifyDataParams,
 			fmt.Sprintf("target-package-updates=%s", m.Notify.PackageUpdatesTarget.ValueString()),
 		)
 	}
 
-	if !m.Notify.Replication.IsNull() {
+	if attribute.IsDefined(m.Notify.Replication) {
 		notifyDataParams = append(notifyDataParams, fmt.Sprintf("replication=%s", m.Notify.Replication.ValueString()))
 	}
 
-	if !m.Notify.ReplicationTarget.IsNull() {
+	if attribute.IsDefined(m.Notify.ReplicationTarget) {
 		notifyDataParams = append(
 			notifyDataParams,
 			fmt.Sprintf("target-replication=%s", m.Notify.ReplicationTarget.ValueString()),
@@ -207,11 +208,11 @@ func (m *clusterOptionsModel) notifyData() string {
 func (m *clusterOptionsModel) crsData() string {
 	var crsDataParams []string
 
-	if !m.CrsHA.IsNull() && m.CrsHA.ValueString() != "" {
+	if attribute.IsDefined(m.CrsHA) {
 		crsDataParams = append(crsDataParams, fmt.Sprintf("ha=%s", m.CrsHA.ValueString()))
 	}
 
-	if !m.CrsHARebalanceOnStart.IsNull() {
+	if attribute.IsDefined(m.CrsHARebalanceOnStart) {
 		var haRebalanceOnStart string
 		if m.CrsHARebalanceOnStart.ValueBool() {
 			haRebalanceOnStart = "1"
@@ -234,23 +235,23 @@ func (m *clusterOptionsModel) crsData() string {
 func (m *clusterOptionsModel) bandwidthData() string {
 	var bandwidthParams []string
 
-	if !m.BandwidthLimitClone.IsNull() && m.BandwidthLimitClone.ValueInt64() != 0 {
+	if attribute.IsDefined(m.BandwidthLimitClone) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("clone=%d", m.BandwidthLimitClone.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitDefault.IsNull() && m.BandwidthLimitDefault.ValueInt64() != 0 {
+	if attribute.IsDefined(m.BandwidthLimitDefault) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("default=%d", m.BandwidthLimitDefault.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitMigration.IsNull() && m.BandwidthLimitMigration.ValueInt64() != 0 {
+	if attribute.IsDefined(m.BandwidthLimitMigration) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("migration=%d", m.BandwidthLimitMigration.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitMove.IsNull() && m.BandwidthLimitMove.ValueInt64() != 0 {
+	if attribute.IsDefined(m.BandwidthLimitMove) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("move=%d", m.BandwidthLimitMove.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitRestore.IsNull() && m.BandwidthLimitRestore.ValueInt64() != 0 {
+	if attribute.IsDefined(m.BandwidthLimitRestore) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("restore=%d", m.BandwidthLimitRestore.ValueInt64()))
 	}
 
@@ -259,6 +260,15 @@ func (m *clusterOptionsModel) bandwidthData() string {
 	}
 
 	return ""
+}
+
+// checkCompositeDelete adds an API field name to the delete list if the plan's serialized value
+// is empty but the state's was not. This is the string-based equivalent of attribute.CheckDelete
+// for composite fields where multiple model fields serialize into a single API parameter.
+func checkCompositeDelete(planData, stateData string, toDelete *[]string, apiName string) {
+	if planData == "" && stateData != "" {
+		*toDelete = append(*toDelete, apiName)
+	}
 }
 
 func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData {
@@ -302,7 +312,7 @@ func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData
 		body.MacPrefix = m.MacPrefix.ValueStringPointer()
 	}
 
-	if !m.MacPrefix.IsUnknown() {
+	if !m.Description.IsUnknown() {
 		body.Description = m.Description.ValueStringPointer()
 	}
 
@@ -398,10 +408,10 @@ func (m *clusterOptionsModel) importFromOptionsAPI(_ context.Context, opts *clus
 
 	if opts.Migration != nil {
 		m.MigrationType = types.StringPointerValue(opts.Migration.Type)
-		m.MigrationNetwork = types.StringPointerValue(opts.Migration.Network)
+		m.MigrationNetwork = customtypes.NewIPCIDRPointerValue(opts.Migration.Network)
 	} else {
 		m.MigrationType = types.StringNull()
-		m.MigrationNetwork = types.StringNull()
+		m.MigrationNetwork = customtypes.NewIPCIDRPointerValue(nil)
 	}
 
 	if opts.NextID != nil {
@@ -548,6 +558,7 @@ func (r *clusterOptionsResource) Schema(
 			"migration_cidr": schema.StringAttribute{
 				Description: "Cluster wide migration network CIDR.",
 				Optional:    true,
+				CustomType:  customtypes.IPCIDRType{},
 			},
 			"next_id": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
@@ -814,61 +825,25 @@ func (r *clusterOptionsResource) Update(
 
 	var toDelete []string
 
-	if !plan.Keyboard.Equal(state.Keyboard) && plan.Keyboard.ValueString() == "" {
-		toDelete = append(toDelete, "keyboard")
-	}
+	attribute.CheckDelete(plan.Keyboard, state.Keyboard, &toDelete, "keyboard")
 
-	if plan.bandwidthData() != state.bandwidthData() && plan.bandwidthData() == "" {
-		toDelete = append(toDelete, "bwlimit")
-	}
+	// Composite fields use checkCompositeDelete instead of attribute.CheckDelete because
+	// multiple model fields are serialized into a single API parameter string (e.g. "type=secure,network=10.0.0.0/8").
+	// attribute.CheckDelete expects attr.Value types, not serialized strings.
+	checkCompositeDelete(plan.bandwidthData(), state.bandwidthData(), &toDelete, "bwlimit")
+	checkCompositeDelete(plan.crsData(), state.crsData(), &toDelete, "crs")
+	checkCompositeDelete(plan.haData(), state.haData(), &toDelete, "ha")
+	checkCompositeDelete(plan.migrationData(), state.migrationData(), &toDelete, "migration")
+	checkCompositeDelete(plan.nextIDData(), state.nextIDData(), &toDelete, "next-id")
+	checkCompositeDelete(plan.notifyData(), state.notifyData(), &toDelete, "notify")
 
-	if plan.crsData() != state.crsData() && plan.crsData() == "" {
-		toDelete = append(toDelete, "crs")
-	}
-
-	if plan.haData() != state.haData() && plan.haData() == "" {
-		toDelete = append(toDelete, "ha")
-	}
-
-	if plan.migrationData() != state.migrationData() && plan.migrationData() == "" {
-		toDelete = append(toDelete, "migration")
-	}
-
-	if plan.nextIDData() != state.nextIDData() && plan.nextIDData() == "" {
-		toDelete = append(toDelete, "next-id")
-	}
-
-	if plan.notifyData() != state.notifyData() && plan.notifyData() == "" {
-		toDelete = append(toDelete, "notify")
-	}
-
-	if !plan.EmailFrom.Equal(state.EmailFrom) && plan.EmailFrom.ValueString() == "" {
-		toDelete = append(toDelete, "email_from")
-	}
-
-	if !plan.Language.Equal(state.Language) && plan.Language.ValueString() == "" {
-		toDelete = append(toDelete, "language")
-	}
-
-	if !plan.Console.Equal(state.Console) && plan.Console.ValueString() == "" {
-		toDelete = append(toDelete, "console")
-	}
-
-	if !plan.HTTPProxy.Equal(state.HTTPProxy) && plan.HTTPProxy.ValueString() == "" {
-		toDelete = append(toDelete, "http_proxy")
-	}
-
-	if !plan.MacPrefix.Equal(state.MacPrefix) && plan.MacPrefix.ValueString() == "" {
-		toDelete = append(toDelete, "mac_prefix")
-	}
-
-	if !plan.Description.Equal(state.Description) && plan.Description.ValueString() == "" {
-		toDelete = append(toDelete, "description")
-	}
-
-	if !plan.MaxWorkers.Equal(state.MaxWorkers) && plan.MaxWorkers.ValueInt64() == 0 {
-		toDelete = append(toDelete, "max_workers")
-	}
+	attribute.CheckDelete(plan.EmailFrom, state.EmailFrom, &toDelete, "email_from")
+	attribute.CheckDelete(plan.Language, state.Language, &toDelete, "language")
+	attribute.CheckDelete(plan.Console, state.Console, &toDelete, "console")
+	attribute.CheckDelete(plan.HTTPProxy, state.HTTPProxy, &toDelete, "http_proxy")
+	attribute.CheckDelete(plan.MacPrefix, state.MacPrefix, &toDelete, "mac_prefix")
+	attribute.CheckDelete(plan.Description, state.Description, &toDelete, "description")
+	attribute.CheckDelete(plan.MaxWorkers, state.MaxWorkers, &toDelete, "max_workers")
 
 	if len(toDelete) > 0 {
 		d := strings.Join(toDelete, ",")
@@ -905,9 +880,11 @@ func (r *clusterOptionsResource) Delete(
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
+	// Delete() has no plan — we simply clear all fields that have values in state.
+	// attribute.CheckDelete cannot be used here because it compares plan vs state.
 	var toDelete []string
 
-	if !state.Keyboard.IsNull() && state.Keyboard.ValueString() != "" {
+	if attribute.IsDefined(state.Keyboard) {
 		toDelete = append(toDelete, "keyboard")
 	}
 
@@ -935,31 +912,31 @@ func (r *clusterOptionsResource) Delete(
 		toDelete = append(toDelete, "notify")
 	}
 
-	if !state.EmailFrom.IsNull() && state.EmailFrom.ValueString() != "" {
+	if attribute.IsDefined(state.EmailFrom) {
 		toDelete = append(toDelete, "email_from")
 	}
 
-	if !state.Language.IsNull() && state.Language.ValueString() != "" {
+	if attribute.IsDefined(state.Language) {
 		toDelete = append(toDelete, "language")
 	}
 
-	if !state.Console.IsNull() && state.Console.ValueString() != "" {
+	if attribute.IsDefined(state.Console) {
 		toDelete = append(toDelete, "console")
 	}
 
-	if !state.HTTPProxy.IsNull() && state.HTTPProxy.ValueString() != "" {
+	if attribute.IsDefined(state.HTTPProxy) {
 		toDelete = append(toDelete, "http_proxy")
 	}
 
-	if !state.MacPrefix.IsNull() && state.MacPrefix.ValueString() != "" {
+	if attribute.IsDefined(state.MacPrefix) {
 		toDelete = append(toDelete, "mac_prefix")
 	}
 
-	if !state.Description.IsNull() && state.Description.ValueString() != "" {
+	if attribute.IsDefined(state.Description) {
 		toDelete = append(toDelete, "description")
 	}
 
-	if !state.MaxWorkers.IsNull() && state.MaxWorkers.ValueInt64() != 0 {
+	if attribute.IsDefined(state.MaxWorkers) {
 		toDelete = append(toDelete, "max_workers")
 	}
 
