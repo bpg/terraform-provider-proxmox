@@ -43,6 +43,7 @@ output "data_proxmox_virtual_environment_node" {
 - `cpu_count` (Number) The total number of logical CPUs on the node (sockets * cores * threads)
 - `cpu_model` (String) The CPU model on the node
 - `cpu_sockets` (Number) The number of CPU sockets on the node
+- `cpu_utilization` (Number) The CPU utilization on the node
 - `id` (String) The ID of this resource.
 - `memory_available` (Number) The available memory in bytes on the node
 - `memory_total` (Number) The total memory in bytes on the node

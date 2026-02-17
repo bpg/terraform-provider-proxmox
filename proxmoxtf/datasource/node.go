@@ -8,6 +8,7 @@ package datasource
 
 import (
 	"context"
+	"math"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -20,6 +21,7 @@ const (
 	mkDataSourceVirtualEnvironmentNodeCPUCount        = "cpu_count"
 	mkDataSourceVirtualEnvironmentNodeCPUSockets      = "cpu_sockets"
 	mkDataSourceVirtualEnvironmentNodeCPUModel        = "cpu_model"
+	mkDataSourceVirtualEnvironmentNodeCPUUtilization  = "cpu_utilization"
 	mkDataSourceVirtualEnvironmentNodeMemoryAvailable = "memory_available"
 	mkDataSourceVirtualEnvironmentNodeMemoryUsed      = "memory_used"
 	mkDataSourceVirtualEnvironmentNodeMemoryTotal     = "memory_total"
@@ -50,6 +52,11 @@ func Node() *schema.Resource {
 			mkDataSourceVirtualEnvironmentNodeCPUModel: {
 				Type:        schema.TypeString,
 				Description: "The CPU model on the node",
+				Computed:    true,
+			},
+			mkDataSourceVirtualEnvironmentNodeCPUUtilization: {
+				Type:        schema.TypeFloat,
+				Description: "The CPU utilization on the node",
 				Computed:    true,
 			},
 			mkDataSourceVirtualEnvironmentNodeMemoryAvailable: {
@@ -129,6 +136,14 @@ func nodeRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		err = d.Set(mkDataSourceVirtualEnvironmentNodeCPUModel, *node.CPUInfo.CPUModel)
 	} else {
 		err = d.Set(mkDataSourceVirtualEnvironmentNodeCPUModel, "")
+	}
+
+	diags = append(diags, diag.FromErr(err)...)
+
+	if node.CPUUtilization != nil {
+		err = d.Set(mkDataSourceVirtualEnvironmentNodeCPUUtilization, math.Round(*node.CPUUtilization*100)/100)
+	} else {
+		err = d.Set(mkDataSourceVirtualEnvironmentNodeCPUUtilization, 0)
 	}
 
 	diags = append(diags, diag.FromErr(err)...)
