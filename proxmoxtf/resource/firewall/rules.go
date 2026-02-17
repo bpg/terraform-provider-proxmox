@@ -419,68 +419,45 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	}
 
 	// reposition all rules to target positions
-	// re-read current state from API to get actual positions after creates
-	currentRules, err := api.ListRules(ctx)
-	if err != nil {
-		diags = append(diags, diag.FromErr(err)...)
-		return diags
-	}
-
-	// build position map: signature -> current position
-	currentPositionMap := make(map[string]int)
-
-	for _, currentRule := range currentRules {
-		rule, err := api.GetRule(ctx, currentRule.Pos)
-		if err != nil {
-			continue
-		}
-
-		sig := computeRuleSignatureFromAPI(rule)
-		currentPositionMap[sig] = currentRule.Pos
-	}
-
-	// move rules from end to start to avoid position conflicts
-	for i := len(newRulesList) - 1; i >= 0; i-- {
-		rule := newRulesList[i]
+	// we re-read from API after each move to get accurate positions
+	// this is O(n^2) but simple and correct
+	for targetPos := range newRulesList {
+		rule := newRulesList[targetPos]
 		sig := computeRuleSignature(rule)
 
-		currentPos, exists := currentPositionMap[sig]
-		if !exists {
+		// re-read current positions from API
+		currentRules, err := api.ListRules(ctx)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+			return diags
+		}
+
+		// find current position of this rule by signature
+		currentPos := -1
+
+		for _, cr := range currentRules {
+			r, err := api.GetRule(ctx, cr.Pos)
+			if err != nil {
+				continue
+			}
+
+			if computeRuleSignatureFromAPI(r) == sig {
+				currentPos = cr.Pos
+				break
+			}
+		}
+
+		if currentPos == -1 || currentPos == targetPos {
 			continue
 		}
 
-		targetPos := i
-
-		if currentPos != targetPos {
-			err := api.UpdateRule(ctx, currentPos, &firewall.RuleUpdateRequestBody{
-				MoveTo: &targetPos,
-			})
-			if err != nil {
-				diags = append(diags, diag.Errorf("Could not move rule from pos %d to %d: %v", currentPos, targetPos, err)...)
-				return diags
-			}
-
-			// update position map for subsequent moves
-			currentPositionMap[sig] = targetPos
-
-			// when moving, other rules shift positions
-			for otherSig, otherPos := range currentPositionMap {
-				if otherSig == sig {
-					continue // already updated above
-				}
-
-				if currentPos > targetPos {
-					// moving UP: rules between targetPos and currentPos-1 shift DOWN
-					if otherPos >= targetPos && otherPos < currentPos {
-						currentPositionMap[otherSig] = otherPos + 1
-					}
-				} else {
-					// moving DOWN: rules between currentPos+1 and targetPos shift UP
-					if otherPos > currentPos && otherPos <= targetPos {
-						currentPositionMap[otherSig] = otherPos - 1
-					}
-				}
-			}
+		// move rule to target position
+		err = api.UpdateRule(ctx, currentPos, &firewall.RuleUpdateRequestBody{
+			MoveTo: &targetPos,
+		})
+		if err != nil {
+			diags = append(diags, diag.Errorf("Could not move rule from pos %d to %d: %v", currentPos, targetPos, err)...)
+			return diags
 		}
 	}
 
@@ -540,11 +517,35 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		}
 	}
 
+	// re-read current state from API to get actual positions after repositioning
+	// this is necessary because positions may have shifted during the reposition phase
+	currentRulesForDelete, err := api.ListRules(ctx)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+		return diags
+	}
+
+	// build map of signature -> current position for deletion
+	deletePositionMap := make(map[string]int)
+
+	for _, currentRule := range currentRulesForDelete {
+		rule, err := api.GetRule(ctx, currentRule.Pos)
+		if err != nil {
+			continue
+		}
+
+		sig := computeRuleSignatureFromAPI(rule)
+		deletePositionMap[sig] = currentRule.Pos
+	}
+
+	// find rules to delete and their current positions
 	var toDelete []int
 
-	for sig, pos := range oldSigToPos {
+	for sig := range oldSigToPos {
 		if !newSigs[sig] {
-			toDelete = append(toDelete, pos)
+			if currentPos, exists := deletePositionMap[sig]; exists {
+				toDelete = append(toDelete, currentPos)
+			}
 		}
 	}
 
