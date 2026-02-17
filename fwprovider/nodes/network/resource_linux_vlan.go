@@ -372,10 +372,11 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 
 	var toDelete []string
 
-	if !plan.MTU.Equal(state.MTU) && (plan.MTU.IsUnknown() || plan.MTU.ValueInt64() == 0) {
-		toDelete = append(toDelete, "mtu")
-		body.MTU = nil
-	}
+	attribute.CheckDelete(plan.Address, state.Address, &toDelete, "cidr")
+	attribute.CheckDelete(plan.Address6, state.Address6, &toDelete, "cidr6")
+	attribute.CheckDelete(plan.MTU, state.MTU, &toDelete, "mtu")
+	attribute.CheckDelete(plan.Gateway, state.Gateway, &toDelete, "gateway")
+	attribute.CheckDelete(plan.Gateway6, state.Gateway6, &toDelete, "gateway6")
 
 	if len(toDelete) > 0 {
 		body.Delete = &toDelete

@@ -68,6 +68,11 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 				Config: te.RenderConfig(testAccResourceLinuxVLANUpdatedConfig(iface, vlan1, ipV4cidr)),
 				Check:  testAccResourceLinuxVLANUpdatedCheck(iface, vlan1, ipV4cidr),
 			},
+			// Update testing (remove addresses)
+			{
+				Config: te.RenderConfig(testAccResourceLinuxVLANAddressRemovedConfig(iface, vlan1)),
+				Check:  testAccResourceLinuxVLANAddressRemovedCheck(iface, vlan1),
+			},
 		},
 	})
 }
@@ -146,5 +151,35 @@ func testAccResourceLinuxVLANUpdatedCheck(iface string, vlan int, ipV4cidr strin
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "timeout_reload", "60"),
 		resource.TestCheckNoResourceAttr(accTestLinuxVLANName, "mtu"),
 		resource.TestCheckResourceAttrSet(accTestLinuxVLANName, "id"),
+	)
+}
+
+func testAccResourceLinuxVLANAddressRemovedConfig(iface string, vlan int) string {
+	return fmt.Sprintf(`
+	resource "proxmox_virtual_environment_network_linux_vlan" "test" {
+		comment = "updated by terraform"
+		name = "%s.%d"
+		node_name = "{{.NodeName}}"
+		timeout_reload = 60
+	}
+	`, iface, vlan)
+}
+
+func testAccResourceLinuxVLANAddressRemovedCheck(iface string, vlan int) resource.TestCheckFunc {
+	return resource.ComposeTestCheckFunc(
+		test.NoResourceAttributesSet(accTestLinuxVLANName, []string{
+			"address",
+			"address6",
+			"mtu",
+		}),
+		test.ResourceAttributes(accTestLinuxVLANName, map[string]string{
+			"comment":   "updated by terraform",
+			"interface": iface,
+			"name":      fmt.Sprintf("%s.%d", iface, vlan),
+			"vlan":      strconv.Itoa(vlan),
+		}),
+		test.ResourceAttributesSet(accTestLinuxVLANName, []string{
+			"id",
+		}),
 	)
 }

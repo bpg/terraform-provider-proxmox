@@ -408,32 +408,13 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 
 	var toDelete []string
 
-	if !plan.Address.Equal(state.Address) && plan.Address.IsNull() {
-		toDelete = append(toDelete, "cidr")
-		body.CIDR = nil
-	}
+	attribute.CheckDelete(plan.Address, state.Address, &toDelete, "cidr")
+	attribute.CheckDelete(plan.Address6, state.Address6, &toDelete, "cidr6")
+	attribute.CheckDelete(plan.MTU, state.MTU, &toDelete, "mtu")
+	attribute.CheckDelete(plan.Gateway, state.Gateway, &toDelete, "gateway")
+	attribute.CheckDelete(plan.Gateway6, state.Gateway6, &toDelete, "gateway6")
 
-	if !plan.Address6.Equal(state.Address6) && plan.Address6.IsNull() {
-		toDelete = append(toDelete, "cidr6")
-		body.CIDR6 = nil
-	}
-
-	if !plan.MTU.Equal(state.MTU) && plan.MTU.ValueInt64() == 0 {
-		toDelete = append(toDelete, "mtu")
-		body.MTU = nil
-	}
-
-	if !plan.Gateway.Equal(state.Gateway) && plan.Gateway.ValueString() == "" {
-		toDelete = append(toDelete, "gateway")
-		body.Gateway = nil
-	}
-
-	if !plan.Gateway6.Equal(state.Gateway6) && plan.Gateway6.ValueString() == "" {
-		toDelete = append(toDelete, "gateway6")
-		body.Gateway6 = nil
-	}
-
-	// VLANAware is computed, will never be null
+	// VLANAware is computed with a default, will never be null
 	if !plan.VLANAware.Equal(state.VLANAware) && !plan.VLANAware.ValueBool() {
 		toDelete = append(toDelete, "bridge_vlan_aware")
 		body.BridgeVLANAware = nil
