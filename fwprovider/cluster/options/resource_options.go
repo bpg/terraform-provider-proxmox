@@ -95,7 +95,7 @@ type clusterOptionsNotifyModel struct {
 func (m *clusterOptionsModel) haData() string {
 	var haDataParams []string
 
-	if !m.HAShutdownPolicy.IsNull() {
+	if attribute.IsDefined(m.HAShutdownPolicy) {
 		haDataParams = append(haDataParams, fmt.Sprintf("shutdown_policy=%s", m.HAShutdownPolicy.ValueString()))
 	}
 
@@ -111,11 +111,11 @@ func (m *clusterOptionsModel) haData() string {
 func (m *clusterOptionsModel) migrationData() string {
 	var migrationDataParams []string
 
-	if !m.MigrationType.IsNull() {
+	if attribute.IsDefined(m.MigrationType) {
 		migrationDataParams = append(migrationDataParams, fmt.Sprintf("type=%s", m.MigrationType.ValueString()))
 	}
 
-	if !m.MigrationNetwork.IsNull() {
+	if attribute.IsDefined(m.MigrationNetwork) {
 		migrationDataParams = append(migrationDataParams, fmt.Sprintf("network=%s", m.MigrationNetwork.ValueString()))
 	}
 
@@ -234,23 +234,23 @@ func (m *clusterOptionsModel) crsData() string {
 func (m *clusterOptionsModel) bandwidthData() string {
 	var bandwidthParams []string
 
-	if !m.BandwidthLimitClone.IsNull() {
+	if attribute.IsDefined(m.BandwidthLimitClone) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("clone=%d", m.BandwidthLimitClone.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitDefault.IsNull() {
+	if attribute.IsDefined(m.BandwidthLimitDefault) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("default=%d", m.BandwidthLimitDefault.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitMigration.IsNull() {
+	if attribute.IsDefined(m.BandwidthLimitMigration) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("migration=%d", m.BandwidthLimitMigration.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitMove.IsNull() {
+	if attribute.IsDefined(m.BandwidthLimitMove) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("move=%d", m.BandwidthLimitMove.ValueInt64()))
 	}
 
-	if !m.BandwidthLimitRestore.IsNull() {
+	if attribute.IsDefined(m.BandwidthLimitRestore) {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("restore=%d", m.BandwidthLimitRestore.ValueInt64()))
 	}
 
