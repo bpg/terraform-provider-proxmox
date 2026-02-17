@@ -23,6 +23,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
@@ -70,7 +71,7 @@ type clusterOptionsModel struct {
 	Language                types.String               `tfsdk:"language"`
 	MacPrefix               types.String               `tfsdk:"mac_prefix"`
 	MaxWorkers              types.Int64                `tfsdk:"max_workers"`
-	MigrationNetwork        types.String               `tfsdk:"migration_cidr"`
+	MigrationNetwork        customtypes.IPCIDRValue    `tfsdk:"migration_cidr"`
 	MigrationType           types.String               `tfsdk:"migration_type"`
 	NextID                  *clusterOptionsNextIDModel `tfsdk:"next_id"`
 	Notify                  *clusterOptionsNotifyModel `tfsdk:"notify"`
@@ -135,11 +136,11 @@ func (m *clusterOptionsModel) nextIDData() string {
 		return ""
 	}
 
-	if !m.NextID.Lower.IsNull() {
+	if attribute.IsDefined(m.NextID.Lower) {
 		nextIDDataParams = append(nextIDDataParams, fmt.Sprintf("lower=%d", m.NextID.Lower.ValueInt64()))
 	}
 
-	if !m.NextID.Upper.IsNull() {
+	if attribute.IsDefined(m.NextID.Upper) {
 		nextIDDataParams = append(nextIDDataParams, fmt.Sprintf("upper=%d", m.NextID.Upper.ValueInt64()))
 	}
 
@@ -159,36 +160,36 @@ func (m *clusterOptionsModel) notifyData() string {
 		return ""
 	}
 
-	if !m.Notify.HAFencingMode.IsNull() {
+	if attribute.IsDefined(m.Notify.HAFencingMode) {
 		notifyDataParams = append(notifyDataParams, fmt.Sprintf("fencing=%s", m.Notify.HAFencingMode.ValueString()))
 	}
 
-	if !m.Notify.HAFencingTarget.IsNull() {
+	if attribute.IsDefined(m.Notify.HAFencingTarget) {
 		notifyDataParams = append(
 			notifyDataParams,
 			fmt.Sprintf("target-fencing=%s", m.Notify.HAFencingTarget.ValueString()),
 		)
 	}
 
-	if !m.Notify.PackageUpdates.IsNull() {
+	if attribute.IsDefined(m.Notify.PackageUpdates) {
 		notifyDataParams = append(
 			notifyDataParams,
 			fmt.Sprintf("package-updates=%s", m.Notify.PackageUpdates.ValueString()),
 		)
 	}
 
-	if !m.Notify.PackageUpdatesTarget.IsNull() {
+	if attribute.IsDefined(m.Notify.PackageUpdatesTarget) {
 		notifyDataParams = append(
 			notifyDataParams,
 			fmt.Sprintf("target-package-updates=%s", m.Notify.PackageUpdatesTarget.ValueString()),
 		)
 	}
 
-	if !m.Notify.Replication.IsNull() {
+	if attribute.IsDefined(m.Notify.Replication) {
 		notifyDataParams = append(notifyDataParams, fmt.Sprintf("replication=%s", m.Notify.Replication.ValueString()))
 	}
 
-	if !m.Notify.ReplicationTarget.IsNull() {
+	if attribute.IsDefined(m.Notify.ReplicationTarget) {
 		notifyDataParams = append(
 			notifyDataParams,
 			fmt.Sprintf("target-replication=%s", m.Notify.ReplicationTarget.ValueString()),
@@ -211,7 +212,7 @@ func (m *clusterOptionsModel) crsData() string {
 		crsDataParams = append(crsDataParams, fmt.Sprintf("ha=%s", m.CrsHA.ValueString()))
 	}
 
-	if !m.CrsHARebalanceOnStart.IsNull() {
+	if attribute.IsDefined(m.CrsHARebalanceOnStart) {
 		var haRebalanceOnStart string
 		if m.CrsHARebalanceOnStart.ValueBool() {
 			haRebalanceOnStart = "1"
@@ -407,10 +408,10 @@ func (m *clusterOptionsModel) importFromOptionsAPI(_ context.Context, opts *clus
 
 	if opts.Migration != nil {
 		m.MigrationType = types.StringPointerValue(opts.Migration.Type)
-		m.MigrationNetwork = types.StringPointerValue(opts.Migration.Network)
+		m.MigrationNetwork = customtypes.NewIPCIDRPointerValue(opts.Migration.Network)
 	} else {
 		m.MigrationType = types.StringNull()
-		m.MigrationNetwork = types.StringNull()
+		m.MigrationNetwork = customtypes.NewIPCIDRPointerValue(nil)
 	}
 
 	if opts.NextID != nil {
@@ -557,6 +558,7 @@ func (r *clusterOptionsResource) Schema(
 			"migration_cidr": schema.StringAttribute{
 				Description: "Cluster wide migration network CIDR.",
 				Optional:    true,
+				CustomType:  customtypes.IPCIDRType{},
 			},
 			"next_id": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
