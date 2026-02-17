@@ -31,6 +31,7 @@ func TestAccDatasourceNode(t *testing.T) {
 					"cpu_count",
 					"cpu_sockets",
 					"cpu_model",
+					"cpu_utilization",
 					"memory_available",
 					"memory_used",
 					"memory_total",

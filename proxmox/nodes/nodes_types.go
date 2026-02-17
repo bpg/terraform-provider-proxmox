@@ -41,7 +41,8 @@ type GetInfoResponseBody struct {
 
 // GetInfoResponseData contains the data from a node info response.
 type GetInfoResponseData struct {
-	CPUInfo struct {
+	CPUUtilization *float64 `json:"cpu,omitempty"`
+	CPUInfo        struct {
 		CPUCores   *int    `json:"cores,omitempty"`
 		CPUCount   *int    `json:"cpus,omitempty"`
 		CPUSockets *int    `json:"sockets,omitempty"`

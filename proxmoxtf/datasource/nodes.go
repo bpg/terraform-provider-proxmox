@@ -41,7 +41,7 @@ func Nodes() *schema.Resource {
 			},
 			mkDataSourceVirtualEnvironmentNodesCPUUtilization: {
 				Type:        schema.TypeList,
-				Description: "The CPU utilization on each node",
+				Description: "The CPU utilization on each node (values between `0.0` and `1.0`)",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeFloat},
 			},

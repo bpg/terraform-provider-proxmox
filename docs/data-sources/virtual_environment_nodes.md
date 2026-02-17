@@ -31,7 +31,7 @@ output "data_proxmox_virtual_environment_nodes" {
 ### Read-Only
 
 - `cpu_count` (List of Number) The total number of logical CPUs on each node
-- `cpu_utilization` (List of Number) The CPU utilization on each node
+- `cpu_utilization` (List of Number) The CPU utilization on each node (values between `0.0` and `1.0`)
 - `id` (String) The ID of this resource.
 - `memory_available` (List of Number) The available memory in bytes on each node
 - `memory_used` (List of Number) The used memory in bytes on each node
