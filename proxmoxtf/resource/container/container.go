@@ -2405,8 +2405,8 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 	return &features, nil
 }
 
-func containerGetIDMaps(list []any) containers.CustomIDMaps {
-	idmaps := make(containers.CustomIDMaps, len(list))
+func containerGetIDMaps(list []any) []containers.CustomIDMapEntry {
+	idmaps := make([]containers.CustomIDMapEntry, len(list))
 
 	for i, entry := range list {
 		entryMap := entry.(map[string]any)
@@ -2426,7 +2426,7 @@ func containerSetIDMaps(
 	client proxmox.Client,
 	nodeName string,
 	vmID int,
-	idmaps containers.CustomIDMaps,
+	idmaps []containers.CustomIDMapEntry,
 ) error {
 	configFile := fmt.Sprintf("/etc/pve/lxc/%d.conf", vmID)
 
@@ -2763,8 +2763,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	idmapList := make([]map[string]any, len(containerConfig.IDMaps))
-	for i, entry := range containerConfig.IDMaps {
+	idmapList := make([]map[string]any, len(containerConfig.LXCConfig.IDMaps))
+	for i, entry := range containerConfig.LXCConfig.IDMaps {
 		idmapList[i] = map[string]any{
 			mkIDMapType:        entry.Type,
 			mkIDMapContainerID: entry.ContainerID,

@@ -1809,12 +1809,13 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 						ctInfo, err := ct.GetContainer(t.Context())
 						require.NoError(te.t, err, "failed to get container")
 
-						require.Len(te.t, ctInfo.IDMaps, 2)
-						require.Equal(te.t, "uid", ctInfo.IDMaps[0].Type)
-						require.Equal(te.t, 0, ctInfo.IDMaps[0].ContainerID)
-						require.Equal(te.t, 100000, ctInfo.IDMaps[0].HostID)
-						require.Equal(te.t, 65536, ctInfo.IDMaps[0].Size)
-						require.Equal(te.t, "gid", ctInfo.IDMaps[1].Type)
+						require.Len(te.t, ctInfo.LXCConfig.IDMaps, 2)
+						require.Equal(te.t, "uid", ctInfo.LXCConfig.IDMaps[0].Type)
+						require.Equal(te.t, 0, ctInfo.LXCConfig.IDMaps[0].ContainerID)
+						require.Equal(te.t, 100000, ctInfo.LXCConfig.IDMaps[0].HostID)
+						require.Equal(te.t, 65536, ctInfo.LXCConfig.IDMaps[0].Size)
+						require.Equal(te.t, "gid", ctInfo.LXCConfig.IDMaps[1].Type)
+						require.Len(te.t, ctInfo.LXCConfig.Raw, 2, "Raw should preserve all LXC entries")
 
 						return nil
 					},
@@ -1917,7 +1918,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 						ctInfo, err := ct.GetContainer(t.Context())
 						require.NoError(te.t, err, "failed to get container")
 
-						require.Empty(te.t, ctInfo.IDMaps)
+						require.Empty(te.t, ctInfo.LXCConfig.IDMaps)
 
 						return nil
 					},
@@ -1943,3 +1944,4 @@ func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileNa
 		require.NoError(t, e)
 	})
 }
+

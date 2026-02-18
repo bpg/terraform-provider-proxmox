@@ -14,47 +14,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCustomIDMaps_UnmarshalJSON(t *testing.T) {
+func TestCustomLXCConfig_UnmarshalJSON(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		json     string
-		expected CustomIDMaps
+		name       string
+		json       string
+		expectedID []CustomIDMapEntry
+		rawLen     int
 	}{
 		{
-			name:     "null value",
-			json:     `null`,
-			expected: nil,
+			name:       "null value",
+			json:       `null`,
+			expectedID: nil,
+			rawLen:     0,
 		},
 		{
-			name:     "empty array",
-			json:     `[]`,
-			expected: nil,
+			name:       "empty array",
+			json:       `[]`,
+			expectedID: nil,
+			rawLen:     0,
 		},
 		{
 			name: "single uid mapping",
 			json: `[["lxc.idmap", "u 0 100000 65536"]]`,
-			expected: CustomIDMaps{
+			expectedID: []CustomIDMapEntry{
 				{Type: "uid", ContainerID: 0, HostID: 100000, Size: 65536},
 			},
+			rawLen: 1,
 		},
 		{
 			name: "uid and gid mappings",
 			json: `[["lxc.idmap", "u 0 100000 65536"], ["lxc.idmap", "g 0 100000 44"], ["lxc.idmap", "g 44 44 1"]]`,
-			expected: CustomIDMaps{
+			expectedID: []CustomIDMapEntry{
 				{Type: "uid", ContainerID: 0, HostID: 100000, Size: 65536},
 				{Type: "gid", ContainerID: 0, HostID: 100000, Size: 44},
 				{Type: "gid", ContainerID: 44, HostID: 44, Size: 1},
 			},
+			rawLen: 3,
 		},
 		{
-			name: "ignores non-idmap entries",
+			name: "ignores non-idmap entries in IDMaps but preserves in Raw",
 			json: `[["lxc.idmap", "u 0 100000 65536"], ["lxc.cap.drop", ""], ["lxc.idmap", "g 0 100000 65536"]]`,
-			expected: CustomIDMaps{
+			expectedID: []CustomIDMapEntry{
 				{Type: "uid", ContainerID: 0, HostID: 100000, Size: 65536},
 				{Type: "gid", ContainerID: 0, HostID: 100000, Size: 65536},
 			},
+			rawLen: 3,
 		},
 	}
 
@@ -62,18 +68,19 @@ func TestCustomIDMaps_UnmarshalJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var idmaps CustomIDMaps
-			err := json.Unmarshal([]byte(tt.json), &idmaps)
+			var lxcConfig CustomLXCConfig
+			err := json.Unmarshal([]byte(tt.json), &lxcConfig)
 			require.NoError(t, err)
-			assert.Equal(t, tt.expected, idmaps)
+			assert.Equal(t, tt.expectedID, lxcConfig.IDMaps)
+			assert.Len(t, lxcConfig.Raw, tt.rawLen)
 		})
 	}
 
 	t.Run("error on unknown type character", func(t *testing.T) {
 		t.Parallel()
 
-		var idmaps CustomIDMaps
-		err := json.Unmarshal([]byte(`[["lxc.idmap", "x 0 100000 65536"]]`), &idmaps)
+		var lxcConfig CustomLXCConfig
+		err := json.Unmarshal([]byte(`[["lxc.idmap", "x 0 100000 65536"]]`), &lxcConfig)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "unknown idmap type")
 	})
@@ -81,8 +88,8 @@ func TestCustomIDMaps_UnmarshalJSON(t *testing.T) {
 	t.Run("error on trailing extra fields", func(t *testing.T) {
 		t.Parallel()
 
-		var idmaps CustomIDMaps
-		err := json.Unmarshal([]byte(`[["lxc.idmap", "u 0 100000 65536 extra-field"]]`), &idmaps)
+		var lxcConfig CustomLXCConfig
+		err := json.Unmarshal([]byte(`[["lxc.idmap", "u 0 100000 65536 extra-field"]]`), &lxcConfig)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "expected 4 fields, got 5")
 	})
@@ -90,8 +97,8 @@ func TestCustomIDMaps_UnmarshalJSON(t *testing.T) {
 	t.Run("error on too few fields", func(t *testing.T) {
 		t.Parallel()
 
-		var idmaps CustomIDMaps
-		err := json.Unmarshal([]byte(`[["lxc.idmap", "u 0 100000"]]`), &idmaps)
+		var lxcConfig CustomLXCConfig
+		err := json.Unmarshal([]byte(`[["lxc.idmap", "u 0 100000"]]`), &lxcConfig)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "expected 4 fields, got 3")
 	})
@@ -99,8 +106,8 @@ func TestCustomIDMaps_UnmarshalJSON(t *testing.T) {
 	t.Run("error on non-integer container_id", func(t *testing.T) {
 		t.Parallel()
 
-		var idmaps CustomIDMaps
-		err := json.Unmarshal([]byte(`[["lxc.idmap", "u abc 100000 65536"]]`), &idmaps)
+		var lxcConfig CustomLXCConfig
+		err := json.Unmarshal([]byte(`[["lxc.idmap", "u abc 100000 65536"]]`), &lxcConfig)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "unable to parse container_id")
 	})
@@ -108,8 +115,8 @@ func TestCustomIDMaps_UnmarshalJSON(t *testing.T) {
 	t.Run("error on non-integer host_id", func(t *testing.T) {
 		t.Parallel()
 
-		var idmaps CustomIDMaps
-		err := json.Unmarshal([]byte(`[["lxc.idmap", "u 0 xyz 65536"]]`), &idmaps)
+		var lxcConfig CustomLXCConfig
+		err := json.Unmarshal([]byte(`[["lxc.idmap", "u 0 xyz 65536"]]`), &lxcConfig)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "unable to parse host_id")
 	})
@@ -117,8 +124,8 @@ func TestCustomIDMaps_UnmarshalJSON(t *testing.T) {
 	t.Run("error on non-integer size", func(t *testing.T) {
 		t.Parallel()
 
-		var idmaps CustomIDMaps
-		err := json.Unmarshal([]byte(`[["lxc.idmap", "u 0 100000 abc"]]`), &idmaps)
+		var lxcConfig CustomLXCConfig
+		err := json.Unmarshal([]byte(`[["lxc.idmap", "u 0 100000 abc"]]`), &lxcConfig)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "unable to parse size")
 	})
@@ -139,14 +146,14 @@ func TestGetResponseData_UnmarshalJSON_WithIDMaps(t *testing.T) {
 	err := json.Unmarshal([]byte(jsonData), &data)
 	require.NoError(t, err)
 
-	require.NotNil(t, data.IDMaps)
-	require.Len(t, data.IDMaps, 2)
-	assert.Equal(t, "uid", data.IDMaps[0].Type)
-	assert.Equal(t, 0, data.IDMaps[0].ContainerID)
-	assert.Equal(t, 100000, data.IDMaps[0].HostID)
-	assert.Equal(t, 65536, data.IDMaps[0].Size)
-	assert.Equal(t, "gid", data.IDMaps[1].Type)
-	assert.Equal(t, 0, data.IDMaps[1].ContainerID)
-	assert.Equal(t, 100000, data.IDMaps[1].HostID)
-	assert.Equal(t, 65536, data.IDMaps[1].Size)
+	require.Len(t, data.LXCConfig.IDMaps, 2)
+	assert.Equal(t, "uid", data.LXCConfig.IDMaps[0].Type)
+	assert.Equal(t, 0, data.LXCConfig.IDMaps[0].ContainerID)
+	assert.Equal(t, 100000, data.LXCConfig.IDMaps[0].HostID)
+	assert.Equal(t, 65536, data.LXCConfig.IDMaps[0].Size)
+	assert.Equal(t, "gid", data.LXCConfig.IDMaps[1].Type)
+	assert.Equal(t, 0, data.LXCConfig.IDMaps[1].ContainerID)
+	assert.Equal(t, 100000, data.LXCConfig.IDMaps[1].HostID)
+	assert.Equal(t, 65536, data.LXCConfig.IDMaps[1].Size)
+	require.Len(t, data.LXCConfig.Raw, 2)
 }

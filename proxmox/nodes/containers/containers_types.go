@@ -151,8 +151,11 @@ type CustomPassthroughDevice struct {
 	Mode      *string           `json:"mode,omitempty"       url:"mode,omitempty"`
 }
 
-// CustomIDMaps represents UID/GID mapping entries for unprivileged containers.
-type CustomIDMaps []CustomIDMapEntry
+// CustomLXCConfig holds the raw LXC configuration from the API and parsed idmap entries.
+type CustomLXCConfig struct {
+	Raw    [][2]string        // all LXC configuration entries from the API
+	IDMaps []CustomIDMapEntry // parsed lxc.idmap entries only
+}
 
 // CustomIDMapEntry represents a single lxc.idmap entry with typed fields.
 type CustomIDMapEntry struct {
@@ -221,7 +224,7 @@ type GetResponseData struct {
 	HookScript           *string                     `json:"hookscript,omitempty"`
 	Hostname             *string                     `json:"hostname,omitempty"`
 	Lock                 *types.CustomBool           `json:"lock,omitempty"`
-	IDMaps               CustomIDMaps                `json:"lxc,omitempty"`
+	LXCConfig            CustomLXCConfig             `json:"lxc,omitempty"`
 	MountPoints          CustomMountPoints           `json:"mp,omitempty"`
 	PassthroughDevices   CustomPassthroughDevices    `json:"dev,omitempty"`
 	NetworkInterfaces    CustomNetworkInterfaces     `json:"net,omitempty"`
@@ -400,13 +403,16 @@ func (r CustomPassthroughDevices) EncodeValues(
 	return nil
 }
 
-// UnmarshalJSON parses the API response [][2]string format, extracting only lxc.idmap entries.
-func (r *CustomIDMaps) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON parses the API response [][2]string format, preserving all entries
+// in Raw and extracting lxc.idmap entries into IDMaps.
+func (r *CustomLXCConfig) UnmarshalJSON(b []byte) error {
 	var raw [][2]string
 
 	if err := json.Unmarshal(b, &raw); err != nil {
-		return fmt.Errorf("unable to unmarshal CustomIDMaps: %w", err)
+		return fmt.Errorf("unable to unmarshal CustomLXCConfig: %w", err)
 	}
+
+	r.Raw = raw
 
 	for _, pair := range raw {
 		if pair[0] != "lxc.idmap" {
@@ -448,7 +454,7 @@ func (r *CustomIDMaps) UnmarshalJSON(b []byte) error {
 			return fmt.Errorf("unknown idmap type %q in value %q", typeChar, value)
 		}
 
-		*r = append(*r, CustomIDMapEntry{
+		r.IDMaps = append(r.IDMaps, CustomIDMapEntry{
 			Type:        idType,
 			ContainerID: containerID,
 			HostID:      hostID,
