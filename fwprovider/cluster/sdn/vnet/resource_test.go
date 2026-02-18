@@ -17,8 +17,6 @@ import (
 )
 
 func TestAccResourceSDNVNet(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	tests := []struct {
@@ -448,7 +446,7 @@ func TestAccResourceSDNVNet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})

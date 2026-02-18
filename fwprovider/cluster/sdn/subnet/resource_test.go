@@ -18,8 +18,6 @@ import (
 )
 
 func TestAccResourceSDNSubnet(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	tests := []struct {

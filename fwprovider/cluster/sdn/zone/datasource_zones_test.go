@@ -17,8 +17,6 @@ import (
 )
 
 func TestAccDataSourceSDNZoneSimple(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	tests := []struct {
@@ -77,7 +75,7 @@ func TestAccDataSourceSDNZoneSimple(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -86,8 +84,6 @@ func TestAccDataSourceSDNZoneSimple(t *testing.T) {
 }
 
 func TestAccDataSourceSDNZoneVLAN(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	tests := []struct {
@@ -121,7 +117,7 @@ func TestAccDataSourceSDNZoneVLAN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -130,8 +126,6 @@ func TestAccDataSourceSDNZoneVLAN(t *testing.T) {
 }
 
 func TestAccDataSourceSDNZoneQinQ(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	tests := []struct {
@@ -169,7 +163,7 @@ func TestAccDataSourceSDNZoneQinQ(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -178,8 +172,6 @@ func TestAccDataSourceSDNZoneQinQ(t *testing.T) {
 }
 
 func TestAccDataSourceSDNZoneVXLAN(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	tests := []struct {
@@ -215,7 +207,7 @@ func TestAccDataSourceSDNZoneVXLAN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -224,8 +216,6 @@ func TestAccDataSourceSDNZoneVXLAN(t *testing.T) {
 }
 
 func TestAccDataSourceSDNZones(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	tests := []struct {
@@ -284,7 +274,7 @@ func TestAccDataSourceSDNZones(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
