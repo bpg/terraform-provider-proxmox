@@ -9,11 +9,15 @@
 package test
 
 import (
+	"context"
+	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -1804,6 +1808,106 @@ func TestAccResourceVMDiskResizeWithOptionChange(t *testing.T) {
 			{
 				// Step 3: Refresh state to verify size persists after reboot
 				RefreshState: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDiskRemoval verifies that removing a secondary disk from
+// a VM config actually deletes it in Proxmox, not just from the Terraform state.
+func TestAccResourceVMDiskRemoval(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create VM with two disks
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 1
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+					"disk.#":           "2",
+					"disk.0.interface": "scsi0",
+					"disk.1.interface": "scsi1",
+				}),
+			},
+			{
+				// Step 2: Remove the second disk and verify it's gone from Proxmox
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.#": "1",
+					}),
+					// Verify via API that scsi1 is actually gone from Proxmox
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_disk_removal"]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+
+						vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+						if err != nil {
+							return fmt.Errorf("failed to parse vm_id: %w", err)
+						}
+
+						vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+						if err != nil {
+							return fmt.Errorf("failed to get VM config: %w", err)
+						}
+
+						if _, exists := vmConfig.StorageDevices["scsi1"]; exists {
+							return fmt.Errorf("scsi1 still exists in Proxmox after removal")
+						}
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 3: Re-apply same config and verify no changes needed
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 			},
 		},
 	})
