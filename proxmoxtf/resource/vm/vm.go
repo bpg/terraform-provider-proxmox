@@ -6228,8 +6228,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		rebootRequired = true
 	}
 
-	// Update the configuration now that everything has been prepared.
-	updateBody.Delete = del
+	// Merge non-disk deletions with any disk deletions already queued.
+	updateBody.Delete = append(updateBody.Delete, del...)
 
 	e = vmAPI.UpdateVM(ctx, updateBody)
 	if e != nil {
