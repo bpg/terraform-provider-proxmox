@@ -361,7 +361,7 @@ func (r *genericZoneResource) Delete(ctx context.Context, req resource.DeleteReq
 }
 
 func (r *genericZoneResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	zone, err := r.client.GetZone(ctx, req.ID)
+	zone, err := r.client.GetZoneWithParams(ctx, req.ID, &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError(fmt.Sprintf("Zone %s does not exist", req.ID), err.Error())
