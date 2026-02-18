@@ -22,6 +22,8 @@ func TestAccResourceVMDisks(t *testing.T) {
 	t.Parallel()
 
 	te := InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	tests := []struct {
 		name  string
@@ -108,20 +110,13 @@ func TestAccResourceVMDisks(t *testing.T) {
 		}},
 		{"create disk from an image", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "test_disk_image" {
-					content_type = "iso"
-					datastore_id = "local"
-					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					overwrite_unmanaged = true
-				}
 				resource "proxmox_virtual_environment_vm" "test_disk" {
 					node_name = "{{.NodeName}}"
 					started   = false
-					name 	  = "test-disk"	
+					name 	  = "test-disk"
 					disk {
 						datastore_id = "local-lvm"
-						file_id      = proxmox_virtual_environment_download_file.test_disk_image.id
+						file_id      = "{{.ImageFileID}}"
 						interface    = "virtio0"
 						iothread     = true
 						discard      = "on"
@@ -151,7 +146,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
 					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					file_name    = "test-disk-image.img.raw"
+					file_name    = "{{.TestName}}-disk-image.img.raw"
 					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_disk" {
@@ -1243,7 +1238,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
 					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					file_name    = "test-bootdisk-bug-image.img.raw"
+					file_name    = "{{.TestName}}-bootdisk-bug-image.img.raw"
 					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_bootdisk_bug" {
@@ -1278,7 +1273,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
 					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					file_name    = "test-bootdisk-bug-image.img.raw"
+					file_name    = "{{.TestName}}-bootdisk-bug-image.img.raw"
 					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_bootdisk_bug" {
@@ -1318,7 +1313,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
 					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					file_name    = "test-boot-resize-image.img.raw"
+					file_name    = "{{.TestName}}-boot-resize-image.img.raw"
 					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_boot_resize" {
@@ -1346,7 +1341,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
 					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					file_name    = "test-boot-resize-image.img.raw"
+					file_name    = "{{.TestName}}-boot-resize-image.img.raw"
 					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_boot_resize" {
@@ -1730,7 +1725,7 @@ func TestAccResourceVMDiskSpeedUpdate(t *testing.T) {
 func TestAccResourceVMDiskResizeWithOptionChange(t *testing.T) {
 	te := InitEnvironment(t)
 
-	imageFileID := downloadCloudImage(t, te)
+	imageFileID := te.DownloadCloudImage()
 	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	resource.Test(t, resource.TestCase{

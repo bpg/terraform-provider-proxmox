@@ -18,44 +18,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"github.com/stretchr/testify/require"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
-
-// downloadCloudImage downloads a cloud image with a unique filename for use in VM tests.
-// The image is automatically cleaned up after the test completes.
-// Returns the file ID in format "local:iso/filename".
-func downloadCloudImage(t *testing.T, te *Environment) string {
-	t.Helper()
-
-	imageFileName := fmt.Sprintf("%d-ubuntu-24.04-minimal-cloudimg-amd64.img", time.Now().UnixMicro())
-
-	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-		Content:  ptr.Ptr("iso"),
-		FileName: ptr.Ptr(imageFileName),
-		Node:     ptr.Ptr(te.NodeName),
-		Storage:  ptr.Ptr("local"),
-		URL:      ptr.Ptr(te.CloudImagesServer + "/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"),
-	})
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		// Best effort cleanup - ignore errors as the file may already be deleted
-		_ = te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName))
-	})
-
-	return fmt.Sprintf("local:iso/%s", imageFileName)
-}
 
 func TestAccResourceVMHotplug(t *testing.T) {
 	te := InitEnvironment(t)
-	imageFileID := downloadCloudImage(t, te)
+	imageFileID := te.DownloadCloudImage()
 
 	t.Run("add disk to running VM", func(t *testing.T) {
-		t.Parallel()
-
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
@@ -151,8 +120,6 @@ func TestAccResourceVMHotplug(t *testing.T) {
 	})
 
 	t.Run("add network device to running VM", func(t *testing.T) {
-		t.Parallel()
-
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
@@ -162,9 +129,10 @@ func TestAccResourceVMHotplug(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_vm" "test_hotplug" {
-						node_name = "{{.NodeName}}"
-						started   = true
-						name      = "test-hotplug-network"
+						node_name       = "{{.NodeName}}"
+						started         = true
+						stop_on_destroy = true
+						name            = "test-hotplug-network"
 
 						cpu {
 							cores = 2
@@ -198,9 +166,10 @@ func TestAccResourceVMHotplug(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_vm" "test_hotplug" {
-						node_name = "{{.NodeName}}"
-						started   = true
-						name      = "test-hotplug-network"
+						node_name       = "{{.NodeName}}"
+						started         = true
+						stop_on_destroy = true
+						name            = "test-hotplug-network"
 
 						cpu {
 							cores = 2
@@ -245,8 +214,6 @@ func TestAccResourceVMHotplug(t *testing.T) {
 	})
 
 	t.Run("increase memory on running VM", func(t *testing.T) {
-		t.Parallel()
-
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
@@ -256,9 +223,10 @@ func TestAccResourceVMHotplug(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_vm" "test_hotplug" {
-						node_name = "{{.NodeName}}"
-						started   = true
-						name      = "test-hotplug-memory"
+						node_name       = "{{.NodeName}}"
+						started         = true
+						stop_on_destroy = true
+						name            = "test-hotplug-memory"
 
 						cpu {
 							cores = 2
@@ -292,9 +260,10 @@ func TestAccResourceVMHotplug(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_vm" "test_hotplug" {
-						node_name = "{{.NodeName}}"
-						started   = true
-						name      = "test-hotplug-memory"
+						node_name       = "{{.NodeName}}"
+						started         = true
+						stop_on_destroy = true
+						name            = "test-hotplug-memory"
 
 						cpu {
 							cores = 2
@@ -335,8 +304,6 @@ func TestAccResourceVMHotplug(t *testing.T) {
 	})
 
 	t.Run("memory increase without hotplug requires reboot", func(t *testing.T) {
-		t.Parallel()
-
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
@@ -489,8 +456,6 @@ func TestAccResourceVMHotplug(t *testing.T) {
 	})
 
 	t.Run("memory increase with hotplug enabled skips reboot", func(t *testing.T) {
-		t.Parallel()
-
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
@@ -647,8 +612,6 @@ func TestAccResourceVMHotplug(t *testing.T) {
 	})
 
 	t.Run("change CPU cores requires reboot", func(t *testing.T) {
-		t.Parallel()
-
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
@@ -801,8 +764,6 @@ func TestAccResourceVMHotplug(t *testing.T) {
 	})
 
 	t.Run("change CPU hotplugged vcpus without hotplug requires reboot", func(t *testing.T) {
-		t.Parallel()
-
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
@@ -959,8 +920,6 @@ func TestAccResourceVMHotplug(t *testing.T) {
 	})
 
 	t.Run("change CPU hotplugged vcpus with hotplug enabled skips reboot", func(t *testing.T) {
-		t.Parallel()
-
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
@@ -1119,8 +1078,6 @@ func TestAccResourceVMHotplug(t *testing.T) {
 	})
 
 	t.Run("change disk properties on running VM", func(t *testing.T) {
-		t.Parallel()
-
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
@@ -1130,9 +1087,10 @@ func TestAccResourceVMHotplug(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_vm" "test_hotplug" {
-						node_name = "{{.NodeName}}"
-						started   = true
-						name      = "test-hotplug-disk-props"
+						node_name       = "{{.NodeName}}"
+						started         = true
+						stop_on_destroy = true
+						name            = "test-hotplug-disk-props"
 
 						cpu {
 							cores = 2
@@ -1167,9 +1125,10 @@ func TestAccResourceVMHotplug(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_vm" "test_hotplug" {
-						node_name = "{{.NodeName}}"
-						started   = true
-						name      = "test-hotplug-disk-props"
+						node_name       = "{{.NodeName}}"
+						started         = true
+						stop_on_destroy = true
+						name            = "test-hotplug-disk-props"
 
 						cpu {
 							cores = 2

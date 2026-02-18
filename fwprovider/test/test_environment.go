@@ -8,6 +8,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"maps"
 	"net/url"
@@ -16,6 +17,7 @@ import (
 	"sync"
 	"testing"
 	"text/template"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -29,6 +31,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
@@ -269,6 +272,34 @@ func (e *Environment) NodeClient() *nodes.Client {
 // NodeStorageClient returns a new storage client for the test environment.
 func (e *Environment) NodeStorageClient() *storage.Client {
 	return &storage.Client{Client: e.NodeClient(), StorageName: e.DatastoreID}
+}
+
+// DownloadCloudImage downloads a cloud image with a unique filename for use in VM tests.
+// The image is automatically cleaned up after the test completes.
+// Returns the file ID in format "local:iso/filename".
+func (e *Environment) DownloadCloudImage() string {
+	e.t.Helper()
+
+	fileName := "ubuntu-24.04-minimal-cloudimg-amd64.img"
+	imageFileName := fmt.Sprintf("%d-%s", time.Now().UnixMicro(), fileName)
+	err := e.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
+		Content:  ptr.Ptr("iso"),
+		FileName: ptr.Ptr(imageFileName),
+		Node:     ptr.Ptr(e.NodeName),
+		Storage:  ptr.Ptr("local"),
+		URL:      ptr.Ptr(fmt.Sprintf("%s/minimal/releases/noble/release/%s", e.CloudImagesServer, fileName)),
+	})
+	require.NoError(e.t, err)
+
+	e.t.Cleanup(func() {
+		// Best effort cleanup - the file may already be deleted by Proxmox
+		err = e.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName))
+		if err != nil {
+			e.t.Logf("cleanup: failed to delete cloud image %s: %v", imageFileName, err)
+		}
+	})
+
+	return fmt.Sprintf("local:iso/%s", imageFileName)
 }
 
 // ClusterClient returns a new cluster client for the test environment.
