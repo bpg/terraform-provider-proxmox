@@ -24,6 +24,8 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 	t.Parallel()
 
 	te := InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	tests := []struct {
 		name string
@@ -31,14 +33,6 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 	}{
 		{"create template from VM with imported disk", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "cloud_image" {
-					content_type = "iso"
-					datastore_id = "local"
-					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					overwrite_unmanaged = true
-				}
-
 				resource "proxmox_virtual_environment_vm" "template_vm" {
 					node_name = "{{.NodeName}}"
 					started   = false
@@ -46,7 +40,7 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 
 					disk {
 						datastore_id = "local-lvm"
-						file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+						file_id      = "{{.ImageFileID}}"
 						interface    = "virtio0"
 						size         = 20
 					}
@@ -67,14 +61,6 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 		}}},
 		{"create template and clone with linked clone", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "cloud_image" {
-					content_type = "iso"
-					datastore_id = "local"
-					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					overwrite_unmanaged = true
-				}
-
 				resource "proxmox_virtual_environment_vm" "template_vm" {
 					node_name = "{{.NodeName}}"
 					started   = false
@@ -82,7 +68,7 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 
 					disk {
 						datastore_id = "local-lvm"
-						file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+						file_id      = "{{.ImageFileID}}"
 						interface    = "virtio0"
 						size         = 20
 					}
@@ -115,14 +101,6 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 		}}},
 		{"create template with imported disk and linked clone - verifies disk naming fix", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "cloud_image" {
-					content_type = "iso"
-					datastore_id = "local"
-					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					overwrite_unmanaged = true
-				}
-
 				resource "proxmox_virtual_environment_vm" "template_vm" {
 					node_name = "{{.NodeName}}"
 					started   = false
@@ -130,7 +108,7 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 
 					disk {
 						datastore_id = "local-lvm"
-						file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+						file_id      = "{{.ImageFileID}}"
 						interface    = "virtio0"
 						size         = 20
 					}

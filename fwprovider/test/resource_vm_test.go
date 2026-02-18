@@ -772,6 +772,8 @@ func TestAccResourceVMImport(t *testing.T) {
 
 func TestAccResourceVMInitialization(t *testing.T) {
 	te := InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	tests := []struct {
 		name string
@@ -826,6 +828,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 					content_type = "snippets"
 					datastore_id = "local"
 					node_name = "{{.NodeName}}"
+					overwrite = true
 					source_raw {
 						data = <<-EOF
 						#cloud-config
@@ -835,13 +838,14 @@ func TestAccResourceVMInitialization(t *testing.T) {
 						  - systemctl enable qemu-guest-agent
 						  - systemctl start qemu-guest-agent
 						EOF
-						file_name = "cloud-config.yaml"
+						file_name = "{{.TestName}}-cloud-config.yaml"
 					}
 				}
 
 				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit1" {
 					node_name = "{{.NodeName}}"
 					started   = true
+					stop_on_destroy = true
 					agent {
 						enabled = true
 					}
@@ -853,7 +857,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 					}
 					disk {
 						datastore_id = "local-lvm"
-						file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+						file_id      = "{{.ImageFileID}}"
 						interface    = "virtio0"
 						iothread     = true
 						discard      = "on"
@@ -862,7 +866,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 
 					initialization {
 						interface = "scsi1"
-						
+
 						ip_config {
 							ipv4 {
 								address = "dhcp"
@@ -873,14 +877,6 @@ func TestAccResourceVMInitialization(t *testing.T) {
 					network_device {
 						bridge = "vmbr0"
 					}
-				}
-
-				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
-					content_type = "iso"
-					datastore_id = "local"
-					node_name = "{{.NodeName}}"
-					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					overwrite_unmanaged = true
 				}`),
 		}}},
 		{"native cloud-init: username should not change", []resource.TestStep{{
@@ -982,6 +978,8 @@ func TestAccResourceVMInitialization(t *testing.T) {
 
 func TestAccResourceVMNetwork(t *testing.T) {
 	te := InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	tests := []struct {
 		name string
@@ -993,6 +991,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					content_type = "snippets"
 					datastore_id = "local"
 					node_name = "{{.NodeName}}"
+					overwrite = true
 					source_raw {
 						data = <<-EOF
 						#cloud-config
@@ -1002,13 +1001,14 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						  - systemctl enable qemu-guest-agent
 						  - systemctl start qemu-guest-agent
 						EOF
-						file_name = "cloud-config.yaml"
+						file_name = "{{.TestName}}-cloud-config.yaml"
 					}
 				}
-				
+
 				resource "proxmox_virtual_environment_vm" "test_vm_network1" {
 					node_name = "{{.NodeName}}"
 					started   = true
+					stop_on_destroy = true
 					agent {
 						enabled = true
 					}
@@ -1020,7 +1020,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					}
 					disk {
 						datastore_id = "local-lvm"
-						file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+						file_id      = "{{.ImageFileID}}"
 						interface    = "virtio0"
 						iothread     = true
 						discard      = "on"
@@ -1038,14 +1038,6 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						bridge = "vmbr0"
 						trunks = "10;20;30"
 					}
-				}
-
-				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
-					content_type = "iso"
-					datastore_id = "local"
-					node_name    = "{{.NodeName}}"
-					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					overwrite_unmanaged = true
 				}`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_network1", map[string]string{
@@ -1062,6 +1054,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					content_type = "snippets"
 					datastore_id = "local"
 					node_name = "{{.NodeName}}"
+					overwrite = true
 					source_raw {
 						data = <<-EOF
 						#cloud-config
@@ -1071,13 +1064,14 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						  - systemctl enable qemu-guest-agent
 						  - systemctl start qemu-guest-agent
 						EOF
-						file_name = "cloud-config.yaml"
+						file_name = "{{.TestName}}-cloud-config.yaml"
 					}
 				}
-				
+
 				resource "proxmox_virtual_environment_vm" "test_vm_wait_ipv4" {
 					node_name = "{{.NodeName}}"
 					started   = true
+					stop_on_destroy = true
 					agent {
 						enabled = true
 						wait_for_ip {
@@ -1092,7 +1086,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					}
 					disk {
 						datastore_id = "local-lvm"
-						file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+						file_id      = "{{.ImageFileID}}"
 						interface    = "virtio0"
 						iothread     = true
 						discard      = "on"
@@ -1109,14 +1103,6 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					network_device {
 						bridge = "vmbr0"
 					}
-				}
-
-				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
-					content_type = "iso"
-					datastore_id = "local"
-					node_name    = "{{.NodeName}}"
-					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					overwrite_unmanaged = true
 				}`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_ipv4", map[string]string{
@@ -1663,6 +1649,8 @@ func TestAccResourceVMClone(t *testing.T) {
 
 func TestAccResourceVMVirtioSCSISingleWithAgent(t *testing.T) {
 	te := InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
@@ -1673,6 +1661,7 @@ func TestAccResourceVMVirtioSCSISingleWithAgent(t *testing.T) {
 					content_type = "snippets"
 					datastore_id = "local"
 					node_name = "{{.NodeName}}"
+					overwrite = true
 					source_raw {
 						data = <<-EOF
 						#cloud-config
@@ -1682,13 +1671,14 @@ func TestAccResourceVMVirtioSCSISingleWithAgent(t *testing.T) {
 						  - systemctl enable qemu-guest-agent
 						  - systemctl start qemu-guest-agent
 						EOF
-						file_name = "cloud-config.yaml"
+						file_name = "{{.TestName}}-cloud-config.yaml"
 					}
 				}
 
 				resource "proxmox_virtual_environment_vm" "test_vm_scsi_single" {
 					node_name = "{{.NodeName}}"
 					started   = true
+					stop_on_destroy = true
 					agent {
 						enabled = true
 					}
@@ -1700,7 +1690,7 @@ func TestAccResourceVMVirtioSCSISingleWithAgent(t *testing.T) {
 					}
 					disk {
 						datastore_id = "local-lvm"
-						file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+						file_id      = "{{.ImageFileID}}"
 						interface    = "scsi0"
 						iothread     = true
 						discard      = "on"
@@ -1719,14 +1709,6 @@ func TestAccResourceVMVirtioSCSISingleWithAgent(t *testing.T) {
 					network_device {
 						bridge = "vmbr0"
 					}
-				}
-
-				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
-					content_type = "iso"
-					datastore_id = "local"
-					node_name    = "{{.NodeName}}"
-					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-					overwrite_unmanaged = true
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm_scsi_single", map[string]string{
