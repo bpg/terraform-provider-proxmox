@@ -280,20 +280,20 @@ func (e *Environment) NodeStorageClient() *storage.Client {
 func (e *Environment) DownloadCloudImage() string {
 	e.t.Helper()
 
-	imageFileName := fmt.Sprintf("%d-ubuntu-24.04-minimal-cloudimg-amd64.img", time.Now().UnixMicro())
-
+	fileName := "ubuntu-24.04-minimal-cloudimg-amd64.img"
+	imageFileName := fmt.Sprintf("%d-%s", time.Now().UnixMicro(), fileName)
 	err := e.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
 		Content:  ptr.Ptr("iso"),
 		FileName: ptr.Ptr(imageFileName),
 		Node:     ptr.Ptr(e.NodeName),
 		Storage:  ptr.Ptr("local"),
-		URL:      ptr.Ptr(e.CloudImagesServer + "/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"),
+		URL:      ptr.Ptr(fmt.Sprintf("%s/minimal/releases/noble/release/%s", e.CloudImagesServer, fileName)),
 	})
 	require.NoError(e.t, err)
 
 	e.t.Cleanup(func() {
 		// Best effort cleanup - the file may already be deleted by Proxmox
-		err := e.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName))
+		err = e.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName))
 		if err != nil {
 			e.t.Logf("cleanup: failed to delete cloud image %s: %v", imageFileName, err)
 		}
