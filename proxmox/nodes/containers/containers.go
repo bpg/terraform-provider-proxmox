@@ -22,16 +22,39 @@ import (
 
 var errContainerAlreadyRunning = errors.New("container is already running")
 
-// CloneContainer clones a container.
-func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error {
-	taskID, err := c.CloneContainerAsync(ctx, d)
-	if err != nil {
-		return err
+// isRetryableContainerError returns true if the error is a transient API error
+// that should be retried. It matches HTTP 5xx server errors, "got no worker upid"
+// (PVE worker start failures), and "got timeout" errors.
+func isRetryableContainerError(err error) bool {
+	var httpErr *api.HTTPError
+	if errors.As(err, &httpErr) {
+		return httpErr.Code >= http.StatusInternalServerError
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+	return strings.Contains(err.Error(), "got no worker upid") ||
+		strings.Contains(err.Error(), "got timeout")
+}
+
+// CloneContainer clones a container.
+func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error {
+	err := retry.New(
+		retry.Context(ctx),
+		retry.Attempts(3),
+		retry.Delay(10*time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(isRetryableContainerError),
+	).Do(
+		func() error {
+			taskID, err := c.CloneContainerAsync(ctx, d)
+			if err != nil {
+				return err
+			}
+
+			return c.Tasks().WaitForTask(ctx, *taskID)
+		},
+	)
 	if err != nil {
-		return fmt.Errorf("error waiting for container cloned: %w", err)
+		return fmt.Errorf("error cloning container: %w", err)
 	}
 
 	return nil
@@ -41,7 +64,7 @@ func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error 
 func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (*string, error) {
 	resBody := &CloneResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("/clone"), d, resBody)
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("clone"), d, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error cloning container: %w", err)
 	}
@@ -55,14 +78,24 @@ func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (
 
 // CreateContainer creates a container.
 func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) error {
-	taskID, err := c.CreateContainerAsync(ctx, d)
-	if err != nil {
-		return err
-	}
+	err := retry.New(
+		retry.Context(ctx),
+		retry.Attempts(3),
+		retry.Delay(10*time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(isRetryableContainerError),
+	).Do(
+		func() error {
+			taskID, err := c.CreateContainerAsync(ctx, d)
+			if err != nil {
+				return err
+			}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+			return c.Tasks().WaitForTask(ctx, *taskID)
+		},
+	)
 	if err != nil {
-		return fmt.Errorf("error waiting for container created: %w", err)
+		return fmt.Errorf("error creating container: %w", err)
 	}
 
 	return nil
