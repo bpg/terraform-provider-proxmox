@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.96.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.95.0...v0.96.0) (2026-02-18)
+
+
+### Features
+
+* **cluster:** add otel options to metrics server resource ([#2595](https://github.com/bpg/terraform-provider-proxmox/issues/2595)) ([32dfac8](https://github.com/bpg/terraform-provider-proxmox/commit/32dfac87b9689a1ad768e8a12e03606ad8398006))
+* **network:** add configurable timeout for network reload operations ([#2573](https://github.com/bpg/terraform-provider-proxmox/issues/2573)) ([ed8593d](https://github.com/bpg/terraform-provider-proxmox/commit/ed8593db8de12bbb3ab940ee4db1e887d4205b53))
+
+
+### Bug Fixes
+
+* **cluster:** fix `Description` body-building bug and standardize delete handling in options ([#2601](https://github.com/bpg/terraform-provider-proxmox/issues/2601)) ([a704bb1](https://github.com/bpg/terraform-provider-proxmox/commit/a704bb17e7ec78bf7a1bf03451575e95b20aaee3))
+* **file:** retry read-back after upload for distributed storage consistency ([#2571](https://github.com/bpg/terraform-provider-proxmox/issues/2571)) ([989a4ba](https://github.com/bpg/terraform-provider-proxmox/commit/989a4bad8fcd93914492a8deb190125dfbc66ad2))
+* **hwmapping:** add comment validator, fix acceptance tests ([#2609](https://github.com/bpg/terraform-provider-proxmox/issues/2609)) ([f943051](https://github.com/bpg/terraform-provider-proxmox/commit/f943051bd79bd2f5d9e478eee595c524818fb2dd))
+* **network:** properly delete cidr/cidr6 when address is removed from linux ([#2587](https://github.com/bpg/terraform-provider-proxmox/issues/2587)) ([a52a11f](https://github.com/bpg/terraform-provider-proxmox/commit/a52a11ff461d3b2a650cfa61d4dcebcdf1ce45e2))
+* **network:** properly delete optional fields when removed from VLAN config ([#2599](https://github.com/bpg/terraform-provider-proxmox/issues/2599)) ([d0f1704](https://github.com/bpg/terraform-provider-proxmox/commit/d0f17048766efdb0a139e13c607e1507acba3c2a))
+* **node:** add CPU utilization to node data source ([#2605](https://github.com/bpg/terraform-provider-proxmox/issues/2605)) ([1a1cbbb](https://github.com/bpg/terraform-provider-proxmox/commit/1a1cbbb2b205d9e0cbd2e29eb2c8dfbbb2dec8d9))
+* **sdn:** avoid mtu=0 when omitted for sdn zones ([#2584](https://github.com/bpg/terraform-provider-proxmox/issues/2584)) ([66c43d8](https://github.com/bpg/terraform-provider-proxmox/commit/66c43d8366dc2957926887c2ee08d1066d8de781))
+* **sdn:** better `apply` resiliency, fix import of a pending zone ([#2610](https://github.com/bpg/terraform-provider-proxmox/issues/2610)) ([a9ea3c1](https://github.com/bpg/terraform-provider-proxmox/commit/a9ea3c14c93877cea587d0cbc8261371a7b40e9a))
+* **vm:** clean up orphaned re-import code and clarify `import_from` as create-only ([#2568](https://github.com/bpg/terraform-provider-proxmox/issues/2568)) ([2160f00](https://github.com/bpg/terraform-provider-proxmox/commit/2160f00e624ff83e954574c87dbdb2c542739f4b))
+
+
+### Miscellaneous
+
+* **core:** unify Delete field type across API client structs ([#2604](https://github.com/bpg/terraform-provider-proxmox/issues/2604)) ([d6a66f4](https://github.com/bpg/terraform-provider-proxmox/commit/d6a66f445fbb164aae998d5d28e7bb24d121bcdc))
+* **deps:** update golangci/golangci-lint (v2.8.0 → v2.9.0) ([#2589](https://github.com/bpg/terraform-provider-proxmox/issues/2589)) ([ee0f07f](https://github.com/bpg/terraform-provider-proxmox/commit/ee0f07f1577f77f19a1c384464eab35441dedc14))
+* **deps:** update image golang (1.25.7 → 1.26.0) ([#2590](https://github.com/bpg/terraform-provider-proxmox/issues/2590)) ([8f5d598](https://github.com/bpg/terraform-provider-proxmox/commit/8f5d598b8ac927f430aa87eaaea45ac061d9a7cc))
+* **deps:** update module golang.org/x/crypto (v0.47.0 → v0.48.0) ([#2591](https://github.com/bpg/terraform-provider-proxmox/issues/2591)) ([43c295b](https://github.com/bpg/terraform-provider-proxmox/commit/43c295b014118bcf9768ca81fbf1c1daa6ba771a))
+* **deps:** update module golang.org/x/net (v0.49.0 → v0.50.0) ([#2592](https://github.com/bpg/terraform-provider-proxmox/issues/2592)) ([7b83dd8](https://github.com/bpg/terraform-provider-proxmox/commit/7b83dd872b9caf49056bea48fa145f1cec9ae898))
+* **test:** do not run SDN acceptance tests in parallel ([#2607](https://github.com/bpg/terraform-provider-proxmox/issues/2607)) ([ac1fabd](https://github.com/bpg/terraform-provider-proxmox/commit/ac1fabd6c108da320ef5eda0b7a10563f9870e65))
+* **test:** fix parallel VM tests execution ([#2608](https://github.com/bpg/terraform-provider-proxmox/issues/2608)) ([09500be](https://github.com/bpg/terraform-provider-proxmox/commit/09500be52827f7d273058834ae4c660b722ce89c))
+
 ## [0.95.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.94.0...v0.95.0) (2026-02-08)
 
 

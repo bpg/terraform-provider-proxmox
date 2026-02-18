@@ -1,7 +1,7 @@
 NAME=terraform-provider-proxmox
 TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
-VERSION=0.95.0# x-release-please-version
+VERSION=0.96.0# x-release-please-version
 
 GOLANGCI_LINT_VERSION=2.9.0# renovate: depName=golangci/golangci-lint datasource=github-releases
 
