@@ -7,6 +7,9 @@
 package validators
 
 import (
+	"regexp"
+
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
@@ -20,4 +23,14 @@ const (
 // HardwareMappingDeviceIDValidator validates a hardware mapping device ID.
 func HardwareMappingDeviceIDValidator() validator.String {
 	return NewParseValidator(proxmoxtypes.ParseDeviceID, HardwareMappingDeviceIDValidatorErrMessage)
+}
+
+// HardwareMappingMapCommentValidator validates that a hardware mapping map comment does not contain
+// characters that are used as separators in the Proxmox VE property string format (comma and equals sign).
+func HardwareMappingMapCommentValidator() validator.String {
+	return stringvalidator.RegexMatches(
+		regexp.MustCompile(`^[^,=]*$`),
+		`must not contain commas "," or equals signs "=" as these are used as `+
+			`separators in the Proxmox VE API property string format`,
+	)
 }

@@ -203,6 +203,8 @@ func (r *pciResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	comment.Description = "The comment of this PCI hardware mapping."
 	commentMap := comment
 	commentMap.Description = "The comment of the mapped PCI device."
+	commentMap.Validators = append([]validator.String{}, commentMap.Validators...)
+	commentMap.Validators = append(commentMap.Validators, validators.HardwareMappingMapCommentValidator())
 
 	resp.Schema = schema.Schema{
 		Description: "Manages a PCI hardware mapping in a Proxmox VE cluster.",

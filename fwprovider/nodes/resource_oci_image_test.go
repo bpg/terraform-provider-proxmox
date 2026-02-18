@@ -10,6 +10,7 @@ package nodes_test
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -29,10 +30,15 @@ const (
 )
 
 func TestAccResourceOCIImage(t *testing.T) {
+	t.Parallel()
+
 	te := test.InitEnvironment(t)
 
+	updateFileName := fmt.Sprintf("%d-test_update_image.tar", time.Now().UnixMicro())
+
 	te.AddTemplateVars(map[string]interface{}{
-		"OCIImage": testOCIImage,
+		"OCIImage":       testOCIImage,
+		"UpdateFileName": updateFileName,
 	})
 
 	tests := []struct {
@@ -114,16 +120,16 @@ func TestAccResourceOCIImage(t *testing.T) {
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
 					reference          = "{{.OCIImage}}"
-					file_name          = "test_update_image.tar"
+					file_name          = "{{.UpdateFileName}}"
 					overwrite_unmanaged = true
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_oci_image.test_update", map[string]string{
-						"id":             "local:vztmpl/test_update_image.tar",
+						"id":             "local:vztmpl/" + updateFileName,
 						"node_name":      te.NodeName,
 						"datastore_id":   te.DatastoreID,
 						"reference":      testOCIImage,
-						"file_name":      "test_update_image.tar",
+						"file_name":      updateFileName,
 						"upload_timeout": "600",
 					}),
 					test.ResourceAttributesSet("proxmox_virtual_environment_oci_image.test_update", []string{
@@ -137,17 +143,17 @@ func TestAccResourceOCIImage(t *testing.T) {
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
 					reference          = "{{.OCIImage}}"
-					file_name          = "test_update_image.tar"
+					file_name          = "{{.UpdateFileName}}"
 					upload_timeout     = 1200
 					overwrite_unmanaged = true
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_oci_image.test_update", map[string]string{
-						"id":             "local:vztmpl/test_update_image.tar",
+						"id":             "local:vztmpl/" + updateFileName,
 						"node_name":      te.NodeName,
 						"datastore_id":   te.DatastoreID,
 						"reference":      testOCIImage,
-						"file_name":      "test_update_image.tar",
+						"file_name":      updateFileName,
 						"upload_timeout": "1200",
 					}),
 					test.ResourceAttributesSet("proxmox_virtual_environment_oci_image.test_update", []string{

@@ -33,8 +33,8 @@ const (
 )
 
 type accTestHardwareMappingFakeData struct {
-	Comments       []string `fake:"{sentence:3}"         fakesize:"2"`
-	MapComments    []string `fake:"{sentence:3}"         fakesize:"2"`
+	Comments       []string `fake:"{loremipsumsentence:3}" fakesize:"2"`
+	MapComments    []string `fake:"{loremipsumsentence:3}" fakesize:"2"`
 	MapDeviceIDs   []string `fake:"{linuxdeviceid}"      fakesize:"2"`
 	MapIOMMUGroups []uint   `fake:"{number:1,20}"        fakesize:"2"`
 	// These paths must exist on the host system, use a hardcoded list
