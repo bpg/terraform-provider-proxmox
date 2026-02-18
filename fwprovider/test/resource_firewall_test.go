@@ -1491,3 +1491,491 @@ func TestAccResourceFirewallOptionsImport(t *testing.T) {
 		})
 	}
 }
+
+// TestAccResourceFirewallRulesWithSecurityGroups tests inserting, prepending,
+// and removing rules around security group references to verify bug #2575 is fixed.
+// the bug caused security group references to be corrupted when rules were inserted
+// before them.
+func TestAccResourceFirewallRulesWithSecurityGroups(t *testing.T) {
+	te := InitEnvironment(t)
+
+	// generate unique security group names to avoid conflicts between test runs
+	// proxmox limits security group names to 18 characters
+	suffix := rand.Intn(100000)
+	sgFoo := fmt.Sprintf("sg-foo-%05d", suffix)
+	sgBar := fmt.Sprintf("sg-bar-%05d", suffix)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"SecurityGroupFoo": sgFoo,
+		"SecurityGroupBar": sgBar,
+	})
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		// insert rule before security groups
+		// initial: ssh + https + security_group foo + security_group bar
+		// insert: icmp at position 2
+		// verify: security groups are not corrupted and shift to positions 3 and 4
+		{"insert before security groups", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_bar" {
+					name    = "{{.SecurityGroupBar}}"
+					comment = "Test security group bar"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_insert" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar,
+					]
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "HTTPS"
+						dport   = "443"
+						proto   = "tcp"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Security group foo"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar.name
+						comment        = "Security group bar"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_insert", map[string]string{
+						"rule.#":                "4",
+						"rule.0.comment":        "SSH",
+						"rule.0.pos":            "0",
+						"rule.1.comment":        "HTTPS",
+						"rule.1.pos":            "1",
+						"rule.2.security_group": sgFoo,
+						"rule.2.pos":            "2",
+						"rule.3.security_group": sgBar,
+						"rule.3.pos":            "3",
+					}),
+				),
+			},
+			{
+				// insert icmp rule at position 2
+				// before fix: security groups would be corrupted
+				// after fix: security groups shift correctly to positions 3 and 4
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_bar" {
+					name    = "{{.SecurityGroupBar}}"
+					comment = "Test security group bar"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_insert" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar,
+					]
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "HTTPS"
+						dport   = "443"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "ICMP"
+						proto   = "icmp"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Security group foo"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar.name
+						comment        = "Security group bar"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_insert", map[string]string{
+						"rule.#":                "5",
+						"rule.0.comment":        "SSH",
+						"rule.0.pos":            "0",
+						"rule.1.comment":        "HTTPS",
+						"rule.1.pos":            "1",
+						"rule.2.comment":        "ICMP",
+						"rule.2.pos":            "2",
+						"rule.3.security_group": sgFoo, // must be foo, not bar!
+						"rule.3.pos":            "3",
+						"rule.4.security_group": sgBar, // must be bar, not duplicate!
+						"rule.4.pos":            "4",
+					}),
+				),
+			},
+		}},
+		// prepend rule before security groups
+		// initial: security_group foo + security_group bar
+		// insert: ssh rule at position 0
+		// verify: ssh at pos 0, foo at pos 1, bar at pos 2
+		{"prepend before security groups", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_bar" {
+					name    = "{{.SecurityGroupBar}}"
+					comment = "Test security group bar"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_prepend" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar,
+					]
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Security group foo"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar.name
+						comment        = "Security group bar"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_prepend", map[string]string{
+						"rule.#":                "2",
+						"rule.0.security_group": sgFoo,
+						"rule.0.pos":            "0",
+						"rule.1.security_group": sgBar,
+						"rule.1.pos":            "1",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_bar" {
+					name    = "{{.SecurityGroupBar}}"
+					comment = "Test security group bar"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_prepend" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar,
+					]
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Security group foo"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar.name
+						comment        = "Security group bar"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_prepend", map[string]string{
+						"rule.#":                "3",
+						"rule.0.comment":        "SSH",
+						"rule.0.pos":            "0",
+						"rule.1.security_group": sgFoo,
+						"rule.1.pos":            "1",
+						"rule.2.security_group": sgBar,
+						"rule.2.pos":            "2",
+					}),
+				),
+			},
+		}},
+		// remove rule before security groups
+		// initial: ssh + https + icmp + security_group foo + security_group bar
+		// remove icmp
+		// verify: foo shifts from pos 3 to pos 2, bar shifts from pos 4 to pos 3
+		{"remove before security groups", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_bar" {
+					name    = "{{.SecurityGroupBar}}"
+					comment = "Test security group bar"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_remove" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar,
+					]
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "HTTPS"
+						dport   = "443"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "ICMP"
+						proto   = "icmp"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Security group foo"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar.name
+						comment        = "Security group bar"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_remove", map[string]string{
+						"rule.#":                "5",
+						"rule.0.comment":        "SSH",
+						"rule.0.pos":            "0",
+						"rule.1.comment":        "HTTPS",
+						"rule.1.pos":            "1",
+						"rule.2.comment":        "ICMP",
+						"rule.2.pos":            "2",
+						"rule.3.security_group": sgFoo,
+						"rule.3.pos":            "3",
+						"rule.4.security_group": sgBar,
+						"rule.4.pos":            "4",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_bar" {
+					name    = "{{.SecurityGroupBar}}"
+					comment = "Test security group bar"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_remove" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar,
+					]
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "HTTPS"
+						dport   = "443"
+						proto   = "tcp"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Security group foo"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_bar.name
+						comment        = "Security group bar"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_remove", map[string]string{
+						"rule.#":                "4",
+						"rule.0.comment":        "SSH",
+						"rule.0.pos":            "0",
+						"rule.1.comment":        "HTTPS",
+						"rule.1.pos":            "1",
+						"rule.2.security_group": sgFoo,
+						"rule.2.pos":            "2",
+						"rule.3.security_group": sgBar,
+						"rule.3.pos":            "3",
+					}),
+				),
+			},
+		}},
+		// simultaneous insert and delete around security groups
+		// initial: ssh + https + security_group foo
+		// changes: remove ssh , add icmp between https and foo
+		// verify: https at pos 0, icmp at pos 1, foo at pos 2
+		{"insert and delete around security groups", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_complex" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+					]
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "HTTPS"
+						dport   = "443"
+						proto   = "tcp"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Security group foo"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_complex", map[string]string{
+						"rule.#":                "3",
+						"rule.0.comment":        "SSH",
+						"rule.0.pos":            "0",
+						"rule.1.comment":        "HTTPS",
+						"rule.1.pos":            "1",
+						"rule.2.security_group": sgFoo,
+						"rule.2.pos":            "2",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_complex" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+					]
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "HTTPS"
+						dport   = "443"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "ICMP"
+						proto   = "icmp"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Security group foo"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_complex", map[string]string{
+						"rule.#":                "3",
+						"rule.0.comment":        "HTTPS",
+						"rule.0.pos":            "0",
+						"rule.1.comment":        "ICMP",
+						"rule.1.pos":            "1",
+						"rule.2.security_group": sgFoo,
+						"rule.2.pos":            "2",
+					}),
+				),
+			},
+		}},
+	}
+
+	// NOTE: these tests are not run in parallel because they modify
+	// cluster-level firewall rules which are shared state.
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
