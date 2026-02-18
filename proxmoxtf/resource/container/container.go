@@ -2430,21 +2430,26 @@ func containerSetIDMaps(
 ) error {
 	configFile := fmt.Sprintf("/etc/pve/lxc/%d.conf", vmID)
 
-	commands := make([]string, 0, 3+len(idmaps))
-	commands = append(commands,
+	commands := []string{
 		`set -e`,
 		ssh.TrySudo,
 		fmt.Sprintf(`try_sudo sed -i '/^lxc\.idmap:/d' %s`, configFile),
-	)
+	}
 
-	for _, entry := range idmaps {
-		typeChar := "u"
-		if entry.Type == "gid" {
-			typeChar = "g"
+	if len(idmaps) > 0 {
+		lines := make([]string, 0, len(idmaps))
+
+		for _, entry := range idmaps {
+			typeChar := "u"
+			if entry.Type == "gid" {
+				typeChar = "g"
+			}
+
+			lines = append(lines, fmt.Sprintf("lxc.idmap: %s %d %d %d", typeChar, entry.ContainerID, entry.HostID, entry.Size))
 		}
 
-		line := fmt.Sprintf("lxc.idmap: %s %d %d %d", typeChar, entry.ContainerID, entry.HostID, entry.Size)
-		commands = append(commands, fmt.Sprintf(`echo '%s' | try_sudo tee -a %s > /dev/null`, line, configFile))
+		commands = append(commands,
+			fmt.Sprintf(`echo '%s' | try_sudo tee -a %s > /dev/null`, strings.Join(lines, "\n"), configFile))
 	}
 
 	_, err := client.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
