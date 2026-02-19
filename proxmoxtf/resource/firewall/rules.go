@@ -385,25 +385,30 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	oldRulesList := oldRules.([]any)
 	newRulesList := newRules.([]any)
 
-	// build signature maps to identify which rules are new, existing, or removed
-	oldSigToPos := make(map[string]int)             // signature -> position
-	oldSigToRule := make(map[string]map[string]any) // signature -> rule map
-	newSigs := make(map[string]bool)                // used to check for necessary deletion of rules
+	// build per-signature queues for old rules to handle duplicate identities correctly.
+	// multiple rules can share the same signature (identity fields only, excludes comment/enabled/log).
+	oldBySig := make(map[string][]map[string]any)
 
 	for _, rule := range oldRulesList {
 		ruleMap := rule.(map[string]any)
 		sig := computeRuleSignature(rule)
-		oldSigToPos[sig] = ruleMap[mkRulePos].(int)
-		oldSigToRule[sig] = ruleMap
+		oldBySig[sig] = append(oldBySig[sig], ruleMap)
 	}
 
-	for _, rule := range newRulesList {
-		sig := computeRuleSignature(rule)
-		newSigs[sig] = true
-		ruleMap := rule.(map[string]any)
+	// match new rules to old rules by consuming from per-signature queues.
+	// unmatched new rules need to be created.
+	sigConsumed := make(map[string]int)
+	newToOldRuleMap := make(map[int]map[string]any)
 
-		// if signature not in old rules, it's a new rule
-		if _, exists := oldSigToPos[sig]; !exists {
+	for i, rule := range newRulesList {
+		sig := computeRuleSignature(rule)
+		ruleMap := rule.(map[string]any)
+		idx := sigConsumed[sig]
+		sigConsumed[sig]++
+
+		if idx < len(oldBySig[sig]) {
+			newToOldRuleMap[i] = oldBySig[sig][idx]
+		} else {
 			ruleBody, err := mapToRuleCreateRequestBody(ruleMap)
 			if err != nil {
 				diags = append(diags, diag.Errorf("Could not create rule: %v", err)...)
@@ -418,9 +423,11 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		}
 	}
 
-	// reposition all rules to target positions
-	// we re-read from API after each move to get accurate positions
-	// this is O(n^2) but simple and correct
+	// reposition all rules to target positions.
+	// we re-read from API after each move to get accurate positions.
+	// skip positions below targetPos to avoid re-matching already-finalized positions,
+	// which is critical when multiple rules share the same signature.
+	// this is O(n^2) but correct for small rule sets.
 	for targetPos := range newRulesList {
 		rule := newRulesList[targetPos]
 		sig := computeRuleSignature(rule)
@@ -436,9 +443,19 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		currentPos := -1
 
 		for _, cr := range currentRules {
+			if cr.Pos < targetPos {
+				continue
+			}
+
 			r, err := api.GetRule(ctx, cr.Pos)
 			if err != nil {
-				continue
+				if strings.Contains(err.Error(), "no rule at position") {
+					continue
+				}
+
+				diags = append(diags, diag.Errorf("Could not read rule at pos %d: %v", cr.Pos, err)...)
+
+				return diags
 			}
 
 			if computeRuleSignatureFromAPI(r) == sig {
@@ -451,7 +468,6 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 			continue
 		}
 
-		// move rule to target position
 		err = api.UpdateRule(ctx, currentPos, &firewall.RuleUpdateRequestBody{
 			MoveTo: &targetPos,
 		})
@@ -461,14 +477,12 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		}
 	}
 
-	// update non-positional attributes
-	// all rules are at correct positions, update their attributes
+	// update non-positional attributes for matched rules.
+	// newly created rules are skipped since they already have correct attributes.
 	for i, newRule := range newRulesList {
 		newRuleMap := newRule.(map[string]any)
-		sig := computeRuleSignature(newRule)
 
-		// find corresponding old rule by signature
-		oldRuleMap, exists := oldSigToRule[sig]
+		oldRuleMap, exists := newToOldRuleMap[i]
 		if !exists {
 			continue
 		}
@@ -485,7 +499,6 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 			ruleBody.Type = &rType
 		}
 
-		// determine fields to delete
 		var fieldsToDelete []string
 		fields := []string{
 			mkRuleComment,
@@ -509,53 +522,25 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 			ruleBody.Delete = fieldsToDelete
 		}
 
-		pos := i
-
-		err := api.UpdateRule(ctx, pos, &ruleBody)
+		err := api.UpdateRule(ctx, i, &ruleBody)
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
-	// re-read current state from API to get actual positions after repositioning
-	// this is necessary because positions may have shifted during the reposition phase
+	// delete excess rules.
+	// after repositioning, desired rules occupy positions 0..N-1.
+	// any rules at positions N..M-1 are excess and should be deleted in reverse order.
 	currentRulesForDelete, err := api.ListRules(ctx)
 	if err != nil {
 		diags = append(diags, diag.FromErr(err)...)
 		return diags
 	}
 
-	// build map of signature -> current position for deletion
-	deletePositionMap := make(map[string]int)
-
-	for _, currentRule := range currentRulesForDelete {
-		rule, err := api.GetRule(ctx, currentRule.Pos)
+	for i := len(currentRulesForDelete) - 1; i >= len(newRulesList); i-- {
+		err := api.DeleteRule(ctx, i)
 		if err != nil {
-			continue
-		}
-
-		sig := computeRuleSignatureFromAPI(rule)
-		deletePositionMap[sig] = currentRule.Pos
-	}
-
-	// find rules to delete and their current positions
-	var toDelete []int
-
-	for sig := range oldSigToPos {
-		if !newSigs[sig] {
-			if currentPos, exists := deletePositionMap[sig]; exists {
-				toDelete = append(toDelete, currentPos)
-			}
-		}
-	}
-
-	sort.Sort(sort.Reverse(sort.IntSlice(toDelete)))
-
-	// delete in reverse order
-	for _, pos := range toDelete {
-		err := api.DeleteRule(ctx, pos)
-		if err != nil {
-			diags = append(diags, diag.Errorf("Could not delete rule at pos %d: %v", pos, err)...)
+			diags = append(diags, diag.Errorf("Could not delete rule at pos %d: %v", i, err)...)
 			return diags
 		}
 	}
@@ -738,8 +723,10 @@ func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]any
 	}
 }
 
-// computeRuleSignature generates a unique signature for a rule based on its identity fields.
-// updateable fields (comment, enabled, log) are excluded from the signature.
+// computeRuleSignature generates a signature for a rule based on its identity fields.
+// fields that can change without altering the rule's identity (comment, enabled, log)
+// are excluded. rules with the same signature are considered the same logical rule
+// for matching purposes during updates.
 func computeRuleSignature(rule any) string {
 	ruleMap := rule.(map[string]any)
 
@@ -773,7 +760,9 @@ func strOrEmpty(s *string) string {
 	return ""
 }
 
-// computeRuleSignatureFromAPI generates signature from API response.
+// computeRuleSignatureFromAPI generates a signature from API response data.
+// for security group rules, the Proxmox API stores the group name in the Action field
+// when Type is "group" (see mapToRuleCreateRequestBody and RulesRead).
 func computeRuleSignatureFromAPI(rule *firewall.RuleGetResponseData) string {
 	if rule.Type == "group" {
 		return strings.Join([]string{"group", rule.Action, strOrEmpty(rule.IFace)}, ":")

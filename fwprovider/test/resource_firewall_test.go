@@ -1354,6 +1354,8 @@ func TestAccResourceFirewallRulesImport(t *testing.T) {
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_firewall_rules" "test" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9991
 					rule {
 						type   = "in"
 						action = "ACCEPT"
@@ -1970,6 +1972,295 @@ func TestAccResourceFirewallRulesWithSecurityGroups(t *testing.T) {
 
 	// NOTE: these tests are not run in parallel because they modify
 	// cluster-level firewall rules which are shared state.
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+// TestAccResourceFirewallRulesDuplicateIdentity tests that rules with identical
+// identity fields (type, action, proto, dport) but different comments are
+// correctly tracked during updates. Without proper handling, the signature-based
+// algorithm collapses duplicate-identity rules into one map entry, causing rules
+// to be silently left behind on deletion or updated at wrong positions.
+func TestAccResourceFirewallRulesDuplicateIdentity(t *testing.T) {
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		// create two rules with identical identity fields but different comments,
+		// then remove one. The algorithm must delete the correct rule.
+		{"remove one of duplicate-identity rules", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "test_dup" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9992
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP admin"
+						dport   = "80"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP ops"
+						dport   = "80"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_dup", map[string]string{
+						"rule.#":         "2",
+						"rule.0.comment": "Allow HTTP admin",
+						"rule.0.pos":     "0",
+						"rule.1.comment": "Allow HTTP ops",
+						"rule.1.pos":     "1",
+					}),
+				),
+			},
+			{
+				// remove the second rule — with the bug, the deletion
+				// logic can't distinguish the two rules (same signature)
+				// and fails to delete, leaving a stale rule behind
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "test_dup" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9992
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP admin"
+						dport   = "80"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_dup", map[string]string{
+						"rule.#":         "1",
+						"rule.0.comment": "Allow HTTP admin",
+						"rule.0.pos":     "0",
+					}),
+				),
+			},
+		}},
+		// insert a new rule between two duplicate-identity rules.
+		// the algorithm must correctly reposition all rules.
+		{"insert between duplicate-identity rules", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "test_dup_insert" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9992
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP admin"
+						dport   = "80"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP ops"
+						dport   = "80"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_dup_insert", map[string]string{
+						"rule.#":         "2",
+						"rule.0.comment": "Allow HTTP admin",
+						"rule.1.comment": "Allow HTTP ops",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "test_dup_insert" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9992
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP admin"
+						dport   = "80"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP ops"
+						dport   = "80"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_dup_insert", map[string]string{
+						"rule.#":         "3",
+						"rule.0.comment": "Allow HTTP admin",
+						"rule.0.pos":     "0",
+						"rule.1.comment": "SSH",
+						"rule.1.pos":     "1",
+						"rule.2.comment": "Allow HTTP ops",
+						"rule.2.pos":     "2",
+					}),
+				),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+// TestAccResourceFirewallRulesIdentityFieldChange tests that changing a rule's
+// identity field (e.g., action from ACCEPT to DROP) correctly updates the rule.
+// With signature-based tracking, identity field changes produce a different
+// signature, so the algorithm creates a new rule and deletes the old one.
+// The end state must be correct and the plan must be empty after apply.
+func TestAccResourceFirewallRulesIdentityFieldChange(t *testing.T) {
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"change action", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "test_change" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9993
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "HTTP rule"
+						dport   = "80"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH rule"
+						dport   = "22"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_change", map[string]string{
+						"rule.#":         "2",
+						"rule.0.action":  "ACCEPT",
+						"rule.0.comment": "HTTP rule",
+						"rule.1.action":  "ACCEPT",
+						"rule.1.comment": "SSH rule",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "test_change" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9993
+					rule {
+						type    = "in"
+						action  = "DROP"
+						comment = "HTTP rule"
+						dport   = "80"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH rule"
+						dport   = "22"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_change", map[string]string{
+						"rule.#":         "2",
+						"rule.0.action":  "DROP",
+						"rule.0.comment": "HTTP rule",
+						"rule.0.pos":     "0",
+						"rule.1.action":  "ACCEPT",
+						"rule.1.comment": "SSH rule",
+						"rule.1.pos":     "1",
+					}),
+				),
+			},
+		}},
+		{"change protocol", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "test_proto" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9993
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow traffic"
+						dport   = "443"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_proto", map[string]string{
+						"rule.0.proto": "tcp",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "test_proto" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9993
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow traffic"
+						dport   = "443"
+						proto   = "udp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_proto", map[string]string{
+						"rule.0.proto":   "udp",
+						"rule.0.comment": "Allow traffic",
+						"rule.0.pos":     "0",
+					}),
+				),
+			},
+		}},
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
