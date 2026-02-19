@@ -26,6 +26,10 @@ var errContainerAlreadyRunning = errors.New("container is already running")
 // that should be retried. It matches HTTP 5xx server errors, "got no worker upid"
 // (PVE worker start failures), and "got timeout" errors.
 func isRetryableContainerError(err error) bool {
+	if err == nil {
+		return false
+	}
+
 	var httpErr *api.HTTPError
 	if errors.As(err, &httpErr) {
 		return httpErr.Code >= http.StatusInternalServerError

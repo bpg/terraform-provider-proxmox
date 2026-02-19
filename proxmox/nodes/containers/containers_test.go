@@ -182,12 +182,6 @@ func TestIsRetryableContainerError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if tt.err == nil {
-				// isRetryableContainerError is only called by retry-go when err != nil,
-				// so we skip the nil case at runtime
-				return
-			}
-
 			got := isRetryableContainerError(tt.err)
 			assert.Equal(t, tt.want, got, tt.comment)
 		})
