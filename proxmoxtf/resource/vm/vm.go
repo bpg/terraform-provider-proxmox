@@ -4625,7 +4625,6 @@ func vmReadCustom(
 		vmConfig.IPConfig5,
 		vmConfig.IPConfig6,
 		vmConfig.IPConfig7,
-		vmConfig.IPConfig7,
 		vmConfig.IPConfig8,
 		vmConfig.IPConfig9,
 		vmConfig.IPConfig10,
