@@ -1734,6 +1734,200 @@ func TestAccResourceContainerCloneStartOnBoot(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerIDMap(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create container with idmap entries
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					started = false
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					idmap {
+						type         = "uid"
+						container_id = 0
+						host_id      = 100000
+						size         = 65536
+					}
+					idmap {
+						type         = "gid"
+						container_id = 0
+						host_id      = 100000
+						size         = 65536
+					}
+					initialization {
+						hostname = "test-idmap"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"idmap.#":              "2",
+						"idmap.0.type":         "uid",
+						"idmap.0.container_id": "0",
+						"idmap.0.host_id":      "100000",
+						"idmap.0.size":         "65536",
+						"idmap.1.type":         "gid",
+						"idmap.1.container_id": "0",
+						"idmap.1.host_id":      "100000",
+						"idmap.1.size":         "65536",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						require.Len(te.t, ctInfo.LXCConfig.IDMaps, 2)
+						require.Equal(te.t, "uid", ctInfo.LXCConfig.IDMaps[0].Type)
+						require.Equal(te.t, 0, ctInfo.LXCConfig.IDMaps[0].ContainerID)
+						require.Equal(te.t, 100000, ctInfo.LXCConfig.IDMaps[0].HostID)
+						require.Equal(te.t, 65536, ctInfo.LXCConfig.IDMaps[0].Size)
+						require.Equal(te.t, "gid", ctInfo.LXCConfig.IDMaps[1].Type)
+						require.Len(te.t, ctInfo.LXCConfig.Raw, 2, "Raw should preserve all LXC entries")
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 2: Update idmap entries
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					started = false
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					idmap {
+						type         = "uid"
+						container_id = 0
+						host_id      = 100000
+						size         = 65536
+					}
+					idmap {
+						type         = "gid"
+						container_id = 0
+						host_id      = 100000
+						size         = 44
+					}
+					idmap {
+						type         = "gid"
+						container_id = 44
+						host_id      = 44
+						size         = 1
+					}
+					initialization {
+						hostname = "test-idmap"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"idmap.#":              "3",
+						"idmap.1.size":         "44",
+						"idmap.2.type":         "gid",
+						"idmap.2.container_id": "44",
+						"idmap.2.host_id":      "44",
+						"idmap.2.size":         "1",
+					}),
+				),
+			},
+			{
+				// Step 3: Remove all idmap entries
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					started = false
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-idmap"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"idmap.#": "0",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						require.Empty(te.t, ctInfo.LXCConfig.IDMaps)
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
 	t.Helper()
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
