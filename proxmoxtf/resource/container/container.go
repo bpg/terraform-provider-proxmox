@@ -1622,17 +1622,18 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		return diag.FromErr(err)
 	}
 
-	// Apply idmap configuration via SSH (the API does not support lxc[n] parameters).
-	if len(idmaps) > 0 {
-		if err := containerSetIDMaps(ctx, client, nodeName, vmID, idmaps); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
 	// Wait for the container's lock to be released.
 	err = containerAPI.WaitForContainerConfigUnlock(ctx, true)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// Apply idmap configuration via SSH (the API does not support lxc[n] parameters).
+	// This must happen after the lock is released to avoid PVE overwriting the config file.
+	if len(idmaps) > 0 {
+		if err := containerSetIDMaps(ctx, client, nodeName, vmID, idmaps); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	return containerCreateStart(ctx, d, m)
@@ -2137,7 +2138,16 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	d.SetId(strconv.Itoa(vmID))
 
+	containerAPI := client.Node(nodeName).Container(vmID)
+
+	// Wait for the container's lock to be released before modifying the config file.
+	err = containerAPI.WaitForContainerConfigUnlock(ctx, true)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	// Apply idmap configuration via SSH (the API does not support lxc[n] parameters).
+	// This must happen after the lock is released to avoid PVE overwriting the config file.
 	if len(idmaps) > 0 {
 		if err := containerSetIDMaps(ctx, client, nodeName, vmID, idmaps); err != nil {
 			return diag.FromErr(err)
@@ -3574,14 +3584,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		rebootRequired = true
 	}
 
-	// Prepare the new idmap configuration via SSH (the API does not support lxc[n] parameters).
-	if d.HasChange(mkIDMap) {
-		_, newIDMap := d.GetChange(mkIDMap)
-		idmaps := containerGetIDMaps(newIDMap.([]any))
+	// Prepare the new idmap configuration (applied via SSH after the lock is released).
+	var idmaps []containers.CustomIDMapEntry
 
-		if err := containerSetIDMaps(ctx, client, nodeName, vmID, idmaps); err != nil {
-			return diag.FromErr(err)
-		}
+	idmapChanged := d.HasChange(mkIDMap)
+	if idmapChanged {
+		_, newIDMap := d.GetChange(mkIDMap)
+		idmaps = containerGetIDMaps(newIDMap.([]any))
 
 		rebootRequired = true
 	}
@@ -3737,7 +3746,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.Tags = &tagString
 	}
 
-	// Update the configuration now that everything has been prepared.
+	// Update the configuration via API if there are non-idmap changes.
 	if len(updateBody.Delete) > 0 || d.HasChangesExcept(mkIDMap) {
 		e = containerAPI.UpdateContainer(ctx, &updateBody)
 		if e != nil {
@@ -3749,6 +3758,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	e = containerAPI.WaitForContainerConfigUnlock(ctx, true)
 	if e != nil {
 		return diag.FromErr(e)
+	}
+
+	// Apply idmap configuration via SSH (the API does not support lxc[n] parameters).
+	// This must happen after the lock is released to avoid PVE overwriting the config file.
+	if idmapChanged {
+		if err := containerSetIDMaps(ctx, client, nodeName, vmID, idmaps); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Determine if the state of the container needs to be changed.

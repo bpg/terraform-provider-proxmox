@@ -1944,4 +1944,3 @@ func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileNa
 		require.NoError(t, e)
 	})
 }
-

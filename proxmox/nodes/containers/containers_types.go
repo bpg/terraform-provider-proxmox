@@ -224,7 +224,7 @@ type GetResponseData struct {
 	HookScript           *string                     `json:"hookscript,omitempty"`
 	Hostname             *string                     `json:"hostname,omitempty"`
 	Lock                 *types.CustomBool           `json:"lock,omitempty"`
-	LXCConfig            CustomLXCConfig             `json:"lxc,omitempty"`
+	LXCConfig            CustomLXCConfig             `json:"lxc"`
 	MountPoints          CustomMountPoints           `json:"mp,omitempty"`
 	PassthroughDevices   CustomPassthroughDevices    `json:"dev,omitempty"`
 	NetworkInterfaces    CustomNetworkInterfaces     `json:"net,omitempty"`
