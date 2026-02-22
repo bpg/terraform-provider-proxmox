@@ -9,7 +9,6 @@ package firewall
 import (
 	"context"
 	"fmt"
-	"sort"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -70,131 +69,6 @@ func TestRuleSchema(t *testing.T) {
 		mkRuleSource:  schema.TypeString,
 		mkRuleSPort:   schema.TypeString,
 	})
-}
-
-// TestRulesReadDriftDetection tests drift detection when rules are manually deleted.
-func TestRulesReadDriftDetection(t *testing.T) {
-	t.Parallel()
-
-	mockAPI := &mockFirewallRuleAPI{
-		rules: map[int]*firewall.RuleGetResponseData{
-			0: {
-				Action: "ACCEPT",
-				Type:   "in",
-				BaseRule: firewall.BaseRule{
-					Comment: stringPtr("Allow HTTP"),
-					DPort:   stringPtr("80"),
-					Proto:   stringPtr("tcp"),
-				},
-			},
-			2: {
-				Action: "ACCEPT",
-				Type:   "in",
-				BaseRule: firewall.BaseRule{
-					Comment: stringPtr("Allow HTTPS"),
-					DPort:   stringPtr("443"),
-					Proto:   stringPtr("tcp"),
-				},
-			},
-		},
-		rulesID: "test-rules-id",
-	}
-
-	// Create ResourceData with the rules schema
-	rulesResource := Rules()
-	d := rulesResource.TestResourceData()
-	err := d.Set(MkRule, []any{
-		map[string]any{
-			mkRulePos:     0,
-			mkRuleAction:  "ACCEPT",
-			mkRuleType:    "in",
-			mkRuleComment: "Allow HTTP",
-			mkRuleDPort:   "80",
-			mkRuleProto:   "tcp",
-		},
-		map[string]any{
-			mkRulePos:     1,
-			mkRuleAction:  "ACCEPT",
-			mkRuleType:    "in",
-			mkRuleComment: "Allow SSH",
-			mkRuleDPort:   "22",
-			mkRuleProto:   "tcp",
-		},
-		map[string]any{
-			mkRulePos:     2,
-			mkRuleAction:  "ACCEPT",
-			mkRuleType:    "in",
-			mkRuleComment: "Allow HTTPS",
-			mkRuleDPort:   "443",
-			mkRuleProto:   "tcp",
-		},
-	})
-	require.NoError(t, err)
-
-	diags := RulesRead(context.Background(), mockAPI, d)
-	require.False(t, diags.HasError(), "RulesRead should not return errors")
-
-	rules := d.Get(MkRule).([]any)
-	require.Len(t, rules, 2, "Should have 2 rules after drift detection")
-
-	rule0 := rules[0].(map[string]any)
-	require.Equal(t, "Allow HTTP", rule0[mkRuleComment])
-	require.Equal(t, "80", rule0[mkRuleDPort])
-
-	rule1 := rules[1].(map[string]any)
-	require.Equal(t, "Allow HTTPS", rule1[mkRuleComment])
-	require.Equal(t, "443", rule1[mkRuleDPort])
-}
-
-// mockFirewallRuleAPI is a mock implementation for testing.
-type mockFirewallRuleAPI struct {
-	rules   map[int]*firewall.RuleGetResponseData
-	rulesID string
-}
-
-func (m *mockFirewallRuleAPI) GetRulesID() string {
-	return m.rulesID
-}
-
-func (m *mockFirewallRuleAPI) CreateRule(_ context.Context, _ *firewall.RuleCreateRequestBody) error {
-	return nil
-}
-
-func (m *mockFirewallRuleAPI) GetRule(_ context.Context, pos int) (*firewall.RuleGetResponseData, error) {
-	rule, exists := m.rules[pos]
-	if !exists {
-		return nil, fmt.Errorf("500 no rule at position %d", pos)
-	}
-
-	return rule, nil
-}
-
-func (m *mockFirewallRuleAPI) ListRules(_ context.Context) ([]*firewall.RuleListResponseData, error) {
-	keys := make([]int, 0, len(m.rules))
-	for k := range m.rules {
-		keys = append(keys, k)
-	}
-
-	sort.Ints(keys)
-
-	result := make([]*firewall.RuleListResponseData, 0, len(m.rules))
-	for _, pos := range keys {
-		result = append(result, &firewall.RuleListResponseData{Pos: pos})
-	}
-
-	return result, nil
-}
-
-func (m *mockFirewallRuleAPI) UpdateRule(_ context.Context, _ int, _ *firewall.RuleUpdateRequestBody) error {
-	return nil
-}
-
-func (m *mockFirewallRuleAPI) DeleteRule(_ context.Context, _ int) error {
-	return nil
-}
-
-func stringPtr(s string) *string {
-	return &s
 }
 
 // TestMapToBaseRuleWithEmptyValues tests empty value handling for issue #1504.
@@ -267,4 +141,181 @@ func TestMapToBaseRuleWithNonEmptyValues(t *testing.T) {
 	require.Equal(t, "tcp", *baseRule.Proto)
 	require.Equal(t, "192.168.1.0/24", *baseRule.Source)
 	require.Equal(t, "8080", *baseRule.SPort)
+}
+
+// deleteTestMockAPI is a minimal mock for testing RulesDelete error handling.
+// RulesDelete's skip-missing logic (ErrNoRuleAtPosition → continue) is only reachable
+// via a race condition (rule disappears between Read and Delete), so it cannot be
+// tested with acceptance tests.
+type deleteTestMockAPI struct {
+	getRuleErrors map[int]error
+	deletedPos    []int
+}
+
+func (m *deleteTestMockAPI) GetRulesID() string { return "test" }
+
+func (m *deleteTestMockAPI) ListRules(context.Context) ([]*firewall.RuleListResponseData, error) {
+	return nil, nil
+}
+
+func (m *deleteTestMockAPI) CreateRule(context.Context, *firewall.RuleCreateRequestBody) error {
+	return nil
+}
+
+func (m *deleteTestMockAPI) UpdateRule(context.Context, int, *firewall.RuleUpdateRequestBody) error {
+	return nil
+}
+
+func (m *deleteTestMockAPI) GetRule(_ context.Context, pos int) (*firewall.RuleGetResponseData, error) {
+	if err, ok := m.getRuleErrors[pos]; ok {
+		return nil, err
+	}
+
+	return &firewall.RuleGetResponseData{Action: "ACCEPT", Type: "in"}, nil
+}
+
+func (m *deleteTestMockAPI) DeleteRule(_ context.Context, pos int) error {
+	m.deletedPos = append(m.deletedPos, pos)
+	return nil
+}
+
+func newDeleteTestState(t *testing.T, rules []map[string]any) *schema.ResourceData {
+	t.Helper()
+
+	d := Rules().TestResourceData()
+
+	ruleList := make([]any, len(rules))
+	for i, r := range rules {
+		ruleList[i] = r
+	}
+
+	err := d.Set(MkRule, ruleList)
+	require.NoError(t, err)
+
+	return d
+}
+
+func ruleState(pos int, comment string) map[string]any {
+	return map[string]any{
+		mkRulePos:       pos,
+		mkRuleAction:    "ACCEPT",
+		mkRuleType:      "in",
+		mkRuleComment:   comment,
+		mkRuleDPort:     "",
+		mkRuleProto:     "",
+		mkSecurityGroup: "",
+		mkRuleDest:      "",
+		mkRuleSource:    "",
+		mkRuleSPort:     "",
+		mkRuleEnabled:   true,
+		mkRuleIFace:     "",
+		mkRuleLog:       "",
+		mkRuleMacro:     "",
+	}
+}
+
+// TestRulesDeleteSkipsMissingRules verifies that RulesDelete skips rules
+// that no longer exist (ErrNoRuleAtPosition) instead of failing.
+func TestRulesDeleteSkipsMissingRules(t *testing.T) {
+	t.Parallel()
+
+	mock := &deleteTestMockAPI{
+		getRuleErrors: map[int]error{
+			1: fmt.Errorf("error retrieving firewall rule 1: %w", firewall.ErrNoRuleAtPosition),
+		},
+	}
+
+	d := newDeleteTestState(t, []map[string]any{
+		ruleState(0, "Allow HTTP"),
+		ruleState(1, "Allow SSH"),
+	})
+
+	diags := RulesDelete(context.Background(), mock, d)
+	require.False(t, diags.HasError(), "RulesDelete should not error for missing rules")
+	require.Equal(t, []int{0}, mock.deletedPos, "Only existing rule should be deleted")
+}
+
+// TestRulesDeletePropagatesAPIErrors verifies that RulesDelete propagates
+// real API errors (non-ErrNoRuleAtPosition) instead of silently ignoring them.
+func TestRulesDeletePropagatesAPIErrors(t *testing.T) {
+	t.Parallel()
+
+	mock := &deleteTestMockAPI{
+		getRuleErrors: map[int]error{
+			1: fmt.Errorf("500 connection refused"),
+		},
+	}
+
+	d := newDeleteTestState(t, []map[string]any{
+		ruleState(0, "Allow HTTP"),
+		ruleState(1, "Allow SSH"),
+	})
+
+	diags := RulesDelete(context.Background(), mock, d)
+	require.True(t, diags.HasError(), "RulesDelete should propagate non-missing-rule API errors")
+	require.Empty(t, mock.deletedPos, "No rules should be deleted when earlier position errors")
+}
+
+// TestComputeRuleSignature tests the signature computation for rules.
+func TestComputeRuleSignature(t *testing.T) {
+	t.Parallel()
+
+	regularRule := map[string]any{
+		mkRuleAction:    "ACCEPT",
+		mkRuleType:      "in",
+		mkRuleDest:      "192.168.1.0/24",
+		mkRuleDPort:     "80",
+		mkRuleSource:    "10.0.0.0/8",
+		mkRuleSPort:     "1024",
+		mkRuleProto:     "tcp",
+		mkRuleMacro:     "",
+		mkRuleIFace:     "net0",
+		mkSecurityGroup: "",
+		mkRuleComment:   "Test comment", // should be excluded
+		mkRuleEnabled:   true,           // should be excluded
+		mkRuleLog:       "info",         // should be excluded
+	}
+
+	sig1 := computeRuleSignature(regularRule)
+	require.NotEmpty(t, sig1)
+	require.Contains(t, sig1, "rule:")
+	require.Contains(t, sig1, "ACCEPT")
+	require.Contains(t, sig1, "in")
+
+	regularRule[mkRuleComment] = "Different comment"
+	sig2 := computeRuleSignature(regularRule)
+	require.Equal(t, sig1, sig2, "Signature should not change when only comment changes")
+
+	regularRule[mkRuleAction] = "DROP"
+	sig3 := computeRuleSignature(regularRule)
+	require.NotEqual(t, sig1, sig3, "Signature should change when action changes")
+
+	groupRule := map[string]any{
+		mkSecurityGroup: "foo",
+		mkRuleIFace:     "net0",
+		mkRuleComment:   "Group comment",
+		mkRuleEnabled:   true,
+		mkRuleAction:    "",
+		mkRuleType:      "",
+		mkRuleDest:      "",
+		mkRuleDPort:     "",
+		mkRuleSource:    "",
+		mkRuleSPort:     "",
+		mkRuleProto:     "",
+		mkRuleMacro:     "",
+		mkRuleLog:       "",
+	}
+
+	groupSig1 := computeRuleSignature(groupRule)
+	require.NotEmpty(t, groupSig1)
+	require.Contains(t, groupSig1, "group:")
+	require.Contains(t, groupSig1, "foo")
+
+	groupRule[mkRuleComment] = "Different group comment"
+	groupSig2 := computeRuleSignature(groupRule)
+	require.Equal(t, groupSig1, groupSig2, "Group signature should not change when only comment changes")
+
+	groupRule[mkSecurityGroup] = "bar"
+	groupSig3 := computeRuleSignature(groupRule)
+	require.NotEqual(t, groupSig1, groupSig3, "Group signature should change when group name changes")
 }
