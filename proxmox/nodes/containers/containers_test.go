@@ -8,8 +8,6 @@ package containers
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,7 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 )
 
 // testUPID is a valid Proxmox UPID for use in tests.
@@ -147,93 +144,6 @@ func TestResizeContainerDiskWaitsForTask(t *testing.T) {
 		Size: "+1G",
 	})
 	require.NoError(t, err)
-}
-
-func TestIsTransientAPIError(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name    string
-		err     error
-		want    bool
-		comment string
-	}{
-		{
-			name:    "HTTP 500 Internal Server Error",
-			err:     &api.HTTPError{Code: http.StatusInternalServerError, Message: "Internal Server Error"},
-			want:    true,
-			comment: "HTTP 500 should be retried (API overload)",
-		},
-		{
-			name:    "HTTP 503 Service Unavailable",
-			err:     &api.HTTPError{Code: http.StatusServiceUnavailable, Message: "Service Unavailable"},
-			want:    true,
-			comment: "HTTP 503 should be retried (API overload)",
-		},
-		{
-			name:    "HTTP 400 Bad Request",
-			err:     &api.HTTPError{Code: http.StatusBadRequest, Message: "Bad Request"},
-			want:    false,
-			comment: "HTTP 400 should not be retried (client error)",
-		},
-		{
-			name:    "HTTP 403 Forbidden",
-			err:     &api.HTTPError{Code: http.StatusForbidden, Message: "Forbidden"},
-			want:    false,
-			comment: "HTTP 403 should not be retried (auth error)",
-		},
-		{
-			name:    "HTTP 404 Not Found",
-			err:     &api.HTTPError{Code: http.StatusNotFound, Message: "Not Found"},
-			want:    false,
-			comment: "HTTP 404 should not be retried (resource does not exist)",
-		},
-		{
-			name:    "got no worker upid error",
-			err:     fmt.Errorf("got no worker upid - start worker failed"),
-			want:    true,
-			comment: "PVE worker start failure should be retried",
-		},
-		{
-			name:    "got timeout error",
-			err:     fmt.Errorf("got timeout"),
-			want:    true,
-			comment: "timeout errors should be retried",
-		},
-		{
-			name:    "wrapped got no worker upid error",
-			err:     fmt.Errorf("error creating container: %w", fmt.Errorf("got no worker upid")),
-			want:    true,
-			comment: "wrapped PVE worker start failure should be retried",
-		},
-		{
-			name:    "wrapped got timeout error",
-			err:     fmt.Errorf("error waiting for task: %w", fmt.Errorf("got timeout")),
-			want:    true,
-			comment: "wrapped timeout errors should be retried",
-		},
-		{
-			name:    "generic error",
-			err:     errors.New("something went wrong"),
-			want:    false,
-			comment: "generic errors should not be retried",
-		},
-		{
-			name:    "nil error",
-			err:     nil,
-			want:    false,
-			comment: "nil error should not be retried",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			got := retry.IsTransientAPIError(tt.err)
-			assert.Equal(t, tt.want, got, tt.comment)
-		})
-	}
 }
 
 // TestCreateContainerRetries verifies that CreateContainer retries on HTTP 500

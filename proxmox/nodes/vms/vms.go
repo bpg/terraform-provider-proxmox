@@ -84,7 +84,7 @@ func (c *Client) ConvertToTemplate(ctx context.Context) error {
 // CreateVM creates a virtual machine.
 func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) error {
 	op := retry.NewTaskOperation("VM create",
-		retry.WithRetryIf(retry.ErrorContains("got no worker upid")),
+		retry.WithRetryIf(retry.IsTransientAPIError),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
@@ -124,7 +124,7 @@ func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDi
 
 	op := retry.NewTaskOperation("VM delete",
 		retry.WithRetryIf(func(err error) bool {
-			return !errors.Is(err, api.ErrResourceDoesNotExist)
+			return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
 	)
 
@@ -417,6 +417,10 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) ([]string, error) 
 		return nil, err
 	}
 
+	if taskID == nil {
+		return nil, nil
+	}
+
 	err = c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599))
 	if err != nil {
 		log, e := c.Tasks().GetTaskLog(ctx, *taskID)
@@ -440,6 +444,7 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) ([]string, error) 
 }
 
 // StartVMAsync starts a virtual machine asynchronously.
+// Returns (nil, nil) if the VM is already running.
 func (c *Client) StartVMAsync(ctx context.Context, timeoutSec int) (*string, error) {
 	reqBody := &StartRequestBody{
 		TimeoutSeconds: &timeoutSec,
@@ -450,9 +455,12 @@ func (c *Client) StartVMAsync(ctx context.Context, timeoutSec int) (*string, err
 		retry.WithRetryIf(retry.ErrorContains("got no worker upid")),
 	)
 
+	var alreadyRunning bool
+
 	err := op.Do(ctx, func() error {
 		err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), reqBody, resBody)
 		if err != nil && strings.Contains(err.Error(), "already running") {
+			alreadyRunning = true
 			return nil
 		}
 
@@ -460,6 +468,10 @@ func (c *Client) StartVMAsync(ctx context.Context, timeoutSec int) (*string, err
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error starting VM: %w", err)
+	}
+
+	if alreadyRunning {
+		return nil, nil //nolint:nilnil // nil taskID means VM is already running, no task to wait for
 	}
 
 	if resBody.Data == nil {
@@ -587,7 +599,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	var result *GetQEMUNetworkInterfacesResponseData
 
 	err := op.DoPoll(ctxWithTimeout, func() error {
-		data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
+		data, err := c.GetVMNetworkInterfacesFromAgent(ctxWithTimeout)
 		if err != nil {
 			var httpError *api.HTTPError
 			if errors.As(err, &httpError) {

@@ -26,9 +26,11 @@ func TestIsTransientAPIError(t *testing.T) {
 		{"HTTP 500", &api.HTTPError{Code: http.StatusInternalServerError}, true},
 		{"HTTP 503", &api.HTTPError{Code: http.StatusServiceUnavailable}, true},
 		{"HTTP 400", &api.HTTPError{Code: http.StatusBadRequest}, false},
+		{"HTTP 403", &api.HTTPError{Code: http.StatusForbidden}, false},
 		{"HTTP 404", &api.HTTPError{Code: http.StatusNotFound}, false},
 		{"got no worker upid", fmt.Errorf("got no worker upid"), true},
 		{"got timeout", fmt.Errorf("got timeout"), true},
+		{"wrapped got no worker upid", fmt.Errorf("error: %w", fmt.Errorf("got no worker upid")), true},
 		{"wrapped got timeout", fmt.Errorf("error: %w", fmt.Errorf("got timeout")), true},
 		{"generic error", errors.New("something else"), false},
 	}

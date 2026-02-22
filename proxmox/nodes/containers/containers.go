@@ -83,7 +83,9 @@ func (c *Client) CreateContainerAsync(ctx context.Context, d *CreateRequestBody)
 // DeleteContainer deletes a container.
 func (c *Client) DeleteContainer(ctx context.Context) error {
 	op := retry.NewTaskOperation("container delete",
-		retry.WithRetryIf(retry.IsTransientAPIError),
+		retry.WithRetryIf(func(err error) bool {
+			return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
+		}),
 	)
 
 	return op.DoTask(ctx,
@@ -101,10 +103,7 @@ func (c *Client) DeleteContainerAsync(ctx context.Context) (*string, error) {
 		return nil, fmt.Errorf("error deleting container: %w", err)
 	}
 
-	if resBody.Data == nil {
-		return nil, api.ErrNoDataObjectInResponse
-	}
-
+	// nil data means the delete completed synchronously (no task to wait for).
 	return resBody.Data, nil
 }
 
@@ -201,7 +200,7 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	err := op.DoPoll(ctxWithTimeout, func() error {
 		var err error
 
-		ifaces, err = c.GetContainerNetworkInterfaces(ctx)
+		ifaces, err = c.GetContainerNetworkInterfaces(ctxWithTimeout)
 		if err != nil {
 			return err
 		}
@@ -397,13 +396,13 @@ func (c *Client) StopContainer(ctx context.Context) error {
 
 // UpdateContainer updates a container.
 func (c *Client) UpdateContainer(ctx context.Context, d *UpdateRequestBody) error {
-	// note: put config does not return a task ID, so we cannot wait for it to complete
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
-	if err != nil {
-		return fmt.Errorf("error updating container: %w", err)
-	}
+	op := retry.NewAPICallOperation("container config update",
+		retry.WithRetryIf(retry.ErrorContains("got timeout")),
+	)
 
-	return nil
+	return op.Do(ctx, func() error {
+		return c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
+	})
 }
 
 // WaitForContainerStatus waits for a container to reach a specific state.

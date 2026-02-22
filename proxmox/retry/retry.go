@@ -80,7 +80,7 @@ func ErrorContains(substr string) func(error) bool {
 }
 
 // NewTaskOperation creates an Operation for async UPID-based task operations
-// (create, clone, delete, start, resize). Defaults: exponential backoff,
+// (create, clone, delete, start). Defaults: exponential backoff,
 // retry logging, LastErrorOnly(false), WaitForTask errors are unrecoverable,
 // 3 attempts.
 func NewTaskOperation(name string, opts ...Option) *Operation {
