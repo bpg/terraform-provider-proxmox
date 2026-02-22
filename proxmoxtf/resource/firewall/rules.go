@@ -24,9 +24,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// ErrRuleMissing is a sentinel error to indicate a rule doesn't exist at the expected position.
-var ErrRuleMissing = errors.New("rule missing")
-
 const (
 	dvSecurityGroup = ""
 	dvRuleComment   = ""
@@ -325,8 +322,8 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 	readRule := func(pos int, ruleMap map[string]any) error {
 		rule, err := api.GetRule(ctx, pos)
 		if err != nil {
-			if strings.Contains(err.Error(), "no rule at position") {
-				return ErrRuleMissing
+			if errors.Is(err, firewall.ErrNoRuleAtPosition) {
+				return firewall.ErrNoRuleAtPosition
 			}
 
 			return fmt.Errorf("error reading rule %d : %w", pos, err)
@@ -359,7 +356,7 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 
 		err = readRule(id.Pos, ruleMap)
 		if err != nil {
-			if !errors.Is(err, ErrRuleMissing) {
+			if !errors.Is(err, firewall.ErrNoRuleAtPosition) {
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(ruleMap) > 0 {
@@ -411,13 +408,13 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		} else {
 			ruleBody, err := mapToRuleCreateRequestBody(ruleMap)
 			if err != nil {
-				diags = append(diags, diag.Errorf("Could not create rule: %v", err)...)
+				diags = append(diags, diag.Errorf("could not create rule: %v", err)...)
 				return diags
 			}
 
 			err = api.CreateRule(ctx, ruleBody)
 			if err != nil {
-				diags = append(diags, diag.Errorf("Could not create rule: %v", err)...)
+				diags = append(diags, diag.Errorf("could not create rule: %v", err)...)
 				return diags
 			}
 		}
@@ -449,11 +446,11 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 
 			r, err := api.GetRule(ctx, cr.Pos)
 			if err != nil {
-				if strings.Contains(err.Error(), "no rule at position") {
+				if errors.Is(err, firewall.ErrNoRuleAtPosition) {
 					continue
 				}
 
-				diags = append(diags, diag.Errorf("Could not read rule at pos %d: %v", cr.Pos, err)...)
+				diags = append(diags, diag.Errorf("could not read rule at pos %d: %v", cr.Pos, err)...)
 
 				return diags
 			}
@@ -464,7 +461,14 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 			}
 		}
 
-		if currentPos == -1 || currentPos == targetPos {
+		if currentPos == -1 {
+			diags = append(diags, diag.Errorf(
+				"could not find rule with signature %q at or after position %d during repositioning", sig, targetPos)...)
+
+			return diags
+		}
+
+		if currentPos == targetPos {
 			continue
 		}
 
@@ -472,7 +476,7 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 			MoveTo: &targetPos,
 		})
 		if err != nil {
-			diags = append(diags, diag.Errorf("Could not move rule from pos %d to %d: %v", currentPos, targetPos, err)...)
+			diags = append(diags, diag.Errorf("could not move rule from pos %d to %d: %v", currentPos, targetPos, err)...)
 			return diags
 		}
 	}
@@ -487,29 +491,41 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 			continue
 		}
 
-		ruleBody := firewall.RuleUpdateRequestBody{
-			BaseRule: *mapToBaseRule(newRuleMap),
-		}
+		isSG := newRuleMap[mkSecurityGroup].(string) != ""
 
-		if action := newRuleMap[mkRuleAction].(string); action != "" {
-			ruleBody.Action = &action
-		}
+		var ruleBody firewall.RuleUpdateRequestBody
 
-		if rType := newRuleMap[mkRuleType].(string); rType != "" {
-			ruleBody.Type = &rType
+		if isSG {
+			ruleBody.BaseRule = *mapToSecurityGroupBaseRule(newRuleMap)
+		} else {
+			ruleBody.BaseRule = *mapToBaseRule(newRuleMap)
+
+			if action := newRuleMap[mkRuleAction].(string); action != "" {
+				ruleBody.Action = &action
+			}
+
+			if rType := newRuleMap[mkRuleType].(string); rType != "" {
+				ruleBody.Type = &rType
+			}
 		}
 
 		var fieldsToDelete []string
-		fields := []string{
-			mkRuleComment,
-			mkRuleDPort,
-			mkRuleDest,
-			mkRuleIFace,
-			mkRuleLog,
-			mkRuleMacro,
-			mkRuleProto,
-			mkRuleSource,
-			mkRuleSPort,
+
+		var fields []string
+		if isSG {
+			fields = []string{mkRuleComment, mkRuleIFace}
+		} else {
+			fields = []string{
+				mkRuleComment,
+				mkRuleDPort,
+				mkRuleDest,
+				mkRuleIFace,
+				mkRuleLog,
+				mkRuleMacro,
+				mkRuleProto,
+				mkRuleSource,
+				mkRuleSPort,
+			}
 		}
 
 		for _, field := range fields {
@@ -538,9 +554,11 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	}
 
 	for i := len(currentRulesForDelete) - 1; i >= len(newRulesList); i-- {
-		err := api.DeleteRule(ctx, i)
+		pos := currentRulesForDelete[i].Pos
+
+		err := api.DeleteRule(ctx, pos)
 		if err != nil {
-			diags = append(diags, diag.Errorf("Could not delete rule at pos %d: %v", i, err)...)
+			diags = append(diags, diag.Errorf("could not delete rule at pos %d: %v", pos, err)...)
 			return diags
 		}
 	}
@@ -570,8 +588,13 @@ func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 
 		_, err := api.GetRule(ctx, pos)
 		if err != nil {
-			// if the rule is not found / can't be retrieved, we can safely ignore it
-			continue
+			if errors.Is(err, firewall.ErrNoRuleAtPosition) {
+				continue
+			}
+
+			diags = append(diags, diag.Errorf("error checking rule at pos %d before deletion: %v", pos, err)...)
+
+			return diags
 		}
 
 		err = api.DeleteRule(ctx, pos)
@@ -724,9 +747,12 @@ func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]any
 }
 
 // computeRuleSignature generates a signature for a rule based on its identity fields.
-// fields that can change without altering the rule's identity (comment, enabled, log)
-// are excluded. rules with the same signature are considered the same logical rule
-// for matching purposes during updates.
+// for regular rules: type, action, dest, dport, source, sport, proto, macro, iface.
+// for security group rules: group name and iface.
+// non-identity fields (comment, enabled, log) are excluded.
+// rules with the same signature are considered the same logical rule for matching
+// during updates. changing an identity field produces a new signature, causing the
+// algorithm to create a new rule and delete the old one (not an in-place update).
 func computeRuleSignature(rule any) string {
 	ruleMap := rule.(map[string]any)
 

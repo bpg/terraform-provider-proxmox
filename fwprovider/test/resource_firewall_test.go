@@ -17,6 +17,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 func TestAccResourceClusterFirewall(t *testing.T) {
@@ -865,6 +869,92 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 				),
 			},
 		}},
+		{"cluster drift detection", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "cluster_drift" {
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP"
+						dport   = "80"
+						proto   = "tcp"
+					}
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTPS"
+						dport   = "443"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.cluster_drift", map[string]string{
+						"rule.#":         "3",
+						"rule.0.comment": "Allow HTTP",
+						"rule.0.dport":   "80",
+						"rule.1.comment": "Allow SSH",
+						"rule.1.dport":   "22",
+						"rule.2.comment": "Allow HTTPS",
+						"rule.2.dport":   "443",
+					}),
+				),
+			},
+			{
+				PreConfig: func() {
+					err := deleteClusterFirewallRuleManually(te, 1)
+					if err != nil {
+						t.Errorf("Failed to manually delete cluster rule: %v", err)
+					}
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "cluster_drift" {
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP"
+						dport   = "80"
+						proto   = "tcp"
+					}
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTPS"
+						dport   = "443"
+						proto   = "tcp"
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_firewall_rules.cluster_drift",
+							plancheck.ResourceActionUpdate),
+						plancheck.ExpectNonEmptyPlan(),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.cluster_drift", map[string]string{
+						"rule.#":         "3",
+						"rule.0.comment": "Allow HTTP",
+						"rule.1.comment": "Allow SSH",
+						"rule.2.comment": "Allow HTTPS",
+					}),
+				),
+			},
+		}},
 		{"ipset with ipV4 and ipV6 cidrs", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_firewall_ipset" "ipset" {
@@ -1234,6 +1324,19 @@ func deleteFirewallRuleManually(te *Environment, nodeName string, vmID int, rule
 	err := firewallClient.DeleteRule(ctx, rulePosition)
 	if err != nil {
 		return fmt.Errorf("failed to manually delete firewall rule at position %d for VM %d on node %s: %w", rulePosition, vmID, nodeName, err)
+	}
+
+	return nil
+}
+
+// deleteClusterFirewallRuleManually simulates manual deletion of a cluster-level firewall rule.
+func deleteClusterFirewallRuleManually(te *Environment, rulePosition int) error {
+	ctx := context.Background()
+	firewallClient := te.ClusterClient().Firewall()
+
+	err := firewallClient.DeleteRule(ctx, rulePosition)
+	if err != nil {
+		return fmt.Errorf("failed to manually delete cluster firewall rule at position %d: %w", rulePosition, err)
 	}
 
 	return nil
@@ -1873,6 +1976,88 @@ func TestAccResourceFirewallRulesWithSecurityGroups(t *testing.T) {
 				),
 			},
 		}},
+		// update security group rule comment
+		// initial: ssh + security_group foo (comment "Security group foo")
+		// change: update foo's comment to "Updated sg foo comment"
+		// verify: the SG rule's comment is updated correctly, plan is clean after apply
+		// this exercises the attribute update path for matched security group rules
+		{"update security group rule comment", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_comment" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+					]
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Security group foo"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_comment", map[string]string{
+						"rule.#":                "2",
+						"rule.0.comment":        "SSH",
+						"rule.0.pos":            "0",
+						"rule.1.security_group": sgFoo,
+						"rule.1.comment":        "Security group foo",
+						"rule.1.pos":            "1",
+					}),
+				),
+			},
+			{
+				// update the security group rule's comment only
+				// the SG rule signature stays the same, so the algorithm matches it
+				// and enters the attribute update path
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_sg_foo" {
+					name    = "{{.SecurityGroupFoo}}"
+					comment = "Test security group foo"
+				}
+
+				resource "proxmox_virtual_environment_firewall_rules" "test_sg_comment" {
+					depends_on = [
+						proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo,
+					]
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+
+					rule {
+						security_group = proxmox_virtual_environment_cluster_firewall_security_group.test_sg_foo.name
+						comment        = "Updated sg foo comment"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.test_sg_comment", map[string]string{
+						"rule.#":                "2",
+						"rule.0.comment":        "SSH",
+						"rule.0.pos":            "0",
+						"rule.1.security_group": sgFoo,
+						"rule.1.comment":        "Updated sg foo comment",
+						"rule.1.pos":            "1",
+					}),
+				),
+			},
+		}},
 		// simultaneous insert and delete around security groups
 		// initial: ssh + https + security_group foo
 		// changes: remove ssh , add icmp between https and foo
@@ -1983,10 +2168,10 @@ func TestAccResourceFirewallRulesWithSecurityGroups(t *testing.T) {
 }
 
 // TestAccResourceFirewallRulesDuplicateIdentity tests that rules with identical
-// identity fields (type, action, proto, dport) but different comments are
-// correctly tracked during updates. Without proper handling, the signature-based
-// algorithm collapses duplicate-identity rules into one map entry, causing rules
-// to be silently left behind on deletion or updated at wrong positions.
+// identity fields (type, action, dest, dport, source, sport, proto, macro, iface)
+// but different comments are correctly tracked during updates. Without per-signature
+// queues, the algorithm collapses duplicate-identity rules into one map entry,
+// causing rules to be silently left behind on deletion or updated at wrong positions.
 func TestAccResourceFirewallRulesDuplicateIdentity(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -2029,9 +2214,9 @@ func TestAccResourceFirewallRulesDuplicateIdentity(t *testing.T) {
 				),
 			},
 			{
-				// remove the second rule — with the bug, the deletion
-				// logic can't distinguish the two rules (same signature)
-				// and fails to delete, leaving a stale rule behind
+				// remove the second rule — without per-signature queues,
+				// a simple map collapses both rules into one entry,
+				// losing track of the second rule and leaving it behind
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_firewall_rules" "test_dup" {
 					node_name = "{{.NodeName}}"
@@ -2269,4 +2454,20 @@ func TestAccResourceFirewallRulesIdentityFieldChange(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestAccFirewallAPIErrorMissingRule validates that GetRule returns
+// firewall.ErrNoRuleAtPosition when fetching a rule at a non-existent position.
+// The provider's RulesRead, RulesUpdate, and RulesDelete all rely on this
+// sentinel error to distinguish "rule missing" from real API errors.
+func TestAccFirewallAPIErrorMissingRule(t *testing.T) {
+	te := InitEnvironment(t)
+
+	ctx := context.Background()
+	fwClient := te.ClusterClient().Firewall()
+
+	// Position 9999 should not exist on any reasonable cluster firewall.
+	_, err := fwClient.GetRule(ctx, 9999)
+	require.Error(t, err, "expected an error when fetching a rule at a non-existent position")
+	assert.ErrorIs(t, err, firewall.ErrNoRuleAtPosition)
 }
