@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v5"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/utils/ip"
@@ -39,29 +40,60 @@ func isRetryableContainerError(err error) bool {
 		strings.Contains(err.Error(), "got timeout")
 }
 
-// CloneContainer clones a container.
-func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error {
+// retryContainerOperation retries an async container operation (create/clone)
+// with exponential backoff. It handles "already exists" errors on retry and
+// marks WaitForTask errors as unrecoverable to prevent duplicate operations.
+func (c *Client) retryContainerOperation(
+	ctx context.Context,
+	operation string,
+	asyncFn func() (*string, error),
+) error {
+	retrying := false
+
 	err := retry.New(
 		retry.Context(ctx),
 		retry.Attempts(3),
 		retry.Delay(10*time.Second),
-		retry.LastErrorOnly(true),
+		retry.LastErrorOnly(false),
+		retry.OnRetry(func(n uint, err error) {
+			tflog.Warn(ctx, "retrying container "+operation, map[string]any{
+				"attempt": n,
+				"error":   err.Error(),
+			})
+
+			retrying = true
+		}),
 		retry.RetryIf(isRetryableContainerError),
 	).Do(
 		func() error {
-			taskID, err := c.CloneContainerAsync(ctx, d)
+			taskID, err := asyncFn()
 			if err != nil {
+				if retrying && strings.Contains(err.Error(), "already exists") {
+					return nil
+				}
+
 				return err
 			}
 
-			return c.Tasks().WaitForTask(ctx, *taskID)
+			if err := c.Tasks().WaitForTask(ctx, *taskID); err != nil {
+				return retry.Unrecoverable(fmt.Errorf("error waiting for %s task: %w", operation, err))
+			}
+
+			return nil
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("error cloning container: %w", err)
+		return fmt.Errorf("error %s container: %w", operation, err)
 	}
 
 	return nil
+}
+
+// CloneContainer clones a container.
+func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error {
+	return c.retryContainerOperation(ctx, "cloning", func() (*string, error) {
+		return c.CloneContainerAsync(ctx, d)
+	})
 }
 
 // CloneContainerAsync clones a container asynchronously.
@@ -82,27 +114,9 @@ func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (
 
 // CreateContainer creates a container.
 func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) error {
-	err := retry.New(
-		retry.Context(ctx),
-		retry.Attempts(3),
-		retry.Delay(10*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(isRetryableContainerError),
-	).Do(
-		func() error {
-			taskID, err := c.CreateContainerAsync(ctx, d)
-			if err != nil {
-				return err
-			}
-
-			return c.Tasks().WaitForTask(ctx, *taskID)
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("error creating container: %w", err)
-	}
-
-	return nil
+	return c.retryContainerOperation(ctx, "creating", func() (*string, error) {
+		return c.CreateContainerAsync(ctx, d)
+	})
 }
 
 // CreateContainerAsync creates a container asynchronously.
