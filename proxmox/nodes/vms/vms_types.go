@@ -134,6 +134,11 @@ func (b *CreateRequestBody) AddCustomStorageDevice(iface string, device CustomSt
 	b.CustomStorageDevices[iface] = &device
 }
 
+// CloneResponseBody contains the body from a clone response.
+type CloneResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
 // CreateResponseBody contains the body from a create response.
 type CreateResponseBody struct {
 	TaskID *string `json:"data,omitempty"`

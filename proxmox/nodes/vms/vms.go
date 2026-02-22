@@ -16,50 +16,50 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v5"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 // CloneVM clones a virtual machine.
 func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) error {
-	var err error
-
-	resBody := &MoveDiskResponseBody{}
-
 	// just a guard in case someone sets retries to zero unknowingly
 	if retries <= 0 {
 		retries = 1
 	}
 
-	err = retry.New(
-		retry.Context(ctx),
-		retry.Attempts(uint(retries)),
-		retry.Delay(10*time.Second),
-		retry.LastErrorOnly(false),
-	).Do(
-		func() error {
-			err = c.DoRequest(ctx, http.MethodPost, c.ExpandPath("clone"), d, resBody)
-			if err != nil {
-				return fmt.Errorf("error cloning VM: %w", err)
-			}
+	op := retry.NewTaskOperation("VM clone",
+		retry.WithAttempts(uint(retries)),
+		retry.WithBaseDelay(10*time.Second),
+		retry.WithRetryIf(retry.IsTransientAPIError),
+		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
+	)
 
-			if resBody.Data == nil {
-				return api.ErrNoDataObjectInResponse
-			}
-
-			// ignoring warnings as per https://www.mail-archive.com/pve-devel@lists.proxmox.com/msg17724.html
-			return c.Tasks().WaitForTask(ctx, *resBody.Data, tasks.WithIgnoreWarnings())
+	return op.DoTask(ctx,
+		func() (*string, error) { return c.CloneVMAsync(ctx, d) },
+		func(ctx context.Context, taskID string) error {
+			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
 		},
 	)
+}
+
+// CloneVMAsync clones a virtual machine asynchronously.
+func (c *Client) CloneVMAsync(ctx context.Context, d *CloneRequestBody) (*string, error) {
+	resBody := &CloneResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("clone"), d, resBody)
 	if err != nil {
-		return fmt.Errorf("error waiting for VM clone: %w", err)
+		return nil, fmt.Errorf("error cloning VM: %w", err)
 	}
 
-	return nil
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // ConvertToTemplate converts a virtual machine to a template using proper endpoint.
@@ -83,53 +83,22 @@ func (c *Client) ConvertToTemplate(ctx context.Context) error {
 
 // CreateVM creates a virtual machine.
 func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) error {
-	taskID, err := c.CreateVMAsync(ctx, d)
-	if err != nil {
-		return err
-	}
+	op := retry.NewTaskOperation("VM create",
+		retry.WithRetryIf(retry.IsTransientAPIError),
+		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
+	)
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
-	if err != nil {
-		return fmt.Errorf("error waiting for VM creation: %w", err)
-	}
-
-	return nil
+	return op.DoTask(ctx,
+		func() (*string, error) { return c.CreateVMAsync(ctx, d) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+	)
 }
 
-// CreateVMAsync creates a virtual machine asynchronously. Returns ID of the started task.
+// CreateVMAsync creates a virtual machine asynchronously.
 func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*string, error) {
 	resBody := &CreateResponseBody{}
-	retrying := false
 
-	// retry the request if we get an error that the VM already exists
-	// but only if we're retrying. If this error is returned by the first
-	// request, we'll just return the error (i.e. can't "override" the VM).
-	err := retry.New(
-		retry.Context(ctx),
-		retry.Attempts(3),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(false),
-		retry.OnRetry(func(n uint, err error) {
-			tflog.Warn(ctx, "retrying VM creation", map[string]any{
-				"attempt": n,
-				"error":   err.Error(),
-			})
-
-			retrying = true
-		}),
-		retry.RetryIf(func(err error) bool {
-			return strings.Contains(err.Error(), "got no worker upid")
-		}),
-	).Do(
-		func() error {
-			err := c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
-			if err != nil && retrying && strings.Contains(err.Error(), "already exists") {
-				return nil
-			}
-
-			return err
-		},
-	)
+	err := c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating VM: %w", err)
 	}
@@ -143,24 +112,6 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 
 // DeleteVM deletes a virtual machine.
 func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDisks bool) error {
-	taskID, err := c.DeleteVMAsync(ctx, purge, destroyUnreferencedDisks)
-	if err != nil {
-		return err
-	}
-
-	err = c.Tasks().WaitForTask(ctx, *taskID)
-	if err != nil {
-		return fmt.Errorf("error waiting for VM deletion: %w", err)
-	}
-
-	return nil
-}
-
-// DeleteVMAsync deletes a virtual machine asynchronously. Returns ID of the started task.
-func (c *Client) DeleteVMAsync(ctx context.Context, purge bool, destroyUnreferencedDisks bool) (*string, error) {
-	// PVE may return a 500 error "got no worker upid - start worker failed", so we retry few times.
-	resBody := &DeleteResponseBody{}
-
 	purgeValue := 0
 	if purge {
 		purgeValue = 1
@@ -171,25 +122,30 @@ func (c *Client) DeleteVMAsync(ctx context.Context, purge bool, destroyUnreferen
 		destroyUnreferencedDisksValue = 1
 	}
 
-	err := retry.New(
-		retry.Context(ctx),
-		retry.Attempts(3),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
-			return !errors.Is(err, api.ErrResourceDoesNotExist)
+	op := retry.NewTaskOperation("VM delete",
+		retry.WithRetryIf(func(err error) bool {
+			return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
-	).Do(
-		func() error {
-			path := fmt.Sprintf("?destroy-unreferenced-disks=%d&purge=%d", destroyUnreferencedDisksValue, purgeValue)
-			return c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(path), nil, resBody)
-		},
 	)
-	if err != nil {
-		return nil, fmt.Errorf("error deleting VM: %w", err)
-	}
 
-	return resBody.TaskID, nil
+	return op.DoTask(ctx,
+		func() (*string, error) {
+			resBody := &DeleteResponseBody{}
+			path := fmt.Sprintf("?destroy-unreferenced-disks=%d&purge=%d", destroyUnreferencedDisksValue, purgeValue)
+
+			err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(path), nil, resBody)
+			if err != nil {
+				return nil, fmt.Errorf("error deleting VM: %w", err)
+			}
+
+			if resBody.TaskID == nil {
+				return nil, api.ErrNoDataObjectInResponse
+			}
+
+			return resBody.TaskID, nil
+		},
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+	)
 }
 
 // GetVM retrieves a virtual machine.
@@ -385,34 +341,25 @@ func (c *Client) RebootVMAsync(ctx context.Context, d *RebootRequestBody) (*stri
 
 // ResizeVMDisk resizes a virtual machine disk.
 func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) error {
-	err := retry.New(
-		retry.Context(ctx),
-		retry.Attempts(5),
-		retry.Delay(1*time.Second),
-		retry.DelayType(retry.BackOffDelay),
-		retry.LastErrorOnly(false),
-		retry.RetryIf(func(err error) bool {
-			errStr := err.Error()
-			// retry on "got timeout" or "does not exist" errors.
-			// the "does not exist" error can happen on NFS storage when a disk
-			// was just moved and the storage needs time to sync.
-			return strings.Contains(errStr, "got timeout") || strings.Contains(errStr, "does not exist")
+	// Retry wraps the entire operation (dispatch + wait) because "does not exist"
+	// errors can come from WaitForTask on NFS storage when a disk was just moved
+	// and the storage needs time to sync.
+	op := retry.NewAPICallOperation("VM disk resize",
+		retry.WithAttempts(5),
+		retry.WithRetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "got timeout") ||
+				strings.Contains(err.Error(), "does not exist")
 		}),
-	).Do(
-		func() error {
-			taskID, err := c.ResizeVMDiskAsync(ctx, d)
-			if err != nil {
-				return err
-			}
-
-			return c.Tasks().WaitForTask(ctx, *taskID)
-		},
 	)
-	if err != nil {
-		return fmt.Errorf("error waiting for VM disk resize: %w", err)
-	}
 
-	return nil
+	return op.Do(ctx, func() error {
+		taskID, err := c.ResizeVMDiskAsync(ctx, d)
+		if err != nil {
+			return err
+		}
+
+		return c.Tasks().WaitForTask(ctx, *taskID)
+	})
 }
 
 // ResizeVMDiskAsync resizes a virtual machine disk asynchronously.
@@ -470,6 +417,10 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) ([]string, error) 
 		return nil, err
 	}
 
+	if taskID == nil {
+		return nil, nil
+	}
+
 	err = c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599))
 	if err != nil {
 		log, e := c.Tasks().GetTaskLog(ctx, *taskID)
@@ -493,33 +444,34 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) ([]string, error) 
 }
 
 // StartVMAsync starts a virtual machine asynchronously.
+// Returns (nil, nil) if the VM is already running.
 func (c *Client) StartVMAsync(ctx context.Context, timeoutSec int) (*string, error) {
 	reqBody := &StartRequestBody{
 		TimeoutSeconds: &timeoutSec,
 	}
 	resBody := &StartResponseBody{}
 
-	// PVE may return a 500 error "got no worker upid - start worker failed", so we retry few times.
-	err := retry.New(
-		retry.Context(ctx),
-		retry.Attempts(3),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
-			return strings.Contains(err.Error(), "got no worker upid")
-		}),
-	).Do(
-		func() error {
-			err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), reqBody, resBody)
-			if err != nil && strings.Contains(err.Error(), "already running") {
-				return nil
-			}
-
-			return err
-		},
+	op := retry.NewAPICallOperation("VM start",
+		retry.WithRetryIf(retry.ErrorContains("got no worker upid")),
 	)
+
+	var alreadyRunning bool
+
+	err := op.Do(ctx, func() error {
+		err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), reqBody, resBody)
+		if err != nil && strings.Contains(err.Error(), "already running") {
+			alreadyRunning = true
+			return nil
+		}
+
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error starting VM: %w", err)
+	}
+
+	if alreadyRunning {
+		return nil, nil //nolint:nilnil // nil taskID means VM is already running, no task to wait for
 	}
 
 	if resBody.Data == nil {
@@ -562,24 +514,13 @@ func (c *Client) StopVMAsync(ctx context.Context) (*string, error) {
 
 // UpdateVM updates a virtual machine.
 func (c *Client) UpdateVM(ctx context.Context, d *UpdateRequestBody) error {
-	err := retry.New(
-		retry.Context(ctx),
-		retry.Attempts(3),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
-			return strings.Contains(err.Error(), "got timeout")
-		}),
-	).Do(
-		func() error {
-			return c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
-		},
+	op := retry.NewAPICallOperation("VM config update",
+		retry.WithRetryIf(retry.ErrorContains("got timeout")),
 	)
-	if err != nil {
-		return fmt.Errorf("error updating VM: %w", err)
-	}
 
-	return nil
+	return op.Do(ctx, func() error {
+		return c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
+	})
 }
 
 // UpdateVMAsync updates a virtual machine asynchronously.
@@ -649,73 +590,68 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 		}
 	}()
 
-	data, err := retry.NewWithData[*GetQEMUNetworkInterfacesResponseData](
-		retry.Context(ctxWithTimeout),
-		retry.RetryIf(func(err error) bool {
-			if isAgentNotReadyError(err) {
-				return true
-			}
-
-			return errors.Is(err, errNoIPsYet)
+	op := retry.NewPollOperation("VM network interfaces",
+		retry.WithRetryIf(func(err error) bool {
+			return isAgentNotReadyError(err) || errors.Is(err, errNoIPsYet)
 		}),
-		retry.LastErrorOnly(true),
-		retry.UntilSucceeded(),
-		retry.DelayType(retry.FixedDelay),
-		retry.Delay(time.Second),
-	).Do(
-		func() (*GetQEMUNetworkInterfacesResponseData, error) {
-			data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
-			if err != nil {
-				var httpError *api.HTTPError
-				if errors.As(err, &httpError) {
-					if httpError.Code == http.StatusForbidden {
-						return nil, err
-					}
-
-					if isAgentNotReadyError(err) {
-						return nil, errNoIPsYet
-					}
-				}
-
-				return nil, errNoIPsYet
-			}
-
-			if data == nil || data.Result == nil {
-				return nil, errNoIPsYet
-			}
-
-			hasIPv4, hasIPv6 := c.checkIPAddresses(*data.Result)
-
-			if waitForIPConfig == nil {
-				// backward compatibility: wait for any valid global unicast address
-				if !hasIPv4 && !hasIPv6 {
-					return nil, errNoIPsYet
-				}
-
-				return data, nil
-			}
-
-			requiredIPv4 := waitForIPConfig.IPv4
-			requiredIPv6 := waitForIPConfig.IPv6
-
-			// if no specific requirements, wait for any IP (backward compatibility)
-			if !requiredIPv4 && !requiredIPv6 {
-				if !hasIPv4 && !hasIPv6 {
-					return nil, errNoIPsYet
-				}
-
-				return data, nil
-			}
-
-			// check if all required IP types are available
-			if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
-				return nil, errNoIPsYet
-			}
-
-			// all required IP types are available
-			return data, nil
-		},
 	)
+
+	var result *GetQEMUNetworkInterfacesResponseData
+
+	err := op.DoPoll(ctxWithTimeout, func() error {
+		data, err := c.GetVMNetworkInterfacesFromAgent(ctxWithTimeout)
+		if err != nil {
+			var httpError *api.HTTPError
+			if errors.As(err, &httpError) {
+				if httpError.Code == http.StatusForbidden {
+					return err
+				}
+
+				if isAgentNotReadyError(err) {
+					return errNoIPsYet
+				}
+			}
+
+			return errNoIPsYet
+		}
+
+		if data == nil || data.Result == nil {
+			return errNoIPsYet
+		}
+
+		hasIPv4, hasIPv6 := c.checkIPAddresses(*data.Result)
+
+		if waitForIPConfig == nil {
+			if !hasIPv4 && !hasIPv6 {
+				return errNoIPsYet
+			}
+
+			result = data
+
+			return nil
+		}
+
+		requiredIPv4 := waitForIPConfig.IPv4
+		requiredIPv6 := waitForIPConfig.IPv6
+
+		if !requiredIPv4 && !requiredIPv6 {
+			if !hasIPv4 && !hasIPv6 {
+				return errNoIPsYet
+			}
+
+			result = data
+
+			return nil
+		}
+
+		if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
+			return errNoIPsYet
+		}
+
+		result = data
+
+		return nil
+	})
 
 	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 		return nil, fmt.Errorf(
@@ -728,7 +664,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 		return nil, fmt.Errorf("error waiting for VM network interfaces: %w", err)
 	}
 
-	return data, nil
+	return result, nil
 }
 
 // checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
@@ -767,28 +703,25 @@ func (c *Client) checkIPAddresses(
 func (c *Client) WaitForVMConfigUnlock(ctx context.Context, ignoreErrorResponse bool) error {
 	stillLocked := errors.New("still locked")
 
-	err := retry.New(
-		retry.Context(ctx),
-		retry.UntilSucceeded(),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
+	op := retry.NewPollOperation("VM config unlock",
+		retry.WithRetryIf(func(err error) bool {
 			return errors.Is(err, stillLocked) || ignoreErrorResponse
 		}),
-	).Do(
-		func() error {
-			data, err := c.GetVMStatus(ctx)
-			if err != nil {
-				return err
-			}
-
-			if data.Lock != nil && *data.Lock != "" {
-				return stillLocked
-			}
-
-			return nil
-		},
 	)
+
+	err := op.DoPoll(ctx, func() error {
+		data, err := c.GetVMStatus(ctx)
+		if err != nil {
+			return err
+		}
+
+		if data.Lock != nil && *data.Lock != "" {
+			return stillLocked
+		}
+
+		return nil
+	})
+
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for VM %d configuration to become unlocked", c.VMID)
 	}
@@ -803,31 +736,27 @@ func (c *Client) WaitForVMConfigUnlock(ctx context.Context, ignoreErrorResponse 
 // WaitForVMStatus waits for a virtual machine to reach a specific status.
 func (c *Client) WaitForVMStatus(ctx context.Context, status string) error {
 	status = strings.ToLower(status)
-
 	unexpectedStatus := fmt.Errorf("unexpected status %q", status)
 
-	err := retry.New(
-		retry.Context(ctx),
-		retry.UntilSucceeded(),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
+	op := retry.NewPollOperation("VM status",
+		retry.WithRetryIf(func(err error) bool {
 			return errors.Is(err, unexpectedStatus)
 		}),
-	).Do(
-		func() error {
-			data, err := c.GetVMStatus(ctx)
-			if err != nil {
-				return err
-			}
-
-			if data.Status != status {
-				return unexpectedStatus
-			}
-
-			return nil
-		},
 	)
+
+	err := op.DoPoll(ctx, func() error {
+		data, err := c.GetVMStatus(ctx)
+		if err != nil {
+			return err
+		}
+
+		if data.Status != status {
+			return unexpectedStatus
+		}
+
+		return nil
+	})
+
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for VM %d to enter the status %q", c.VMID, status)
 	}
