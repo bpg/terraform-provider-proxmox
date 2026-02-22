@@ -8,15 +8,21 @@ package firewall
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
+
+// ErrNoRuleAtPosition is returned when the Proxmox API reports that no firewall
+// rule exists at the requested position.
+var ErrNoRuleAtPosition = errors.New("no rule at position")
 
 // Rule is an interface for the Proxmox firewall rule API.
 type Rule interface {
@@ -73,6 +79,10 @@ func (c *Client) GetRule(ctx context.Context, pos int) (*RuleGetResponseData, er
 
 	err := c.DoRequest(ctx, http.MethodGet, c.rulePath(pos), nil, resBody)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrNoRuleAtPosition.Error()) {
+			return nil, fmt.Errorf("error retrieving firewall rule %d: %w", pos, ErrNoRuleAtPosition)
+		}
+
 		return nil, fmt.Errorf("error retrieving firewall rule %d: %w", pos, err)
 	}
 

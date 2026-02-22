@@ -299,6 +299,7 @@ SSH connection is **only** required for these specific operations:
 | Upload snippets | `proxmox_virtual_environment_file` | Proxmox API doesn't support snippet uploads |
 | Upload certain file types | `proxmox_virtual_environment_file` | Some content types require direct node access |
 | Import disks via `source_file.path` | `proxmox_virtual_environment_vm` | Local file transfer to node |
+| Configure `idmap` entries | `proxmox_virtual_environment_container` | Proxmox API doesn't support `lxc[n]` parameters |
 
 **SSH is NOT required for:**
 
@@ -423,6 +424,13 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
     terraform ALL=(root) NOPASSWD: /usr/sbin/pvesm
     terraform ALL=(root) NOPASSWD: /usr/sbin/qm
     terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
+    ```
+
+  If you use the `idmap` attribute on `proxmox_virtual_environment_container`, the provider edits the container configuration file via SSH. Add the following rules to allow `sed` and `tee` access to the LXC configuration directory:
+
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/sed -i * /etc/pve/lxc/*.conf
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee -a /etc/pve/lxc/*.conf
     ```
 
   If you're using a different datastore for snippets, not the default `local`, you should add the datastore's mount point to the sudoers file as well, for example:
