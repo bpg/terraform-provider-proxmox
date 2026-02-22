@@ -61,7 +61,9 @@ const ErrNoDataObjectInResponse Error = "the server did not include a data objec
 const ErrResourceDoesNotExist Error = "the requested resource does not exist"
 
 // For not-found cases, both errors are joined so callers can check either:
+// This happens for HTTP 404 AND for HTTP 500 responses containing "does not exist":
 errors.Join(ErrResourceDoesNotExist, &HTTPError{Code: 404, Message: "..."})
+errors.Join(ErrResourceDoesNotExist, &HTTPError{Code: 500, Message: "...does not exist..."})
 ```
 
 #### Layer 2: Domain Client (`proxmox/{domain}/`)
@@ -129,17 +131,40 @@ Use standard Go error inspection:
 
 ### Retry Policies
 
-| Scenario                                         | Strategy | Attempts      | Backoff                           |
-|--------------------------------------------------|----------|---------------|-----------------------------------|
-| Transient errors (network issues, 5xx responses) | Retry    | Up to 3       | Linear                            |
-| Async task status checks                         | Retry    | Up to 5       | Linear, with configurable timeout |
-| Resource state polling (creation/deletion)       | Poll     | Until timeout | Configurable interval and timeout |
+Retry logic is centralized in the `proxmox/retry/` package, which provides three operation constructors:
+
+| Constructor            | Use Case                                              | Attempts  | Backoff     | Method   |
+|------------------------|-------------------------------------------------------|-----------|-------------|----------|
+| `NewTaskOperation`     | Async UPID-based tasks (create, clone, delete, start) | 3         | Exponential | `DoTask` |
+| `NewAPICallOperation`  | Synchronous blocking API calls (e.g. PUT /config)     | 3         | Exponential | `Do`     |
+| `NewPollOperation`     | Wait-for-condition loops (status, config unlock)      | Unlimited | Fixed (1s)  | `DoPoll` |
+
+Key behaviors of `DoTask`:
+
+- `dispatchFn` is retried; `waitFn` errors are wrapped in `Unrecoverable` (no re-dispatch after wait failure)
+- `nil` taskID with `nil` error means "already done" (e.g., "already running") — skips the wait
+- `WithAlreadyDoneCheck` is only applied on retry attempts, not the first attempt
+
+Common retry predicates:
+
+| Predicate                    | Matches                                           |
+|------------------------------|---------------------------------------------------|
+| `IsTransientAPIError`        | HTTP 5xx, "got no worker upid", "got timeout"     |
+| `ErrorContains(substr)`      | Error message contains substring                  |
 
 Do not retry on:
 
-- 4xx client errors (except 408 Request Timeout)
+- 4xx client errors (except specific known-transient messages)
 - `ErrResourceDoesNotExist` (unless polling for creation)
 - Authentication failures (401, 403)
+
+> **Delete predicate trap:** `ErrResourceDoesNotExist` can arrive via HTTP 500 (not just 404) because `proxmox/api/client.go` uses `errors.Join(ErrResourceDoesNotExist, httpError)` for 500 responses containing "does not exist". This means `IsTransientAPIError` alone will match these errors (it checks for 5xx). Delete operations must use a combined predicate:
+>
+> ```go
+> retry.WithRetryIf(func(err error) bool {
+>     return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
+> })
+> ```
 
 ## Consequences
 
@@ -162,6 +187,7 @@ Do not retry on:
 - Using `"Error"`, `"Failed to"`, or `"Could not"` prefixes in new code — use `"Unable to [Action] [Resource]"`.
 - Wrapping errors with `fmt.Errorf("...: %v", err)` instead of `%w` — breaks error chain inspection.
 - Forgetting `resp.State.RemoveResource(ctx)` in Read when the resource no longer exists.
+- Using `IsTransientAPIError` alone as a delete retry predicate — it will retry on `ErrResourceDoesNotExist` when it arrives via HTTP 500. Always combine with `!errors.Is(err, api.ErrResourceDoesNotExist)`. See [Retry Policies](#retry-policies).
 
 ## References
 

@@ -266,6 +266,19 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 Ignore `api.ErrResourceDoesNotExist` on delete -- the resource is already gone, which
 is the desired end state.
 
+> **Retry predicate note:** If your resource's domain client uses `retry.NewTaskOperation`
+> for delete, ensure the retry predicate excludes `ErrResourceDoesNotExist`. This error
+> can arrive via HTTP 500 (not just 404), so `IsTransientAPIError` alone will incorrectly
+> retry it. Use the combined predicate:
+>
+> ```go
+> retry.WithRetryIf(func(err error) bool {
+>     return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
+> })
+> ```
+>
+> See [ADR-005: Error Handling — Retry Policies](005-error-handling.md#retry-policies).
+
 ### ImportState
 
 ```go
@@ -806,3 +819,4 @@ relevant pattern in this document.
 - [ ] `make test` passes (unit tests)
 - [ ] `./testacc TestAccYourResource` passes (acceptance tests)
 - [ ] API calls verified with mitmproxy
+- [ ] Domain client delete retry predicate excludes `ErrResourceDoesNotExist` (see [ADR-005](005-error-handling.md#retry-policies))

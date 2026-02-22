@@ -82,10 +82,10 @@ npx --yes markdownlint-cli2 --fix "path/to/*.md"  # Lint markdown files
 
 **Never manually format or lint code. Always use the appropriate linter tool.**
 
-| File type  | Linter command                                  | When to run                     |
-|------------|------------------------------------------------ |---------------------------------|
-| Go (`.go`) | `make lint`                                     | After editing any `.go` file    |
-| Markdown   | `npx --yes markdownlint-cli2 --fix "file.md"`  | After editing any `.md` file    |
+| File type | Linter command                                 | When to run                  |
+|-----------|------------------------------------------------|------------------------------|
+| Go `.go`  | `make lint`                                    | After editing any `.go` file |
+| Markdown  | `npx --yes markdownlint-cli2 --fix "file.md"` | After editing any `.md` file |
 
 ### Acceptance Test Script (`./testacc`)
 
@@ -235,6 +235,7 @@ When handing off work:
 
 ```text
 ├── proxmox/           # Shared API client
+│   └── retry/         # Unified retry logic (TaskOperation, APICallOperation, PollOperation)
 ├── fwprovider/        # Framework provider ← NEW CODE HERE
 │   ├── test/          # Shared test utilities and acceptance tests
 │   ├── config/        # Provider configuration types (Resource, DataSource)
@@ -306,6 +307,34 @@ schema.StringAttribute{
 }
 resp.Diagnostics.AddError("Unable to Create Resource", err.Error())
 ```
+
+### Retry Patterns (proxmox/retry/)
+
+Three operation types — choose based on the API call pattern:
+
+```go
+// Async UPID tasks (create, clone, delete, start):
+op := retry.NewTaskOperation("name", retry.WithRetryIf(retry.IsTransientAPIError))
+op.DoTask(ctx, dispatchFn, waitFn)
+
+// Synchronous blocking calls (PUT /config):
+op := retry.NewAPICallOperation("name", retry.WithRetryIf(retry.ErrorContains("got timeout")))
+op.Do(ctx, fn)
+
+// Polling loops (wait for status, config unlock):
+op := retry.NewPollOperation("name", retry.WithRetryIf(func(err error) bool { ... }))
+op.DoPoll(ctx, fn)
+```
+
+**Delete predicate trap:** `ErrResourceDoesNotExist` can arrive via HTTP 500, so `IsTransientAPIError` alone will match it. Delete operations must combine predicates:
+
+```go
+retry.WithRetryIf(func(err error) bool {
+    return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
+})
+```
+
+See [ADR-005: Error Handling](docs/adr/005-error-handling.md#retry-policies) for full details.
 
 ### SDK (proxmoxtf/) — Legacy Only
 
