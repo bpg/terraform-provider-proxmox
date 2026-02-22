@@ -183,7 +183,9 @@ type TaskSubmittedResponseBody struct {
 type (
 	CreateResponseBody   = TaskSubmittedResponseBody
 	CloneResponseBody    = TaskSubmittedResponseBody
+	DeleteResponseBody   = TaskSubmittedResponseBody
 	RebootResponseBody   = TaskSubmittedResponseBody
+	ResizeResponseBody   = TaskSubmittedResponseBody
 	ShutdownResponseBody = TaskSubmittedResponseBody
 )
 

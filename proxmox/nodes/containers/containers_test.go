@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 )
 
 // testUPID is a valid Proxmox UPID for use in tests.
@@ -101,7 +102,54 @@ func taskCompletedHandler(captures *requestCaptures) http.HandlerFunc {
 	}
 }
 
-func TestIsRetryableContainerError(t *testing.T) {
+func TestDeleteContainerWaitsForTask(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("DELETE /api2/json/lxc/100", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{"data": testUPID})
+	})
+	mux.HandleFunc("GET /api2/json/nodes/", taskCompletedHandler(captures))
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.DeleteContainer(t.Context())
+	require.NoError(t, err)
+}
+
+func TestResizeContainerDiskWaitsForTask(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("PUT /api2/json/lxc/100/resize", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{"data": testUPID})
+	})
+	mux.HandleFunc("GET /api2/json/nodes/", taskCompletedHandler(captures))
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.ResizeContainerDisk(t.Context(), &ResizeRequestBody{
+		Disk: "rootfs",
+		Size: "+1G",
+	})
+	require.NoError(t, err)
+}
+
+func TestIsTransientAPIError(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -182,7 +230,7 @@ func TestIsRetryableContainerError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := isRetryableContainerError(tt.err)
+			got := retry.IsTransientAPIError(tt.err)
 			assert.Equal(t, tt.want, got, tt.comment)
 		})
 	}
@@ -296,6 +344,204 @@ func TestCloneContainerRetries(t *testing.T) {
 
 	assert.Equal(t, 2, captures.countPOST("/clone"),
 		"expected exactly 2 POST calls (1 failure + 1 success), proving retry occurred")
+}
+
+// containerStatusHandler returns a handler that responds with the given container status.
+func containerStatusHandler(captures *requestCaptures, status string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{
+			"data": map[string]any{
+				"status": status,
+			},
+		})
+	}
+}
+
+// TestStartContainerAlreadyRunningOnFirstAttempt verifies the TOCTOU race
+// condition: the status pre-check says "stopped", but by the time the start
+// API call is made, the container is already running. StartContainer should
+// treat this as success (not an error).
+func TestStartContainerAlreadyRunningOnFirstAttempt(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+	var statusCallCount int
+
+	mux := http.NewServeMux()
+
+	// Status endpoint: first call returns "stopped" (pre-check), subsequent calls return "running".
+	mux.HandleFunc("GET /api2/json/lxc/100/status/current", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+
+		statusCallCount++
+
+		w.Header().Set("Content-Type", "application/json")
+
+		status := "running"
+		if statusCallCount == 1 {
+			status = "stopped"
+		}
+
+		writeJSON(w, map[string]any{
+			"data": map[string]any{"status": status},
+		})
+	})
+
+	// Start endpoint: returns "already running" error (race condition).
+	mux.HandleFunc("POST /api2/json/lxc/100/status/start", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		writeJSON(w, map[string]any{
+			"errors": map[string]string{"status": "container is already running"},
+		})
+	})
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.StartContainer(t.Context())
+	require.NoError(t, err, "StartContainer should succeed when API returns 'already running'")
+
+	assert.Equal(t, 1, captures.countPOST("/status/start"),
+		"expected exactly 1 start attempt")
+}
+
+// TestStartContainerAlreadyRunningDetectedByPreCheck verifies that
+// StartContainer short-circuits when the status pre-check already shows
+// "running" — no start API call should be made.
+func TestStartContainerAlreadyRunningDetectedByPreCheck(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api2/json/lxc/100/status/current",
+		containerStatusHandler(captures, "running"))
+	mux.HandleFunc("POST /api2/json/lxc/100/status/start", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		t.Fatal("start API should not be called when container is already running")
+	})
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.StartContainer(t.Context())
+	require.NoError(t, err)
+
+	assert.Equal(t, 0, captures.countPOST("/status/start"),
+		"expected no start calls when container is already running")
+}
+
+// TestStartContainerRetriesOnNoWorkerUpid verifies that StartContainer retries
+// when the API returns "got no worker upid" and eventually succeeds.
+func TestStartContainerRetriesOnNoWorkerUpid(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+	var startCount int
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api2/json/lxc/100/status/current", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+
+		// Return "stopped" on pre-check, "running" on WaitForContainerStatus polls.
+		status := "running"
+		if startCount == 0 {
+			status = "stopped"
+		}
+
+		writeJSON(w, map[string]any{
+			"data": map[string]any{"status": status},
+		})
+	})
+
+	mux.HandleFunc("POST /api2/json/lxc/100/status/start", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+
+		startCount++
+
+		w.Header().Set("Content-Type", "application/json")
+
+		if startCount == 1 {
+			w.WriteHeader(http.StatusInternalServerError)
+			writeJSON(w, map[string]any{
+				"errors": map[string]string{"status": "got no worker upid - start worker failed"},
+			})
+
+			return
+		}
+
+		writeJSON(w, map[string]any{"data": testUPID})
+	})
+	mux.HandleFunc("GET /api2/json/nodes/", taskCompletedHandler(captures))
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.StartContainer(t.Context())
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, captures.countPOST("/status/start"),
+		"expected exactly 2 start calls (1 failure + 1 success), proving retry occurred")
+}
+
+// TestStartContainerAlreadyRunningOnRetry verifies the scenario where the first
+// start attempt gets "got no worker upid" (retried), and the second attempt gets
+// "already running" because the first attempt actually succeeded. This should be
+// treated as success.
+func TestStartContainerAlreadyRunningOnRetry(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+	var startCount int
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api2/json/lxc/100/status/current",
+		containerStatusHandler(captures, "stopped"))
+	mux.HandleFunc("POST /api2/json/lxc/100/status/start", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+
+		startCount++
+
+		w.Header().Set("Content-Type", "application/json")
+
+		if startCount == 1 {
+			// First attempt: transient error (retryable).
+			w.WriteHeader(http.StatusInternalServerError)
+			writeJSON(w, map[string]any{
+				"errors": map[string]string{"status": "got no worker upid - start worker failed"},
+			})
+
+			return
+		}
+
+		// Second attempt: "already running" because first actually started it.
+		w.WriteHeader(http.StatusBadRequest)
+		writeJSON(w, map[string]any{
+			"errors": map[string]string{"status": "container is already running"},
+		})
+	})
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.StartContainer(t.Context())
+	require.NoError(t, err, "should succeed when retry finds container already running")
+
+	assert.Equal(t, 2, captures.countPOST("/status/start"),
+		"expected exactly 2 start calls (1 transient failure + 1 already running)")
 }
 
 // TestCloneContainerNoRetryOn400 verifies that CloneContainer does NOT retry

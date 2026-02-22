@@ -14,86 +14,25 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v5"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 var errContainerAlreadyRunning = errors.New("container is already running")
 
-// isRetryableContainerError returns true if the error is a transient API error
-// that should be retried. It matches HTTP 5xx server errors, "got no worker upid"
-// (PVE worker start failures), and "got timeout" errors.
-func isRetryableContainerError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	var httpErr *api.HTTPError
-	if errors.As(err, &httpErr) {
-		return httpErr.Code >= http.StatusInternalServerError
-	}
-
-	return strings.Contains(err.Error(), "got no worker upid") ||
-		strings.Contains(err.Error(), "got timeout")
-}
-
-// retryContainerOperation retries an async container operation (create/clone)
-// with exponential backoff. It handles "already exists" errors on retry and
-// marks WaitForTask errors as unrecoverable to prevent duplicate operations.
-func (c *Client) retryContainerOperation(
-	ctx context.Context,
-	operation string,
-	asyncFn func() (*string, error),
-) error {
-	retrying := false
-
-	err := retry.New(
-		retry.Context(ctx),
-		retry.Attempts(3),
-		retry.Delay(10*time.Second),
-		retry.LastErrorOnly(false),
-		retry.OnRetry(func(n uint, err error) {
-			tflog.Warn(ctx, "retrying container "+operation, map[string]any{
-				"attempt": n,
-				"error":   err.Error(),
-			})
-
-			retrying = true
-		}),
-		retry.RetryIf(isRetryableContainerError),
-	).Do(
-		func() error {
-			taskID, err := asyncFn()
-			if err != nil {
-				if retrying && strings.Contains(err.Error(), "already exists") {
-					return nil
-				}
-
-				return err
-			}
-
-			if err := c.Tasks().WaitForTask(ctx, *taskID); err != nil {
-				return retry.Unrecoverable(fmt.Errorf("error waiting for %s task: %w", operation, err))
-			}
-
-			return nil
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("error %s container: %w", operation, err)
-	}
-
-	return nil
-}
-
 // CloneContainer clones a container.
 func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error {
-	return c.retryContainerOperation(ctx, "cloning", func() (*string, error) {
-		return c.CloneContainerAsync(ctx, d)
-	})
+	op := retry.NewTaskOperation("container clone",
+		retry.WithBaseDelay(10*time.Second),
+		retry.WithRetryIf(retry.IsTransientAPIError),
+		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
+	)
+
+	return op.DoTask(ctx,
+		func() (*string, error) { return c.CloneContainerAsync(ctx, d) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+	)
 }
 
 // CloneContainerAsync clones a container asynchronously.
@@ -114,9 +53,15 @@ func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (
 
 // CreateContainer creates a container.
 func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) error {
-	return c.retryContainerOperation(ctx, "creating", func() (*string, error) {
-		return c.CreateContainerAsync(ctx, d)
-	})
+	op := retry.NewTaskOperation("container create",
+		retry.WithRetryIf(retry.IsTransientAPIError),
+		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
+	)
+
+	return op.DoTask(ctx,
+		func() (*string, error) { return c.CreateContainerAsync(ctx, d) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+	)
 }
 
 // CreateContainerAsync creates a container asynchronously.
@@ -137,12 +82,30 @@ func (c *Client) CreateContainerAsync(ctx context.Context, d *CreateRequestBody)
 
 // DeleteContainer deletes a container.
 func (c *Client) DeleteContainer(ctx context.Context) error {
-	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(""), nil, nil)
+	op := retry.NewTaskOperation("container delete",
+		retry.WithRetryIf(retry.IsTransientAPIError),
+	)
+
+	return op.DoTask(ctx,
+		func() (*string, error) { return c.DeleteContainerAsync(ctx) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+	)
+}
+
+// DeleteContainerAsync deletes a container asynchronously.
+func (c *Client) DeleteContainerAsync(ctx context.Context) (*string, error) {
+	resBody := &DeleteResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(""), nil, resBody)
 	if err != nil {
-		return fmt.Errorf("error deleting container: %w", err)
+		return nil, fmt.Errorf("error deleting container: %w", err)
 	}
 
-	return nil
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // GetContainer retrieves a container.
@@ -220,64 +183,57 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ifaces, err := retry.NewWithData[[]GetNetworkInterfacesData](
-		retry.Context(ctxWithTimeout),
-		retry.RetryIf(func(err error) bool {
+	op := retry.NewPollOperation("container network interfaces",
+		retry.WithRetryIf(func(err error) bool {
 			var target *api.HTTPError
 			if errors.As(err, &target) {
 				if target.Code == http.StatusBadRequest {
-					// this is a special case to account for eventual consistency
-					// when creating a task -- the task may not be available via status API
-					// immediately after creation
 					return true
 				}
 			}
 
 			return errors.Is(err, api.ErrNoDataObjectInResponse) || errors.Is(err, errNoIPsYet)
 		}),
-		retry.LastErrorOnly(true),
-		retry.UntilSucceeded(),
-		retry.DelayType(retry.FixedDelay),
-		retry.Delay(time.Second),
-	).Do(
-		func() ([]GetNetworkInterfacesData, error) {
-			ifaces, err := c.GetContainerNetworkInterfaces(ctx)
-			if err != nil {
-				return nil, err
-			}
-
-			hasIPv4, hasIPv6 := c.checkIPAddresses(ifaces)
-
-			if waitForIPConfig == nil {
-				// backward compatibility: wait for any valid global unicast address
-				if !hasIPv4 && !hasIPv6 {
-					return nil, errNoIPsYet
-				}
-
-				return ifaces, nil
-			}
-
-			requiredIPv4 := waitForIPConfig.IPv4
-			requiredIPv6 := waitForIPConfig.IPv6
-
-			// if no specific requirements, wait for any IP (backward compatibility)
-			if !requiredIPv4 && !requiredIPv6 {
-				if !hasIPv4 && !hasIPv6 {
-					return nil, errNoIPsYet
-				}
-
-				return ifaces, nil
-			}
-
-			// check if all required IP types are available
-			if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
-				return nil, errNoIPsYet
-			}
-
-			// all required IP types are available
-			return ifaces, nil
-		},
 	)
+
+	var ifaces []GetNetworkInterfacesData
+
+	err := op.DoPoll(ctxWithTimeout, func() error {
+		var err error
+
+		ifaces, err = c.GetContainerNetworkInterfaces(ctx)
+		if err != nil {
+			return err
+		}
+
+		hasIPv4, hasIPv6 := c.checkIPAddresses(ifaces)
+
+		if waitForIPConfig == nil {
+			if !hasIPv4 && !hasIPv6 {
+				return errNoIPsYet
+			}
+
+			return nil
+		}
+
+		requiredIPv4 := waitForIPConfig.IPv4
+		requiredIPv6 := waitForIPConfig.IPv6
+
+		if !requiredIPv4 && !requiredIPv6 {
+			if !hasIPv4 && !hasIPv6 {
+				return errNoIPsYet
+			}
+
+			return nil
+		}
+
+		if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
+			return errNoIPsYet
+		}
+
+		return nil
+	})
+
 	if errors.Is(err, context.DeadlineExceeded) {
 		return nil, errors.New("timeout while waiting for container IP addresses")
 	}
@@ -390,30 +346,26 @@ func (c *Client) StartContainer(ctx context.Context) error {
 		return nil
 	}
 
-	taskID, err := c.StartContainerAsync(ctx)
-	if err != nil {
+	op := retry.NewTaskOperation("container start",
+		retry.WithRetryIf(retry.ErrorContains("got no worker upid")),
+	)
+
+	if err := op.DoTask(ctx,
+		func() (*string, error) { return c.StartContainerAsync(ctx) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+	); err != nil {
 		if errors.Is(err, errContainerAlreadyRunning) {
 			return nil
 		}
 
-		return fmt.Errorf("error starting container: %w", err)
+		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
-	if err != nil {
-		return fmt.Errorf("error waiting for container start: %w", err)
-	}
-
-	// the timeout here should probably be configurable
-	err = c.WaitForContainerStatus(ctx, "running")
-	if err != nil {
-		return fmt.Errorf("error waiting for container start: %w", err)
-	}
-
-	return nil
+	return c.WaitForContainerStatus(ctx, "running")
 }
 
 // StartContainerAsync starts a container asynchronously.
+// Returns errContainerAlreadyRunning if the container is already running.
 func (c *Client) StartContainerAsync(ctx context.Context) (*string, error) {
 	resBody := &StartResponseBody{}
 
@@ -457,31 +409,27 @@ func (c *Client) UpdateContainer(ctx context.Context, d *UpdateRequestBody) erro
 // WaitForContainerStatus waits for a container to reach a specific state.
 func (c *Client) WaitForContainerStatus(ctx context.Context, status string) error {
 	status = strings.ToLower(status)
-
 	unexpectedStatus := fmt.Errorf("unexpected status %q", status)
 
-	err := retry.New(
-		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
+	op := retry.NewPollOperation("container status",
+		retry.WithRetryIf(func(err error) bool {
 			return errors.Is(err, unexpectedStatus)
 		}),
-		retry.UntilSucceeded(),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-	).Do(
-		func() error {
-			data, err := c.GetContainerStatus(ctx)
-			if err != nil {
-				return err
-			}
-
-			if data.Status != status {
-				return unexpectedStatus
-			}
-
-			return nil
-		},
 	)
+
+	err := op.DoPoll(ctx, func() error {
+		data, err := c.GetContainerStatus(ctx)
+		if err != nil {
+			return err
+		}
+
+		if data.Status != status {
+			return unexpectedStatus
+		}
+
+		return nil
+	})
+
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for container %d to enter the status %q", c.VMID, status)
 	}
@@ -497,28 +445,25 @@ func (c *Client) WaitForContainerStatus(ctx context.Context, status string) erro
 func (c *Client) WaitForContainerConfigUnlock(ctx context.Context, ignoreErrorResponse bool) error {
 	stillLocked := errors.New("still locked")
 
-	err := retry.New(
-		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
+	op := retry.NewPollOperation("container config unlock",
+		retry.WithRetryIf(func(err error) bool {
 			return errors.Is(err, stillLocked) || ignoreErrorResponse
 		}),
-		retry.UntilSucceeded(),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-	).Do(
-		func() error {
-			data, err := c.GetContainerStatus(ctx)
-			if err != nil {
-				return err
-			}
-
-			if data.Lock != nil && *data.Lock != "" {
-				return stillLocked
-			}
-
-			return nil
-		},
 	)
+
+	err := op.DoPoll(ctx, func() error {
+		data, err := c.GetContainerStatus(ctx)
+		if err != nil {
+			return err
+		}
+
+		if data.Lock != nil && *data.Lock != "" {
+			return stillLocked
+		}
+
+		return nil
+	})
+
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for container %d configuration to become unlocked", c.VMID)
 	}
@@ -532,10 +477,28 @@ func (c *Client) WaitForContainerConfigUnlock(ctx context.Context, ignoreErrorRe
 
 // ResizeContainerDisk resizes a container disk.
 func (c *Client) ResizeContainerDisk(ctx context.Context, d *ResizeRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("resize"), d, nil)
+	op := retry.NewTaskOperation("container disk resize",
+		retry.WithRetryIf(retry.IsTransientAPIError),
+	)
+
+	return op.DoTask(ctx,
+		func() (*string, error) { return c.ResizeContainerDiskAsync(ctx, d) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+	)
+}
+
+// ResizeContainerDiskAsync resizes a container disk asynchronously.
+func (c *Client) ResizeContainerDiskAsync(ctx context.Context, d *ResizeRequestBody) (*string, error) {
+	resBody := &ResizeResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("resize"), d, resBody)
 	if err != nil {
-		return fmt.Errorf("error resizing container disk: %w", err)
+		return nil, fmt.Errorf("error resizing container disk: %w", err)
 	}
 
-	return nil
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
