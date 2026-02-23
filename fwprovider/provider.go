@@ -211,7 +211,10 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 						"password": schema.StringAttribute{
 							Description: "The password used for the SSH connection. " +
 								"Defaults to the value of the `password` field of the " +
-								"`provider` block.",
+								"`provider` block when using username/password authentication. " +
+								"Default has no effect when using API token authentication, " +
+								"as there is no password to inherit. " +
+								"Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.",
 							Optional:  true,
 							Sensitive: true,
 						},
