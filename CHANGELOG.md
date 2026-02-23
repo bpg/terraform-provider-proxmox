@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.97.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.96.0...v0.97.0) (2026-02-23)
+
+
+### Features
+
+* **lxc:** implement idmap support via SSH config file editing ([#2579](https://github.com/bpg/terraform-provider-proxmox/issues/2579)) ([63334e1](https://github.com/bpg/terraform-provider-proxmox/commit/63334e163fe4562dce7cbfbc446d6a77b5671a62))
+
+
+### Bug Fixes
+
+* **ci:** exclude ARM architecture for Windows builds in goreleaser ([9c268a5](https://github.com/bpg/terraform-provider-proxmox/commit/9c268a57504ba61a7516069c4478d88d0e746a86))
+* **docs:** clarify SSH password inheritance with API token auth ([#2624](https://github.com/bpg/terraform-provider-proxmox/issues/2624)) ([d453924](https://github.com/bpg/terraform-provider-proxmox/commit/d4539245714a3d243d0343bf7b85e1c3a4451642))
+* **firewall:** handle "already exists" error in SG and IPSet create ([#2627](https://github.com/bpg/terraform-provider-proxmox/issues/2627)) ([06f3c6f](https://github.com/bpg/terraform-provider-proxmox/commit/06f3c6f9ff78db56ddcb2db2a7db6f655898a3d1))
+* **firewall:** update rules with position awareness ([#2593](https://github.com/bpg/terraform-provider-proxmox/issues/2593)) ([2bd6b98](https://github.com/bpg/terraform-provider-proxmox/commit/2bd6b98a004380e02ff672251cb841dd279a4a07))
+* **lxc, vm:** add retries for LXC operations, unify retry logic into shared package ([#2616](https://github.com/bpg/terraform-provider-proxmox/issues/2616)) ([39c0198](https://github.com/bpg/terraform-provider-proxmox/commit/39c01984184eed019dcad8b8f6f4c8660bd05060))
+* **storage:** unknown `encryption_key_fingerprint` after PBS apply ([#2625](https://github.com/bpg/terraform-provider-proxmox/issues/2625)) ([82c49fd](https://github.com/bpg/terraform-provider-proxmox/commit/82c49fdc87c182a0d71ed705320c8aa265f8d793))
+* **vm:** preserve disk deletions in update request ([#2614](https://github.com/bpg/terraform-provider-proxmox/issues/2614)) ([b12111f](https://github.com/bpg/terraform-provider-proxmox/commit/b12111fa5d29b27349569500675515f140de1da6))
+* **vm:** remove duplicate line in ipConfigObjects ([#2618](https://github.com/bpg/terraform-provider-proxmox/issues/2618)) ([0a4ab5b](https://github.com/bpg/terraform-provider-proxmox/commit/0a4ab5beee272c95bb3c9887adcfebf08e4aa3f3))
+* **vm:** skip cdrom devices during disk read-back on import ([#2626](https://github.com/bpg/terraform-provider-proxmox/issues/2626)) ([64c2db2](https://github.com/bpg/terraform-provider-proxmox/commit/64c2db25f60c35a1d61bbf9a2eb9ac87cd34ccf2))
+
+
+### Miscellaneous
+
+* **ci:** update actions/stale digest (9971854 → b5d41d4) ([#2611](https://github.com/bpg/terraform-provider-proxmox/issues/2611)) ([fcead36](https://github.com/bpg/terraform-provider-proxmox/commit/fcead36a03f65c7e538ed6ceb1c2a5af4dcd9ee8))
+* **ci:** Update goreleaser/goreleaser-action action (v6.4.0 → v7.0.0) ([#2623](https://github.com/bpg/terraform-provider-proxmox/issues/2623)) ([f7ab67d](https://github.com/bpg/terraform-provider-proxmox/commit/f7ab67de8338be8d9341da1b7de65c44e1f35f92))
+* **deps:** update golangci/golangci-lint (v2.9.0 → v2.10.1) ([#2603](https://github.com/bpg/terraform-provider-proxmox/issues/2603)) ([3e64ec4](https://github.com/bpg/terraform-provider-proxmox/commit/3e64ec42e28b962b528fd103107a985637f1e7f8))
+* **docs:** update terraform local (2.6.2 → 2.7.0) ([#2612](https://github.com/bpg/terraform-provider-proxmox/issues/2612)) ([6da27f6](https://github.com/bpg/terraform-provider-proxmox/commit/6da27f6042997d8d32062824685ebe95ea5af93d))
+
 ## [0.96.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.95.0...v0.96.0) (2026-02-18)
 
 
