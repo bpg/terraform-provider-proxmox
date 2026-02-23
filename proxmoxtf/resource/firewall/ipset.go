@@ -8,6 +8,7 @@ package firewall
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	proxmoxapi "github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
@@ -213,8 +215,17 @@ func ipSetCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) 
 
 	err := api.CreateIPSet(ctx, body)
 	if err != nil {
-		return diag.FromErr(err)
+		if !errors.Is(err, proxmoxapi.ErrResourceAlreadyExists) {
+			return diag.FromErr(err)
+		}
+
+		// adopt existing IPSet into state; next plan will reconcile.
+		d.SetId(name)
+
+		return ipSetRead(ctx, api, d)
 	}
+
+	d.SetId(name)
 
 	for _, v := range ipSetsArray {
 		err = api.AddCIDRToIPSet(ctx, name, v)
@@ -222,8 +233,6 @@ func ipSetCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) 
 			return diag.FromErr(err)
 		}
 	}
-
-	d.SetId(name)
 
 	return ipSetRead(ctx, api, d)
 }
