@@ -385,6 +385,11 @@ func Read(
 			continue
 		}
 
+		// skip CDROM devices — they are managed by the cdrom block, not the disk block
+		if dd.Media != nil && *dd.Media == "cdrom" {
+			continue
+		}
+
 		disk := map[string]any{}
 
 		datastoreID, pathInDatastore, hasDatastoreID := strings.Cut(dd.FileVolume, ":")

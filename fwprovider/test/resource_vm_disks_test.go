@@ -11,6 +11,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"strconv"
 	"testing"
@@ -1907,6 +1908,92 @@ func TestAccResourceVMDiskRemoval(t *testing.T) {
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectEmptyPlan(),
 					},
+				},
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDiskCDROMNotInDiskBlock verifies that CDROM devices (media=cdrom)
+// are not read back into the disk block during import. This is a regression test
+// for https://github.com/bpg/terraform-provider-proxmox/issues/2550.
+func TestAccResourceVMDiskCDROMNotInDiskBlock(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+
+	testVMID := 100000 + rand.Intn(99999) //nolint:gosec
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID": testVMID,
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create a VM with a disk and a physical cdrom drive.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cdrom_not_in_disk" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					vm_id     = {{.TestVMID}}
+					name      = "test-cdrom-not-in-disk"
+
+					cdrom {
+						file_id   = "cdrom"
+						interface = "ide2"
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_cdrom_not_in_disk", map[string]string{
+					"disk.#":            "1",
+					"disk.0.interface":  "scsi0",
+					"cdrom.0.interface": "ide2",
+				}),
+			},
+			{
+				// Step 2: Import the VM. During import, currentDiskList is
+				// empty so disk.Read() uses all storage devices from the API.
+				// Without the fix, the cdrom device (media=cdrom) leaks into
+				// the disk block in state.
+				ResourceName:      "proxmox_virtual_environment_vm.test_cdrom_not_in_disk",
+				ImportState:       true,
+				ImportStateVerify: false,
+				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, testVMID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 instance state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+					diskCount := attrs["disk.#"]
+
+					if diskCount != "1" {
+						var diskAttrs []string
+						for k, v := range attrs {
+							if len(k) >= 5 && k[:5] == "disk." {
+								diskAttrs = append(diskAttrs, fmt.Sprintf("%s=%s", k, v))
+							}
+						}
+
+						return fmt.Errorf(
+							"expected disk.# = 1 after import (cdrom should not be in disk block), got %s; disk attrs: %v",
+							diskCount, diskAttrs,
+						)
+					}
+
+					iface := attrs["disk.0.interface"]
+					if iface != "scsi0" {
+						return fmt.Errorf("expected disk.0.interface = scsi0, got %s", iface)
+					}
+
+					return nil
 				},
 			},
 		},
