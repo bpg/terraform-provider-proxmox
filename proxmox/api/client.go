@@ -371,6 +371,10 @@ func validateResponseCode(res *http.Response) error {
 			return errors.Join(ErrResourceDoesNotExist, httpError)
 		}
 
+		if strings.Contains(msg, "already exists") {
+			return errors.Join(ErrResourceAlreadyExists, httpError)
+		}
+
 		return httpError
 	}
 

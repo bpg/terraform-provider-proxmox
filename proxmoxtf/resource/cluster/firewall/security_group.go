@@ -8,11 +8,13 @@ package firewall
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	proxmoxapi "github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
@@ -68,15 +70,22 @@ func SecurityGroupCreate(ctx context.Context, api clusterfirewall.API, d *schema
 
 	err := api.CreateGroup(ctx, body)
 	if err != nil {
-		return diag.FromErr(err)
+		if !errors.Is(err, proxmoxapi.ErrResourceAlreadyExists) {
+			return diag.FromErr(err)
+		}
+
+		// adopt existing group into state; next plan will reconcile.
+		d.SetId(name)
+
+		return SecurityGroupRead(ctx, api, d)
 	}
+
+	d.SetId(name)
 
 	diags := firewall.RulesCreate(ctx, api.SecurityGroup(name), d)
 	if diags.HasError() {
 		return diags
 	}
-
-	d.SetId(name)
 
 	return SecurityGroupRead(ctx, api, d)
 }

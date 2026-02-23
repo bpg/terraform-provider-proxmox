@@ -278,7 +278,7 @@ Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` with:
 - If `gh` CLI is not authenticated, the skill will prompt for manual verification
 - Branch names are auto-truncated to avoid filesystem issues
 - Session state file is gitignored, so it won't be committed
-- Always create the acceptance test before implementing the fix
+- **Acceptance tests first:** Always create the acceptance test BEFORE implementing the fix. The test must reproduce the bug with the current code and fail, proving the issue exists. Only then implement the fix and verify the test passes.
 - Stale `/tmp/testacc.log` and `/tmp/api_debug.log` are cleared to ensure clean slate
 - Use `/bpg:resume` to continue work if you need to come back later
 

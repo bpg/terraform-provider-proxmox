@@ -23,6 +23,9 @@ const ErrNoDataObjectInResponse Error = "the server did not include a data objec
 // ErrResourceDoesNotExist is returned when the requested resource does not exist.
 const ErrResourceDoesNotExist Error = "the requested resource does not exist"
 
+// ErrResourceAlreadyExists is returned when attempting to create a resource that already exists.
+const ErrResourceAlreadyExists Error = "the requested resource already exists"
+
 // HTTPError is a generic error type for HTTP errors.
 type HTTPError struct {
 	Code    int

@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
@@ -2454,6 +2455,128 @@ func TestAccResourceFirewallRulesIdentityFieldChange(t *testing.T) {
 			})
 		})
 	}
+}
+
+// createSecurityGroupManually creates a security group via the API, bypassing Terraform.
+func createSecurityGroupManually(te *Environment, name, comment string) error {
+	ctx := context.Background()
+	fwClient := te.ClusterClient().Firewall()
+
+	return fwClient.CreateGroup(ctx, &clusterfirewall.GroupCreateRequestBody{
+		Group:   name,
+		Comment: &comment,
+	})
+}
+
+// deleteSecurityGroupManually deletes a security group via the API, bypassing Terraform.
+func deleteSecurityGroupManually(te *Environment, name string) error {
+	ctx := context.Background()
+	fwClient := te.ClusterClient().Firewall()
+
+	return fwClient.DeleteGroup(ctx, name)
+}
+
+// createIPSetManually creates an IPSet via the API, bypassing Terraform.
+func createIPSetManually(te *Environment, name, comment string) error {
+	ctx := context.Background()
+	fwClient := te.ClusterClient().Firewall()
+
+	return fwClient.CreateIPSet(ctx, &firewall.IPSetCreateRequestBody{
+		Name:    name,
+		Comment: comment,
+	})
+}
+
+// deleteIPSetManually deletes an IPSet via the API, bypassing Terraform.
+func deleteIPSetManually(te *Environment, name string) error {
+	ctx := context.Background()
+	fwClient := te.ClusterClient().Firewall()
+
+	return fwClient.DeleteIPSet(ctx, name)
+}
+
+// TestAccResourceClusterFirewallSecurityGroupCreateAlreadyExists verifies that
+// a pre-existing security group is adopted into state instead of erroring.
+func TestAccResourceClusterFirewallSecurityGroupCreateAlreadyExists(t *testing.T) {
+	te := InitEnvironment(t)
+
+	suffix := rand.Intn(100000)
+	sgName := fmt.Sprintf("sg-adopt-%05d", suffix)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"SecurityGroupName": sgName,
+	})
+
+	t.Cleanup(func() {
+		_ = deleteSecurityGroupManually(te, sgName)
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				PreConfig: func() {
+					err := createSecurityGroupManually(te, sgName, "pre-created group")
+					require.NoError(t, err, "failed to pre-create security group")
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_adopt" {
+					name    = "{{.SecurityGroupName}}"
+					comment = "pre-created group"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(
+						"proxmox_virtual_environment_cluster_firewall_security_group.test_adopt",
+						map[string]string{
+							"name": sgName,
+						},
+					),
+				),
+			},
+		},
+	})
+}
+
+// TestAccResourceFirewallIPSetCreateAlreadyExists verifies that a pre-existing
+// IPSet is adopted into state instead of erroring.
+func TestAccResourceFirewallIPSetCreateAlreadyExists(t *testing.T) {
+	te := InitEnvironment(t)
+
+	suffix := rand.Intn(100000)
+	ipsetName := fmt.Sprintf("ipset-adopt-%d", suffix)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"IPSetName": ipsetName,
+	})
+
+	t.Cleanup(func() {
+		_ = deleteIPSetManually(te, ipsetName)
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				PreConfig: func() {
+					err := createIPSetManually(te, ipsetName, "pre-created ipset")
+					require.NoError(t, err, "failed to pre-create IPSet")
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_ipset" "test_adopt" {
+					name    = "{{.IPSetName}}"
+					comment = "pre-created ipset"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(
+						"proxmox_virtual_environment_firewall_ipset.test_adopt",
+						map[string]string{
+							"name": ipsetName,
+						},
+					),
+				),
+			},
+		},
+	})
 }
 
 // TestAccFirewallAPIErrorMissingRule validates that GetRule returns
