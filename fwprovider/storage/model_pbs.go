@@ -8,6 +8,8 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -121,6 +123,17 @@ func (m *PBSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 
 	if datastore.Shared != nil {
 		m.Shared = types.BoolValue(*datastore.Shared.PointerBool())
+	}
+
+	if datastore.EncryptionKey != nil {
+		var encryptionKey storage.EncryptionKey
+		if err := json.Unmarshal([]byte(*datastore.EncryptionKey), &encryptionKey); err != nil {
+			return fmt.Errorf("cannot unmarshal encryption key: %w", err)
+		}
+
+		m.EncryptionKeyFingerprint = types.StringValue(encryptionKey.Fingerprint)
+	} else {
+		m.EncryptionKeyFingerprint = types.StringNull()
 	}
 
 	// only populate backups if user has configured it to avoid "was absent, but now present" error
