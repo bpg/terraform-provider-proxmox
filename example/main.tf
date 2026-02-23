@@ -5,6 +5,8 @@ provider "proxmox" {
   ssh {
     agent    = true
     username = var.virtual_environment_ssh_username
+    # When using api_token, there is no provider password to inherit for SSH.
+    # Ensure ssh-agent has the appropriate keys loaded, or set password / private_key here.
   }
 }
 

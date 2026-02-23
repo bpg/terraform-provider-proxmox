@@ -76,6 +76,8 @@ provider "proxmox" {
 }
 ```
 
+~> When using **API token** authentication, the SSH password cannot be inherited from the provider `password` field (since there is none). You must ensure that either `ssh-agent` has the appropriate keys loaded, or explicitly configure `password` or `private_key` in the `ssh` block.
+
 ## Authentication
 
 The provider supports three authentication methods (in order of precedence):
@@ -330,6 +332,8 @@ provider "proxmox" {
 If no `ssh` block is provided, the provider will attempt to connect to the target node using the credentials provided in the `username` and `password` arguments (or `PROXMOX_VE_USERNAME` and `PROXMOX_VE_PASSWORD` environment variables).
 Note that the target node is identified by the `node` argument in the resource, and may be different from the Proxmox API endpoint.
 Please refer to the [Argument Reference](#argument-reference) section to view the available arguments of the `ssh` block.
+
+~> **Important:** The SSH password is only inherited from the provider's `password` field when using **username/password** authentication. When using **API token** authentication, there is no password to inherit. In this case, you must provide SSH credentials explicitly: either configure `ssh-agent` with the appropriate keys, or set `password` or `private_key` in the `ssh` block (or their corresponding environment variables).
 
 ### SSH Agent
 
@@ -586,7 +590,7 @@ In addition to [generic provider arguments](https://developer.hashicorp.com/terr
 
 - `ssh` - (Optional) The SSH connection configuration to a Proxmox node. This is a block, whose fields are documented below.
     - `username` - (Optional) The username to use for the SSH connection. Defaults to the username used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_USERNAME`. Required when using API Token.
-    - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.
+    - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection when using username/password authentication. Default has no effect when using API token authentication, as there is no password to inherit. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.
     - `agent` - (Optional) Whether to use the SSH agent for the SSH authentication. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_AGENT`.
     - `agent_socket` - (Optional) The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
     - `agent_forwarding` - (Optional) Whether to enable SSH agent forwarding. Defaults to the value of the `PROXMOX_VE_SSH_AGENT_FORWARDING` environment variable, or `false` if not set.
