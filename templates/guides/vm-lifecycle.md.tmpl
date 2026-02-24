@@ -1,0 +1,78 @@
+---
+layout: page
+page_title: "VM Lifecycle Management"
+subcategory: Guides
+description: |-
+    This guide covers creating, updating, and destroying VMs, including hotplug behavior and destroy semantics.
+---
+
+# VM Lifecycle Management
+
+This guide covers the full VM lifecycle — from creation through day-2 updates to destruction — focusing on Proxmox-specific behaviors that affect how Terraform manages your VMs.
+
+## Creating a VM
+
+A typical VM starts with a cloud image download and a `proxmox_virtual_environment_vm` resource:
+
+{{ codefile "terraform" "examples/guides/vm-lifecycle/create.tf" }}
+
+Key points:
+
+- **`started` defaults to `true`** — the VM will boot after creation. Set `started = false` for templates.
+- **Templates ignore `started`** — when `template = true`, the VM is never started regardless of the `started` value. Set `started = false` explicitly to avoid confusion.
+- **`stop_on_destroy = true`** is recommended for started VMs — without it, Terraform sends an ACPI shutdown and waits for the guest to power off. If the guest agent is not installed or the guest hangs, the destroy will time out.
+
+## Updating a VM
+
+Proxmox supports hotplugging some attributes while a VM is running. Other changes require a reboot, and some force full recreation of the VM.
+
+{{ codefile "terraform" "examples/guides/vm-lifecycle/update.tf" }}
+
+### Hotplug vs reboot vs recreate
+
+When `reboot_after_update = true` (default), Terraform automatically reboots the VM when a non-hotpluggable attribute changes. Set it to `false` if you prefer to schedule reboots manually — Terraform will log a warning instead.
+
+| Change | Behavior |
+| ------ | -------- |
+| `memory.dedicated` (increase) | Hotplug (when VM `hotplug` includes `memory`) |
+| Adding a network device | Hotplug |
+| `cpu.cores`, `cpu.sockets` | Requires reboot |
+| `cpu.type` | Requires reboot |
+| `machine`, `bios` | Requires reboot |
+| `disk.size` (increase) | Applied online, no reboot |
+| `disk.size` (decrease) | **Error** — disks can only grow |
+| `disk.interface` | Deletes old disk, creates new (data-destructive, not VM recreation) |
+| `template` | Forces recreation |
+
+-> **Tip:** Run `terraform plan` after changing VM attributes. The plan output will indicate whether a change triggers an in-place update or forces replacement.
+
+## Destroying a VM
+
+Three attributes control what happens when Terraform destroys a VM:
+
+{{ codefile "terraform" "examples/guides/vm-lifecycle/destroy.tf" }}
+
+| Attribute | Default (`vm`) | Default (`cloned_vm`) | Effect |
+| --------- | :------------: | :-------------------: | ------ |
+| `stop_on_destroy` | `false` | `false` | `false` = ACPI shutdown (graceful), `true` = force stop |
+| `purge_on_destroy` | `true` | `true` | Remove backup jobs, replication, and HA config |
+| `delete_unreferenced_disks_on_destroy` | **`true`** | **`false`** | Delete disks not tracked by Terraform |
+
+~> **Warning:** The `vm` resource defaults `delete_unreferenced_disks_on_destroy` to `true`, which deletes any disk not explicitly declared in your Terraform config. If you attach disks outside Terraform, set this to `false` to prevent data loss.
+
+For the `cloned_vm` resource, see the [Clone VM guide](clone-vm) and the [Choosing Between Clone Resources guide](migration-vm-clone) for details on the `delete` block and inherited device management.
+
+## Quick reference
+
+| Operation | What to set |
+| --------- | ----------- |
+| Create a running VM | `started = true`, `stop_on_destroy = true` |
+| Create a template | `template = true`, `started = false` |
+| Resize disk up | Increase `disk.size` — applied online |
+| Add memory (hot) | Increase `memory.dedicated` (requires `hotplug` to include `memory`) |
+| Change CPU cores | Change `cpu.cores` — auto-reboots by default |
+| Prevent auto-reboot | `reboot_after_update = false` |
+| Force-stop on destroy | `stop_on_destroy = true` |
+| Keep unmanaged disks | `delete_unreferenced_disks_on_destroy = false` |
+
+Full example is available in the [examples/guides/vm-lifecycle](https://github.com/bpg/terraform-provider-proxmox/tree/main/examples/guides/vm-lifecycle) directory.

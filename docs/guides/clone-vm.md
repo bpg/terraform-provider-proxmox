@@ -115,3 +115,10 @@ output "vm_ipv4_address" {
 ```
 
 Full example is available in the [examples/guides/clone-vm](https://github.com/bpg/terraform-provider-proxmox/tree/main/examples/guides/clone-vm) directory.
+
+## See also
+
+- [VM Lifecycle Management](vm-lifecycle) — `started`, `stop_on_destroy`, hotplug behavior, and destroy semantics
+- [Clone VM with cloned_vm Resource](cloned-vm) — Framework resource with explicit device control and map-based addressing
+- [Choosing Between Clone Resources](migration-vm-clone) — Comparison and migration guide between the two clone approaches
+- [Multi-Node Cluster Management](multi-node) — Cross-node cloning with shared and local storage
