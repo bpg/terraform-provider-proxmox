@@ -172,3 +172,7 @@ Use `proxmox_virtual_environment_vm` with `clone` block when:
 
 Full example is available in the [examples/guides/cloned-vm](https://github.com/bpg/terraform-provider-proxmox/tree/main/examples/guides/cloned-vm) directory.
 
+## See also
+
+- [VM Lifecycle Management](vm-lifecycle) — destroy semantics and default differences between `vm` and `cloned_vm`
+- [Choosing Between Clone Resources](migration-vm-clone) — detailed comparison and migration guide
