@@ -403,3 +403,15 @@ func RangeSemicolonValidator() schema.SchemaValidateDiagFunc {
 		),
 	)
 }
+
+// HostnameValidator is a scheme validation function for virtual machine name. According to Proxmox documentation,
+// it must be a valid DNS name.
+// Regexp is based on Proxmox validation at https://git.proxmox.com/?p=pve-common.git;a=blob;f=src/PVE/JSONSchema.pm
+func HostnameValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(
+		validation.StringMatch(
+			regexp.MustCompile("^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$"),
+			"must be a valid DNS name",
+		),
+	)
+}

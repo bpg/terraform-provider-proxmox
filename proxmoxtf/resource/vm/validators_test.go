@@ -7,9 +7,9 @@
 package resource
 
 import (
-	"testing"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestCPUType(t *testing.T) {
@@ -74,6 +74,37 @@ func TestMachineType(t *testing.T) {
 			} else {
 				require.NotEmpty(t, res, "validate: '%s'", tt.value)
 			}
+		})
+	}
+}
+
+func TestVmHostname(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value string
+		valid bool
+	}{
+		{"empty", "", false},
+		{"underscores", "my_name", false},
+		{"trailing dot", "my-name.com.", false},
+		{"starts with alphanumeric", "-my-name.com", false},
+		{"ends with alphanumeric", "my-name.com!", false},
+		{"single letter", "a", true},
+		{"domain name", "my-name.com", true},
+		{"multi domain", "my-name.com.edu.net.xyz.dev", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := HostnameValidator()
+			res := f(tt.value, nil)
+
+			valid := !res.HasError()
+			assert.Equal(t, tt.valid, valid)
 		})
 	}
 }

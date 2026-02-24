@@ -1210,10 +1210,11 @@ func VM() *schema.Resource {
 			MinItems: 0,
 		},
 		mkName: {
-			Type:        schema.TypeString,
-			Description: "The name",
-			Optional:    true,
-			Default:     dvName,
+			Type:             schema.TypeString,
+			Description:      "The name of the VM. Must be a valid DNS name.",
+			Optional:         true,
+			Default:          dvName,
+			ValidateDiagFunc: HostnameValidator(),
 		},
 		mkNodeName: {
 			Type:         schema.TypeString,
