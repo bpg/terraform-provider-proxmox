@@ -410,7 +410,7 @@ func RangeSemicolonValidator() schema.SchemaValidateDiagFunc {
 func HostnameValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(
 		validation.StringMatch(
-			regexp.MustCompile("^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$"),
+			regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`),
 			"must be a valid DNS name",
 		),
 	)
