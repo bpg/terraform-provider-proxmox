@@ -9,11 +9,13 @@
 
 A Terraform / OpenTofu Provider that adds support for Proxmox Virtual Environment.
 
+Maintained by [BPG Labs](https://bpg.sh).
+
 This repository is a fork of <https://github.com/danitso/terraform-provider-proxmox> which is no longer maintained.
 
 ## Disclaimer
 
-This project is a personal open-source initiative and is not affiliated with, endorsed by, or associated with any of my current or former employers. All opinions, code, and documentation are solely those of myself and the individual contributors.
+This project is a personal open-source initiative by [@bpg-dev](https://github.com/bpg-dev) and is not affiliated with, endorsed by, or associated with any of their current or former employers. All opinions, code, and documentation are solely those of the maintainer and the individual contributors.
 
 The project is not affiliated with [Proxmox Server Solutions GmbH](https://www.proxmox.com/en/about/about-us/company) or any of its subsidiaries. The use of the Proxmox name and/or logo is for informational purposes only and does not imply any endorsement or affiliation with the Proxmox project.
 

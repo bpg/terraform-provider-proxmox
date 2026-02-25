@@ -1,14 +1,14 @@
 name: Project Automation
 
 on:
-  # issues:
-  #   types: [opened, labeled, closed, reopened]
-  # pull_request:
-  #   types: [opened, closed]
+  issues:
+    types: [opened, labeled, closed, reopened]
+  pull_request:
+    types: [opened, closed]
   workflow_dispatch:
 
 env:
-  PROJECT_NUMBER: 4
+  PROJECT_NUMBER: 3
   PROJECT_OWNER: bpg
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
       - name: Add to project
         uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
         with:
-          project-url: https://github.com/users/${{ env.PROJECT_OWNER }}/projects/${{ env.PROJECT_NUMBER }}
+          project-url: https://github.com/orgs/${{ env.PROJECT_OWNER }}/projects/${{ env.PROJECT_NUMBER }}
           github-token: ${{ secrets.PROJECT_TOKEN }}
 
   sync-priority-label-to-field:
@@ -72,7 +72,7 @@ jobs:
             // Get project and field info
             const projectQuery = `
               query($owner: String!, $number: Int!) {
-                user(login: $owner) {
+                organization(login: $owner) {
                   projectV2(number: $number) {
                     id
                     field(name: "Priority") {
@@ -91,7 +91,7 @@ jobs:
               number: ${{ env.PROJECT_NUMBER }}
             });
             
-            const project = projectResult.user.projectV2;
+            const project = projectResult.organization.projectV2;
             const priorityField = project.field;
             
             if (!priorityField) {
@@ -185,7 +185,7 @@ jobs:
             // Get project info
             const projectQuery = `
               query($owner: String!, $number: Int!) {
-                user(login: $owner) {
+                organization(login: $owner) {
                   projectV2(number: $number) {
                     id
                     field(name: "Status") {
@@ -204,7 +204,7 @@ jobs:
               number: ${{ env.PROJECT_NUMBER }}
             });
             
-            const project = projectResult.user.projectV2;
+            const project = projectResult.organization.projectV2;
             const statusField = project.field;
             const option = statusField.options.find(o => o.name === targetColumn);
             
