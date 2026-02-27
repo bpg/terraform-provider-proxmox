@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.97.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.97.0...v0.97.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* **firewall:** handle missing security group in `Read` and fix id override `Create` ([#2647](https://github.com/bpg/terraform-provider-proxmox/issues/2647)) ([f526c39](https://github.com/bpg/terraform-provider-proxmox/commit/f526c3992321de337efa4d420549aa2baa9b4e48))
+* **hwmapping:** enable nested USB hubs ([#2636](https://github.com/bpg/terraform-provider-proxmox/issues/2636)) ([d42fe74](https://github.com/bpg/terraform-provider-proxmox/commit/d42fe74c75c788a575aee92c4a80da4a18fa22c7))
+* **vm,lxc:** add name validation ([#2631](https://github.com/bpg/terraform-provider-proxmox/issues/2631)) ([53cce6f](https://github.com/bpg/terraform-provider-proxmox/commit/53cce6fb4302ab9c0f9f697f24718afc35d3bfe0))
+* **vm:** allow adding EFI disk without forcing VM replacement ([#2645](https://github.com/bpg/terraform-provider-proxmox/issues/2645)) ([d636403](https://github.com/bpg/terraform-provider-proxmox/commit/d63640316c1499aa0c61b2ba301470685b4d6b6d))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/attest-build-provenance action (v3 → v4) ([#2641](https://github.com/bpg/terraform-provider-proxmox/issues/2641)) ([de5f833](https://github.com/bpg/terraform-provider-proxmox/commit/de5f8334517f44e602fff28e31307d8d0c91eb3f))
+* **ci:** update actions/setup-go digest (7a3fe6c → 4b73464) ([#2643](https://github.com/bpg/terraform-provider-proxmox/issues/2643)) ([9af341a](https://github.com/bpg/terraform-provider-proxmox/commit/9af341a94a2dfbf6e7df9762d94934a9e50d4bf1))
+* **ci:** Update actions/upload-artifact action (v6 → v7) ([#2642](https://github.com/bpg/terraform-provider-proxmox/issues/2642)) ([4d84904](https://github.com/bpg/terraform-provider-proxmox/commit/4d84904b5764957ae66a600f3888aa681715e855))
+* **ci:** Update hashicorp/setup-terraform action ([#2635](https://github.com/bpg/terraform-provider-proxmox/issues/2635)) ([af078b7](https://github.com/bpg/terraform-provider-proxmox/commit/af078b7dab3638b8d9da87f7acbc59ba1c3170c1))
+* **ci:** update lycheeverse/lychee-action action (v2.7.0 → v2.8.0) ([#2638](https://github.com/bpg/terraform-provider-proxmox/issues/2638)) ([5271851](https://github.com/bpg/terraform-provider-proxmox/commit/5271851dc97a143db6a7870cfb8d549d52c2f1fd))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#2634](https://github.com/bpg/terraform-provider-proxmox/issues/2634)) ([345f785](https://github.com/bpg/terraform-provider-proxmox/commit/345f785b7026dbeaf87c3751b3531c46380a1f8c))
+* **deps:** update image golang (c83e68f → 9edf713) ([#2633](https://github.com/bpg/terraform-provider-proxmox/issues/2633)) ([c47a705](https://github.com/bpg/terraform-provider-proxmox/commit/c47a70569b7842ece5bc9e8f6f4c3b17c269dac0))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.38.2 → v2.39.0) ([#2639](https://github.com/bpg/terraform-provider-proxmox/issues/2639)) ([8b3bff1](https://github.com/bpg/terraform-provider-proxmox/commit/8b3bff197e7ea8a5be85effa65759443ef976a8b))
+* **deps:** update module golang.org/x/net (v0.50.0 → v0.51.0) ([#2640](https://github.com/bpg/terraform-provider-proxmox/issues/2640)) ([587d1fe](https://github.com/bpg/terraform-provider-proxmox/commit/587d1feb7b8d6492741f9975ba807fef50193e1a))
+* **docs:** add vm-lifecycle, multi-node, and upgrade guides ([#2628](https://github.com/bpg/terraform-provider-proxmox/issues/2628)) ([d2b8729](https://github.com/bpg/terraform-provider-proxmox/commit/d2b87294e72181caa12ccae497a3d4bf7837b766))
+
 ## [0.97.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.96.0...v0.97.0) (2026-02-23)
 
 
