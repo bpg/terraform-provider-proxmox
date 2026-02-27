@@ -246,6 +246,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/PendaGTP"><img src="https://avatars.githubusercontent.com/u/38917281?v=4?s=100" width="100px;" alt="Clément"/><br /><sub><b>Clément</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=PendaGTP" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/LTe"><img src="https://avatars.githubusercontent.com/u/160962?v=4?s=100" width="100px;" alt="Piotr Niełacny"/><br /><sub><b>Piotr Niełacny</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=LTe" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://tila.cat"><img src="https://avatars.githubusercontent.com/u/65857432?v=4?s=100" width="100px;" alt="tila :3"/><br /><sub><b>tila :3</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=xqtc161" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Mortom123"><img src="https://avatars.githubusercontent.com/u/43972560?v=4?s=100" width="100px;" alt="m0rtom"/><br /><sub><b>m0rtom</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Mortom123" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3AMortom123" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
   <tfoot>

@@ -1755,6 +1755,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Mortom123",
+      "name": "m0rtom",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43972560?v=4",
+      "profile": "https://github.com/Mortom123",
+      "contributions": [
+        "code",
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
