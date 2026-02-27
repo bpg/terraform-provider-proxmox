@@ -44,7 +44,7 @@ var (
 	PathPCIValueRegEx = regexp.MustCompile(`^[a-f0-9]{4,}:[a-f0-9]{2}:[a-f0-9]{2}(\.[a-f0-9])?$`)
 
 	// PathUSBValueRegEx is the regular expression for a USB hardware mapping path.
-	PathUSBValueRegEx = regexp.MustCompile(`^\d+-(\d+)(\.\d+)?$`)
+	PathUSBValueRegEx = regexp.MustCompile(`^\d+-(\d+)(\.\d+)*$`)
 )
 
 // PathType is a type that represents a path of a hardware mapping.
