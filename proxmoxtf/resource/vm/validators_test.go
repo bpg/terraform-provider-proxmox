@@ -87,7 +87,7 @@ func TestVmHostname(t *testing.T) {
 		value string
 		valid bool
 	}{
-		{"empty", "", false},
+		{"empty", "", true},
 		{"underscores", "my_name", false},
 		{"trailing dot", "my-name.com.", false},
 		{"starts with alphanumeric", "-my-name.com", false},

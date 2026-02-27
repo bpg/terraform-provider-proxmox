@@ -409,9 +409,12 @@ func RangeSemicolonValidator() schema.SchemaValidateDiagFunc {
 // Regexp is based on Proxmox validation at https://git.proxmox.com/?p=pve-common.git;a=blob;f=src/PVE/JSONSchema.pm
 func HostnameValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(
-		validation.StringMatch(
-			regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`),
-			"must be a valid DNS name",
+		validation.Any(
+			validation.StringIsEmpty,
+			validation.StringMatch(
+				regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`),
+				"must be a valid DNS name",
+			),
 		),
 	)
 }

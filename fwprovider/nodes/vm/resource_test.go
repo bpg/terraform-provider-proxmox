@@ -59,6 +59,16 @@ func TestAccResourceVM(t *testing.T) {
 			}`),
 			ExpectError: regexp.MustCompile(`name must be a valid DNS name`),
 		}}},
+		{"set a FQDN VM name", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_vm2" "test_vm" {
+				node_name = "{{.NodeName}}"
+				name = "vm.example.com"
+			}`),
+			Check: test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				"name": "vm.example.com",
+			}),
+		}}},
 		{"set, update, import with primitive fields", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
