@@ -49,8 +49,7 @@ func TestPathValueFromTerraform(t *testing.T) {
 			expected: func(val PathValue) bool {
 				return val.ValueString() == "1-5.2.4"
 			},
-		}
-		
+		},
 	}
 
 	for name, test := range tests {
