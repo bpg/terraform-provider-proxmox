@@ -1,6 +1,6 @@
 module github.com/bpg/terraform-provider-proxmox
 
-go 1.25
+go 1.25.0
 
 tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
@@ -26,7 +26,7 @@ require (
 	github.com/skeema/knownhosts v1.3.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.48.0
-	golang.org/x/net v0.50.0
+	golang.org/x/net v0.51.0
 )
 
 require (
