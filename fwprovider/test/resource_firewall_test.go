@@ -2468,6 +2468,26 @@ func createSecurityGroupManually(te *Environment, name, comment string) error {
 	})
 }
 
+// deleteSecurityGroupRulesManually deletes all rules from a security group via the API.
+func deleteSecurityGroupRulesManually(te *Environment, name string) error {
+	ctx := context.Background()
+	sgClient := te.ClusterClient().Firewall().SecurityGroup(name)
+
+	rules, err := sgClient.ListRules(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Delete in reverse order to avoid position shifts.
+	for i := len(rules) - 1; i >= 0; i-- {
+		if err := sgClient.DeleteRule(ctx, rules[i].Pos); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // deleteSecurityGroupManually deletes a security group via the API, bypassing Terraform.
 func deleteSecurityGroupManually(te *Environment, name string) error {
 	ctx := context.Background()
@@ -2593,4 +2613,80 @@ func TestAccFirewallAPIErrorMissingRule(t *testing.T) {
 	_, err := fwClient.GetRule(ctx, 9999)
 	require.Error(t, err, "expected an error when fetching a rule at a non-existent position")
 	assert.ErrorIs(t, err, firewall.ErrNoRuleAtPosition)
+}
+
+// TestAccResourceClusterFirewallSecurityGroupReadDeletedGroup verifies that
+// SecurityGroupRead removes a security group from state when it has been deleted
+// outside of Terraform, instead of returning an error.
+func TestAccResourceClusterFirewallSecurityGroupReadDeletedGroup(t *testing.T) {
+	te := InitEnvironment(t)
+
+	suffix := rand.Intn(100000)
+	sgName := fmt.Sprintf("sg-del-%05d", suffix)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"SecurityGroupName": sgName,
+	})
+
+	t.Cleanup(func() {
+		// Best-effort cleanup in case the test fails mid-way.
+		_ = deleteSecurityGroupManually(te, sgName)
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create the security group normally via Terraform.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_deleted" {
+					name    = "{{.SecurityGroupName}}"
+					comment = "will be deleted"
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "test rule"
+						dport   = "80"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(
+						"proxmox_virtual_environment_cluster_firewall_security_group.test_deleted",
+						map[string]string{
+							"name": sgName,
+						},
+					),
+				),
+			},
+			{
+				// Step 2: Delete the group outside of Terraform (rules first, then group),
+				// then plan. The provider should detect the group is gone and remove it
+				// from state, not error with HTTP 500.
+				PreConfig: func() {
+					err := deleteSecurityGroupRulesManually(te, sgName)
+					require.NoError(t, err, "failed to delete security group rules manually")
+
+					err = deleteSecurityGroupManually(te, sgName)
+					require.NoError(t, err, "failed to delete security group manually")
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test_deleted" {
+					name    = "{{.SecurityGroupName}}"
+					comment = "will be deleted"
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "test rule"
+						dport   = "80"
+						proto   = "tcp"
+					}
+				}`),
+				// The key assertion: this step does NOT error during the refresh phase.
+				// After refresh removes the resource from state, Terraform recreates it.
+			},
+		},
+	})
 }

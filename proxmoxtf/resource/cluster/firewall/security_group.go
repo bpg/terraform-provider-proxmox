@@ -87,6 +87,9 @@ func SecurityGroupCreate(ctx context.Context, api clusterfirewall.API, d *schema
 		return diags
 	}
 
+	// RulesCreate overwrites d.SetId with a rules hash; restore the group name.
+	d.SetId(name)
+
 	return SecurityGroupRead(ctx, api, d)
 }
 
@@ -101,8 +104,12 @@ func SecurityGroupRead(ctx context.Context, api clusterfirewall.API, d *schema.R
 		return diag.FromErr(err)
 	}
 
+	found := false
+
 	for _, v := range allGroups {
 		if v.Group == name {
+			found = true
+
 			err = d.Set(mkSecurityGroupName, v.Group)
 			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkSecurityGroupComment, v.Comment)
@@ -110,6 +117,11 @@ func SecurityGroupRead(ctx context.Context, api clusterfirewall.API, d *schema.R
 
 			break
 		}
+	}
+
+	if !found {
+		d.SetId("")
+		return nil
 	}
 
 	if diags.HasError() {
