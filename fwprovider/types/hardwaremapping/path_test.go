@@ -44,6 +44,13 @@ func TestPathValueFromTerraform(t *testing.T) {
 				return val.ValueString() == "1-5.2"
 			},
 		},
+		"Valid for USB Hub": {
+			val: tftypes.NewValue(tftypes.String, "1-5.2.4"),
+			expected: func(val PathValue) bool {
+				return val.ValueString() == "1-5.2.4"
+			},
+		}
+		
 	}
 
 	for name, test := range tests {
