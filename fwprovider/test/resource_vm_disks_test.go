@@ -970,6 +970,46 @@ func TestAccResourceVMDisks(t *testing.T) {
 				},
 			},
 		}},
+		{"add efi disk to existing vm without replacement", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_add" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-efi-disk-add"
+
+					bios = "ovmf"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("proxmox_virtual_environment_vm.test_efi_disk_add", "efi_disk.0.type"),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_add" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-efi-disk-add"
+
+					bios = "ovmf"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_add", map[string]string{
+						"efi_disk.0.datastore_id": "local-lvm",
+						"efi_disk.0.type":         "2m",
+					}),
+				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_efi_disk_add", plancheck.ResourceActionUpdate),
+					},
+				},
+			},
+		}},
 		{"ide disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

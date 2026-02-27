@@ -765,7 +765,6 @@ func VM() *schema.Resource {
 						Type:        schema.TypeString,
 						Description: "Size and type of the OVMF EFI disk",
 						Optional:    true,
-						ForceNew:    true,
 						Default:     dvEFIDiskType,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 							"2m",
@@ -1765,6 +1764,7 @@ func VM() *schema.Resource {
 				},
 			),
 			forceNewOnTPMVersionChange,
+			forceNewOnEFIDiskTypeChange,
 		),
 		Importer: &schema.ResourceImporter{
 			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
@@ -1840,6 +1840,61 @@ func forceNewOnTPMVersionChange(ctx context.Context, d *schema.ResourceDiff, _ a
 	if err := d.ForceNew(mkTPMState); err != nil {
 		tflog.Warn(ctx, "unable to require tpm_state replacement", map[string]any{
 			"attribute": mkTPMState,
+			"error":     err,
+		})
+	}
+
+	return nil
+}
+
+func forceNewOnEFIDiskTypeChange(ctx context.Context, d *schema.ResourceDiff, _ any) error {
+	if !d.HasChange(mkEFIDisk) {
+		return nil
+	}
+
+	oldValue, newValue := d.GetChange(mkEFIDisk)
+
+	oldList, ok := oldValue.([]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for old %s value: %T", mkEFIDisk, oldValue)
+	}
+
+	newList, ok := newValue.([]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for new %s value: %T", mkEFIDisk, newValue)
+	}
+
+	// Adding or removing an EFI disk should not force replacement.
+	if len(oldList) == 0 || len(newList) == 0 {
+		return nil
+	}
+
+	oldBlock, ok := oldList[0].(map[string]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for old %s block: %T", mkEFIDisk, oldList[0])
+	}
+
+	newBlock, ok := newList[0].(map[string]any)
+	if !ok {
+		return fmt.Errorf("unexpected type for new %s block: %T", mkEFIDisk, newList[0])
+	}
+
+	if oldBlock == nil || newBlock == nil {
+		return nil
+	}
+
+	oldType, _ := oldBlock[mkEFIDiskType].(string)
+	newType, _ := newBlock[mkEFIDiskType].(string)
+
+	if oldType == "" || newType == "" || oldType == newType {
+		return nil
+	}
+
+	attrPath := fmt.Sprintf("%s.0.%s", mkEFIDisk, mkEFIDiskType)
+
+	if err := d.ForceNew(attrPath); err != nil {
+		tflog.Warn(ctx, "unable to require efi_disk type replacement", map[string]any{
+			"attribute": attrPath,
 			"error":     err,
 		})
 	}
@@ -3373,6 +3428,10 @@ func vmGetEfiDisk(d *schema.ResourceData, disk []any) *vms.CustomEFIDisk {
 		fileFormat, _ := block[mkEFIDiskFileFormat].(string)
 		efiType, _ := block[mkEFIDiskType].(string)
 		preEnrolledKeys := types.CustomBool(block[mkEFIDiskPreEnrolledKeys].(bool))
+
+		if fileFormat == "" {
+			fileFormat = dvEFIDiskFileFormat
+		}
 
 		// use the special syntax STORAGE_ID:SIZE_IN_GiB to allocate a new volume.
 		// NB SIZE_IN_GiB is ignored, see docs for more info.
