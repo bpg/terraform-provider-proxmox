@@ -519,10 +519,11 @@ func Container() *schema.Resource {
 							DiffSuppressFunc: skipDnsDiffIfEmpty,
 						},
 						mkInitializationHostname: {
-							Type:        schema.TypeString,
-							Description: "The hostname",
-							Optional:    true,
-							Default:     dvInitializationHostname,
+							Type:             schema.TypeString,
+							Description:      "The hostname. Must be a valid DNS name.",
+							Optional:         true,
+							Default:          dvInitializationHostname,
+							ValidateDiagFunc: resource.HostnameValidator(),
 						},
 						mkInitializationIPConfig: {
 							Type:        schema.TypeList,

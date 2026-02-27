@@ -88,6 +88,15 @@ func TestAccResourceVM(t *testing.T) {
 				}`),
 			ExpectError: regexp.MustCompile(`expected "node_name" to not be an empty string, got `),
 		}}},
+		{"name", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+				    node_name = "pve"
+				    name = ".hello"
+				}`),
+			ExpectError: regexp.MustCompile(`invalid value for name \(must be a valid DNS name\)`),
+			PlanOnly:    true,
+		}}},
 		{"protection", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

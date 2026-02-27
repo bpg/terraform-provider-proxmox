@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -883,6 +884,18 @@ func TestAccResourceContainerHostname(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_container" "test_container" {
+					    node_name = "pve"
+					    initialization {
+					      hostname = ".world"
+					    }
+					}
+				`),
+				ExpectError: regexp.MustCompile(`invalid value for hostname \(must be a valid DNS name\)`),
+				PlanOnly:    true,
+			},
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
