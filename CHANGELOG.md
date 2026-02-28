@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.97.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.97.1...v0.97.2) (2026-02-28)
+
+
+### Miscellaneous
+
+* **ci:** Update peter-evans/repository-dispatch action (v3 → v4) ([#2653](https://github.com/bpg/terraform-provider-proxmox/issues/2653)) ([3408558](https://github.com/bpg/terraform-provider-proxmox/commit/34085582164e9c56933ca4c3b781b1492d021317))
+* **docs:** update terraform proxmox (0.97.0 → 0.97.1) ([#2648](https://github.com/bpg/terraform-provider-proxmox/issues/2648)) ([6811fb3](https://github.com/bpg/terraform-provider-proxmox/commit/6811fb3b749ff313dfd082b09459b9fe9d3c6eb8))
+* **fwk:** standardize model files  ([#2651](https://github.com/bpg/terraform-provider-proxmox/issues/2651)) ([911d8d3](https://github.com/bpg/terraform-provider-proxmox/commit/911d8d3430d5f416f24dd6ec3dc018be51694b2e))
+
 ## [0.97.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.97.0...v0.97.1) (2026-02-27)
 
 
