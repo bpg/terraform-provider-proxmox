@@ -40,14 +40,18 @@ type RealmCreateRequestBody struct {
 	SyncDefaultsOpts *string           `json:"sync-defaults-options,omitempty" url:"sync-defaults-options,omitempty"` // Default sync options
 
 	// OpenID specific
-	ClientID      *string           `json:"client-id,omitempty"      url:"client-id,omitempty"`      // OpenID client ID
-	ClientKey     *string           `json:"client-key,omitempty"     url:"client-key,omitempty"`     // OpenID client secret
-	IssuerURL     *string           `json:"issuer-url,omitempty"     url:"issuer-url,omitempty"`     // OpenID issuer URL
-	UsernameClaim *string           `json:"username-claim,omitempty" url:"username-claim,omitempty"` // Username claim
-	Scopes        *string           `json:"scopes,omitempty"         url:"scopes,omitempty"`         // OAuth scopes
-	Prompt        *string           `json:"prompt,omitempty"         url:"prompt,omitempty"`         // OAuth prompt
-	ACRValues     *string           `json:"acr-values,omitempty"     url:"acr-values,omitempty"`     // ACR values
-	AutoCreate    *types.CustomBool `json:"autocreate,omitempty"     url:"autocreate,omitempty,int"` // Auto-create users
+	ClientID         *string           `json:"client-id,omitempty"         url:"client-id,omitempty"`             // OpenID client ID
+	ClientKey        *string           `json:"client-key,omitempty"        url:"client-key,omitempty"`            // OpenID client secret
+	IssuerURL        *string           `json:"issuer-url,omitempty"        url:"issuer-url,omitempty"`            // OpenID issuer URL
+	UsernameClaim    *string           `json:"username-claim,omitempty"    url:"username-claim,omitempty"`        // Username claim
+	Scopes           *string           `json:"scopes,omitempty"            url:"scopes,omitempty"`                // OAuth scopes
+	Prompt           *string           `json:"prompt,omitempty"            url:"prompt,omitempty"`                // OAuth prompt
+	ACRValues        *string           `json:"acr-values,omitempty"        url:"acr-values,omitempty"`            // ACR values
+	AutoCreate       *types.CustomBool `json:"autocreate,omitempty"        url:"autocreate,omitempty,int"`        // Auto-create users
+	GroupsClaim      *string           `json:"groups-claim,omitempty"      url:"groups-claim,omitempty"`          // Groups claim
+	GroupsAutocreate *types.CustomBool `json:"groups-autocreate,omitempty" url:"groups-autocreate,omitempty,int"` // Auto-create groups
+	GroupsOverwrite  *types.CustomBool `json:"groups-overwrite,omitempty"  url:"groups-overwrite,omitempty,int"`  // Overwrite groups
+	QueryUserinfo    *types.CustomBool `json:"query-userinfo,omitempty"    url:"query-userinfo,omitempty,int"`    // Query userinfo endpoint
 
 	// General options
 	Comment       *string           `json:"comment,omitempty"        url:"comment,omitempty"`            // Description
@@ -90,6 +94,10 @@ type RealmUpdateRequestBody struct {
 	Prompt           *string           `json:"prompt,omitempty"                url:"prompt,omitempty"`
 	ACRValues        *string           `json:"acr-values,omitempty"            url:"acr-values,omitempty"`
 	AutoCreate       *types.CustomBool `json:"autocreate,omitempty"            url:"autocreate,omitempty,int"`
+	GroupsClaim      *string           `json:"groups-claim,omitempty"          url:"groups-claim,omitempty"`
+	GroupsAutocreate *types.CustomBool `json:"groups-autocreate,omitempty"     url:"groups-autocreate,omitempty,int"`
+	GroupsOverwrite  *types.CustomBool `json:"groups-overwrite,omitempty"      url:"groups-overwrite,omitempty,int"`
+	QueryUserinfo    *types.CustomBool `json:"query-userinfo,omitempty"        url:"query-userinfo,omitempty,int"`
 	Comment          *string           `json:"comment,omitempty"               url:"comment,omitempty"`
 	Default          *types.CustomBool `json:"default,omitempty"               url:"default,omitempty,int"`
 	TFA              *string           `json:"tfa,omitempty"                   url:"tfa,omitempty"`
@@ -136,6 +144,10 @@ type RealmGetResponseData struct {
 	Prompt           *string           `json:"prompt,omitempty"`
 	ACRValues        *string           `json:"acr-values,omitempty"`
 	AutoCreate       *types.CustomBool `json:"autocreate,omitempty"`
+	GroupsClaim      *string           `json:"groups-claim,omitempty"`
+	GroupsAutocreate *types.CustomBool `json:"groups-autocreate,omitempty"`
+	GroupsOverwrite  *types.CustomBool `json:"groups-overwrite,omitempty"`
+	QueryUserinfo    *types.CustomBool `json:"query-userinfo,omitempty"`
 	Comment          *string           `json:"comment,omitempty"`
 	Default          *types.CustomBool `json:"default,omitempty"`
 	TFA              *string           `json:"tfa,omitempty"`
