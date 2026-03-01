@@ -84,6 +84,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_oci_image.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_pool_membership.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_realm_ldap.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_realm_openid.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_realm_sync.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_applier.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_subnet.md ./docs/resources/

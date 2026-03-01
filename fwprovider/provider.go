@@ -525,6 +525,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 	return []func() resource.Resource{
 		access.NewACLResource,
 		access.NewRealmLDAPResource,
+		access.NewRealmOpenIDResource,
 		access.NewRealmSyncResource,
 		access.NewUserTokenResource,
 		acme.NewACMEAccountResource,
