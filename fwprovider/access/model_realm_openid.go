@@ -112,6 +112,7 @@ func (m *realmOpenIDModel) toUpdateRequest(state *realmOpenIDModel) *access.Real
 	updateStringAttribute(&req.ACRValues, m.ACRValues, state.ACRValues, &toDelete, "acr-values")
 	updateStringAttribute(&req.GroupsClaim, m.GroupsClaim, state.GroupsClaim, &toDelete, "groups-claim")
 	updateStringAttribute(&req.Comment, m.Comment, state.Comment, &toDelete, "comment")
+	updateStringAttribute(&req.UsernameClaim, m.UsernameClaim, state.UsernameClaim, &toDelete, "username-claim")
 
 	// Booleans are sent on change.
 	if !m.AutoCreate.Equal(state.AutoCreate) {
