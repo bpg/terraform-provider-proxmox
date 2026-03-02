@@ -171,34 +171,20 @@ func (m *realmOpenIDModel) fromAPIResponse(data *access.RealmGetResponseData, di
 	// Set optional string fields
 	m.UsernameClaim = types.StringPointerValue(data.UsernameClaim)
 	m.GroupsClaim = types.StringPointerValue(data.GroupsClaim)
-	m.Scopes = types.StringPointerValue(data.Scopes)
 	m.Prompt = types.StringPointerValue(data.Prompt)
 	m.ACRValues = types.StringPointerValue(data.ACRValues)
 	m.Comment = types.StringPointerValue(data.Comment)
 
-	// Set optional boolean fields with defaults
+	// Scopes is Computed; guard against nil to prevent perpetual drift
+	// if PVE omits it from the response.
+	if data.Scopes != nil {
+		m.Scopes = types.StringPointerValue(data.Scopes)
+	}
+
+	// Set optional boolean fields
 	m.AutoCreate = types.BoolPointerValue(data.AutoCreate.PointerBool())
-	if m.AutoCreate.IsNull() {
-		m.AutoCreate = types.BoolValue(false)
-	}
-
 	m.GroupsAutocreate = types.BoolPointerValue(data.GroupsAutocreate.PointerBool())
-	if m.GroupsAutocreate.IsNull() {
-		m.GroupsAutocreate = types.BoolValue(false)
-	}
-
 	m.GroupsOverwrite = types.BoolPointerValue(data.GroupsOverwrite.PointerBool())
-	if m.GroupsOverwrite.IsNull() {
-		m.GroupsOverwrite = types.BoolValue(false)
-	}
-
 	m.QueryUserinfo = types.BoolPointerValue(data.QueryUserinfo.PointerBool())
-	if m.QueryUserinfo.IsNull() {
-		m.QueryUserinfo = types.BoolValue(true)
-	}
-
 	m.Default = types.BoolPointerValue(data.Default.PointerBool())
-	if m.Default.IsNull() {
-		m.Default = types.BoolValue(false)
-	}
 }

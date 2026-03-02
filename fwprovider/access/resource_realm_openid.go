@@ -17,9 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
@@ -97,7 +95,6 @@ func (r *realmOpenIDResource) Schema(
 				Description: "Automatically create users on the Proxmox cluster if they do not exist.",
 				Optional:    true,
 				Computed:    true,
-				Default:     booldefault.StaticBool(false),
 			},
 			"username_claim": schema.StringAttribute{
 				Description: "OpenID claim used to generate the unique username (subject, username, or email).",
@@ -117,19 +114,16 @@ func (r *realmOpenIDResource) Schema(
 				Description: "Automatically create groups from claims rather than using existing Proxmox VE groups.",
 				Optional:    true,
 				Computed:    true,
-				Default:     booldefault.StaticBool(false),
 			},
 			"groups_overwrite": schema.BoolAttribute{
 				Description: "Replace assigned groups on login instead of appending to existing ones.",
 				Optional:    true,
 				Computed:    true,
-				Default:     booldefault.StaticBool(false),
 			},
 			"scopes": schema.StringAttribute{
 				Description: "Space-separated list of OpenID scopes to request.",
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("email profile"),
 			},
 			"prompt": schema.StringAttribute{
 				Description: "Specifies whether the authorization server prompts for reauthentication and/or consent " +
@@ -145,7 +139,6 @@ func (r *realmOpenIDResource) Schema(
 					"Required when the identity provider does not include claims in the ID token.",
 				Optional: true,
 				Computed: true,
-				Default:  booldefault.StaticBool(true),
 			},
 			"comment": schema.StringAttribute{
 				Description: "Description of the realm.",
@@ -155,7 +148,6 @@ func (r *realmOpenIDResource) Schema(
 				Description: "Use this realm as the default for login.",
 				Optional:    true,
 				Computed:    true,
-				Default:     booldefault.StaticBool(false),
 			},
 		},
 	}
