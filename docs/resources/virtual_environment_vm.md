@@ -510,7 +510,7 @@ output "ubuntu_vm_public_key" {
 - `operating_system` - (Optional) The Operating System configuration.
     - `type` - (Optional) The type (defaults to `other`).
         - `l24` - Linux Kernel 2.4.
-        - `l26` - Linux Kernel 2.6 - 5.X.
+        - `l26` - Linux Kernel 2.6 - 6.X.
         - `other` - Unspecified OS.
         - `solaris` - OpenIndiania, OpenSolaris og Solaris Kernel.
         - `w2k` - Windows 2000.
