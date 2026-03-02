@@ -30,7 +30,7 @@ Use this skill when:
 <context>
 Issue number: $ARGUMENTS
 
-From [CLAUDE.md](../../CLAUDE.md): "All work on fixes or features MUST have a corresponding GitHub issue."
+From [CLAUDE.md](../../../CLAUDE.md): "All work on fixes or features MUST have a corresponding GitHub issue."
 </context>
 
 <process>

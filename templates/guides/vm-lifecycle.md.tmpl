@@ -60,7 +60,7 @@ Three attributes control what happens when Terraform destroys a VM:
 
 ~> **Warning:** The `vm` resource defaults `delete_unreferenced_disks_on_destroy` to `true`, which deletes any disk not explicitly declared in your Terraform config. If you attach disks outside Terraform, set this to `false` to prevent data loss.
 
-For the `cloned_vm` resource, see the [Clone VM guide](clone-vm) and the [Choosing Between Clone Resources guide](migration-vm-clone) for details on the `delete` block and inherited device management.
+For the `cloned_vm` resource, see the [Clone VM guide](clone-vm.md) and the [Choosing Between Clone Resources guide](migration-vm-clone.md) for details on the `delete` block and inherited device management.
 
 ## Quick reference
 

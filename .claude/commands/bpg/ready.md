@@ -27,7 +27,7 @@ Use this skill when:
 <context>
 Test name (optional): $ARGUMENTS
 
-Executes the Production Readiness Checklist from [CLAUDE.md](../../CLAUDE.md#production-readiness-checklist).
+Executes the Production Readiness Checklist from [CLAUDE.md](../../../CLAUDE.md#production-readiness-checklist).
 </context>
 
 <process>

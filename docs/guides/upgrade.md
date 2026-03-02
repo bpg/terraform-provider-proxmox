@@ -144,7 +144,7 @@ The `proxmox_virtual_environment_datastores` data source uses a new structured f
 
 Disk management during clone operations was both clarified in documentation and fixed in code — disks moved during a VM clone are now handled correctly during subsequent updates.
 
-**Action required:** If you clone VMs and then modify disk configuration, verify that updates behave as expected. Review the [Clone VM guide](clone-vm) for current disk handling semantics.
+**Action required:** If you clone VMs and then modify disk configuration, verify that updates behave as expected. Review the [Clone VM guide](clone-vm.md) for current disk handling semantics.
 
 ## v0.69.0
 

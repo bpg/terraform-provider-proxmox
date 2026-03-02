@@ -28,7 +28,7 @@ Use this skill when:
 Test name: $0
 Parameter to verify: $1
 
-Reference: [DEBUGGING.md](../../.dev/DEBUGGING.md)
+Reference: [DEBUGGING.md](../../../.dev/DEBUGGING.md)
 </context>
 
 <process>
