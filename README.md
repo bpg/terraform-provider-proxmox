@@ -1,11 +1,11 @@
 # Terraform / OpenTofu Provider for Proxmox VE
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
-[![GitHub Release Date](https://img.shields.io/github/release-date/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
-[![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox?style=flat)](https://github.com/bpg/terraform-provider-proxmox/stargazers)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/bpg-dev/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
+[![GitHub Release Date](https://img.shields.io/github/release-date/bpg-dev/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
+![Terraform Provider Downloads](https://img.shields.io/terraform/provider/dw/2185)
 [![All Contributors](https://img.shields.io/github/all-contributors/bpg/terraform-provider-proxmox)](#contributors)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bpg/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/bpg/terraform-provider-proxmox)
-[![Conventional Commits](https://img.shields.io/badge/conventional%20commits-v1.0.0-ff69b4)](https://www.conventionalcommits.org/en/v1.0.0/)
+[![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox?style=flat)](https://github.com/bpg/terraform-provider-proxmox/stargazers)
+![GitHub Sponsors](https://img.shields.io/github/sponsors/bpg-dev)
 
 A Terraform / OpenTofu Provider that adds support for Proxmox Virtual Environment.
 
