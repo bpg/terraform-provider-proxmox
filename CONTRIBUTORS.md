@@ -250,6 +250,7 @@
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MBH999"><img src="https://avatars.githubusercontent.com/u/32163171?v=4?s=100" width="100px;" alt="Markus Hughes"/><br /><sub><b>Markus Hughes</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=MBH999" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/pascalinthecloud"><img src="https://avatars.githubusercontent.com/u/19240096?v=4?s=100" width="100px;" alt="Pascal T."/><br /><sub><b>Pascal T.</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=pascalinthecloud" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
