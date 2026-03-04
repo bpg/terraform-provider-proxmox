@@ -1783,6 +1783,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "hensou",
+      "name": "Henrique Sousa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1756077?v=4",
+      "profile": "https://github.com/hensou",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
