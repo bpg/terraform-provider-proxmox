@@ -7,6 +7,7 @@
 package resource
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -146,6 +147,7 @@ func TestContainerSchema(t *testing.T) {
 
 	test.AssertOptionalArguments(t, initializationSchema, []string{
 		mkInitializationDNS,
+		mkInitializationEntrypoint,
 		mkInitializationHostname,
 		mkInitializationIPConfig,
 		mkInitializationUserAccount,
@@ -153,6 +155,7 @@ func TestContainerSchema(t *testing.T) {
 
 	test.AssertValueTypes(t, initializationSchema, map[string]schema.ValueType{
 		mkInitializationDNS:         schema.TypeList,
+		mkInitializationEntrypoint:  schema.TypeString,
 		mkInitializationHostname:    schema.TypeString,
 		mkInitializationIPConfig:    schema.TypeList,
 		mkInitializationUserAccount: schema.TypeList,
@@ -363,6 +366,37 @@ func TestContainerSchema(t *testing.T) {
 		mkOperatingSystemTemplateFileID: schema.TypeString,
 		mkOperatingSystemType:           schema.TypeString,
 	})
+}
+
+func TestInitializationEntrypointValidation(t *testing.T) {
+	t.Parallel()
+
+	// Same character set Proxmox rejects (see EnvironmentVariablesValidator).
+	re := regexp.MustCompile(`^[^\x00-\x08\x10-\x1F\x7F]+$`)
+
+	validCases := []string{
+		"/sbin/init",
+		"/usr/bin/my-init --option",
+		"my-init",
+		"/path/with spaces/init",
+		"init\twith-tab",
+	}
+
+	for _, v := range validCases {
+		assert.True(t, re.MatchString(v), "expected %q to be valid", v)
+	}
+
+	invalidCases := []string{
+		"\x00null",
+		"\x08backspace",
+		"\x10dle",
+		"\x1Fescape",
+		"\x7Fdel",
+	}
+
+	for _, v := range invalidCases {
+		assert.False(t, re.MatchString(v), "expected %q to be invalid", v)
+	}
 }
 
 func TestInitializationDnsBlockDiffIgnore(t *testing.T) {

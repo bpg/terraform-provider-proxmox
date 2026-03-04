@@ -1941,6 +1941,153 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerEntrypoint(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: create without entrypoint — should default to empty string
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-entrypoint"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.entrypoint": "",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.Nil(te.t, ctInfo.Entrypoint, "entrypoint should be nil in API when not set")
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 2: set a custom entrypoint
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname   = "test-entrypoint"
+						entrypoint = "/sbin/init"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.entrypoint": "/sbin/init",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.Entrypoint, "entrypoint should be set in API")
+						require.Equal(te.t, "/sbin/init", *ctInfo.Entrypoint, "entrypoint value should match")
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 3: remove entrypoint — should revert to empty and delete from API
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-entrypoint"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.entrypoint": "",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.Nil(te.t, ctInfo.Entrypoint, "entrypoint should be nil in API after removal")
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
 	t.Helper()
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
