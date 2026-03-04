@@ -19,29 +19,6 @@ To use this provider, you only need:
 
 -> **SSH access is optional.** Most resources work entirely through the Proxmox API. See [When is SSH Required?](#when-is-ssh-required) for specific cases that need SSH.
 
-## Table of Contents
-
-- [Example Usage](#example-usage)
-- [Authentication](#authentication)
-  - [Authentication Methods Comparison](#authentication-methods-comparison)
-  - [Quick Examples](#quick-examples)
-  - [Security Best Practices](#security-best-practices)
-  - [Environment Variables](#environment-variables)
-  - [API Token Authentication](#api-token-authentication)
-  - [Pre-Authentication](#pre-authentication)
-- [SSH Connection](#ssh-connection) *(optional)*
-  - [When is SSH Required?](#when-is-ssh-required)
-  - [SSH Configuration](#ssh-configuration)
-  - [SSH Agent](#ssh-agent)
-  - [SSH Private Key](#ssh-private-key)
-  - [SSH User](#ssh-user)
-  - [Node IP address used for SSH connection](#node-ip-address-used-for-ssh-connection)
-  - [SSH Connection via SOCKS5 Proxy](#ssh-connection-via-socks5-proxy)
-- [VM and Container ID Assignment](#vm-and-container-id-assignment)
-- [Temporary Directory](#temporary-directory)
-- [Environment Variables Summary](#environment-variables-summary)
-- [Argument Reference](#argument-reference)
-
 ## Example Usage
 
 **Minimal configuration (no SSH):**
