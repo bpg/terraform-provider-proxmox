@@ -632,7 +632,7 @@ func Container() *schema.Resource {
 						},
 						mkInitializationEntrypoint: {
 							Type:        schema.TypeString,
-							Description: "Command to run as init, optionally with arguments; may start with an absolute path, relative path, or a binary in $PATH.",
+							Description: "Command to run as init, optionally with arguments. It may start with an absolute path, relative path, or a binary in `$PATH`.",
 							Optional:    true,
 							Default:     dvInitializationEntrypoint,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(
@@ -1383,6 +1383,12 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 
 		if initializationHostname != dvInitializationHostname {
 			updateBody.Hostname = &initializationHostname
+		}
+
+		initializationEntrypoint := initializationBlock[mkInitializationEntrypoint].(string)
+
+		if initializationEntrypoint != dvInitializationEntrypoint {
+			updateBody.Entrypoint = &initializationEntrypoint
 		}
 
 		initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]any)
@@ -2754,8 +2760,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		entrypoint := *containerConfig.Entrypoint
 		initialization[mkInitializationEntrypoint] = entrypoint
 	} else {
-		// Default value of "entrypoint" is "/sbin/init" according to the API documentation.
-		initialization[mkInitializationEntrypoint] = "/sbin/init"
+		initialization[mkInitializationEntrypoint] = dvInitializationEntrypoint
 	}
 
 	passthroughDevicesMap := make(map[string]any, len(containerConfig.PassthroughDevices))
