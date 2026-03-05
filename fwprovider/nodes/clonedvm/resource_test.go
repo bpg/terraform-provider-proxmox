@@ -84,567 +84,550 @@ const templateWithOneNet = `
 	}
 	`
 
-func TestAccResourceClonedVM_InheritAndDelete(t *testing.T) {
-	t.Parallel()
+func TestAccResourceClonedVM(t *testing.T) {
+	imageFileID := test.InitEnvironment(t).DownloadCloudImage()
 
-	te := test.InitEnvironment(t)
-	imageFileID := te.DownloadCloudImage()
-	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+	t.Run("InheritAndDelete", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: te.RenderConfig(templateWithTwoNets + `
-				resource "proxmox_virtual_environment_cloned_vm" "keep_inherited" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-keep"
-					started   = false
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(templateWithTwoNets + `
+					resource "proxmox_virtual_environment_cloned_vm" "keep_inherited" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-keep"
+						started   = false
 
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					network = {
-						net0 = {
-							bridge = "vmbr0"
-							model  = "virtio"
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
 						}
-					}
-				}
 
-				resource "proxmox_virtual_environment_cloned_vm" "delete_inherited" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-delete"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					network = {
-						net0 = {
-							bridge = "vmbr0"
-							model  = "virtio"
+						network = {
+							net0 = {
+								bridge = "vmbr0"
+								model  = "virtio"
+							}
 						}
 					}
 
-					delete = {
-						network = ["net1"]
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.keep_inherited", "net1", true),
-					checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.delete_inherited", "net1", false),
-				),
-			},
-		},
-	})
-}
+					resource "proxmox_virtual_environment_cloned_vm" "delete_inherited" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-delete"
+						started   = false
 
-func TestAccResourceClonedVM_StopManagingDoesNotDelete(t *testing.T) {
-	t.Parallel()
-
-	te := test.InitEnvironment(t)
-	imageFileID := te.DownloadCloudImage()
-	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: te.RenderConfig(templateWithOneNet + `
-				resource "proxmox_virtual_environment_cloned_vm" "unmanaged" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-unmanage"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					network = {
-						net0 = {
-							bridge = "vmbr0"
-							model  = "virtio"
-						}
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.unmanaged", "net0", true),
-				),
-			},
-			{
-				Config: te.RenderConfig(templateWithOneNet + `
-				resource "proxmox_virtual_environment_cloned_vm" "unmanaged" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-unmanage"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.unmanaged", "net0", true),
-				),
-			},
-		},
-	})
-}
-
-func TestAccResourceClonedVM_MapKeyStability(t *testing.T) {
-	t.Parallel()
-
-	te := test.InitEnvironment(t)
-	imageFileID := te.DownloadCloudImage()
-	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: te.RenderConfig(templateWithTwoNets + `
-				resource "proxmox_virtual_environment_cloned_vm" "stability" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-stability"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					network = {
-						net0 = {
-							bridge = "vmbr0"
-							model  = "virtio"
-						}
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net0", true),
-					checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net1", true),
-				),
-			},
-			{
-				Config: te.RenderConfig(templateWithTwoNets + `
-				resource "proxmox_virtual_environment_cloned_vm" "stability" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-stability"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					network = {
-						net0 = {
-							bridge = "vmbr0"
-							model  = "e1000"
-							tag    = 100
-						}
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net0", true),
-					checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net1", true),
-				),
-			},
-		},
-	})
-}
-
-func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
-	t.Parallel()
-
-	te := test.InitEnvironment(t)
-	imageFileID := te.DownloadCloudImage()
-	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
-
-	baseConfig := `
-	resource "proxmox_virtual_environment_vm" "template_vm" {
-		node_name = "{{.NodeName}}"
-		started   = false
-		template  = true
-
-		disk {
-			datastore_id = "local-lvm"
-			file_id      = "{{.ImageFileID}}"
-			interface    = "virtio0"
-			size         = 16
-		}
-
-		cpu {
-			cores = 1
-		}
-
-		memory {
-			dedicated = 512
-		}
-
-		network_device {
-			model  = "virtio"
-			bridge = "vmbr0"
-		}
-	}
-	`
-
-	resName := "proxmox_virtual_environment_cloned_vm.memory_test"
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: te.RenderConfig(baseConfig + `
-				resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-memory"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					memory = {
-						size    = 2048
-						balloon = 1024
-						shares  = 1500
-					}
-				}
-				`),
-				Check: checkMemoryConfig(te, resName, 2048, 1024, 1500),
-			},
-			{
-				Config: te.RenderConfig(baseConfig + `
-				resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-memory"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					memory = {
-						size    = 4096
-						balloon = 2048
-						shares  = 2000
-					}
-				}
-				`),
-				Check: checkMemoryConfig(te, resName, 4096, 2048, 2000),
-			},
-		},
-	})
-}
-
-func TestAccResourceClonedVM_Started(t *testing.T) {
-	t.Parallel()
-
-	te := test.InitEnvironment(t)
-	imageFileID := te.DownloadCloudImage()
-	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
-
-	baseConfig := `
-	resource "proxmox_virtual_environment_vm" "template_vm" {
-		node_name = "{{.NodeName}}"
-		started   = false
-		template  = true
-
-		disk {
-			datastore_id = "local-lvm"
-			file_id      = "{{.ImageFileID}}"
-			interface    = "virtio0"
-			size         = 16
-		}
-
-		cpu {
-			cores = 1
-		}
-
-		memory {
-			dedicated = 512
-		}
-
-		network_device {
-			model  = "virtio"
-			bridge = "vmbr0"
-		}
-	}
-	`
-
-	resName := "proxmox_virtual_environment_cloned_vm.started_test"
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: te.RenderConfig(baseConfig + `
-				resource "proxmox_virtual_environment_cloned_vm" "started_test" {
-					node_name       = "{{.NodeName}}"
-					name            = "fwk-cloned-started"
-					stop_on_destroy = true
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkVMStatus(te, resName, "running"),
-					test.ResourceAttributes(resName, map[string]string{
-						"started": "true",
-					}),
-				),
-			},
-			{
-				Config: te.RenderConfig(baseConfig + `
-				resource "proxmox_virtual_environment_cloned_vm" "started_test" {
-					node_name       = "{{.NodeName}}"
-					name            = "fwk-cloned-started"
-					started         = false
-					stop_on_destroy = true
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkVMStatus(te, resName, "stopped"),
-					test.ResourceAttributes(resName, map[string]string{
-						"started": "false",
-					}),
-				),
-			},
-			{
-				Config: te.RenderConfig(baseConfig + `
-				resource "proxmox_virtual_environment_cloned_vm" "started_test" {
-					node_name       = "{{.NodeName}}"
-					name            = "fwk-cloned-started"
-					started         = true
-					stop_on_destroy = true
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkVMStatus(te, resName, "running"),
-					test.ResourceAttributes(resName, map[string]string{
-						"started": "true",
-					}),
-				),
-			},
-		},
-	})
-}
-
-func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
-	t.Parallel()
-
-	te := test.InitEnvironment(t)
-	imageFileID := te.DownloadCloudImage()
-	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
-
-	baseConfig := `
-	resource "proxmox_virtual_environment_vm" "template_vm" {
-		node_name = "{{.NodeName}}"
-		started   = false
-		template  = true
-
-		disk {
-			datastore_id = "local-lvm"
-			file_id      = "{{.ImageFileID}}"
-			interface    = "virtio0"
-			size         = 16
-		}
-
-		disk {
-			datastore_id = "local-lvm"
-			interface    = "scsi0"
-			size         = 8
-		}
-
-		cpu {
-			cores = 1
-		}
-
-		memory {
-			dedicated = 1024
-		}
-
-		network_device {
-			model  = "virtio"
-			bridge = "vmbr0"
-		}
-	}
-	`
-
-	resName := "proxmox_virtual_environment_cloned_vm.disk_test"
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: te.RenderConfig(baseConfig + `
-				resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-disk"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					disk = {
-						virtio0 = {
-							datastore_id = "local-lvm"
-							size_gb      = 32
-						}
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkDiskSlot(te, resName, "virtio0", true),
-					checkDiskSlot(te, resName, "scsi0", true),
-				),
-			},
-			{
-				Config: te.RenderConfig(baseConfig + `
-				resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-disk"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					disk = {
-						virtio0 = {
-							datastore_id = "local-lvm"
-							size_gb      = 64
-							discard      = "on"
-							ssd          = true
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
 						}
 
-						scsi1 = {
-							datastore_id = "local-lvm"
-							size_gb      = 20
+						network = {
+							net0 = {
+								bridge = "vmbr0"
+								model  = "virtio"
+							}
+						}
+
+						delete = {
+							network = ["net1"]
 						}
 					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkDiskSlot(te, resName, "virtio0", true),
-					checkDiskSlot(te, resName, "scsi0", true),
-					checkDiskSlot(te, resName, "scsi1", true),
-				),
-			},
-			{
-				Config: te.RenderConfig(baseConfig + `
-				resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-disk"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					disk = {
-						virtio0 = {
-							datastore_id = "local-lvm"
-							size_gb      = 64
-						}
-					}
-
-					delete = {
-						disk = ["scsi0"]
-					}
-				}
-				`),
-				Check: resource.ComposeTestCheckFunc(
-					checkDiskSlot(te, resName, "virtio0", true),
-					checkDiskSlot(te, resName, "scsi0", false),
-					checkDiskSlot(te, resName, "scsi1", true),
-				),
-			},
-		},
-	})
-}
-
-func TestAccResourceClonedVM_Import(t *testing.T) {
-	t.Parallel()
-
-	te := test.InitEnvironment(t)
-	imageFileID := te.DownloadCloudImage()
-	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: te.RenderConfig(templateWithOneNet + `
-				resource "proxmox_virtual_environment_cloned_vm" "import_test" {
-					node_name = "{{.NodeName}}"
-					name      = "fwk-cloned-import"
-					started   = false
-
-					clone = {
-						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
-					}
-
-					cpu = {
-						cores = 2
-					}
-
-					memory = {
-						size = 2048
-					}
-
-					network = {
-						net0 = {
-							bridge = "vmbr0"
-							model  = "virtio"
-						}
-					}
-				}
-				`),
-			},
-			{
-				ResourceName:      "proxmox_virtual_environment_cloned_vm.import_test",
-				ImportState:       true,
-				ImportStateVerify: true,
-				// cloned_vm uses opt-in management, so imported state only contains
-				// minimal fields - clone config and explicitly managed attributes are not preserved
-				ImportStateVerifyIgnore: []string{
-					"clone",
-					"cpu",
-					"memory",
-					"network",
-					"name",
-				},
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					rs, ok := s.RootModule().Resources["proxmox_virtual_environment_cloned_vm.import_test"]
-					if !ok {
-						return "", fmt.Errorf("resource not found")
-					}
-
-					nodeName := rs.Primary.Attributes["node_name"]
-					idStr := rs.Primary.Attributes["id"]
-
-					return fmt.Sprintf("%s/%s", nodeName, idStr), nil
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.keep_inherited", "net1", true),
+						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.delete_inherited", "net1", false),
+					),
 				},
 			},
-		},
+		})
+	})
+
+	t.Run("StopManagingDoesNotDelete", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(templateWithOneNet + `
+					resource "proxmox_virtual_environment_cloned_vm" "unmanaged" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-unmanage"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						network = {
+							net0 = {
+								bridge = "vmbr0"
+								model  = "virtio"
+							}
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.unmanaged", "net0", true),
+					),
+				},
+				{
+					Config: te.RenderConfig(templateWithOneNet + `
+					resource "proxmox_virtual_environment_cloned_vm" "unmanaged" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-unmanage"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.unmanaged", "net0", true),
+					),
+				},
+			},
+		})
+	})
+
+	t.Run("MapKeyStability", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(templateWithTwoNets + `
+					resource "proxmox_virtual_environment_cloned_vm" "stability" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-stability"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						network = {
+							net0 = {
+								bridge = "vmbr0"
+								model  = "virtio"
+							}
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net0", true),
+						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net1", true),
+					),
+				},
+				{
+					Config: te.RenderConfig(templateWithTwoNets + `
+					resource "proxmox_virtual_environment_cloned_vm" "stability" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-stability"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						network = {
+							net0 = {
+								bridge = "vmbr0"
+								model  = "e1000"
+								tag    = 100
+							}
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net0", true),
+						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net1", true),
+					),
+				},
+			},
+		})
+	})
+
+	t.Run("MemoryConfiguration", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+		baseConfig := `
+		resource "proxmox_virtual_environment_vm" "template_vm" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			template  = true
+
+			disk {
+				datastore_id = "local-lvm"
+				file_id      = "{{.ImageFileID}}"
+				interface    = "virtio0"
+				size         = 16
+			}
+
+			cpu {
+				cores = 1
+			}
+
+			memory {
+				dedicated = 512
+			}
+
+			network_device {
+				model  = "virtio"
+				bridge = "vmbr0"
+			}
+		}
+		`
+
+		resName := "proxmox_virtual_environment_cloned_vm.memory_test"
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(baseConfig + `
+					resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-memory"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						memory = {
+							size    = 2048
+							balloon = 1024
+							shares  = 1500
+						}
+					}
+					`),
+					Check: checkMemoryConfig(te, resName, 2048, 1024, 1500),
+				},
+				{
+					Config: te.RenderConfig(baseConfig + `
+					resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-memory"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						memory = {
+							size    = 4096
+							balloon = 2048
+							shares  = 2000
+						}
+					}
+					`),
+					Check: checkMemoryConfig(te, resName, 4096, 2048, 2000),
+				},
+			},
+		})
+	})
+
+	t.Run("Started", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+		baseConfig := `
+		resource "proxmox_virtual_environment_vm" "template_vm" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			template  = true
+
+			disk {
+				datastore_id = "local-lvm"
+				file_id      = "{{.ImageFileID}}"
+				interface    = "virtio0"
+				size         = 16
+			}
+
+			cpu {
+				cores = 1
+			}
+
+			memory {
+				dedicated = 512
+			}
+
+			network_device {
+				model  = "virtio"
+				bridge = "vmbr0"
+			}
+		}
+		`
+
+		resName := "proxmox_virtual_environment_cloned_vm.started_test"
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(baseConfig + `
+					resource "proxmox_virtual_environment_cloned_vm" "started_test" {
+						node_name       = "{{.NodeName}}"
+						name            = "fwk-cloned-started"
+						stop_on_destroy = true
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkVMStatus(te, resName, "running"),
+						test.ResourceAttributes(resName, map[string]string{
+							"started": "true",
+						}),
+					),
+				},
+				{
+					Config: te.RenderConfig(baseConfig + `
+					resource "proxmox_virtual_environment_cloned_vm" "started_test" {
+						node_name       = "{{.NodeName}}"
+						name            = "fwk-cloned-started"
+						started         = false
+						stop_on_destroy = true
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkVMStatus(te, resName, "stopped"),
+						test.ResourceAttributes(resName, map[string]string{
+							"started": "false",
+						}),
+					),
+				},
+				{
+					Config: te.RenderConfig(baseConfig + `
+					resource "proxmox_virtual_environment_cloned_vm" "started_test" {
+						node_name       = "{{.NodeName}}"
+						name            = "fwk-cloned-started"
+						started         = true
+						stop_on_destroy = true
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkVMStatus(te, resName, "running"),
+						test.ResourceAttributes(resName, map[string]string{
+							"started": "true",
+						}),
+					),
+				},
+			},
+		})
+	})
+
+	t.Run("DiskManagement", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+		baseConfig := `
+		resource "proxmox_virtual_environment_vm" "template_vm" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			template  = true
+
+			disk {
+				datastore_id = "local-lvm"
+				file_id      = "{{.ImageFileID}}"
+				interface    = "virtio0"
+				size         = 16
+			}
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "scsi0"
+				size         = 8
+			}
+
+			cpu {
+				cores = 1
+			}
+
+			memory {
+				dedicated = 1024
+			}
+
+			network_device {
+				model  = "virtio"
+				bridge = "vmbr0"
+			}
+		}
+		`
+
+		resName := "proxmox_virtual_environment_cloned_vm.disk_test"
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(baseConfig + `
+					resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-disk"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						disk = {
+							virtio0 = {
+								datastore_id = "local-lvm"
+								size_gb      = 32
+							}
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkDiskSlot(te, resName, "virtio0", true),
+						checkDiskSlot(te, resName, "scsi0", true),
+					),
+				},
+				{
+					Config: te.RenderConfig(baseConfig + `
+					resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-disk"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						disk = {
+							virtio0 = {
+								datastore_id = "local-lvm"
+								size_gb      = 64
+								discard      = "on"
+								ssd          = true
+							}
+
+							scsi1 = {
+								datastore_id = "local-lvm"
+								size_gb      = 20
+							}
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkDiskSlot(te, resName, "virtio0", true),
+						checkDiskSlot(te, resName, "scsi0", true),
+						checkDiskSlot(te, resName, "scsi1", true),
+					),
+				},
+				{
+					Config: te.RenderConfig(baseConfig + `
+					resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-disk"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						disk = {
+							virtio0 = {
+								datastore_id = "local-lvm"
+								size_gb      = 64
+							}
+						}
+
+						delete = {
+							disk = ["scsi0"]
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkDiskSlot(te, resName, "virtio0", true),
+						checkDiskSlot(te, resName, "scsi0", false),
+						checkDiskSlot(te, resName, "scsi1", true),
+					),
+				},
+			},
+		})
+	})
+
+	t.Run("Import", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(templateWithOneNet + `
+					resource "proxmox_virtual_environment_cloned_vm" "import_test" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-import"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						cpu = {
+							cores = 2
+						}
+
+						memory = {
+							size = 2048
+						}
+
+						network = {
+							net0 = {
+								bridge = "vmbr0"
+								model  = "virtio"
+							}
+						}
+					}
+					`),
+				},
+				{
+					ResourceName:      "proxmox_virtual_environment_cloned_vm.import_test",
+					ImportState:       true,
+					ImportStateVerify: true,
+					// cloned_vm uses opt-in management, so imported state only contains
+					// minimal fields - clone config and explicitly managed attributes are not preserved
+					ImportStateVerifyIgnore: []string{
+						"clone",
+						"cpu",
+						"memory",
+						"network",
+						"name",
+					},
+					ImportStateIdFunc: func(s *terraform.State) (string, error) {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_cloned_vm.import_test"]
+						if !ok {
+							return "", fmt.Errorf("resource not found")
+						}
+
+						nodeName := rs.Primary.Attributes["node_name"]
+						idStr := rs.Primary.Attributes["id"]
+
+						return fmt.Sprintf("%s/%s", nodeName, idStr), nil
+					},
+				},
+			},
+		})
 	})
 }
 
