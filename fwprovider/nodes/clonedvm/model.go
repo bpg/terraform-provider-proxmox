@@ -34,6 +34,7 @@ type Model struct {
 	RNG                              rng.Value               `tfsdk:"rng"`
 	VGA                              vga.Value               `tfsdk:"vga"`
 	CDROM                            cdrom.Value             `tfsdk:"cdrom"`
+	Started                          types.Bool              `tfsdk:"started"`
 	StopOnDestroy                    types.Bool              `tfsdk:"stop_on_destroy"`
 	PurgeOnDestroy                   types.Bool              `tfsdk:"purge_on_destroy"`
 	DeleteUnreferencedDisksOnDestroy types.Bool              `tfsdk:"delete_unreferenced_disks_on_destroy"`

@@ -538,6 +538,151 @@ func checkMemoryConfig(te *test.Environment, resourceName string, expectedMemory
 	}
 }
 
+func TestAccResourceClonedVM_Started(t *testing.T) {
+	if utils.GetAnyStringEnv("TF_ACC") == "" {
+		t.Skip("Acceptance tests are disabled")
+	}
+
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	baseConfig := `
+		resource "proxmox_virtual_environment_download_file" "cloud_image" {
+			content_type = "iso"
+			datastore_id = "local"
+			node_name    = "{{.NodeName}}"
+			file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
+			url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+			overwrite_unmanaged = true
+		}
+
+		resource "proxmox_virtual_environment_vm" "template_vm" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			template  = true
+
+			disk {
+				datastore_id = "local-lvm"
+				file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+				interface    = "virtio0"
+				size         = 16
+			}
+
+			cpu {
+				cores = 1
+			}
+
+			memory {
+				dedicated = 512
+			}
+
+			network_device {
+				model  = "virtio"
+				bridge = "vmbr0"
+			}
+		}
+		`
+
+	startedConfig := te.RenderConfig(baseConfig + `
+		resource "proxmox_virtual_environment_cloned_vm" "started_test" {
+			node_name      = "{{.NodeName}}"
+			name           = "fwk-cloned-started"
+			stop_on_destroy = true
+
+			clone = {
+				source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+			}
+		}
+	`)
+
+	stoppedConfig := te.RenderConfig(baseConfig + `
+		resource "proxmox_virtual_environment_cloned_vm" "started_test" {
+			node_name      = "{{.NodeName}}"
+			name           = "fwk-cloned-started"
+			started         = false
+			stop_on_destroy = true
+
+			clone = {
+				source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+			}
+		}
+	`)
+
+	restartedConfig := te.RenderConfig(baseConfig + `
+		resource "proxmox_virtual_environment_cloned_vm" "started_test" {
+			node_name      = "{{.NodeName}}"
+			name           = "fwk-cloned-started"
+			started         = true
+			stop_on_destroy = true
+
+			clone = {
+				source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+			}
+		}
+	`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: startedConfig,
+				Check: resource.ComposeTestCheckFunc(
+					checkVMStatus(te, "proxmox_virtual_environment_cloned_vm.started_test", "running"),
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_cloned_vm.started_test", "started", "true"),
+				),
+			},
+			{
+				Config: stoppedConfig,
+				Check: resource.ComposeTestCheckFunc(
+					checkVMStatus(te, "proxmox_virtual_environment_cloned_vm.started_test", "stopped"),
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_cloned_vm.started_test", "started", "false"),
+				),
+			},
+			{
+				Config: restartedConfig,
+				Check: resource.ComposeTestCheckFunc(
+					checkVMStatus(te, "proxmox_virtual_environment_cloned_vm.started_test", "running"),
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_cloned_vm.started_test", "started", "true"),
+				),
+			},
+		},
+	})
+}
+
+func checkVMStatus(te *test.Environment, resourceName, expectedStatus string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource %s not found", resourceName)
+		}
+
+		nodeName := rs.Primary.Attributes["node_name"]
+		idStr := rs.Primary.Attributes["id"]
+
+		if nodeName == "" || idStr == "" {
+			return fmt.Errorf("resource %s missing node_name or id in state", resourceName)
+		}
+
+		vmid, err := strconv.Atoi(idStr)
+		if err != nil {
+			return err
+		}
+
+		ctx := context.Background()
+		status, err := te.NodeClient().VM(vmid).GetVMStatus(ctx)
+		if err != nil {
+			return err
+		}
+
+		if status.Status != expectedStatus {
+			return fmt.Errorf("expected VM status %q, got %q for %s", expectedStatus, status.Status, resourceName)
+		}
+
+		return nil
+	}
+}
+
 func slotIndex(slot string, prefix string) (int, bool) {
 	if !strings.HasPrefix(slot, prefix) {
 		return 0, false

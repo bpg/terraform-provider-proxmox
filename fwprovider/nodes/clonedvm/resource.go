@@ -191,6 +191,22 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
+	if plan.Started.ValueBool() {
+		tflog.Debug(ctx, "Starting VM after clone")
+
+		_, err = vmAPI.StartVM(ctx, int(timeout.Seconds()))
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to start VM", err.Error())
+			return
+		}
+
+		err = vmAPI.WaitForVMStatus(ctx, "running")
+		if err != nil {
+			resp.Diagnostics.AddError("Failed waiting for VM to start", err.Error())
+			return
+		}
+	}
+
 	exists := read(ctx, vmAPI, &plan, &resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError("VM does not exist after creation", "")
@@ -282,6 +298,36 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	if !plan.Started.Equal(state.Started) {
+		if plan.Started.ValueBool() {
+			tflog.Debug(ctx, "Starting VM")
+
+			_, err = vmAPI.StartVM(ctx, int(timeout.Seconds()))
+			if err != nil {
+				resp.Diagnostics.AddError("Failed to start VM", err.Error())
+				return
+			}
+
+			err = vmAPI.WaitForVMStatus(ctx, "running")
+			if err != nil {
+				resp.Diagnostics.AddError("Failed waiting for VM to start", err.Error())
+				return
+			}
+		} else {
+			if state.StopOnDestroy.ValueBool() {
+				if err = vmStop(ctx, vmAPI); err != nil {
+					resp.Diagnostics.AddError("Failed to stop VM", err.Error())
+					return
+				}
+			} else {
+				if err = vmShutdown(ctx, vmAPI); err != nil {
+					resp.Diagnostics.AddError("Failed to shut down VM", err.Error())
+					return
+				}
+			}
+		}
 	}
 
 	exists := read(ctx, vmAPI, &plan, &resp.Diagnostics)
@@ -775,6 +821,8 @@ func read(ctx context.Context, vmAPI *vms.Client, model *Model, diags *diag.Diag
 	}
 
 	model.ID = types.Int64Value(int64(*status.VMID))
+	model.Started = types.BoolValue(status.Status == "running")
+
 	if !model.Description.IsUnknown() && !model.Description.IsNull() {
 		model.Description = types.StringPointerValue(vmConfig.Description)
 	}
