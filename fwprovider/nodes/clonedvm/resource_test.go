@@ -24,15 +24,6 @@ import (
 )
 
 const templateWithTwoNets = `
-	resource "proxmox_virtual_environment_download_file" "cloud_image" {
-		content_type = "iso"
-		datastore_id = "local"
-		node_name    = "{{.NodeName}}"
-		file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
-		url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-		overwrite_unmanaged = true
-	}
-
 	resource "proxmox_virtual_environment_vm" "template_vm" {
 		node_name = "{{.NodeName}}"
 		started   = false
@@ -40,7 +31,7 @@ const templateWithTwoNets = `
 
 		disk {
 			datastore_id = "local-lvm"
-			file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+			file_id      = "{{.ImageFileID}}"
 			interface    = "virtio0"
 			size         = 16
 		}
@@ -66,15 +57,6 @@ const templateWithTwoNets = `
 	`
 
 const templateWithOneNet = `
-	resource "proxmox_virtual_environment_download_file" "cloud_image" {
-		content_type = "iso"
-		datastore_id = "local"
-		node_name    = "{{.NodeName}}"
-		file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
-		url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-		overwrite_unmanaged = true
-	}
-
 	resource "proxmox_virtual_environment_vm" "template_vm" {
 		node_name = "{{.NodeName}}"
 		started   = false
@@ -82,7 +64,7 @@ const templateWithOneNet = `
 
 		disk {
 			datastore_id = "local-lvm"
-			file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+			file_id      = "{{.ImageFileID}}"
 			interface    = "virtio0"
 			size         = 16
 		}
@@ -106,6 +88,8 @@ func TestAccResourceClonedVM_InheritAndDelete(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
@@ -115,6 +99,7 @@ func TestAccResourceClonedVM_InheritAndDelete(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "keep_inherited" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-keep"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -131,6 +116,7 @@ func TestAccResourceClonedVM_InheritAndDelete(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "delete_inherited" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-delete"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -161,6 +147,8 @@ func TestAccResourceClonedVM_StopManagingDoesNotDelete(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
@@ -170,6 +158,7 @@ func TestAccResourceClonedVM_StopManagingDoesNotDelete(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "unmanaged" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-unmanage"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -192,6 +181,7 @@ func TestAccResourceClonedVM_StopManagingDoesNotDelete(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "unmanaged" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-unmanage"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -210,6 +200,8 @@ func TestAccResourceClonedVM_MapKeyStability(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
@@ -219,6 +211,7 @@ func TestAccResourceClonedVM_MapKeyStability(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "stability" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-stability"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -242,6 +235,7 @@ func TestAccResourceClonedVM_MapKeyStability(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "stability" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-stability"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -269,17 +263,10 @@ func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	baseConfig := `
-	resource "proxmox_virtual_environment_download_file" "cloud_image" {
-		content_type = "iso"
-		datastore_id = "local"
-		node_name    = "{{.NodeName}}"
-		file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
-		url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-		overwrite_unmanaged = true
-	}
-
 	resource "proxmox_virtual_environment_vm" "template_vm" {
 		node_name = "{{.NodeName}}"
 		started   = false
@@ -287,7 +274,7 @@ func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
 
 		disk {
 			datastore_id = "local-lvm"
-			file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+			file_id      = "{{.ImageFileID}}"
 			interface    = "virtio0"
 			size         = 16
 		}
@@ -317,6 +304,7 @@ func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-memory"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -336,6 +324,7 @@ func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-memory"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -358,17 +347,10 @@ func TestAccResourceClonedVM_Started(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	baseConfig := `
-	resource "proxmox_virtual_environment_download_file" "cloud_image" {
-		content_type = "iso"
-		datastore_id = "local"
-		node_name    = "{{.NodeName}}"
-		file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
-		url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-		overwrite_unmanaged = true
-	}
-
 	resource "proxmox_virtual_environment_vm" "template_vm" {
 		node_name = "{{.NodeName}}"
 		started   = false
@@ -376,7 +358,7 @@ func TestAccResourceClonedVM_Started(t *testing.T) {
 
 		disk {
 			datastore_id = "local-lvm"
-			file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+			file_id      = "{{.ImageFileID}}"
 			interface    = "virtio0"
 			size         = 16
 		}
@@ -468,17 +450,10 @@ func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	baseConfig := `
-	resource "proxmox_virtual_environment_download_file" "cloud_image" {
-		content_type = "iso"
-		datastore_id = "local"
-		node_name    = "{{.NodeName}}"
-		file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
-		url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
-		overwrite_unmanaged = true
-	}
-
 	resource "proxmox_virtual_environment_vm" "template_vm" {
 		node_name = "{{.NodeName}}"
 		started   = false
@@ -486,7 +461,7 @@ func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
 
 		disk {
 			datastore_id = "local-lvm"
-			file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+			file_id      = "{{.ImageFileID}}"
 			interface    = "virtio0"
 			size         = 16
 		}
@@ -522,6 +497,7 @@ func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-disk"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -545,6 +521,7 @@ func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-disk"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -576,6 +553,7 @@ func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-disk"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
@@ -607,6 +585,8 @@ func TestAccResourceClonedVM_Import(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
@@ -616,6 +596,7 @@ func TestAccResourceClonedVM_Import(t *testing.T) {
 				resource "proxmox_virtual_environment_cloned_vm" "import_test" {
 					node_name = "{{.NodeName}}"
 					name      = "fwk-cloned-import"
+					started   = false
 
 					clone = {
 						source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
