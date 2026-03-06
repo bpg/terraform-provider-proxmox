@@ -1,9 +1,10 @@
 ---
 name: start-issue
-description: Start work on a GitHub issue with proper setup
+description: Use when starting work on a GitHub issue — sets up branch, session state, and displays context. Also use when user says "work on issue", "fix #1234", or "investigate #1234".
 argument-hint: \[issue-number\]
 allowed-tools:
   - Read
+  - Edit
   - Write
   - Bash
   - Grep
@@ -13,18 +14,19 @@ allowed-tools:
 ---
 
 <objective>
-Set up the environment to start work on a GitHub issue:
+Set up the environment to start work on a GitHub issue, then guide the agent through investigation and TDD.
+
+Phase 1 (setup — executed immediately):
 
 1. Verify the issue exists and get context
 2. Create a properly named branch
 3. Create a session state file from template
-4. Display issue summary for context
+4. Display issue summary and update session state
 
-Use this skill when:
+Phase 2 (after setup — guidance for next steps):
 
-- Starting work on a new issue
-- User says "work on issue #1234" or "fix #1234", or "investigate #1234"
-- Beginning any fix or feature implementation
+5. Investigate the issue before writing any code
+6. Fix with TDD (acceptance tests first)
 </objective>
 
 <context>
@@ -220,11 +222,9 @@ AskUserQuestion(
 rm -f /tmp/testacc.log /tmp/api_debug.log
 ```
 
-This ensures a clean slate for the new issue.
+## Step 6: Display Summary and Complete Setup
 
-## Step 6: Display Summary
-
-Present the setup summary to the user. Replace placeholders with actual values:
+Present the setup summary to the user:
 
 ```text
 === ISSUE #{ISSUE_NUM} SETUP COMPLETE ===
@@ -238,26 +238,67 @@ Issue Summary:
 {ISSUE_BODY_FIRST_PARAGRAPH}
 
 Labels: {LABELS}
-
---- Next Steps ---
-1. Review the full issue: gh issue view {ISSUE_NUM}
-2. Update session state as you work
-3. Create acceptance test BEFORE implementing fix
-4. Run /bpg:ready before completing work
 ```
-
-## Step 7: Update Session State
 
 Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` with:
 
 - `Status:` → "In Progress"
 - `Last Updated:` → current date
-- `Current state:` → "Branch created, ready to implement"
-- `Immediate next action:` → "Create acceptance test that reproduces the issue"
+- `Current state:` → "Setup complete, ready to investigate"
+- `Immediate next action:` → "Investigate the issue — explore relevant code and identify root cause"
+
+**Then ask the user whether to continue with investigation or wait for further instructions.**
 
 </process>
 
+---
+
+## After Setup: Investigation and TDD
+
+**These steps are mandatory before any fix is implemented. Do NOT skip investigation.**
+
+### Investigate First
+
+**Do NOT jump to writing code or tests.** Investigate first, then discuss with the user.
+
+Invoke the `/superpowers:systematic-debugging` skill to guide the investigation. Then:
+
+1. **Explore the relevant code** — Find the resource, model, API client, and existing tests. Read and understand the code paths involved.
+2. **Identify the root cause** — Form a hypothesis about what's wrong and why. Trace the code path from the user's reported behavior to the underlying bug.
+3. **Check for related patterns** — Look for similar attributes/resources that may have the same issue or that already handle the case correctly.
+4. **Present findings to the user** — Summarize root cause, proposed fix, and open questions.
+5. **Ask the user** if you should continue with the fix or discuss further.
+
+Update session state with investigation findings before proceeding.
+
+### Fix with TDD
+
+Only proceed after investigation is complete and the user confirms.
+
+Follow TDD (Red-Green-Refactor):
+
+1. **RED — Write a failing acceptance test first**
+   - Create an acceptance test that reproduces the bug
+   - Run it with `./testacc` and **verify it fails for the expected reason**
+   - If the test fails for a different reason (e.g. connection issues, missing infrastructure), **ask the user** — do NOT work around it
+   - If the bug cannot be reproduced with acceptance tests, ask the user how to proceed
+2. **GREEN — Implement the minimal fix**
+   - Write the simplest code that makes the failing test pass
+   - Run the test again and verify it passes
+3. **Verify — No regressions**
+   - Run related existing acceptance tests to confirm no regressions
+   - Run `make lint`
+4. Run `/bpg:ready` before completing work
+
+### What NOT to Do
+
+- Do NOT create unit tests, extract helper functions, or refactor production code as workarounds when acceptance tests can't reproduce the bug. Ask the user instead.
+- Do NOT skip investigation and jump straight to writing code or tests.
+- Do NOT work around infrastructure problems (Proxmox unreachable, missing services). Ask the user.
+
 <success_criteria>
+
+Setup phase (executed by this skill):
 
 - [ ] Issue number provided and validated
 - [ ] Issue verified to exist on GitHub
@@ -270,6 +311,7 @@ Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` with:
 - [ ] Stale log files cleared
 - [ ] Issue context displayed to user
 - [ ] Session state updated with current status
+- [ ] User asked whether to continue or wait
 
 </success_criteria>
 
@@ -278,7 +320,6 @@ Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` with:
 - If `gh` CLI is not authenticated, the skill will prompt for manual verification
 - Branch names are auto-truncated to avoid filesystem issues
 - Session state file is gitignored, so it won't be committed
-- **Acceptance tests first:** Always create the acceptance test BEFORE implementing the fix. The test must reproduce the bug with the current code and fail, proving the issue exists. Only then implement the fix and verify the test passes.
 - Stale `/tmp/testacc.log` and `/tmp/api_debug.log` are cleared to ensure clean slate
 - Use `/bpg:resume` to continue work if you need to come back later
 
