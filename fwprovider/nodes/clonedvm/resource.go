@@ -316,7 +316,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 				return
 			}
 		} else {
-			if state.StopOnDestroy.ValueBool() {
+			if plan.StopOnDestroy.ValueBool() {
 				if err = vmStop(ctx, vmAPI); err != nil {
 					resp.Diagnostics.AddError("Failed to stop VM", err.Error())
 					return
