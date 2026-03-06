@@ -73,12 +73,14 @@ There are a number of TF examples in the `example` directory, which can be used 
 
 The following assumptions are made about the test environment:
 
-- It has one node named `pve`
+- It has one node named `pve` (the default Proxmox hostname — if yours differs, set `virtual_environment_node_name` in your `terraform.tfvars`)
 - The node has local storages named `local` and `local-lvm`
 - The "Snippets" and "Import" content types are enabled in the `local` storage
 - Default Linux Bridge "vmbr0" is VLAN aware (datacenter -> pve -> network -> edit & apply)
 - The directory `/mnt/bindmounts/shared` exists
-- An API token, which you can get by going to datacenter -> permissions -> API Tokens.
+- An API token, which you can get by going to datacenter -> permissions -> API Tokens
+- A working `ssh-agent` with a key authorized on the Proxmox host (see [SSH Agent](https://registry.terraform.io/providers/bpg/proxmox/latest/docs#ssh-agent) in the provider docs). The default provider config uses API token auth, so there is no password to fall back to for SSH — you must either have `ssh-agent` configured or explicitly set the SSH `password` / `private_key` in the provider block.
+- DHCP v4 available on the network connected to `vmbr0` (required by the trunks example, which waits for an IP from the QEMU guest agent)
 
 Create `example/terraform.tfvars` with the following variables:
 

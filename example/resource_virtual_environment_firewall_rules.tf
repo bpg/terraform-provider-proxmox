@@ -82,7 +82,7 @@ resource "proxmox_virtual_environment_firewall_rules" "container_rules" {
 }
 
 resource "proxmox_virtual_environment_firewall_rules" "node_rules" {
-  node_name = "pve"
+  node_name = var.virtual_environment_node_name
 
   rule {
     type    = "in"
