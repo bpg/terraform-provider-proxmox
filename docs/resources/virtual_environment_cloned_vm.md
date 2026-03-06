@@ -280,6 +280,7 @@ resource "proxmox_virtual_environment_cloned_vm" "imported" {
 - `network` (Attributes Map) Network devices keyed by slot (net0, net1, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--network))
 - `purge_on_destroy` (Boolean) Purge backup configuration on destroy.
 - `rng` (Attributes) Configure the RNG (Random Number Generator) device. The RNG device provides entropy to guests to ensure good quality random numbers for guest applications that require them. Can only be set by `root@pam.` See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for more information. (see [below for nested schema](#nestedatt--rng))
+- `started` (Boolean) Whether the VM should be started after cloning. Defaults to true.
 - `stop_on_destroy` (Boolean) Stop the VM on destroy (instead of shutdown).
 - `tags` (Set of String) Tags applied after cloning.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))

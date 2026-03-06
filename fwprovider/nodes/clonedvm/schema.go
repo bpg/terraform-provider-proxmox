@@ -99,6 +99,12 @@ func (r *Resource) Schema(
 			"rng":    optInManagedAttribute(rng.ResourceSchema()),
 			"vga":    optInManagedAttribute(vga.ResourceSchema()),
 			"cdrom":  optInManagedAttribute(cdrom.ResourceSchema()),
+			"started": schema.BoolAttribute{
+				Description: "Whether the VM should be started after cloning. Defaults to true.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(true),
+			},
 			"stop_on_destroy": schema.BoolAttribute{
 				Description: "Stop the VM on destroy (instead of shutdown).",
 				Optional:    true,
