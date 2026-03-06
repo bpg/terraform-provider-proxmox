@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.98.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.97.1...v0.98.0) (2026-03-06)
+
+
+### Features
+
+* **access:** add OpenID Connect realm resource and documentation ([#2655](https://github.com/bpg/terraform-provider-proxmox/issues/2655)) ([51c7535](https://github.com/bpg/terraform-provider-proxmox/commit/51c75354e0aae13c1f7b7e16bf0091b8a5fa526d))
+* **lxc:** add support for `entrypoint` attribute ([#2543](https://github.com/bpg/terraform-provider-proxmox/issues/2543)) ([178a8ad](https://github.com/bpg/terraform-provider-proxmox/commit/178a8add4a738c1409184af1983f33966e8c5cb7))
+
+
+### Bug Fixes
+
+* **lxc:** wrong mapping of `ignore-unpack-errors` attr in `create` API request ([8fe621d](https://github.com/bpg/terraform-provider-proxmox/commit/8fe621ddd6132c7131fa26e10e81b592241d9c3f))
+* **vm:** add `started` attribute to `cloned_vm` resource ([#2666](https://github.com/bpg/terraform-provider-proxmox/issues/2666)) ([d9b292a](https://github.com/bpg/terraform-provider-proxmox/commit/d9b292ab05309e934873ebff8f0d16ef56b2e474))
+
+
+### Miscellaneous
+
+* **ci:** Update crazy-max/ghaction-import-gpg action (v6.3.0 → v7.0.0) ([#2665](https://github.com/bpg/terraform-provider-proxmox/issues/2665)) ([e77ea1e](https://github.com/bpg/terraform-provider-proxmox/commit/e77ea1ed79752a5533c9bbf5fb902befac63f691))
+* **ci:** Update peter-evans/repository-dispatch action (v3 → v4) ([#2653](https://github.com/bpg/terraform-provider-proxmox/issues/2653)) ([3408558](https://github.com/bpg/terraform-provider-proxmox/commit/34085582164e9c56933ca4c3b781b1492d021317))
+* **deps:** bump cloudflare/circl to v1.6.3 ([da4b6ab](https://github.com/bpg/terraform-provider-proxmox/commit/da4b6ab101e6eefc96d450c0b602d8070bd3ff0f))
+* **deps:** update image golang (9edf713 → fb612b7) ([#2663](https://github.com/bpg/terraform-provider-proxmox/issues/2663)) ([369254f](https://github.com/bpg/terraform-provider-proxmox/commit/369254f78dc25017159e6d9ad4dedb77c6347386))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.14.0 → v7.14.1) ([#2664](https://github.com/bpg/terraform-provider-proxmox/issues/2664)) ([b25f773](https://github.com/bpg/terraform-provider-proxmox/commit/b25f773aaaea96716ab91339a3997a730c070867))
+* **docs:** fix broken links ([c792dc9](https://github.com/bpg/terraform-provider-proxmox/commit/c792dc93827658741d5339a90d00422b0daf242c))
+* **docs:** remove TOC section from the main documentation page ([d6638f7](https://github.com/bpg/terraform-provider-proxmox/commit/d6638f79e13bc2196728eebc7df253915f0449b1))
+* **docs:** update badge links in readme.md ([7de7db1](https://github.com/bpg/terraform-provider-proxmox/commit/7de7db1ad516a874ad3b6189d1e5e8447f8980f7))
+* **docs:** update os type `l26` linux kernel range for vm ([#2657](https://github.com/bpg/terraform-provider-proxmox/issues/2657)) ([cdd7356](https://github.com/bpg/terraform-provider-proxmox/commit/cdd7356f5333f516c4edee63530ce4fc9ff76838))
+* **docs:** update shields in readme.md ([8988f21](https://github.com/bpg/terraform-provider-proxmox/commit/8988f21eecb56b10a6f4ec7dcb596e45d77fa96b))
+* **docs:** update terraform proxmox (0.97.0 → 0.97.1) ([#2648](https://github.com/bpg/terraform-provider-proxmox/issues/2648)) ([6811fb3](https://github.com/bpg/terraform-provider-proxmox/commit/6811fb3b749ff313dfd082b09459b9fe9d3c6eb8))
+* **fwk:** standardize model files  ([#2651](https://github.com/bpg/terraform-provider-proxmox/issues/2651)) ([911d8d3](https://github.com/bpg/terraform-provider-proxmox/commit/911d8d3430d5f416f24dd6ec3dc018be51694b2e))
+
 ## [0.97.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.97.0...v0.97.1) (2026-02-27)
 
 
