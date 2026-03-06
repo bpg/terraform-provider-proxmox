@@ -335,8 +335,12 @@ func (r *acmeAccountResource) read(ctx context.Context, data *acmeAccountModel) 
 	}
 
 	data.Directory = types.StringValue(acc.Directory)
-	data.TOS = types.StringValue(acc.TOS)
 	data.Location = types.StringValue(acc.Location)
+
+	if acc.TOS != "" {
+		data.TOS = types.StringValue(acc.TOS)
+	}
+
 	data.Contact = types.StringValue(contact)
 	data.CreatedAt = types.StringValue(acc.Account.CreatedAt)
 
