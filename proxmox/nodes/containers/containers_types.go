@@ -68,7 +68,7 @@ type CreateRequestBody struct {
 	Force                *types.CustomBool           `json:"force,omitempty"                url:"force,omitempty,int"`
 	HookScript           *string                     `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
 	Hostname             *string                     `json:"hostname,omitempty"             url:"hostname,omitempty"`
-	IgnoreUnpackErrors   *types.CustomBool           `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
+	IgnoreUnpackErrors   *types.CustomBool           `json:"ignore-unpack-errors,omitempty" url:"ignore-unpack-errors,omitempty,int"`
 	Lock                 *string                     `json:"lock,omitempty"                 url:"lock,omitempty,int"`
 	MountPoints          CustomMountPoints           `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
 	PassthroughDevices   CustomPassthroughDevices    `json:"dev,omitempty"                  url:"dev,omitempty,numbered"`
