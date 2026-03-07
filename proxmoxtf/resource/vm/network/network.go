@@ -105,14 +105,9 @@ func valueOrDefault[T any](v *T, def T) T {
 	return *v
 }
 
-// ReadNetworkDeviceObjects reads the network device objects from the response data.
-func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseData) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	macAddresses := make([]any, 0)
-	networkDevices := make([]any, 0)
-
-	networkDeviceObjects := []*vms.CustomNetworkDevice{
+// getNetworkDeviceObjects extracts the ordered list of network device pointers from the API response.
+func getNetworkDeviceObjects(vmConfig *vms.GetResponseData) []*vms.CustomNetworkDevice {
+	return []*vms.CustomNetworkDevice{
 		vmConfig.NetworkDevice0,
 		vmConfig.NetworkDevice1,
 		vmConfig.NetworkDevice2,
@@ -146,6 +141,29 @@ func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseD
 		vmConfig.NetworkDevice30,
 		vmConfig.NetworkDevice31,
 	}
+}
+
+// ExistingNetworkDeviceIndices returns the set of "net<i>" keys that currently exist on the VM.
+func ExistingNetworkDeviceIndices(vmConfig *vms.GetResponseData) map[string]struct{} {
+	result := make(map[string]struct{})
+
+	for i, nd := range getNetworkDeviceObjects(vmConfig) {
+		if nd != nil {
+			result[fmt.Sprintf("net%d", i)] = struct{}{}
+		}
+	}
+
+	return result
+}
+
+// ReadNetworkDeviceObjects reads the network device objects from the response data.
+func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	macAddresses := make([]any, 0)
+	networkDevices := make([]any, 0)
+
+	networkDeviceObjects := getNetworkDeviceObjects(vmConfig)
 
 	for len(networkDeviceObjects) > 0 && networkDeviceObjects[len(networkDeviceObjects)-1] == nil {
 		// drop
@@ -182,6 +200,7 @@ func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseD
 
 	err := d.Set(MkNetworkDevice, networkDevices)
 	diags = append(diags, diag.FromErr(err)...)
+
 	err = d.Set(mkMACAddresses, macAddresses)
 	diags = append(diags, diag.FromErr(err)...)
 
