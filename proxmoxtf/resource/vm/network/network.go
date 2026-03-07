@@ -105,52 +105,26 @@ func valueOrDefault[T any](v *T, def T) T {
 	return *v
 }
 
-// getNetworkDeviceObjects extracts the ordered list of network device pointers from the API response.
+// getNetworkDeviceObjects builds an ordered slice of network device pointers from the API response map.
 func getNetworkDeviceObjects(vmConfig *vms.GetResponseData) []*vms.CustomNetworkDevice {
-	return []*vms.CustomNetworkDevice{
-		vmConfig.NetworkDevice0,
-		vmConfig.NetworkDevice1,
-		vmConfig.NetworkDevice2,
-		vmConfig.NetworkDevice3,
-		vmConfig.NetworkDevice4,
-		vmConfig.NetworkDevice5,
-		vmConfig.NetworkDevice6,
-		vmConfig.NetworkDevice7,
-		vmConfig.NetworkDevice8,
-		vmConfig.NetworkDevice9,
-		vmConfig.NetworkDevice10,
-		vmConfig.NetworkDevice11,
-		vmConfig.NetworkDevice12,
-		vmConfig.NetworkDevice13,
-		vmConfig.NetworkDevice14,
-		vmConfig.NetworkDevice15,
-		vmConfig.NetworkDevice16,
-		vmConfig.NetworkDevice17,
-		vmConfig.NetworkDevice18,
-		vmConfig.NetworkDevice19,
-		vmConfig.NetworkDevice20,
-		vmConfig.NetworkDevice21,
-		vmConfig.NetworkDevice22,
-		vmConfig.NetworkDevice23,
-		vmConfig.NetworkDevice24,
-		vmConfig.NetworkDevice25,
-		vmConfig.NetworkDevice26,
-		vmConfig.NetworkDevice27,
-		vmConfig.NetworkDevice28,
-		vmConfig.NetworkDevice29,
-		vmConfig.NetworkDevice30,
-		vmConfig.NetworkDevice31,
+	result := make([]*vms.CustomNetworkDevice, MaxNetworkDevices)
+
+	for key, device := range vmConfig.NetworkDevices {
+		var idx int
+		if _, err := fmt.Sscanf(key, "net%d", &idx); err == nil && idx >= 0 && idx < MaxNetworkDevices {
+			result[idx] = device
+		}
 	}
+
+	return result
 }
 
 // ExistingNetworkDeviceIndices returns the set of "net<i>" keys that currently exist on the VM.
 func ExistingNetworkDeviceIndices(vmConfig *vms.GetResponseData) map[string]struct{} {
-	result := make(map[string]struct{})
+	result := make(map[string]struct{}, len(vmConfig.NetworkDevices))
 
-	for i, nd := range getNetworkDeviceObjects(vmConfig) {
-		if nd != nil {
-			result[fmt.Sprintf("net%d", i)] = struct{}{}
-		}
+	for key := range vmConfig.NetworkDevices {
+		result[key] = struct{}{}
 	}
 
 	return result

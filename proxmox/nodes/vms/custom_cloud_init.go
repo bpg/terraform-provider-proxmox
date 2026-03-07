@@ -43,6 +43,9 @@ type CustomCloudInitIPConfig struct {
 	IPv6        *string `json:"ip6,omitempty" url:"ip6,omitempty"`
 }
 
+// CustomCloudInitIPConfigMap is a map of CustomCloudInitIPConfig per IP config key (e.g. "ipconfig0").
+type CustomCloudInitIPConfigMap map[string]*CustomCloudInitIPConfig
+
 // CustomCloudInitSSHKeys handles QEMU cloud-init SSH keys parameters.
 type CustomCloudInitSSHKeys []string
 
