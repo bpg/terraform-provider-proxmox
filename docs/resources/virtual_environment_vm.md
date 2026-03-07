@@ -487,7 +487,7 @@ output "ubuntu_vm_public_key" {
 - `network_device` - (Optional) A network device (multiple blocks supported).
     - `bridge` - (Optional) The name of the network bridge (defaults to `vmbr0`).
     - `disconnected` - (Optional) Whether to disconnect the network device from the network (defaults to `false`).
-    - `enabled` - (Optional) Whether to enable the network device (defaults to `true`).
+    - `enabled` - (Optional, **Deprecated**) Whether to enable the network device (defaults to `true`). Remove the `network_device` block from your configuration instead of setting `enabled = false`.
     - `firewall` - (Optional) Whether this interface's firewall rules should be used (defaults to `false`).
     - `mac_address` - (Optional) The MAC address.
     - `model` - (Optional) The network device model (defaults to `virtio`).
