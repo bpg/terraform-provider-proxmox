@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.98.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.98.0...v0.98.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* **provider:** preserve null `tos` in ACME account when API returns empty string ([#2672](https://github.com/bpg/terraform-provider-proxmox/issues/2672)) ([f9bbd7d](https://github.com/bpg/terraform-provider-proxmox/commit/f9bbd7dd97a2b459e73b06627e415dc2198fde42))
+* **vm:** replace enumerated network and IP config fields with dynamic unmarshaling ([#2679](https://github.com/bpg/terraform-provider-proxmox/issues/2679)) ([e5b2771](https://github.com/bpg/terraform-provider-proxmox/commit/e5b277145c719ce5f99e4e38d2277a87546b921f))
+* **vm:** support removal of network devices from VM configuration ([#2674](https://github.com/bpg/terraform-provider-proxmox/issues/2674)) ([9b5a978](https://github.com/bpg/terraform-provider-proxmox/commit/9b5a9786e14e2d852ef362fb238494f54a02405e))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (1.26.0 → 1.26.1) ([#2669](https://github.com/bpg/terraform-provider-proxmox/issues/2669)) ([9a8d85b](https://github.com/bpg/terraform-provider-proxmox/commit/9a8d85b43fb51b550e49566257ed670b827572de))
+* **docs:** clarify example prerequisites for SSH, node name, timezone, and DHCP ([8f97a34](https://github.com/bpg/terraform-provider-proxmox/commit/8f97a34a7f631d925abec12a0254ddded04e36d9))
+* **vm:** deprecate 'enabled' attribute on 'network_device' block ([#2678](https://github.com/bpg/terraform-provider-proxmox/issues/2678)) ([65b809d](https://github.com/bpg/terraform-provider-proxmox/commit/65b809d6205337f023c78b22f442d2d5e3606530))
+
 ## [0.98.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.97.1...v0.98.0) (2026-03-06)
 
 
