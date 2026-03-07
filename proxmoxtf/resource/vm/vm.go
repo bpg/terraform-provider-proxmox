@@ -4676,40 +4676,15 @@ func vmReadCustom(
 	}
 
 	ipConfigLast := -1
-	ipConfigObjects := []*vms.CustomCloudInitIPConfig{
-		vmConfig.IPConfig0,
-		vmConfig.IPConfig1,
-		vmConfig.IPConfig2,
-		vmConfig.IPConfig3,
-		vmConfig.IPConfig4,
-		vmConfig.IPConfig5,
-		vmConfig.IPConfig6,
-		vmConfig.IPConfig7,
-		vmConfig.IPConfig8,
-		vmConfig.IPConfig9,
-		vmConfig.IPConfig10,
-		vmConfig.IPConfig11,
-		vmConfig.IPConfig12,
-		vmConfig.IPConfig13,
-		vmConfig.IPConfig14,
-		vmConfig.IPConfig15,
-		vmConfig.IPConfig16,
-		vmConfig.IPConfig17,
-		vmConfig.IPConfig18,
-		vmConfig.IPConfig19,
-		vmConfig.IPConfig20,
-		vmConfig.IPConfig21,
-		vmConfig.IPConfig22,
-		vmConfig.IPConfig23,
-		vmConfig.IPConfig24,
-		vmConfig.IPConfig25,
-		vmConfig.IPConfig26,
-		vmConfig.IPConfig27,
-		vmConfig.IPConfig28,
-		vmConfig.IPConfig29,
-		vmConfig.IPConfig30,
-		vmConfig.IPConfig31,
+	ipConfigObjects := make([]*vms.CustomCloudInitIPConfig, network.MaxNetworkDevices)
+
+	for key, ipConfig := range vmConfig.IPConfigs {
+		var idx int
+		if _, err := fmt.Sscanf(key, "ipconfig%d", &idx); err == nil && idx >= 0 && idx < network.MaxNetworkDevices {
+			ipConfigObjects[idx] = ipConfig
+		}
 	}
+
 	ipConfigList := make([]any, len(ipConfigObjects))
 
 	for ipConfigIndex, ipConfig := range ipConfigObjects {

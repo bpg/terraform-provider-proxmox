@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -976,27 +975,7 @@ func readDiskSlot(config *vms.GetResponseData, slot string, current DiskModel) D
 }
 
 func networkDeviceBySlot(config *vms.GetResponseData, slot string) *vms.CustomNetworkDevice {
-	idx, ok := slotIndex(slot, "net")
-	if !ok {
-		return nil
-	}
-
-	val := reflect.ValueOf(config)
-	if val.Kind() == reflect.Pointer {
-		val = val.Elem()
-	}
-
-	field := val.FieldByName(fmt.Sprintf("NetworkDevice%d", idx))
-	if !field.IsValid() || field.IsNil() {
-		return nil
-	}
-
-	device, ok := field.Interface().(*vms.CustomNetworkDevice)
-	if !ok {
-		return nil
-	}
-
-	return device
+	return config.NetworkDevices[slot]
 }
 
 func slotIndex(slot string, prefix string) (int, bool) {

@@ -35,6 +35,9 @@ type CustomNetworkDevice struct {
 // CustomNetworkDevices handles QEMU network device parameters.
 type CustomNetworkDevices []CustomNetworkDevice
 
+// CustomNetworkDeviceMap is a map of CustomNetworkDevice per network device key (e.g. "net0").
+type CustomNetworkDeviceMap map[string]*CustomNetworkDevice
+
 // EncodeValues converts a CustomNetworkDevice struct to a URL value.
 func (r *CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{

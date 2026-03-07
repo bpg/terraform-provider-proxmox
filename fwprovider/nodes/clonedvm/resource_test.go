@@ -11,7 +11,6 @@ package clonedvm_test
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -670,22 +669,7 @@ func checkNetworkSlot(te *test.Environment, resourceName, slot string, expected 
 }
 
 func networkSlotPresent(config *vms.GetResponseData, slot string) bool {
-	idx, ok := slotIndex(slot, "net")
-	if !ok {
-		return false
-	}
-
-	val := reflect.ValueOf(config)
-	if val.Kind() == reflect.Pointer {
-		val = val.Elem()
-	}
-
-	field := val.FieldByName(fmt.Sprintf("NetworkDevice%d", idx))
-	if !field.IsValid() || field.IsNil() {
-		return false
-	}
-
-	return true
+	return config.NetworkDevices[slot] != nil
 }
 
 func checkMemoryConfig(
