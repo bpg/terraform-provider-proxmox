@@ -4939,7 +4939,7 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	diags = append(diags, network.ReadNetworkDeviceObjects(d, vmConfig)...)
+	diags = append(diags, network.ReadNetworkDeviceObjects(d, vmConfig, len(clone) > 0)...)
 
 	// Compare the operating system configuration to the one stored in the state.
 	operatingSystem := map[string]any{}
@@ -5876,7 +5876,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	allDiskInfo := vmConfig.StorageDevices
 
-	// Handle disk deletion before applying other changes
+	// Handle disk deletion before applying other changes.
+	// Compare the current API state (allDiskInfo) against the plan (planDisks) to detect
+	// removed disks. Devices present on the VM but absent from the plan are sent to the
+	// Proxmox API via the "delete" parameter. The same pattern is used for network devices.
 	if d.HasChange(disk.MkDisk) {
 		bootOrder := d.Get(mkBootOrder).([]any)
 
@@ -6157,6 +6160,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	}
 
 	// Prepare the new network device configuration.
+	// Compare the current API state against the plan to detect removed devices,
+	// following the same pattern as disk deletion (see above). This ensures that
+	// devices present on the VM but absent from the plan are sent to the Proxmox
+	// API via the "delete" parameter (e.g. delete=net1,net2).
 
 	if d.HasChange(network.MkNetworkDevice) {
 		updateBody.NetworkDevices, err = network.GetNetworkDeviceObjects(d)
@@ -6170,8 +6177,17 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			}
 		}
 
-		for i := len(updateBody.NetworkDevices); i < network.MaxNetworkDevices; i++ {
-			del = append(del, fmt.Sprintf("net%d", i))
+		// Build a set of planned device indices.
+		plannedDevices := make(map[string]struct{}, len(updateBody.NetworkDevices))
+		for i := range updateBody.NetworkDevices {
+			plannedDevices[fmt.Sprintf("net%d", i)] = struct{}{}
+		}
+
+		// Delete any device that exists on the VM but is not in the plan.
+		for existingKey := range network.ExistingNetworkDeviceIndices(vmConfig) {
+			if _, present := plannedDevices[existingKey]; !present {
+				del = append(del, existingKey)
+			}
 		}
 
 		// Network devices can be hotplugged, no reboot required
