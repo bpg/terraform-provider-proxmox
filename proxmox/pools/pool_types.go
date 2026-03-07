@@ -18,7 +18,7 @@ type PoolCreateRequestBody struct {
 
 // PoolGetResponseBody contains the body from a pool get response.
 type PoolGetResponseBody struct {
-	Data *PoolGetResponseData `json:"data,omitempty"`
+	Data []*PoolGetResponseData `json:"data,omitempty"`
 }
 
 // PoolGetResponseData contains the data from a pool get response.
