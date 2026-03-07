@@ -2,6 +2,7 @@ package network
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -75,6 +76,8 @@ func Schema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Description: "The network devices",
 			Optional:    true,
+			Computed:    true,
+			ConfigMode:  schema.SchemaConfigModeAttr,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkNetworkDeviceBridge: {
@@ -167,6 +170,7 @@ func Schema() map[string]*schema.Schema {
 // CustomizeDiff returns the custom diff functions for the network resource.
 func CustomizeDiff() []schema.CustomizeDiffFunc {
 	return []schema.CustomizeDiffFunc{
+		forceEmptyNetworkDeviceDiff,
 		customdiff.ComputedIf(
 			mkIPv4Addresses,
 			func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
@@ -189,4 +193,28 @@ func CustomizeDiff() []schema.CustomizeDiffFunc {
 			},
 		),
 	}
+}
+
+// forceEmptyNetworkDeviceDiff forces a diff when the user explicitly sets network_device = []
+// to remove all devices. With ConfigMode: schema.SchemaConfigModeAttr, the raw config
+// distinguishes null (unset → inherit/compute) from empty list (explicit removal).
+func forceEmptyNetworkDeviceDiff(_ context.Context, d *schema.ResourceDiff, _ any) error {
+	rawConfig := d.GetRawConfig()
+	networkDeviceConfig := rawConfig.GetAttr(MkNetworkDevice)
+
+	// If the config is null, the user didn't specify network_device at all → no action needed.
+	// Computed will fill in inherited/existing devices from state.
+	if networkDeviceConfig.IsNull() {
+		return nil
+	}
+
+	// If the config is an explicit empty list, the user wants zero devices.
+	// Force the planned value to empty so Terraform detects a diff.
+	if networkDeviceConfig.IsKnown() && networkDeviceConfig.LengthInt() == 0 {
+		if err := d.SetNew(MkNetworkDevice, []any{}); err != nil {
+			return fmt.Errorf("error forcing empty network_device diff: %w", err)
+		}
+	}
+
+	return nil
 }

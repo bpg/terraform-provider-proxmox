@@ -1175,10 +1175,14 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 			{
+				// Use network_device = [] to explicitly remove all devices.
+				// With ConfigMode: schema.SchemaConfigModeAttr, this distinguishes
+				// "remove all" from "not specified" (which preserves inherited/existing).
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
-					node_name = "{{.NodeName}}"
-					started   = false
+					node_name      = "{{.NodeName}}"
+					started        = false
+					network_device = []
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
@@ -1232,10 +1236,12 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 			{
+				// Use network_device = [] to explicitly remove all remaining devices.
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
-					node_name = "{{.NodeName}}"
-					started   = false
+					node_name      = "{{.NodeName}}"
+					started        = false
+					network_device = []
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
@@ -1268,8 +1274,9 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				// This step tests that the state is read correctly after network device removal
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
-					node_name = "{{.NodeName}}"
-					started   = false
+					node_name      = "{{.NodeName}}"
+					started        = false
+					network_device = []
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
@@ -1324,10 +1331,6 @@ func TestAccResourceVMClone(t *testing.T) {
 		step []resource.TestStep
 	}{
 		{"clone with network device", []resource.TestStep{{
-			// When cloning a VM with network devices but not specifying any network_device
-			// blocks on the clone, the inherited devices are invisible to Terraform state
-			// (same behavior as disks). This preserves backward compatibility: Terraform
-			// won't try to remove inherited devices the user didn't explicitly declare.
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
 					node_name = "{{.NodeName}}"
@@ -1346,7 +1349,8 @@ func TestAccResourceVMClone(t *testing.T) {
 				}`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
-					"network_device.#": "0",
+					"network_device.#":        "1",
+					"network_device.0.bridge": "vmbr0",
 				}),
 			),
 		}}},
@@ -1408,8 +1412,6 @@ func TestAccResourceVMClone(t *testing.T) {
 			),
 		}}},
 		{"clone with network devices", []resource.TestStep{{
-			// Same as "clone with network device" — inherited devices are not visible
-			// in state when the clone doesn't declare any network_device blocks.
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
 					node_name = "{{.NodeName}}"
@@ -1427,7 +1429,8 @@ func TestAccResourceVMClone(t *testing.T) {
 				}`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
-					"network_device.#": "0",
+					"network_device.#":        "1",
+					"network_device.0.bridge": "vmbr0",
 				}),
 			),
 		}}},

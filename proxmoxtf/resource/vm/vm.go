@@ -4939,7 +4939,7 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	diags = append(diags, network.ReadNetworkDeviceObjects(d, vmConfig, len(clone) > 0)...)
+	diags = append(diags, network.ReadNetworkDeviceObjects(d, vmConfig)...)
 
 	// Compare the operating system configuration to the one stored in the state.
 	operatingSystem := map[string]any{}

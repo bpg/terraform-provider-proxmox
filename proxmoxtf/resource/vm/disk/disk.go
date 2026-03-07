@@ -546,9 +546,6 @@ func Read(
 		diskMap[di] = disk
 	}
 
-	// For clones with no user-specified disks, skip setting state to preserve inherited
-	// devices. Without this guard, Terraform would see the inherited disks as drift and
-	// plan to remove them on the next apply. The same pattern is used for network devices.
 	if !isClone || len(currentDiskList) > 0 {
 		var diskList []any
 

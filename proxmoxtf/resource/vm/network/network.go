@@ -157,10 +157,8 @@ func ExistingNetworkDeviceIndices(vmConfig *vms.GetResponseData) map[string]stru
 }
 
 // ReadNetworkDeviceObjects reads the network device objects from the response data.
-func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseData, isClone bool) diag.Diagnostics {
+func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseData) diag.Diagnostics {
 	var diags diag.Diagnostics
-
-	currentNetworkDeviceList := d.Get(MkNetworkDevice).([]any)
 
 	macAddresses := make([]any, 0)
 	networkDevices := make([]any, 0)
@@ -200,15 +198,10 @@ func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseD
 		}
 	}
 
-	// For clones with no user-specified network devices, skip setting state to preserve
-	// inherited devices (same pattern as disk.Read). Otherwise Terraform would detect
-	// a diff and try to remove the inherited devices on the next plan.
-	if !isClone || len(currentNetworkDeviceList) > 0 {
-		err := d.Set(MkNetworkDevice, networkDevices)
-		diags = append(diags, diag.FromErr(err)...)
-	}
+	err := d.Set(MkNetworkDevice, networkDevices)
+	diags = append(diags, diag.FromErr(err)...)
 
-	err := d.Set(mkMACAddresses, macAddresses)
+	err = d.Set(mkMACAddresses, macAddresses)
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
