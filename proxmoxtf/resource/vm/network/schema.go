@@ -96,6 +96,8 @@ func Schema() map[string]*schema.Schema {
 						Description: "Whether to enable the network device",
 						Optional:    true,
 						Default:     dvNetworkDeviceEnabled,
+						Deprecated: "The `enabled` attribute is deprecated and will be removed in a future release. " +
+							"Remove the `network_device` block from your configuration instead of setting `enabled = false`.",
 					},
 					mkNetworkDeviceFirewall: {
 						Type:        schema.TypeBool,
