@@ -30,6 +30,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/replication"
 	sdnapplier "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/applier"
 	sdnfabric "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/fabric"
 	sdnfabricnode "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/fabric_node"
@@ -567,6 +568,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		storage.NewProxmoxBackupServerStorageResource,
 		storage.NewZFSPoolStorageResource,
 		vm.NewResource,
+		replication.NewResource,
 	}
 }
 
@@ -604,6 +606,8 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		sdnfabricnode.NewOpenFabricDataSource,
 		sdnfabricnode.NewOSPFDataSource,
 		vm.NewDataSource,
+		replication.NewDataSource,
+		replication.NewreplicationsDataSource,
 	}
 }
 
