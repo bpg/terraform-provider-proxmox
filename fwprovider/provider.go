@@ -535,6 +535,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		clonedvm.NewResource,
 		ha.NewHAGroupResource,
 		ha.NewHAResourceResource,
+		ha.NewHARuleResource,
 		hardwaremapping.NewDirResource,
 		hardwaremapping.NewPCIResource,
 		hardwaremapping.NewUSBResource,
