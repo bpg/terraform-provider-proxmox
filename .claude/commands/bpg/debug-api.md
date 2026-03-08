@@ -25,8 +25,7 @@ Use this skill when:
 </objective>
 
 <context>
-Test name: $0
-Parameter to verify: $1
+Arguments: $ARGUMENTS (format: `TestName [param-to-verify]`)
 
 Reference: [DEBUGGING.md](../../../.dev/DEBUGGING.md)
 </context>
@@ -60,7 +59,9 @@ If proxy already running or port in use, ask user:
 
 ## Step 2: Determine Test and Parameter
 
-If `$0` (test name) not provided:
+Parse `$ARGUMENTS` — expect format: `TestName [param-to-verify]`. The first word is the test name, the rest (if any) is the parameter to verify.
+
+If no test name provided, ask:
 
 ```text
 AskUserQuestion(
@@ -78,7 +79,7 @@ If user wants to search, use Grep to find relevant tests:
 grep -r "func TestAcc" fwprovider/ proxmoxtf/ --include="*_test.go" | grep -i "{keyword}" | head -10
 ```
 
-If `$1` (parameter) not provided:
+If no parameter provided, ask:
 
 ```text
 AskUserQuestion(
@@ -90,7 +91,7 @@ AskUserQuestion(
 )
 ```
 
-Store test name as `$TEST_NAME` and parameter as `$PARAM`.
+Store test name as `TEST_NAME` and parameter as `PARAM`.
 
 ## Step 3: Start Mitmproxy
 
@@ -187,6 +188,8 @@ grep -E "400|401|403|404|500|502|503" /tmp/api_debug.log | head -10
 ```
 
 ## Step 8: Present Findings
+
+If you need to understand what the Proxmox API expects for a specific endpoint, use Context7 with library ID `/websites/pve_proxmox_pve-docs` to look up the endpoint documentation.
 
 Summarize findings for user:
 

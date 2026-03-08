@@ -9,6 +9,7 @@ allowed-tools:
   - Bash
   - Grep
   - Glob
+  - Agent
   - AskUserQuestion
   - WebFetch
 ---
@@ -54,15 +55,7 @@ AskUserQuestion(
 
 If "Browse issues", run `gh issue list --limit 10` to show recent issues.
 
-Validate it's a number:
-
-```bash
-ISSUE_NUM="${ARGUMENTS}"
-if ! [[ "$ISSUE_NUM" =~ ^[0-9]+$ ]]; then
-  echo "ERROR: Invalid issue number: $ISSUE_NUM"
-  exit 1
-fi
-```
+Validate the input is a number. If not numeric, ask the user to provide a valid issue number.
 
 ## Step 2: Verify Issue Exists
 
@@ -263,11 +256,12 @@ Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` with:
 
 Invoke the `/superpowers:systematic-debugging` skill to guide the investigation. Then:
 
-1. **Explore the relevant code** — Find the resource, model, API client, and existing tests. Read and understand the code paths involved.
-2. **Identify the root cause** — Form a hypothesis about what's wrong and why. Trace the code path from the user's reported behavior to the underlying bug.
-3. **Check for related patterns** — Look for similar attributes/resources that may have the same issue or that already handle the case correctly.
-4. **Present findings to the user** — Summarize root cause, proposed fix, and open questions.
-5. **Ask the user** if you should continue with the fix or discuss further.
+1. **Explore the relevant code** — Use Serena's `get_symbols_overview` to understand file structure, then `find_symbol` to drill into specific functions. Use `find_referencing_symbols` to trace call chains. Fall back to Grep/Glob for cross-file pattern searches.
+2. **Look up API docs if needed** — Use Context7 with `/websites/pve_proxmox_pve-docs` to check Proxmox API endpoint parameters and behavior. Use `/hashicorp/terraform-plugin-framework` for Framework API questions.
+3. **Identify the root cause** — Form a hypothesis about what's wrong and why. Trace the code path from the user's reported behavior to the underlying bug.
+4. **Check for related patterns** — Look for similar attributes/resources that may have the same issue or that already handle the case correctly.
+5. **Present findings to the user** — Summarize root cause, proposed fix, and open questions.
+6. **Ask the user** if you should continue with the fix or discuss further.
 
 Update session state with investigation findings before proceeding.
 

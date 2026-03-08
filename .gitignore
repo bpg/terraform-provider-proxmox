@@ -52,6 +52,7 @@ terraform-provider-proxmox*
 # VScode / Cursor 
 .vscode/settings.json
 .cursor/
+.serena/
 coverage.out
 
 # local-only progress/report/session notes (keep out of git)

@@ -9,7 +9,7 @@ allowed-tools:
   - Glob
   - Write
   - Edit
-  - Task
+  - Agent
   - TaskCreate
   - TaskUpdate
   - TaskList
@@ -26,7 +26,7 @@ Make a todo list of the steps below, then follow them precisely.
 
 ## Step 1: Eligibility Check
 
-Use a Haiku agent to check if the pull request is eligible for review. Use `gh pr view <number> --json state,isDraft,author` to check. Skip the review if:
+Use a fast agent to check if the pull request is eligible for review. Use `gh pr view <number> --json state,isDraft,author` to check. Skip the review if:
 
 - The PR is **closed** or **merged**
 - The PR is a **draft**
@@ -77,7 +77,7 @@ Store this list for use in Steps 5 and 6.
 
 ## Step 4: Determine PR Size and Summarize
 
-Use a Haiku agent to:
+Use a fast agent to:
 
 1. View the pull request diff (`gh pr diff <number>`)
 2. Count the total lines changed (additions + deletions)
@@ -93,18 +93,18 @@ Classify the PR:
 
 Launch review agents based on PR size. **Each agent's prompt must include the worktree path (`$WORKTREE`) and the list of guideline files from Step 3.** Agents should return a list of issues with the reason each was flagged (e.g., guidelines violation, bug, historical context).
 
-**Small PRs (<50 lines) — 2 Sonnet agents:**
+**Small PRs (<50 lines) — 2 agents:**
 
 - Agent 1: Guidelines compliance
 - Agent 2: Bug scan
 
-**Medium PRs (50–300 lines) — 3 Sonnet agents:**
+**Medium PRs (50–300 lines) — 3 agents:**
 
 - Agent 1: Guidelines compliance
 - Agent 2: Bug scan
 - Agent 3: Historical context
 
-**Large PRs (>300 lines) — 5 Sonnet agents:**
+**Large PRs (>300 lines) — 5 agents:**
 
 - Agent 1: Guidelines compliance
 - Agent 2: Bug scan
@@ -126,7 +126,7 @@ e. **Code comment compliance:** Read code comments in the modified files, and ma
 
 ## Step 6: Score Issues
 
-Batch all issues and launch **one Haiku agent per review agent that found issues** to score that agent's issues. Skip scoring for agents that reported no issues. Each scoring agent receives the PR diff, the issues from its corresponding review agent, and the list of guideline files (from Step 3). It returns a score for each issue.
+Batch all issues and launch **one fast agent per review agent that found issues** to score that agent's issues. Skip scoring for agents that reported no issues. Each scoring agent receives the PR diff, the issues from its corresponding review agent, and the list of guideline files (from Step 3). It returns a score for each issue.
 
 For issues flagged due to guideline violations, the agent should double-check that `CONTRIBUTING.md` or the relevant `CLAUDE.md` actually calls out that issue specifically.
 

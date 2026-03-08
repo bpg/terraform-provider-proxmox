@@ -108,11 +108,7 @@ Replace `{ISSUE_N}`, `{STATUS_N}`, `{TITLE_N}` with actual values from the sessi
 
 ## Step 3: Load Session Context
 
-Read the selected session file:
-
-```bash
-cat ".dev/${ISSUE_NUM}_SESSION_STATE.md"
-```
+Read the selected session file using the Read tool (do NOT use `cat`).
 
 Extract key sections:
 

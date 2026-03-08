@@ -93,7 +93,7 @@ The PR title becomes the squash commit message on merge. It must follow conventi
 - **Scopes:** `vm`, `lxc`, `provider`, `core`, `docs`, `ci`
 - Lowercase description, no period at the end, under 72 characters
 - No issue numbers in the title
-- For breaking changes, add bang before colon, e.g. feat{scope}bang: description
+- For breaking changes, add `!` before colon, e.g. `feat(scope)!: description`
 
 Infer type from branch prefix (`fix/` or `feat/`), scope from changed files, and description from the commit history and diff.
 

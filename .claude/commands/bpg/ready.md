@@ -21,7 +21,7 @@ Use this skill when:
 - After implementing changes, to verify nothing was missed
 - User asks "is this ready?" or "am I done?"
 
-**This checklist is mandatory.** Never skip steps. If a step fails, stop and fix before continuing.
+**This checklist is mandatory.** Never skip steps. **If any step fails, stop immediately and report the failure. Do not continue to the next step until the failure is resolved.**
 </objective>
 
 <context>
@@ -90,8 +90,6 @@ BUILD_EXIT=$?
 - Exit 0: "BUILD PASSED"
 - Exit non-zero: "BUILD FAILED — Fix build errors before continuing"
 
-If failed, stop and report. Do not continue.
-
 ---
 
 ## Step 2: Lint Check
@@ -108,8 +106,6 @@ LINT_EXIT=$?
 
 - "0 issues": "GO LINT PASSED"
 - Issues found: "GO LINT FAILED — Run `make lint` to auto-fix, then review changes"
-
-If failed, stop and report. Do not continue.
 
 ### Markdown Lint
 
@@ -134,8 +130,6 @@ fi
 - Exit 0: "MARKDOWN LINT PASSED"
 - Issues found: "MARKDOWN LINT FAILED — Review and fix remaining issues"
 
-If failed, stop and report. Do not continue.
-
 ---
 
 ## Step 3: Unit Tests
@@ -150,8 +144,6 @@ TEST_EXIT=$?
 
 - Exit 0: "UNIT TESTS PASSED"
 - Exit non-zero: "UNIT TESTS FAILED — Fix failing tests"
-
-If failed, stop and report. Do not continue.
 
 ---
 
@@ -214,7 +206,6 @@ The test output is saved to `/tmp/testacc.log` for use in `/bpg:prepare-pr`.
 - Exit 0: "ACCEPTANCE TESTS PASSED"
 - Exit non-zero: "ACCEPTANCE TESTS FAILED — Fix failing tests"
 
-If failed, stop and report. Do not continue.
 
 ---
 
