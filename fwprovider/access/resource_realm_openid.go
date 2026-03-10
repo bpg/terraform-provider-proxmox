@@ -97,11 +97,9 @@ func (r *realmOpenIDResource) Schema(
 				Computed:    true,
 			},
 			"username_claim": schema.StringAttribute{
-				Description: "OpenID claim used to generate the unique username (subject, username, or email).",
-				Optional:    true,
-				Validators: []validator.String{
-					stringvalidator.OneOf("subject", "username", "email"),
-				},
+				Description: "OpenID claim used to generate the unique username." +
+					" Common values are `subject`, `username`, `email`, and `upn`.",
+				Optional: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
