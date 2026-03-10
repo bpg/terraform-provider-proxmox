@@ -91,6 +91,9 @@ linters:
       - linters:
           - lll
         source: ^.*https?://.*$
+      - linters:
+          - prealloc
+        text: "diags"
     paths:
       - third_party$
       - builtin$
