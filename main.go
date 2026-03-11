@@ -77,6 +77,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_hardware_mapping_pci.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_hardware_mapping_usb.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_haresource.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_harule.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_metrics_server.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_bridge.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_vlan.md ./docs/resources/

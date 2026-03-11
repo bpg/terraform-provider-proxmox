@@ -8,6 +8,7 @@ package ha
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -29,6 +30,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	harules "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/rules"
 )
 
@@ -90,7 +92,7 @@ func (r *haruleResource) Schema(
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					stringvalidator.OneOf("node-affinity", "resource-affinity"),
+					stringvalidator.OneOf(RuleTypeNodeAffinity, RuleTypeResourceAffinity),
 				},
 			},
 			"comment": schema.StringAttribute{
@@ -181,7 +183,7 @@ func (r *haruleResource) ValidateConfig(
 	ruleType := data.Type.ValueString()
 
 	switch ruleType {
-	case "node-affinity":
+	case RuleTypeNodeAffinity:
 		if data.Nodes.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("nodes"),
@@ -198,7 +200,7 @@ func (r *haruleResource) ValidateConfig(
 			)
 		}
 
-	case "resource-affinity":
+	case RuleTypeResourceAffinity:
 		if data.Affinity.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("affinity"),
@@ -212,6 +214,14 @@ func (r *haruleResource) ValidateConfig(
 				path.Root("nodes"),
 				"Invalid attribute combination",
 				"The `nodes` attribute is only valid when `type` is \"node-affinity\".",
+			)
+		}
+
+		if !data.Strict.IsNull() && !data.Strict.IsUnknown() && data.Strict.ValueBool() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("strict"),
+				"Invalid Attribute Combination",
+				"The `strict` attribute is only valid when `type` is \"node-affinity\".",
 			)
 		}
 	}
@@ -259,19 +269,19 @@ func (r *haruleResource) Create(ctx context.Context, req resource.CreateRequest,
 	createRequest.Resources = r.resourcesToString(data.Resources)
 
 	switch data.Type.ValueString() {
-	case "node-affinity":
+	case RuleTypeNodeAffinity:
 		nodesStr := r.nodesToString(data.Nodes)
 		createRequest.Nodes = &nodesStr
 		createRequest.Strict.FromValue(data.Strict)
-	case "resource-affinity":
+	case RuleTypeResourceAffinity:
 		createRequest.Affinity = data.Affinity.ValueStringPointer()
 	}
 
 	err := r.client.Create(ctx, createRequest)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Could not create HA rule '%s'.", ruleID),
-			err.Error(),
+			"Unable to Create HA Rule",
+			fmt.Sprintf("Could not create HA rule '%s': %s", ruleID, err.Error()),
 		)
 
 		return
@@ -328,11 +338,11 @@ func (r *haruleResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	switch data.Type.ValueString() {
-	case "node-affinity":
+	case RuleTypeNodeAffinity:
 		nodesStr := r.nodesToString(data.Nodes)
 		updateRequest.Nodes = &nodesStr
 		updateRequest.Strict.FromValue(data.Strict)
-	case "resource-affinity":
+	case RuleTypeResourceAffinity:
 		updateRequest.Affinity = data.Affinity.ValueStringPointer()
 	}
 
@@ -345,8 +355,8 @@ func (r *haruleResource) Update(ctx context.Context, req resource.UpdateRequest,
 		r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
 	} else {
 		resp.Diagnostics.AddError(
-			"Error updating HA rule",
-			fmt.Sprintf("Could not update HA rule '%s', unexpected error: %s",
+			"Unable to Update HA Rule",
+			fmt.Sprintf("Could not update HA rule '%s': %s",
 				state.Rule.ValueString(), err.Error()),
 		)
 	}
@@ -366,7 +376,7 @@ func (r *haruleResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	err := r.client.Delete(ctx, ruleID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no such ha rule") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddWarning(
 				"HA rule does not exist",
 				fmt.Sprintf(
@@ -376,8 +386,8 @@ func (r *haruleResource) Delete(ctx context.Context, req resource.DeleteRequest,
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				"Error deleting HA rule",
-				fmt.Sprintf("Could not delete HA rule '%s', unexpected error: %s",
+				"Unable to Delete HA Rule",
+				fmt.Sprintf("Could not delete HA rule '%s': %s",
 					ruleID, err.Error()),
 			)
 		}
@@ -413,8 +423,8 @@ func (r *haruleResource) readBack(
 
 	if !found {
 		respDiags.AddError(
-			"HA rule not found after update",
-			"Failed to find the rule when trying to read back the updated HA rule's data.",
+			"Unable to Read HA Rule",
+			"Failed to find the rule when trying to read back the HA rule's data.",
 		)
 	}
 
@@ -431,8 +441,8 @@ func (r *haruleResource) read(ctx context.Context, data *RuleModel) (bool, diag.
 	if err != nil {
 		diags := diag.Diagnostics{}
 
-		if !strings.Contains(err.Error(), "no such ha rule") {
-			diags.AddError("Could not read HA rule", err.Error())
+		if !errors.Is(err, api.ErrResourceDoesNotExist) {
+			diags.AddError("Unable to Read HA Rule", err.Error())
 		}
 
 		return false, diags

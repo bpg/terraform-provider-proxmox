@@ -7,11 +7,6 @@
 package ha
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
-
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -37,47 +32,9 @@ func (m *GroupModel) ImportFromAPI(group hagroups.HAGroupGetResponseData) diag.D
 	return m.parseHAGroupNodes(group.Nodes)
 }
 
-// Parse the list of member nodes. The list is received from the Proxmox API as a string. It must
-// be converted into a map value. Errors will be returned as Terraform diagnostics.
+// parseHAGroupNodes delegates to the shared parseNodePriorities helper.
 func (m *GroupModel) parseHAGroupNodes(nodes string) diag.Diagnostics {
-	diags := diag.Diagnostics{}
-
-	nodesIn := strings.Split(nodes, ",")
-	nodesOut := make(map[string]attr.Value)
-
-	for _, nodeDescStr := range nodesIn {
-		nodeDesc := strings.Split(nodeDescStr, ":")
-		if len(nodeDesc) > 2 {
-			diags.AddWarning(
-				"Could not parse HA group node",
-				fmt.Sprintf("Received group node '%s' for HA group '%s'",
-					nodeDescStr, m.Group.ValueString()),
-			)
-
-			continue
-		}
-
-		priority := types.Int64Null()
-
-		if len(nodeDesc) == 2 {
-			prio, err := strconv.Atoi(nodeDesc[1])
-			if err == nil {
-				priority = types.Int64Value(int64(prio))
-			} else {
-				diags.AddWarning(
-					"Could not parse HA group node priority",
-					fmt.Sprintf("Node priority string '%s' for node %s of HA group '%s'",
-						nodeDesc[1], nodeDesc[0], m.Group.ValueString()),
-				)
-			}
-		}
-
-		nodesOut[nodeDesc[0]] = priority
-	}
-
-	value, mbDiags := types.MapValue(types.Int64Type, nodesOut)
-	diags.Append(mbDiags...)
-
+	value, diags := parseNodePriorities(nodes, m.Group.ValueString())
 	m.Nodes = value
 
 	return diags

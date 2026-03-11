@@ -7,8 +7,6 @@
 package ha
 
 import (
-	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -16,6 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	harules "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/rules"
+)
+
+const (
+	// RuleTypeNodeAffinity is the HA rule type for node affinity.
+	RuleTypeNodeAffinity = "node-affinity"
+	// RuleTypeResourceAffinity is the HA rule type for resource affinity.
+	RuleTypeResourceAffinity = "resource-affinity"
 )
 
 // RuleModel is the model used to represent a High Availability rule.
@@ -46,7 +51,7 @@ func (m *RuleModel) ImportFromAPI(rule harules.HARuleGetResponseData) diag.Diagn
 
 	// Type-specific fields.
 	switch rule.Type {
-	case "node-affinity":
+	case RuleTypeNodeAffinity:
 		if rule.Nodes != nil {
 			nodeDiags := m.parseNodes(*rule.Nodes)
 			diags.Append(nodeDiags...)
@@ -57,7 +62,7 @@ func (m *RuleModel) ImportFromAPI(rule harules.HARuleGetResponseData) diag.Diagn
 		m.Strict = rule.Strict.ToValue()
 		m.Affinity = types.StringNull()
 
-	case "resource-affinity":
+	case RuleTypeResourceAffinity:
 		m.Nodes = types.MapNull(types.Int64Type)
 		// strict has Computed+Default(false) in schema, so use false (not null)
 		// to avoid perpetual plan diffs for resource-affinity rules.
@@ -86,46 +91,9 @@ func (m *RuleModel) parseResources(resources string) diag.Diagnostics {
 	return diags
 }
 
-// parseNodes parses a comma-separated nodes string (node1:pri,node2:pri) into a Terraform map.
+// parseNodes delegates to the shared parseNodePriorities helper.
 func (m *RuleModel) parseNodes(nodes string) diag.Diagnostics {
-	diags := diag.Diagnostics{}
-
-	nodesIn := strings.Split(nodes, ",")
-	nodesOut := make(map[string]attr.Value)
-
-	for _, nodeDescStr := range nodesIn {
-		nodeDesc := strings.Split(nodeDescStr, ":")
-		if len(nodeDesc) > 2 {
-			diags.AddWarning(
-				"Could not parse HA rule node",
-				fmt.Sprintf("Received node '%s' for HA rule '%s'",
-					nodeDescStr, m.Rule.ValueString()),
-			)
-
-			continue
-		}
-
-		priority := types.Int64Null()
-
-		if len(nodeDesc) == 2 {
-			prio, err := strconv.Atoi(nodeDesc[1])
-			if err == nil {
-				priority = types.Int64Value(int64(prio))
-			} else {
-				diags.AddWarning(
-					"Could not parse HA rule node priority",
-					fmt.Sprintf("Node priority string '%s' for node %s of HA rule '%s'",
-						nodeDesc[1], nodeDesc[0], m.Rule.ValueString()),
-				)
-			}
-		}
-
-		nodesOut[nodeDesc[0]] = priority
-	}
-
-	value, mbDiags := types.MapValue(types.Int64Type, nodesOut)
-	diags.Append(mbDiags...)
-
+	value, diags := parseNodePriorities(nodes, m.Rule.ValueString())
 	m.Nodes = value
 
 	return diags
