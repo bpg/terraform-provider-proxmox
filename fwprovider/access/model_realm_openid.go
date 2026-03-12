@@ -175,11 +175,7 @@ func (m *realmOpenIDModel) fromAPIResponse(data *access.RealmGetResponseData, di
 	m.ACRValues = types.StringPointerValue(data.ACRValues)
 	m.Comment = types.StringPointerValue(data.Comment)
 
-	// Scopes is Computed; guard against nil to prevent perpetual drift
-	// if PVE omits it from the response.
-	if data.Scopes != nil {
-		m.Scopes = types.StringPointerValue(data.Scopes)
-	}
+	m.Scopes = types.StringPointerValue(data.Scopes)
 
 	// Set optional boolean fields
 	m.AutoCreate = types.BoolPointerValue(data.AutoCreate.PointerBool())

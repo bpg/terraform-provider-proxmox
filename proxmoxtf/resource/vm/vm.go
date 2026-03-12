@@ -4162,10 +4162,10 @@ func vmReadCustom(
 	// Compare the audio devices to those stored in the state.
 	currentAudioDevice := d.Get(mkAudioDevice).([]any)
 
-	audioDevices := make([]any, 1)
 	audioDevicesArray := []*vms.CustomAudioDevice{
 		vmConfig.AudioDevice,
 	}
+	audioDevices := make([]any, len(audioDevicesArray))
 	audioDevicesCount := 0
 
 	for adi, ad := range audioDevicesArray {

@@ -16,6 +16,40 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
+func TestAccRealmOpenIDUsernameClaim(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			// Create with username_claim = "upn" (custom claim used by ADFS/Azure AD)
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_realm_openid" "test_upn" {
+						realm          = "test-upn"
+						issuer_url     = "https://accounts.google.com"
+						client_id      = "test-client-id"
+						username_claim = "upn"
+					}
+				`),
+				Check: test.ResourceAttributes("proxmox_virtual_environment_realm_openid.test_upn", map[string]string{
+					"realm":          "test-upn",
+					"username_claim": "upn",
+				}),
+			},
+			// Import state
+			{
+				ResourceName:            "proxmox_virtual_environment_realm_openid.test_upn",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"client_key"},
+			},
+		},
+	})
+}
+
 func TestAccRealmOpenID(t *testing.T) {
 	t.Parallel()
 

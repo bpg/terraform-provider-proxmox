@@ -70,7 +70,7 @@ resource "proxmox_virtual_environment_realm_openid" "example" {
 - `prompt` (String) Specifies whether the authorization server prompts for reauthentication and/or consent (e.g., 'none', 'login', 'consent', 'select_account').
 - `query_userinfo` (Boolean) Query the OpenID userinfo endpoint for claims. Required when the identity provider does not include claims in the ID token.
 - `scopes` (String) Space-separated list of OpenID scopes to request.
-- `username_claim` (String) OpenID claim used to generate the unique username (subject, username, or email).
+- `username_claim` (String) OpenID claim used to generate the unique username. Common values are `subject`, `username`, `email`, and `upn`.
 
 ### Read-Only
 
@@ -100,13 +100,14 @@ The `client_key` is sent to Proxmox and stored securely, but it's never returned
 
 ### Username Claim
 
-The `username_claim` attribute is **fixed after creation** — it cannot be changed once the realm is created. Changing it requires destroying and recreating the realm. Valid values:
+The `username_claim` attribute is **fixed after creation** — it cannot be changed once the realm is created. Changing it requires destroying and recreating the realm. Common values:
 
 - `subject` (default) — Uses the OpenID `sub` claim
 - `username` — Uses the `preferred_username` claim
 - `email` — Uses the `email` claim
+- `upn` — Uses the User Principal Name claim (common with ADFS/Azure AD)
 
-Ensure the chosen claim provides unique, stable identifiers for your users.
+Any valid OpenID claim name can be used. Ensure the chosen claim provides unique, stable identifiers for your users.
 
 ### Common Configuration Scenarios
 

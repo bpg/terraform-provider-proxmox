@@ -142,7 +142,76 @@ Scoring rubric (give this to the agents verbatim):
 
 Filter out any issues with a score less than 50. If there are no issues that meet this criteria, report that no issues were found.
 
-## Step 8: Display Results
+## Step 8: Acceptance Tests & API Verification
+
+After the static code review is complete, run acceptance tests and optionally verify API calls — similar to the production readiness checklist (`/bpg:ready`).
+
+### 8a: Detect and Run Acceptance Tests
+
+Detect test names from changed test files in the PR:
+
+```bash
+# Find test files in the PR diff
+CHANGED_TESTS=$(gh pr diff <number> --name-only | grep "_test.go")
+if [ -n "$CHANGED_TESTS" ]; then
+  # Extract TestAcc function names from changed files in the worktree
+  grep -h "^func TestAcc" $WORKTREE/$CHANGED_TESTS 2>/dev/null | sed 's/func \(TestAcc[^(]*\).*/\1/'
+fi
+```
+
+If acceptance tests are found:
+
+1. Ensure `testacc.env` is available in the worktree (symlink from project root if needed):
+
+   ```bash
+   ln -sf "$(pwd)/testacc.env" "$WORKTREE/testacc.env" 2>/dev/null || true
+   ```
+
+2. Run the tests from the worktree with verbose output:
+
+   ```bash
+   cd "$WORKTREE" && ./testacc "$TEST_PATTERN" -- -v 2>&1 | tee /tmp/testacc-review.log
+   ```
+
+3. Record the result (pass/fail) for inclusion in the review output.
+
+If no test files are found in the PR, skip this step and note "No acceptance tests in PR."
+
+If tests fail, this is a **review finding** — add it to the issues list with Score 100 and category "Test Failure".
+
+### 8b: API Verification (Mitmproxy)
+
+Check if the PR modifies API client code (files under `proxmox/`):
+
+```bash
+gh pr diff <number> --name-only | grep -q "^proxmox/"
+```
+
+If API client code is changed:
+
+1. Ask the user if mitmproxy verification is needed:
+
+   ```text
+   AskUserQuestion(
+     header: "API Verification",
+     question: "This PR modifies API client code. Run mitmproxy verification?",
+     options: [
+       { label: "Yes", description: "Run acceptance tests through mitmproxy to verify API calls" },
+       { label: "No", description: "Skip mitmproxy — I'll verify separately" },
+       { label: "Already done", description: "API calls were already verified" }
+     ]
+   )
+   ```
+
+2. If "Yes": Run `./testacc --verbose "$TEST_PATTERN"` from the worktree (the `./testacc` script handles mitmproxy when proxy env is set). Record results for the review output.
+
+3. If "No" or "Already done": Note in the review output that mitmproxy verification was skipped or already completed.
+
+If no API client code was changed, skip this step entirely.
+
+---
+
+## Step 9: Display Results
 
 Display the review results directly in the conversation. **Never post to GitHub.**
 
@@ -175,7 +244,7 @@ Format for no issues:
 No issues found. Checked for bugs and contributor guidelines compliance.
 ```
 
-## Step 9: Save Session State
+## Step 10: Save Session State
 
 Write a session state file to `.dev/review_PR_NUMBER_SESSION_STATE.md`.
 
@@ -278,7 +347,7 @@ Record every issue from all review agents here, regardless of score.
 - User to review findings and choose: fix locally or end review
 ```
 
-## Step 10: Clean Up Worktree
+## Step 11: Clean Up Worktree
 
 Remove the isolated worktree:
 
@@ -289,7 +358,7 @@ git worktree remove .claude/worktrees/review-<number>
 If removal fails, warn the user and provide the manual cleanup command:
 `git worktree remove --force .claude/worktrees/review-<number>`
 
-## Step 11: Next Steps
+## Step 12: Next Steps
 
 Tell the user where the session state file was saved, then ask what they'd like to do next:
 
@@ -298,7 +367,7 @@ Tell the user where the session state file was saved, then ask what they'd like 
 
 If there are no issues (clean review), skip the prompt and just report the result.
 
-## Step 12: Fix Mode (if selected)
+## Step 13: Fix Mode (if selected)
 
 If the user chose to fix issues:
 
@@ -316,7 +385,7 @@ If the user chose to fix issues:
    gh pr checkout <number>
    ```
 
-3. **Create a todo list** from the issues found in Step 8 (using TaskCreate), one task per issue, ordered by score (highest first). Each task should include the file path, line numbers, and a brief description of what to fix.
+3. **Create a todo list** from the issues found in Step 9 (using TaskCreate), one task per issue, ordered by score (highest first). Each task should include the file path, line numbers, and a brief description of what to fix.
 
 4. **Work through the issues** — fix each one, marking tasks complete as you go.
 
@@ -341,7 +410,7 @@ Examples of false positives, for Steps 5 and 6:
 
 ## Notes
 
-- Do not check build signal or attempt to build or typecheck the app. These will run separately, and are not relevant to your code review.
+- Do not check build signal or attempt to build or typecheck the app during static analysis (Steps 5-7). Build/lint checks run separately in CI. However, DO run acceptance tests as part of Step 8 — these verify correctness beyond what static analysis can catch.
 - Use `gh` to interact with Github (eg. to fetch a pull request), rather than web fetch.
 - You must cite each issue with the full file path from the project root and line numbers (e.g., `fwprovider/resource_vm.go:10-15`). When referencing a guideline violation, cite the specific section of `CONTRIBUTING.md` or `CLAUDE.md`.
 - When linking to code on GitHub (e.g., in session state), use the full git SHA (not HEAD or abbreviated). Line range format is `L[start]-L[end]`, provide at least 1 line of context before and after.
