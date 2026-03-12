@@ -25,6 +25,9 @@ type NetworkInterfaceListResponseData struct {
 	Address         *string           `json:"address,omitempty"`
 	Address6        *string           `json:"address6,omitempty"`
 	Autostart       *types.CustomBool `json:"autostart,omitempty"`
+	BondMode           *string           `json:"bond_mode,omitempty"`
+	BondPrimary        *string           `json:"bond-primary,omitempty"`
+	BondXmitHashPolicy *string           `json:"bond_xmit_hash_policy,omitempty"`
 	BridgePorts     *string           `json:"bridge_ports,omitempty"`
 	BridgeSTP       *string           `json:"bridge_stp,omitempty"`
 	BridgeVIDs      *string           `json:"bridge_vids,omitempty"`
@@ -41,6 +44,7 @@ type NetworkInterfaceListResponseData struct {
 	MethodIPv6      *string           `json:"method6,omitempty"`
 	MTU             *string           `json:"mtu,omitempty"`
 	Netmask         *string           `json:"netmask,omitempty"`
+	Slaves          *string           `json:"slaves,omitempty"`
 	VLANID          *string           `json:"vlan-id,omitempty"`
 	VLANRawDevice   *string           `json:"vlan-raw-device,omitempty"`
 	Priority        int               `json:"priority"`
