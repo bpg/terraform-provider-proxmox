@@ -12,6 +12,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
+	harules "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/rules"
 )
 
 // Client is an interface for accessing the Proxmox High Availability API.
@@ -32,4 +33,9 @@ func (c *Client) Groups() *hagroups.Client {
 // Resources returns a client for managing the cluster's High Availability resources.
 func (c *Client) Resources() *haresources.Client {
 	return &haresources.Client{Client: c.Client}
+}
+
+// Rules returns a client for managing the cluster's High Availability rules (PVE 9+).
+func (c *Client) Rules() *harules.Client {
+	return &harules.Client{Client: c.Client}
 }

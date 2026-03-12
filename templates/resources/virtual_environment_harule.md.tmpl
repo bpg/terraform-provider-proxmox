@@ -1,0 +1,34 @@
+---
+layout: page
+title: {{.Name}}
+parent: Resources
+subcategory: Virtual Environment
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}}: {{.Name}}
+
+{{ .Description | trimspace }}
+
+~> **Note:** This resource requires Proxmox VE 9.0 or later. In PVE 9, HA groups
+have been replaced by HA rules, which provide node affinity and resource affinity
+capabilities. For PVE 8 and earlier, use
+[`proxmox_virtual_environment_hagroup`](virtual_environment_hagroup.md) instead.
+
+{{ if .HasExample -}}
+
+## Example Usage
+
+{{ codefile "terraform" .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}
+{{- if .HasImport }}
+
+## Import
+
+Import is supported using the following syntax:
+
+{{ codefile "shell" .ImportFile }}
+{{- end }}
