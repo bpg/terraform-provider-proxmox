@@ -78,7 +78,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				},
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^[0-9]*-[0-9]*$`),
+						regexp.MustCompile(`^[0-9]+-[0-9]+$`),
 						"id must be <GUEST>-<JOBNUM>",
 					),
 				},

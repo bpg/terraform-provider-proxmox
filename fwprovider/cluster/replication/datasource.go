@@ -73,7 +73,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Description: "Replication Job ID. The ID is composed of a Guest ID and a job number, separated by a hyphen, i.e. '<GUEST>-<JOBNUM>'.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^[0-9]*-[0-9]*$`),
+						regexp.MustCompile(`^[0-9]+-[0-9]+$`),
 						"id must be <GUEST>-<JOBNUM>",
 					),
 				},

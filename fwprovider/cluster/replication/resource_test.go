@@ -515,6 +515,17 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				ExpectError: regexp.MustCompile(`id must be <GUEST>-<JOBNUM>`),
 			},
 			{
+				// id must be <GUEST>-<JOBNUM>
+				PlanOnly: true,
+				Config: `
+				resource "proxmox_virtual_environment_replication" "test" {
+				id     = "-"
+				target = "pve2"
+				type   = "local"
+				}`,
+				ExpectError: regexp.MustCompile(`id must be <GUEST>-<JOBNUM>`),
+			},
+			{
 				// type must be "local"
 				PlanOnly: true,
 				Config: `
