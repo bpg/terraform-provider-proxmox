@@ -115,9 +115,10 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Description: "Rate limit in mbps (megabytes per second) as floating point number.",
 			},
 			"schedule": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Storage replication schedule. The format is a subset of `systemd` calendar events. Defaults to */15",
+				Optional:      true,
+				Computed:      true,
+				Description:   "Storage replication schedule. The format is a subset of `systemd` calendar events. Defaults to */15",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"source": schema.StringAttribute{
 				Computed:    true,
