@@ -45,7 +45,7 @@ type HARuleNodeAffinityData struct {
 	// A comma-separated list of node names with optional priorities (e.g. node1:2,node2:1).
 	Nodes *string `json:"nodes,omitempty" url:"nodes,omitempty"`
 	// Whether the node affinity rule is strict (resources cannot run on other nodes).
-	Strict types.CustomBool `json:"strict,omitempty" url:"strict,int"`
+	Strict *types.CustomBool `json:"strict,omitempty" url:"strict,omitempty,int"`
 }
 
 // HARuleResourceAffinityData contains fields specific to resource-affinity rules.

@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
@@ -2035,6 +2036,348 @@ func TestAccResourceVMDiskCDROMNotInDiskBlock(t *testing.T) {
 
 					return nil
 				},
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDiskResizeNonHotpluggable tests that resizing a disk on a running VM
+// triggers a reboot when disk is excluded from the hotplug setting.
+// Also tests the double-reboot scenario (AIO change + resize with non-hotpluggable disk).
+// Regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2684
+func TestAccResourceVMDiskResizeNonHotpluggable(t *testing.T) {
+	te := InitEnvironment(t)
+
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+	var capturedUptime int
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create a running VM with disk excluded from hotplug
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_resize_no_hotplug" {
+					node_name           = "{{.NodeName}}"
+					started             = true
+					stop_on_destroy     = true
+					reboot_after_update = true
+					name                = "test-disk-resize-nohp"
+					hotplug             = "network,usb"
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "scsi0"
+						size         = 8
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_resize_no_hotplug", map[string]string{
+						"disk.0.size": "8",
+						"hotplug":     "network,usb",
+					}),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_disk_resize_no_hotplug"]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+
+						vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+						if err != nil {
+							return fmt.Errorf("failed to parse vm_id: %w", err)
+						}
+
+						// wait for uptime to accumulate
+						time.Sleep(5 * time.Second)
+
+						ctx := context.Background()
+
+						status, err := te.NodeClient().VM(vmID).GetVMStatus(ctx)
+						if err != nil {
+							return fmt.Errorf("failed to get VM status: %w", err)
+						}
+
+						if status.Uptime == nil || *status.Uptime < 3 {
+							return fmt.Errorf("VM uptime too low, expected >= 3 seconds, got %v", status.Uptime)
+						}
+
+						capturedUptime = *status.Uptime
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 2: Resize only — provider should reboot because disk is not hotpluggable.
+				// This is the primary bug scenario from issue #2684.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_resize_no_hotplug" {
+					node_name           = "{{.NodeName}}"
+					started             = true
+					stop_on_destroy     = true
+					reboot_after_update = true
+					name                = "test-disk-resize-nohp"
+					hotplug             = "network,usb"
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "scsi0"
+						size         = 16
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_resize_no_hotplug", map[string]string{
+						"disk.0.size": "16",
+					}),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_disk_resize_no_hotplug"]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+
+						vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+						if err != nil {
+							return fmt.Errorf("failed to parse vm_id: %w", err)
+						}
+
+						ctx := context.Background()
+
+						status, err := te.NodeClient().VM(vmID).GetVMStatus(ctx)
+						if err != nil {
+							return fmt.Errorf("failed to get VM status: %w", err)
+						}
+
+						if status.Uptime == nil {
+							return fmt.Errorf("VM uptime is nil")
+						}
+
+						// Uptime should be reset (reboot happened) — new uptime should be less than captured.
+						if *status.Uptime >= capturedUptime {
+							return fmt.Errorf(
+								"VM was NOT rebooted after disk resize: uptime before=%d, after=%d (expected reboot)",
+								capturedUptime, *status.Uptime,
+							)
+						}
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 3: Change AIO + resize — triggers double reboot:
+				// 1. Pre-resize reboot for AIO pending change
+				// 2. Post-resize reboot because disk is not hotpluggable
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_resize_no_hotplug" {
+					node_name           = "{{.NodeName}}"
+					started             = true
+					stop_on_destroy     = true
+					reboot_after_update = true
+					name                = "test-disk-resize-nohp"
+					hotplug             = "network,usb"
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "scsi0"
+						size         = 24
+						aio          = "threads"
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_resize_no_hotplug", map[string]string{
+					"disk.0.size": "24",
+					"disk.0.aio":  "threads",
+				}),
+			},
+			{
+				// Step 4: Refresh state to verify everything persists
+				RefreshState: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDiskResizeDefaultHotplug tests that resizing a disk on a running VM
+// does NOT trigger an unnecessary reboot when hotplug is not explicitly configured.
+// PVE defaults to "network,disk,usb", so disk is hotpluggable by default.
+// This protects against the isHotpluggable default change causing regressions.
+func TestAccResourceVMDiskResizeDefaultHotplug(t *testing.T) {
+	te := InitEnvironment(t)
+
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+	var capturedUptime int
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create a running VM without setting hotplug (PVE default)
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_resize_default_hp" {
+					node_name           = "{{.NodeName}}"
+					started             = true
+					stop_on_destroy     = true
+					reboot_after_update = true
+					name                = "test-disk-resize-defhp"
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "scsi0"
+						size         = 8
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_resize_default_hp", map[string]string{
+						"disk.0.size": "8",
+					}),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_disk_resize_default_hp"]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+
+						vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+						if err != nil {
+							return fmt.Errorf("failed to parse vm_id: %w", err)
+						}
+
+						// wait for uptime to accumulate
+						time.Sleep(5 * time.Second)
+
+						ctx := context.Background()
+
+						status, err := te.NodeClient().VM(vmID).GetVMStatus(ctx)
+						if err != nil {
+							return fmt.Errorf("failed to get VM status: %w", err)
+						}
+
+						if status.Uptime == nil || *status.Uptime < 3 {
+							return fmt.Errorf("VM uptime too low, expected >= 3 seconds, got %v", status.Uptime)
+						}
+
+						capturedUptime = *status.Uptime
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 2: Resize — should succeed WITHOUT reboot since disk is
+				// hotpluggable by default. Uptime should keep increasing.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_resize_default_hp" {
+					node_name           = "{{.NodeName}}"
+					started             = true
+					stop_on_destroy     = true
+					reboot_after_update = true
+					name                = "test-disk-resize-defhp"
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "scsi0"
+						size         = 16
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_resize_default_hp", map[string]string{
+						"disk.0.size": "16",
+					}),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_disk_resize_default_hp"]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+
+						vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+						if err != nil {
+							return fmt.Errorf("failed to parse vm_id: %w", err)
+						}
+
+						ctx := context.Background()
+
+						status, err := te.NodeClient().VM(vmID).GetVMStatus(ctx)
+						if err != nil {
+							return fmt.Errorf("failed to get VM status: %w", err)
+						}
+
+						if status.Uptime == nil {
+							return fmt.Errorf("VM uptime is nil")
+						}
+
+						// Uptime should NOT be reset — no reboot should have occurred.
+						if *status.Uptime < capturedUptime {
+							return fmt.Errorf(
+								"VM was unexpectedly rebooted after disk resize with default hotplug: "+
+									"uptime before=%d, after=%d (expected no reboot)",
+								capturedUptime, *status.Uptime,
+							)
+						}
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 3: Refresh state to verify size persists
+				RefreshState: true,
 			},
 		},
 	})

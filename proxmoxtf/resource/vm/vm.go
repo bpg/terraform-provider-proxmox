@@ -78,6 +78,11 @@ const (
 	dvCPUAffinity         = ""
 	dvDescription         = ""
 
+	// dvHotplug is the Proxmox VE default hotplug value.
+	// When hotplug is not explicitly configured, PVE uses "network,disk,usb".
+	// See: https://pve.proxmox.com/wiki/Manual:_qm.conf
+	dvHotplug = "network,disk,usb"
+
 	dvEFIDiskDatastoreID                = "local-lvm"
 	dvEFIDiskFileFormat                 = "raw"
 	dvEFIDiskType                       = "2m"
@@ -3899,7 +3904,8 @@ func hotplugContains(hotplug, feature string) bool {
 func isHotpluggable(d *schema.ResourceData, feature string) bool {
 	hotplug, ok := d.GetOk(mkHotplug)
 	if !ok {
-		return false
+		// When hotplug is not explicitly configured, PVE defaults to "network,disk,usb".
+		return hotplugContains(dvHotplug, feature)
 	}
 
 	return hotplugContains(hotplug.(string), feature)
@@ -6617,6 +6623,51 @@ func vmUpdateDiskLocationAndSize(
 		err = vmAPI.ResizeVMDisk(ctx, reqBody)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+	}
+
+	// If disks were resized on a running VM and disk is not hotpluggable,
+	// reboot so the guest OS can process the size change (e.g. cloud-init growpart).
+	// This is separate from the config-change reboot above: that one applies pending
+	// config changes BEFORE resize; this one notifies the guest AFTER resize.
+	// No !reboot guard: even if we already rebooted for config changes, that happened
+	// BEFORE resize — the guest still needs a post-resize reboot to see the new size.
+	if len(diskResizeBodies) > 0 && started && !template && !isHotpluggable(d, "disk") {
+		canReboot := d.Get(mkRebootAfterUpdate).(bool)
+		if !canReboot {
+			return []diag.Diagnostic{{
+				Severity: diag.Warning,
+				Summary: "a reboot is required after disk resize because disk is not hotpluggable, " +
+					"but automatic reboots are disabled by 'reboot_after_update = false'. " +
+					"Please reboot the VM manually to apply the disk size change.",
+			}}
+		}
+
+		vmStatus, err := vmAPI.GetVMStatus(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if vmStatus.Status != "stopped" {
+			agentEnabled, diags := isAgentEnabled(ctx, vmAPI)
+			if diags != nil {
+				return diags
+			}
+
+			if agentEnabled {
+				rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
+				if e := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); e != nil {
+					return diag.FromErr(e)
+				}
+			} else {
+				if e := vmStop(ctx, vmAPI, d); e != nil {
+					return e
+				}
+
+				if diags := vmStart(ctx, vmAPI, d); diags != nil {
+					return diags
+				}
+			}
 		}
 	}
 

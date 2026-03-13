@@ -56,7 +56,7 @@ Then offer to help create one:
 | Artifact | Format | Example |
 | -------- | ------ | ------- |
 | Branch | `{type}/{issue}-{desc}` | `fix/1234-clone-timeout` |
-| Plans | `.dev/YYYY-MM-DD-{feature}.md` | `.dev/2026-02-03-reference-examples.md` |
+| Plans | `.dev/{issue}_PLAN.md` | `.dev/1234_PLAN.md` |
 | PR body | `.dev/{issue}_PR_BODY.md` | `.dev/1234_PR_BODY.md` |
 | Session state | `.dev/{issue}_SESSION_STATE.md` | `.dev/1234_SESSION_STATE.md` |
 | Test names | Descriptive, NO issue numbers | `TestAccResourceVMClone` |
@@ -187,7 +187,7 @@ LLMs have no memory between sessions. Externalize state to files:
 ### Proof Over Trust
 
 - "Tests pass" ≠ correct behavior
-- Always verify with mitmproxy
+- Verify with mitmproxy when available, OR use behavioral assertions in tests (uptime checks, API status queries) to prove the behavior change
 - Include evidence in PR proof of work section
 
 ### Context Window Management
@@ -356,6 +356,8 @@ When fixing validation issues, update BOTH providers where applicable.
 - **VMs with `started = true`** need boot disk with cloud image; use `stop_on_destroy = true`
 - **Naming:** Descriptive names only, NO issue numbers
 - **API verification:** Use `/bpg:debug-api` for mitmproxy workflow
+- **Behavioral assertions:** When verifying side effects (reboots, state changes), use direct API checks in test check functions rather than relying only on Terraform state attributes. Example: use `te.NodeClient().VM(vmID).GetVMStatus(ctx)` to check uptime before/after to detect reboots. See `resource_vm_hotplug_test.go` and `resource_vm_disks_test.go` for patterns.
+- **TDD acceptance tests:** Tests MUST actually fail without the fix. If a test passes both with and without the fix, it doesn't prove anything — add behavioral assertions (uptime, status, API checks) that detect the actual behavior change.
 
 ---
 

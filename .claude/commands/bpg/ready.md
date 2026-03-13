@@ -209,28 +209,50 @@ The test output is saved to `/tmp/testacc.log` for use in `/bpg:prepare-pr`.
 
 ---
 
-## Step 5: API Verification (Mitmproxy)
+## Step 5: API Verification
 
-Ask if API verification is needed:
+First, check if mitmproxy is available and configured:
+
+```bash
+MITM_AVAILABLE="no"
+which mitmdump > /dev/null 2>&1 && MITM_AVAILABLE="yes"
+PROXY_CONFIGURED="no"
+grep -q '^HTTPS_PROXY' testacc.env 2>/dev/null && PROXY_CONFIGURED="yes"
+echo "mitmproxy installed: $MITM_AVAILABLE, proxy configured in testacc.env: $PROXY_CONFIGURED"
+```
+
+Check if acceptance tests already include behavioral assertions (e.g., uptime-based reboot detection, status checks via the Proxmox API):
+
+```bash
+# Look for direct API verification in test code (uptime checks, status checks, etc.)
+git diff --name-only HEAD | grep "_test.go" | xargs grep -l "GetVMStatus\|Uptime\|NodeClient" 2>/dev/null
+```
+
+Then ask the user:
 
 ```text
 AskUserQuestion(
-  header: "API Verification",
-  question: "Does this change involve API calls that need mitmproxy verification?",
+  header: "API Verify",
+  question: "Does this change involve API calls that need verification?",
   options: [
-    { label: "Yes", description: "Run mitmproxy verification" },
-    { label: "No", description: "No API changes (docs-only, refactor, etc.)" },
+    { label: "Yes, run mitmproxy", description: "Start mitmproxy and capture API traffic" },
+    { label: "Tests verify behavior", description: "Acceptance tests already assert correct behavior" },
+    { label: "No API changes", description: "Docs-only, refactor, etc." },
     { label: "Already done", description: "I verified API calls earlier" }
   ]
 )
 ```
 
-If "Yes":
+If "Yes, run mitmproxy":
 
-- Suggest: "Run `/bpg:debug-api {test_name}` to verify API calls"
-- Or run inline mitmproxy check (abbreviated version)
+- Check mitmproxy is installed and proxy is configured
+- If not installed: "mitmproxy not found. Install with `brew install mitmproxy` or use behavioral assertions in tests instead."
+- If not configured in `testacc.env`: "Proxy not configured. Uncomment `HTTP_PROXY` and `HTTPS_PROXY` in `testacc.env`, or run `/bpg:debug-api {test_name}` which sets them inline."
+- Otherwise: "Run `/bpg:debug-api {test_name}` to verify API calls"
 
-If "No" or "Already done": Record as skipped/completed.
+If "Tests verify behavior": Record as "Verified via test assertions" — this is acceptable when tests directly check the behavior (e.g., uptime-based reboot detection, API status checks) rather than just Terraform state attributes.
+
+If "No API changes" or "Already done": Record as skipped/completed.
 
 ---
 

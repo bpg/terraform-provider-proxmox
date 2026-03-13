@@ -59,7 +59,12 @@ func (m *RuleModel) ImportFromAPI(rule harules.HARuleGetResponseData) diag.Diagn
 			m.Nodes = types.MapNull(types.Int64Type)
 		}
 
-		m.Strict = rule.Strict.ToValue()
+		if rule.Strict != nil {
+			m.Strict = rule.Strict.ToValue()
+		} else {
+			m.Strict = types.BoolValue(false)
+		}
+
 		m.Affinity = types.StringNull()
 
 	case RuleTypeResourceAffinity:
