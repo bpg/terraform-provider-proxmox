@@ -116,8 +116,10 @@ func (m *linuxBondResourceModel) importFromNetworkInterfaceList(
 	}
 
 	if iface.MTU != nil {
-		if v, err := strconv.Atoi(*iface.MTU); err == nil {
+if v, err := strconv.Atoi(*iface.MTU); err == nil {
 			m.MTU = types.Int64Value(int64(v))
+		} else {
+			m.MTU = types.Int64Null()
 		}
 	} else {
 		m.MTU = types.Int64Null()
