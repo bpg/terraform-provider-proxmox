@@ -186,7 +186,7 @@ func (d *replicationsDataSource) Read(ctx context.Context, req datasource.ReadRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-// NewreplicationsDataSource returns a new data source for Replications.
-func NewreplicationsDataSource() datasource.DataSource {
+// NewReplicationsDataSource returns a new data source for Replications.
+func NewReplicationsDataSource() datasource.DataSource {
 	return &replicationsDataSource{}
 }

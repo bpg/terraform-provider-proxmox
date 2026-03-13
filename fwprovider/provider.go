@@ -606,7 +606,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		sdnfabricnode.NewOSPFDataSource,
 		vm.NewDataSource,
 		replication.NewDataSource,
-		replication.NewreplicationsDataSource,
+		replication.NewReplicationsDataSource,
 	}
 }
 
