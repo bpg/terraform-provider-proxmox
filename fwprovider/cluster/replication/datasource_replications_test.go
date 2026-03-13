@@ -54,188 +54,210 @@ func TestAccDataSourceReplications(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"read replication data sources with minimum attributes", []resource.TestStep{{
-			Config: te.RenderConfig(`
-				
-			resource "proxmox_virtual_environment_container" "test_container1" {
-				node_name = "{{.NodeName}}"
-				vm_id     = "100100"
+		{"read replication data sources with minimum attributes", func() []resource.TestStep {
+			cid1 := newCID()
+			cid2 := newCID()
+			id1 := fmt.Sprintf("%d-1", cid1)
+			id2 := fmt.Sprintf("%d-1", cid2)
+			te.AddTemplateVars(map[string]any{
+				"TestContainerID1": cid1,
+				"TestContainerID2": cid2,
+			})
+			return []resource.TestStep{{
+				Config: te.RenderConfig(`
 
-				disk {
-					datastore_id = "{{.ZfsDatastoreID}}"
-					size         = 4
-					mount_options = []
+				resource "proxmox_virtual_environment_container" "test_container1" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID1}}
+
+					disk {
+						datastore_id = "{{.ZfsDatastoreID}}"
+						size         = 4
+						mount_options = []
+					}
+
+					operating_system {
+						template_file_id = "local:vztmpl/{{ .ImageFileName }}"
+						type             = "ubuntu"
+					}
+
+					initialization {
+						hostname = "test"
+					}
+
+					started = false
 				}
 
-				operating_system {
-					template_file_id = "local:vztmpl/{{ .ImageFileName }}"
-					type             = "ubuntu"
+				resource "proxmox_virtual_environment_container" "test_container2" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID2}}
+
+					disk {
+						datastore_id = "{{.ZfsDatastoreID}}"
+						size         = 4
+						mount_options = []
+					}
+
+					operating_system {
+						template_file_id = "local:vztmpl/{{ .ImageFileName }}"
+						type             = "ubuntu"
+					}
+
+					initialization {
+						hostname = "test"
+					}
+
+					started = false
 				}
 
-				initialization {
-					hostname = "test"
+				resource "proxmox_virtual_environment_replication" "test_replication1" {
+					id     = "${proxmox_virtual_environment_container.test_container1.id}-1"
+					target = "{{.Node2Name}}"
+					type = "local"
 				}
 
-				started = false
-			}
-
-			resource "proxmox_virtual_environment_container" "test_container2" {
-				node_name = "{{.NodeName}}"
-				vm_id     = "100200"
-
-				disk {
-					datastore_id = "{{.ZfsDatastoreID}}"
-					size         = 4
-					mount_options = []
+				resource "proxmox_virtual_environment_replication" "test_replication2" {
+					id     = "${proxmox_virtual_environment_container.test_container2.id}-1"
+					target = "{{.Node2Name}}"
+					type = "local"
 				}
 
-				operating_system {
-					template_file_id = "local:vztmpl/{{ .ImageFileName }}"
-					type             = "ubuntu"
+				data "proxmox_virtual_environment_replications" "all" {
+							depends_on = [
+							proxmox_virtual_environment_replication.test_replication1,
+							proxmox_virtual_environment_replication.test_replication2
+						]
+				}
+					`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_replications.all", "replications.#"),
+					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+						"id":     id1,
+						"target": te.Node2Name,
+						"type":   "local",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+						"id":     id2,
+						"target": te.Node2Name,
+						"type":   "local",
+					}),
+				),
+			}}
+		}()},
+		{"read replication data sources with all attributes", func() []resource.TestStep {
+			cid1 := newCID()
+			cid2 := newCID()
+			id1 := fmt.Sprintf("%d-1", cid1)
+			id2 := fmt.Sprintf("%d-1", cid2)
+			guest1 := fmt.Sprintf("%d", cid1)
+			guest2 := fmt.Sprintf("%d", cid2)
+			te.AddTemplateVars(map[string]any{
+				"TestContainerID1": cid1,
+				"TestContainerID2": cid2,
+			})
+			return []resource.TestStep{{
+				Config: te.RenderConfig(`
+
+				resource "proxmox_virtual_environment_container" "test_container1" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID1}}
+
+					disk {
+						datastore_id = "{{.ZfsDatastoreID}}"
+						size         = 4
+						mount_options = []
+					}
+
+					operating_system {
+						template_file_id = "local:vztmpl/{{ .ImageFileName }}"
+						type             = "ubuntu"
+					}
+
+					initialization {
+						hostname = "test"
+					}
+
+					started = false
 				}
 
-				initialization {
-					hostname = "test"
+				resource "proxmox_virtual_environment_container" "test_container2" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID2}}
+
+					disk {
+						datastore_id = "{{.ZfsDatastoreID}}"
+						size         = 4
+						mount_options = []
+					}
+
+					operating_system {
+						template_file_id = "local:vztmpl/{{ .ImageFileName }}"
+						type             = "ubuntu"
+					}
+
+					initialization {
+						hostname = "test"
+					}
+
+					started = false
 				}
 
-				started = false
-			}
-
-			resource "proxmox_virtual_environment_replication" "test_replication1" {
-				id     = "${proxmox_virtual_environment_container.test_container1.id}-1"
-				target = "{{.Node2Name}}"
-				type = "local"
-			}
-
-			resource "proxmox_virtual_environment_replication" "test_replication2" {
-				id     = "${proxmox_virtual_environment_container.test_container2.id}-1"
-				target = "{{.Node2Name}}"
-				type = "local"
-			}
-
-			data "proxmox_virtual_environment_replications" "all" {
-						depends_on = [
-						proxmox_virtual_environment_replication.test_replication1,
-						proxmox_virtual_environment_replication.test_replication2
-					]
-			}
-				`),
-			Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_replications.all", "replications.#"),
-				resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
-					"id":     "100100-1",
-					"target": te.Node2Name,
-					"type":   "local",
-				}),
-				resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
-					"id":     "100200-1",
-					"target": te.Node2Name,
-					"type":   "local",
-				}),
-			),
-		}}},
-		{"read replication data sources with all attributes", []resource.TestStep{{
-			Config: te.RenderConfig(`
-				
-			resource "proxmox_virtual_environment_container" "test_container1" {
-				node_name = "{{.NodeName}}"
-				vm_id     = "100101"
-
-				disk {
-					datastore_id = "{{.ZfsDatastoreID}}"
-					size         = 4
-					mount_options = []
+				resource "proxmox_virtual_environment_replication" "test_replication1" {
+					id     = "${proxmox_virtual_environment_container.test_container1.id}-1"
+					target = "{{.Node2Name}}"
+					type = "local"
+					disable = true
+					comment = "comment 123"
+					schedule = "*/30"
+					rate = 10
 				}
 
-				operating_system {
-					template_file_id = "local:vztmpl/{{ .ImageFileName }}"
-					type             = "ubuntu"
+				resource "proxmox_virtual_environment_replication" "test_replication2" {
+					id     = "${proxmox_virtual_environment_container.test_container2.id}-1"
+					target = "{{.Node2Name}}"
+					type = "local"
+					disable = true
+					comment = "comment 123"
+					schedule = "*/30"
+					rate = 10
 				}
 
-				initialization {
-					hostname = "test"
+				data "proxmox_virtual_environment_replications" "all" {
+							depends_on = [
+							proxmox_virtual_environment_replication.test_replication1,
+							proxmox_virtual_environment_replication.test_replication2
+						]
 				}
-
-				started = false
-			}
-
-			resource "proxmox_virtual_environment_container" "test_container2" {
-				node_name = "{{.NodeName}}"
-				vm_id     = "100201"
-
-				disk {
-					datastore_id = "{{.ZfsDatastoreID}}"
-					size         = 4
-					mount_options = []
-				}
-
-				operating_system {
-					template_file_id = "local:vztmpl/{{ .ImageFileName }}"
-					type             = "ubuntu"
-				}
-
-				initialization {
-					hostname = "test"
-				}
-
-				started = false
-			}
-
-			resource "proxmox_virtual_environment_replication" "test_replication1" {
-				id     = "${proxmox_virtual_environment_container.test_container1.id}-1"
-				target = "{{.Node2Name}}"
-				type = "local"
-				disable = true
-				comment = "comment 123"
-				schedule = "*/30"
-				rate = 10
-			}
-
-			resource "proxmox_virtual_environment_replication" "test_replication2" {
-				id     = "${proxmox_virtual_environment_container.test_container2.id}-1"
-				target = "{{.Node2Name}}"
-				type = "local"
-				disable = true
-				comment = "comment 123"
-				schedule = "*/30"
-				rate = 10
-			}
-
-			data "proxmox_virtual_environment_replications" "all" {
-						depends_on = [
-						proxmox_virtual_environment_replication.test_replication1,
-						proxmox_virtual_environment_replication.test_replication2
-					]
-			}
-				`),
-			Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_replications.all", "replications.#"),
-				resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
-					"id":       "100101-1",
-					"target":   te.Node2Name,
-					"type":     "local",
-					"jobnum":   jobnum,
-					"guest":    "100101",
-					"disable":  "true",
-					"comment":  "comment 123",
-					"schedule": "*/30",
-					"rate":     "10",
-				}),
-				resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
-					"id":       "100201-1",
-					"target":   te.Node2Name,
-					"type":     "local",
-					"jobnum":   jobnum,
-					"guest":    "100201",
-					"disable":  "true",
-					"comment":  "comment 123",
-					"schedule": "*/30",
-					"rate":     "10",
-				}),
-			),
-		}}},
+					`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_replications.all", "replications.#"),
+					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+						"id":       id1,
+						"target":   te.Node2Name,
+						"type":     "local",
+						"jobnum":   jobnum,
+						"guest":    guest1,
+						"disable":  "true",
+						"comment":  "comment 123",
+						"schedule": "*/30",
+						"rate":     "10",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+						"id":       id2,
+						"target":   te.Node2Name,
+						"type":     "local",
+						"jobnum":   jobnum,
+						"guest":    guest2,
+						"disable":  "true",
+						"comment":  "comment 123",
+						"schedule": "*/30",
+						"rate":     "10",
+					}),
+				),
+			}}
+		}(),
+		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
