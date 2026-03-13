@@ -375,7 +375,10 @@ output "ubuntu_vm_public_key" {
 - `hotplug` - (Optional) Selectively enable hotplug features. Use `0` to
     disable, `1` to enable all. Valid features: `disk`, `network`, `usb`,
     `memory`, `cpu`. Memory hotplug requires NUMA to be enabled. If not set,
-    PVE defaults to `network,disk,usb`.
+    PVE defaults to `network,disk,usb`. When `disk` is included in the
+    hotplug list, disk resizes on a running VM are applied live without a
+    reboot. When `disk` is excluded, the provider will reboot the VM after
+    resize (controlled by `reboot_after_update`).
 - `usb` - (Optional) A host USB device mapping (multiple blocks supported).
     - `host` - (Optional) The Host USB device or port or the value `spice`. Use either this or `mapping`.
     - `mapping` - (Optional) The cluster-wide resource mapping name of the device, for example "usbdevice". Use either this or `host`.
@@ -525,7 +528,12 @@ output "ubuntu_vm_public_key" {
 - `pool_id` - (Optional) The identifier for a pool to assign the virtual machine to.
 - `protection` - (Optional) Sets the protection flag of the VM. This will disable the remove VM and remove disk operations (defaults to `false`).
 - `reboot` - (Optional) Reboot the VM after initial creation (defaults to `false`).
-- `reboot_after_update` - (Optional) Reboot the VM after update if needed (defaults to `true`).
+- `reboot_after_update` - (Optional) Whether the provider is allowed to
+    reboot the VM after an update when the change requires it (defaults to
+    `true`). Reboots are triggered by changes to non-hotpluggable settings
+    (e.g. BIOS, boot order, CPU type) and by disk resizes when `disk` is
+    excluded from `hotplug`. If set to `false`, the provider emits a warning
+    instead of rebooting.
 - `rng` - (Optional) The random number generator configuration. Can only be set by `root@pam.`
     - `source` - The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
     - `max_bytes` - (Optional) Maximum bytes of entropy allowed to get injected into the guest every `period` milliseconds (defaults to `1024`). Prefer a lower value when using `/dev/random` as source.

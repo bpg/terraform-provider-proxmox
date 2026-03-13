@@ -435,6 +435,11 @@ func TestHotplugContains(t *testing.T) {
 		{"single feature no match", "cpu", "memory", false},
 		{"default proxmox value", "disk,network,usb", "cpu", false},
 		{"cpu in list", "disk,cpu,network", "cpu", true},
+		{"pve default includes disk", "network,disk,usb", "disk", true},
+		{"pve default includes network", "network,disk,usb", "network", true},
+		{"pve default includes usb", "network,disk,usb", "usb", true},
+		{"pve default excludes cpu", "network,disk,usb", "cpu", false},
+		{"pve default excludes memory", "network,disk,usb", "memory", false},
 	}
 
 	for _, tt := range tests {
