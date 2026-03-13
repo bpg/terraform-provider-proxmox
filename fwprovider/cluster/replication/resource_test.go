@@ -105,19 +105,19 @@ func TestAccResourceReplication(t *testing.T) {
 		steps []resource.TestStep
 	}{
 		{
-			"create and update minimal replication", []resource.TestStep{
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+			"create and update minimal replication", func() []resource.TestStep {
+				cid := newCID()
+				id := fmt.Sprintf("%d-%s", cid, jobnum)
+				guest := fmt.Sprintf("%d", cid)
+				return []resource.TestStep{
+					{
 						Config: renderConfigWithCT(te, cid, `
 
-			resource "proxmox_virtual_environment_replication" "test_replication" {
-				id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-				target = "{{.Node2Name}}"
-				type = "local"
-			}`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+						}`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":     id,
@@ -127,22 +127,16 @@ func TestAccResourceReplication(t *testing.T) {
 								"guest":  guest,
 							}),
 						),
-					}
-				}(),
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+					},
+					{
 						Config: renderConfigWithCT(te, cid, `
-
-			resource "proxmox_virtual_environment_replication" "test_replication" {
-				id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-				target = "{{.Node2Name}}"
-				type = "local"
-				disable = true
-			}
-				`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+							disable = true
+						}
+						`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":      id,
@@ -153,23 +147,17 @@ func TestAccResourceReplication(t *testing.T) {
 								"disable": "true",
 							}),
 						),
-					}
-				}(),
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+					},
+					{
 						Config: renderConfigWithCT(te, cid, `
-
-				resource "proxmox_virtual_environment_replication" "test_replication" {
-					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-					target = "{{.Node2Name}}"
-					type = "local"
-					disable = true
-					comment = "comment 123"
-				}
-					`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+							disable = true
+							comment = "comment 123"
+						}
+						`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":      id,
@@ -181,24 +169,19 @@ func TestAccResourceReplication(t *testing.T) {
 								"comment": "comment 123",
 							}),
 						),
-					}
-				}(),
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+					},
+					{
 						Config: renderConfigWithCT(te, cid, `
 
-				resource "proxmox_virtual_environment_replication" "test_replication" {
-					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-					target = "{{.Node2Name}}"
-					type = "local"
-					disable = true
-					comment = "comment 123"
-					schedule = "*/30"
-				}
-					`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+							disable = true
+							comment = "comment 123"
+							schedule = "*/30"
+						}
+						`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":       id,
@@ -211,25 +194,19 @@ func TestAccResourceReplication(t *testing.T) {
 								"schedule": "^*/30$",
 							}),
 						),
-					}
-				}(),
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+					},
+					{
 						Config: renderConfigWithCT(te, cid, `
-
-				resource "proxmox_virtual_environment_replication" "test_replication" {
-					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-					target = "{{.Node2Name}}"
-					type = "local"
-					disable = true
-					comment = "comment 123"
-					schedule = "*/30"
-					rate = 10
-				}
-					`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+							disable = true
+							comment = "comment 123"
+							schedule = "*/30"
+							rate = 10
+						}
+						`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":       id,
@@ -246,9 +223,9 @@ func TestAccResourceReplication(t *testing.T) {
 						ResourceName:      "proxmox_virtual_environment_replication.test_replication",
 						ImportState:       true,
 						ImportStateVerify: true,
-					}
-				}(),
-			},
+					},
+				}
+			}(),
 		},
 		{"create disabled replication", []resource.TestStep{
 			func() resource.TestStep {
@@ -365,23 +342,23 @@ func TestAccResourceReplication(t *testing.T) {
 			}(),
 		}},
 		{
-			"replication fields deletion", []resource.TestStep{
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+			"replication fields deletion", func() []resource.TestStep {
+				cid := newCID()
+				id := fmt.Sprintf("%d-%s", cid, jobnum)
+				guest := fmt.Sprintf("%d", cid)
+				return []resource.TestStep{
+					{
 						Config: renderConfigWithCT(te, cid, `
-				resource "proxmox_virtual_environment_replication" "test_replication" {
-					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-					target = "{{.Node2Name}}"
-					type = "local"
-					disable = true
-					comment = "comment 123"
-					schedule = "*/30"
-					rate = 10
-				}
-					`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+							disable = true
+							comment = "comment 123"
+							schedule = "*/30"
+							rate = 10
+						}
+										`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":       id,
@@ -395,21 +372,16 @@ func TestAccResourceReplication(t *testing.T) {
 								"rate":     "10",
 							}),
 						),
-					}
-				}(),
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+					},
+					{
 						Config: renderConfigWithCT(te, cid, `
-				resource "proxmox_virtual_environment_replication" "test_replication" {
-					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-					target = "{{.Node2Name}}"
-					type = "local"
-					# removed disable, comment, schedule, rate
-				}
-					`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+							# removed disable, comment, schedule, rate
+						}
+										`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":     id,
@@ -419,28 +391,27 @@ func TestAccResourceReplication(t *testing.T) {
 								"guest":  guest,
 							}),
 						),
-					}
-				}(),
-			},
+					},
+				}
+			}(),
 		},
 		{
-			"replication fields deletion and re-addition", []resource.TestStep{
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+			"replication fields deletion and re-addition", func() []resource.TestStep {
+				cid := newCID()
+				id := fmt.Sprintf("%d-%s", cid, jobnum)
+				guest := fmt.Sprintf("%d", cid)
+				return []resource.TestStep{
+					{
 						Config: renderConfigWithCT(te, cid, `
-				resource "proxmox_virtual_environment_replication" "test_replication" {
-					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-					target = "{{.Node2Name}}"
-					type = "local"
-					disable = true
-					comment = "comment 123"
-					schedule = "*/30"
-					rate = 10
-				}
-					`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+							disable = true
+							comment = "comment 123"
+							schedule = "*/30"
+							rate = 10
+						}`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":       id,
@@ -454,21 +425,15 @@ func TestAccResourceReplication(t *testing.T) {
 								"rate":     "10",
 							}),
 						),
-					}
-				}(),
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+					},
+					{
 						Config: renderConfigWithCT(te, cid, `
-				resource "proxmox_virtual_environment_replication" "test_replication" {
-					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-					target = "{{.Node2Name}}"
-					type = "local"
-					# removed disable, comment, schedule, rate
-				}
-					`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+							# removed disable, comment, schedule, rate
+						}`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":     id,
@@ -478,24 +443,18 @@ func TestAccResourceReplication(t *testing.T) {
 								"guest":  guest,
 							}),
 						),
-					}
-				}(),
-				func() resource.TestStep {
-					cid := newCID()
-					id := fmt.Sprintf("%d-%s", cid, jobnum)
-					guest := fmt.Sprintf("%d", cid)
-					return resource.TestStep{
+					},
+					{
 						Config: renderConfigWithCT(te, cid, `
-				resource "proxmox_virtual_environment_replication" "test_replication" {
-					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
-					target = "{{.Node2Name}}"
-					type = "local"
-					disable = true
-					comment = "comment 123"
-					schedule = "*/30"
-					rate = 10
-				}
-					`),
+						resource "proxmox_virtual_environment_replication" "test_replication" {
+							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
+							target = "{{.Node2Name}}"
+							type = "local"
+							disable = true
+							comment = "comment 123"
+							schedule = "*/30"
+							rate = 10
+						}`),
 						Check: resource.ComposeTestCheckFunc(
 							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
 								"id":       id,
@@ -509,9 +468,9 @@ func TestAccResourceReplication(t *testing.T) {
 								"rate":     "10",
 							}),
 						),
-					}
-				}(),
-			},
+					},
+				}
+			}(),
 		},
 	}
 
@@ -539,7 +498,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				Config: `
 				resource "proxmox_virtual_environment_replication" "test" {
 				id     = "invalidid"
-				target = "{{.Node2Name}}"
+				target = "pve2"
 				type   = "local"
 				}`,
 				ExpectError: regexp.MustCompile(`id must be <GUEST>-<JOBNUM>`),
@@ -550,7 +509,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				Config: `
 				resource "proxmox_virtual_environment_replication" "test" {
 				id     = "a-b"
-				target = "{{.Node2Name}}"
+				target = "pve2"
 				type   = "local"
 				}`,
 				ExpectError: regexp.MustCompile(`id must be <GUEST>-<JOBNUM>`),
@@ -561,7 +520,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				Config: `
 				resource "proxmox_virtual_environment_replication" "test" {
 				id     = "100-1"
-				target = "{{.Node2Name}}"
+				target = "pve2"
 				type   = "remote"
 				}
 				`,
@@ -572,7 +531,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				PlanOnly: true,
 				Config: `
 				resource "proxmox_virtual_environment_replication" "test" {
-				target = "{{.Node2Name}}"
+				target = "pve2"
 				type   = "local"
 				}
 				`,
@@ -595,7 +554,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				Config: `
 				resource "proxmox_virtual_environment_replication" "test" {
 				id     = "100-1"
-				target = "{{.Node2Name}}"
+				target = "pve2"
 				}
 				`,
 				ExpectError: regexp.MustCompile(`The argument "type" is required, but no definition was found.`),
