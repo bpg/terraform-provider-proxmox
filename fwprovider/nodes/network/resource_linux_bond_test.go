@@ -45,14 +45,14 @@ func TestAccResourceLinuxBond(t *testing.T) {
 				`, ipV4cidr1, iface)),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_network_linux_bond.test", map[string]string{
-						"address":              ipV4cidr1,
-						"autostart":            "true",
-						"comment":              "created by terraform",
-						"name":                 iface,
-						"bond_mode":            "802.3ad",
+						"address":               ipV4cidr1,
+						"autostart":             "true",
+						"comment":               "created by terraform",
+						"name":                  iface,
+						"bond_mode":             "802.3ad",
 						"bond_xmit_hash_policy": "layer3+4",
-						"slaves.#":             "2",
-						"timeout_reload":       "60",
+						"slaves.#":              "2",
+						"timeout_reload":        "60",
 					}),
 					test.ResourceAttributesSet("proxmox_virtual_environment_network_linux_bond.test", []string{
 						"id",
