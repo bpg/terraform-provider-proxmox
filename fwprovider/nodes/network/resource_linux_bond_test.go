@@ -37,7 +37,7 @@ func TestAccResourceLinuxBond(t *testing.T) {
 					comment   = "created by terraform"
 					name      = "%s"
 					node_name = "{{.NodeName}}"
-					slaves    = ["eth0", "eth1"]
+					slaves    = ["ens19", "ens20"]
 					bond_mode = "802.3ad"
 					bond_xmit_hash_policy = "layer3+4"
 					timeout_reload = 60
@@ -50,7 +50,7 @@ func TestAccResourceLinuxBond(t *testing.T) {
 						"comment":               "created by terraform",
 						"name":                  iface,
 						"bond_mode":             "802.3ad",
-						"bond_xmit_hash_policy": "layer3+4",
+						"bond_xmit_hash_policy": `layer3\+4`,
 						"slaves.#":              "2",
 						"timeout_reload":        "60",
 					}),
@@ -68,9 +68,9 @@ func TestAccResourceLinuxBond(t *testing.T) {
 					comment   = ""
 					name      = "%s"
 					node_name = "{{.NodeName}}"
-					slaves    = ["eth0", "eth1"]
+					slaves    = ["ens19", "ens20"]
 					bond_mode = "active-backup"
-					bond_primary = "eth0"
+					bond_primary = "ens19"
 					timeout_reload = 60
 				}`, ipV4cidr2, iface)),
 				Check: resource.ComposeTestCheckFunc(
@@ -80,7 +80,7 @@ func TestAccResourceLinuxBond(t *testing.T) {
 						"comment":      "",
 						"name":         iface,
 						"bond_mode":    "active-backup",
-						"bond_primary": "eth0",
+						"bond_primary": "ens19",
 						"slaves.#":     "2",
 					}),
 					test.NoResourceAttributesSet("proxmox_virtual_environment_network_linux_bond.test", []string{
@@ -99,7 +99,7 @@ func TestAccResourceLinuxBond(t *testing.T) {
 					comment   = ""
 					name      = "%s"
 					node_name = "{{.NodeName}}"
-					slaves    = ["eth0", "eth1"]
+					slaves    = ["ens19", "ens20"]
 					bond_mode = "balance-rr"
 				}`, iface)),
 				Check: resource.ComposeTestCheckFunc(

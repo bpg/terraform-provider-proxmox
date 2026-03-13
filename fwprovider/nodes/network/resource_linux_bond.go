@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -116,7 +117,7 @@ func (m *linuxBondResourceModel) importFromNetworkInterfaceList(
 	}
 
 	if iface.MTU != nil {
-if v, err := strconv.Atoi(*iface.MTU); err == nil {
+		if v, err := strconv.Atoi(*iface.MTU); err == nil {
 			m.MTU = types.Int64Value(int64(v))
 		} else {
 			m.MTU = types.Int64Null()
@@ -125,6 +126,8 @@ if v, err := strconv.Atoi(*iface.MTU); err == nil {
 		m.MTU = types.Int64Null()
 	}
 
+	// Comments can be set to an empty string in plan, which will translate to a "no value" in PVE
+	// So we don't want to set it to null if it's empty, as this will be indicated as a plan drift
 	if iface.Comments != nil {
 		m.Comment = types.StringValue(strings.TrimSpace(*iface.Comments))
 	}
@@ -148,7 +151,10 @@ if v, err := strconv.Atoi(*iface.MTU); err == nil {
 	}
 
 	if iface.Slaves != nil && len(*iface.Slaves) > 0 {
-		slaves, diags := types.ListValueFrom(ctx, types.StringType, strings.Split(*iface.Slaves, " "))
+		parsed := strings.Split(*iface.Slaves, " ")
+		sort.Strings(parsed)
+
+		slaves, diags := types.ListValueFrom(ctx, types.StringType, parsed)
 		if diags.HasError() {
 			return fmt.Errorf("failed to parse bond slaves: %s", *iface.Slaves)
 		}
@@ -266,6 +272,7 @@ func (r *linuxBondResource) Schema(
 					"`broadcast`, `802.3ad`, `balance-tlb`, `balance-alb` (defaults to `balance-rr`).",
 				Optional: true,
 				Computed: true,
+				Default:  stringdefault.StaticString("balance-rr"),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"balance-rr",
