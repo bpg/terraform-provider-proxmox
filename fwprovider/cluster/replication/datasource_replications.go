@@ -19,6 +19,22 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/replications"
 )
 
+func replicationAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"id":         types.StringType,
+		"target":     types.StringType,
+		"type":       types.StringType,
+		"comment":    types.StringType,
+		"disable":    types.BoolType,
+		"rate":       types.Float64Type,
+		"remove_job": types.StringType,
+		"schedule":   types.StringType,
+		"source":     types.StringType,
+		"guest":      types.Int64Type,
+		"jobnum":     types.Int64Type,
+	}
+}
+
 // Ensure the implementation satisfies the required interfaces.
 var (
 	_ datasource.DataSource              = &replicationsDataSource{}
@@ -84,19 +100,7 @@ func (d *replicationsDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "List of Replications.",
 				Computed:    true,
 				ElementType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"id":         types.StringType,
-						"target":     types.StringType,
-						"type":       types.StringType,
-						"comment":    types.StringType,
-						"disable":    types.BoolType,
-						"rate":       types.Float64Type,
-						"remove_job": types.StringType,
-						"schedule":   types.StringType,
-						"source":     types.StringType,
-						"guest":      types.Int64Type,
-						"jobnum":     types.Int64Type,
-					},
+					AttrTypes: replicationAttrTypes(),
 				},
 			},
 		},
@@ -139,19 +143,7 @@ func (d *replicationsDataSource) Read(ctx context.Context, req datasource.ReadRe
 			JobNum:    types.Int64Value(repl.JobNum),
 		}
 
-		objValue, objDiag := types.ObjectValueFrom(ctx, map[string]attr.Type{
-			"id":         types.StringType,
-			"target":     types.StringType,
-			"type":       types.StringType,
-			"comment":    types.StringType,
-			"disable":    types.BoolType,
-			"rate":       types.Float64Type,
-			"remove_job": types.StringType,
-			"schedule":   types.StringType,
-			"source":     types.StringType,
-			"guest":      types.Int64Type,
-			"jobnum":     types.Int64Type,
-		}, replData)
+		objValue, objDiag := types.ObjectValueFrom(ctx, replicationAttrTypes(), replData)
 		resp.Diagnostics.Append(objDiag...)
 
 		if resp.Diagnostics.HasError() {
@@ -162,19 +154,7 @@ func (d *replicationsDataSource) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	listValue, listDiag := types.ListValue(types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"id":         types.StringType,
-			"target":     types.StringType,
-			"type":       types.StringType,
-			"comment":    types.StringType,
-			"disable":    types.BoolType,
-			"rate":       types.Float64Type,
-			"remove_job": types.StringType,
-			"schedule":   types.StringType,
-			"source":     types.StringType,
-			"guest":      types.Int64Type,
-			"jobnum":     types.Int64Type,
-		},
+		AttrTypes: replicationAttrTypes(),
 	}, replElements)
 	resp.Diagnostics.Append(listDiag...)
 

@@ -48,8 +48,7 @@ type ReplicationUpdate struct {
 	Delete []string `url:"delete,omitempty,comma"`
 }
 
-type ReplicationDelete struct {
-}
+type ReplicationDelete struct{}
 
 type replicationResponse struct {
 	Data *ReplicationData `json:"data"`

@@ -144,19 +144,20 @@ func TestAccDataSourceReplications(t *testing.T) {
 				),
 			}}
 		}()},
-		{"read replication data sources with all attributes", func() []resource.TestStep {
-			cid1 := newCID()
-			cid2 := newCID()
-			id1 := fmt.Sprintf("%d-1", cid1)
-			id2 := fmt.Sprintf("%d-1", cid2)
-			guest1 := fmt.Sprintf("%d", cid1)
-			guest2 := fmt.Sprintf("%d", cid2)
-			te.AddTemplateVars(map[string]any{
-				"TestContainerID1": cid1,
-				"TestContainerID2": cid2,
-			})
-			return []resource.TestStep{{
-				Config: te.RenderConfig(`
+		{
+			"read replication data sources with all attributes", func() []resource.TestStep {
+				cid1 := newCID()
+				cid2 := newCID()
+				id1 := fmt.Sprintf("%d-1", cid1)
+				id2 := fmt.Sprintf("%d-1", cid2)
+				guest1 := fmt.Sprintf("%d", cid1)
+				guest2 := fmt.Sprintf("%d", cid2)
+				te.AddTemplateVars(map[string]any{
+					"TestContainerID1": cid1,
+					"TestContainerID2": cid2,
+				})
+				return []resource.TestStep{{
+					Config: te.RenderConfig(`
 
 				resource "proxmox_virtual_environment_container" "test_container1" {
 					node_name = "{{.NodeName}}"
@@ -229,33 +230,33 @@ func TestAccDataSourceReplications(t *testing.T) {
 						]
 				}
 					`),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_replications.all", "replications.#"),
-					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
-						"id":       id1,
-						"target":   te.Node2Name,
-						"type":     "local",
-						"jobnum":   jobnum,
-						"guest":    guest1,
-						"disable":  "true",
-						"comment":  "comment 123",
-						"schedule": "*/30",
-						"rate":     "10",
-					}),
-					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
-						"id":       id2,
-						"target":   te.Node2Name,
-						"type":     "local",
-						"jobnum":   jobnum,
-						"guest":    guest2,
-						"disable":  "true",
-						"comment":  "comment 123",
-						"schedule": "*/30",
-						"rate":     "10",
-					}),
-				),
-			}}
-		}(),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_replications.all", "replications.#"),
+						resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+							"id":       id1,
+							"target":   te.Node2Name,
+							"type":     "local",
+							"jobnum":   jobnum,
+							"guest":    guest1,
+							"disable":  "true",
+							"comment":  "comment 123",
+							"schedule": "*/30",
+							"rate":     "10",
+						}),
+						resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+							"id":       id2,
+							"target":   te.Node2Name,
+							"type":     "local",
+							"jobnum":   jobnum,
+							"guest":    guest2,
+							"disable":  "true",
+							"comment":  "comment 123",
+							"schedule": "*/30",
+							"rate":     "10",
+						}),
+					),
+				}}
+			}(),
 		},
 	}
 	for _, tt := range tests {
