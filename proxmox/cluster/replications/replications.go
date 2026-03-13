@@ -38,7 +38,7 @@ func (c *Client) GetReplications(ctx context.Context) ([]ReplicationData, error)
 
 	err := c.DoRequest(ctx, http.MethodGet, c.basePath(), nil, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("error listing Relpications: %w", err)
+		return nil, fmt.Errorf("error listing Replications: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -62,7 +62,7 @@ func (c *Client) CreateReplication(ctx context.Context, data *ReplicationCreate)
 func (c *Client) UpdateReplication(ctx context.Context, data *ReplicationUpdate) error {
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(), data, nil)
 	if err != nil {
-		return fmt.Errorf("error updating Replicaiton: %w", err)
+		return fmt.Errorf("error updating Replication: %w", err)
 	}
 
 	return nil

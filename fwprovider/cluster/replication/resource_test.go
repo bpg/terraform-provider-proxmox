@@ -256,7 +256,7 @@ func TestAccResourceReplication(t *testing.T) {
 			}(),
 		}},
 		{
-			"create schduled replication", []resource.TestStep{
+			"create scheduled replication", []resource.TestStep{
 				func() resource.TestStep {
 					cid := newCID()
 					id := fmt.Sprintf("%d-%s", cid, jobnum)
