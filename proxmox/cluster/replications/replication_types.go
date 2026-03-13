@@ -50,8 +50,6 @@ type ReplicationUpdate struct {
 }
 
 type ReplicationDelete struct {
-	Force *types.CustomBool `json:"force,omitempty" url:"force,omitempty,int"`
-	Keep  *types.CustomBool `json:"keep,omitempty"  url:"keep,omitempty,int"`
 }
 
 type replicationResponse struct {
