@@ -30,7 +30,7 @@ type replicationsDataSource struct {
 	client *replications.Client
 }
 
-// replicationsDataSourceModel represents the data source model for listing VNets.
+// replicationsDataSourceModel represents the data source model for listing Replications.
 type replicationsDataSourceModel struct {
 	Replications types.List `tfsdk:"replications"`
 }

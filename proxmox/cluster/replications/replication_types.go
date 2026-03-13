@@ -11,7 +11,6 @@ import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 /*
 Replication used to represent a Replication in the API.
 
-This part is related to the SDN component: Replication
 Based on docs:
   - https://pve.proxmox.com/pve-docs/api-viewer/index.html#/cluster/replication
   - https://pve.proxmox.com/pve-docs/api-viewer/index.html#/cluster/replication/{id}
