@@ -46,7 +46,7 @@ type ReplicationCreate struct {
 type ReplicationUpdate struct {
 	Replication
 
-	Delete []string `url:"delete,omitempty"`
+	Delete []string `url:"delete,omitempty,comma"`
 }
 
 type ReplicationDelete struct {
