@@ -32,6 +32,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	harules "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/rules"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 var (
@@ -272,7 +273,7 @@ func (r *haruleResource) Create(ctx context.Context, req resource.CreateRequest,
 	case RuleTypeNodeAffinity:
 		nodesStr := r.nodesToString(data.Nodes)
 		createRequest.Nodes = &nodesStr
-		createRequest.Strict.FromValue(data.Strict)
+		createRequest.Strict = proxmoxtypes.CustomBoolPtr(data.Strict.ValueBoolPointer())
 	case RuleTypeResourceAffinity:
 		createRequest.Affinity = data.Affinity.ValueStringPointer()
 	}
@@ -341,7 +342,7 @@ func (r *haruleResource) Update(ctx context.Context, req resource.UpdateRequest,
 	case RuleTypeNodeAffinity:
 		nodesStr := r.nodesToString(data.Nodes)
 		updateRequest.Nodes = &nodesStr
-		updateRequest.Strict.FromValue(data.Strict)
+		updateRequest.Strict = proxmoxtypes.CustomBoolPtr(data.Strict.ValueBoolPointer())
 	case RuleTypeResourceAffinity:
 		updateRequest.Affinity = data.Affinity.ValueStringPointer()
 	}
