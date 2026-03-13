@@ -11,11 +11,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
-
-	"github.com/avast/retry-go/v5"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 )
 
 // GetReplication retrieves a single Replication by ID.
@@ -73,38 +71,32 @@ func (c *Client) UpdateReplication(ctx context.Context, data *ReplicationUpdate)
 // DeleteReplication deletes a Replication and wait for it to complete.
 func (c *Client) DeleteReplication(ctx context.Context, data *ReplicationDelete) error {
 	err := c.DeleteReplicationAsync(ctx, data)
-
-	ErrReplictionExist := errors.New("replication still exists")
-
 	if err != nil {
 		return err
 	}
 
-	err = retry.New(
-		retry.Context(ctx),
-		retry.UntilSucceeded(),
-		retry.DelayType(retry.FixedDelay),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
-			return errors.Is(err, ErrReplictionExist)
+	stillExists := errors.New("replication still exists")
+
+	op := retry.NewPollOperation("replication delete",
+		retry.WithRetryIf(func(err error) bool {
+			return errors.Is(err, stillExists)
 		}),
-	).Do(
-		func() error {
-			repls, err := c.GetReplications(ctx)
-			if err != nil {
-				return err
-			}
-
-			for _, r := range repls {
-				if r.ID == c.ID {
-					return ErrReplictionExist
-				}
-			}
-
-			return nil
-		},
 	)
+
+	err = op.DoPoll(ctx, func() error {
+		repls, err := c.GetReplications(ctx)
+		if err != nil {
+			return err
+		}
+
+		for _, r := range repls {
+			if r.ID == c.ID {
+				return stillExists
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("error waiting for deleting replication: %w", err)
 	}
