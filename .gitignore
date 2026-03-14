@@ -61,6 +61,7 @@ coverage.out
 *_PLAN.md
 *_SESSION_STATE.md
 *_PR_BODY.md
+*_COMMENT.md
 .dev/archive/
 
 # Python cache
