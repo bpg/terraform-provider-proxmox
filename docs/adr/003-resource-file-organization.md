@@ -63,14 +63,15 @@ Optional additional files:
 
 ### Naming Conventions
 
-| Element                   | Convention                                    | Example                                                 |
-|---------------------------|-----------------------------------------------|---------------------------------------------------------|
-| Package names             | Lowercase, singular noun matching API domain  | `zone`, `vnet`, `subnet`, multi-word: `hardwaremapping` |
-| Terraform attribute names | `snake_case`                                  | `isolate_ports`, `vlan_aware`                           |
-| Go struct fields          | PascalCase with `tfsdk` tag                   | `IsolatePorts types.Bool \`tfsdk:"isolate_ports"\``     |
-| Resource type names       | `proxmox_virtual_environment_{domain}_{name}` | `proxmox_virtual_environment_sdn_vnet`                  |
-| Test function names       | `TestAcc{Resource}{Scenario}`                 | `TestAccResourceSDNVNet`                                |
-| Constructor functions     | `NewResource()`, `NewDataSource()`            | —                                                       |
+| Element                   | Convention                                                                 | Example                                                 |
+|---------------------------|----------------------------------------------------------------------------|---------------------------------------------------------|
+| Package names             | Lowercase, singular noun matching API domain                               | `zone`, `vnet`, `subnet`, multi-word: `hardwaremapping` |
+| Terraform attribute names | `snake_case`                                                               | `isolate_ports`, `vlan_aware`                           |
+| Go struct fields          | PascalCase with `tfsdk` tag                                                | `IsolatePorts types.Bool \`tfsdk:"isolate_ports"\``     |
+| Resource type names (new) | `proxmox_{domain}_{name}` ([ADR-007](007-resource-type-name-migration.md)) | `proxmox_sdn_vnet`                                      |
+| Resource type names (old) | `proxmox_virtual_environment_{domain}_{name}` (legacy, pre-ADR-007)        | `proxmox_virtual_environment_sdn_vnet`                  |
+| Test function names       | `TestAcc{Resource}{Scenario}`                                              | `TestAccResourceSDNVNet`                                |
+| Constructor functions     | `NewResource()`, `NewDataSource()`                                         | —                                                       |
 
 ### Test Colocation
 

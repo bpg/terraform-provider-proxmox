@@ -4,14 +4,15 @@ This directory contains Architecture Decision Records (ADRs) for terraform-provi
 
 ## ADRs
 
-| ADR                                      | Title                      | Summary                                                                              |
-|------------------------------------------|----------------------------|--------------------------------------------------------------------------------------|
-| [001](001-use-plugin-framework.md)       | Use Plugin Framework       | All new resources use Terraform Plugin Framework, not SDKv2                          |
-| [002](002-api-client-structure.md)       | API Client Structure       | Layered domain clients in `proxmox/` with `ExpandPath()` pattern                     |
-| [003](003-resource-file-organization.md) | Resource File Organization | Domain hierarchy, 3-file pattern, naming conventions                                 |
-| [004](004-schema-design-conventions.md)  | Schema Design Conventions  | Attribute types, validators, model-API conversion, `CheckDelete`                     |
-| [005](005-error-handling.md)             | Error Handling             | `"Unable to [Action] [Resource]"` format, 3-layer error architecture, retry policies |
-| [006](006-testing-requirements.md)       | Testing Requirements       | Acceptance tests required, table-driven structure, test helpers                      |
+| ADR                                        | Title                        | Summary                                                                              |
+|--------------------------------------------|------------------------------|--------------------------------------------------------------------------------------|
+| [001](001-use-plugin-framework.md)         | Use Plugin Framework         | All new resources use Terraform Plugin Framework, not SDKv2                          |
+| [002](002-api-client-structure.md)         | API Client Structure         | Layered domain clients in `proxmox/` with `ExpandPath()` pattern                     |
+| [003](003-resource-file-organization.md)   | Resource File Organization   | Domain hierarchy, 3-file pattern, naming conventions                                 |
+| [004](004-schema-design-conventions.md)    | Schema Design Conventions    | Attribute types, validators, model-API conversion, `CheckDelete`                     |
+| [005](005-error-handling.md)               | Error Handling               | `"Unable to [Action] [Resource]"` format, 3-layer error architecture, retry policies |
+| [006](006-testing-requirements.md)         | Testing Requirements         | Acceptance tests required, table-driven structure, test helpers                      |
+| [007](007-resource-type-name-migration.md) | Resource Type Name Migration | Migrate from `proxmox_virtual_environment_` to `proxmox_` prefix in 3 phases         |
 
 ## Reading Order for New Resource Implementation
 
