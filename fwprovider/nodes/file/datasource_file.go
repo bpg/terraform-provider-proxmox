@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package nodes
+package file
 
 import (
 	"context"
@@ -76,15 +76,7 @@ func (d *fileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 				Description: "The content type of the file.",
 				Required:    true,
 				Validators: []validator.String{
-					stringvalidator.OneOf(
-						"backup",
-						"images",
-						"import",
-						"iso",
-						"rootdir",
-						"snippets",
-						"vztmpl",
-					),
+					stringvalidator.OneOf(storage.ValidContentTypes()...),
 				},
 			},
 			"file_name": schema.StringAttribute{

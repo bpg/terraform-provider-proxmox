@@ -41,6 +41,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/clonedvm"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/file"
 	nodefirewall "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/firewall"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
@@ -590,7 +591,8 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewPCIDataSource,
 		hardwaremapping.NewUSBDataSource,
 		metrics.NewMetricsServerDatasource,
-		nodes.NewFileDataSource,
+		file.NewFileDataSource,
+		file.NewListDataSource,
 		sdnsubnet.NewDataSource,
 		sdnvnet.NewDataSource,
 		sdnvnet.NewVNetsDataSource,
