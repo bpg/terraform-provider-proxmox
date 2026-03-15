@@ -213,7 +213,7 @@ If no API client code was changed, skip this step entirely.
 
 ## Step 9: Display Results
 
-Display the review results directly in the conversation. **Never post to GitHub.**
+Display the review results directly in the conversation first.
 
 Reference files using full paths from the project root with line numbers.
 
@@ -243,6 +243,36 @@ Format for no issues:
 
 No issues found. Checked for bugs and contributor guidelines compliance.
 ```
+
+## Step 9b: Offer to Post as Pending GitHub Comments
+
+If issues were found (score >= 50), ask the user if they want the findings posted as **pending** GitHub review comments:
+
+```text
+AskUserQuestion(
+  header: "GitHub",
+  question: "Post findings as pending GitHub review comments? (They stay invisible to the PR author until you submit the review on GitHub.)",
+  options: [
+    { label: "Yes", description: "Create pending review with inline comments on the PR" },
+    { label: "No", description: "Keep findings local only" }
+  ]
+)
+```
+
+If "Yes":
+
+1. Build a JSON payload for the GitHub API. Use the commit SHA from Step 2.
+2. **Inline comments** go on specific diff lines (issues that reference changed files with line numbers). Use `path` (relative to repo root), `line` (file line number), and `side: "RIGHT"`.
+3. **Non-file-specific issues** (e.g., missing files, commit messages, proof of work) go in the review `body` field.
+4. Create the review via the GitHub API — **omit the `event` field entirely** (do NOT use `"PENDING"` — the API rejects it). Omitting `event` defaults to pending status.
+
+```bash
+# Write JSON to a temp file, then POST via gh api
+gh api repos/{owner}/{repo}/pulls/{number}/reviews \
+  --method POST --input /tmp/pr-review.json
+```
+
+5. Confirm to the user that the pending review was created and remind them to submit it on GitHub when ready.
 
 ## Step 10: Save Session State
 
@@ -414,4 +444,4 @@ Examples of false positives, for Steps 5 and 6:
 - Use `gh` to interact with Github (eg. to fetch a pull request), rather than web fetch.
 - You must cite each issue with the full file path from the project root and line numbers (e.g., `fwprovider/resource_vm.go:10-15`). When referencing a guideline violation, cite the specific section of `CONTRIBUTING.md` or `CLAUDE.md`.
 - When linking to code on GitHub (e.g., in session state), use the full git SHA (not HEAD or abbreviated). Line range format is `L[start]-L[end]`, provide at least 1 line of context before and after.
-- **Never post reviews to GitHub.** All results are displayed locally in the conversation only.
+- **Never post reviews to GitHub without asking first.** Always display results locally first, then offer to post as pending comments (Step 9b).

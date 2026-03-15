@@ -206,7 +206,6 @@ The test output is saved to `/tmp/testacc.log` for use in `/bpg:prepare-pr`.
 - Exit 0: "ACCEPTANCE TESTS PASSED"
 - Exit non-zero: "ACCEPTANCE TESTS FAILED — Fix failing tests"
 
-
 ---
 
 ## Step 5: API Verification
@@ -285,7 +284,7 @@ If schema not changed:
 
 ---
 
-## Step 7: Summary and Proof Report Prompt
+## Step 7: Summary and Proof of Work Report
 
 Generate summary:
 
@@ -307,10 +306,89 @@ Date: $(date +%Y-%m-%d)
 Overall: ${OVERALL_STATUS}
 ```
 
+### Write Proof of Work Report
+
+Write a `.dev/${ISSUE_NUM}_REPORT.md` file containing the proof of work evidence. This file is required by CONTRIBUTING.md for AI-assisted contributions and is used by `/bpg:prepare-pr` to fill the PR body.
+
+**First, assess test coverage quality.** Read the test code and the implementation diff, then classify:
+
+- **Strong** — Tests precisely replicate and validate the behavior from the PR. A test would fail without the change and pass with it.
+- **Partial** — Tests exercise the resource but don't specifically target the changed behavior.
+- **None** — No acceptance tests, or tests don't exercise the changed code paths.
+
+**Then write the report, scaling evidence depth to coverage:**
+
+```markdown
+# Proof of Work Report — Issue #${ISSUE_NUM}
+
+**Date:** YYYY-MM-DD
+**Branch:** ${BRANCH_NAME}
+**Test Coverage:** Strong / Partial / None
+
+## Checklist Results
+
+| Step | Status |
+|------|--------|
+| Build | PASSED/FAILED |
+| Lint | PASSED/FAILED |
+| Unit Tests | PASSED/FAILED |
+| Acceptance Tests | PASSED/FAILED/SKIPPED |
+| API Verification | PASSED/SKIPPED |
+| Documentation | PASSED/SKIPPED |
+
+## Acceptance Test Output
+
+\`\`\`
+<command used>
+<trimmed test output: RUN/PASS/FAIL lines + summary>
+\`\`\`
+
+## Additional Evidence
+
+<Include this section when test coverage is Partial or None>
+
+### Terraform Configuration
+
+\`\`\`hcl
+<the HCL config used to exercise the change>
+\`\`\`
+
+### terraform plan Output
+
+\`\`\`
+<plan output showing expected diff — especially for bug fixes>
+\`\`\`
+
+### terraform apply Output
+
+\`\`\`
+<apply output showing successful creation/modification>
+\`\`\`
+
+### Before / After
+
+<For bug fixes: what happened before the fix vs after.
+E.g. "Before: plan showed unexpected diff on every run. After: clean plan.">
+
+## API Verification
+
+<mitmproxy logs, behavioral assertion details, or "N/A — no API changes">
+
+## Notes
+
+<any additional context, decisions, or caveats>
+```
+
+**What to include based on coverage level:**
+
+- **Strong:** Checklist + test output is sufficient. Omit the "Additional Evidence" section.
+- **Partial:** Checklist + test output + at least one item from Additional Evidence (terraform config + plan/apply output, or before/after comparison).
+- **None:** Checklist + full Additional Evidence section (terraform config, plan output, apply output, and before/after if applicable). This is the minimum to prove the change works without tests.
+
 If all passed:
 
 ```text
-All checks passed.
+All checks passed. Proof of work saved to: .dev/${ISSUE_NUM}_REPORT.md
 
 Next step: Prepare PR body.
 Run: /prepare-pr ${ISSUE_NUM}
