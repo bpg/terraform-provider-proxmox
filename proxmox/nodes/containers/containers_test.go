@@ -85,34 +85,31 @@ func writeJSON(w http.ResponseWriter, v any) {
 	}
 }
 
-// taskCompletedHandler returns a handler that responds with a completed task status.
-func taskCompletedHandler(captures *requestCaptures) http.HandlerFunc {
+// taskStatusHandler returns a handler that responds with a completed task
+// with the given exit status.
+func taskStatusHandler(captures *requestCaptures, exitStatus string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		captures.add(r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		writeJSON(w, map[string]any{
 			"data": map[string]any{
 				"status":     "stopped",
-				"exitstatus": "OK",
+				"exitstatus": exitStatus,
 			},
 		})
 	}
+}
+
+// taskCompletedHandler returns a handler that responds with a completed task status.
+func taskCompletedHandler(captures *requestCaptures) http.HandlerFunc {
+	return taskStatusHandler(captures, "OK")
 }
 
 // taskCompletedWithWarningsHandler returns a handler that responds with a completed task
 // that has a WARNINGS exit status (e.g., "WARNINGS: 1"), simulating benign PVE warnings
 // like "Systemd 255 detected. You may need to enable nesting.".
 func taskCompletedWithWarningsHandler(captures *requestCaptures) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		captures.add(r.Method, r.URL.Path)
-		w.Header().Set("Content-Type", "application/json")
-		writeJSON(w, map[string]any{
-			"data": map[string]any{
-				"status":     "stopped",
-				"exitstatus": "WARNINGS: 1",
-			},
-		})
-	}
+	return taskStatusHandler(captures, "WARNINGS: 1")
 }
 
 // TestCreateContainerSucceedsWithWarnings verifies that CreateContainer succeeds
