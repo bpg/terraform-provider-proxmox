@@ -37,14 +37,14 @@ func TestAccDatasourceFiles(t *testing.T) {
 		require.NoError(t, e)
 	})
 
-	datasourceName := "data.proxmox_virtual_environment_files.test"
+	datasourceName := "data.proxmox_files.test"
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					data "proxmox_virtual_environment_files" "test" {
+					data "proxmox_files" "test" {
 						node_name    = "{{.NodeName}}"
 						datastore_id = "local"
 						content_type = "snippets"
@@ -54,8 +54,12 @@ func TestAccDatasourceFiles(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "node_name", te.NodeName),
 					resource.TestCheckResourceAttr(datasourceName, "datastore_id", "local"),
 					resource.TestCheckResourceAttr(datasourceName, "content_type", "snippets"),
-					// At least one file should exist (the one we uploaded)
-					resource.TestCheckResourceAttrSet(datasourceName, "files.#"),
+					// Verify the uploaded file appears in the list with correct attributes
+					resource.TestCheckTypeSetElemNestedAttrs(datasourceName, "files.*", map[string]string{
+						"file_name":    fileName,
+						"content_type": "snippets",
+						"id":           fmt.Sprintf("local:snippets/%s", fileName),
+					}),
 				),
 			},
 		},
@@ -77,14 +81,14 @@ func TestAccDatasourceFilesNoFilter(t *testing.T) {
 		require.NoError(t, e)
 	})
 
-	datasourceName := "data.proxmox_virtual_environment_files.test_no_filter"
+	datasourceName := "data.proxmox_files.test_no_filter"
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					data "proxmox_virtual_environment_files" "test_no_filter" {
+					data "proxmox_files" "test_no_filter" {
 						node_name    = "{{.NodeName}}"
 						datastore_id = "local"
 					}
@@ -102,7 +106,7 @@ func TestAccDatasourceFilesNoFilter(t *testing.T) {
 func TestAccDatasourceFilesEmptyResult(t *testing.T) {
 	te := InitEnvironment(t)
 
-	datasourceName := "data.proxmox_virtual_environment_files.test_empty"
+	datasourceName := "data.proxmox_files.test_empty"
 
 	// "import" content type is unlikely to have files on a default local datastore
 	resource.ParallelTest(t, resource.TestCase{
@@ -110,7 +114,7 @@ func TestAccDatasourceFilesEmptyResult(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					data "proxmox_virtual_environment_files" "test_empty" {
+					data "proxmox_files" "test_empty" {
 						node_name    = "{{.NodeName}}"
 						datastore_id = "local"
 						content_type = "import"

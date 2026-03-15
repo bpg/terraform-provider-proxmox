@@ -1,4 +1,4 @@
-data "proxmox_virtual_environment_files" "iso_files" {
+data "proxmox_files" "iso_files" {
   node_name    = "pve"
   datastore_id = "local"
   content_type = "iso"
@@ -7,7 +7,7 @@ data "proxmox_virtual_environment_files" "iso_files" {
 # Check if a specific image already exists
 locals {
   image_exists = anytrue([
-    for f in data.proxmox_virtual_environment_files.iso_files.files :
+    for f in data.proxmox_files.iso_files.files :
     f.file_name == "noble-server-cloudimg-amd64.img"
   ])
 }
@@ -23,15 +23,15 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_noble" {
 }
 
 # List all files without filtering
-data "proxmox_virtual_environment_files" "all_files" {
+data "proxmox_files" "all_files" {
   node_name    = "pve"
   datastore_id = "local"
 }
 
 output "iso_file_count" {
-  value = length(data.proxmox_virtual_environment_files.iso_files.files)
+  value = length(data.proxmox_files.iso_files.files)
 }
 
 output "all_file_names" {
-  value = [for f in data.proxmox_virtual_environment_files.all_files.files : f.file_name]
+  value = [for f in data.proxmox_files.all_files.files : f.file_name]
 }
