@@ -85,18 +85,80 @@ func writeJSON(w http.ResponseWriter, v any) {
 	}
 }
 
-// taskCompletedHandler returns a handler that responds with a completed task status.
-func taskCompletedHandler(captures *requestCaptures) http.HandlerFunc {
+// taskStatusHandler returns a handler that responds with a completed task
+// with the given exit status.
+func taskStatusHandler(captures *requestCaptures, exitStatus string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		captures.add(r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		writeJSON(w, map[string]any{
 			"data": map[string]any{
 				"status":     "stopped",
-				"exitstatus": "OK",
+				"exitstatus": exitStatus,
 			},
 		})
 	}
+}
+
+// taskCompletedHandler returns a handler that responds with a completed task status.
+func taskCompletedHandler(captures *requestCaptures) http.HandlerFunc {
+	return taskStatusHandler(captures, "OK")
+}
+
+// taskCompletedWithWarningsHandler returns a handler that responds with a completed task
+// that has a WARNINGS exit status (e.g., "WARNINGS: 1"), simulating benign PVE warnings
+// like "Systemd 255 detected. You may need to enable nesting.".
+func taskCompletedWithWarningsHandler(captures *requestCaptures) http.HandlerFunc {
+	return taskStatusHandler(captures, "WARNINGS: 1")
+}
+
+// TestCreateContainerSucceedsWithWarnings verifies that CreateContainer succeeds
+// when the PVE task completes with warnings (e.g., "WARNINGS: 1") rather than "OK".
+// This is a common scenario with Ubuntu 24.04 templates on systemd 255+.
+func TestCreateContainerSucceedsWithWarnings(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api2/json/lxc", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{"data": testUPID})
+	})
+	mux.HandleFunc("GET /api2/json/nodes/", taskCompletedWithWarningsHandler(captures))
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.CreateContainer(t.Context(), &CreateRequestBody{})
+	require.NoError(t, err, "CreateContainer should succeed when task completes with warnings")
+}
+
+// TestCloneContainerSucceedsWithWarnings verifies that CloneContainer succeeds
+// when the PVE task completes with warnings rather than "OK".
+func TestCloneContainerSucceedsWithWarnings(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api2/json/lxc/100/clone", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{"data": testUPID})
+	})
+	mux.HandleFunc("GET /api2/json/nodes/", taskCompletedWithWarningsHandler(captures))
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	err := client.CloneContainer(t.Context(), &CloneRequestBody{})
+	require.NoError(t, err, "CloneContainer should succeed when task completes with warnings")
 }
 
 func TestDeleteContainerWaitsForTask(t *testing.T) {

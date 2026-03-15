@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
@@ -31,7 +32,9 @@ func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error 
 
 	return op.DoTask(ctx,
 		func() (*string, error) { return c.CloneContainerAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+		func(ctx context.Context, taskID string) error {
+			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+		},
 	)
 }
 
@@ -60,7 +63,9 @@ func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) erro
 
 	return op.DoTask(ctx,
 		func() (*string, error) { return c.CreateContainerAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+		func(ctx context.Context, taskID string) error {
+			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+		},
 	)
 }
 
@@ -351,7 +356,9 @@ func (c *Client) StartContainer(ctx context.Context) error {
 
 	if err := op.DoTask(ctx,
 		func() (*string, error) { return c.StartContainerAsync(ctx) },
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+		func(ctx context.Context, taskID string) error {
+			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+		},
 	); err != nil {
 		if errors.Is(err, errContainerAlreadyRunning) {
 			return nil
