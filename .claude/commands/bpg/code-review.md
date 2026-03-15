@@ -114,7 +114,7 @@ Launch review agents based on PR size. **Each agent's prompt must include the wo
 
 ### Agent Descriptions
 
-a. **Guidelines compliance:** Audit the changes against `CONTRIBUTING.md` (the primary source of contributor guidelines) and any relevant `CLAUDE.md` files. Key areas to check from CONTRIBUTING.md: coding conventions, commit message format, PR scope (one change per PR, no mixed concerns), proof of work, DCO sign-off, Framework-only for new resources, documentation workflow, and test placement. Note that CLAUDE.md is guidance for Claude agents, so not all of its instructions apply during code review of human contributions.
+a. **Guidelines compliance:** Audit the changes against `CONTRIBUTING.md` (the primary source of contributor guidelines) and any relevant `CLAUDE.md` files. Key areas to check from CONTRIBUTING.md: coding conventions, commit message format, PR scope (one change per PR, no mixed concerns), proof of work, DCO sign-off, Framework-only for new resources, documentation workflow, and test placement. Additionally, if the PR adds **new** resources or data sources, verify they follow [ADR-007](docs/adr/007-resource-type-name-migration.md) Phase 1: the `Metadata` method must hardcode `resp.TypeName = "proxmox_..."` instead of using `req.ProviderTypeName + "_suffix"`. Note that CLAUDE.md is guidance for Claude agents, so not all of its instructions apply during code review of human contributions.
 
 b. **Bug scan:** Read the file changes in the pull request, then do a shallow scan for obvious bugs. Avoid reading extra context beyond the changes, focusing just on the changes themselves. Focus on large bugs, and avoid small issues and nitpicks. Ignore likely false positives.
 

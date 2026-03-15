@@ -130,6 +130,34 @@ fi
 - Exit 0: "MARKDOWN LINT PASSED"
 - Issues found: "MARKDOWN LINT FAILED — Review and fix remaining issues"
 
+### ADR-007: Resource Type Name Convention
+
+Check if any **new** resources or data sources were added, and verify they follow [ADR-007](docs/adr/007-resource-type-name-migration.md) Phase 1: new resources must use the `proxmox_` prefix with a hardcoded `TypeName`, not `req.ProviderTypeName + "_suffix"`.
+
+```bash
+echo "=== Step 2c: ADR-007 Naming Convention ==="
+# Find new Go files added in this branch that contain Metadata functions (resources/data sources)
+NEW_FILES=$(git diff --name-only --diff-filter=A main...HEAD | grep -E '\.go$')
+if [ -n "$NEW_FILES" ]; then
+  # Check for the old pattern: req.ProviderTypeName + "_something"
+  VIOLATIONS=$(grep -l 'req\.ProviderTypeName' $NEW_FILES 2>/dev/null)
+  if [ -n "$VIOLATIONS" ]; then
+    echo "ADR-007 VIOLATION: New files use req.ProviderTypeName instead of hardcoded proxmox_ prefix:"
+    echo "$VIOLATIONS"
+    grep -n 'req\.ProviderTypeName' $VIOLATIONS
+  else
+    echo "No ADR-007 violations in new files"
+  fi
+else
+  echo "No new Go files added"
+fi
+```
+
+**Result:**
+
+- No violations or no new files: "ADR-007 PASSED"
+- Violations found: "ADR-007 FAILED — New resources/data sources must hardcode `resp.TypeName = \"proxmox_...\"` per [ADR-007](docs/adr/007-resource-type-name-migration.md) Phase 1"
+
 ---
 
 ## Step 3: Unit Tests
@@ -298,6 +326,7 @@ Date: $(date +%Y-%m-%d)
 |------|--------|
 | Build | ${BUILD_STATUS} |
 | Lint | ${LINT_STATUS} |
+| ADR-007 Naming | ${ADR007_STATUS} |
 | Unit Tests | ${TEST_STATUS} |
 | Acceptance Tests | ${ACC_STATUS} |
 | API Verification | ${API_STATUS} |
@@ -331,6 +360,7 @@ Write a `.dev/${ISSUE_NUM}_REPORT.md` file containing the proof of work evidence
 |------|--------|
 | Build | PASSED/FAILED |
 | Lint | PASSED/FAILED |
+| ADR-007 Naming | PASSED/SKIPPED |
 | Unit Tests | PASSED/FAILED |
 | Acceptance Tests | PASSED/FAILED/SKIPPED |
 | API Verification | PASSED/SKIPPED |
@@ -423,6 +453,7 @@ Detect issue number and update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read a
 - [ ] Build passes
 - [ ] Go lint shows 0 issues
 - [ ] Markdown lint passes on changed `.md` files
+- [ ] ADR-007 naming convention check passes (new resources use `proxmox_` prefix)
 - [ ] Unit tests pass
 - [ ] Acceptance tests pass (or explicitly skipped)
 - [ ] API verification done (or explicitly skipped for non-API changes)
