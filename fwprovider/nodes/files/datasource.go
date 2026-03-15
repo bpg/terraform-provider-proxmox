@@ -105,11 +105,9 @@ func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		// Extract filename from volume ID format: "datastore:content/filename"
 		var fileName string
 
-		volumeParts := strings.SplitN(apiFile.VolumeID, ":", 2)
-		if len(volumeParts) == 2 {
-			fileParts := strings.SplitN(volumeParts[1], "/", 2)
-			if len(fileParts) == 2 {
-				fileName = fileParts[1]
+		if _, afterColon, found := strings.Cut(apiFile.VolumeID, ":"); found {
+			if _, afterSlash, foundSlash := strings.Cut(afterColon, "/"); foundSlash {
+				fileName = afterSlash
 			}
 		}
 
