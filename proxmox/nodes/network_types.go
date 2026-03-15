@@ -21,30 +21,34 @@ type NetworkInterfaceListResponseData struct {
 	// See https://github.com/bpg/terraform-provider-proxmox/issues/410
 	// BridgeFD        *int              `json:"bridge_fd,omitempty"`
 
-	Active          *types.CustomBool `json:"active,omitempty"`
-	Address         *string           `json:"address,omitempty"`
-	Address6        *string           `json:"address6,omitempty"`
-	Autostart       *types.CustomBool `json:"autostart,omitempty"`
-	BridgePorts     *string           `json:"bridge_ports,omitempty"`
-	BridgeSTP       *string           `json:"bridge_stp,omitempty"`
-	BridgeVIDs      *string           `json:"bridge_vids,omitempty"`
-	BridgeVLANAware *types.CustomBool `json:"bridge_vlan_aware,omitempty"`
-	CIDR            *string           `json:"cidr,omitempty"`
-	CIDR6           *string           `json:"cidr6,omitempty"`
-	Comments        *string           `json:"comments,omitempty"`
-	Exists          *types.CustomBool `json:"exists,omitempty"`
-	Families        *[]string         `json:"families,omitempty"`
-	Gateway         *string           `json:"gateway,omitempty"`
-	Gateway6        *string           `json:"gateway6,omitempty"`
-	Iface           string            `json:"iface"`
-	MethodIPv4      *string           `json:"method,omitempty"`
-	MethodIPv6      *string           `json:"method6,omitempty"`
-	MTU             *string           `json:"mtu,omitempty"`
-	Netmask         *string           `json:"netmask,omitempty"`
-	VLANID          *string           `json:"vlan-id,omitempty"`
-	VLANRawDevice   *string           `json:"vlan-raw-device,omitempty"`
-	Priority        int               `json:"priority"`
-	Type            string            `json:"type"`
+	Active             *types.CustomBool `json:"active,omitempty"`
+	Address            *string           `json:"address,omitempty"`
+	Address6           *string           `json:"address6,omitempty"`
+	Autostart          *types.CustomBool `json:"autostart,omitempty"`
+	BondMode           *string           `json:"bond_mode,omitempty"`
+	BondPrimary        *string           `json:"bond-primary,omitempty"`
+	BondXmitHashPolicy *string           `json:"bond_xmit_hash_policy,omitempty"`
+	BridgePorts        *string           `json:"bridge_ports,omitempty"`
+	BridgeSTP          *string           `json:"bridge_stp,omitempty"`
+	BridgeVIDs         *string           `json:"bridge_vids,omitempty"`
+	BridgeVLANAware    *types.CustomBool `json:"bridge_vlan_aware,omitempty"`
+	CIDR               *string           `json:"cidr,omitempty"`
+	CIDR6              *string           `json:"cidr6,omitempty"`
+	Comments           *string           `json:"comments,omitempty"`
+	Exists             *types.CustomBool `json:"exists,omitempty"`
+	Families           *[]string         `json:"families,omitempty"`
+	Gateway            *string           `json:"gateway,omitempty"`
+	Gateway6           *string           `json:"gateway6,omitempty"`
+	Iface              string            `json:"iface"`
+	MethodIPv4         *string           `json:"method,omitempty"`
+	MethodIPv6         *string           `json:"method6,omitempty"`
+	MTU                *string           `json:"mtu,omitempty"`
+	Netmask            *string           `json:"netmask,omitempty"`
+	Slaves             *string           `json:"slaves,omitempty"`
+	VLANID             *string           `json:"vlan-id,omitempty"`
+	VLANRawDevice      *string           `json:"vlan-raw-device,omitempty"`
+	Priority           int               `json:"priority"`
+	Type               string            `json:"type"`
 }
 
 // NetworkInterfaceCreateUpdateRequestBody contains the body for a node network interface create / update request.
