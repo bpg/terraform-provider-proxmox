@@ -32,6 +32,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -267,6 +268,8 @@ const (
 	mkName                = "name"
 
 	mkNodeName                         = "node_name"
+	mkNodeNames                        = "node_names"
+	mkCurrentNodeName                  = "current_node_name"
 	mkOperatingSystem                  = "operating_system"
 	mkOperatingSystemType              = "type"
 	mkPoolID                           = "pool_id"
@@ -1223,8 +1226,27 @@ func VM() *schema.Resource {
 		mkNodeName: {
 			Type:         schema.TypeString,
 			Description:  "The node name",
-			Required:     true,
+			Optional:     true,
 			ValidateFunc: validation.StringIsNotEmpty,
+			ExactlyOneOf: []string{mkNodeName, mkNodeNames},
+		},
+		mkNodeNames: {
+			Type:        schema.TypeSet,
+			Description: "The node names on which the VM is allowed to run",
+			Optional:    true,
+			ExactlyOneOf: []string{
+				mkNodeName,
+				mkNodeNames,
+			},
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringIsNotEmpty,
+			},
+		},
+		mkCurrentNodeName: {
+			Type:        schema.TypeString,
+			Description: "The node name on which the VM is currently running",
+			Computed:    true,
 		},
 		mkNUMA: {
 			Type:        schema.TypeList,
@@ -1768,6 +1790,25 @@ func VM() *schema.Resource {
 					return !d.Get(mkMigrate).(bool)
 				},
 			),
+			customdiff.ForceNewIf(
+				mkNodeNames,
+				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
+					if !d.HasChange(mkNodeNames) {
+						return false
+					}
+
+					if d.Get(mkMigrate).(bool) {
+						return false
+					}
+
+					currentNodeName, ok := d.GetOk(mkCurrentNodeName)
+					if !ok {
+						return true
+					}
+
+					return !slices.Contains(stringSetValues(d.Get(mkNodeNames)), currentNodeName.(string))
+				},
+			),
 			forceNewOnTPMVersionChange,
 			forceNewOnEFIDiskTypeChange,
 		),
@@ -1783,6 +1824,11 @@ func VM() *schema.Resource {
 				err = d.Set(mkNodeName, node)
 				if err != nil {
 					return nil, fmt.Errorf("failed setting state during import: %w", err)
+				}
+
+				err = d.Set(mkCurrentNodeName, node)
+				if err != nil {
+					return nil, fmt.Errorf("failed setting current node state during import: %w", err)
 				}
 
 				return []*schema.ResourceData{d}, nil
@@ -2054,7 +2100,17 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	description := d.Get(mkDescription).(string)
 	name := d.Get(mkName).(string)
 	tags := d.Get(mkTags).([]any)
-	nodeName := d.Get(mkNodeName).(string)
+
+	nodeName, err := selectVMNodeForCreate(ctx, client, d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	err = d.Set(mkCurrentNodeName, nodeName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	poolID := d.Get(mkPoolID).(string)
 	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
 	vmID := vmIDUntyped.(int)
@@ -2870,7 +2926,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		return diag.FromErr(err)
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
+	nodeName, err := selectVMNodeForCreate(ctx, client, d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	operatingSystem, err := structure.GetSchemaBlock(
 		resource,
@@ -3137,6 +3196,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		return diag.FromErr(err)
 	}
 
+	err = d.Set(mkCurrentNodeName, nodeName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(strconv.Itoa(vmID))
 
 	diags := disk.CreateCustomDisks(ctx, client, nodeName, vmID, diskDeviceObjects)
@@ -3192,7 +3256,10 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		return diag.FromErr(err)
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
+	nodeName, err := getCurrentVMNodeName(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	vmID, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -3948,14 +4015,34 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics
 		return diag.FromErr(err)
 	}
 
-	if vmNodeName != d.Get(mkNodeName) {
-		err = d.Set(mkNodeName, vmNodeName)
+	err = d.Set(mkCurrentNodeName, *vmNodeName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	currentNodeName := *vmNodeName
+
+	if isMultiNodePlacementConfigured(d) {
+		configuredNodes := getConfiguredVMNodeNames(d)
+		if slices.Contains(configuredNodes, currentNodeName) {
+			err = d.Set(mkNodeNames, configuredNodes)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		} else {
+			err = d.Set(mkNodeNames, []string{currentNodeName})
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	} else if currentNodeName != d.Get(mkNodeName) {
+		err = d.Set(mkNodeName, currentNodeName)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
+	nodeName := currentNodeName
 
 	vmAPI := client.Node(nodeName).VM(vmID)
 
@@ -4030,7 +4117,11 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
+	nodeName, err := getCurrentVMNodeName(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	clone := d.Get(mkClone).([]any)
 
 	// Compare the agent configuration to the one stored in the state.
@@ -5241,8 +5332,14 @@ func vmReadCustom(
 	// during import these core attributes might not be set, so set them explicitly here
 	d.SetId(strconv.Itoa(vmID))
 	e = d.Set(mkVMID, vmID)
+
 	diags = append(diags, diag.FromErr(e)...)
-	e = d.Set(mkNodeName, nodeName)
+	if !isMultiNodePlacementConfigured(d) {
+		e = d.Set(mkNodeName, nodeName)
+		diags = append(diags, diag.FromErr(e)...)
+	}
+
+	e = d.Set(mkCurrentNodeName, nodeName)
 	diags = append(diags, diag.FromErr(e)...)
 
 	diags = setDefaultIfNotExists(d, diags, mkMigrate, dvMigrate)
@@ -5516,7 +5613,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(e)
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
+	nodeName, e := getCurrentVMNodeName(d)
+	if e != nil {
+		return diag.FromErr(e)
+	}
+
 	rebootRequired := false
 
 	vmID, e := strconv.Atoi(d.Id())
@@ -5530,18 +5631,34 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	}
 
 	// If the node name has changed we need to migrate the VM to the new node before we do anything else.
-	if d.HasChange(mkNodeName) {
-		migrateTimeoutSec := d.Get(mkTimeoutMigrate).(int)
-
-		migrateCtx, cancel := context.WithTimeout(ctx, time.Duration(migrateTimeoutSec)*time.Second)
-		defer cancel()
-
-		oldNodeNameValue, _ := d.GetChange(mkNodeName)
-		oldNodeName := oldNodeNameValue.(string)
-
-		err := migrateVM(migrateCtx, client, vmID, oldNodeName, nodeName)
+	if d.HasChange(mkNodeName) || d.HasChange(mkNodeNames) {
+		targetNodeName, shouldMigrate, err := getVMNodeMigrationTarget(ctx, d, client)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+
+		if shouldMigrate {
+			migrateTimeoutSec := d.Get(mkTimeoutMigrate).(int)
+
+			migrateCtx, cancel := context.WithTimeout(ctx, time.Duration(migrateTimeoutSec)*time.Second)
+			defer cancel()
+
+			currentNodeName, err := getCurrentVMNodeName(d)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			err = migrateVM(migrateCtx, client, vmID, currentNodeName, targetNodeName)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			nodeName = targetNodeName
+
+			e = d.Set(mkCurrentNodeName, nodeName)
+			if e != nil {
+				return diag.FromErr(e)
+			}
 		}
 	}
 
@@ -6371,7 +6488,11 @@ func vmUpdateDiskLocationAndSize(
 		return diag.FromErr(err)
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
+	nodeName, err := getCurrentVMNodeName(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	started := d.Get(mkStarted).(bool)
 	template := d.Get(mkTemplate).(bool)
 
@@ -6695,7 +6816,10 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(err)
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
+	nodeName, err := getCurrentVMNodeName(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	vmID, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -6826,6 +6950,191 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	}
 
 	return nodeName, id, nil
+}
+
+func isMultiNodePlacementConfigured(d *schema.ResourceData) bool {
+	nodeNames, ok := d.GetOk(mkNodeNames)
+	if !ok {
+		return false
+	}
+
+	return len(nodeNames.(*schema.Set).List()) > 0
+}
+
+func getConfiguredVMNodeNames(d *schema.ResourceData) []string {
+	if isMultiNodePlacementConfigured(d) {
+		return stringSetValues(d.Get(mkNodeNames))
+	}
+
+	nodeName, ok := d.GetOk(mkNodeName)
+	if !ok {
+		return nil
+	}
+
+	return []string{nodeName.(string)}
+}
+
+func getCurrentVMNodeName(d *schema.ResourceData) (string, error) {
+	currentNodeName, ok := d.GetOk(mkCurrentNodeName)
+	if ok && currentNodeName.(string) != "" {
+		return currentNodeName.(string), nil
+	}
+
+	return "", fmt.Errorf("failed to determine current VM node from state")
+}
+
+func stringSetValues(nodes any) []string {
+	var values []string
+
+	switch v := nodes.(type) {
+	case *schema.Set:
+		for _, value := range v.List() {
+			values = append(values, value.(string))
+		}
+	case []any:
+		for _, value := range v {
+			values = append(values, value.(string))
+		}
+	case []string:
+		values = append(values, v...)
+	}
+
+	slices.Sort(values)
+
+	return values
+}
+
+func selectVMNodeForCreate(ctx context.Context, client proxmox.Client, d *schema.ResourceData) (string, error) {
+	configuredNodes := getConfiguredVMNodeNames(d)
+	if len(configuredNodes) == 0 {
+		return "", fmt.Errorf("no target node configured")
+	}
+
+	if len(configuredNodes) == 1 {
+		return configuredNodes[0], nil
+	}
+
+	return selectLeastUtilizedNode(ctx, client, configuredNodes)
+}
+
+func getVMNodeMigrationTarget(
+	ctx context.Context,
+	d *schema.ResourceData,
+	client proxmox.Client,
+) (string, bool, error) {
+	currentNodeName, err := getCurrentVMNodeName(d)
+	if err != nil {
+		return "", false, err
+	}
+
+	configuredNodes := getConfiguredVMNodeNames(d)
+	if len(configuredNodes) == 0 {
+		return "", false, fmt.Errorf("no target node configured")
+	}
+
+	if !isMultiNodePlacementConfigured(d) {
+		targetNodeName := configuredNodes[0]
+
+		return targetNodeName, targetNodeName != currentNodeName, nil
+	}
+
+	if slices.Contains(configuredNodes, currentNodeName) {
+		return "", false, nil
+	}
+
+	targetNodeName, err := selectLeastUtilizedNode(ctx, client, configuredNodes)
+	if err != nil {
+		return "", false, err
+	}
+
+	return targetNodeName, true, nil
+}
+
+type vmNodePlacement struct {
+	name              string
+	cpuUtilization    float64
+	memoryUtilization float64
+}
+
+func selectLeastUtilizedNode(ctx context.Context, client proxmox.Client, nodeNames []string) (string, error) {
+	nodes, err := client.Node("").ListNodes(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return selectLeastUtilizedNodeFromList(nodeNames, nodes)
+}
+
+func selectLeastUtilizedNodeFromList(nodeNames []string, nodes []*nodes.ListResponseData) (string, error) {
+	candidates := make([]vmNodePlacement, 0, len(nodeNames))
+	selectedNodeNames := make(map[string]struct{}, len(nodeNames))
+
+	for _, nodeName := range nodeNames {
+		selectedNodeNames[nodeName] = struct{}{}
+	}
+
+	for _, node := range nodes {
+		if _, ok := selectedNodeNames[node.Name]; !ok {
+			continue
+		}
+
+		if node.Status == nil || *node.Status != "online" {
+			continue
+		}
+
+		candidates = append(candidates, vmNodePlacement{
+			name:              node.Name,
+			cpuUtilization:    getNodeCPUUtilization(node),
+			memoryUtilization: getNodeMemoryUtilization(node),
+		})
+
+		delete(selectedNodeNames, node.Name)
+	}
+
+	if len(selectedNodeNames) > 0 {
+		missingNodeNames := make([]string, 0, len(selectedNodeNames))
+		for nodeName := range selectedNodeNames {
+			missingNodeNames = append(missingNodeNames, nodeName)
+		}
+
+		slices.Sort(missingNodeNames)
+
+		return "", fmt.Errorf("failed to find online nodes from node_names: %s", strings.Join(missingNodeNames, ", "))
+	}
+
+	sort.Slice(candidates, func(i, j int) bool {
+		if candidates[i].memoryUtilization != candidates[j].memoryUtilization {
+			return candidates[i].memoryUtilization < candidates[j].memoryUtilization
+		}
+
+		if candidates[i].cpuUtilization != candidates[j].cpuUtilization {
+			return candidates[i].cpuUtilization < candidates[j].cpuUtilization
+		}
+
+		return candidates[i].name < candidates[j].name
+	})
+
+	if len(candidates) == 0 {
+		return "", fmt.Errorf("failed to find an online node from node_names")
+	}
+
+	return candidates[0].name, nil
+}
+
+func getNodeCPUUtilization(node *nodes.ListResponseData) float64 {
+	if node.CPUUtilization == nil {
+		return 1.0
+	}
+
+	return *node.CPUUtilization
+}
+
+func getNodeMemoryUtilization(node *nodes.ListResponseData) float64 {
+	if node.MemoryUsed == nil || node.MemoryAvailable == nil || *node.MemoryAvailable == 0 {
+		return 1.0
+	}
+
+	return float64(*node.MemoryUsed) / float64(*node.MemoryAvailable)
 }
 
 func getAgentTimeout(d *schema.ResourceData) (time.Duration, error) {

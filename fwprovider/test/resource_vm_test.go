@@ -88,6 +88,34 @@ func TestAccResourceVM(t *testing.T) {
 				}`),
 			ExpectError: regexp.MustCompile(`expected "node_name" to not be an empty string, got `),
 		}}},
+		{"node_name and node_names are mutually exclusive", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_invalid_nodes" {
+					node_name  = "{{.NodeName}}"
+					node_names = ["{{.NodeName}}"]
+					started    = false
+				}`),
+			ExpectError: regexp.MustCompile(`"node_name": only one of `),
+			PlanOnly:    true,
+		}}},
+		{"node_names with one allowed node", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_node_names_single" {
+					node_names = ["{{.NodeName}}"]
+					started    = false
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.test_node_names_single", map[string]string{
+					"node_names.#":      "1",
+					"current_node_name": te.NodeName,
+				}),
+				resource.TestCheckTypeSetElemAttr(
+					"proxmox_virtual_environment_vm.test_node_names_single",
+					"node_names.*",
+					te.NodeName,
+				),
+			),
+		}}},
 		{"name", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "vm" {

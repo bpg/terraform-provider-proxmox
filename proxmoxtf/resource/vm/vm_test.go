@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
@@ -33,10 +34,6 @@ func TestVMSchema(t *testing.T) {
 
 	s := VM().Schema
 
-	test.AssertRequiredArguments(t, s, []string{
-		mkNodeName,
-	})
-
 	test.AssertOptionalArguments(t, s, []string{
 		mkACPI,
 		mkAgent,
@@ -57,6 +54,8 @@ func TestVMSchema(t *testing.T) {
 		mkMachine,
 		mkMemory,
 		mkName,
+		mkNodeName,
+		mkNodeNames,
 		network.MkNetworkDevice,
 		mkOperatingSystem,
 		mkPoolID,
@@ -88,6 +87,8 @@ func TestVMSchema(t *testing.T) {
 		mkMachine:         schema.TypeString,
 		mkMemory:          schema.TypeList,
 		mkName:            schema.TypeString,
+		mkNodeName:        schema.TypeString,
+		mkNodeNames:       schema.TypeSet,
 		mkOperatingSystem: schema.TypeList,
 		mkPoolID:          schema.TypeString,
 		mkSerialDevice:    schema.TypeList,
@@ -97,6 +98,15 @@ func TestVMSchema(t *testing.T) {
 		mkVirtiofs:        schema.TypeList,
 		mkVMID:            schema.TypeInt,
 		mkSCSIHardware:    schema.TypeString,
+	})
+
+	test.AssertComputedAttributes(t, s, []string{
+		mkCurrentNodeName,
+	})
+
+	test.AssertExactlyOneOfArguments(t, s, map[string][]string{
+		mkNodeName:  {mkNodeName, mkNodeNames},
+		mkNodeNames: {mkNodeName, mkNodeNames},
 	})
 
 	agentSchema := test.AssertNestedSchemaExistence(t, s, mkAgent)
@@ -481,6 +491,142 @@ func Test_parseImportIDWIthNodeName(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tt.expectedNodeName, nodeName)
 			require.Equal(t, tt.expectedID, id)
+		})
+	}
+}
+
+func TestSelectLeastUtilizedNodeFromList(t *testing.T) {
+	t.Parallel()
+
+	online := "online"
+	offline := "offline"
+	lowCPU := 0.10
+	highCPU := 0.80
+	midCPU := 0.40
+	lowMemTotal := int64(100)
+	lowMemUsed := int64(20)
+	highMemTotal := int64(100)
+	highMemUsed := int64(70)
+	tieMemTotal := int64(100)
+	tieMemUsed := int64(20)
+
+	tests := []struct {
+		name      string
+		nodeNames []string
+		nodes     []*nodes.ListResponseData
+		want      string
+		wantErr   string
+	}{
+		{
+			name:      "prefers lower memory utilization",
+			nodeNames: []string{"node-a", "node-b"},
+			nodes: []*nodes.ListResponseData{
+				{Name: "node-a", Status: &online, CPUUtilization: &midCPU, MemoryAvailable: &highMemTotal, MemoryUsed: &highMemUsed},
+				{Name: "node-b", Status: &online, CPUUtilization: &highCPU, MemoryAvailable: &lowMemTotal, MemoryUsed: &lowMemUsed},
+			},
+			want: "node-b",
+		},
+		{
+			name:      "uses cpu as tie breaker",
+			nodeNames: []string{"node-a", "node-b"},
+			nodes: []*nodes.ListResponseData{
+				{Name: "node-a", Status: &online, CPUUtilization: &highCPU, MemoryAvailable: &tieMemTotal, MemoryUsed: &tieMemUsed},
+				{Name: "node-b", Status: &online, CPUUtilization: &lowCPU, MemoryAvailable: &tieMemTotal, MemoryUsed: &tieMemUsed},
+			},
+			want: "node-b",
+		},
+		{
+			name:      "ignores offline nodes",
+			nodeNames: []string{"node-a", "node-b"},
+			nodes: []*nodes.ListResponseData{
+				{Name: "node-a", Status: &offline, CPUUtilization: &lowCPU, MemoryAvailable: &lowMemTotal, MemoryUsed: &lowMemUsed},
+				{Name: "node-b", Status: &online, CPUUtilization: &midCPU, MemoryAvailable: &highMemTotal, MemoryUsed: &highMemUsed},
+			},
+			wantErr: "failed to find online nodes from node_names: node-a",
+		},
+		{
+			name:      "fails when no configured node is found",
+			nodeNames: []string{"node-a"},
+			nodes:     []*nodes.ListResponseData{},
+			wantErr:   "failed to find online nodes from node_names: node-a",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := selectLeastUtilizedNodeFromList(tt.nodeNames, tt.nodes)
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestNodePlacementHelpers(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		config      map[string]any
+		wantNodes   []string
+		wantMulti   bool
+		wantCurrent string
+		wantErr     string
+	}{
+		{
+			name: "single node placement",
+			config: map[string]any{
+				mkNodeName: "node-a",
+			},
+			wantNodes: []string{"node-a"},
+			wantMulti: false,
+			wantErr:   "failed to determine current VM node from state",
+		},
+		{
+			name: "multi node placement",
+			config: map[string]any{
+				mkNodeNames: []any{"node-b", "node-a"},
+			},
+			wantNodes: []string{"node-a", "node-b"},
+			wantMulti: true,
+			wantErr:   "failed to determine current VM node from state",
+		},
+		{
+			name: "current node uses computed state",
+			config: map[string]any{
+				mkNodeNames:       []any{"node-b", "node-a"},
+				mkCurrentNodeName: "node-b",
+			},
+			wantCurrent: "node-b",
+			wantNodes:   []string{"node-a", "node-b"},
+			wantMulti:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			d := schema.TestResourceDataRaw(t, VM().Schema, tt.config)
+
+			require.Equal(t, tt.wantMulti, isMultiNodePlacementConfigured(d))
+			require.Equal(t, tt.wantNodes, getConfiguredVMNodeNames(d))
+
+			currentNode, err := getCurrentVMNodeName(d)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tt.wantCurrent, currentNode)
 		})
 	}
 }
