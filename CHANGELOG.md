@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.99.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.98.1...v0.99.0) (2026-03-21)
+
+
+### Features
+
+* **backup:** add `proxmox_backup_job` resource and `proxmox_backup_jobs` data source ([#2711](https://github.com/bpg/terraform-provider-proxmox/issues/2711)) ([92b3e88](https://github.com/bpg/terraform-provider-proxmox/commit/92b3e8856b1259319c23548fccb585b4c68a7adb))
+* **file:** add `proxmox_files` data source ([#2703](https://github.com/bpg/terraform-provider-proxmox/issues/2703)) ([e848a57](https://github.com/bpg/terraform-provider-proxmox/commit/e848a5780816a9c525f6a224f4c0f028b8ec69e9))
+* **ha:** add `proxmox_virtual_environment_harule` resource (PVE 9+) ([#2682](https://github.com/bpg/terraform-provider-proxmox/issues/2682)) ([31ab05a](https://github.com/bpg/terraform-provider-proxmox/commit/31ab05ac610c5caf0221cfd3c9b2c362052060d7))
+* **provider:** add support for replication ([#2661](https://github.com/bpg/terraform-provider-proxmox/issues/2661)) ([ca9a5f7](https://github.com/bpg/terraform-provider-proxmox/commit/ca9a5f7c0029096790750d0d3f4b57507d57b4ba))
+
+
+### Bug Fixes
+
+* **access:** remove overly restrictive `username_claim` validation on openid realm ([#2685](https://github.com/bpg/terraform-provider-proxmox/issues/2685)) ([7782dc5](https://github.com/bpg/terraform-provider-proxmox/commit/7782dc5d033a91dd0f1c962d0a3458c6497072a8))
+* **ci:** correct repository reference in sync-docs workflow ([f225107](https://github.com/bpg/terraform-provider-proxmox/commit/f225107457e08a7a5b51fe51c51f3138d898f0b2))
+* **ha:** handle nil Strict value in HARule and update API response validation ([3bf1e8c](https://github.com/bpg/terraform-provider-proxmox/commit/3bf1e8c764f009517123d86b7b14f46795927045))
+* **lxc:** ignore warnings in container create and clone tasks ([#2701](https://github.com/bpg/terraform-provider-proxmox/issues/2701)) ([7f7e36d](https://github.com/bpg/terraform-provider-proxmox/commit/7f7e36d5a9193a86e17629c1dd58bada22a9ae6a))
+* **vm:** reboot after disk resize when disk is not hotpluggable ([#2686](https://github.com/bpg/terraform-provider-proxmox/issues/2686)) ([4ffb2f1](https://github.com/bpg/terraform-provider-proxmox/commit/4ffb2f18688ec4b31e6e301782985a65e009aa67))
+* **vm:** skip cloud-init device update when only config changed ([#2709](https://github.com/bpg/terraform-provider-proxmox/issues/2709)) ([46e8362](https://github.com/bpg/terraform-provider-proxmox/commit/46e8362cbce08e7fd0d44538dd43a28a85abbb17))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/create-github-app-token action (v2.2.1 → v3.0.0) ([#2698](https://github.com/bpg/terraform-provider-proxmox/issues/2698)) ([7983416](https://github.com/bpg/terraform-provider-proxmox/commit/798341634be600fcb4589138f0f8c6adddf654e7))
+* **ci:** Update dorny/paths-filter action (v3.0.2 → v4.0.1) ([#2699](https://github.com/bpg/terraform-provider-proxmox/issues/2699)) ([9828faa](https://github.com/bpg/terraform-provider-proxmox/commit/9828faa09c7bd1642654aa11fc8263a8fa681527))
+* **ci:** update jetbrains/qodana-action action (v2025.3.1 → v2025.3.2) ([#2712](https://github.com/bpg/terraform-provider-proxmox/issues/2712)) ([98e9407](https://github.com/bpg/terraform-provider-proxmox/commit/98e9407de5132176ea9c52a0f14296da6f0ef26f))
+* **deps:** bump google.golang.org/grpc from 1.79.2 to 1.79.3 ([#2713](https://github.com/bpg/terraform-provider-proxmox/issues/2713)) ([c653d7c](https://github.com/bpg/terraform-provider-proxmox/commit/c653d7c190cdd2f1a0664c23229a4641b69efae3))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#2693](https://github.com/bpg/terraform-provider-proxmox/issues/2693)) ([db6522f](https://github.com/bpg/terraform-provider-proxmox/commit/db6522fd4ab9ea54beb1b59ade2835fe47ca6af2))
+* **deps:** update golangci/golangci-lint ([#2670](https://github.com/bpg/terraform-provider-proxmox/issues/2670)) ([979ce29](https://github.com/bpg/terraform-provider-proxmox/commit/979ce29246bc6f3ff2b54184b2bffc0e25cf0f5d))
+* **deps:** update golangci/golangci-lint (v2.11.2 → v2.11.3) ([#2692](https://github.com/bpg/terraform-provider-proxmox/issues/2692)) ([a737b37](https://github.com/bpg/terraform-provider-proxmox/commit/a737b37cd2cea8aa4c786ba875ba42c995ab58c8))
+* **deps:** update image golang (c7e98cc → 595c784) ([#2708](https://github.com/bpg/terraform-provider-proxmox/issues/2708)) ([d6339f9](https://github.com/bpg/terraform-provider-proxmox/commit/d6339f9333c18f3127cdf24d31161f5cf2df9341))
+* **deps:** update image golang (e2ddb15 → c7e98cc) ([#2691](https://github.com/bpg/terraform-provider-proxmox/issues/2691)) ([c33b2ab](https://github.com/bpg/terraform-provider-proxmox/commit/c33b2ab481c76a2d746e89b31267b2ae186a942c))
+* **deps:** update module golang.org/x/crypto (v0.48.0 → v0.49.0) ([#2696](https://github.com/bpg/terraform-provider-proxmox/issues/2696)) ([e7484c2](https://github.com/bpg/terraform-provider-proxmox/commit/e7484c292907c35c8444650ad2eea2690de93e9e))
+* **deps:** update module golang.org/x/net (v0.51.0 → v0.52.0) ([#2697](https://github.com/bpg/terraform-provider-proxmox/issues/2697)) ([951bc29](https://github.com/bpg/terraform-provider-proxmox/commit/951bc292fc5efb7f420ea0cd21e8811dfdfd726b))
+* **dev:** introduce ADR-007 for resource type name migration to shorter prefix ([1c07f6d](https://github.com/bpg/terraform-provider-proxmox/commit/1c07f6d9c958c11dd05721bbfd74bba3155b119a))
+
 ## [0.98.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.98.0...v0.98.1) (2026-03-09)
 
 
