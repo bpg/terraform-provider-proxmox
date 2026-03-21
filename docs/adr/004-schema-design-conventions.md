@@ -162,6 +162,50 @@ update := &vnets.VNetUpdate{
 
 The third argument to `CheckDelete` is the **Proxmox API parameter name**, which may differ from the Terraform attribute name (e.g., `"api-path-prefix"` vs `influx_api_path_prefix`).
 
+### Comma-Separated API Values → Terraform Lists
+
+When the Proxmox API accepts or returns a comma-separated string (e.g., `vmid=100,101,102`, `exclude-path=/tmp,/var`), **always expose it as a Terraform list or set attribute** — never as a raw comma-separated string. This gives users proper HCL list syntax, element-level validation, and `for_each`/`dynamic` block compatibility.
+
+In the schema:
+
+```go
+"vmid": schema.ListAttribute{
+    Description: "A list of guest VM/CT IDs to include in the backup job.",
+    Optional:    true,
+    ElementType: types.StringType,
+},
+```
+
+In `toAPI()` — join the list into a comma-separated string for the API:
+
+```go
+if !m.VMIDs.IsNull() && !m.VMIDs.IsUnknown() {
+    var ids []string
+    diags.Append(m.VMIDs.ElementsAs(ctx, &ids, false)...)
+    if len(ids) > 0 {
+        joined := strings.Join(ids, ",")
+        common.VMID = &joined
+    }
+}
+```
+
+In `fromAPI()` — split the comma-separated string into a list:
+
+```go
+if data.VMID != nil && *data.VMID != "" {
+    ids := strings.Split(*data.VMID, ",")
+    values := make([]attr.Value, len(ids))
+    for i, id := range ids {
+        values[i] = types.StringValue(strings.TrimSpace(id))
+    }
+    m.VMIDs, _ = types.ListValue(types.StringType, values)
+} else {
+    m.VMIDs = types.ListNull(types.StringType)
+}
+```
+
+For unordered values (e.g., tags, node lists), use `stringset.Value` (a custom set type) instead of `types.List`.
+
 ### Custom Types
 
 The project provides custom attribute types in `fwprovider/types/`:
@@ -193,6 +237,7 @@ The project provides custom attribute types in `fwprovider/types/`:
 - Forgetting `CheckDelete` calls in Update for optional fields — the Proxmox API won't clear the field.
 - Using the Terraform attribute name instead of the Proxmox API parameter name in `CheckDelete`.
 - Setting `Computed: true` with `Default` — leads to unexpected behavior when server defaults change.
+- Exposing comma-separated API values as a single `types.String` instead of `types.List` or `stringset.Value` — use proper Terraform list/set types so users get HCL list syntax and element-level operations.
 
 ## References
 

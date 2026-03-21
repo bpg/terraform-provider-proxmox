@@ -122,6 +122,18 @@ Additional scenarios when applicable:
 5. **Validation errors** — use `resource.UnitTest` with `PlanOnly: true` and `ExpectError`
 6. **Field removal** — verify optional fields can be unset (tests the `CheckDelete` path)
 
+### Functional Coverage Requirement
+
+Acceptance tests must cover **all major use cases** for the resource, not just the happy path. PRs that only test one basic scenario will be rejected during review. For example, a backup job resource that only tests `all = true` but never tests targeting specific VMs by ID is incomplete — the VM targeting is a core use case.
+
+When planning tests, identify the distinct operational modes of the resource and ensure each has at least one test scenario:
+
+- Different input combinations (e.g., `all` vs `vmid` vs `pool` for backup targets)
+- List/set attributes with multiple elements (not just empty or single-element)
+- Compound string attributes that round-trip through the API (e.g., `prune_backups`)
+- Nested object attributes (e.g., `fleecing`, `performance`)
+- Import with non-trivial state (e.g., list attributes that must survive import round-trip)
+
 ### Validation Tests
 
 Validation logic can be tested without a live Proxmox instance using `resource.UnitTest`:
