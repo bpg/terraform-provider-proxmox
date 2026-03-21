@@ -26,6 +26,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/access"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/acme"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/backup"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
@@ -533,6 +534,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		acme.NewACMEPluginResource,
 		apt.NewRepositoryResource,
 		apt.NewStandardRepositoryResource,
+		backup.NewResource,
 		clonedvm.NewResource,
 		ha.NewHAGroupResource,
 		ha.NewHAResourceResource,
@@ -581,6 +583,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		acme.NewACMEPluginsDataSource,
 		apt.NewRepositoryDataSource,
 		apt.NewStandardRepositoryDataSource,
+		backup.NewDataSource,
 		datastores.NewDataSource,
 		ha.NewHAGroupDataSource,
 		ha.NewHAGroupsDataSource,
