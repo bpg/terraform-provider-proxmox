@@ -123,9 +123,10 @@ func (d *backupJobsDataSource) Schema(
 							Description: "Compression algorithm used for the backup.",
 							Computed:    true,
 						},
-						"mailto": schema.StringAttribute{
-							Description: "Comma-separated list of email addresses for notifications.",
+						"mailto": schema.ListAttribute{
+							Description: "List of email addresses for notifications.",
 							Computed:    true,
+							ElementType: types.StringType,
 						},
 						"mailnotification": schema.StringAttribute{
 							Description: "When to send email notifications (always or failure).",
@@ -139,9 +140,10 @@ func (d *backupJobsDataSource) Schema(
 							Description: "Pool whose members are backed up.",
 							Computed:    true,
 						},
-						"prune_backups": schema.StringAttribute{
-							Description: "Prune options in the format `keep-last=N,...`.",
+						"prune_backups": schema.MapAttribute{
+							Description: "Retention options as a map of keep policies.",
 							Computed:    true,
+							ElementType: types.StringType,
 						},
 						"protected": schema.BoolAttribute{
 							Description: "Indicates whether backups created by this job are protected from pruning.",

@@ -8,6 +8,8 @@ package backup
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -32,13 +34,13 @@ type backupJobModel struct {
 	Compress               types.String `tfsdk:"compress"`
 	StartTime              types.String `tfsdk:"starttime"`
 	MaxFiles               types.Int64  `tfsdk:"maxfiles"`
-	MailTo                 types.String `tfsdk:"mailto"`
+	MailTo                 types.List   `tfsdk:"mailto"`
 	MailNotification       types.String `tfsdk:"mailnotification"`
 	BwLimit                types.Int64  `tfsdk:"bwlimit"`
 	IONice                 types.Int64  `tfsdk:"ionice"`
 	Pigz                   types.Int64  `tfsdk:"pigz"`
 	Zstd                   types.Int64  `tfsdk:"zstd"`
-	PruneBackups           types.String `tfsdk:"prune_backups"`
+	PruneBackups           types.Map    `tfsdk:"prune_backups"`
 	Remove                 types.Bool   `tfsdk:"remove"`
 	NotesTemplate          types.String `tfsdk:"notes_template"`
 	Protected              types.Bool   `tfsdk:"protected"`
@@ -101,6 +103,28 @@ func intPtrToInt64Ptr(v *int) *int64 {
 	return &i
 }
 
+// int64PtrToCustomIntPtr converts *int64 to *types.CustomInt for API fields.
+func int64PtrToCustomIntPtr(v *int64) *proxmoxtypes.CustomInt {
+	if v == nil {
+		return nil
+	}
+
+	i := proxmoxtypes.CustomInt(*v)
+
+	return &i
+}
+
+// customIntPtrToInt64Ptr converts *types.CustomInt to *int64 for Terraform state.
+func customIntPtrToInt64Ptr(v *proxmoxtypes.CustomInt) *int64 {
+	if v == nil {
+		return nil
+	}
+
+	i := int64(*v)
+
+	return &i
+}
+
 func (m *backupJobModel) toCreateAPI(ctx context.Context, diags *diag.Diagnostics) *backup.CreateRequestBody {
 	body := &backup.CreateRequestBody{}
 
@@ -130,12 +154,6 @@ func (m *backupJobModel) toUpdateAPI(
 	attribute.CheckDelete(m.Node, state.Node, &toDelete, "node")
 	attribute.CheckDelete(m.VMIDs, state.VMIDs, &toDelete, "vmid")
 
-	// Also clear vmid when transitioning from non-empty to empty list
-	if !m.VMIDs.IsNull() && !m.VMIDs.IsUnknown() && len(m.VMIDs.Elements()) == 0 &&
-		!state.VMIDs.IsNull() && len(state.VMIDs.Elements()) > 0 {
-		toDelete = append(toDelete, "vmid")
-	}
-
 	attribute.CheckDelete(m.Mode, state.Mode, &toDelete, "mode")
 	attribute.CheckDelete(m.Compress, state.Compress, &toDelete, "compress")
 	attribute.CheckDelete(m.StartTime, state.StartTime, &toDelete, "starttime")
@@ -154,13 +172,6 @@ func (m *backupJobModel) toUpdateAPI(
 	attribute.CheckDelete(m.Script, state.Script, &toDelete, "script")
 	attribute.CheckDelete(m.StdExcludes, state.StdExcludes, &toDelete, "stdexcludes")
 	attribute.CheckDelete(m.ExcludePath, state.ExcludePath, &toDelete, "exclude-path")
-
-	// Also clear exclude-path when transitioning from non-empty to empty list
-	// (CheckDelete only detects null, not empty list)
-	if !m.ExcludePath.IsNull() && !m.ExcludePath.IsUnknown() && len(m.ExcludePath.Elements()) == 0 &&
-		!state.ExcludePath.IsNull() && len(state.ExcludePath.Elements()) > 0 {
-		toDelete = append(toDelete, "exclude-path")
-	}
 
 	attribute.CheckDelete(m.Pool, state.Pool, &toDelete, "pool")
 	attribute.CheckDelete(m.Fleecing, state.Fleecing, &toDelete, "fleecing")
@@ -191,13 +202,49 @@ func (m *backupJobModel) fillCommonFields(
 	common.Compress = attribute.StringPtrFromValue(m.Compress)
 	common.StartTime = attribute.StringPtrFromValue(m.StartTime)
 	common.MaxFiles = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.MaxFiles))
-	common.MailTo = attribute.StringPtrFromValue(m.MailTo)
+	// MailTo: convert types.List to comma-separated string
+	if !m.MailTo.IsNull() && !m.MailTo.IsUnknown() {
+		var emails []string
+
+		d := m.MailTo.ElementsAs(ctx, &emails, false)
+		diags.Append(d...)
+
+		if !d.HasError() && len(emails) > 0 {
+			emailStr := strings.Join(emails, ",")
+			common.MailTo = &emailStr
+		}
+	}
+
 	common.MailNotification = attribute.StringPtrFromValue(m.MailNotification)
 	common.BwLimit = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.BwLimit))
 	common.IONice = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.IONice))
 	common.Pigz = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.Pigz))
 	common.Zstd = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.Zstd))
-	common.PruneBackups = attribute.StringPtrFromValue(m.PruneBackups)
+	// PruneBackups: convert types.Map to comma-separated key=value string
+	if !m.PruneBackups.IsNull() && !m.PruneBackups.IsUnknown() {
+		pruneMap := make(map[string]string)
+
+		d := m.PruneBackups.ElementsAs(ctx, &pruneMap, false)
+		diags.Append(d...)
+
+		if !d.HasError() && len(pruneMap) > 0 {
+			keys := make([]string, 0, len(pruneMap))
+			for k := range pruneMap {
+				keys = append(keys, k)
+			}
+
+			sort.Strings(keys)
+
+			parts := make([]string, 0, len(pruneMap))
+			for _, k := range keys {
+				parts = append(parts, fmt.Sprintf("%s=%s", k, pruneMap[k]))
+			}
+
+			pruneStr := strings.Join(parts, ",")
+			common.PruneBackups = &pruneStr
+		}
+	}
+
 	common.Remove = attribute.CustomBoolPtrFromValue(m.Remove)
 	common.NotesTemplate = attribute.StringPtrFromValue(m.NotesTemplate)
 	common.Protected = attribute.CustomBoolPtrFromValue(m.Protected)
@@ -260,8 +307,8 @@ func (m *backupJobModel) fillCommonFields(
 
 		if !d.HasError() {
 			common.Performance = &backup.PerformanceConfig{
-				MaxWorkers:    int64PtrToIntPtr(perf.MaxWorkers.ValueInt64Pointer()),
-				PBSEntriesMax: int64PtrToIntPtr(perf.PBSEntriesMax.ValueInt64Pointer()),
+				MaxWorkers:    int64PtrToCustomIntPtr(perf.MaxWorkers.ValueInt64Pointer()),
+				PBSEntriesMax: int64PtrToCustomIntPtr(perf.PBSEntriesMax.ValueInt64Pointer()),
 			}
 		}
 	}
@@ -289,7 +336,10 @@ func (m *backupJobModel) fromAPI(
 			vmidValues[i] = types.StringValue(strings.TrimSpace(id))
 		}
 
-		m.VMIDs, _ = types.ListValue(types.StringType, vmidValues)
+		listVal, d := types.ListValue(types.StringType, vmidValues)
+		diags.Append(d...)
+
+		m.VMIDs = listVal
 	} else {
 		m.VMIDs = types.ListNull(types.StringType)
 	}
@@ -298,7 +348,24 @@ func (m *backupJobModel) fromAPI(
 	m.Compress = types.StringPointerValue(data.Compress)
 	m.StartTime = types.StringPointerValue(data.StartTime)
 	m.MaxFiles = types.Int64PointerValue(intPtrToInt64Ptr(data.MaxFiles))
-	m.MailTo = types.StringPointerValue(data.MailTo)
+
+	// MailTo: convert comma-separated string to list
+	if data.MailTo != nil && *data.MailTo != "" {
+		emails := strings.Split(*data.MailTo, ",")
+		emailValues := make([]attr.Value, len(emails))
+
+		for i, e := range emails {
+			emailValues[i] = types.StringValue(strings.TrimSpace(e))
+		}
+
+		listVal, d := types.ListValue(types.StringType, emailValues)
+		diags.Append(d...)
+
+		m.MailTo = listVal
+	} else {
+		m.MailTo = types.ListNull(types.StringType)
+	}
+
 	m.MailNotification = types.StringPointerValue(data.MailNotification)
 	m.BwLimit = types.Int64PointerValue(intPtrToInt64Ptr(data.BwLimit))
 	m.IONice = types.Int64PointerValue(intPtrToInt64Ptr(data.IONice))
@@ -316,11 +383,28 @@ func (m *backupJobModel) fromAPI(
 	m.StopWait = types.Int64PointerValue(intPtrToInt64Ptr(data.StopWait))
 	m.TmpDir = types.StringPointerValue(data.TmpDir)
 
-	// PruneBackups
+	// PruneBackups: convert comma-separated key=value string to map
 	if data.PruneBackups != nil {
-		m.PruneBackups = types.StringPointerValue(data.PruneBackups.Pointer())
+		s := data.PruneBackups.Pointer()
+		if s != nil && *s != "" {
+			mapValues := make(map[string]attr.Value)
+
+			for part := range strings.SplitSeq(*s, ",") {
+				kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
+				if len(kv) == 2 {
+					mapValues[kv[0]] = types.StringValue(kv[1])
+				}
+			}
+
+			mapVal, d := types.MapValue(types.StringType, mapValues)
+			diags.Append(d...)
+
+			m.PruneBackups = mapVal
+		} else {
+			m.PruneBackups = types.MapNull(types.StringType)
+		}
 	} else {
-		m.PruneBackups = types.StringNull()
+		m.PruneBackups = types.MapNull(types.StringType)
 	}
 
 	// ExcludePath: convert CustomCommaSeparatedList to types.List
@@ -356,8 +440,8 @@ func (m *backupJobModel) fromAPI(
 	// Performance: convert to types.Object
 	if data.Performance != nil {
 		perfVal := performanceModel{
-			MaxWorkers:    types.Int64PointerValue(intPtrToInt64Ptr(data.Performance.MaxWorkers)),
-			PBSEntriesMax: types.Int64PointerValue(intPtrToInt64Ptr(data.Performance.PBSEntriesMax)),
+			MaxWorkers:    types.Int64PointerValue(customIntPtrToInt64Ptr(data.Performance.MaxWorkers)),
+			PBSEntriesMax: types.Int64PointerValue(customIntPtrToInt64Ptr(data.Performance.PBSEntriesMax)),
 		}
 
 		obj, d := types.ObjectValueFrom(ctx, performanceAttrTypes(), perfVal)
@@ -382,11 +466,11 @@ type backupJobDatasourceModel struct {
 	All              types.Bool   `tfsdk:"all"`
 	Mode             types.String `tfsdk:"mode"`
 	Compress         types.String `tfsdk:"compress"`
-	MailTo           types.String `tfsdk:"mailto"`
+	MailTo           types.List   `tfsdk:"mailto"`
 	MailNotification types.String `tfsdk:"mailnotification"`
 	NotesTemplate    types.String `tfsdk:"notes_template"`
 	Pool             types.String `tfsdk:"pool"`
-	PruneBackups     types.String `tfsdk:"prune_backups"`
+	PruneBackups     types.Map    `tfsdk:"prune_backups"`
 	Protected        types.Bool   `tfsdk:"protected"`
 }
 
@@ -399,7 +483,21 @@ func (m *backupJobDatasourceModel) fromAPI(data *backup.GetResponseData) {
 	m.All = types.BoolPointerValue(data.All.PointerBool())
 	m.Mode = types.StringPointerValue(data.Mode)
 	m.Compress = types.StringPointerValue(data.Compress)
-	m.MailTo = types.StringPointerValue(data.MailTo)
+
+	// MailTo: convert comma-separated string to list
+	if data.MailTo != nil && *data.MailTo != "" {
+		emails := strings.Split(*data.MailTo, ",")
+		emailValues := make([]attr.Value, len(emails))
+
+		for i, e := range emails {
+			emailValues[i] = types.StringValue(strings.TrimSpace(e))
+		}
+
+		m.MailTo = types.ListValueMust(types.StringType, emailValues)
+	} else {
+		m.MailTo = types.ListNull(types.StringType)
+	}
+
 	m.MailNotification = types.StringPointerValue(data.MailNotification)
 	m.NotesTemplate = types.StringPointerValue(data.NotesTemplate)
 	m.Pool = types.StringPointerValue(data.Pool)
@@ -414,14 +512,29 @@ func (m *backupJobDatasourceModel) fromAPI(data *backup.GetResponseData) {
 			vmidValues[i] = types.StringValue(strings.TrimSpace(id))
 		}
 
-		m.VMIDs, _ = types.ListValue(types.StringType, vmidValues)
+		m.VMIDs = types.ListValueMust(types.StringType, vmidValues)
 	} else {
 		m.VMIDs = types.ListNull(types.StringType)
 	}
 
+	// PruneBackups: convert comma-separated key=value string to map
 	if data.PruneBackups != nil {
-		m.PruneBackups = types.StringPointerValue(data.PruneBackups.Pointer())
+		s := data.PruneBackups.Pointer()
+		if s != nil && *s != "" {
+			mapValues := make(map[string]attr.Value)
+
+			for part := range strings.SplitSeq(*s, ",") {
+				kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
+				if len(kv) == 2 {
+					mapValues[kv[0]] = types.StringValue(kv[1])
+				}
+			}
+
+			m.PruneBackups = types.MapValueMust(types.StringType, mapValues)
+		} else {
+			m.PruneBackups = types.MapNull(types.StringType)
+		}
 	} else {
-		m.PruneBackups = types.StringNull()
+		m.PruneBackups = types.MapNull(types.StringType)
 	}
 }

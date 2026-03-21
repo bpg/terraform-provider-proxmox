@@ -12,9 +12,14 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -26,9 +31,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &backupJobResource{}
-	_ resource.ResourceWithConfigure   = &backupJobResource{}
-	_ resource.ResourceWithImportState = &backupJobResource{}
+	_ resource.Resource                     = &backupJobResource{}
+	_ resource.ResourceWithConfigure        = &backupJobResource{}
+	_ resource.ResourceWithImportState      = &backupJobResource{}
+	_ resource.ResourceWithConfigValidators = &backupJobResource{}
 )
 
 type backupJobResource struct {
@@ -70,6 +76,23 @@ func (r *backupJobResource) Configure(
 	r.client = cfg.Client.Cluster().Backup()
 }
 
+func (r *backupJobResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		resourcevalidator.Conflicting(
+			path.MatchRoot("all"),
+			path.MatchRoot("vmid"),
+		),
+		resourcevalidator.Conflicting(
+			path.MatchRoot("all"),
+			path.MatchRoot("pool"),
+		),
+		resourcevalidator.Conflicting(
+			path.MatchRoot("vmid"),
+			path.MatchRoot("pool"),
+		),
+	}
+}
+
 func (r *backupJobResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
@@ -97,6 +120,9 @@ func (r *backupJobResource) Schema(
 				Description: "Whether the backup job is enabled.",
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"node": schema.StringAttribute{
 				Description: "The cluster node name to limit the backup job to.",
@@ -111,6 +137,9 @@ func (r *backupJobResource) Schema(
 				Description: "Whether to back up all known guests on the node.",
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"mode": schema.StringAttribute{
 				Description: "The backup mode (snapshot, suspend, or stop).",
@@ -119,6 +148,9 @@ func (r *backupJobResource) Schema(
 				Validators: []validator.String{
 					stringvalidator.OneOf("snapshot", "suspend", "stop"),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"compress": schema.StringAttribute{
 				Description: "The compression algorithm (0, gzip, lzo, or zstd).",
@@ -126,6 +158,9 @@ func (r *backupJobResource) Schema(
 				Computed:    true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("0", "1", "gzip", "lzo", "zstd"),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"starttime": schema.StringAttribute{
@@ -136,9 +171,10 @@ func (r *backupJobResource) Schema(
 				Description: "Deprecated: use prune_backups instead. Maximum number of backup files per guest.",
 				Optional:    true,
 			},
-			"mailto": schema.StringAttribute{
-				Description: "A comma-separated list of email addresses to send notifications to.",
+			"mailto": schema.ListAttribute{
+				Description: "A list of email addresses to send notifications to.",
 				Optional:    true,
+				ElementType: types.StringType,
 			},
 			"mailnotification": schema.StringAttribute{
 				Description: "Email notification setting (always or failure).",
@@ -147,11 +183,17 @@ func (r *backupJobResource) Schema(
 				Validators: []validator.String{
 					stringvalidator.OneOf("always", "failure"),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"bwlimit": schema.Int64Attribute{
 				Description: "I/O bandwidth limit in KiB/s.",
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"ionice": schema.Int64Attribute{
 				Description: "I/O priority (0-8).",
@@ -159,6 +201,9 @@ func (r *backupJobResource) Schema(
 				Computed:    true,
 				Validators: []validator.Int64{
 					int64validator.Between(0, 8),
+				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
 				},
 			},
 			"pigz": schema.Int64Attribute{
@@ -169,16 +214,23 @@ func (r *backupJobResource) Schema(
 				Description: "Number of zstd threads (0 uses half of available cores).",
 				Optional:    true,
 			},
-			"prune_backups": schema.StringAttribute{
-				Description: "Retention options as a comma-separated list of key=value pairs " +
-					"(e.g. keep-last=3,keep-weekly=2).",
-				Optional: true,
-				Computed: true,
+			"prune_backups": schema.MapAttribute{
+				Description: "Retention options as a map of keep policies " +
+					"(e.g. keep-last = \"3\", keep-weekly = \"2\").",
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"remove": schema.BoolAttribute{
 				Description: "Whether to remove old backups if there are more than maxfiles.",
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"notes_template": schema.StringAttribute{
 				Description: "Template for notes attached to the backup.",
@@ -188,11 +240,17 @@ func (r *backupJobResource) Schema(
 				Description: "Whether the backup should be marked as protected.",
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"repeat_missed": schema.BoolAttribute{
 				Description: "Whether to repeat missed backup jobs as soon as possible.",
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"script": schema.StringAttribute{
 				Description: "Path to a script to execute before/after the backup job.",
@@ -202,6 +260,9 @@ func (r *backupJobResource) Schema(
 				Description: "Whether to exclude common temporary files from the backup.",
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"exclude_path": schema.ListAttribute{
 				Description: "A list of paths to exclude from the backup.",
@@ -220,6 +281,9 @@ func (r *backupJobResource) Schema(
 						Description: "Whether fleecing is enabled.",
 						Optional:    true,
 						Computed:    true,
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.UseStateForUnknown(),
+						},
 					},
 					"storage": schema.StringAttribute{
 						Description: "The storage identifier for fleecing.",

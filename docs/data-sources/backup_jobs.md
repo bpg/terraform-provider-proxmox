@@ -35,13 +35,13 @@ Read-Only:
 - `enabled` (Boolean) Indicates whether the backup job is enabled.
 - `id` (String) Unique identifier of the backup job.
 - `mailnotification` (String) When to send email notifications (always or failure).
-- `mailto` (String) Comma-separated list of email addresses for notifications.
+- `mailto` (List of String) List of email addresses for notifications.
 - `mode` (String) Backup mode (e.g. snapshot, suspend, stop).
 - `node` (String) Node on which the backup job runs.
 - `notes_template` (String) Template for backup notes.
 - `pool` (String) Pool whose members are backed up.
 - `protected` (Boolean) Indicates whether backups created by this job are protected from pruning.
-- `prune_backups` (String) Prune options in the format `keep-last=N,...`.
+- `prune_backups` (Map of String) Retention options as a map of keep policies.
 - `schedule` (String) Backup schedule in systemd calendar format.
 - `storage` (String) Target storage for the backup.
 - `vmid` (List of String) List of VM/CT IDs included in the backup job.

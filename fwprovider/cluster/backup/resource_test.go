@@ -98,13 +98,14 @@ func TestAccResourceBackupJob(t *testing.T) {
 					all      = true
 					mode     = "snapshot"
 					compress = "zstd"
-					mailto   = "test@example.com"
+					mailto   = ["test@example.com"]
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test_delete", "id", "acc-test-del"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test_delete", "mode", "snapshot"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test_delete", "compress", "zstd"),
-					resource.TestCheckResourceAttr("proxmox_backup_job.test_delete", "mailto", "test@example.com"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_delete", "mailto.#", "1"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_delete", "mailto.0", "test@example.com"),
 				),
 			},
 			{
@@ -118,9 +119,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test_delete", "id", "acc-test-del"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test_delete", "all", "true"),
-					test.NoResourceAttributesSet("proxmox_backup_job.test_delete", []string{
-						"mailto",
-					}),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_delete", "mailto.#", "0"),
 				),
 			},
 		}},
@@ -174,12 +173,79 @@ func TestAccResourceBackupJob(t *testing.T) {
 					schedule      = "*-*-* 07:00"
 					storage       = "local"
 					all           = true
-					prune_backups = "keep-daily=7,keep-last=3"
+					prune_backups = {
+						keep-daily = "7"
+						keep-last  = "3"
+					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test_retention", "id", "acc-test-ret"),
-					resource.TestCheckResourceAttr("proxmox_backup_job.test_retention", "prune_backups", "keep-daily=7,keep-last=3"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_retention", "prune_backups.%", "2"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_retention", "prune_backups.keep-daily", "7"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_retention", "prune_backups.keep-last", "3"),
 				),
+			},
+		}},
+		{"backup with fleecing", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_fleecing" {
+					id       = "acc-test-flc"
+					schedule = "*-*-* 09:00"
+					storage  = "local"
+					all      = true
+					fleecing = {
+						enabled = true
+						storage = "local"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_fleecing", "id", "acc-test-flc"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_fleecing", "fleecing.enabled", "true"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_fleecing", "fleecing.storage", "local"),
+				),
+			},
+		}},
+		{"backup with performance settings", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_perf" {
+					id       = "acc-test-perf"
+					schedule = "*-*-* 10:00"
+					storage  = "local"
+					all      = true
+					performance = {
+						max_workers = 2
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_perf", "id", "acc-test-perf"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_perf", "performance.max_workers", "2"),
+				),
+			},
+		}},
+		{"backup with multiple mailto addresses", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_mailto" {
+					id       = "acc-test-mail"
+					schedule = "*-*-* 11:00"
+					storage  = "local"
+					all      = true
+					mailto   = ["admin@example.com", "ops@example.com"]
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_mailto", "id", "acc-test-mail"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_mailto", "mailto.#", "2"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_mailto", "mailto.0", "admin@example.com"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_mailto", "mailto.1", "ops@example.com"),
+				),
+			},
+			{
+				ResourceName:      "proxmox_backup_job.test_mailto",
+				ImportStateId:     "acc-test-mail",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		}},
 	}
@@ -195,9 +261,11 @@ func TestAccResourceBackupJob(t *testing.T) {
 }
 
 func TestAccDataSourceBackupJobs(t *testing.T) {
+	t.Parallel()
+
 	te := test.InitEnvironment(t)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{

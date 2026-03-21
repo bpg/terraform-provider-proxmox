@@ -215,8 +215,8 @@ func (f *FleecingConfig) EncodeValues(key string, v *url.Values) error {
 
 // PerformanceConfig contains the performance configuration for a backup job.
 type PerformanceConfig struct {
-	MaxWorkers    *int `json:"max-workers,omitempty"     url:"max-workers,omitempty"`
-	PBSEntriesMax *int `json:"pbs-entries-max,omitempty" url:"pbs-entries-max,omitempty"`
+	MaxWorkers    *types.CustomInt `json:"max-workers,omitempty"     url:"max-workers,omitempty"`
+	PBSEntriesMax *types.CustomInt `json:"pbs-entries-max,omitempty" url:"pbs-entries-max,omitempty"`
 }
 
 // EncodeValues encodes the PerformanceConfig into URL values as a comma-separated key=value string.
@@ -224,11 +224,11 @@ func (p *PerformanceConfig) EncodeValues(key string, v *url.Values) error {
 	var parts []string
 
 	if p.MaxWorkers != nil {
-		parts = append(parts, fmt.Sprintf("max-workers=%d", *p.MaxWorkers))
+		parts = append(parts, fmt.Sprintf("max-workers=%d", int(*p.MaxWorkers)))
 	}
 
 	if p.PBSEntriesMax != nil {
-		parts = append(parts, fmt.Sprintf("pbs-entries-max=%d", *p.PBSEntriesMax))
+		parts = append(parts, fmt.Sprintf("pbs-entries-max=%d", int(*p.PBSEntriesMax)))
 	}
 
 	if len(parts) > 0 {

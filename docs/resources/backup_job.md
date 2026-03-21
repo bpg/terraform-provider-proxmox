@@ -44,7 +44,7 @@ resource "proxmox_backup_job" "daily_backup" {
 - `ionice` (Number) I/O priority (0-8).
 - `lockwait` (Number) Maximum wait time in minutes for the global lock.
 - `mailnotification` (String) Email notification setting (always or failure).
-- `mailto` (String) A comma-separated list of email addresses to send notifications to.
+- `mailto` (List of String) A list of email addresses to send notifications to.
 - `maxfiles` (Number) Deprecated: use prune_backups instead. Maximum number of backup files per guest.
 - `mode` (String) The backup mode (snapshot, suspend, or stop).
 - `node` (String) The cluster node name to limit the backup job to.
@@ -54,7 +54,7 @@ resource "proxmox_backup_job" "daily_backup" {
 - `pigz` (Number) Number of pigz threads (0 disables, 1 uses single-threaded gzip).
 - `pool` (String) Limit backup to guests in the specified pool.
 - `protected` (Boolean) Whether the backup should be marked as protected.
-- `prune_backups` (String) Retention options as a comma-separated list of key=value pairs (e.g. keep-last=3,keep-weekly=2).
+- `prune_backups` (Map of String) Retention options as a map of keep policies (e.g. keep-last = "3", keep-weekly = "2").
 - `remove` (Boolean) Whether to remove old backups if there are more than maxfiles.
 - `repeat_missed` (Boolean) Whether to repeat missed backup jobs as soon as possible.
 - `script` (String) Path to a script to execute before/after the backup job.

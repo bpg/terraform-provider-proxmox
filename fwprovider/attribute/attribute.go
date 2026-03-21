@@ -84,6 +84,16 @@ func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName s
 		planIsEmpty = planIsEmpty || len(planSet.Elements()) == 0
 	}
 
+	// Special handling for types.List: treat empty list as null
+	if planList, ok := planField.(types.List); ok {
+		planIsEmpty = planIsEmpty || len(planList.Elements()) == 0
+	}
+
+	// Special handling for types.Map: treat empty map as null
+	if planMap, ok := planField.(types.Map); ok {
+		planIsEmpty = planIsEmpty || len(planMap.Elements()) == 0
+	}
+
 	if planIsEmpty && !stateIsEmpty {
 		*toDelete = append(*toDelete, apiName)
 	}
