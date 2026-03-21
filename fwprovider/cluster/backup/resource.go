@@ -109,7 +109,7 @@ func (r *backupJobResource) Schema(
 				},
 			},
 			"schedule": schema.StringAttribute{
-				Description: "Backup schedule in cron format or systemd calendar event.",
+				Description: "Backup schedule in systemd calendar event format.",
 				Required:    true,
 			},
 			"storage": schema.StringAttribute{
@@ -153,7 +153,7 @@ func (r *backupJobResource) Schema(
 				},
 			},
 			"compress": schema.StringAttribute{
-				Description: "The compression algorithm (0, gzip, lzo, or zstd).",
+				Description: "The compression algorithm (0, 1, gzip, lzo, or zstd).",
 				Optional:    true,
 				Computed:    true,
 				Validators: []validator.String{

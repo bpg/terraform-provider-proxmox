@@ -41,7 +41,7 @@ Read-Only:
 - `notes_template` (String) Template for backup notes.
 - `pool` (String) Pool whose members are backed up.
 - `protected` (Boolean) Indicates whether backups created by this job are protected from pruning.
-- `prune_backups` (Map of String) Retention options as a map of keep policies.
+- `prune_backups` (Map of String) Retention options as a map of keep policies (e.g. keep-last = "3", keep-weekly = "2").
 - `schedule` (String) Backup schedule in systemd calendar format.
 - `storage` (String) Target storage for the backup.
 - `vmid` (List of String) List of VM/CT IDs included in the backup job.

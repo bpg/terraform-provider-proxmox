@@ -141,7 +141,8 @@ func (d *backupJobsDataSource) Schema(
 							Computed:    true,
 						},
 						"prune_backups": schema.MapAttribute{
-							Description: "Retention options as a map of keep policies.",
+							Description: "Retention options as a map of keep policies " +
+								"(e.g. keep-last = \"3\", keep-weekly = \"2\").",
 							Computed:    true,
 							ElementType: types.StringType,
 						},

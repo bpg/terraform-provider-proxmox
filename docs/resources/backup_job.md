@@ -30,14 +30,14 @@ resource "proxmox_backup_job" "daily_backup" {
 ### Required
 
 - `id` (String) The identifier of the backup job.
-- `schedule` (String) Backup schedule in cron format or systemd calendar event.
+- `schedule` (String) Backup schedule in systemd calendar event format.
 - `storage` (String) The storage identifier for the backup.
 
 ### Optional
 
 - `all` (Boolean) Whether to back up all known guests on the node.
 - `bwlimit` (Number) I/O bandwidth limit in KiB/s.
-- `compress` (String) The compression algorithm (0, gzip, lzo, or zstd).
+- `compress` (String) The compression algorithm (0, 1, gzip, lzo, or zstd).
 - `enabled` (Boolean) Whether the backup job is enabled.
 - `exclude_path` (List of String) A list of paths to exclude from the backup.
 - `fleecing` (Attributes) Fleecing configuration for the backup job. (see [below for nested schema](#nestedatt--fleecing))
