@@ -141,6 +141,13 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
    PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
    ```
 
+  Some tests require multi node cluster and a ZFS datastore to run. To include these (otherwise skipped) tests add additional configuration corresponding to the cluster.
+
+  ```env
+  PROXMOX_VE_ACC_NODE_2_NAME="pve2"
+  PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
+  ```
+
 #### Running acceptance tests
 
 Run the full acceptance test suite with:

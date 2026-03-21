@@ -16,6 +16,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/replications"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/applier"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
@@ -90,4 +91,10 @@ func (c *Client) SDNFabricNodes(fabricID, protocol string) *fabric_nodes.Client 
 // SDNApplier returns a client for applying the SDN's configuration.
 func (c *Client) SDNApplier() *applier.Client {
 	return &applier.Client{Client: c}
+}
+
+// Replication returns a client for managing the cluster's Storage Replication.
+// id is the identifier of the Replication to manage.
+func (c *Client) Replication(id string) *replications.Client {
+	return &replications.Client{Client: c, ID: id}
 }
