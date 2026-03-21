@@ -973,6 +973,81 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				},
 			},
 		}}},
+		{"native cloud-init: config update on running VM should not fail", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_running" {
+					node_name       = "{{.NodeName}}"
+					started         = true
+					stop_on_destroy = true
+					cpu {
+						cores = 1
+					}
+					memory {
+						dedicated = 1024
+					}
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "virtio0"
+						size         = 8
+					}
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_running", map[string]string{
+				"initialization.0.datastore_id": "local-lvm",
+			}),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_running" {
+					node_name       = "{{.NodeName}}"
+					started         = true
+					stop_on_destroy = true
+					cpu {
+						cores = 1
+					}
+					memory {
+						dedicated = 1024
+					}
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "virtio0"
+						size         = 8
+					}
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+						dns {
+							servers = ["1.1.1.1"]
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+			ConfigPlanChecks: resource.ConfigPlanChecks{
+				PreApply: []plancheck.PlanCheck{
+					plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_vm_cloudinit_running", plancheck.ResourceActionUpdate),
+				},
+			},
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_running", map[string]string{
+				"initialization.0.dns.0.servers.0": "1.1.1.1",
+			}),
+		}}},
 	}
 
 	for _, tt := range tests {

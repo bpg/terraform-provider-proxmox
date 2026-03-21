@@ -5958,14 +5958,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		initialization := d.Get(mkInitialization).([]any)
 
 		if updateBody.CloudInitConfig != nil && len(initialization) > 0 && initialization[0] != nil {
-			var fileVolume string
-
 			initializationBlock := initialization[0].(map[string]any)
 			initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
 			initializationInterface := initializationBlock[mkInitializationInterface].(string)
 			initializationFileFormat := initializationBlock[mkInitializationFileFormat].(string)
 
-			existingInterface, existingDevice := findExistingCloudInitDrive(vmConfig, vmID, "")
+			existingInterface, _ := findExistingCloudInitDrive(vmConfig, vmID, "")
 			if initializationInterface == "" && existingInterface == "" {
 				initializationInterface = "ide2"
 			} else if initializationInterface == "" {
@@ -6000,8 +5998,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			}
 
 			if mustChangeInterface || mustChangeDatastore || mustChangeFileFormat || existingInterface == "" {
-				// CloudInit must be moved, either from a device to another or from a datastore
-				// to another (or both). This requires the VM to be stopped.
+				// CloudInit device must be created or moved (interface, datastore, or format changed).
+				// This requires the VM to be stopped.
 				if !stoppedBeforeUpdate {
 					if er := vmShutdown(ctx, vmAPI, d); er != nil {
 						return er
@@ -6013,20 +6011,23 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 				}
 
 				stoppedBeforeUpdate = true
-				fileVolume = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
-			} else {
-				fileVolume = existingDevice.FileVolume
-			}
 
-			device := vms.CustomStorageDevice{
-				FileVolume: fileVolume,
-			}
+				fileVolume := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 
-			if initializationFileFormat != "" {
-				device.Format = &initializationFileFormat
-			}
+				device := vms.CustomStorageDevice{
+					FileVolume: fileVolume,
+				}
 
-			updateBody.AddCustomStorageDevice(initializationInterface, device)
+				if initializationFileFormat != "" {
+					device.Format = &initializationFileFormat
+				}
+
+				updateBody.AddCustomStorageDevice(initializationInterface, device)
+			}
+			// When only cloud-init config changed (DNS, IP, user settings) but the device
+			// structure is unchanged, we skip AddCustomStorageDevice. The cloud-init parameters
+			// are already set on updateBody.CloudInitConfig (line above), and
+			// RebuildCloudInitDisk is called after the update to regenerate the ISO.
 		}
 
 		cloudInitRebuildRequired = true
