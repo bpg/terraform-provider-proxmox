@@ -116,6 +116,8 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
 
 **Where to put tests:** place acceptance tests alongside the resource or data source implementation (same package/folder) whenever possible. The shared `fwprovider/test/` directory is reserved for cross-resource integration tests or cases that require expensive Proxmox setup shared across multiple suites.
 
+**Functional coverage:** acceptance tests must cover all major use cases for the resource — not just one basic scenario. Test each distinct operational mode (e.g., different targeting strategies, list attributes with multiple elements, compound fields, nested objects). PRs with insufficient functional test coverage will be rejected during review. See [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement) for details.
+
 #### Prerequisites
 
 1. A running Proxmox instance (see [Development Proxmox Setup](docs/guides/dev-proxmox-setup.md))
