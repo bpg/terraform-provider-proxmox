@@ -308,6 +308,10 @@ schema.StringAttribute{
 resp.Diagnostics.AddError("Unable to Create Resource", err.Error())
 ```
 
+### Comma-Separated API Values
+
+When the Proxmox API uses comma-separated strings (e.g., `vmid=100,101,102`), **always expose them as Terraform list or set attributes** — never as raw comma-separated strings. Convert in `toAPI()` (join) and `fromAPI()` (split). See [ADR-004](docs/adr/004-schema-design-conventions.md#comma-separated-api-values--terraform-lists) for details and code examples.
+
 ### Retry Patterns (proxmox/retry/)
 
 Three operation types — choose based on the API call pattern:
@@ -358,6 +362,7 @@ When fixing validation issues, update BOTH providers where applicable.
 - **API verification:** Use `/bpg:debug-api` for mitmproxy workflow
 - **Behavioral assertions:** When verifying side effects (reboots, state changes), use direct API checks in test check functions rather than relying only on Terraform state attributes. Example: use `te.NodeClient().VM(vmID).GetVMStatus(ctx)` to check uptime before/after to detect reboots. See `resource_vm_hotplug_test.go` and `resource_vm_disks_test.go` for patterns.
 - **TDD acceptance tests:** Tests MUST actually fail without the fix. If a test passes both with and without the fix, it doesn't prove anything — add behavioral assertions (uptime, status, API checks) that detect the actual behavior change.
+- **Functional coverage:** Tests must cover ALL major use cases for the resource — not just one happy path. Different input modes (e.g., `all` vs `vmid` vs `pool`), list attributes with multiple elements, compound fields, nested objects, and import round-trips must each have test scenarios. PRs with insufficient functional coverage will be rejected. See [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement).
 
 ---
 
