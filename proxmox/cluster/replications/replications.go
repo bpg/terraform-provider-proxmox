@@ -20,7 +20,7 @@ import (
 func (c *Client) GetReplication(ctx context.Context) (*ReplicationData, error) {
 	resBody := &replicationResponse{}
 
-	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error reading Replication %s: %w", c.ID, err)
 	}
@@ -60,7 +60,7 @@ func (c *Client) CreateReplication(ctx context.Context, data *ReplicationCreate)
 
 // UpdateReplication Updates an existing Replication.
 func (c *Client) UpdateReplication(ctx context.Context, data *ReplicationUpdate) error {
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(), data, nil)
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(""), data, nil)
 	if err != nil {
 		return fmt.Errorf("error updating Replication: %w", err)
 	}
@@ -106,7 +106,7 @@ func (c *Client) DeleteReplication(ctx context.Context, data *ReplicationDelete)
 
 // DeleteReplicationAsync deletes a Replication but not wait for it to complete.
 func (c *Client) DeleteReplicationAsync(ctx context.Context, data *ReplicationDelete) error {
-	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(), data, nil)
+	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(""), data, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting replication: %w", err)
 	}

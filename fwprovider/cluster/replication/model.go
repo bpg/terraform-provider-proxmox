@@ -33,7 +33,7 @@ func (m *model) fromAPI(id string, data *replications.ReplicationData) {
 	m.Comment = types.StringPointerValue(data.Comment)
 
 	// API skips returning `disabled` even if created with `disabled=false`
-	// so set disabled to false if not retured as true
+	// so set disabled to false if not returned as true
 	if v := data.Disable.PointerBool(); v != nil {
 		m.Disable = types.BoolValue(*v)
 	} else {

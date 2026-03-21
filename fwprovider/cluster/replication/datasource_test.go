@@ -115,7 +115,7 @@ func TestAccDataSourceReplication(t *testing.T) {
 							"guest":    guest,
 							"disable":  "true",
 							"comment":  "comment 123",
-							"schedule": "^*/30$",
+							"schedule": `^\*/30$`,
 							"rate":     "10",
 						}),
 					),
