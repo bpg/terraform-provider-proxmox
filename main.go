@@ -41,6 +41,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_apt_repository.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_apt_standard_repository.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_datastores.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/backup_jobs.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/files.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_hagroup.md ./docs/data-sources/
@@ -65,6 +66,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zones.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_version.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_vm2.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/resources/backup_job.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_acl.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_acme_account.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_acme_dns_plugin.md ./docs/resources/

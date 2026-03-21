@@ -11,8 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // ResourceID generates an attribute definition suitable for the always-present resource `id` attribute.
@@ -42,6 +44,35 @@ func IsDefined(v attr.Value) bool {
 	return !v.IsNull() && !v.IsUnknown()
 }
 
+// StringPtrFromValue returns a *string from a types.String, returning nil for null or unknown values.
+// Use this instead of ValueStringPointer() when the field is Optional+Computed without a Default,
+// because ValueStringPointer() returns &"" for unknown values which sends empty strings to the API.
+func StringPtrFromValue(v types.String) *string {
+	if v.IsNull() || v.IsUnknown() {
+		return nil
+	}
+
+	return v.ValueStringPointer()
+}
+
+// CustomBoolPtrFromValue returns a *CustomBool from a types.Bool, returning nil for null or unknown values.
+func CustomBoolPtrFromValue(v types.Bool) *proxmoxtypes.CustomBool {
+	if v.IsNull() || v.IsUnknown() {
+		return nil
+	}
+
+	return proxmoxtypes.CustomBoolPtr(v.ValueBoolPointer())
+}
+
+// Int64PtrFromValue returns a *int64 from a types.Int64, returning nil for null or unknown values.
+func Int64PtrFromValue(v types.Int64) *int64 {
+	if v.IsNull() || v.IsUnknown() {
+		return nil
+	}
+
+	return v.ValueInt64Pointer()
+}
+
 // CheckDelete adds an API field name to the delete list if the plan field is null but the state field is not null.
 // This is used to handle attribute deletion in API calls.
 func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName string) {
@@ -51,6 +82,16 @@ func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName s
 	// Special handling for stringset.Value: treat empty set as null
 	if planSet, ok := planField.(stringset.Value); ok {
 		planIsEmpty = planIsEmpty || len(planSet.Elements()) == 0
+	}
+
+	// Special handling for types.List: treat empty list as null
+	if planList, ok := planField.(types.List); ok {
+		planIsEmpty = planIsEmpty || len(planList.Elements()) == 0
+	}
+
+	// Special handling for types.Map: treat empty map as null
+	if planMap, ok := planField.(types.Map); ok {
+		planIsEmpty = planIsEmpty || len(planMap.Elements()) == 0
 	}
 
 	if planIsEmpty && !stateIsEmpty {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/backup"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
@@ -53,6 +54,11 @@ func (c *Client) HardwareMapping() *mapping.Client {
 // ACME returns a client for managing the cluster's ACME features.
 func (c *Client) ACME() *acme.Client {
 	return &acme.Client{Client: c}
+}
+
+// Backup returns a client for managing cluster backup jobs.
+func (c *Client) Backup() *backup.Client {
+	return &backup.Client{Client: c}
 }
 
 // Metrics returns a client for managing the cluster's metrics features.

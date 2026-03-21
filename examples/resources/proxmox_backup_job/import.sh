@@ -1,0 +1,1 @@
+terraform import proxmox_backup_job.daily_backup daily-backup
