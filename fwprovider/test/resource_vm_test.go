@@ -9,14 +9,19 @@
 package test
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"regexp"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -1697,4 +1702,213 @@ func TestAccResourceVMVirtioSCSISingleWithAgent(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceVMUpdateWhileStopped(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+	var vmID string
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_file" "cloud_config" {
+						content_type = "snippets"
+						datastore_id = "local"
+						node_name    = "{{.NodeName}}"
+						overwrite    = true
+						source_raw {
+							data = <<-EOF
+							#cloud-config
+							runcmd:
+							  - apt update
+							  - apt install -y qemu-guest-agent
+							  - systemctl enable qemu-guest-agent
+							  - systemctl start qemu-guest-agent
+							EOF
+							file_name = "{{.TestName}}-cloud-config.yaml"
+						}
+					}
+
+					resource "proxmox_virtual_environment_vm" "test_update_while_stopped" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						stop_on_destroy = true
+
+						cpu {
+							cores = 2
+							type  = "kvm64"
+						}
+
+						memory {
+							dedicated = 1024
+						}
+
+						agent {
+							enabled = true
+						}
+
+						disk {
+							datastore_id = "local-lvm"
+							file_id      = "{{.ImageFileID}}"
+							interface    = "virtio0"
+							iothread     = true
+							discard      = "on"
+							size         = 20
+						}
+
+						initialization {
+							ip_config {
+								ipv4 {
+									address = "dhcp"
+								}
+							}
+							user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+						}
+
+						network_device {
+							bridge = "vmbr0"
+						}
+					}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrWith(
+						"proxmox_virtual_environment_vm.test_update_while_stopped",
+						"vm_id",
+						func(v string) error {
+							vmID = v
+							return nil
+						},
+					),
+				),
+			},
+			{
+				PreConfig: func() {
+					if vmID == "" {
+						t.Fatalf("vm_id was not captured from state")
+					}
+					err := stopVM(te, vmID)
+					if err != nil {
+						t.Fatalf("failed to stop VM out-of-band: %v", err)
+					}
+					waitForVMStopped(te, vmID)
+				},
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_file" "cloud_config" {
+						content_type = "snippets"
+						datastore_id = "local"
+						node_name    = "{{.NodeName}}"
+						overwrite    = true
+						source_raw {
+							data = <<-EOF
+							#cloud-config
+							runcmd:
+							  - apt update
+							  - apt install -y qemu-guest-agent
+							  - systemctl enable qemu-guest-agent
+							  - systemctl start qemu-guest-agent
+							EOF
+							file_name = "{{.TestName}}-cloud-config.yaml"
+						}
+					}
+
+					resource "proxmox_virtual_environment_vm" "test_update_while_stopped" {
+						node_name = "{{.NodeName}}"
+						started   = true
+						stop_on_destroy = true
+
+						cpu {
+							cores = 2
+							type  = "host"
+						}
+
+						memory {
+							dedicated = 1024
+						}
+
+						agent {
+							enabled = true
+						}
+
+						disk {
+							datastore_id = "local-lvm"
+							file_id      = "{{.ImageFileID}}"
+							interface    = "virtio0"
+							iothread     = true
+							discard      = "on"
+							size         = 20
+						}
+
+						initialization {
+							ip_config {
+								ipv4 {
+									address = "dhcp"
+								}
+							}
+							user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+						}
+
+						network_device {
+							bridge = "vmbr0"
+						}
+					}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_update_while_stopped", map[string]string{
+						"agent.0.enabled":           "true",
+						"ipv4_addresses.#":          "2",
+						"network_interface_names.#": "2",
+					}),
+					func(*terraform.State) error {
+						id, err := strconv.Atoi(vmID)
+						if err != nil {
+							return fmt.Errorf("invalid vm_id %q: %w", vmID, err)
+						}
+
+						status, err := te.NodeClient().VM(id).GetVMStatus(context.Background())
+						if err != nil {
+							return fmt.Errorf("failed to get VM status: %w", err)
+						}
+
+						if status == nil || status.Status != "running" {
+							return fmt.Errorf("expected VM %s to be running, got %v", vmID, status)
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+func stopVM(te *Environment, vmID string) error {
+	id, err := strconv.Atoi(vmID)
+	if err != nil {
+		return fmt.Errorf("invalid vm_id %q: %w", vmID, err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	return te.NodeClient().VM(id).StopVM(ctx)
+}
+
+func waitForVMStopped(te *Environment, vmID string) {
+	te.t.Helper()
+
+	id, err := strconv.Atoi(vmID)
+	require.NoError(te.t, err, "invalid vm_id %q", vmID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	err = te.NodeClient().VM(id).WaitForVMStatus(ctx, "stopped")
+	require.NoError(te.t, err, "failed waiting for VM %s to stop on node %s", vmID, te.NodeName)
 }
