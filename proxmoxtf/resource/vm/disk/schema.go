@@ -156,10 +156,13 @@ func Schema() map[string]*schema.Schema {
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 20)),
 					},
 					mkDiskSize: {
-						Type:             schema.TypeInt,
-						Description:      "The disk size in gigabytes",
-						Optional:         true,
-						Default:          dvDiskSize,
+						Type:        schema.TypeInt,
+						Description: "The disk size in gigabytes",
+						Optional:    true,
+						Computed:    true,
+						DefaultFunc: func() (any, error) {
+							return dvDiskSize, nil
+						},
 						ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
 					},
 					mkDiskIOThread: {

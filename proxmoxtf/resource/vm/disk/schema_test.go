@@ -24,6 +24,12 @@ func TestVMSchema(t *testing.T) {
 		mkDiskSize,
 	})
 
+	test.AssertComputedAttributes(t, diskSchema, []string{
+		mkDiskPathInDatastore,
+		mkDiskFileFormat,
+		mkDiskSize,
+	})
+
 	test.AssertValueTypes(t, diskSchema, map[string]schema.ValueType{
 		mkDiskDatastoreID:     schema.TypeString,
 		mkDiskPathInDatastore: schema.TypeString,
