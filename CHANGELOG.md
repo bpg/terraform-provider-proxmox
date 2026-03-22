@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.99.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.99.0...v0.99.1) (2026-03-22)
+
+
+### Bug Fixes
+
+* **lychee:** update comments for clarity ([6fea54e](https://github.com/bpg/terraform-provider-proxmox/commit/6fea54e47f422cf03d0b3e333ff6eb96840c327c))
+
 ## [0.99.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.98.1...v0.99.0) (2026-03-21)
 
 
