@@ -1,13 +1,15 @@
 # Lychee configuration file
 # Exclude specific files from link checking
-# Note: PR template uses repo-root-relative links that GitHub resolves correctly,
-# but lychee resolves them relative to .github/ directory.
+# Note: PR template and Claude agent skill files use repo-root-relative links that
+# GitHub/agents resolve correctly, but lychee resolves them relative to the file's
+# directory.
 exclude_path = [
     "CONTRIBUTORS.md",
     "CHANGELOG.md",
     "cache",
     ".terraform",
-    ".github/PULL_REQUEST_TEMPLATE.md"
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    ".claude"
 ]
 
 # Exclude URL patterns (regex)
