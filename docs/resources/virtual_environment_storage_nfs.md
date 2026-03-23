@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_storage_nfs
 
+~> **Deprecated:** Use [`proxmox_storage_nfs`](storage_nfs.md) instead. This resource will be removed in v1.0.
+
 Manages an NFS-based storage in Proxmox VE.
 
 ## Example Usage

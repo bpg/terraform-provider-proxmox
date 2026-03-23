@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 )
 
@@ -193,4 +194,5 @@ func (r *pbsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 	factory.WithDescription("Manages a Proxmox Backup Server (PBS) storage in Proxmox VE.")
 	factory.WithBackupBlock()
 	resp.Schema = *factory.Schema
+	resp.Schema.DeprecationMessage = migration.DeprecationMessage("proxmox_storage_pbs")
 }
