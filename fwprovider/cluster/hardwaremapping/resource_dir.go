@@ -23,6 +23,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
@@ -205,7 +206,8 @@ func (r *dirResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	comment.Description = "The comment of this directory mapping."
 
 	resp.Schema = schema.Schema{
-		Description: "Manages a directory mapping in a Proxmox VE cluster.",
+		Description:        "Manages a directory mapping in a Proxmox VE cluster.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_hardware_mapping_dir"),
 		Attributes: map[string]schema.Attribute{
 			schemaAttrNameComment: comment,
 			schemaAttrNameMap: schema.SetNestedAttribute{
@@ -277,4 +279,42 @@ func (r *dirResource) Update(ctx context.Context, req resource.UpdateRequest, re
 // This is a helper function to simplify the provider implementation.
 func NewDirResource() resource.Resource {
 	return &dirResource{}
+}
+
+// Ensure the short-name resource implements the required interfaces.
+var (
+	_ resource.Resource                = &dirResourceShort{}
+	_ resource.ResourceWithConfigure   = &dirResourceShort{}
+	_ resource.ResourceWithImportState = &dirResourceShort{}
+	_ resource.ResourceWithMoveState   = &dirResourceShort{}
+)
+
+// dirResourceShort is the short-name alias for dirResource (proxmox_hardware_mapping_dir).
+type dirResourceShort struct{ dirResource }
+
+// Metadata defines the short name of the directory mapping resource.
+func (r *dirResourceShort) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "proxmox_hardware_mapping_dir"
+}
+
+// Schema returns the same schema as the original resource without the deprecation message.
+func (r *dirResourceShort) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	r.dirResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+// MoveState returns state movers that allow migrating from the old resource type name.
+func (r *dirResourceShort) MoveState(ctx context.Context) []resource.StateMover {
+	var s resource.SchemaResponse
+
+	r.Schema(ctx, resource.SchemaRequest{}, &s)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_hardware_mapping_dir", &s.Schema),
+	}
+}
+
+// NewDirResourceShort returns a new short-name resource for managing a directory mapping.
+func NewDirResourceShort() resource.Resource {
+	return &dirResourceShort{}
 }

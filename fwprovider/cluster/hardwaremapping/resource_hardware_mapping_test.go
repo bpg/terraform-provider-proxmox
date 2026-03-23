@@ -27,9 +27,9 @@ import (
 )
 
 const (
-	accTestHardwareMappingNameDir = "proxmox_virtual_environment_hardware_mapping_dir.test"
-	accTestHardwareMappingNamePCI = "proxmox_virtual_environment_hardware_mapping_pci.test"
-	accTestHardwareMappingNameUSB = "proxmox_virtual_environment_hardware_mapping_usb.test"
+	accTestHardwareMappingNameDir = "proxmox_hardware_mapping_dir.test"
+	accTestHardwareMappingNamePCI = "proxmox_hardware_mapping_pci.test"
+	accTestHardwareMappingNameUSB = "proxmox_hardware_mapping_usb.test"
 )
 
 type accTestHardwareMappingFakeData struct {
@@ -113,7 +113,7 @@ func TestAccResourceHardwareMappingDirValidInput(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+					resource "proxmox_hardware_mapping_dir" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -154,7 +154,7 @@ func TestAccResourceHardwareMappingDirValidInput(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+					resource "proxmox_hardware_mapping_dir" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -205,7 +205,7 @@ func TestAccResourceHardwareMappingDirValidInputMinimal(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+					resource "proxmox_hardware_mapping_dir" "test" {
 						name    = "%s"
 						map     = [
 							{
@@ -241,7 +241,7 @@ func TestAccResourceHardwareMappingDirValidInputMinimal(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+					resource "proxmox_hardware_mapping_dir" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -290,7 +290,7 @@ func TestAccResourceHardwareMappingDirInvalidInput(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_usb" "test" {
+					resource "proxmox_hardware_mapping_usb" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -333,7 +333,7 @@ func TestAccResourceHardwareMappingPCIValidInput(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_pci" "test" {
+					resource "proxmox_hardware_mapping_pci" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -393,7 +393,7 @@ func TestAccResourceHardwareMappingPCIValidInput(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_pci" "test" {
+					resource "proxmox_hardware_mapping_pci" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -463,7 +463,7 @@ func TestAccResourceHardwareMappingPCIValidInputMinimal(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_pci" "test" {
+					resource "proxmox_hardware_mapping_pci" "test" {
 						name    = "%s"
 						map     = [
 							{
@@ -518,7 +518,7 @@ func TestAccResourceHardwareMappingPCIValidInputMinimal(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_pci" "test" {
+					resource "proxmox_hardware_mapping_pci" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -600,7 +600,7 @@ func TestAccResourceHardwareMappingPCIInvalidInput(t *testing.T) {
 					),
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_pci" "test" {
+					resource "proxmox_hardware_mapping_pci" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -642,7 +642,7 @@ func TestAccResourceHardwareMappingPCIInvalidInput(t *testing.T) {
 					ExpectError: regexp.MustCompile(fmt.Sprintf(`.*%s.*`, validators.HardwareMappingDeviceIDValidatorErrMessage)),
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_pci" "test" {
+					resource "proxmox_hardware_mapping_pci" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -690,7 +690,7 @@ func TestAccResourceHardwareMappingUSBValidInput(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_usb" "test" {
+					resource "proxmox_hardware_mapping_usb" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -737,7 +737,7 @@ func TestAccResourceHardwareMappingUSBValidInput(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_usb" "test" {
+					resource "proxmox_hardware_mapping_usb" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -794,7 +794,7 @@ func TestAccResourceHardwareMappingUSBValidInputMinimal(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_usb" "test" {
+					resource "proxmox_hardware_mapping_usb" "test" {
 						name    = "%s"
 						map     = [
 							{
@@ -836,7 +836,7 @@ func TestAccResourceHardwareMappingUSBValidInputMinimal(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_usb" "test" {
+					resource "proxmox_hardware_mapping_usb" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [
@@ -891,7 +891,7 @@ func TestAccResourceHardwareMappingUSBInvalidInput(t *testing.T) {
 				{
 					Config: fmt.Sprintf(
 						`
-					resource "proxmox_virtual_environment_hardware_mapping_usb" "test" {
+					resource "proxmox_hardware_mapping_usb" "test" {
 						comment = "%s"
 						name    = "%s"
 						map     = [

@@ -23,6 +23,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
@@ -210,7 +211,8 @@ func (r *usbResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	commentMap.Validators = append(commentMap.Validators, validators.HardwareMappingMapCommentValidator())
 
 	resp.Schema = schema.Schema{
-		Description: "Manages a USB hardware mapping in a Proxmox VE cluster.",
+		Description:        "Manages a USB hardware mapping in a Proxmox VE cluster.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_hardware_mapping_usb"),
 		Attributes: map[string]schema.Attribute{
 			schemaAttrNameComment: comment,
 			schemaAttrNameMap: schema.SetNestedAttribute{
@@ -290,4 +292,42 @@ func (r *usbResource) Update(ctx context.Context, req resource.UpdateRequest, re
 // This is a helper function to simplify the provider implementation.
 func NewUSBResource() resource.Resource {
 	return &usbResource{}
+}
+
+// Ensure the short-name resource implements the required interfaces.
+var (
+	_ resource.Resource                = &usbResourceShort{}
+	_ resource.ResourceWithConfigure   = &usbResourceShort{}
+	_ resource.ResourceWithImportState = &usbResourceShort{}
+	_ resource.ResourceWithMoveState   = &usbResourceShort{}
+)
+
+// usbResourceShort is the short-name alias for usbResource (proxmox_hardware_mapping_usb).
+type usbResourceShort struct{ usbResource }
+
+// Metadata defines the short name of the USB hardware mapping resource.
+func (r *usbResourceShort) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "proxmox_hardware_mapping_usb"
+}
+
+// Schema returns the same schema as the original resource without the deprecation message.
+func (r *usbResourceShort) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	r.usbResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+// MoveState returns state movers that allow migrating from the old resource type name.
+func (r *usbResourceShort) MoveState(ctx context.Context) []resource.StateMover {
+	var s resource.SchemaResponse
+
+	r.Schema(ctx, resource.SchemaRequest{}, &s)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_hardware_mapping_usb", &s.Schema),
+	}
+}
+
+// NewUSBResourceShort returns a new short-name resource for managing a USB hardware mapping.
+func NewUSBResourceShort() resource.Resource {
+	return &usbResourceShort{}
 }

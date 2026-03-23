@@ -21,6 +21,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
@@ -150,7 +151,8 @@ func (d *dataSource) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a list of hardware mapping resources.",
+		Description:        "Retrieves a list of hardware mapping resources.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_hardware_mappings"),
 		Attributes: map[string]schema.Attribute{
 			schemaAttrNameChecks: schema.ListNestedAttribute{
 				Computed:    true,
@@ -205,4 +207,29 @@ func (d *dataSource) Schema(
 // This is a helper function to simplify the provider implementation.
 func NewDataSource() datasource.DataSource {
 	return &dataSource{}
+}
+
+// Ensure the short-name data source implements the required interfaces.
+var (
+	_ datasource.DataSource              = &dataSourceShort{}
+	_ datasource.DataSourceWithConfigure = &dataSourceShort{}
+)
+
+// dataSourceShort is the short-name alias for dataSource (proxmox_hardware_mappings).
+type dataSourceShort struct{ dataSource }
+
+// Metadata returns the short data source type name.
+func (d *dataSourceShort) Metadata(_ context.Context, _ datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = "proxmox_hardware_mappings"
+}
+
+// Schema returns the same schema as the original data source without the deprecation message.
+func (d *dataSourceShort) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	d.dataSource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+// NewDataSourceShort returns a new short-name data source for hardware mappings.
+func NewDataSourceShort() datasource.DataSource {
+	return &dataSourceShort{}
 }

@@ -17,6 +17,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
@@ -100,7 +101,8 @@ func (d *usbDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, re
 	commentMap.Description = "The comment of the mapped USB device."
 
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a USB hardware mapping from a Proxmox VE cluster.",
+		Description:        "Retrieves a USB hardware mapping from a Proxmox VE cluster.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_hardware_mapping_usb"),
 		Attributes: map[string]schema.Attribute{
 			schemaAttrNameComment: comment,
 			schemaAttrNameMap: schema.SetNestedAttribute{
@@ -148,4 +150,33 @@ func (d *usbDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, re
 // This is a helper function to simplify the provider implementation.
 func NewUSBDataSource() datasource.DataSource {
 	return &usbDataSource{}
+}
+
+// Ensure the short-name data source implements the required interfaces.
+var (
+	_ datasource.DataSource              = &usbDataSourceShort{}
+	_ datasource.DataSourceWithConfigure = &usbDataSourceShort{}
+)
+
+// usbDataSourceShort is the short-name alias for usbDataSource (proxmox_hardware_mapping_usb).
+type usbDataSourceShort struct{ usbDataSource }
+
+// Metadata returns the short data source type name.
+func (d *usbDataSourceShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_hardware_mapping_usb"
+}
+
+// Schema returns the same schema as the original data source without the deprecation message.
+func (d *usbDataSourceShort) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	d.usbDataSource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+// NewUSBDataSourceShort returns a new short-name data source for a USB hardware mapping.
+func NewUSBDataSourceShort() datasource.DataSource {
+	return &usbDataSourceShort{}
 }
