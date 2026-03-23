@@ -16,6 +16,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
@@ -48,7 +49,8 @@ func (d *haGroupDatasource) Metadata(
 // Schema returns the schema for the data source.
 func (d *haGroupDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves information about a specific High Availability group.",
+		Description:        "Retrieves information about a specific High Availability group.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_hagroup"),
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"group": schema.StringAttribute{
@@ -127,4 +129,35 @@ func (d *haGroupDatasource) Read(ctx context.Context, req datasource.ReadRequest
 
 	resp.Diagnostics.Append(state.ImportFromAPI(*group)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// Short-name alias for proxmox_hagroup data source (ADR-007).
+
+var (
+	_ datasource.DataSource              = &haGroupDSShort{}
+	_ datasource.DataSourceWithConfigure = &haGroupDSShort{}
+)
+
+type haGroupDSShort struct{ haGroupDatasource }
+
+// NewHAGroupShortDataSource creates the short-name version of the HA group data source.
+func NewHAGroupShortDataSource() datasource.DataSource {
+	return &haGroupDSShort{}
+}
+
+func (d *haGroupDSShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_hagroup"
+}
+
+func (d *haGroupDSShort) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
+	d.haGroupDatasource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
 }

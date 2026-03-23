@@ -9,14 +9,12 @@ description: |-
 
 # {{.Type}}: {{.Name}}
 
-~> **Deprecated:** Use [`proxmox_harule`](harule.md) instead. This resource will be removed in v1.0.
-
 {{ .Description | trimspace }}
 
 ~> **Note:** This resource requires Proxmox VE 9.0 or later. In PVE 9, HA groups
 have been replaced by HA rules, which provide node affinity and resource affinity
 capabilities. For PVE 8 and earlier, use
-[`proxmox_virtual_environment_hagroup`](virtual_environment_hagroup.md) instead.
+[`proxmox_hagroup`](hagroup.md) instead.
 
 {{ if .HasExample -}}
 

@@ -48,6 +48,10 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/backup_jobs.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/files.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/hagroup.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/hagroups.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/haresource.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/haresources.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_hagroup.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_hagroups.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_hardware_mapping_dir.md ./docs/data-sources/
@@ -88,6 +92,9 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_cluster_options.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_download_file.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/hagroup.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/haresource.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/harule.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_hagroup.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_hardware_mapping_dir.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_hardware_mapping_pci.md ./docs/resources/
