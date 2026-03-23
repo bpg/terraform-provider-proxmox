@@ -10,7 +10,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -60,16 +59,9 @@ func TestPrefixMoveState_MatchingSourceTypeName(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", resp.Diagnostics.Errors())
 	}
 
-	// Verify the target state received the source raw value.
-	var id string
-
-	diags := resp.TargetState.GetAttribute(context.Background(), path.Root("id"), &id)
-	if diags.HasError() {
-		t.Fatalf("failed to read id from target state: %s", diags.Errors())
-	}
-
-	if id != "test-id" {
-		t.Errorf("expected id = %q, got %q", "test-id", id)
+	// Verify the target state received the source raw value by comparing Raw directly.
+	if !resp.TargetState.Raw.Equal(raw) {
+		t.Errorf("expected target Raw to equal source Raw")
 	}
 }
 
