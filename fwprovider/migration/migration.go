@@ -25,9 +25,9 @@ import (
 //
 // This helper does not check SourceSchemaVersion or SourceProviderAddress — both
 // are assumed to match since this is a same-provider, same-schema rename.
-func PrefixMoveState(oldTypeName string, sourceSchema schema.Schema) resource.StateMover {
+func PrefixMoveState(oldTypeName string, sourceSchema *schema.Schema) resource.StateMover {
 	return resource.StateMover{
-		SourceSchema: &sourceSchema,
+		SourceSchema: sourceSchema,
 		StateMover: func(_ context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
 			if req.SourceTypeName != oldTypeName {
 				return

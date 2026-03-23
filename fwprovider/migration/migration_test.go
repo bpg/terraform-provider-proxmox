@@ -52,7 +52,7 @@ func TestPrefixMoveState_MatchingSourceTypeName(t *testing.T) {
 		TargetState: targetState,
 	}
 
-	mover := PrefixMoveState("proxmox_virtual_environment_example", testSchema)
+	mover := PrefixMoveState("proxmox_virtual_environment_example", &testSchema)
 	mover.StateMover(context.Background(), req, resp)
 
 	if resp.Diagnostics.HasError() {
@@ -102,7 +102,7 @@ func TestPrefixMoveState_NonMatchingSourceTypeName(t *testing.T) {
 		TargetState: targetState,
 	}
 
-	mover := PrefixMoveState("proxmox_virtual_environment_example", testSchema)
+	mover := PrefixMoveState("proxmox_virtual_environment_example", &testSchema)
 	mover.StateMover(context.Background(), req, resp)
 
 	if resp.Diagnostics.HasError() {
