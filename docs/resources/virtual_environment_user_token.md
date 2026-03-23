@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_user_token
 
+~> **Deprecated:** Use [`proxmox_user_token`](user_token.md) instead. This resource will be removed in v1.0.
+
 User API tokens.
 
 ## Example Usage

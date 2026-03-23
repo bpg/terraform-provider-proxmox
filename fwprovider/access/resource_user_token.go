@@ -24,6 +24,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
@@ -61,7 +62,8 @@ func (r *userTokenResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "User API tokens.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_user_token"),
+		Description:        "User API tokens.",
 		Attributes: map[string]schema.Attribute{
 			"comment": schema.StringAttribute{
 				Description: "Comment for the token.",
@@ -320,4 +322,50 @@ func (r *userTokenResource) ImportState(
 
 	diags := resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
+}
+
+// Short-name alias: proxmox_user_token.
+
+var (
+	_ resource.Resource                = (*userTokenShort)(nil)
+	_ resource.ResourceWithConfigure   = (*userTokenShort)(nil)
+	_ resource.ResourceWithImportState = (*userTokenShort)(nil)
+	_ resource.ResourceWithConfigure   = (*userTokenShort)(nil)
+	_ resource.ResourceWithMoveState   = (*userTokenShort)(nil)
+	_ resource.ResourceWithConfigure   = (*userTokenShort)(nil)
+)
+
+// userTokenShort is the short-name alias (proxmox_user_token) for userTokenResource.
+// It embeds the original and overrides Metadata/Schema/MoveState.
+type userTokenShort struct{ userTokenResource }
+
+// NewUserTokenShortResource creates the short-name alias for the user token resource.
+func NewUserTokenShortResource() resource.Resource {
+	return &userTokenShort{}
+}
+
+func (r *userTokenShort) Metadata(
+	_ context.Context,
+	_ resource.MetadataRequest,
+	resp *resource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_user_token"
+}
+
+func (r *userTokenShort) Schema(
+	ctx context.Context,
+	req resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
+	r.userTokenResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *userTokenShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+	r.userTokenResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_user_token", &schemaResp.Schema),
+	}
 }

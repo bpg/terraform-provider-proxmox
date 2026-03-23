@@ -10,6 +10,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_realm_openid
 
+~> **Deprecated:** Use [`proxmox_realm_openid`](realm_openid.md) instead. This resource will be removed in v1.0.
+
 Manages an OpenID Connect authentication realm in Proxmox VE.
 
 OpenID Connect realms allow Proxmox to authenticate users against an external OpenID Connect provider.

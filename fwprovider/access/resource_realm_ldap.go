@@ -27,6 +27,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -60,7 +61,8 @@ func (r *realmLDAPResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages an LDAP authentication realm in Proxmox VE.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_realm_ldap"),
+		Description:        "Manages an LDAP authentication realm in Proxmox VE.",
 		MarkdownDescription: "Manages an LDAP authentication realm in Proxmox VE.\n\n" +
 			"LDAP realms allow Proxmox to authenticate users against an LDAP directory service.",
 		Attributes: map[string]schema.Attribute{
@@ -402,4 +404,50 @@ func (r *realmLDAPResource) ImportState(
 ) {
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("realm"), req.ID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+}
+
+// Short-name alias: proxmox_realm_ldap.
+
+var (
+	_ resource.Resource                = (*realmLDAPShort)(nil)
+	_ resource.ResourceWithConfigure   = (*realmLDAPShort)(nil)
+	_ resource.ResourceWithImportState = (*realmLDAPShort)(nil)
+	_ resource.ResourceWithConfigure   = (*realmLDAPShort)(nil)
+	_ resource.ResourceWithMoveState   = (*realmLDAPShort)(nil)
+	_ resource.ResourceWithConfigure   = (*realmLDAPShort)(nil)
+)
+
+// realmLDAPShort is the short-name alias (proxmox_realm_ldap) for realmLDAPResource.
+// It embeds the original and overrides Metadata/Schema/MoveState.
+type realmLDAPShort struct{ realmLDAPResource }
+
+// NewRealmLDAPShortResource creates the short-name alias for the LDAP realm resource.
+func NewRealmLDAPShortResource() resource.Resource {
+	return &realmLDAPShort{}
+}
+
+func (r *realmLDAPShort) Metadata(
+	_ context.Context,
+	_ resource.MetadataRequest,
+	resp *resource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_realm_ldap"
+}
+
+func (r *realmLDAPShort) Schema(
+	ctx context.Context,
+	req resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
+	r.realmLDAPResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *realmLDAPShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+	r.realmLDAPResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_realm_ldap", &schemaResp.Schema),
+	}
 }

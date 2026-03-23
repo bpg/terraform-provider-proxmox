@@ -27,7 +27,7 @@ func TestAccRealmLDAP(t *testing.T) {
 			// Create with minimal required fields
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_realm_ldap" "test" {
+					resource "proxmox_realm_ldap" "test" {
 						realm     = "test-realm.local"
 						server1   = "ldap.example.com"
 						base_dn   = "dc=example,dc=com"
@@ -37,7 +37,7 @@ func TestAccRealmLDAP(t *testing.T) {
 						comment   = "Test LDAP realm"
 					}
 				`),
-				Check: test.ResourceAttributes("proxmox_virtual_environment_realm_ldap.test", map[string]string{
+				Check: test.ResourceAttributes("proxmox_realm_ldap.test", map[string]string{
 					"realm":     "test-realm.local",
 					"server1":   "ldap.example.com",
 					"base_dn":   "dc=example,dc=com",
@@ -48,7 +48,7 @@ func TestAccRealmLDAP(t *testing.T) {
 			},
 			// Import state
 			{
-				ResourceName:            "proxmox_virtual_environment_realm_ldap.test",
+				ResourceName:            "proxmox_realm_ldap.test",
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"bind_password"}, // Password not returned by API
@@ -56,7 +56,7 @@ func TestAccRealmLDAP(t *testing.T) {
 			// Update with optional fields added
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_realm_ldap" "test" {
+					resource "proxmox_realm_ldap" "test" {
 						realm     = "test-realm.local"
 						server1   = "ldap2.example.com"
 						base_dn   = "dc=example,dc=com"
@@ -68,7 +68,7 @@ func TestAccRealmLDAP(t *testing.T) {
 						group_dn  = "ou=groups,dc=example,dc=com"
 					}
 				`),
-				Check: test.ResourceAttributes("proxmox_virtual_environment_realm_ldap.test", map[string]string{
+				Check: test.ResourceAttributes("proxmox_realm_ldap.test", map[string]string{
 					"realm":    "test-realm.local",
 					"server1":  "ldap2.example.com",
 					"base_dn":  "dc=example,dc=com",
@@ -80,7 +80,7 @@ func TestAccRealmLDAP(t *testing.T) {
 			// Remove optional fields to verify proper cleanup
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_realm_ldap" "test" {
+					resource "proxmox_realm_ldap" "test" {
 						realm     = "test-realm.local"
 						server1   = "ldap2.example.com"
 						base_dn   = "dc=example,dc=com"
@@ -91,13 +91,13 @@ func TestAccRealmLDAP(t *testing.T) {
 					}
 				`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_realm_ldap.test", map[string]string{
+					test.ResourceAttributes("proxmox_realm_ldap.test", map[string]string{
 						"realm":   "test-realm.local",
 						"server1": "ldap2.example.com",
 						"base_dn": "dc=example,dc=com",
 						"comment": "Updated test realm",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_realm_ldap.test", []string{
+					test.NoResourceAttributesSet("proxmox_realm_ldap.test", []string{
 						"filter",
 						"group_dn",
 					}),

@@ -68,7 +68,12 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zones.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_version.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_vm2.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/resources/acl.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/backup_job.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/realm_ldap.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/realm_openid.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/realm_sync.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/user_token.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_acl.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_acme_account.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_acme_dns_plugin.md ./docs/resources/
