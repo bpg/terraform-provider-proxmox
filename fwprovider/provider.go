@@ -615,8 +615,10 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		storage.NewZFSPoolStorageResource,
 		storage.NewZFSPoolStorageShortResource,
 		vm.NewResource,
+		vm.NewShortResource,
 		replication.NewResource,
 		replication.NewShortResource,
+		pools.NewShortPoolMembershipResource,
 	}
 }
 
@@ -686,8 +688,10 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		sdnfabricnode.NewOSPFDataSource,
 		sdnfabricnode.NewOSPFShortDataSource,
 		vm.NewDataSource,
+		vm.NewShortDataSource,
 		replication.NewDataSource,
 		replication.NewShortDataSource,
+		NewShortVersionDataSource,
 		replication.NewReplicationsDataSource,
 		replication.NewReplicationsShortDataSource,
 	}

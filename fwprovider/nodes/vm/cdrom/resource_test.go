@@ -16,7 +16,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-const resourceName = "proxmox_virtual_environment_vm2.test_vm"
+const resourceName = "proxmox_vm.test_vm"
 
 func TestAccResourceVM2CDROM(t *testing.T) {
 	t.Parallel()
@@ -29,7 +29,7 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 	}{
 		{"create VM default CDROM", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-cdrom"
 				cdrom = {
@@ -43,7 +43,7 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 		}}},
 		{"create VM multiple CDROMs", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-cdrom"
 				cdrom = {
@@ -62,7 +62,7 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 		{"create VM with CDROM and then update it", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-cdrom"
 					cdrom = {
@@ -82,7 +82,7 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 			},
 			{ // now update the cdrom params and check if they are updated
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-cdrom"
 					cdrom = {

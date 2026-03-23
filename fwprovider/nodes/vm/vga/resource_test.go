@@ -27,18 +27,18 @@ func TestAccResourceVM2VGA(t *testing.T) {
 	}{
 		{"create VM with no vga params", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-vga"
 			}`),
-			Check: test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+			Check: test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 				// PVE does not set / return anything by default
 				"vga.type",
 			}),
 		}}},
 		{"create VM with some vga params", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-vga"
 				vga = {
@@ -46,10 +46,10 @@ func TestAccResourceVM2VGA(t *testing.T) {
 				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					"vga.type": "std",
 				}),
-				test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+				test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 					"vga.clipboard",
 					"vga.memory",
 				}),
@@ -58,7 +58,7 @@ func TestAccResourceVM2VGA(t *testing.T) {
 		{"create VM with VGA params and then update them", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-vga"
 					vga = {
@@ -67,18 +67,18 @@ func TestAccResourceVM2VGA(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"vga.type":   "std",
 						"vga.memory": "16",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+					test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 						"vga.clipboard",
 					}),
 				),
 			},
 			{ // now update the vga params and check if they are updated
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-cpu"
 					vga = {
@@ -87,11 +87,11 @@ func TestAccResourceVM2VGA(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"vga.type":      "qxl",
 						"vga.clipboard": "vnc",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+					test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 						"vga.memory",
 					}),
 				),

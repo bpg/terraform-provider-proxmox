@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_pool_membership
 
+~> **Deprecated:** Use [`proxmox_pool_membership`](pool_membership.md) instead. This resource will be removed in v1.0.
+
 Manages resource pool memberships for containers, virtual machines and storages
 
 ~> This resource requires the `Pool.Allocate` permission on the pool path (e.g., `/pool/{poolid}`).

@@ -94,13 +94,13 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 					started = false
 				}
 				
-				resource "proxmox_virtual_environment_pool_membership" "pool_membership" {
+				resource "proxmox_pool_membership" "pool_membership" {
 					pool_id = proxmox_virtual_environment_pool.test_pool.id
 					vm_id = proxmox_virtual_environment_container.test_container.id
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes(
-						"proxmox_virtual_environment_pool_membership.pool_membership",
+						"proxmox_pool_membership.pool_membership",
 						map[string]string{
 							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName, accTestContainerID),
 							"pool_id": accTestPoolName,
@@ -112,7 +112,7 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      "proxmox_virtual_environment_pool_membership.pool_membership",
+				ResourceName:      "proxmox_pool_membership.pool_membership",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -146,13 +146,13 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 					started = false
 				}
 				
-				resource "proxmox_virtual_environment_pool_membership" "pool_membership" {
+				resource "proxmox_pool_membership" "pool_membership" {
 					pool_id = proxmox_virtual_environment_pool.test_pool-2.id
 					vm_id = proxmox_virtual_environment_container.test_container.id
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes(
-						"proxmox_virtual_environment_pool_membership.pool_membership",
+						"proxmox_pool_membership.pool_membership",
 						map[string]string{
 							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName2, accTestContainerID),
 							"pool_id": accTestPoolName2,
@@ -166,7 +166,7 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(
-							"proxmox_virtual_environment_pool_membership.pool_membership",
+							"proxmox_pool_membership.pool_membership",
 							plancheck.ResourceActionDestroyBeforeCreate,
 						),
 					},
@@ -198,13 +198,13 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 					started = false
 				}
 				
-				resource "proxmox_virtual_environment_pool_membership" "pool_membership" {
+				resource "proxmox_pool_membership" "pool_membership" {
 					pool_id = proxmox_virtual_environment_pool.test_pool-2.id
 					vm_id = proxmox_virtual_environment_container.test_container-2.id
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes(
-						"proxmox_virtual_environment_pool_membership.pool_membership",
+						"proxmox_pool_membership.pool_membership",
 						map[string]string{
 							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName2, accTestContainerID2),
 							"pool_id": accTestPoolName2,
@@ -216,7 +216,7 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(
-							"proxmox_virtual_environment_pool_membership.pool_membership",
+							"proxmox_pool_membership.pool_membership",
 							plancheck.ResourceActionDestroyBeforeCreate,
 						),
 					},
@@ -288,13 +288,13 @@ func TestAccPoolMembershipVm(t *testing.T) {
 					pool_id = "{{.TestPoolName}}"
 				}
 				
-				resource "proxmox_virtual_environment_pool_membership" "pool_membership" {
+				resource "proxmox_pool_membership" "pool_membership" {
 					pool_id = proxmox_virtual_environment_pool.test_pool.id
 					vm_id = proxmox_virtual_environment_vm.test_vm1.id
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes(
-						"proxmox_virtual_environment_pool_membership.pool_membership",
+						"proxmox_pool_membership.pool_membership",
 						map[string]string{
 							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName, accTestVmID),
 							"pool_id": accTestPoolName,
@@ -306,7 +306,7 @@ func TestAccPoolMembershipVm(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      "proxmox_virtual_environment_pool_membership.pool_membership",
+				ResourceName:      "proxmox_pool_membership.pool_membership",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -326,13 +326,13 @@ func TestAccPoolMembershipVm(t *testing.T) {
 					started   = false
 				}
 				
-				resource "proxmox_virtual_environment_pool_membership" "pool_membership" {
+				resource "proxmox_pool_membership" "pool_membership" {
 					pool_id = proxmox_virtual_environment_pool.test_pool-2.id
 					vm_id = proxmox_virtual_environment_vm.test_vm1.id
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes(
-						"proxmox_virtual_environment_pool_membership.pool_membership",
+						"proxmox_pool_membership.pool_membership",
 						map[string]string{
 							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName2, accTestVmID),
 							"pool_id": accTestPoolName2,
@@ -346,7 +346,7 @@ func TestAccPoolMembershipVm(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(
-							"proxmox_virtual_environment_pool_membership.pool_membership",
+							"proxmox_pool_membership.pool_membership",
 							plancheck.ResourceActionDestroyBeforeCreate,
 						),
 					},
@@ -364,13 +364,13 @@ func TestAccPoolMembershipVm(t *testing.T) {
 					started   = false
 				}
 				
-				resource "proxmox_virtual_environment_pool_membership" "pool_membership" {
+				resource "proxmox_pool_membership" "pool_membership" {
 					pool_id = proxmox_virtual_environment_pool.test_pool-2.id
 					vm_id = proxmox_virtual_environment_vm.test_vm2.id
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes(
-						"proxmox_virtual_environment_pool_membership.pool_membership",
+						"proxmox_pool_membership.pool_membership",
 						map[string]string{
 							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName2, accTestVmID2),
 							"pool_id": accTestPoolName2,
@@ -382,7 +382,7 @@ func TestAccPoolMembershipVm(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(
-							"proxmox_virtual_environment_pool_membership.pool_membership",
+							"proxmox_pool_membership.pool_membership",
 							plancheck.ResourceActionDestroyBeforeCreate,
 						),
 					},
@@ -430,13 +430,13 @@ func TestAccPoolMembershipStorage(t *testing.T) {
 					pool_id = "{{.TestPoolName}}"
 				}
 				
-				resource "proxmox_virtual_environment_pool_membership" "pool_membership" {
+				resource "proxmox_pool_membership" "pool_membership" {
 					pool_id = proxmox_virtual_environment_pool.test_pool.id
 					storage_id = "{{ .DatastoreID }}"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes(
-						"proxmox_virtual_environment_pool_membership.pool_membership",
+						"proxmox_pool_membership.pool_membership",
 						map[string]string{
 							"id":         fmt.Sprintf("%s/storage/%s", accTestPoolName, "local"),
 							"pool_id":    accTestPoolName,
@@ -448,7 +448,7 @@ func TestAccPoolMembershipStorage(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      "proxmox_virtual_environment_pool_membership.pool_membership",
+				ResourceName:      "proxmox_pool_membership.pool_membership",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -461,13 +461,13 @@ func TestAccPoolMembershipStorage(t *testing.T) {
 					pool_id = "{{ .TestPoolName2 }}"
 				}
 				
-				resource "proxmox_virtual_environment_pool_membership" "pool_membership" {
+				resource "proxmox_pool_membership" "pool_membership" {
 					pool_id = proxmox_virtual_environment_pool.test_pool-2.id
 					storage_id = "{{ .DatastoreID }}"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes(
-						"proxmox_virtual_environment_pool_membership.pool_membership",
+						"proxmox_pool_membership.pool_membership",
 						map[string]string{
 							"id":         fmt.Sprintf("%s/storage/%s", accTestPoolName2, "local"),
 							"pool_id":    accTestPoolName2,
@@ -481,7 +481,7 @@ func TestAccPoolMembershipStorage(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(
-							"proxmox_virtual_environment_pool_membership.pool_membership",
+							"proxmox_pool_membership.pool_membership",
 							plancheck.ResourceActionDestroyBeforeCreate,
 						),
 					},
@@ -509,7 +509,7 @@ func TestAccPoolMembership_Validators(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				PlanOnly: true,
-				Config: `resource "proxmox_virtual_environment_pool_membership" "test" {
+				Config: `resource "proxmox_pool_membership" "test" {
 					pool_id = "test_pool"
 					storage_id = "local"
 					vm_id = 1234
@@ -518,14 +518,14 @@ func TestAccPoolMembership_Validators(t *testing.T) {
 			},
 			{
 				PlanOnly: true,
-				Config: `resource "proxmox_virtual_environment_pool_membership" "test" {
+				Config: `resource "proxmox_pool_membership" "test" {
 					pool_id = "test_pool"
 				}`,
 				ExpectError: regexp.MustCompile(`.*Error: Missing Attribute Configuration`),
 			},
 			{
 				PlanOnly: true,
-				Config: `resource "proxmox_virtual_environment_pool_membership" "test" {
+				Config: `resource "proxmox_pool_membership" "test" {
 					pool_id = "test_pool"
 					vm_id = 1234
 				}`,
@@ -533,7 +533,7 @@ func TestAccPoolMembership_Validators(t *testing.T) {
 			},
 			{
 				PlanOnly: true,
-				Config: `resource "proxmox_virtual_environment_pool_membership" "test" {
+				Config: `resource "proxmox_pool_membership" "test" {
 					pool_id = "test_pool"
 					storage_id = "local"
 				}`,

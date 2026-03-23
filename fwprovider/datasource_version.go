@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
@@ -54,7 +55,8 @@ func (d *versionDatasource) Metadata(
 // Schema defines the schema for the data source.
 func (d *versionDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves API version details.",
+		DeprecationMessage: migration.DeprecationMessage(shortVersionDataSourceTypeName),
+		Description:        "Retrieves API version details.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Placeholder identifier attribute.",

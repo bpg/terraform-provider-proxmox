@@ -32,28 +32,28 @@ func TestAccResourceVM(t *testing.T) {
 	}{
 		{"create minimal VM", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					"node_name": te.NodeName,
 				}),
-				test.ResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+				test.ResourceAttributesSet("proxmox_vm.test_vm", []string{
 					"id",
 				}),
 			),
 		}}},
 		{"create minimal VM with ID", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				id = {{.TestVMID}}
 			}`),
 		}}},
 		{"set an invalid VM name", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "not a valid DNS name"
 			}`),
@@ -61,44 +61,44 @@ func TestAccResourceVM(t *testing.T) {
 		}}},
 		{"set a FQDN VM name", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "vm.example.com"
 			}`),
-			Check: test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+			Check: test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 				"name": "vm.example.com",
 			}),
 		}}},
 		{"set, update, import with primitive fields", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-vm"
 					description = "test description"
 				}`),
-				Check: test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				Check: test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					"name":        "test-vm",
 					"description": "test description",
 				}),
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-vm"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"name": "test-vm",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+					test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 						"description",
 					}),
 				),
 			},
 			{
-				ResourceName:        "proxmox_virtual_environment_vm2.test_vm",
+				ResourceName:        "proxmox_vm.test_vm",
 				ImportState:         true,
 				ImportStateVerify:   true,
 				ImportStateIdPrefix: te.NodeName + "/",
@@ -107,55 +107,55 @@ func TestAccResourceVM(t *testing.T) {
 		{"set, update, import with tags", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-tags"
 					tags = ["tag2", "tag1"]
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
-					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag2"),
+					resource.TestCheckTypeSetElemAttr("proxmox_vm.test_vm", "tags.*", "tag1"),
+					resource.TestCheckTypeSetElemAttr("proxmox_vm.test_vm", "tags.*", "tag2"),
 				),
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-tags"
 					tags = ["tag1"]
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "tags.#", "1"),
-					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
+					resource.TestCheckResourceAttr("proxmox_vm.test_vm", "tags.#", "1"),
+					resource.TestCheckTypeSetElemAttr("proxmox_vm.test_vm", "tags.*", "tag1"),
 				),
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-tags"
 					// no tags
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "tags.#", "1"),
-					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
+					resource.TestCheckResourceAttr("proxmox_vm.test_vm", "tags.#", "1"),
+					resource.TestCheckTypeSetElemAttr("proxmox_vm.test_vm", "tags.*", "tag1"),
 				),
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-tags"
 					tags = []
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "tags.#", "0"),
+					resource.TestCheckResourceAttr("proxmox_vm.test_vm", "tags.#", "0"),
 				),
 			},
 		}},
 		{"a VM can't have empty tags", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				tags = ["", "tag1"]
 			}`),
@@ -163,7 +163,7 @@ func TestAccResourceVM(t *testing.T) {
 		}}},
 		{"a VM can't have empty tags", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				tags = [" ", "tag1"]
 			}`),
@@ -171,7 +171,7 @@ func TestAccResourceVM(t *testing.T) {
 		}}},
 		{"multiline description", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					description = trimspace(<<-EOT
 						my
@@ -181,7 +181,7 @@ func TestAccResourceVM(t *testing.T) {
 					)
 				}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					"description": "my\ndescription\nvalue",
 				}),
 			),

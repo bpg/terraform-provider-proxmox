@@ -22,6 +22,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
@@ -77,7 +78,8 @@ func (r *poolMembershipResource) Configure(_ context.Context, req resource.Confi
 
 func (r *poolMembershipResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages resource pool memberships for containers, virtual machines and storages",
+		DeprecationMessage: migration.DeprecationMessage(shortPoolMembershipTypeName),
+		Description:        "Manages resource pool memberships for containers, virtual machines and storages",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"type": schema.StringAttribute{
