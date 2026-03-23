@@ -115,4 +115,5 @@ Each resource package in `fwprovider/` typically has a corresponding client pack
 - [ADR-002: API Client Structure](002-api-client-structure.md)
 - [ADR-004: Schema Design Conventions](004-schema-design-conventions.md) — schema and model patterns
 - [ADR-006: Testing Requirements](006-testing-requirements.md) — test file placement and structure
+- [ADR-007: Resource Type Name Migration](007-resource-type-name-migration.md) — resource type naming and `moved` block support
 - [Reference Examples](reference-examples.md) — annotated walkthrough of the 3-file pattern
