@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_acme_accounts
 
+~> **Deprecated:** Use [`proxmox_acme_accounts`](acme_accounts.md) instead. This data source will be removed in v1.0.
+
 Retrieves the list of ACME accounts.
 
 ## Example Usage

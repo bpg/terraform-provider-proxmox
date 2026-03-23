@@ -41,6 +41,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/account"
 )
 
@@ -100,6 +101,7 @@ func (r *acmeAccountResource) Schema(
 		Description: "Manages an ACME account in a Proxmox VE cluster.",
 		MarkdownDescription: "Manages an ACME account in a Proxmox VE cluster.\n\n" +
 			"~> This resource requires `root@pam` authentication.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_acme_account"),
 		Attributes: map[string]schema.Attribute{
 			"contact": schema.StringAttribute{
 				Description: "The contact email addresses.",
@@ -345,4 +347,39 @@ func (r *acmeAccountResource) read(ctx context.Context, data *acmeAccountModel) 
 	data.CreatedAt = types.StringValue(acc.Account.CreatedAt)
 
 	return true, nil
+}
+
+// Short-name alias for proxmox_acme_account (ADR-007).
+
+var (
+	_ resource.Resource                = &acmeAccountShort{}
+	_ resource.ResourceWithConfigure   = &acmeAccountShort{}
+	_ resource.ResourceWithImportState = &acmeAccountShort{}
+	_ resource.ResourceWithMoveState   = &acmeAccountShort{}
+)
+
+type acmeAccountShort struct{ acmeAccountResource }
+
+// NewACMEAccountShortResource creates the short-name version of the ACME account resource.
+func NewACMEAccountShortResource() resource.Resource {
+	return &acmeAccountShort{}
+}
+
+func (r *acmeAccountShort) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "proxmox_acme_account"
+}
+
+func (r *acmeAccountShort) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	r.acmeAccountResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *acmeAccountShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+
+	r.acmeAccountResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_acme_account", &schemaResp.Schema),
+	}
 }

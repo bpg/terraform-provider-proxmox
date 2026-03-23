@@ -537,7 +537,9 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		access.NewUserTokenResource,
 		access.NewUserTokenShortResource, // proxmox_user_token
 		acme.NewACMEAccountResource,
+		acme.NewACMEAccountShortResource,
 		acme.NewACMEPluginResource,
+		acme.NewACMEPluginShortResource,
 		apt.NewRepositoryResource,
 		apt.NewStandardRepositoryResource,
 		backup.NewResource,
@@ -585,9 +587,13 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 	return []func() datasource.DataSource{
 		NewVersionDataSource,
 		acme.NewACMEAccountDataSource,
+		acme.NewACMEAccountShortDataSource,
 		acme.NewACMEAccountsDataSource,
+		acme.NewACMEAccountsShortDataSource,
 		acme.NewACMEPluginDataSource,
+		acme.NewACMEPluginShortDataSource,
 		acme.NewACMEPluginsDataSource,
+		acme.NewACMEPluginsShortDataSource,
 		apt.NewRepositoryDataSource,
 		apt.NewStandardRepositoryDataSource,
 		backup.NewDataSource,

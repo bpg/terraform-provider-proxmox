@@ -34,29 +34,29 @@ func TestAccDatasourceACMEAccounts(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_account" "test_account1" {
+					resource "proxmox_acme_account" "test_account1" {
 						name = "{{.AccountName1}}"
 						contact = "le.ge9ro@passmail.net"
 						directory = "https://acme-staging-v02.api.letsencrypt.org/directory"
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
 					}
 					
-					resource "proxmox_virtual_environment_acme_account" "test_account2" {
+					resource "proxmox_acme_account" "test_account2" {
 						name = "{{.AccountName2}}"
 						contact = "le.ge9ro@passmail.net"
 						directory = "https://acme-staging-v02.api.letsencrypt.org/directory"
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
 					}
 
-					data "proxmox_virtual_environment_acme_accounts" "test" {
+					data "proxmox_acme_accounts" "test" {
 						depends_on = [
-							proxmox_virtual_environment_acme_account.test_account1,
-							proxmox_virtual_environment_acme_account.test_account2
+							proxmox_acme_account.test_account1,
+							proxmox_acme_account.test_account2
 						]
 					}
 				`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_acme_accounts.test", "accounts.#"),
+					resource.TestCheckResourceAttrSet("data.proxmox_acme_accounts.test", "accounts.#"),
 				),
 			},
 		},

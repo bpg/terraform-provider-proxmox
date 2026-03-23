@@ -35,7 +35,7 @@ func TestAccDatasourceACMEPlugins(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin1" {
+					resource "proxmox_acme_dns_plugin" "test_plugin1" {
 						plugin = "{{.PluginName1}}"
 						api = "cf"
 						data = {
@@ -44,7 +44,7 @@ func TestAccDatasourceACMEPlugins(t *testing.T) {
 						}
 					}
 					
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin2" {
+					resource "proxmox_acme_dns_plugin" "test_plugin2" {
 						plugin = "{{.PluginName2}}"
 						api = "cf"
 						data = {
@@ -62,7 +62,7 @@ func TestAccDatasourceACMEPlugins(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin1" {
+					resource "proxmox_acme_dns_plugin" "test_plugin1" {
 						plugin = "{{.PluginName1}}"
 						api = "cf"
 						data = {
@@ -71,7 +71,7 @@ func TestAccDatasourceACMEPlugins(t *testing.T) {
 						}
 					}
 					
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin2" {
+					resource "proxmox_acme_dns_plugin" "test_plugin2" {
 						plugin = "{{.PluginName2}}"
 						api = "cf"
 						data = {
@@ -80,15 +80,15 @@ func TestAccDatasourceACMEPlugins(t *testing.T) {
 						}
 					}
 
-					data "proxmox_virtual_environment_acme_plugins" "test" {
+					data "proxmox_acme_plugins" "test" {
 						depends_on = [
-							proxmox_virtual_environment_acme_dns_plugin.test_plugin1,
-							proxmox_virtual_environment_acme_dns_plugin.test_plugin2
+							proxmox_acme_dns_plugin.test_plugin1,
+							proxmox_acme_dns_plugin.test_plugin2
 						]
 					}
 				`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_acme_plugins.test", "plugins.#"),
+					resource.TestCheckResourceAttrSet("data.proxmox_acme_plugins.test", "plugins.#"),
 				),
 			},
 		},

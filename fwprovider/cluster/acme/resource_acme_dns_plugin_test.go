@@ -35,7 +35,7 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 		{"basic plugin creation", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin" {
+					resource "proxmox_acme_dns_plugin" "test_plugin" {
 						plugin = "{{.PluginName}}"
 						api = "cf"
 						data = {
@@ -44,11 +44,11 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 						}
 					}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_dns_plugin.test_plugin", map[string]string{
+					test.ResourceAttributes("proxmox_acme_dns_plugin.test_plugin", map[string]string{
 						"plugin": pluginName,
 						"api":    "cf",
 					}),
-					test.ResourceAttributesSet("proxmox_virtual_environment_acme_dns_plugin.test_plugin", []string{
+					test.ResourceAttributesSet("proxmox_acme_dns_plugin.test_plugin", []string{
 						"digest",
 					}),
 				),
@@ -57,7 +57,7 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 		{"plugin with validation delay", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin_delay" {
+					resource "proxmox_acme_dns_plugin" "test_plugin_delay" {
 						plugin = "{{.PluginName}}-delay"
 						api = "cf"
 						data = {
@@ -67,7 +67,7 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 						validation_delay = 60
 					}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_dns_plugin.test_plugin_delay", map[string]string{
+					test.ResourceAttributes("proxmox_acme_dns_plugin.test_plugin_delay", map[string]string{
 						"plugin":           fmt.Sprintf("%s-delay", pluginName),
 						"api":              "cf",
 						"validation_delay": "60",
@@ -78,7 +78,7 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 		{"plugin with disable flag", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin_disabled" {
+					resource "proxmox_acme_dns_plugin" "test_plugin_disabled" {
 						plugin = "{{.PluginName}}-disabled"
 						api = "cf"
 						data = {
@@ -88,7 +88,7 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 						disable = true
 					}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_dns_plugin.test_plugin_disabled", map[string]string{
+					test.ResourceAttributes("proxmox_acme_dns_plugin.test_plugin_disabled", map[string]string{
 						"plugin":  fmt.Sprintf("%s-disabled", pluginName),
 						"api":     "cf",
 						"disable": "true",
@@ -99,7 +99,7 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 		{"update plugin", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin_update" {
+					resource "proxmox_acme_dns_plugin" "test_plugin_update" {
 						plugin = "{{.PluginName}}-update"
 						api = "cf"
 						data = {
@@ -109,14 +109,14 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 						validation_delay = 30
 					}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_dns_plugin.test_plugin_update", map[string]string{
+					test.ResourceAttributes("proxmox_acme_dns_plugin.test_plugin_update", map[string]string{
 						"validation_delay": "30",
 					}),
 				),
 			},
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin_update" {
+					resource "proxmox_acme_dns_plugin" "test_plugin_update" {
 						plugin = "{{.PluginName}}-update"
 						api = "cf"
 						data = {
@@ -126,7 +126,7 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 						validation_delay = 120
 					}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_dns_plugin.test_plugin_update", map[string]string{
+					test.ResourceAttributes("proxmox_acme_dns_plugin.test_plugin_update", map[string]string{
 						"validation_delay": "120",
 					}),
 				),
@@ -135,7 +135,7 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 		{"invalid validation delay", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_dns_plugin" "test_plugin_invalid" {
+					resource "proxmox_acme_dns_plugin" "test_plugin_invalid" {
 						plugin = "{{.PluginName}}-invalid"
 						api = "cf"
 						data = {

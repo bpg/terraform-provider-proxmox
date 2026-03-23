@@ -35,19 +35,19 @@ func TestAccResourceACMEAccount(t *testing.T) {
 		{"basic account creation", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_account" "test_account" {
+					resource "proxmox_acme_account" "test_account" {
 						name = "{{.AccountName}}"
 						contact = "le.ge9ro@passmail.net"
 						directory = "https://acme-staging-v02.api.letsencrypt.org/directory"
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
 					}`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_account.test_account", map[string]string{
+					test.ResourceAttributes("proxmox_acme_account.test_account", map[string]string{
 						"name":      accountName,
 						"directory": "https://acme-staging-v02.api.letsencrypt.org/directory",
 						"tos":       "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf",
 					}),
-					test.ResourceAttributesSet("proxmox_virtual_environment_acme_account.test_account", []string{
+					test.ResourceAttributesSet("proxmox_acme_account.test_account", []string{
 						"created_at",
 						"location",
 					}),
@@ -57,7 +57,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 		{"account with EAB", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_account" "test_account_eab" {
+					resource "proxmox_acme_account" "test_account_eab" {
 						name = "{{.AccountName}}-eab"
 						contact = "le.ge9ro@passmail.net"
 						directory = "https://acme-staging-v02.api.letsencrypt.org/directory"
@@ -66,7 +66,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 						eab_kid = "test-kid"
 					}`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_account.test_account_eab", map[string]string{
+					test.ResourceAttributes("proxmox_acme_account.test_account_eab", map[string]string{
 						"name":         fmt.Sprintf("%s-eab", accountName),
 						"directory":    "https://acme-staging-v02.api.letsencrypt.org/directory",
 						"tos":          "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf",
@@ -79,28 +79,28 @@ func TestAccResourceACMEAccount(t *testing.T) {
 		{"update account", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_account" "test_account_update" {
+					resource "proxmox_acme_account" "test_account_update" {
 						name = "{{.AccountName}}-update"
 						contact = "le.ge9ro@passmail.net"
 						directory = "https://acme-staging-v02.api.letsencrypt.org/directory"
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
 					}`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_account.test_account_update", map[string]string{
+					test.ResourceAttributes("proxmox_acme_account.test_account_update", map[string]string{
 						"name": fmt.Sprintf("%s-update", accountName),
 					}),
 				),
 			},
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_account" "test_account_update" {
+					resource "proxmox_acme_account" "test_account_update" {
 						name = "{{.AccountName}}-update"
 						contact = "le.ge9ro@passmail.net"
 						directory = "https://acme-staging-v02.api.letsencrypt.org/directory"
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
 					}`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_account.test_account_update", map[string]string{
+					test.ResourceAttributes("proxmox_acme_account.test_account_update", map[string]string{
 						"name": fmt.Sprintf("%s-update", accountName),
 					}),
 				),
@@ -109,7 +109,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 		{"invalid directory URL", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_account" "test_account_invalid" {
+					resource "proxmox_acme_account" "test_account_invalid" {
 						name = "{{.AccountName}}-invalid"
 						contact = "le.ge9ro@passmail.net"
 						directory = "invalid-url"
