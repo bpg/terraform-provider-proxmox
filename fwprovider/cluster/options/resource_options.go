@@ -23,6 +23,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -465,7 +466,8 @@ func (r *clusterOptionsResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Proxmox VE Cluster Datacenter options.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_cluster_options"),
+		Description:        "Manages Proxmox VE Cluster Datacenter options.",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"email_from": schema.StringAttribute{
@@ -969,4 +971,51 @@ func (r *clusterOptionsResource) ImportState(
 
 	diags := resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
+}
+
+// Short-name alias for the cluster options resource (ADR-007).
+
+var (
+	_ resource.Resource                = &clusterOptionsResourceShort{}
+	_ resource.ResourceWithConfigure   = &clusterOptionsResourceShort{}
+	_ resource.ResourceWithImportState = &clusterOptionsResourceShort{}
+	_ resource.ResourceWithMoveState   = &clusterOptionsResourceShort{}
+)
+
+type clusterOptionsResourceShort struct {
+	clusterOptionsResource
+}
+
+// NewClusterOptionsShortResource creates a short-name alias for the cluster options resource.
+func NewClusterOptionsShortResource() resource.Resource {
+	return &clusterOptionsResourceShort{}
+}
+
+func (r *clusterOptionsResourceShort) Metadata(
+	_ context.Context,
+	_ resource.MetadataRequest,
+	resp *resource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_cluster_options"
+}
+
+func (r *clusterOptionsResourceShort) Schema(
+	ctx context.Context,
+	req resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
+	r.clusterOptionsResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *clusterOptionsResourceShort) MoveState(ctx context.Context) []resource.StateMover {
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState(
+			"proxmox_virtual_environment_cluster_options",
+			&schemaResp.Schema,
+		),
+	}
 }

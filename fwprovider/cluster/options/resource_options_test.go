@@ -17,7 +17,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-const accTestClusterOptionsName = "proxmox_virtual_environment_cluster_options.test_options"
+const accTestClusterOptionsName = "proxmox_cluster_options.test_options"
 
 func TestAccResourceClusterOptions(t *testing.T) {
 	t.Parallel()
@@ -52,7 +52,7 @@ func TestAccResourceClusterOptions(t *testing.T) {
 func testAccResourceClusterOptionsCreatedConfig() string {
 	return fmt.Sprintf(
 		`
-	resource "proxmox_virtual_environment_cluster_options" "test_options" {
+	resource "proxmox_cluster_options" "test_options" {
 		bandwidth_limit_default   = 666666
 		bandwidth_limit_migration = 555554
 		console                   = "html5"
@@ -123,7 +123,7 @@ func testAccResourceClusterOptionsCreatedCheck() resource.TestCheckFunc {
 
 func testAccResourceClusterOptionsUpdatedConfig() string {
 	return `
-  resource "proxmox_virtual_environment_cluster_options" "test_options" {
+  resource "proxmox_cluster_options" "test_options" {
     bandwidth_limit_clone     = 0
     bandwidth_limit_default   = 333333
     bandwidth_limit_migration = 111111

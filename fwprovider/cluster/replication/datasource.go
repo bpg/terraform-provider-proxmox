@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 )
@@ -66,7 +67,8 @@ func (d *DataSource) Configure(
 
 func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves information about an existing Replication.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_replication"),
+		Description:        "Retrieves information about an existing Replication.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:    true,
@@ -143,4 +145,38 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	state.fromAPI(readModel.ID.ValueString(), repl)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// Short-name alias for the replication data source (ADR-007).
+
+var (
+	_ datasource.DataSource              = &DataSourceShort{}
+	_ datasource.DataSourceWithConfigure = &DataSourceShort{}
+)
+
+// DataSourceShort is the short-name alias for the replication data source.
+type DataSourceShort struct {
+	DataSource
+}
+
+// NewShortDataSource creates a short-name alias for the replication data source.
+func NewShortDataSource() datasource.DataSource {
+	return &DataSourceShort{}
+}
+
+func (d *DataSourceShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_replication"
+}
+
+func (d *DataSourceShort) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
+	d.DataSource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
 }

@@ -62,18 +62,18 @@ func TestAccDataSourceReplication(t *testing.T) {
 				return resource.TestStep{
 					Config: renderConfigWithCT(te, cid, `
 				
-			resource "proxmox_virtual_environment_replication" "test_replication" {
+			resource "proxmox_replication" "test_replication" {
 				id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 				target = "{{.Node2Name}}"
 				type = "local"
 			}
 
-			data "proxmox_virtual_environment_replication" "test_replication_data" {
-				id = proxmox_virtual_environment_replication.test_replication.id
+			data "proxmox_replication" "test_replication_data" {
+				id = proxmox_replication.test_replication.id
 			}
 				`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("data.proxmox_virtual_environment_replication.test_replication_data", map[string]string{
+						test.ResourceAttributes("data.proxmox_replication.test_replication_data", map[string]string{
 							"id":     id,
 							"target": te.Node2Name,
 							"type":   "local",
@@ -92,7 +92,7 @@ func TestAccDataSourceReplication(t *testing.T) {
 				return resource.TestStep{
 					Config: renderConfigWithCT(te, cid, `
 				
-			resource "proxmox_virtual_environment_replication" "test_replication" {
+			resource "proxmox_replication" "test_replication" {
 				id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 				target = "{{.Node2Name}}"
 				type = "local"
@@ -102,12 +102,12 @@ func TestAccDataSourceReplication(t *testing.T) {
 				rate = 10
 			}
 
-			data "proxmox_virtual_environment_replication" "test_replication_data" {
-				id = proxmox_virtual_environment_replication.test_replication.id
+			data "proxmox_replication" "test_replication_data" {
+				id = proxmox_replication.test_replication.id
 			}
 				`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("data.proxmox_virtual_environment_replication.test_replication_data", map[string]string{
+						test.ResourceAttributes("data.proxmox_replication.test_replication_data", map[string]string{
 							"id":       id,
 							"target":   te.Node2Name,
 							"type":     "local",

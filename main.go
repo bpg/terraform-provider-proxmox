@@ -64,10 +64,13 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_hardware_mappings.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresource.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresources.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/metrics_server.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_metrics_server.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_node.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_nodes.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/replication.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_replication.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/replications.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_replications.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_subnet.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_vnet.md ./docs/data-sources/
@@ -111,6 +114,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_apt_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_apt_standard_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_cloned_vm.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/cluster_options.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_cluster_options.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_download_file.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/hagroup.md ./docs/resources/
@@ -125,6 +129,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_hardware_mapping_usb.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_haresource.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_harule.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/metrics_server.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_metrics_server.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_bridge.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_vlan.md ./docs/resources/
@@ -134,6 +139,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_realm_ldap.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_realm_openid.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_realm_sync.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/replication.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_replication.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_applier.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_subnet.md ./docs/resources/

@@ -26,7 +26,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 		{"create influxdb udp server & update it & again to default mtu", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "acc_influxdb_server" {
+				resource "proxmox_metrics_server" "acc_influxdb_server" {
 					name   = "acc_example_influxdb_server"
 					server = "192.168.3.2"
 					port   = 18089
@@ -34,7 +34,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					mtu    = 1000
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
+					test.ResourceAttributes("proxmox_metrics_server.acc_influxdb_server", map[string]string{
 						"id":     "acc_example_influxdb_server",
 						"name":   "acc_example_influxdb_server",
 						"mtu":    "1000",
@@ -42,7 +42,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"server": "192.168.3.2",
 						"type":   "influxdb",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
+					test.NoResourceAttributesSet("proxmox_metrics_server.acc_influxdb_server", []string{
 						"disable",
 						"timeout",
 						"influx_api_path_prefix",
@@ -61,7 +61,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "acc_influxdb_server" {
+				resource "proxmox_metrics_server" "acc_influxdb_server" {
 					name   			 = "acc_example_influxdb_server"
 					server 			 = "192.168.3.2"
 					port   			 = 18089
@@ -70,7 +70,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					influx_bucket    = "xxxxx"
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
+					test.ResourceAttributes("proxmox_metrics_server.acc_influxdb_server", map[string]string{
 						"id":            "acc_example_influxdb_server",
 						"name":          "acc_example_influxdb_server",
 						"mtu":           "1000",
@@ -79,7 +79,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"type":          "influxdb",
 						"influx_bucket": "xxxxx",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
+					test.NoResourceAttributesSet("proxmox_metrics_server.acc_influxdb_server", []string{
 						"disable",
 						"timeout",
 						"influx_api_path_prefix",
@@ -97,7 +97,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "acc_influxdb_server" {
+				resource "proxmox_metrics_server" "acc_influxdb_server" {
 					name   			 = "acc_example_influxdb_server"
 					server 			 = "192.168.3.2"
 					port   			 = 18089
@@ -105,7 +105,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					influx_bucket    = "xxxxx"
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
+					test.ResourceAttributes("proxmox_metrics_server.acc_influxdb_server", map[string]string{
 						"id":            "acc_example_influxdb_server",
 						"name":          "acc_example_influxdb_server",
 						"port":          "18089",
@@ -113,7 +113,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"type":          "influxdb",
 						"influx_bucket": "xxxxx",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
+					test.NoResourceAttributesSet("proxmox_metrics_server.acc_influxdb_server", []string{
 						"disable",
 						"timeout",
 						"mtu",
@@ -133,9 +133,9 @@ func TestAccResourceMetricsServer(t *testing.T) {
 		}},
 		{"create graphite udp metrics server & import it", []resource.TestStep{
 			{
-				ResourceName: "proxmox_virtual_environment_metrics_server.acc_graphite_server",
+				ResourceName: "proxmox_metrics_server.acc_graphite_server",
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "acc_graphite_server" {
+				resource "proxmox_metrics_server" "acc_graphite_server" {
 					name   = "acc_example_graphite_server"
 					server = "192.168.3.2"
 					port   = 18089
@@ -143,7 +143,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 				  }`),
 			},
 			{
-				ResourceName:      "proxmox_virtual_environment_metrics_server.acc_graphite_server",
+				ResourceName:      "proxmox_metrics_server.acc_graphite_server",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -151,17 +151,17 @@ func TestAccResourceMetricsServer(t *testing.T) {
 		{"create graphite udp metrics server & test datasource", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "acc_graphite_server2" {
+				resource "proxmox_metrics_server" "acc_graphite_server2" {
 					name   = "acc_example_graphite_server2"
 					server = "192.168.3.2"
 					port   = 18089
 					type   = "graphite"
 				  }
-				data "proxmox_virtual_environment_metrics_server" "acc_graphite_server2" {
-					name = proxmox_virtual_environment_metrics_server.acc_graphite_server2.name
+				data "proxmox_metrics_server" "acc_graphite_server2" {
+					name = proxmox_metrics_server.acc_graphite_server2.name
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("data.proxmox_virtual_environment_metrics_server.acc_graphite_server2", map[string]string{
+					test.ResourceAttributes("data.proxmox_metrics_server.acc_graphite_server2", map[string]string{
 						"id":     "acc_example_graphite_server2",
 						"name":   "acc_example_graphite_server2",
 						"port":   "18089",
@@ -178,9 +178,9 @@ func TestAccResourceMetricsServer(t *testing.T) {
 				SkipFunc: func() (bool, error) {
 					return true, nil
 				},
-				ResourceName: "proxmox_virtual_environment_metrics_server.acc_otel_server",
+				ResourceName: "proxmox_metrics_server.acc_otel_server",
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "acc_otel_server" {
+				resource "proxmox_metrics_server" "acc_otel_server" {
 					name   = "acc_example_otel_server"
 					server = "192.168.3.2"
 					port   = 4318
@@ -194,7 +194,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 				SkipFunc: func() (bool, error) {
 					return true, nil
 				},
-				ResourceName:      "proxmox_virtual_environment_metrics_server.acc_otel_server",
+				ResourceName:      "proxmox_metrics_server.acc_otel_server",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -207,7 +207,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					return true, nil
 				},
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "acc_otel_server2" {
+				resource "proxmox_metrics_server" "acc_otel_server2" {
 					name   = "acc_example_otel_server2"
 					server = "192.168.3.2"
 					port   = 4318
@@ -215,11 +215,11 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					opentelemetry_proto = "https"
 					opentelemetry_path  = "/v1/metrics"
 				}
-				data "proxmox_virtual_environment_metrics_server" "acc_otel_server2" {
-					name = proxmox_virtual_environment_metrics_server.acc_otel_server2.name
+				data "proxmox_metrics_server" "acc_otel_server2" {
+					name = proxmox_metrics_server.acc_otel_server2.name
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("data.proxmox_virtual_environment_metrics_server.acc_otel_server2", map[string]string{
+					test.ResourceAttributes("data.proxmox_metrics_server.acc_otel_server2", map[string]string{
 						"id":                  "acc_example_otel_server2",
 						"name":                "acc_example_otel_server2",
 						"port":                "4318",
