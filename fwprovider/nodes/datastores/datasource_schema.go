@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 )
 
@@ -22,7 +23,8 @@ func (d *Datasource) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves information about all the datastores available to a specific node.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_datastores"),
+		Description:        "Retrieves information about all the datastores available to a specific node.",
 		Attributes: map[string]schema.Attribute{
 			"node_name": schema.StringAttribute{
 				Description: "The name of the node to retrieve the stores from.",

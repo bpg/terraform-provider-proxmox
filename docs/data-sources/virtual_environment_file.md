@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_file
 
+~> **Deprecated:** Use [`proxmox_file`](file.md) instead. This data source will be removed in v1.0.
+
 Retrieves information about an existing file in a Proxmox Virtual Environment node.
 
 ## Example Usage

@@ -28,6 +28,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
@@ -146,7 +147,8 @@ func (r *ociImageResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages OCI images pulled from OCI registries using PVE oci-registry-pull API. ",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_oci_image"),
+		Description:        "Manages OCI images pulled from OCI registries using PVE oci-registry-pull API. ",
 		MarkdownDescription: "Manages OCI images pulled from OCI registries using PVE oci-registry-pull API. " +
 			"Pulls OCI container images and stores them as tar files in Proxmox VE datastores.",
 		Attributes: map[string]schema.Attribute{

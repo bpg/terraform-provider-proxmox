@@ -23,6 +23,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -230,7 +231,8 @@ func (r *standardRepositoryResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages an APT standard repository of a Proxmox VE node.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_apt_standard_repository"),
+		Description:        "Manages an APT standard repository of a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
 			SchemaAttrNameStandardDescription: schema.StringAttribute{
 				Computed:    true,

@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_oci_image
 
+~> **Deprecated:** Use [`proxmox_oci_image`](oci_image.md) instead. This resource will be removed in v1.0.
+
 Manages OCI images pulled from OCI registries using PVE oci-registry-pull API. Pulls OCI container images and stores them as tar files in Proxmox VE datastores.
 
 ## Example Usage

@@ -18,6 +18,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
@@ -103,7 +104,8 @@ func (d *repositoryDataSource) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves an APT repository from a Proxmox VE cluster.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_apt_repository"),
+		Description:        "Retrieves an APT repository from a Proxmox VE cluster.",
 		Attributes: map[string]schema.Attribute{
 			SchemaAttrNameComment: schema.StringAttribute{
 				Computed:    true,

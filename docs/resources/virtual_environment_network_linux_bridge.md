@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_network_linux_bridge
 
+~> **Deprecated:** Use [`proxmox_network_linux_bridge`](network_linux_bridge.md) instead. This resource will be removed in v1.0.
+
 Manages a Linux Bridge network interface in a Proxmox VE node.
 
 ## Example Usage

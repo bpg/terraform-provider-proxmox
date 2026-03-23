@@ -32,7 +32,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 			// Create and Read testing
 			{
 				Config: te.RenderConfig(fmt.Sprintf(`
-				resource "proxmox_virtual_environment_network_linux_bridge" "test" {
+				resource "proxmox_network_linux_bridge" "test" {
 					address = "%s"
 					autostart = true
 					comment = "created by terraform"
@@ -44,7 +44,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 				}
 				`, ipV4cidr1, iface)),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
 						"address":        ipV4cidr1,
 						"autostart":      "true",
 						"comment":        "created by terraform",
@@ -53,7 +53,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 						"timeout_reload": "60",
 						"vlan_aware":     "true",
 					}),
-					test.ResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+					test.ResourceAttributesSet("proxmox_network_linux_bridge.test", []string{
 						"id",
 					}),
 				),
@@ -61,7 +61,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 			// Update testing
 			{
 				Config: te.RenderConfig(fmt.Sprintf(`
-				resource "proxmox_virtual_environment_network_linux_bridge" "test" {
+				resource "proxmox_network_linux_bridge" "test" {
 					address = "%s"
 					address6 = "%s"
 					autostart = false
@@ -73,7 +73,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					vlan_aware = false
 				}`, ipV4cidr2, ipV6cidr, iface)),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
 						"address":        ipV4cidr2,
 						"address6":       ipV6cidr,
 						"autostart":      "false",
@@ -82,10 +82,10 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 						"timeout_reload": "60",
 						"vlan_aware":     "false",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+					test.NoResourceAttributesSet("proxmox_network_linux_bridge.test", []string{
 						"mtu",
 					}),
-					test.ResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+					test.ResourceAttributesSet("proxmox_network_linux_bridge.test", []string{
 						"id",
 					}),
 				),
@@ -93,7 +93,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 			// Update testing (remove v4 + v6)
 			{
 				Config: te.RenderConfig(fmt.Sprintf(`
-				resource "proxmox_virtual_environment_network_linux_bridge" "test" {
+				resource "proxmox_network_linux_bridge" "test" {
 					autostart  = false
 					comment    = ""
 					mtu        = null
@@ -102,25 +102,25 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					vlan_aware = false
 				}`, iface)),
 				Check: resource.ComposeTestCheckFunc(
-					test.NoResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+					test.NoResourceAttributesSet("proxmox_network_linux_bridge.test", []string{
 						"address",
 						"address6",
 						"mtu",
 					}),
-					test.ResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
 						"autostart":  "false",
 						"comment":    "",
 						"name":       iface,
 						"vlan_aware": "false",
 					}),
-					test.ResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+					test.ResourceAttributesSet("proxmox_network_linux_bridge.test", []string{
 						"id",
 					}),
 				),
 			},
 			// ImportState testing
 			{
-				ResourceName:      "proxmox_virtual_environment_network_linux_bridge.test",
+				ResourceName:      "proxmox_network_linux_bridge.test",
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{

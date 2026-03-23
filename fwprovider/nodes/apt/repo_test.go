@@ -49,7 +49,7 @@ func TestAccDataSourceRepo(t *testing.T) {
 			[]resource.TestStep{
 				{
 					Config: te.RenderConfig(`
-					data "proxmox_virtual_environment_apt_repository" "test" {
+					data "proxmox_apt_repository" "test" {
 						file_path = "/etc/apt/sources.list.d/proxmox.sources"
 						index = 0
 						node = "{{.NodeName}}"
@@ -57,17 +57,17 @@ func TestAccDataSourceRepo(t *testing.T) {
 					// The provided attributes and computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestMatchResourceAttr(
-							"data.proxmox_virtual_environment_apt_repository.test",
+							"data.proxmox_apt_repository.test",
 							apt.SchemaAttrNameComment,
 							// Expect any value or an empty string.
 							regexp.MustCompile(`(.*|^$)`),
 						),
 						resource.TestCheckResourceAttr(
-							"data.proxmox_virtual_environment_apt_repository.test",
+							"data.proxmox_apt_repository.test",
 							apt.SchemaAttrNameTerraformID,
 							"apt_repository_"+strings.ToLower(te.NodeName)+"_etc_apt_sources_list_d_proxmox_sources_0",
 						),
-						test.ResourceAttributesSet("data.proxmox_virtual_environment_apt_repository.test", []string{
+						test.ResourceAttributesSet("data.proxmox_apt_repository.test", []string{
 							"components.#",
 							"enabled",
 							"file_path",
@@ -112,16 +112,16 @@ func TestAccDataSourceStandardRepo(t *testing.T) {
 			[]resource.TestStep{
 				{
 					Config: te.RenderConfig(`
-					data "proxmox_virtual_environment_apt_standard_repository" "test" {
+					data "proxmox_apt_standard_repository" "test" {
 						handle = "no-subscription"
 						node   = "{{.NodeName}}"
 					}`),
 					// The provided attributes and computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("data.proxmox_virtual_environment_apt_standard_repository.test", map[string]string{
+						test.ResourceAttributes("data.proxmox_apt_standard_repository.test", map[string]string{
 							"id": fmt.Sprintf("apt_standard_repository_%s_no_subscription", strings.ToLower(te.NodeName)),
 						}),
-						test.ResourceAttributesSet("data.proxmox_virtual_environment_apt_standard_repository.test", []string{
+						test.ResourceAttributesSet("data.proxmox_apt_standard_repository.test", []string{
 							// Note that we can not check for the following attributes because they are only available when the
 							// standard repository has been added to a source list:
 							//
@@ -177,7 +177,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 				// Test the "Create" and "Read" implementations.
 				{
 					Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_apt_repository" "test" {
+					resource "proxmox_apt_repository" "test" {
 						enabled   = true
 						file_path = "/etc/apt/sources.list.d/debian.sources"
 						index     = 0
@@ -232,7 +232,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 					},
 					// The provided attributes and computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_apt_repository.test", map[string]string{
+						test.ResourceAttributes("proxmox_apt_repository.test", map[string]string{
 							"enabled":   strconv.FormatBool(true),
 							"file_path": "/etc/apt/sources.list.d/debian.sources",
 							"index":     strconv.FormatInt(0, 10),
@@ -247,8 +247,8 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 								0,
 							),
 						}),
-						resource.TestMatchResourceAttr("proxmox_virtual_environment_apt_repository.test", "comment", regexp.MustCompile(`(.*|^$)`)),
-						resource.TestCheckResourceAttrSet("proxmox_virtual_environment_apt_repository.test", "file_type"),
+						resource.TestMatchResourceAttr("proxmox_apt_repository.test", "comment", regexp.MustCompile(`(.*|^$)`)),
+						resource.TestCheckResourceAttrSet("proxmox_apt_repository.test", "file_type"),
 					),
 				},
 
@@ -268,7 +268,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 				// Test the "Update" implementation by toggling the activation status.
 				{
 					Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_apt_repository" "test" {
+					resource "proxmox_apt_repository" "test" {
 						enabled    = false
 						file_path  = "/etc/apt/sources.list.d/debian.sources"
 						index     = 0
@@ -276,7 +276,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 					}`),
 					// The provides attributes and some computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("proxmox_virtual_environment_apt_repository.test", "enabled", "false"),
+						resource.TestCheckResourceAttr("proxmox_apt_repository.test", "enabled", "false"),
 					),
 				},
 			},
@@ -313,20 +313,20 @@ func TestAccResourceStandardRepoValidInput(t *testing.T) {
 						return true, nil
 					},
 					Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_apt_standard_repository" "test" {
+					resource "proxmox_apt_standard_repository" "test" {
 						handle = "no-subscription"
 						node   = "{{.NodeName}}"
 					}`),
 					// The provided attributes and computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_apt_standard_repository.test", map[string]string{
+						test.ResourceAttributes("proxmox_apt_standard_repository.test", map[string]string{
 							"file_path": "/etc/apt/sources.list.d/proxmox.sources",
 							"handle":    "no-subscription",
 							"node":      te.NodeName,
 							"status":    "1",
 							"id":        fmt.Sprintf("apt_standard_repository_%s_no_subscription", strings.ToLower(te.NodeName)),
 						}),
-						test.ResourceAttributesSet("proxmox_virtual_environment_apt_standard_repository.test", []string{
+						test.ResourceAttributesSet("proxmox_apt_standard_repository.test", []string{
 							"description",
 							"index",
 							"name",
@@ -344,7 +344,7 @@ func TestAccResourceStandardRepoValidInput(t *testing.T) {
 					ImportState:       true,
 					ImportStateId:     fmt.Sprintf("%s,no-subscription", strings.ToLower(te.NodeName)),
 					ImportStateVerify: true,
-					ResourceName:      "proxmox_virtual_environment_apt_standard_repository.test",
+					ResourceName:      "proxmox_apt_standard_repository.test",
 				},
 			},
 		},

@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_apt_repository
 
+~> **Deprecated:** Use [`proxmox_apt_repository`](apt_repository.md) instead. This data source will be removed in v1.0.
+
 Retrieves an APT repository from a Proxmox VE cluster.
 
 ## Example Usage

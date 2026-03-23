@@ -95,7 +95,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: te.RenderConfig(templateWithTwoNets + `
-					resource "proxmox_virtual_environment_cloned_vm" "keep_inherited" {
+					resource "proxmox_cloned_vm" "keep_inherited" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-keep"
 						started   = false
@@ -112,7 +112,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 						}
 					}
 
-					resource "proxmox_virtual_environment_cloned_vm" "delete_inherited" {
+					resource "proxmox_cloned_vm" "delete_inherited" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-delete"
 						started   = false
@@ -134,8 +134,8 @@ func TestAccResourceClonedVM(t *testing.T) {
 					}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.keep_inherited", "net1", true),
-						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.delete_inherited", "net1", false),
+						checkNetworkSlot(te, "proxmox_cloned_vm.keep_inherited", "net1", true),
+						checkNetworkSlot(te, "proxmox_cloned_vm.delete_inherited", "net1", false),
 					),
 				},
 			},
@@ -151,7 +151,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: te.RenderConfig(templateWithOneNet + `
-					resource "proxmox_virtual_environment_cloned_vm" "unmanaged" {
+					resource "proxmox_cloned_vm" "unmanaged" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-unmanage"
 						started   = false
@@ -169,12 +169,12 @@ func TestAccResourceClonedVM(t *testing.T) {
 					}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.unmanaged", "net0", true),
+						checkNetworkSlot(te, "proxmox_cloned_vm.unmanaged", "net0", true),
 					),
 				},
 				{
 					Config: te.RenderConfig(templateWithOneNet + `
-					resource "proxmox_virtual_environment_cloned_vm" "unmanaged" {
+					resource "proxmox_cloned_vm" "unmanaged" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-unmanage"
 						started   = false
@@ -185,7 +185,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 					}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.unmanaged", "net0", true),
+						checkNetworkSlot(te, "proxmox_cloned_vm.unmanaged", "net0", true),
 					),
 				},
 			},
@@ -201,7 +201,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: te.RenderConfig(templateWithTwoNets + `
-					resource "proxmox_virtual_environment_cloned_vm" "stability" {
+					resource "proxmox_cloned_vm" "stability" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-stability"
 						started   = false
@@ -219,13 +219,13 @@ func TestAccResourceClonedVM(t *testing.T) {
 					}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net0", true),
-						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net1", true),
+						checkNetworkSlot(te, "proxmox_cloned_vm.stability", "net0", true),
+						checkNetworkSlot(te, "proxmox_cloned_vm.stability", "net1", true),
 					),
 				},
 				{
 					Config: te.RenderConfig(templateWithTwoNets + `
-					resource "proxmox_virtual_environment_cloned_vm" "stability" {
+					resource "proxmox_cloned_vm" "stability" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-stability"
 						started   = false
@@ -244,8 +244,8 @@ func TestAccResourceClonedVM(t *testing.T) {
 					}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net0", true),
-						checkNetworkSlot(te, "proxmox_virtual_environment_cloned_vm.stability", "net1", true),
+						checkNetworkSlot(te, "proxmox_cloned_vm.stability", "net0", true),
+						checkNetworkSlot(te, "proxmox_cloned_vm.stability", "net1", true),
 					),
 				},
 			},
@@ -284,14 +284,14 @@ func TestAccResourceClonedVM(t *testing.T) {
 		}
 		`
 
-		resName := "proxmox_virtual_environment_cloned_vm.memory_test"
+		resName := "proxmox_cloned_vm.memory_test"
 
 		resource.Test(t, resource.TestCase{
 			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				{
 					Config: te.RenderConfig(baseConfig + `
-					resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
+					resource "proxmox_cloned_vm" "memory_test" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-memory"
 						started   = false
@@ -311,7 +311,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 				},
 				{
 					Config: te.RenderConfig(baseConfig + `
-					resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
+					resource "proxmox_cloned_vm" "memory_test" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-memory"
 						started   = false
@@ -365,14 +365,14 @@ func TestAccResourceClonedVM(t *testing.T) {
 		}
 		`
 
-		resName := "proxmox_virtual_environment_cloned_vm.started_test"
+		resName := "proxmox_cloned_vm.started_test"
 
 		resource.Test(t, resource.TestCase{
 			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				{
 					Config: te.RenderConfig(baseConfig + `
-					resource "proxmox_virtual_environment_cloned_vm" "started_test" {
+					resource "proxmox_cloned_vm" "started_test" {
 						node_name       = "{{.NodeName}}"
 						name            = "fwk-cloned-started"
 						stop_on_destroy = true
@@ -391,7 +391,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 				},
 				{
 					Config: te.RenderConfig(baseConfig + `
-					resource "proxmox_virtual_environment_cloned_vm" "started_test" {
+					resource "proxmox_cloned_vm" "started_test" {
 						node_name       = "{{.NodeName}}"
 						name            = "fwk-cloned-started"
 						started         = false
@@ -411,7 +411,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 				},
 				{
 					Config: te.RenderConfig(baseConfig + `
-					resource "proxmox_virtual_environment_cloned_vm" "started_test" {
+					resource "proxmox_cloned_vm" "started_test" {
 						node_name       = "{{.NodeName}}"
 						name            = "fwk-cloned-started"
 						started         = true
@@ -471,14 +471,14 @@ func TestAccResourceClonedVM(t *testing.T) {
 		}
 		`
 
-		resName := "proxmox_virtual_environment_cloned_vm.disk_test"
+		resName := "proxmox_cloned_vm.disk_test"
 
 		resource.Test(t, resource.TestCase{
 			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				{
 					Config: te.RenderConfig(baseConfig + `
-					resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
+					resource "proxmox_cloned_vm" "disk_test" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-disk"
 						started   = false
@@ -502,7 +502,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 				},
 				{
 					Config: te.RenderConfig(baseConfig + `
-					resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
+					resource "proxmox_cloned_vm" "disk_test" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-disk"
 						started   = false
@@ -534,7 +534,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 				},
 				{
 					Config: te.RenderConfig(baseConfig + `
-					resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
+					resource "proxmox_cloned_vm" "disk_test" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-disk"
 						started   = false
@@ -574,7 +574,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					Config: te.RenderConfig(templateWithOneNet + `
-					resource "proxmox_virtual_environment_cloned_vm" "import_test" {
+					resource "proxmox_cloned_vm" "import_test" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-import"
 						started   = false
@@ -601,7 +601,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 					`),
 				},
 				{
-					ResourceName:      "proxmox_virtual_environment_cloned_vm.import_test",
+					ResourceName:      "proxmox_cloned_vm.import_test",
 					ImportState:       true,
 					ImportStateVerify: true,
 					// cloned_vm uses opt-in management, so imported state only contains
@@ -614,7 +614,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 						"name",
 					},
 					ImportStateIdFunc: func(s *terraform.State) (string, error) {
-						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_cloned_vm.import_test"]
+						rs, ok := s.RootModule().Resources["proxmox_cloned_vm.import_test"]
 						if !ok {
 							return "", fmt.Errorf("resource not found")
 						}

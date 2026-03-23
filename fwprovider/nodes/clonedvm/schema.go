@@ -27,6 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/memory"
@@ -42,6 +43,7 @@ func (r *Resource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
+		DeprecationMessage: migration.DeprecationMessage("proxmox_cloned_vm"),
 		Description: "Clone a VM from a source template/VM and manage only explicitly-defined configuration. " +
 			"This resource uses explicit opt-in management: only configuration blocks and devices explicitly " +
 			"listed in your Terraform code are managed. Inherited settings from the template are preserved " +

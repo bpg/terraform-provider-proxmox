@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_cloned_vm
 
+~> **Deprecated:** Use [`proxmox_cloned_vm`](cloned_vm.md) instead. This resource will be removed in v1.0.
+
 ~> **EXPERIMENTAL**
 
 Clone a VM from a source template/VM and manage only explicitly-defined configuration. This resource uses explicit opt-in management: only configuration blocks and devices explicitly listed in your Terraform code are managed. Inherited settings from the template are preserved unless explicitly overridden or deleted. Removing a configuration from Terraform stops managing it but does not delete it from the VM.

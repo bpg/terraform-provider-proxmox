@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_network_linux_vlan
 
+~> **Deprecated:** Use [`proxmox_network_linux_vlan`](network_linux_vlan.md) instead. This resource will be removed in v1.0.
+
 Manages a Linux VLAN network interface in a Proxmox VE node.
 
 ## Example Usage

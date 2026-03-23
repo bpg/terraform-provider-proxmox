@@ -24,6 +24,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -100,14 +101,15 @@ func (r *acmeCertificateResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
+		DeprecationMessage: migration.DeprecationMessage("proxmox_acme_certificate"),
 		Description: "Manages ACME SSL certificates for Proxmox VE nodes. " +
 			"This resource orders and renews certificates from an ACME Certificate Authority (like Let's Encrypt) " +
 			"for a specific node.",
 		MarkdownDescription: "Manages ACME SSL certificates for Proxmox VE nodes.\n\n" +
 			"This resource orders and renews certificates from an ACME Certificate Authority (like Let's Encrypt) " +
 			"for a specific node. Before using this resource, ensure that:\n" +
-			"- An ACME account is configured (using `proxmox_virtual_environment_acme_account`)\n" +
-			"- DNS plugins are configured if using DNS-01 challenge (using `proxmox_virtual_environment_acme_dns_plugin`)",
+			"- An ACME account is configured (using `proxmox_acme_account`)\n" +
+			"- DNS plugins are configured if using DNS-01 challenge (using `proxmox_acme_dns_plugin`)",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"node_name": schema.StringAttribute{

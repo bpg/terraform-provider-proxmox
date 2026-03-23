@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_apt_standard_repository
 
+~> **Deprecated:** Use [`proxmox_apt_standard_repository`](apt_standard_repository.md) instead. This data source will be removed in v1.0.
+
 Retrieves an APT standard repository from a Proxmox VE cluster.
 
 ## Example Usage

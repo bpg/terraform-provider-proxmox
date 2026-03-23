@@ -73,19 +73,19 @@ func TestAccResourceACMECertificate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_certificate" "test_cert" {
+					resource "proxmox_acme_certificate" "test_cert" {
 						node_name = "{{.NodeName}}"
 						account   = "{{.Account}}"
 						force     = true
 						{{.DomainsConfig}}
 					}`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acme_certificate.test_cert", map[string]string{
+					test.ResourceAttributes("proxmox_acme_certificate.test_cert", map[string]string{
 						"node_name": te.NodeName,
 						"account":   acmeAccount,
 						"force":     "true",
 					}),
-					test.ResourceAttributesSet("proxmox_virtual_environment_acme_certificate.test_cert", []string{
+					test.ResourceAttributesSet("proxmox_acme_certificate.test_cert", []string{
 						"certificate",
 						"fingerprint",
 						"issuer",
@@ -133,7 +133,7 @@ func TestAccResourceACMECertificate_Import(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_acme_certificate" "test_cert_import" {
+					resource "proxmox_acme_certificate" "test_cert_import" {
 						node_name = "{{.NodeName}}"
 						account   = "{{.Account}}"
 						force     = true
@@ -141,7 +141,7 @@ func TestAccResourceACMECertificate_Import(t *testing.T) {
 					}`, test.WithRootUser()),
 			},
 			{
-				ResourceName:      "proxmox_virtual_environment_acme_certificate.test_cert_import",
+				ResourceName:      "proxmox_acme_certificate.test_cert_import",
 				ImportState:       true,
 				ImportStateId:     te.NodeName,
 				ImportStateVerify: true,
