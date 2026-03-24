@@ -276,11 +276,8 @@ var (
 	_ resource.Resource                     = (*aclShort)(nil)
 	_ resource.ResourceWithConfigure        = (*aclShort)(nil)
 	_ resource.ResourceWithImportState      = (*aclShort)(nil)
-	_ resource.ResourceWithConfigure        = (*aclShort)(nil)
 	_ resource.ResourceWithConfigValidators = (*aclShort)(nil)
-	_ resource.ResourceWithConfigure        = (*aclShort)(nil)
 	_ resource.ResourceWithMoveState        = (*aclShort)(nil)
-	_ resource.ResourceWithConfigure        = (*aclShort)(nil)
 )
 
 // aclShort is the short-name alias (proxmox_acl) for aclResource.

@@ -338,9 +338,7 @@ var (
 	_ resource.Resource                = (*realmOpenIDShort)(nil)
 	_ resource.ResourceWithConfigure   = (*realmOpenIDShort)(nil)
 	_ resource.ResourceWithImportState = (*realmOpenIDShort)(nil)
-	_ resource.ResourceWithConfigure   = (*realmOpenIDShort)(nil)
 	_ resource.ResourceWithMoveState   = (*realmOpenIDShort)(nil)
-	_ resource.ResourceWithConfigure   = (*realmOpenIDShort)(nil)
 )
 
 // realmOpenIDShort is the short-name alias (proxmox_realm_openid) for realmOpenIDResource.

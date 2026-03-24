@@ -234,9 +234,7 @@ var (
 	_ resource.Resource                = (*realmSyncShort)(nil)
 	_ resource.ResourceWithConfigure   = (*realmSyncShort)(nil)
 	_ resource.ResourceWithImportState = (*realmSyncShort)(nil)
-	_ resource.ResourceWithConfigure   = (*realmSyncShort)(nil)
 	_ resource.ResourceWithMoveState   = (*realmSyncShort)(nil)
-	_ resource.ResourceWithConfigure   = (*realmSyncShort)(nil)
 )
 
 // realmSyncShort is the short-name alias (proxmox_realm_sync) for realmSyncResource.

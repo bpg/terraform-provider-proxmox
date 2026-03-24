@@ -18,11 +18,9 @@ import (
 )
 
 func TestAccRealmSync(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{

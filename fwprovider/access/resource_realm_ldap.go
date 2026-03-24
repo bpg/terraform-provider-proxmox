@@ -412,9 +412,7 @@ var (
 	_ resource.Resource                = (*realmLDAPShort)(nil)
 	_ resource.ResourceWithConfigure   = (*realmLDAPShort)(nil)
 	_ resource.ResourceWithImportState = (*realmLDAPShort)(nil)
-	_ resource.ResourceWithConfigure   = (*realmLDAPShort)(nil)
 	_ resource.ResourceWithMoveState   = (*realmLDAPShort)(nil)
-	_ resource.ResourceWithConfigure   = (*realmLDAPShort)(nil)
 )
 
 // realmLDAPShort is the short-name alias (proxmox_realm_ldap) for realmLDAPResource.

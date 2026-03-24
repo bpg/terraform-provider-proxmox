@@ -22,8 +22,6 @@ import (
 )
 
 func TestAccResourceUser(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
@@ -80,7 +78,7 @@ func TestAccResourceUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -89,8 +87,6 @@ func TestAccResourceUser(t *testing.T) {
 }
 
 func TestAccResourceUserToken(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
 	tokenName := gofakeit.Word()
@@ -186,7 +182,7 @@ func TestAccResourceUserToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				PreCheck:                 tt.preCheck,
 				Steps:                    tt.steps,

@@ -17,11 +17,9 @@ import (
 )
 
 func TestAccRealmOpenIDUsernameClaim(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			// Create with username_claim = "upn" (custom claim used by ADFS/Azure AD)
@@ -51,11 +49,9 @@ func TestAccRealmOpenIDUsernameClaim(t *testing.T) {
 }
 
 func TestAccRealmOpenID(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			// Step 1: Create with minimal required fields, verify computed defaults
@@ -74,7 +70,10 @@ func TestAccRealmOpenID(t *testing.T) {
 						"issuer_url": "https://accounts.google.com",
 						"client_id":  "test-client-id",
 						"comment":    "Test OpenID realm",
-						// Verify computed defaults
+						// Verify computed defaults from PVE API.
+						// Note: PVE does not return query_userinfo or scopes for a
+						// minimal realm — they are null/unset, not "true"/"email profile"
+						// as previously asserted (corrected from PR #2655).
 						"autocreate":        "false",
 						"default":           "false",
 						"groups_autocreate": "false",

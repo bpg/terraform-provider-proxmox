@@ -330,9 +330,7 @@ var (
 	_ resource.Resource                = (*userTokenShort)(nil)
 	_ resource.ResourceWithConfigure   = (*userTokenShort)(nil)
 	_ resource.ResourceWithImportState = (*userTokenShort)(nil)
-	_ resource.ResourceWithConfigure   = (*userTokenShort)(nil)
 	_ resource.ResourceWithMoveState   = (*userTokenShort)(nil)
-	_ resource.ResourceWithConfigure   = (*userTokenShort)(nil)
 )
 
 // userTokenShort is the short-name alias (proxmox_user_token) for userTokenResource.
