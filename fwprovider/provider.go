@@ -545,11 +545,11 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		backup.NewResource,
 		clonedvm.NewResource,
 		ha.NewHAGroupResource,
-		ha.NewHAGroupShortResource,
+		ha.NewHAGroupShortResource, // proxmox_hagroup
 		ha.NewHAResourceResource,
-		ha.NewHAResourceShortResource,
+		ha.NewHAResourceShortResource, // proxmox_haresource
 		ha.NewHARuleResource,
-		ha.NewHARuleShortResource,
+		ha.NewHARuleShortResource, // proxmox_harule
 		hardwaremapping.NewDirResource,
 		hardwaremapping.NewPCIResource,
 		hardwaremapping.NewUSBResource,
@@ -602,13 +602,13 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		backup.NewDataSource,
 		datastores.NewDataSource,
 		ha.NewHAGroupDataSource,
-		ha.NewHAGroupShortDataSource,
+		ha.NewHAGroupShortDataSource, // proxmox_hagroup
 		ha.NewHAGroupsDataSource,
-		ha.NewHAGroupsShortDataSource,
+		ha.NewHAGroupsShortDataSource, // proxmox_hagroups
 		ha.NewHAResourceDataSource,
-		ha.NewHAResourceShortDataSource,
+		ha.NewHAResourceShortDataSource, // proxmox_haresource
 		ha.NewHAResourcesDataSource,
-		ha.NewHAResourcesShortDataSource,
+		ha.NewHAResourcesShortDataSource, // proxmox_haresources
 		hardwaremapping.NewDataSource,
 		hardwaremapping.NewDirDataSource,
 		hardwaremapping.NewPCIDataSource,

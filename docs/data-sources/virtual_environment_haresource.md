@@ -4,14 +4,14 @@ title: proxmox_virtual_environment_haresource
 parent: Data Sources
 subcategory: Virtual Environment
 description: |-
-  Retrieves the list of High Availability resources.
+  Retrieves information about a specific High Availability resource.
 ---
 
 # Data Source: proxmox_virtual_environment_haresource
 
 ~> **Deprecated:** Use [`proxmox_haresource`](haresource.md) instead. This data source will be removed in v1.0.
 
-Retrieves the list of High Availability resources.
+Retrieves information about a specific High Availability resource.
 
 ## Example Usage
 

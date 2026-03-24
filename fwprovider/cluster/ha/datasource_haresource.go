@@ -49,7 +49,7 @@ func (d *haResourceDatasource) Metadata(
 // Schema returns the schema for the data source.
 func (d *haResourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:        "Retrieves the list of High Availability resources.",
+		Description:        "Retrieves information about a specific High Availability resource.",
 		DeprecationMessage: migration.DeprecationMessage("proxmox_haresource"),
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
