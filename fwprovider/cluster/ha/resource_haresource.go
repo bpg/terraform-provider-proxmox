@@ -26,6 +26,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -66,7 +67,8 @@ func (r *haResourceResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Proxmox HA resources.",
+		Description:        "Manages Proxmox HA resources.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_haresource"),
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"resource_id": schema.StringAttribute{
@@ -367,5 +369,40 @@ func (r *haResourceResource) readBack(
 
 	if !respDiags.HasError() {
 		respDiags.Append(respState.Set(ctx, *data)...)
+	}
+}
+
+// Short-name alias for proxmox_haresource (ADR-007).
+
+var (
+	_ resource.Resource                = &haResourceShort{}
+	_ resource.ResourceWithConfigure   = &haResourceShort{}
+	_ resource.ResourceWithImportState = &haResourceShort{}
+	_ resource.ResourceWithMoveState   = &haResourceShort{}
+)
+
+type haResourceShort struct{ haResourceResource }
+
+// NewHAResourceShortResource creates the short-name version of the HA resource resource.
+func NewHAResourceShortResource() resource.Resource {
+	return &haResourceShort{}
+}
+
+func (r *haResourceShort) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "proxmox_haresource"
+}
+
+func (r *haResourceShort) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	r.haResourceResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *haResourceShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+
+	r.haResourceResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_haresource", &schemaResp.Schema),
 	}
 }

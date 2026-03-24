@@ -30,6 +30,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	harules "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/rules"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -70,6 +71,7 @@ func (r *haruleResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages a High Availability rule in a Proxmox VE cluster (PVE 9+). " +
 			"HA rules replace the legacy HA groups and provide node affinity and resource affinity capabilities.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_harule"),
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"rule": schema.StringAttribute{
@@ -478,4 +480,40 @@ func (r *haruleResource) nodesToString(nodes types.Map) string {
 	}
 
 	return strings.Join(parts, ",")
+}
+
+// Short-name alias for proxmox_harule (ADR-007).
+
+var (
+	_ resource.Resource                   = &haruleShort{}
+	_ resource.ResourceWithConfigure      = &haruleShort{}
+	_ resource.ResourceWithImportState    = &haruleShort{}
+	_ resource.ResourceWithValidateConfig = &haruleShort{}
+	_ resource.ResourceWithMoveState      = &haruleShort{}
+)
+
+type haruleShort struct{ haruleResource }
+
+// NewHARuleShortResource creates the short-name version of the HA rule resource.
+func NewHARuleShortResource() resource.Resource {
+	return &haruleShort{}
+}
+
+func (r *haruleShort) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "proxmox_harule"
+}
+
+func (r *haruleShort) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	r.haruleResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *haruleShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+
+	r.haruleResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_harule", &schemaResp.Schema),
+	}
 }

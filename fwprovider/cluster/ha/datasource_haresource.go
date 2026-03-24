@@ -16,6 +16,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -48,7 +49,8 @@ func (d *haResourceDatasource) Metadata(
 // Schema returns the schema for the data source.
 func (d *haResourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves the list of High Availability resources.",
+		Description:        "Retrieves information about a specific High Availability resource.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_haresource"),
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"resource_id": schema.StringAttribute{
@@ -141,4 +143,35 @@ func (d *haResourceDatasource) Read(ctx context.Context, req datasource.ReadRequ
 
 	data.ImportFromAPI(resource)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+// Short-name alias for proxmox_haresource data source (ADR-007).
+
+var (
+	_ datasource.DataSource              = &haResourceDSShort{}
+	_ datasource.DataSourceWithConfigure = &haResourceDSShort{}
+)
+
+type haResourceDSShort struct{ haResourceDatasource }
+
+// NewHAResourceShortDataSource creates the short-name version of the HA resource data source.
+func NewHAResourceShortDataSource() datasource.DataSource {
+	return &haResourceDSShort{}
+}
+
+func (d *haResourceDSShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_haresource"
+}
+
+func (d *haResourceDSShort) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
+	d.haResourceDatasource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
 }

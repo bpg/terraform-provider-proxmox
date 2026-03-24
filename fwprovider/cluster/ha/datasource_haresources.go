@@ -19,6 +19,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -61,7 +62,8 @@ func (d *haResourcesDatasource) Metadata(
 // Schema returns the schema for the data source.
 func (d *haResourcesDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves the list of High Availability resources.",
+		Description:        "Retrieves the list of High Availability resources.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_haresources"),
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"type": schema.StringAttribute{
@@ -161,4 +163,35 @@ func (d *haResourcesDatasource) Read(ctx context.Context, req datasource.ReadReq
 
 	data.Resources = resourcesValue
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+// Short-name alias for proxmox_haresources data source (ADR-007).
+
+var (
+	_ datasource.DataSource              = &haResourcesDSShort{}
+	_ datasource.DataSourceWithConfigure = &haResourcesDSShort{}
+)
+
+type haResourcesDSShort struct{ haResourcesDatasource }
+
+// NewHAResourcesShortDataSource creates the short-name version of the HA resources data source.
+func NewHAResourcesShortDataSource() datasource.DataSource {
+	return &haResourcesDSShort{}
+}
+
+func (d *haResourcesDSShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_haresources"
+}
+
+func (d *haResourcesDSShort) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
+	d.haResourcesDatasource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
 }

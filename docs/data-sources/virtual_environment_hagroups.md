@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_hagroups
 
+~> **Deprecated:** Use [`proxmox_hagroups`](hagroups.md) instead. This data source will be removed in v1.0.
+
 Retrieves the list of High Availability groups.
 
 ## Example Usage

@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_haresources
 
+~> **Deprecated:** Use [`proxmox_haresources`](haresources.md) instead. This data source will be removed in v1.0.
+
 Retrieves the list of High Availability resources.
 
 ## Example Usage

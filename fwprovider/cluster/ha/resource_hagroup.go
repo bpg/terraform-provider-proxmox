@@ -25,6 +25,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
@@ -61,7 +62,8 @@ func (r *hagroupResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a High Availability group in a Proxmox VE cluster.",
+		Description:        "Manages a High Availability group in a Proxmox VE cluster.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_hagroup"),
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"group": schema.StringAttribute{
@@ -337,4 +339,39 @@ func (r *hagroupResource) groupNodesToString(nodes types.Map) string {
 	}
 
 	return strings.Join(mbNodes, ",")
+}
+
+// Short-name alias for proxmox_hagroup (ADR-007).
+
+var (
+	_ resource.Resource                = &hagroupShort{}
+	_ resource.ResourceWithConfigure   = &hagroupShort{}
+	_ resource.ResourceWithImportState = &hagroupShort{}
+	_ resource.ResourceWithMoveState   = &hagroupShort{}
+)
+
+type hagroupShort struct{ hagroupResource }
+
+// NewHAGroupShortResource creates the short-name version of the HA group resource.
+func NewHAGroupShortResource() resource.Resource {
+	return &hagroupShort{}
+}
+
+func (r *hagroupShort) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "proxmox_hagroup"
+}
+
+func (r *hagroupShort) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	r.hagroupResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *hagroupShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+
+	r.hagroupResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_hagroup", &schemaResp.Schema),
+	}
 }
