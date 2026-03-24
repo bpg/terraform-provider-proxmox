@@ -17,31 +17,29 @@ import (
 )
 
 func TestAccRealmOpenIDUsernameClaim(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			// Create with username_claim = "upn" (custom claim used by ADFS/Azure AD)
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_realm_openid" "test_upn" {
+					resource "proxmox_realm_openid" "test_upn" {
 						realm          = "test-upn"
 						issuer_url     = "https://accounts.google.com"
 						client_id      = "test-client-id"
 						username_claim = "upn"
 					}
 				`),
-				Check: test.ResourceAttributes("proxmox_virtual_environment_realm_openid.test_upn", map[string]string{
+				Check: test.ResourceAttributes("proxmox_realm_openid.test_upn", map[string]string{
 					"realm":          "test-upn",
 					"username_claim": "upn",
 				}),
 			},
 			// Import state
 			{
-				ResourceName:            "proxmox_virtual_environment_realm_openid.test_upn",
+				ResourceName:            "proxmox_realm_openid.test_upn",
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"client_key"},
@@ -51,17 +49,15 @@ func TestAccRealmOpenIDUsernameClaim(t *testing.T) {
 }
 
 func TestAccRealmOpenID(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			// Step 1: Create with minimal required fields, verify computed defaults
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_realm_openid" "test" {
+					resource "proxmox_realm_openid" "test" {
 						realm      = "test-oidc"
 						issuer_url = "https://accounts.google.com"
 						client_id  = "test-client-id"
@@ -69,31 +65,34 @@ func TestAccRealmOpenID(t *testing.T) {
 					}
 				`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_realm_openid.test", map[string]string{
+					test.ResourceAttributes("proxmox_realm_openid.test", map[string]string{
 						"realm":      "test-oidc",
 						"issuer_url": "https://accounts.google.com",
 						"client_id":  "test-client-id",
 						"comment":    "Test OpenID realm",
-						// Verify computed defaults
+						// Verify computed defaults from PVE API.
+						// Note: PVE does not return query_userinfo or scopes for a
+						// minimal realm — they are null/unset, not "true"/"email profile"
+						// as previously asserted (corrected from PR #2655).
 						"autocreate":        "false",
 						"default":           "false",
 						"groups_autocreate": "false",
 						"groups_overwrite":  "false",
-						"query_userinfo":    "true",
-						"scopes":            "email profile",
+						"query_userinfo":    "false",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_realm_openid.test", []string{
+					test.NoResourceAttributesSet("proxmox_realm_openid.test", []string{
 						"username_claim",
 						"groups_claim",
 						"prompt",
 						"acr_values",
 						"client_key",
+						"scopes",
 					}),
 				),
 			},
 			// Step 2: Import state
 			{
-				ResourceName:            "proxmox_virtual_environment_realm_openid.test",
+				ResourceName:            "proxmox_realm_openid.test",
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"client_key"}, // Not returned by API
@@ -101,7 +100,7 @@ func TestAccRealmOpenID(t *testing.T) {
 			// Step 3: Update with optional fields added
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_realm_openid" "test" {
+					resource "proxmox_realm_openid" "test" {
 						realm             = "test-oidc"
 						issuer_url        = "https://accounts.google.com"
 						client_id         = "test-client-id"
@@ -114,7 +113,7 @@ func TestAccRealmOpenID(t *testing.T) {
 						comment           = "Updated OpenID realm"
 					}
 				`),
-				Check: test.ResourceAttributes("proxmox_virtual_environment_realm_openid.test", map[string]string{
+				Check: test.ResourceAttributes("proxmox_realm_openid.test", map[string]string{
 					"realm":             "test-oidc",
 					"issuer_url":        "https://accounts.google.com",
 					"client_id":         "test-client-id",
@@ -130,7 +129,7 @@ func TestAccRealmOpenID(t *testing.T) {
 			// Step 4: Remove optional fields to verify proper cleanup via delete parameter
 			{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_realm_openid" "test" {
+					resource "proxmox_realm_openid" "test" {
 						realm      = "test-oidc"
 						issuer_url = "https://accounts.google.com"
 						client_id  = "test-client-id"
@@ -138,7 +137,7 @@ func TestAccRealmOpenID(t *testing.T) {
 					}
 				`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_realm_openid.test", map[string]string{
+					test.ResourceAttributes("proxmox_realm_openid.test", map[string]string{
 						"realm":      "test-oidc",
 						"issuer_url": "https://accounts.google.com",
 						"client_id":  "test-client-id",
@@ -147,10 +146,9 @@ func TestAccRealmOpenID(t *testing.T) {
 						"autocreate":        "false",
 						"groups_autocreate": "false",
 						"groups_overwrite":  "false",
-						"query_userinfo":    "true",
-						"scopes":            "email profile",
+						"query_userinfo":    "false",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_realm_openid.test", []string{
+					test.NoResourceAttributesSet("proxmox_realm_openid.test", []string{
 						"groups_claim",
 						"prompt",
 						"acr_values",

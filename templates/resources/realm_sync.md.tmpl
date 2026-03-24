@@ -9,13 +9,11 @@ description: |-
 
 # {{.Type}}: {{.Name}}
 
-~> **Deprecated:** Use [`proxmox_realm_sync`](realm_sync.md) instead. This resource will be removed in v1.0.
-
 {{ .Description | trimspace }}
 
 This resource wraps the `/access/domains/{realm}/sync` API and is intended to be
 used alongside realm configuration resources such as
-`proxmox_virtual_environment_realm_ldap`.
+`proxmox_realm_ldap`.
 
 {{ if .HasExample -}}
 ## Example Usage

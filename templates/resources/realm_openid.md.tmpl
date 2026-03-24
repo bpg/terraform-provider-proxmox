@@ -9,8 +9,6 @@ description: |-
 
 # {{.Type}}: {{.Name}}
 
-~> **Deprecated:** Use [`proxmox_realm_openid`](realm_openid.md) instead. This resource will be removed in v1.0.
-
 {{ .Description | trimspace }}
 
 ## Privileges Required
@@ -64,7 +62,7 @@ Any valid OpenID claim name can be used. Ensure the chosen claim provides unique
 #### Minimal Configuration
 
 ```hcl
-resource "proxmox_virtual_environment_realm_openid" "minimal" {
+resource "proxmox_realm_openid" "minimal" {
   realm      = "my-oidc"
   issuer_url = "https://auth.example.com"
   client_id  = var.oidc_client_id
@@ -75,7 +73,7 @@ resource "proxmox_virtual_environment_realm_openid" "minimal" {
 #### With User and Group Provisioning
 
 ```hcl
-resource "proxmox_virtual_environment_realm_openid" "full" {
+resource "proxmox_realm_openid" "full" {
   realm          = "corporate-oidc"
   issuer_url     = "https://auth.example.com/realms/my-realm"
   client_id      = var.oidc_client_id

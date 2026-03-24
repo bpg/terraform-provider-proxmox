@@ -22,8 +22,6 @@ import (
 )
 
 func TestAccResourceUser(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
@@ -80,7 +78,7 @@ func TestAccResourceUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -89,8 +87,6 @@ func TestAccResourceUser(t *testing.T) {
 }
 
 func TestAccResourceUserToken(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
 	tokenName := gofakeit.Word()
@@ -121,12 +117,12 @@ func TestAccResourceUserToken(t *testing.T) {
 			},
 			[]resource.TestStep{
 				{
-					Config: te.RenderConfig(`resource "proxmox_virtual_environment_user_token" "user_token" {
+					Config: te.RenderConfig(`resource "proxmox_user_token" "user_token" {
 						comment  			= "Managed by Terraform"
 						token_name 			= "{{.TokenName}}"
 						user_id  			= "{{.UserID}}"
 					}`),
-					Check: test.ResourceAttributes("proxmox_virtual_environment_user_token.user_token", map[string]string{
+					Check: test.ResourceAttributes("proxmox_user_token.user_token", map[string]string{
 						"comment": "Managed by Terraform",
 						"id":      fmt.Sprintf("%s!%s", userID, tokenName),
 						"user_id": userID,
@@ -134,7 +130,7 @@ func TestAccResourceUserToken(t *testing.T) {
 					}),
 				},
 				{
-					Config: te.RenderConfig(`resource "proxmox_virtual_environment_user_token" "user_token" {
+					Config: te.RenderConfig(`resource "proxmox_user_token" "user_token" {
 						comment  			  = "Managed by Terraform 2"
 						expiration_date 	  = "2033-01-01T01:01:01Z"
 						privileges_separation = false
@@ -142,7 +138,7 @@ func TestAccResourceUserToken(t *testing.T) {
 						user_id  			  = "{{.UserID}}"
 					}`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_user_token.user_token", map[string]string{
+						test.ResourceAttributes("proxmox_user_token.user_token", map[string]string{
 							"comment":               "Managed by Terraform 2",
 							"expiration_date":       "2033-01-01T01:01:01Z",
 							"privileges_separation": "false",
@@ -153,27 +149,27 @@ func TestAccResourceUserToken(t *testing.T) {
 					),
 				},
 				{
-					Config: te.RenderConfig(`resource "proxmox_virtual_environment_user_token" "user_token" {
+					Config: te.RenderConfig(`resource "proxmox_user_token" "user_token" {
 						comment  			  = "Managed by Terraform 2"
 						privileges_separation = false
 						token_name 			  = "{{.TokenName}}"
 						user_id  			  = "{{.UserID}}"
 					}`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_user_token.user_token", map[string]string{
+						test.ResourceAttributes("proxmox_user_token.user_token", map[string]string{
 							"comment":               "Managed by Terraform 2",
 							"privileges_separation": "false",
 							"token_name":            tokenName,
 							"user_id":               userID,
 							"value":                 fmt.Sprintf("%s!%s=.*", userID, tokenName),
 						}),
-						test.NoResourceAttributesSet("proxmox_virtual_environment_user_token.user_token", []string{
+						test.NoResourceAttributesSet("proxmox_user_token.user_token", []string{
 							"expiration_date",
 						}),
 					),
 				},
 				{
-					ResourceName:      "proxmox_virtual_environment_user_token.user_token",
+					ResourceName:      "proxmox_user_token.user_token",
 					ImportState:       true,
 					ImportStateVerify: true,
 					ImportStateVerifyIgnore: []string{
@@ -186,7 +182,7 @@ func TestAccResourceUserToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				PreCheck:                 tt.preCheck,
 				Steps:                    tt.steps,

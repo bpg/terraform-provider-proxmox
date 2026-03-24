@@ -9,8 +9,6 @@ description: |-
 
 # {{.Type}}: {{.Name}}
 
-~> **Deprecated:** Use [`proxmox_realm_ldap`](realm_ldap.md) instead. This resource will be removed in v1.0.
-
 {{ .Description | trimspace }}
 
 ## Privileges Required
@@ -54,14 +52,14 @@ The `bind_password` is sent to Proxmox and stored securely, but it's never retur
 
 ### User Synchronization
 
-To trigger synchronization, use the `proxmox_virtual_environment_realm_sync` resource.
+To trigger synchronization, use the `proxmox_realm_sync` resource.
 
 ### Common Configuration Scenarios
 
 #### Anonymous Binding
 For testing or public LDAP servers, omit `bind_dn` and `bind_password` to use anonymous binding:
 ```hcl
-resource "proxmox_virtual_environment_realm_ldap" "anonymous" {
+resource "proxmox_realm_ldap" "anonymous" {
   realm     = "public-ldap"
   server1   = "ldap.example.com"
   base_dn   = "ou=users,dc=example,dc=com"
@@ -71,7 +69,7 @@ resource "proxmox_virtual_environment_realm_ldap" "anonymous" {
 
 #### Secure LDAPS with Failover
 ```hcl
-resource "proxmox_virtual_environment_realm_ldap" "secure" {
+resource "proxmox_realm_ldap" "secure" {
   realm         = "secure-ldap"
   server1       = "ldap1.example.com"
   server2       = "ldap2.example.com"  # Failover server
@@ -87,7 +85,7 @@ resource "proxmox_virtual_environment_realm_ldap" "secure" {
 
 #### With Group Synchronization
 ```hcl
-resource "proxmox_virtual_environment_realm_ldap" "with_groups" {
+resource "proxmox_realm_ldap" "with_groups" {
   realm                 = "corporate-ldap"
   server1               = "ldap.corp.example.com"
   base_dn               = "ou=users,dc=corp,dc=example,dc=com"

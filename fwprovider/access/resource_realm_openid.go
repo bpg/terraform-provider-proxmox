@@ -23,6 +23,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -56,7 +57,8 @@ func (r *realmOpenIDResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages an OpenID Connect authentication realm in Proxmox VE.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_realm_openid"),
+		Description:        "Manages an OpenID Connect authentication realm in Proxmox VE.",
 		MarkdownDescription: "Manages an OpenID Connect authentication realm in Proxmox VE.\n\n" +
 			"OpenID Connect realms allow Proxmox to authenticate users against an external OpenID Connect provider.",
 		Attributes: map[string]schema.Attribute{
@@ -328,4 +330,48 @@ func (r *realmOpenIDResource) ImportState(
 ) {
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("realm"), req.ID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+}
+
+// Short-name alias: proxmox_realm_openid.
+
+var (
+	_ resource.Resource                = (*realmOpenIDShort)(nil)
+	_ resource.ResourceWithConfigure   = (*realmOpenIDShort)(nil)
+	_ resource.ResourceWithImportState = (*realmOpenIDShort)(nil)
+	_ resource.ResourceWithMoveState   = (*realmOpenIDShort)(nil)
+)
+
+// realmOpenIDShort is the short-name alias (proxmox_realm_openid) for realmOpenIDResource.
+// It embeds the original and overrides Metadata/Schema/MoveState.
+type realmOpenIDShort struct{ realmOpenIDResource }
+
+// NewRealmOpenIDShortResource creates the short-name alias for the OpenID realm resource.
+func NewRealmOpenIDShortResource() resource.Resource {
+	return &realmOpenIDShort{}
+}
+
+func (r *realmOpenIDShort) Metadata(
+	_ context.Context,
+	_ resource.MetadataRequest,
+	resp *resource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_realm_openid"
+}
+
+func (r *realmOpenIDShort) Schema(
+	ctx context.Context,
+	req resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
+	r.realmOpenIDResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *realmOpenIDShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+	r.realmOpenIDResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_realm_openid", &schemaResp.Schema),
+	}
 }

@@ -21,6 +21,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -54,7 +55,8 @@ func (r *realmSyncResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Triggers synchronization of an existing authentication realm.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_realm_sync"),
+		Description:        "Triggers synchronization of an existing authentication realm.",
 		MarkdownDescription: "Triggers synchronization of an existing authentication realm using `/access/domains/{realm}/sync`. " +
 			"This resource represents the last requested sync configuration; deleting it does not undo the sync.",
 		Attributes: map[string]schema.Attribute{
@@ -224,4 +226,48 @@ func (r *realmSyncResource) ImportState(
 	// Import by realm name.
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("realm"), req.ID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+}
+
+// Short-name alias: proxmox_realm_sync.
+
+var (
+	_ resource.Resource                = (*realmSyncShort)(nil)
+	_ resource.ResourceWithConfigure   = (*realmSyncShort)(nil)
+	_ resource.ResourceWithImportState = (*realmSyncShort)(nil)
+	_ resource.ResourceWithMoveState   = (*realmSyncShort)(nil)
+)
+
+// realmSyncShort is the short-name alias (proxmox_realm_sync) for realmSyncResource.
+// It embeds the original and overrides Metadata/Schema/MoveState.
+type realmSyncShort struct{ realmSyncResource }
+
+// NewRealmSyncShortResource creates the short-name alias for the realm sync resource.
+func NewRealmSyncShortResource() resource.Resource {
+	return &realmSyncShort{}
+}
+
+func (r *realmSyncShort) Metadata(
+	_ context.Context,
+	_ resource.MetadataRequest,
+	resp *resource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_realm_sync"
+}
+
+func (r *realmSyncShort) Schema(
+	ctx context.Context,
+	req resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
+	r.realmSyncResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *realmSyncShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+	r.realmSyncResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_realm_sync", &schemaResp.Schema),
+	}
 }

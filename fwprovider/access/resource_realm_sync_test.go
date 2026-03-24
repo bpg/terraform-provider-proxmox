@@ -18,18 +18,16 @@ import (
 )
 
 func TestAccRealmSync(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(testAccRealmLDAPWithSyncConfig("test-realm-sync.local", "ldap.example.com", "dc=example,dc=com")),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("proxmox_virtual_environment_realm_sync.sync", "realm", "test-realm-sync.local"),
-					resource.TestCheckResourceAttr("proxmox_virtual_environment_realm_sync.sync", "scope", "users"),
+					resource.TestCheckResourceAttr("proxmox_realm_sync.sync", "realm", "test-realm-sync.local"),
+					resource.TestCheckResourceAttr("proxmox_realm_sync.sync", "scope", "users"),
 				),
 			},
 		},
@@ -38,7 +36,7 @@ func TestAccRealmSync(t *testing.T) {
 
 func testAccRealmLDAPWithSyncConfig(realm, server, baseDN string) string {
 	return fmt.Sprintf(`
-resource "proxmox_virtual_environment_realm_ldap" "test" {
+resource "proxmox_realm_ldap" "test" {
   realm    = "%s"
   server1  = "%s"
   base_dn  = "%s"
@@ -46,8 +44,8 @@ resource "proxmox_virtual_environment_realm_ldap" "test" {
   comment  = "Test LDAP realm for sync"
 }
 
-resource "proxmox_virtual_environment_realm_sync" "sync" {
-  realm = proxmox_virtual_environment_realm_ldap.test.realm
+resource "proxmox_realm_sync" "sync" {
+  realm = proxmox_realm_ldap.test.realm
   scope = "users"
 }
 `, realm, server, baseDN)

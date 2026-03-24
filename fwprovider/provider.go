@@ -527,10 +527,15 @@ func (p *proxmoxProvider) Configure(
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		access.NewACLResource,
+		access.NewACLShortResource, // proxmox_acl
 		access.NewRealmLDAPResource,
+		access.NewRealmLDAPShortResource, // proxmox_realm_ldap
 		access.NewRealmOpenIDResource,
+		access.NewRealmOpenIDShortResource, // proxmox_realm_openid
 		access.NewRealmSyncResource,
+		access.NewRealmSyncShortResource, // proxmox_realm_sync
 		access.NewUserTokenResource,
+		access.NewUserTokenShortResource, // proxmox_user_token
 		acme.NewACMEAccountResource,
 		acme.NewACMEPluginResource,
 		apt.NewRepositoryResource,

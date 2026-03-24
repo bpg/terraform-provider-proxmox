@@ -11,6 +11,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_acl
 
+~> **Deprecated:** Use [`proxmox_acl`](acl.md) instead. This resource will be removed in v1.0.
+
 Manages ACLs on the Proxmox cluster.
 
 ACLs are used to control access to resources in the Proxmox cluster.

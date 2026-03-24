@@ -23,17 +23,15 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 )
 
-func TestAccAcl_User(t *testing.T) {
-	t.Parallel()
-
+func TestAccAclUser(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
+	userID := fmt.Sprintf("testacl%s@pve", gofakeit.LetterN(8))
 	te.AddTemplateVars(map[string]any{
 		"UserID": userID,
 	})
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		CheckDestroy:             nil,
 		PreCheck: func() {
@@ -50,44 +48,44 @@ func TestAccAcl_User(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: te.RenderConfig(`resource "proxmox_virtual_environment_acl" "test" {
+				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
 					user_id = "{{.UserID}}"
 					path = "/"
 					role_id = "NoAccess"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acl.test", map[string]string{
+					test.ResourceAttributes("proxmox_acl.test", map[string]string{
 						"path":      "/",
 						"role_id":   "NoAccess",
 						"user_id":   userID,
 						"propagate": "true",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_acl.test", []string{
+					test.NoResourceAttributesSet("proxmox_acl.test", []string{
 						"group_id",
 						"token_id",
 					}),
 				),
 			},
 			{
-				ResourceName:      "proxmox_virtual_environment_acl.test",
+				ResourceName:      "proxmox_acl.test",
 				ImportState:       true,
 				ImportStateIdFunc: testAccACLImportStateIDFunc(),
 				ImportStateVerify: true,
 			},
 			{
-				Config: te.RenderConfig(`resource "proxmox_virtual_environment_acl" "test" {
+				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
 					user_id = "{{.UserID}}"
 					path = "/"
 					role_id = "PVEPoolUser"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_acl.test", map[string]string{
+					test.ResourceAttributes("proxmox_acl.test", map[string]string{
 						"path":      "/",
 						"role_id":   "PVEPoolUser",
 						"user_id":   userID,
 						"propagate": "true",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_acl.test", []string{
+					test.NoResourceAttributesSet("proxmox_acl.test", []string{
 						"group_id",
 						"token_id",
 					}),
@@ -97,9 +95,158 @@ func TestAccAcl_User(t *testing.T) {
 	})
 }
 
-func TestAccAcl_Validators(t *testing.T) {
-	t.Parallel()
+func TestAccAclGroup(t *testing.T) {
+	te := test.InitEnvironment(t)
 
+	groupID := fmt.Sprintf("testaclgrp%s", gofakeit.LetterN(8))
+	te.AddTemplateVars(map[string]any{
+		"GroupID": groupID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		CheckDestroy:             nil,
+		PreCheck: func() {
+			err := te.AccessClient().CreateGroup(context.Background(), &access.GroupCreateRequestBody{
+				ID: groupID,
+			})
+			require.NoError(t, err)
+
+			t.Cleanup(func() {
+				err := te.AccessClient().DeleteGroup(context.Background(), groupID)
+				require.NoError(t, err)
+			})
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
+					group_id = "{{.GroupID}}"
+					path = "/"
+					role_id = "NoAccess"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_acl.test", map[string]string{
+						"path":      "/",
+						"role_id":   "NoAccess",
+						"group_id":  groupID,
+						"propagate": "true",
+					}),
+					test.NoResourceAttributesSet("proxmox_acl.test", []string{
+						"user_id",
+						"token_id",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_acl.test",
+				ImportState:       true,
+				ImportStateIdFunc: testAccACLImportStateIDFunc(),
+				ImportStateVerify: true,
+			},
+			{
+				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
+					group_id = "{{.GroupID}}"
+					path = "/"
+					role_id = "PVEPoolUser"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_acl.test", map[string]string{
+						"path":      "/",
+						"role_id":   "PVEPoolUser",
+						"group_id":  groupID,
+						"propagate": "true",
+					}),
+					test.NoResourceAttributesSet("proxmox_acl.test", []string{
+						"user_id",
+						"token_id",
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccAclToken(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	userID := fmt.Sprintf("testacltok%s@pve", gofakeit.LetterN(8))
+	tokenName := gofakeit.LetterN(8)
+	tokenID := fmt.Sprintf("%s!%s", userID, tokenName)
+	te.AddTemplateVars(map[string]any{
+		"TokenID": tokenID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		CheckDestroy:             nil,
+		PreCheck: func() {
+			err := te.AccessClient().CreateUser(context.Background(), &access.UserCreateRequestBody{
+				ID:       userID,
+				Password: gofakeit.Password(true, true, true, true, false, 8),
+			})
+			require.NoError(t, err)
+
+			_, err = te.AccessClient().CreateUserToken(
+				context.Background(), userID, tokenName, &access.UserTokenCreateRequestBody{},
+			)
+			require.NoError(t, err)
+
+			t.Cleanup(func() {
+				_ = te.AccessClient().DeleteUserToken(context.Background(), userID, tokenName)
+				err := te.AccessClient().DeleteUser(context.Background(), userID)
+				require.NoError(t, err)
+			})
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
+					token_id = "{{.TokenID}}"
+					path = "/"
+					role_id = "NoAccess"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_acl.test", map[string]string{
+						"path":      "/",
+						"role_id":   "NoAccess",
+						"token_id":  tokenID,
+						"propagate": "true",
+					}),
+					test.NoResourceAttributesSet("proxmox_acl.test", []string{
+						"user_id",
+						"group_id",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_acl.test",
+				ImportState:       true,
+				ImportStateIdFunc: testAccACLImportStateIDFunc(),
+				ImportStateVerify: true,
+			},
+			{
+				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
+					token_id = "{{.TokenID}}"
+					path = "/"
+					role_id = "PVEPoolUser"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_acl.test", map[string]string{
+						"path":      "/",
+						"role_id":   "PVEPoolUser",
+						"token_id":  tokenID,
+						"propagate": "true",
+					}),
+					test.NoResourceAttributesSet("proxmox_acl.test", []string{
+						"user_id",
+						"group_id",
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccAclValidators(t *testing.T) {
 	te := test.InitEnvironment(t)
 
 	resource.UnitTest(t, resource.TestCase{
@@ -108,7 +255,7 @@ func TestAccAcl_Validators(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				PlanOnly: true,
-				Config: `resource "proxmox_virtual_environment_acl" "test" {
+				Config: `resource "proxmox_acl" "test" {
 					group_id = "test"
 					path = "/"
 					role_id = "test"
@@ -118,7 +265,7 @@ func TestAccAcl_Validators(t *testing.T) {
 			},
 			{
 				PlanOnly: true,
-				Config: `resource "proxmox_virtual_environment_acl" "test" {
+				Config: `resource "proxmox_acl" "test" {
 					path = "/"
 					role_id = "test"
 					token_id = "test"
@@ -128,7 +275,7 @@ func TestAccAcl_Validators(t *testing.T) {
 			},
 			{
 				PlanOnly: true,
-				Config: `resource "proxmox_virtual_environment_acl" "test" {
+				Config: `resource "proxmox_acl" "test" {
 					group_id = "test"
 					path = "/"
 					role_id = "test"
@@ -138,7 +285,7 @@ func TestAccAcl_Validators(t *testing.T) {
 			},
 			{
 				PlanOnly: true,
-				Config: `resource "proxmox_virtual_environment_acl" "test" {
+				Config: `resource "proxmox_acl" "test" {
 					group_id = "test"
 					path = "/"
 					role_id = "test"
@@ -153,7 +300,7 @@ func TestAccAcl_Validators(t *testing.T) {
 
 func testAccACLImportStateIDFunc() resource.ImportStateIdFunc {
 	return func(s *terraform.State) (string, error) {
-		resourceName := "proxmox_virtual_environment_acl.test"
+		resourceName := "proxmox_acl.test"
 
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {

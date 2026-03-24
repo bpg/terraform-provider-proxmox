@@ -20,6 +20,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -43,7 +44,8 @@ func NewACLResource() resource.Resource {
 
 func (r *aclResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages ACLs on the Proxmox cluster",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_acl"),
+		Description:        "Manages ACLs on the Proxmox cluster",
 		MarkdownDescription: "Manages ACLs on the Proxmox cluster.\n\n" +
 			"ACLs are used to control access to resources in the Proxmox cluster.\n" +
 			"Each ACL consists of a path, a user, group or token, a role, and a flag to allow propagation of permissions.",
@@ -267,3 +269,48 @@ func (r *aclResource) ImportState(
 }
 
 const apiCallFailed = "API call failed: "
+
+// Short-name alias: proxmox_acl.
+
+var (
+	_ resource.Resource                     = (*aclShort)(nil)
+	_ resource.ResourceWithConfigure        = (*aclShort)(nil)
+	_ resource.ResourceWithImportState      = (*aclShort)(nil)
+	_ resource.ResourceWithConfigValidators = (*aclShort)(nil)
+	_ resource.ResourceWithMoveState        = (*aclShort)(nil)
+)
+
+// aclShort is the short-name alias (proxmox_acl) for aclResource.
+// It embeds the original and overrides Metadata/Schema/MoveState.
+type aclShort struct{ aclResource }
+
+// NewACLShortResource creates the short-name alias for the ACL resource.
+func NewACLShortResource() resource.Resource {
+	return &aclShort{}
+}
+
+func (r *aclShort) Metadata(
+	_ context.Context,
+	_ resource.MetadataRequest,
+	resp *resource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_acl"
+}
+
+func (r *aclShort) Schema(
+	ctx context.Context,
+	req resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
+	r.aclResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *aclShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+	r.aclResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_acl", &schemaResp.Schema),
+	}
+}
