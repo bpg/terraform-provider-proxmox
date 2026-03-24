@@ -53,6 +53,14 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 					}),
 				),
 			},
+			{
+				ResourceName:                         "proxmox_acme_dns_plugin.test_plugin",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateId:                        pluginName,
+				ImportStateVerifyIdentifierAttribute: "plugin",
+				ImportStateVerifyIgnore:              []string{"digest"}, // changes on re-read
+			},
 		}},
 		{"plugin with validation delay", []resource.TestStep{
 			{
@@ -151,7 +159,7 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.step,
 			})

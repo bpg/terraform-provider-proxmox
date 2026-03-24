@@ -19,15 +19,13 @@ import (
 )
 
 func TestAccDatasourceACMEPlugin(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 	pluginName := fmt.Sprintf("test-ds-plugin-%s", gofakeit.Word())
 	te.AddTemplateVars(map[string]interface{}{
 		"PluginName": pluginName,
 	})
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{

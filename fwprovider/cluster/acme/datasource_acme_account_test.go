@@ -19,15 +19,13 @@ import (
 )
 
 func TestAccDatasourceACMEAccount(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 	accountName := fmt.Sprintf("test-ds-account-%s", gofakeit.Word())
 	te.AddTemplateVars(map[string]interface{}{
 		"AccountName": accountName,
 	})
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{

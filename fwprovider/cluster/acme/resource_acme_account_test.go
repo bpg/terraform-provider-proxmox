@@ -53,6 +53,14 @@ func TestAccResourceACMEAccount(t *testing.T) {
 					}),
 				),
 			},
+			{
+				ResourceName:                         "proxmox_acme_account.test_account",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateId:                        accountName,
+				ImportStateVerifyIdentifierAttribute: "name",
+				ImportStateVerifyIgnore:              []string{"contact"}, // not returned by API on fresh read
+			},
 		}},
 		{"account with EAB", []resource.TestStep{
 			{
@@ -122,7 +130,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.step,
 			})

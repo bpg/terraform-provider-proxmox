@@ -19,8 +19,6 @@ import (
 )
 
 func TestAccDatasourceACMEAccounts(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 	accountName1 := fmt.Sprintf("test-ds-accounts1-%s", gofakeit.Word())
 	accountName2 := fmt.Sprintf("test-ds-accounts2-%s", gofakeit.Word())
@@ -29,7 +27,7 @@ func TestAccDatasourceACMEAccounts(t *testing.T) {
 		"AccountName2": accountName2,
 	})
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
