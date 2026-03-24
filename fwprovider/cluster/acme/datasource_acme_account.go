@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/account"
 )
 
@@ -79,7 +80,8 @@ func (d *acmeAccountDatasource) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves information about a specific ACME account.",
+		Description:        "Retrieves information about a specific ACME account.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_acme_account"),
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The identifier of the ACME account to read.",
@@ -187,4 +189,35 @@ func (d *acmeAccountDatasource) Read(ctx context.Context, req datasource.ReadReq
 	state.TOS = types.StringValue(accountData.TOS)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// Short-name alias for proxmox_acme_account data source (ADR-007).
+
+var (
+	_ datasource.DataSource              = &acmeAccountDSShort{}
+	_ datasource.DataSourceWithConfigure = &acmeAccountDSShort{}
+)
+
+type acmeAccountDSShort struct{ acmeAccountDatasource }
+
+// NewACMEAccountShortDataSource creates the short-name version of the ACME account data source.
+func NewACMEAccountShortDataSource() datasource.DataSource {
+	return &acmeAccountDSShort{}
+}
+
+func (d *acmeAccountDSShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_acme_account"
+}
+
+func (d *acmeAccountDSShort) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
+	d.acmeAccountDatasource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
 }

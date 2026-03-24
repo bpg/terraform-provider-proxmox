@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/plugins"
 )
 
@@ -53,7 +54,8 @@ func (d *acmePluginsDatasource) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves the list of ACME plugins.",
+		Description:        "Retrieves the list of ACME plugins.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_acme_plugins"),
 		Attributes: map[string]schema.Attribute{
 			"plugins": schema.ListNestedAttribute{
 				Description: "List of ACME plugins",
@@ -154,4 +156,35 @@ func (d *acmePluginsDatasource) Read(ctx context.Context, _ datasource.ReadReque
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// Short-name alias for proxmox_acme_plugins data source (ADR-007).
+
+var (
+	_ datasource.DataSource              = &acmePluginsDSShort{}
+	_ datasource.DataSourceWithConfigure = &acmePluginsDSShort{}
+)
+
+type acmePluginsDSShort struct{ acmePluginsDatasource }
+
+// NewACMEPluginsShortDataSource creates the short-name version of the ACME plugins data source.
+func NewACMEPluginsShortDataSource() datasource.DataSource {
+	return &acmePluginsDSShort{}
+}
+
+func (d *acmePluginsDSShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_acme_plugins"
+}
+
+func (d *acmePluginsDSShort) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
+	d.acmePluginsDatasource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
 }

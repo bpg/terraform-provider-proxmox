@@ -34,6 +34,10 @@ import (
 // for the resources / data sources that have been migrated.
 //go:generate cp -R ./build/docs-gen/guides/. ./docs/guides/
 // sorted alphabetically:
+//go:generate cp ./build/docs-gen/data-sources/acme_account.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/acme_accounts.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/acme_plugin.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/acme_plugins.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_acme_account.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_acme_accounts.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_acme_plugin.md ./docs/data-sources/
@@ -75,6 +79,8 @@ import (
 //go:generate cp ./build/docs-gen/resources/realm_sync.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/user_token.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_acl.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/acme_account.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/acme_dns_plugin.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_acme_account.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_acme_dns_plugin.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_apt_repository.md ./docs/resources/

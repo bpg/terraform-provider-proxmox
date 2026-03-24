@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/plugins"
 )
 
@@ -56,7 +57,8 @@ func (r *acmePluginResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages an ACME plugin in a Proxmox VE cluster.",
+		Description:        "Manages an ACME plugin in a Proxmox VE cluster.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_acme_dns_plugin"),
 		Attributes: map[string]schema.Attribute{
 			"api": schema.StringAttribute{
 				Description: "API plugin name.",
@@ -304,4 +306,39 @@ func (r *acmePluginResource) ImportState(
 	resp *resource.ImportStateResponse,
 ) {
 	resource.ImportStatePassthroughID(ctx, path.Root("plugin"), req, resp)
+}
+
+// Short-name alias for proxmox_acme_dns_plugin (ADR-007).
+
+var (
+	_ resource.Resource                = &acmePluginShort{}
+	_ resource.ResourceWithConfigure   = &acmePluginShort{}
+	_ resource.ResourceWithImportState = &acmePluginShort{}
+	_ resource.ResourceWithMoveState   = &acmePluginShort{}
+)
+
+type acmePluginShort struct{ acmePluginResource }
+
+// NewACMEPluginShortResource creates the short-name version of the ACME DNS plugin resource.
+func NewACMEPluginShortResource() resource.Resource {
+	return &acmePluginShort{}
+}
+
+func (r *acmePluginShort) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "proxmox_acme_dns_plugin"
+}
+
+func (r *acmePluginShort) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	r.acmePluginResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *acmePluginShort) MoveState(ctx context.Context) []resource.StateMover {
+	var schemaResp resource.SchemaResponse
+
+	r.acmePluginResource.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_acme_dns_plugin", &schemaResp.Schema),
+	}
 }
