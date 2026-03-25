@@ -551,11 +551,11 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		ha.NewHARuleResource,
 		ha.NewHARuleShortResource, // proxmox_harule
 		hardwaremapping.NewDirResource,
-		hardwaremapping.NewDirResourceShort,
+		hardwaremapping.NewDirResourceShort, // proxmox_hardware_mapping_dir
 		hardwaremapping.NewPCIResource,
-		hardwaremapping.NewPCIResourceShort,
+		hardwaremapping.NewPCIResourceShort, // proxmox_hardware_mapping_pci
 		hardwaremapping.NewUSBResource,
-		hardwaremapping.NewUSBResourceShort,
+		hardwaremapping.NewUSBResourceShort, // proxmox_hardware_mapping_usb
 		metrics.NewMetricsServerResource,
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
@@ -613,13 +613,13 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		ha.NewHAResourcesDataSource,
 		ha.NewHAResourcesShortDataSource, // proxmox_haresources
 		hardwaremapping.NewDataSource,
-		hardwaremapping.NewDataSourceShort,
+		hardwaremapping.NewDataSourceShort, // proxmox_hardware_mappings
 		hardwaremapping.NewDirDataSource,
-		hardwaremapping.NewDirDataSourceShort,
+		hardwaremapping.NewDirDataSourceShort, // proxmox_hardware_mapping_dir
 		hardwaremapping.NewPCIDataSource,
-		hardwaremapping.NewPCIDataSourceShort,
+		hardwaremapping.NewPCIDataSourceShort, // proxmox_hardware_mapping_pci
 		hardwaremapping.NewUSBDataSource,
-		hardwaremapping.NewUSBDataSourceShort,
+		hardwaremapping.NewUSBDataSourceShort, // proxmox_hardware_mapping_usb
 		metrics.NewMetricsServerDatasource,
 		file.NewFileDataSource,
 		file.NewListDataSource,
