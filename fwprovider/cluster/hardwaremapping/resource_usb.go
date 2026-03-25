@@ -233,8 +233,8 @@ func (r *usbResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 						},
 						schemaAttrNameMapPath: schema.StringAttribute{
 							CustomType: customtypes.PathType{},
-							Description: "The path of the map. For hardware mappings of type USB the path is optional and indicates" +
-								" that the device is mapped through the device ID instead of ports.",
+							Description: "The path of the map. For USB hardware mappings, this is optional and indicates " +
+								"that the device is mapped via its device ID rather than ports.",
 							Optional: true,
 							Validators: []validator.String{
 								stringvalidator.RegexMatches(

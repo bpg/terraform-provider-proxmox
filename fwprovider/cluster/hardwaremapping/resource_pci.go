@@ -225,8 +225,8 @@ func (r *pciResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 							},
 						},
 						schemaAttrNameMapIOMMUGroup: schema.Int64Attribute{
-							Description: "The IOMMU group of the map. Not mandatory for the Proxmox VE API call, " +
-								"but causes a PCI hardware mapping to be incomplete when not set",
+							Description: "The IOMMU group of the map. While not mandatory for the Proxmox VE API call, " +
+								"omitting this attribute will result in an incomplete PCI hardware mapping.",
 							Optional: true,
 						},
 						schemaAttrNameMapNode: schema.StringAttribute{
@@ -246,8 +246,8 @@ func (r *pciResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 							},
 						},
 						schemaAttrNameMapSubsystemID: schema.StringAttribute{
-							Description: "The subsystem ID group of the map. Not mandatory for the Proxmox VE API call, " +
-								"but causes a PCI hardware mapping to be incomplete when not set",
+							Description: "The subsystem ID group of the map. While not mandatory for the Proxmox VE API call, " +
+								"omitting this attribute will result in an incomplete PCI hardware mapping.",
 							Optional: true,
 							Validators: []validator.String{
 								validators.HardwareMappingDeviceIDValidator(),

@@ -136,9 +136,9 @@ func (d *pciDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, re
 						},
 						schemaAttrNameMapSubsystemID: schema.StringAttribute{
 							Computed: true,
-							Description: "The subsystem ID attribute of the map." +
-								"Not mandatory for the Proxmox VE API call, but causes a PCI hardware mapping to be incomplete when " +
-								"not set.",
+							Description: "The subsystem ID attribute of the map. " +
+								"While not mandatory for the Proxmox VE API call, omitting this attribute will result in an " +
+								"incomplete PCI hardware mapping.",
 							Validators: []validator.String{
 								validators.HardwareMappingDeviceIDValidator(),
 							},

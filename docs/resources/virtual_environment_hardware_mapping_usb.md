@@ -59,7 +59,7 @@ Required:
 Optional:
 
 - `comment` (String) The comment of the mapped USB device.
-- `path` (String) The path of the map. For hardware mappings of type USB the path is optional and indicates that the device is mapped through the device ID instead of ports.
+- `path` (String) The path of the map. For USB hardware mappings, this is optional and indicates that the device is mapped via its device ID rather than ports.
 
 ## Import
 
