@@ -24,6 +24,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
@@ -207,7 +208,8 @@ func (r *pciResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	commentMap.Validators = append(commentMap.Validators, validators.HardwareMappingMapCommentValidator())
 
 	resp.Schema = schema.Schema{
-		Description: "Manages a PCI hardware mapping in a Proxmox VE cluster.",
+		Description:        "Manages a PCI hardware mapping in a Proxmox VE cluster.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_hardware_mapping_pci"),
 		Attributes: map[string]schema.Attribute{
 			schemaAttrNameComment: comment,
 			schemaAttrNameMap: schema.SetNestedAttribute{
@@ -223,8 +225,8 @@ func (r *pciResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 							},
 						},
 						schemaAttrNameMapIOMMUGroup: schema.Int64Attribute{
-							Description: "The IOMMU group of the map. Not mandatory for the Proxmox VE API call, " +
-								"but causes a PCI hardware mapping to be incomplete when not set",
+							Description: "The IOMMU group of the map. While not mandatory for the Proxmox VE API call, " +
+								"omitting this attribute will result in an incomplete PCI hardware mapping.",
 							Optional: true,
 						},
 						schemaAttrNameMapNode: schema.StringAttribute{
@@ -244,8 +246,8 @@ func (r *pciResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 							},
 						},
 						schemaAttrNameMapSubsystemID: schema.StringAttribute{
-							Description: "The subsystem ID group of the map. Not mandatory for the Proxmox VE API call, " +
-								"but causes a PCI hardware mapping to be incomplete when not set",
+							Description: "The subsystem ID group of the map. While not mandatory for the Proxmox VE API call, " +
+								"omitting this attribute will result in an incomplete PCI hardware mapping.",
 							Optional: true,
 							Validators: []validator.String{
 								validators.HardwareMappingDeviceIDValidator(),
@@ -309,4 +311,42 @@ func (r *pciResource) Update(ctx context.Context, req resource.UpdateRequest, re
 // This is a helper function to simplify the provider implementation.
 func NewPCIResource() resource.Resource {
 	return &pciResource{}
+}
+
+// Ensure the short-name resource implements the required interfaces.
+var (
+	_ resource.Resource                = &pciResourceShort{}
+	_ resource.ResourceWithConfigure   = &pciResourceShort{}
+	_ resource.ResourceWithImportState = &pciResourceShort{}
+	_ resource.ResourceWithMoveState   = &pciResourceShort{}
+)
+
+// pciResourceShort is the short-name alias for pciResource (proxmox_hardware_mapping_pci).
+type pciResourceShort struct{ pciResource }
+
+// Metadata defines the short name of the PCI hardware mapping resource.
+func (r *pciResourceShort) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "proxmox_hardware_mapping_pci"
+}
+
+// Schema returns the same schema as the original resource without the deprecation message.
+func (r *pciResourceShort) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	r.pciResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+// MoveState returns state movers that allow migrating from the old resource type name.
+func (r *pciResourceShort) MoveState(ctx context.Context) []resource.StateMover {
+	var s resource.SchemaResponse
+
+	r.Schema(ctx, resource.SchemaRequest{}, &s)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState("proxmox_virtual_environment_hardware_mapping_pci", &s.Schema),
+	}
+}
+
+// NewPCIResourceShort returns a new short-name resource for managing a PCI hardware mapping.
+func NewPCIResourceShort() resource.Resource {
+	return &pciResourceShort{}
 }

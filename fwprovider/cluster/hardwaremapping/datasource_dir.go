@@ -17,6 +17,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
@@ -97,7 +98,8 @@ func (d *dirDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, re
 	comment.Description = "The comment of this directory mapping."
 
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a directory mapping from a Proxmox VE cluster.",
+		Description:        "Retrieves a directory mapping from a Proxmox VE cluster.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_hardware_mapping_dir"),
 		Attributes: map[string]schema.Attribute{
 			schemaAttrNameComment: comment,
 			schemaAttrNameMap: schema.SetNestedAttribute{
@@ -137,4 +139,33 @@ func (d *dirDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, re
 // This is a helper function to simplify the provider implementation.
 func NewDirDataSource() datasource.DataSource {
 	return &dirDataSource{}
+}
+
+// Ensure the short-name data source implements the required interfaces.
+var (
+	_ datasource.DataSource              = &dirDataSourceShort{}
+	_ datasource.DataSourceWithConfigure = &dirDataSourceShort{}
+)
+
+// dirDataSourceShort is the short-name alias for dirDataSource (proxmox_hardware_mapping_dir).
+type dirDataSourceShort struct{ dirDataSource }
+
+// Metadata returns the short data source type name.
+func (d *dirDataSourceShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_hardware_mapping_dir"
+}
+
+// Schema returns the same schema as the original data source without the deprecation message.
+func (d *dirDataSourceShort) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	d.dirDataSource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+// NewDirDataSourceShort returns a new short-name data source for a directory mapping.
+func NewDirDataSourceShort() datasource.DataSource {
+	return &dirDataSourceShort{}
 }
