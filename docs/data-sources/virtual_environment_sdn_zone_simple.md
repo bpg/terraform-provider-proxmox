@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_sdn_zone_simple
 
+~> **Deprecated:** Use [`proxmox_sdn_zone_simple`](sdn_zone_simple.md) instead. This data source will be removed in v1.0.
+
 Retrieves information about a Simple Zone in Proxmox SDN. It will create an isolated VNet bridge. This bridge is not linked to a physical interface, and VM traffic is only local on each the node. It can be used in NAT or routed setups.
 
 ## Example Usage

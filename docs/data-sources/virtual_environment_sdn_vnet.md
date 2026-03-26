@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_sdn_vnet
 
+~> **Deprecated:** Use [`proxmox_sdn_vnet`](sdn_vnet.md) instead. This data source will be removed in v1.0.
+
 Retrieves information about an existing SDN VNet.
 
 ## Example Usage

@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_sdn_subnet
 
+~> **Deprecated:** Use [`proxmox_sdn_subnet`](sdn_subnet.md) instead. This data source will be removed in v1.0.
+
 Retrieve details about a specific SDN Subnet in Proxmox VE.
 
 

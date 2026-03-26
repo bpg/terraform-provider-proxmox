@@ -1,0 +1,22 @@
+---
+layout: page
+title: {{.Name}}
+parent: Data Sources
+subcategory: Virtual Environment
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}}: {{.Name}}
+
+~> **Deprecated:** Use [`proxmox_sdn_fabric_node_ospf`](sdn_fabric_node_ospf.md) instead. This data source will be removed in v1.0.
+
+{{ .Description | trimspace }}
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ codefile "terraform" .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}

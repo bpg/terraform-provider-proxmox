@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/applier"
 )
 
@@ -49,8 +50,9 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Applies pending Proxmox SDN configuration (cluster-wide).",
-		MarkdownDescription: "**EXPERIMENTAL** Triggers Proxmox's SDN **Apply** (equivalent to `PUT /cluster/sdn`)." +
+		DeprecationMessage: migration.DeprecationMessage("proxmox_sdn_applier"),
+		Description:        "Applies pending Proxmox SDN configuration (cluster-wide).",
+		MarkdownDescription: "**EXPERIMENTAL** Triggers Proxmox's SDN **Apply** (equivalent to `PUT /cluster/sdn`). " +
 			"Intended to be used with `replace_triggered_by` so it runs after SDN objects change.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

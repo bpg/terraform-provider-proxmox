@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 )
 
@@ -36,7 +37,8 @@ func NewVLANDataSource() datasource.DataSource {
 
 func (d *VLANDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves information about a VLAN Zone in Proxmox SDN.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_sdn_zone_vlan"),
+		Description:        "Retrieves information about a VLAN Zone in Proxmox SDN.",
 		MarkdownDescription: "Retrieves information about a VLAN Zone in Proxmox SDN. It uses an existing local Linux or OVS bridge to connect to the " +
 			"node's physical interface. It uses VLAN tagging defined in the VNet to isolate the network segments. " +
 			"This allows connectivity of VMs between different nodes.",

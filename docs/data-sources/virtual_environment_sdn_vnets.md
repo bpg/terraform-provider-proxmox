@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_sdn_vnets
 
+~> **Deprecated:** Use [`proxmox_sdn_vnets`](sdn_vnets.md) instead. This data source will be removed in v1.0.
+
 Retrieves information about all SDN VNets in Proxmox. This data source lists all virtual networks configured in the Software-Defined Networking setup.
 
 ## Example Usage

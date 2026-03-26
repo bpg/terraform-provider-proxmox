@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_sdn_vnet
 
+~> **Deprecated:** Use [`proxmox_sdn_vnet`](sdn_vnet.md) instead. This resource will be removed in v1.0.
+
 Manages Proxmox VE SDN VNet.
 
 ## Example Usage

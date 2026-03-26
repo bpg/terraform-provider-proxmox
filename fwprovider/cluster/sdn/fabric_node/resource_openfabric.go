@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
@@ -100,6 +101,7 @@ func (r *OpenFabricResource) Update(ctx context.Context, req resource.UpdateRequ
 
 func (r *OpenFabricResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		DeprecationMessage:  migration.DeprecationMessage("proxmox_sdn_fabric_node_openfabric"),
 		Description:         "OpenFabric Fabric Node in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
 		MarkdownDescription: "OpenFabric Fabric Node in Proxmox SDN. Fabrics in Proxmox VE SDN provide automated routing between nodes in a cluster.",
 		Attributes: genericAttributesWith(map[string]schema.Attribute{

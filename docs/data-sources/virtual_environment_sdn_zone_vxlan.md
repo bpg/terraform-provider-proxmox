@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_sdn_zone_vxlan
 
+~> **Deprecated:** Use [`proxmox_sdn_zone_vxlan`](sdn_zone_vxlan.md) instead. This data source will be removed in v1.0.
+
 Retrieves information about a VXLAN Zone in Proxmox SDN. It establishes a tunnel (overlay) on top of an existing network (underlay). This encapsulates layer 2 Ethernet frames within layer 4 UDP datagrams using the default destination port 4789. You have to configure the underlay network yourself to enable UDP connectivity between all peers. Because VXLAN encapsulation uses 50 bytes, the MTU needs to be 50 bytes lower than the outgoing physical interface.
 
 ## Example Usage

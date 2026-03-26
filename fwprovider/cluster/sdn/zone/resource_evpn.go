@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -155,7 +156,8 @@ func NewEVPNResource() resource.Resource {
 
 func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "EVPN Zone in Proxmox SDN.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_sdn_zone_evpn"),
+		Description:        "EVPN Zone in Proxmox SDN.",
 		MarkdownDescription: "EVPN Zone in Proxmox SDN. The EVPN zone creates a routable Layer 3 network, capable of " +
 			"spanning across multiple clusters.",
 		Attributes: genericAttributesWith(map[string]schema.Attribute{

@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
@@ -57,7 +58,8 @@ func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureReques
 
 func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieve details about a specific SDN Subnet in Proxmox VE.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_sdn_subnet"),
+		Description:        "Retrieve details about a specific SDN Subnet in Proxmox VE.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The full ID in the format 'vnet-id/subnet-id'.",

@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
@@ -94,7 +95,8 @@ func (d *zonesDataSource) Metadata(_ context.Context, req datasource.MetadataReq
 // Schema defines the schema for the data source.
 func (d *zonesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves information about all SDN Zones in Proxmox.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_sdn_zones"),
+		Description:        "Retrieves information about all SDN Zones in Proxmox.",
 		MarkdownDescription: "Retrieves information about all SDN Zones in Proxmox. " +
 			"This data source can optionally filter zones by type.",
 		Attributes: map[string]schema.Attribute{
