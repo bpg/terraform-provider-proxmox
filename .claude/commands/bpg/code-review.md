@@ -89,6 +89,28 @@ Classify the PR:
 - **Medium:** 50–300 lines changed
 - **Large:** >300 lines changed
 
+## Step 4b: Review Existing PR Comments
+
+Fetch all existing comments on the PR — review comments, issue comments, and review bodies:
+
+```bash
+gh api repos/{owner}/{repo}/pulls/{number}/comments   # inline review comments
+gh api repos/{owner}/{repo}/issues/{number}/comments   # issue-level comments
+gh api repos/{owner}/{repo}/pulls/{number}/reviews      # review bodies
+```
+
+For each comment:
+
+1. **Skip boilerplate** — ignore bot summary comments (e.g., Gemini "Summary of Changes" headers, dependabot changelogs). Only consider comments that contain actionable code review feedback or suggestions.
+2. **Verify against current HEAD** — comments may reference an older commit. Check whether the issue they describe still exists in the current PR head. Read the referenced file/lines in the worktree to confirm.
+3. **Evaluate validity** — determine if each actionable comment is:
+   - **Valid and unaddressed** — the issue still exists in the current code
+   - **Already addressed** — the author fixed it in a subsequent push
+   - **False positive** — the comment was incorrect (explain why)
+4. **Collect valid unaddressed comments** — these become additional review findings with category "Existing PR Comment" and are included alongside your own findings in Step 9. Score them using the same rubric as Step 6.
+
+If the PR has no comments or no actionable feedback, note this and move on.
+
 ## Step 5: Parallel Code Review
 
 Launch review agents based on PR size. **Each agent's prompt must include the worktree path (`$WORKTREE`) and the list of guideline files from Step 3.** Agents should return a list of issues with the reason each was flagged (e.g., guidelines violation, bug, historical context).
@@ -228,7 +250,7 @@ Found N issues (M total identified, K filtered as low confidence):
 
 1. (Score: 85) <brief description>
    File: `fwprovider/resource_vm.go:10-15`
-   Category: <one of: Bug, Guidelines, Historical, Prior PR, Code comments>
+   Category: <one of: Bug, Guidelines, Historical, Prior PR, Code comments, Existing PR Comment>
    Details: <explanation and suggestion>
 
 2. ...
@@ -345,7 +367,7 @@ Write a session state file to `.dev/review_PR_NUMBER_SESSION_STATE.md`.
 
 - **Score:** 85
 - **File:** `path/to/file.go:10-15`
-- **Category:** Bug / Guidelines / Historical context
+- **Category:** Bug / Guidelines / Historical context / Existing PR Comment
 - **Description:** Detailed description
 - **Suggestion:** What should be changed
 
