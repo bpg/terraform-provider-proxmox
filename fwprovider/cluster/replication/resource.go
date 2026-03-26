@@ -276,23 +276,23 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 // Short-name alias for the replication resource (ADR-007).
 
 var (
-	_ resource.Resource                = &ResourceShort{}
-	_ resource.ResourceWithConfigure   = &ResourceShort{}
-	_ resource.ResourceWithImportState = &ResourceShort{}
-	_ resource.ResourceWithMoveState   = &ResourceShort{}
+	_ resource.Resource                = &resourceShort{}
+	_ resource.ResourceWithConfigure   = &resourceShort{}
+	_ resource.ResourceWithImportState = &resourceShort{}
+	_ resource.ResourceWithMoveState   = &resourceShort{}
 )
 
-// ResourceShort is the short-name alias for the replication resource.
-type ResourceShort struct {
+// resourceShort is the short-name alias for the replication resource.
+type resourceShort struct {
 	Resource
 }
 
 // NewShortResource creates a short-name alias for the replication resource.
 func NewShortResource() resource.Resource {
-	return &ResourceShort{}
+	return &resourceShort{}
 }
 
-func (r *ResourceShort) Metadata(
+func (r *resourceShort) Metadata(
 	_ context.Context,
 	_ resource.MetadataRequest,
 	resp *resource.MetadataResponse,
@@ -300,7 +300,7 @@ func (r *ResourceShort) Metadata(
 	resp.TypeName = "proxmox_replication"
 }
 
-func (r *ResourceShort) Schema(
+func (r *resourceShort) Schema(
 	ctx context.Context,
 	req resource.SchemaRequest,
 	resp *resource.SchemaResponse,
@@ -309,7 +309,7 @@ func (r *ResourceShort) Schema(
 	resp.Schema.DeprecationMessage = ""
 }
 
-func (r *ResourceShort) MoveState(ctx context.Context) []resource.StateMover {
+func (r *resourceShort) MoveState(ctx context.Context) []resource.StateMover {
 	schemaResp := &resource.SchemaResponse{}
 	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
 

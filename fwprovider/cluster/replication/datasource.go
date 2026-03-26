@@ -150,21 +150,21 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 // Short-name alias for the replication data source (ADR-007).
 
 var (
-	_ datasource.DataSource              = &DataSourceShort{}
-	_ datasource.DataSourceWithConfigure = &DataSourceShort{}
+	_ datasource.DataSource              = &dataSourceShort{}
+	_ datasource.DataSourceWithConfigure = &dataSourceShort{}
 )
 
-// DataSourceShort is the short-name alias for the replication data source.
-type DataSourceShort struct {
+// dataSourceShort is the short-name alias for the replication data source.
+type dataSourceShort struct {
 	DataSource
 }
 
 // NewShortDataSource creates a short-name alias for the replication data source.
 func NewShortDataSource() datasource.DataSource {
-	return &DataSourceShort{}
+	return &dataSourceShort{}
 }
 
-func (d *DataSourceShort) Metadata(
+func (d *dataSourceShort) Metadata(
 	_ context.Context,
 	_ datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
@@ -172,7 +172,7 @@ func (d *DataSourceShort) Metadata(
 	resp.TypeName = "proxmox_replication"
 }
 
-func (d *DataSourceShort) Schema(
+func (d *dataSourceShort) Schema(
 	ctx context.Context,
 	req datasource.SchemaRequest,
 	resp *datasource.SchemaResponse,
