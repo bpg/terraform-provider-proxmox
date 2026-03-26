@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_sdn_zone_evpn
 
+~> **Deprecated:** Use [`proxmox_sdn_zone_evpn`](sdn_zone_evpn.md) instead. This data source will be removed in v1.0.
+
 Retrieves information about an EVPN Zone in Proxmox SDN. The EVPN zone creates a routable Layer 3 network, capable of spanning across multiple clusters.
 
 ## Example Usage

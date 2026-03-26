@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_sdn_zones
 
+~> **Deprecated:** Use [`proxmox_sdn_zones`](sdn_zones.md) instead. This data source will be removed in v1.0.
+
 Retrieves information about all SDN Zones in Proxmox. This data source can optionally filter zones by type.
 
 ## Example Usage

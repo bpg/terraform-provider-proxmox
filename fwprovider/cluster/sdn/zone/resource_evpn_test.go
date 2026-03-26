@@ -30,7 +30,7 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 			steps: []resource.TestStep{
 				{
 					Config: te.RenderConfig(`
-						resource "proxmox_virtual_environment_sdn_zone_evpn" "evpn_update_test" {
+						resource "proxmox_sdn_zone_evpn" "evpn_update_test" {
 						  id                         = "evpntest"
 						  controller                 = "evpnctl"
 						  vrf_vxlan                  = 99999
@@ -41,26 +41,26 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 						  nodes                      = ["{{.NodeName}}"]
 						  exit_nodes                 = ["{{.NodeName}}"]
 						  depends_on = [
-						    proxmox_virtual_environment_sdn_applier.finalizer
+						    proxmox_sdn_applier.finalizer
 						  ]
 						}
 
-						resource "proxmox_virtual_environment_sdn_applier" "evpn_applier" {
+						resource "proxmox_sdn_applier" "evpn_applier" {
 						  lifecycle {
 							  replace_triggered_by = [
-                  proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test,
+                  proxmox_sdn_zone_evpn.evpn_update_test,
 					      ]
 						  }
 
 						  depends_on = [
-						    proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test
+						    proxmox_sdn_zone_evpn.evpn_update_test
 						  ]
 						}
 
-						resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+						resource "proxmox_sdn_applier" "finalizer" {}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test", map[string]string{
+						test.ResourceAttributes("proxmox_sdn_zone_evpn.evpn_update_test", map[string]string{
 							"id":                         "evpntest",
 							"controller":                 "evpnctl",
 							"vrf_vxlan":                  "99999",
@@ -77,33 +77,33 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 				},
 				{
 					Config: te.RenderConfig(`
-						resource "proxmox_virtual_environment_sdn_zone_evpn" "evpn_update_test" {
+						resource "proxmox_sdn_zone_evpn" "evpn_update_test" {
 						  id         = "evpntest"
 						  controller = "evpnctl"
 						  vrf_vxlan  = 99998
 						  mtu        = 1450
 						  nodes      = []
 						  depends_on = [
-						    proxmox_virtual_environment_sdn_applier.finalizer
+						    proxmox_sdn_applier.finalizer
 						  ]
 						}
 
-						resource "proxmox_virtual_environment_sdn_applier" "evpn_applier" {
+						resource "proxmox_sdn_applier" "evpn_applier" {
 						  lifecycle {
 							  replace_triggered_by = [
-                  proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test,
+                  proxmox_sdn_zone_evpn.evpn_update_test,
 					      ]
 						  }
 
 						  depends_on = [
-						    proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test
+						    proxmox_sdn_zone_evpn.evpn_update_test
 						  ]
 						}
 
-						resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+						resource "proxmox_sdn_applier" "finalizer" {}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test", map[string]string{
+						test.ResourceAttributes("proxmox_sdn_zone_evpn.evpn_update_test", map[string]string{
 							"id":                         "evpntest",
 							"controller":                 "evpnctl",
 							"vrf_vxlan":                  "99998",
@@ -120,7 +120,7 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 				},
 				{
 					Config: te.RenderConfig(`
-						resource "proxmox_virtual_environment_sdn_zone_evpn" "evpn_update_test" {
+						resource "proxmox_sdn_zone_evpn" "evpn_update_test" {
 						  id                         = "evpntest"
 						  controller                 = "evpnctl"
 						  vrf_vxlan                  = 99999
@@ -131,26 +131,26 @@ func TestAccResourceSDNZoneEVPN(t *testing.T) {
 						  nodes                      = ["{{.NodeName}}"]
 						  exit_nodes                 = ["{{.NodeName}}"]
 						  depends_on = [
-						    proxmox_virtual_environment_sdn_applier.finalizer
+						    proxmox_sdn_applier.finalizer
 						  ]
 						}
 
-						resource "proxmox_virtual_environment_sdn_applier" "evpn_applier" {
+						resource "proxmox_sdn_applier" "evpn_applier" {
 						  lifecycle {
 							  replace_triggered_by = [
-                  proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test,
+                  proxmox_sdn_zone_evpn.evpn_update_test,
 					      ]
 						  }
 
 						  depends_on = [
-						    proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test
+						    proxmox_sdn_zone_evpn.evpn_update_test
 						  ]
 						}
 
-						resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+						resource "proxmox_sdn_applier" "finalizer" {}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_evpn.evpn_update_test", map[string]string{
+						test.ResourceAttributes("proxmox_sdn_zone_evpn.evpn_update_test", map[string]string{
 							"id":                         "evpntest",
 							"controller":                 "evpnctl",
 							"vrf_vxlan":                  "99999",

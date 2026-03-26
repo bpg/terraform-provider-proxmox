@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_sdn_subnet
 
+~> **Deprecated:** Use [`proxmox_sdn_subnet`](sdn_subnet.md) instead. This resource will be removed in v1.0.
+
 Manages SDN Subnets in Proxmox VE.
 
 ## Example Usage

@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/vnets"
 )
@@ -73,7 +74,8 @@ func (d *vnetsDataSource) Metadata(_ context.Context, req datasource.MetadataReq
 // Schema defines the schema for the data source.
 func (d *vnetsDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves information about all SDN VNets in Proxmox.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_sdn_vnets"),
+		Description:        "Retrieves information about all SDN VNets in Proxmox.",
 		MarkdownDescription: "Retrieves information about all SDN VNets in Proxmox. " +
 			"This data source lists all virtual networks configured in the Software-Defined Networking setup.",
 		Attributes: map[string]schema.Attribute{

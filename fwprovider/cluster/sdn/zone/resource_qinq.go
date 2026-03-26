@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 )
 
@@ -70,7 +71,8 @@ func NewQinQResource() resource.Resource {
 
 func (r *QinQResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "QinQ Zone in Proxmox SDN.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_sdn_zone_qinq"),
+		Description:        "QinQ Zone in Proxmox SDN.",
 		MarkdownDescription: "QinQ Zone in Proxmox SDN. QinQ also known as VLAN stacking, that uses multiple layers of " +
 			"VLAN tags for isolation. The QinQ zone defines the outer VLAN tag (the Service VLAN) whereas the inner " +
 			"VLAN tag is defined by the VNet. Your physical network switches must support stacked VLANs for this " +

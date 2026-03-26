@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 )
@@ -62,7 +63,8 @@ func NewVXLANResource() resource.Resource {
 
 func (r *VXLANResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "VXLAN Zone in Proxmox SDN.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_sdn_zone_vxlan"),
+		Description:        "VXLAN Zone in Proxmox SDN.",
 		MarkdownDescription: "VXLAN Zone in Proxmox SDN. It establishes a tunnel (overlay) on top of an existing network " +
 			"(underlay). This encapsulates layer 2 Ethernet frames within layer 4 UDP datagrams using the default " +
 			"destination port 4789. You have to configure the underlay network yourself to enable UDP connectivity " +

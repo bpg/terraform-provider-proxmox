@@ -27,26 +27,26 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 	}{
 		{"create and update zones", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple" {
+				resource "proxmox_sdn_zone_simple" "zone_simple" {
 				  id  = "zoneS"
 				  nodes = ["{{.NodeName}}"]
 				  ipam  = "pve"
 				  mtu   = 1496
 				  depends_on = [
-					proxmox_virtual_environment_sdn_applier.finalizer
+					proxmox_sdn_applier.finalizer
 				  ]
 				}
 
-				resource "proxmox_virtual_environment_sdn_applier" "zone_simple_applier" {
+				resource "proxmox_sdn_applier" "zone_simple_applier" {
 				  depends_on = [
-					proxmox_virtual_environment_sdn_zone_simple.zone_simple
+					proxmox_sdn_zone_simple.zone_simple
 				  ]
 				}
 
-				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+				resource "proxmox_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_simple.zone_simple", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_simple.zone_simple", map[string]string{
 					"id":      "zoneS",
 					"mtu":     "1496",
 					"ipam":    "pve",
@@ -56,90 +56,90 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 			),
 		}, {
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple" {
+				resource "proxmox_sdn_zone_simple" "zone_simple" {
 				  id  = "zoneS"
 				  nodes = ["{{.NodeName}}"]
 				  mtu   = 1495
 				  depends_on = [
-					proxmox_virtual_environment_sdn_applier.finalizer
+					proxmox_sdn_applier.finalizer
 				  ]
 				}
 
-				resource "proxmox_virtual_environment_sdn_applier" "zone_simple_applier" {
+				resource "proxmox_sdn_applier" "zone_simple_applier" {
 				  depends_on = [
-					proxmox_virtual_environment_sdn_zone_simple.zone_simple
+					proxmox_sdn_zone_simple.zone_simple
 				  ]
 				}
 
-				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+				resource "proxmox_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_simple.zone_simple", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_simple.zone_simple", map[string]string{
 					"id":      "zoneS",
 					"mtu":     "1495",
 					"pending": "true",
 					"state":   "changed",
 				}),
-				test.NoResourceAttributesSet("proxmox_virtual_environment_sdn_zone_simple.zone_simple", []string{
+				test.NoResourceAttributesSet("proxmox_sdn_zone_simple.zone_simple", []string{
 					"ipam",
 				}),
 			),
-			ResourceName: "proxmox_virtual_environment_sdn_zone_simple.zone_simple",
+			ResourceName: "proxmox_sdn_zone_simple.zone_simple",
 			// ImportStateId:     "zoneS",
 			// ImportState:       true,
 			// ImportStateVerify: true,
 		}}},
 		{"create zone without mtu", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_no_mtu" {
+				resource "proxmox_sdn_zone_simple" "zone_no_mtu" {
 				  id  = "zoneNM"
 				  nodes = ["{{.NodeName}}"]
 				  depends_on = [
-					proxmox_virtual_environment_sdn_applier.finalizer
+					proxmox_sdn_applier.finalizer
 				  ]
 				}
 
-				resource "proxmox_virtual_environment_sdn_applier" "zone_no_mtu_applier" {
+				resource "proxmox_sdn_applier" "zone_no_mtu_applier" {
 				  depends_on = [
-					proxmox_virtual_environment_sdn_zone_simple.zone_no_mtu
+					proxmox_sdn_zone_simple.zone_no_mtu
 				  ]
 				}
 
-				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+				resource "proxmox_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_simple.zone_no_mtu", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_simple.zone_no_mtu", map[string]string{
 					"id":      "zoneNM",
 					"pending": "true",
 					"state":   "new",
 				}),
-				test.NoResourceAttributesSet("proxmox_virtual_environment_sdn_zone_simple.zone_no_mtu", []string{
+				test.NoResourceAttributesSet("proxmox_sdn_zone_simple.zone_no_mtu", []string{
 					"mtu",
 				}),
 			),
 		}}},
 		{"create zones with empty nodes", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple2" {
+				resource "proxmox_sdn_zone_simple" "zone_simple2" {
 				  id  = "zoneSE"
 				  nodes = []
 				  mtu   = 1496
 				  depends_on = [
-					proxmox_virtual_environment_sdn_applier.finalizer
+					proxmox_sdn_applier.finalizer
 				  ]
 				}
 
-				resource "proxmox_virtual_environment_sdn_applier" "zone_simple2_applier" {
+				resource "proxmox_sdn_applier" "zone_simple2_applier" {
 				  depends_on = [
-					proxmox_virtual_environment_sdn_zone_simple.zone_simple2
+					proxmox_sdn_zone_simple.zone_simple2
 				  ]
 				}
 				  
-				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+				resource "proxmox_sdn_applier" "finalizer" {}
 
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_simple.zone_simple2", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_simple.zone_simple2", map[string]string{
 					"id":      "zoneSE",
 					"mtu":     "1496",
 					"pending": "true",
@@ -171,7 +171,7 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 	}{
 		{"create and update VLAN zone", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan" {
+				resource "proxmox_sdn_zone_vlan" "zone_vlan" {
 				  id    = "zoneV"
 				  nodes = ["{{.NodeName}}"]
 				  mtu   = 1496
@@ -179,7 +179,7 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_vlan.zone_vlan", map[string]string{
 					"id":      "zoneV",
 					"mtu":     "1496",
 					"bridge":  "vmbr0",
@@ -189,7 +189,7 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 			),
 		}, {
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan" {
+				resource "proxmox_sdn_zone_vlan" "zone_vlan" {
 				  id    = "zoneV"
 				  nodes = ["{{.NodeName}}"]
 				  mtu   = 1495
@@ -197,7 +197,7 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_vlan.zone_vlan", map[string]string{
 					"id":      "zoneV",
 					"mtu":     "1495",
 					"bridge":  "vmbr0",
@@ -205,7 +205,7 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 					"state":   "new",
 				}),
 			),
-			ResourceName:      "proxmox_virtual_environment_sdn_zone_vlan.zone_vlan",
+			ResourceName:      "proxmox_sdn_zone_vlan.zone_vlan",
 			ImportStateId:     "zoneV",
 			ImportState:       true,
 			ImportStateVerify: true,
@@ -235,14 +235,14 @@ func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
 			name: "create VLAN zone without nodes",
 			steps: []resource.TestStep{{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan_no_nodes" {
+					resource "proxmox_sdn_zone_vlan" "zone_vlan_no_nodes" {
 					  id     = "zoneVNo"
 					  bridge = "vmbr0"
 					  mtu    = 1496
 					}
 				`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan_no_nodes", map[string]string{
+					test.ResourceAttributes("proxmox_sdn_zone_vlan.zone_vlan_no_nodes", map[string]string{
 						"id":      "zoneVNo",
 						"bridge":  "vmbr0",
 						"mtu":     "1496",
@@ -256,7 +256,7 @@ func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
 			name: "create VLAN zone with empty nodes list",
 			steps: []resource.TestStep{{
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan_empty_nodes" {
+					resource "proxmox_sdn_zone_vlan" "zone_vlan_empty_nodes" {
 					  id     = "zoneVEm"
 					  nodes  = []
 					  bridge = "vmbr0"
@@ -264,7 +264,7 @@ func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
 					}
 				`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan_empty_nodes", map[string]string{
+					test.ResourceAttributes("proxmox_sdn_zone_vlan.zone_vlan_empty_nodes", map[string]string{
 						"id":      "zoneVEm",
 						"bridge":  "vmbr0",
 						"mtu":     "1496",
@@ -297,7 +297,7 @@ func TestAccResourceSDNZoneQinQ(t *testing.T) {
 	}{
 		{"create and update QinQ zone", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_qinq" "zone_qinq" {
+				resource "proxmox_sdn_zone_qinq" "zone_qinq" {
 				  id    = "zoneQ"
 				  nodes = ["{{.NodeName}}"]
 				  mtu   = 1496
@@ -307,7 +307,7 @@ func TestAccResourceSDNZoneQinQ(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_qinq.zone_qinq", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_qinq.zone_qinq", map[string]string{
 					"id":                    "zoneQ",
 					"mtu":                   "1496",
 					"bridge":                "vmbr0",
@@ -319,7 +319,7 @@ func TestAccResourceSDNZoneQinQ(t *testing.T) {
 			),
 		}, {
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_qinq" "zone_qinq" {
+				resource "proxmox_sdn_zone_qinq" "zone_qinq" {
 				  id    = "zoneQ"
 				  nodes = ["{{.NodeName}}"]
 				  mtu   = 1495
@@ -329,7 +329,7 @@ func TestAccResourceSDNZoneQinQ(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_qinq.zone_qinq", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_qinq.zone_qinq", map[string]string{
 					"id":                    "zoneQ",
 					"mtu":                   "1495",
 					"bridge":                "vmbr0",
@@ -339,7 +339,7 @@ func TestAccResourceSDNZoneQinQ(t *testing.T) {
 					"state":                 "new",
 				}),
 			),
-			ResourceName:      "proxmox_virtual_environment_sdn_zone_qinq.zone_qinq",
+			ResourceName:      "proxmox_sdn_zone_qinq.zone_qinq",
 			ImportStateId:     "zoneQ",
 			ImportState:       true,
 			ImportStateVerify: true,
@@ -367,7 +367,7 @@ func TestAccResourceSDNZoneVXLAN(t *testing.T) {
 	}{
 		{"create and update VXLAN zone", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_vxlan" "zone_vxlan" {
+				resource "proxmox_sdn_zone_vxlan" "zone_vxlan" {
 				  id    = "zoneX"
 				  nodes = ["{{.NodeName}}"]
 				  mtu   = 1450
@@ -375,7 +375,7 @@ func TestAccResourceSDNZoneVXLAN(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vxlan.zone_vxlan", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_vxlan.zone_vxlan", map[string]string{
 					"id":      "zoneX",
 					"mtu":     "1450",
 					"pending": "true",
@@ -384,7 +384,7 @@ func TestAccResourceSDNZoneVXLAN(t *testing.T) {
 			),
 		}, {
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_vxlan" "zone_vxlan" {
+				resource "proxmox_sdn_zone_vxlan" "zone_vxlan" {
 				  id    = "zoneX"
 				  nodes = ["{{.NodeName}}"]
 				  mtu   = 1440
@@ -392,14 +392,14 @@ func TestAccResourceSDNZoneVXLAN(t *testing.T) {
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vxlan.zone_vxlan", map[string]string{
+				test.ResourceAttributes("proxmox_sdn_zone_vxlan.zone_vxlan", map[string]string{
 					"id":      "zoneX",
 					"mtu":     "1440",
 					"pending": "true",
 					"state":   "new",
 				}),
 			),
-			ResourceName:      "proxmox_virtual_environment_sdn_zone_vxlan.zone_vxlan",
+			ResourceName:      "proxmox_sdn_zone_vxlan.zone_vxlan",
 			ImportStateId:     "zoneX",
 			ImportState:       true,
 			ImportStateVerify: true,

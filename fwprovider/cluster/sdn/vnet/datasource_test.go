@@ -25,24 +25,24 @@ func TestAccDataSourceSDNVNet(t *testing.T) {
 	}{
 		{"read vnet data source with all attributes", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_sdn_zone_simple" "test_zone" {
+			resource "proxmox_sdn_zone_simple" "test_zone" {
 				id    = "testdz"
 				nodes = ["{{.NodeName}}"]
 			}
 
-			resource "proxmox_virtual_environment_sdn_vnet" "test_vnet" {
+			resource "proxmox_sdn_vnet" "test_vnet" {
 				id            = "testdv"
-				zone          = proxmox_virtual_environment_sdn_zone_simple.test_zone.id
+				zone          = proxmox_sdn_zone_simple.test_zone.id
 				alias         = "Test Data VNet"
 				isolate_ports = true
 				vlan_aware    = false
 			}
 
-			data "proxmox_virtual_environment_sdn_vnet" "test_vnet_data" {
-				id = proxmox_virtual_environment_sdn_vnet.test_vnet.id
+			data "proxmox_sdn_vnet" "test_vnet_data" {
+				id = proxmox_sdn_vnet.test_vnet.id
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_vnet.test_vnet_data", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_vnet.test_vnet_data", map[string]string{
 					"id":            "testdv",
 					"zone":          "testdz",
 					"alias":         "Test Data VNet",
@@ -53,21 +53,21 @@ func TestAccDataSourceSDNVNet(t *testing.T) {
 		}}},
 		{"read vnet data source with minimal attributes", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_sdn_zone_simple" "test_zone" {
+			resource "proxmox_sdn_zone_simple" "test_zone" {
 				id    = "testdz2"
 				nodes = ["{{.NodeName}}"]
 			}
 
-			resource "proxmox_virtual_environment_sdn_vnet" "test_vnet" {
+			resource "proxmox_sdn_vnet" "test_vnet" {
 				id   = "testdv2"
-				zone = proxmox_virtual_environment_sdn_zone_simple.test_zone.id
+				zone = proxmox_sdn_zone_simple.test_zone.id
 			}
 
-			data "proxmox_virtual_environment_sdn_vnet" "test_vnet_data" {
-				id = proxmox_virtual_environment_sdn_vnet.test_vnet.id
+			data "proxmox_sdn_vnet" "test_vnet_data" {
+				id = proxmox_sdn_vnet.test_vnet.id
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_vnet.test_vnet_data", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_vnet.test_vnet_data", map[string]string{
 					"id":   "testdv2",
 					"zone": "testdz2",
 				}),
@@ -75,39 +75,39 @@ func TestAccDataSourceSDNVNet(t *testing.T) {
 		}}},
 		{"read vnet data source with VLAN zone and tag", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_sdn_zone_vlan" "test_zone3" {
+			resource "proxmox_sdn_zone_vlan" "test_zone3" {
 				id     = "testdz3"
 				nodes  = ["{{.NodeName}}"]
 				bridge = "vmbr0"
 			}
 
-			resource "proxmox_virtual_environment_sdn_vnet" "test_vnet3" {
+			resource "proxmox_sdn_vnet" "test_vnet3" {
 				id            = "testdv3"
-				zone          = proxmox_virtual_environment_sdn_zone_vlan.test_zone3.id
+				zone          = proxmox_sdn_zone_vlan.test_zone3.id
 				alias         = "Data VNet with Tag"
 				isolate_ports = true
 				tag           = 400
 				vlan_aware    = true
 				depends_on = [
-					proxmox_virtual_environment_sdn_applier.finalizer
+					proxmox_sdn_applier.finalizer
 				]
 			}
 
-			data "proxmox_virtual_environment_sdn_vnet" "test_vnet_data3" {
-				id = proxmox_virtual_environment_sdn_vnet.test_vnet3.id
+			data "proxmox_sdn_vnet" "test_vnet_data3" {
+				id = proxmox_sdn_vnet.test_vnet3.id
 			}
 
-			resource "proxmox_virtual_environment_sdn_applier" "test_applier3" {
+			resource "proxmox_sdn_applier" "test_applier3" {
 				depends_on = [
-					proxmox_virtual_environment_sdn_zone_vlan.test_zone3,
-					proxmox_virtual_environment_sdn_vnet.test_vnet3
+					proxmox_sdn_zone_vlan.test_zone3,
+					proxmox_sdn_vnet.test_vnet3
 				]
 			}
 
-			resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+			resource "proxmox_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_vnet.test_vnet_data3", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_vnet.test_vnet_data3", map[string]string{
 					"id":            "testdv3",
 					"zone":          "testdz3",
 					"alias":         "Data VNet with Tag",
@@ -119,24 +119,24 @@ func TestAccDataSourceSDNVNet(t *testing.T) {
 		}}},
 		{"data source reads vnet with pending changes scenario", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_sdn_zone_simple" "test_zone_ds_pending" {
+			resource "proxmox_sdn_zone_simple" "test_zone_ds_pending" {
 				id    = "testdzp"
 				nodes = ["{{.NodeName}}"]
 			}
 
-			resource "proxmox_virtual_environment_sdn_vnet" "test_vnet_ds_pending" {
+			resource "proxmox_sdn_vnet" "test_vnet_ds_pending" {
 				id            = "testdvp"
-				zone          = proxmox_virtual_environment_sdn_zone_simple.test_zone_ds_pending.id
+				zone          = proxmox_sdn_zone_simple.test_zone_ds_pending.id
 				alias         = "Data Source Pending VNet"
 				isolate_ports = false
 				vlan_aware    = false
 			}
 
-			data "proxmox_virtual_environment_sdn_vnet" "test_vnet_ds_pending" {
-				id = proxmox_virtual_environment_sdn_vnet.test_vnet_ds_pending.id
+			data "proxmox_sdn_vnet" "test_vnet_ds_pending" {
+				id = proxmox_sdn_vnet.test_vnet_ds_pending.id
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_vnet.test_vnet_ds_pending", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_vnet.test_vnet_ds_pending", map[string]string{
 					"id":            "testdvp",
 					"zone":          "testdzp",
 					"alias":         "Data Source Pending VNet",
@@ -146,24 +146,24 @@ func TestAccDataSourceSDNVNet(t *testing.T) {
 			),
 		}, {
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_sdn_zone_simple" "test_zone_ds_pending" {
+			resource "proxmox_sdn_zone_simple" "test_zone_ds_pending" {
 				id    = "testdzp"
 				nodes = ["{{.NodeName}}"]
 			}
 
-			resource "proxmox_virtual_environment_sdn_vnet" "test_vnet_ds_pending" {
+			resource "proxmox_sdn_vnet" "test_vnet_ds_pending" {
 				id            = "testdvp"
-				zone          = proxmox_virtual_environment_sdn_zone_simple.test_zone_ds_pending.id
+				zone          = proxmox_sdn_zone_simple.test_zone_ds_pending.id
 				alias         = "Updated Data Source Pending VNet"
 				isolate_ports = true
 				vlan_aware    = true
 			}
 
-			data "proxmox_virtual_environment_sdn_vnet" "test_vnet_ds_pending" {
-				id = proxmox_virtual_environment_sdn_vnet.test_vnet_ds_pending.id
+			data "proxmox_sdn_vnet" "test_vnet_ds_pending" {
+				id = proxmox_sdn_vnet.test_vnet_ds_pending.id
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_vnet.test_vnet_ds_pending", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_vnet.test_vnet_ds_pending", map[string]string{
 					"id":            "testdvp",
 					"zone":          "testdzp",
 					"alias":         "Updated Data Source Pending VNet",

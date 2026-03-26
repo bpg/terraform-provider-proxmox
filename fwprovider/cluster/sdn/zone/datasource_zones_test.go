@@ -25,22 +25,22 @@ func TestAccDataSourceSDNZoneSimple(t *testing.T) {
 	}{
 		{"create simple zone and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "test" {
+				resource "proxmox_sdn_zone_simple" "test" {
 					id    = "dstest1"
 					nodes = ["pve"]
 					mtu   = 1500
 				}
 				
-				data "proxmox_virtual_environment_sdn_zone_simple" "test" {
-					id = proxmox_virtual_environment_sdn_zone_simple.test.id
+				data "proxmox_sdn_zone_simple" "test" {
+					id = proxmox_sdn_zone_simple.test.id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_simple.test", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_zone_simple.test", map[string]string{
 					"id":  "dstest1",
 					"mtu": "1500",
 				}),
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_simple.test", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_zone_simple.test", map[string]string{
 					"nodes.#": "1",
 					"nodes.0": "pve",
 				}),
@@ -49,19 +49,19 @@ func TestAccDataSourceSDNZoneSimple(t *testing.T) {
 		}}},
 		{"create simple zone with DHCP and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "dhcp_test" {
+				resource "proxmox_sdn_zone_simple" "dhcp_test" {
 					id    = "dhcpdst1"
 					nodes = ["{{.NodeName}}"]
 					mtu   = 1500
 					dhcp  = "dnsmasq"
 				}
 				
-				data "proxmox_virtual_environment_sdn_zone_simple" "dhcp_test" {
-					id = proxmox_virtual_environment_sdn_zone_simple.dhcp_test.id
+				data "proxmox_sdn_zone_simple" "dhcp_test" {
+					id = proxmox_sdn_zone_simple.dhcp_test.id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_simple.dhcp_test", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_zone_simple.dhcp_test", map[string]string{
 					"id":      "dhcpdst1",
 					"mtu":     "1500",
 					"dhcp":    "dnsmasq",
@@ -92,19 +92,19 @@ func TestAccDataSourceSDNZoneVLAN(t *testing.T) {
 	}{
 		{"create VLAN zone and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_vlan" "test" {
+				resource "proxmox_sdn_zone_vlan" "test" {
 					id     = "dstest2"
 					nodes  = ["pve"]
 					bridge = "vmbr0"
 					mtu    = 1496
 				}
 				
-				data "proxmox_virtual_environment_sdn_zone_vlan" "test" {
-					id = proxmox_virtual_environment_sdn_zone_vlan.test.id
+				data "proxmox_sdn_zone_vlan" "test" {
+					id = proxmox_sdn_zone_vlan.test.id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_vlan.test", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_zone_vlan.test", map[string]string{
 					"id":      "dstest2",
 					"bridge":  "vmbr0",
 					"mtu":     "1496",
@@ -134,7 +134,7 @@ func TestAccDataSourceSDNZoneQinQ(t *testing.T) {
 	}{
 		{"create QinQ zone and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_qinq" "test" {
+				resource "proxmox_sdn_zone_qinq" "test" {
 					id                    = "dstest3"
 					nodes                 = ["pve"]
 					bridge                = "vmbr0"
@@ -143,12 +143,12 @@ func TestAccDataSourceSDNZoneQinQ(t *testing.T) {
 					mtu                   = 1492
 				}
 				
-				data "proxmox_virtual_environment_sdn_zone_qinq" "test" {
-					id = proxmox_virtual_environment_sdn_zone_qinq.test.id
+				data "proxmox_sdn_zone_qinq" "test" {
+					id = proxmox_sdn_zone_qinq.test.id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_qinq.test", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_zone_qinq.test", map[string]string{
 					"id":                    "dstest3",
 					"bridge":                "vmbr0",
 					"service_vlan":          "100",
@@ -180,19 +180,19 @@ func TestAccDataSourceSDNZoneVXLAN(t *testing.T) {
 	}{
 		{"create VXLAN zone and read with datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_vxlan" "test" {
+				resource "proxmox_sdn_zone_vxlan" "test" {
 					id    = "dstest4"
 					nodes = ["pve"]
 					peers = ["10.0.0.1", "10.0.0.2"]
 					mtu   = 1450
 				}
 				
-				data "proxmox_virtual_environment_sdn_zone_vxlan" "test" {
-					id = proxmox_virtual_environment_sdn_zone_vxlan.test.id
+				data "proxmox_sdn_zone_vxlan" "test" {
+					id = proxmox_sdn_zone_vxlan.test.id
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_vxlan.test", map[string]string{
+				test.ResourceAttributes("data.proxmox_sdn_zone_vxlan.test", map[string]string{
 					"id":      "dstest4",
 					"mtu":     "1450",
 					"nodes.#": "1",
@@ -224,50 +224,50 @@ func TestAccDataSourceSDNZones(t *testing.T) {
 	}{
 		{"create multiple zones and read with zones datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "test1" {
+				resource "proxmox_sdn_zone_simple" "test1" {
 					id    = "dstest6"
 					nodes = ["pve"]
 					mtu   = 1500
 				}
 				
-				resource "proxmox_virtual_environment_sdn_zone_vlan" "test2" {
+				resource "proxmox_sdn_zone_vlan" "test2" {
 					id     = "dstest7"
 					nodes  = ["pve"]
 					bridge = "vmbr0"
 					mtu    = 1496
 				}
 
-				resource "proxmox_virtual_environment_sdn_applier" "test_applier" {
+				resource "proxmox_sdn_applier" "test_applier" {
 					depends_on = [
-						proxmox_virtual_environment_sdn_zone_simple.test1,
-						proxmox_virtual_environment_sdn_zone_vlan.test2
+						proxmox_sdn_zone_simple.test1,
+						proxmox_sdn_zone_vlan.test2
 					]
 				}
 				
-				data "proxmox_virtual_environment_sdn_zones" "all" {
+				data "proxmox_sdn_zones" "all" {
 					depends_on = [
-						proxmox_virtual_environment_sdn_applier.test_applier
+						proxmox_sdn_applier.test_applier
 					]
 				}
 				
-				data "proxmox_virtual_environment_sdn_zones" "simple_only" {
+				data "proxmox_sdn_zones" "simple_only" {
 					type = "simple"
 					depends_on = [
-						proxmox_virtual_environment_sdn_applier.test_applier
+						proxmox_sdn_applier.test_applier
 					]
 				}
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				// Check that all zones datasource returns multiple zones
-				resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_sdn_zones.all", "zones.#"),
+				resource.TestCheckResourceAttrSet("data.proxmox_sdn_zones.all", "zones.#"),
 
 				// Check that filtered datasource works
-				resource.TestCheckResourceAttr("data.proxmox_virtual_environment_sdn_zones.simple_only", "type", "simple"),
-				resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_sdn_zones.simple_only", "zones.#"),
+				resource.TestCheckResourceAttr("data.proxmox_sdn_zones.simple_only", "type", "simple"),
+				resource.TestCheckResourceAttrSet("data.proxmox_sdn_zones.simple_only", "zones.#"),
 
 				// Verify pending and state attributes exist in zones list
-				resource.TestCheckResourceAttr("data.proxmox_virtual_environment_sdn_zones.all", "zones.0.pending", "false"),
-				resource.TestCheckResourceAttr("data.proxmox_virtual_environment_sdn_zones.simple_only", "zones.0.pending", "false"),
+				resource.TestCheckResourceAttr("data.proxmox_sdn_zones.all", "zones.0.pending", "false"),
+				resource.TestCheckResourceAttr("data.proxmox_sdn_zones.simple_only", "zones.0.pending", "false"),
 			),
 		}}},
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 )
 
@@ -67,7 +68,8 @@ func NewSimpleResource() resource.Resource {
 
 func (r *SimpleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Simple Zone in Proxmox SDN.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_sdn_zone_simple"),
+		Description:        "Simple Zone in Proxmox SDN.",
 		MarkdownDescription: "Simple Zone in Proxmox SDN. It will create an isolated VNet bridge. " +
 			"This bridge is not linked to a physical interface, and VM traffic is only local on each the node. " +
 			"It can be used in NAT or routed setups.",

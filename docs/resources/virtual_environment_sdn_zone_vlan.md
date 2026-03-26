@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_sdn_zone_vlan
 
+~> **Deprecated:** Use [`proxmox_sdn_zone_vlan`](sdn_zone_vlan.md) instead. This resource will be removed in v1.0.
+
 VLAN Zone in Proxmox SDN. It uses an existing local Linux or OVS bridge to connect to the node's physical interface. It uses VLAN tagging defined in the VNet to isolate the network segments. This allows connectivity of VMs between different nodes.
 
 ## Example Usage
