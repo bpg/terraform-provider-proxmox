@@ -22,6 +22,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 )
@@ -68,7 +69,8 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Proxmox VE Replication.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_replication"),
+		Description:        "Manages Proxmox VE Replication.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Replication Job ID. The ID is composed of a Guest ID and a job number, separated by a hyphen, i.e. '<GUEST>-<JOBNUM>'.",
@@ -269,4 +271,52 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	readModel.fromAPI(req.ID, data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
+}
+
+// Short-name alias for the replication resource (ADR-007).
+
+var (
+	_ resource.Resource                = &resourceShort{}
+	_ resource.ResourceWithConfigure   = &resourceShort{}
+	_ resource.ResourceWithImportState = &resourceShort{}
+	_ resource.ResourceWithMoveState   = &resourceShort{}
+)
+
+// resourceShort is the short-name alias for the replication resource.
+type resourceShort struct {
+	Resource
+}
+
+// NewShortResource creates a short-name alias for the replication resource.
+func NewShortResource() resource.Resource {
+	return &resourceShort{}
+}
+
+func (r *resourceShort) Metadata(
+	_ context.Context,
+	_ resource.MetadataRequest,
+	resp *resource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_replication"
+}
+
+func (r *resourceShort) Schema(
+	ctx context.Context,
+	req resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
+	r.Resource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *resourceShort) MoveState(ctx context.Context) []resource.StateMover {
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState(
+			"proxmox_virtual_environment_replication",
+			&schemaResp.Schema,
+		),
+	}
 }

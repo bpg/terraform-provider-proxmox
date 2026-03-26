@@ -15,6 +15,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 )
 
@@ -70,7 +71,8 @@ func (r *metricsServerDatasource) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves information about a specific PVE metric server.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_metrics_server"),
+		Description:        "Retrieves information about a specific PVE metric server.",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"name": schema.StringAttribute{
@@ -161,4 +163,37 @@ func (r *metricsServerDatasource) Read(
 	readModel.importFromAPI(state.ID.ValueString(), data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
+}
+
+// Short-name alias for the metrics server data source (ADR-007).
+
+var (
+	_ datasource.DataSource              = &metricsServerDatasourceShort{}
+	_ datasource.DataSourceWithConfigure = &metricsServerDatasourceShort{}
+)
+
+type metricsServerDatasourceShort struct {
+	metricsServerDatasource
+}
+
+// NewMetricsServerShortDatasource creates a short-name alias for the metrics server data source.
+func NewMetricsServerShortDatasource() datasource.DataSource {
+	return &metricsServerDatasourceShort{}
+}
+
+func (r *metricsServerDatasourceShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_metrics_server"
+}
+
+func (r *metricsServerDatasourceShort) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
+	r.metricsServerDatasource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
 }

@@ -110,33 +110,33 @@ func TestAccDataSourceReplications(t *testing.T) {
 					started = false
 				}
 
-				resource "proxmox_virtual_environment_replication" "test_replication1" {
+				resource "proxmox_replication" "test_replication1" {
 					id     = "${proxmox_virtual_environment_container.test_container1.id}-1"
 					target = "{{.Node2Name}}"
 					type = "local"
 				}
 
-				resource "proxmox_virtual_environment_replication" "test_replication2" {
+				resource "proxmox_replication" "test_replication2" {
 					id     = "${proxmox_virtual_environment_container.test_container2.id}-1"
 					target = "{{.Node2Name}}"
 					type = "local"
 				}
 
-				data "proxmox_virtual_environment_replications" "all" {
+				data "proxmox_replications" "all" {
 							depends_on = [
-							proxmox_virtual_environment_replication.test_replication1,
-							proxmox_virtual_environment_replication.test_replication2
+							proxmox_replication.test_replication1,
+							proxmox_replication.test_replication2
 						]
 				}
 					`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_replications.all", "replications.#"),
-					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+					resource.TestCheckResourceAttrSet("data.proxmox_replications.all", "replications.#"),
+					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_replications.all", "replications.*", map[string]string{
 						"id":     id1,
 						"target": te.Node2Name,
 						"type":   "local",
 					}),
-					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_replications.all", "replications.*", map[string]string{
 						"id":     id2,
 						"target": te.Node2Name,
 						"type":   "local",
@@ -203,7 +203,7 @@ func TestAccDataSourceReplications(t *testing.T) {
 					started = false
 				}
 
-				resource "proxmox_virtual_environment_replication" "test_replication1" {
+				resource "proxmox_replication" "test_replication1" {
 					id     = "${proxmox_virtual_environment_container.test_container1.id}-1"
 					target = "{{.Node2Name}}"
 					type = "local"
@@ -213,7 +213,7 @@ func TestAccDataSourceReplications(t *testing.T) {
 					rate = 10
 				}
 
-				resource "proxmox_virtual_environment_replication" "test_replication2" {
+				resource "proxmox_replication" "test_replication2" {
 					id     = "${proxmox_virtual_environment_container.test_container2.id}-1"
 					target = "{{.Node2Name}}"
 					type = "local"
@@ -223,16 +223,16 @@ func TestAccDataSourceReplications(t *testing.T) {
 					rate = 10
 				}
 
-				data "proxmox_virtual_environment_replications" "all" {
+				data "proxmox_replications" "all" {
 							depends_on = [
-							proxmox_virtual_environment_replication.test_replication1,
-							proxmox_virtual_environment_replication.test_replication2
+							proxmox_replication.test_replication1,
+							proxmox_replication.test_replication2
 						]
 				}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_replications.all", "replications.#"),
-						resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+						resource.TestCheckResourceAttrSet("data.proxmox_replications.all", "replications.#"),
+						resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_replications.all", "replications.*", map[string]string{
 							"id":       id1,
 							"target":   te.Node2Name,
 							"type":     "local",
@@ -243,7 +243,7 @@ func TestAccDataSourceReplications(t *testing.T) {
 							"schedule": "*/30",
 							"rate":     "10",
 						}),
-						resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_virtual_environment_replications.all", "replications.*", map[string]string{
+						resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_replications.all", "replications.*", map[string]string{
 							"id":       id2,
 							"target":   te.Node2Name,
 							"type":     "local",

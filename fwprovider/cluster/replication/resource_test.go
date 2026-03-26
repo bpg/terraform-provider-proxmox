@@ -113,13 +113,13 @@ func TestAccResourceReplication(t *testing.T) {
 					{
 						Config: renderConfigWithCT(te, cid, `
 
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
 						}`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":     id,
 								"target": te.Node2Name,
 								"type":   "local",
@@ -130,7 +130,7 @@ func TestAccResourceReplication(t *testing.T) {
 					},
 					{
 						Config: renderConfigWithCT(te, cid, `
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
@@ -138,7 +138,7 @@ func TestAccResourceReplication(t *testing.T) {
 						}
 						`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":      id,
 								"target":  te.Node2Name,
 								"type":    "local",
@@ -150,7 +150,7 @@ func TestAccResourceReplication(t *testing.T) {
 					},
 					{
 						Config: renderConfigWithCT(te, cid, `
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
@@ -159,7 +159,7 @@ func TestAccResourceReplication(t *testing.T) {
 						}
 						`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":      id,
 								"target":  te.Node2Name,
 								"type":    "local",
@@ -173,7 +173,7 @@ func TestAccResourceReplication(t *testing.T) {
 					{
 						Config: renderConfigWithCT(te, cid, `
 
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
@@ -183,7 +183,7 @@ func TestAccResourceReplication(t *testing.T) {
 						}
 						`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":       id,
 								"target":   te.Node2Name,
 								"type":     "local",
@@ -197,7 +197,7 @@ func TestAccResourceReplication(t *testing.T) {
 					},
 					{
 						Config: renderConfigWithCT(te, cid, `
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
@@ -208,7 +208,7 @@ func TestAccResourceReplication(t *testing.T) {
 						}
 						`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":       id,
 								"target":   te.Node2Name,
 								"type":     "local",
@@ -220,7 +220,7 @@ func TestAccResourceReplication(t *testing.T) {
 								"rate":     "10",
 							}),
 						),
-						ResourceName:      "proxmox_virtual_environment_replication.test_replication",
+						ResourceName:      "proxmox_replication.test_replication",
 						ImportState:       true,
 						ImportStateVerify: true,
 					},
@@ -235,7 +235,7 @@ func TestAccResourceReplication(t *testing.T) {
 				return resource.TestStep{
 					Config: renderConfigWithCT(te, cid, `
 
-				resource "proxmox_virtual_environment_replication" "test_replication" {
+				resource "proxmox_replication" "test_replication" {
 					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 					target = "{{.Node2Name}}"
 					type = "local"
@@ -243,7 +243,7 @@ func TestAccResourceReplication(t *testing.T) {
 				}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+						test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 							"id":      id,
 							"target":  te.Node2Name,
 							"type":    "local",
@@ -264,7 +264,7 @@ func TestAccResourceReplication(t *testing.T) {
 					return resource.TestStep{
 						Config: renderConfigWithCT(te, cid, `
 
-				resource "proxmox_virtual_environment_replication" "test_replication" {
+				resource "proxmox_replication" "test_replication" {
 					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 					target = "{{.Node2Name}}"
 					type = "local"
@@ -272,7 +272,7 @@ func TestAccResourceReplication(t *testing.T) {
 				}
 					`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":       id,
 								"target":   te.Node2Name,
 								"type":     "local",
@@ -293,7 +293,7 @@ func TestAccResourceReplication(t *testing.T) {
 				return resource.TestStep{
 					Config: renderConfigWithCT(te, cid, `
 
-				resource "proxmox_virtual_environment_replication" "test_replication" {
+				resource "proxmox_replication" "test_replication" {
 					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 					target = "{{.Node2Name}}"
 					type = "local"
@@ -301,7 +301,7 @@ func TestAccResourceReplication(t *testing.T) {
 				}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+						test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 							"id":     id,
 							"target": te.Node2Name,
 							"type":   "local",
@@ -321,7 +321,7 @@ func TestAccResourceReplication(t *testing.T) {
 				return resource.TestStep{
 					Config: renderConfigWithCT(te, cid, `
 
-				resource "proxmox_virtual_environment_replication" "test_replication" {
+				resource "proxmox_replication" "test_replication" {
 					id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 					target = "{{.Node2Name}}"
 					type = "local"
@@ -329,7 +329,7 @@ func TestAccResourceReplication(t *testing.T) {
 				}
 					`),
 					Check: resource.ComposeTestCheckFunc(
-						test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+						test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 							"id":      id,
 							"target":  te.Node2Name,
 							"type":    "local",
@@ -349,7 +349,7 @@ func TestAccResourceReplication(t *testing.T) {
 				return []resource.TestStep{
 					{
 						Config: renderConfigWithCT(te, cid, `
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
@@ -360,7 +360,7 @@ func TestAccResourceReplication(t *testing.T) {
 						}
 										`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":       id,
 								"target":   te.Node2Name,
 								"type":     "local",
@@ -375,7 +375,7 @@ func TestAccResourceReplication(t *testing.T) {
 					},
 					{
 						Config: renderConfigWithCT(te, cid, `
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
@@ -383,7 +383,7 @@ func TestAccResourceReplication(t *testing.T) {
 						}
 										`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":     id,
 								"target": te.Node2Name,
 								"type":   "local",
@@ -403,7 +403,7 @@ func TestAccResourceReplication(t *testing.T) {
 				return []resource.TestStep{
 					{
 						Config: renderConfigWithCT(te, cid, `
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
@@ -413,7 +413,7 @@ func TestAccResourceReplication(t *testing.T) {
 							rate = 10
 						}`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":       id,
 								"target":   te.Node2Name,
 								"type":     "local",
@@ -428,14 +428,14 @@ func TestAccResourceReplication(t *testing.T) {
 					},
 					{
 						Config: renderConfigWithCT(te, cid, `
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
 							# removed disable, comment, schedule, rate
 						}`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":     id,
 								"target": te.Node2Name,
 								"type":   "local",
@@ -446,7 +446,7 @@ func TestAccResourceReplication(t *testing.T) {
 					},
 					{
 						Config: renderConfigWithCT(te, cid, `
-						resource "proxmox_virtual_environment_replication" "test_replication" {
+						resource "proxmox_replication" "test_replication" {
 							id     = "${proxmox_virtual_environment_container.test_container.id}-{{.JobNum}}"
 							target = "{{.Node2Name}}"
 							type = "local"
@@ -456,7 +456,7 @@ func TestAccResourceReplication(t *testing.T) {
 							rate = 10
 						}`),
 						Check: resource.ComposeTestCheckFunc(
-							test.ResourceAttributes("proxmox_virtual_environment_replication.test_replication", map[string]string{
+							test.ResourceAttributes("proxmox_replication.test_replication", map[string]string{
 								"id":       id,
 								"target":   te.Node2Name,
 								"type":     "local",
@@ -496,7 +496,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				// id must be <GUEST>-<JOBNUM>
 				PlanOnly: true,
 				Config: `
-				resource "proxmox_virtual_environment_replication" "test" {
+				resource "proxmox_replication" "test" {
 				id     = "invalidid"
 				target = "pve2"
 				type   = "local"
@@ -507,7 +507,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				// id must be <GUEST>-<JOBNUM>
 				PlanOnly: true,
 				Config: `
-				resource "proxmox_virtual_environment_replication" "test" {
+				resource "proxmox_replication" "test" {
 				id     = "a-b"
 				target = "pve2"
 				type   = "local"
@@ -518,7 +518,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				// id must be <GUEST>-<JOBNUM>
 				PlanOnly: true,
 				Config: `
-				resource "proxmox_virtual_environment_replication" "test" {
+				resource "proxmox_replication" "test" {
 				id     = "-"
 				target = "pve2"
 				type   = "local"
@@ -529,7 +529,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				// type must be "local"
 				PlanOnly: true,
 				Config: `
-				resource "proxmox_virtual_environment_replication" "test" {
+				resource "proxmox_replication" "test" {
 				id     = "100-1"
 				target = "pve2"
 				type   = "remote"
@@ -541,7 +541,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				// missing required attribute: id
 				PlanOnly: true,
 				Config: `
-				resource "proxmox_virtual_environment_replication" "test" {
+				resource "proxmox_replication" "test" {
 				target = "pve2"
 				type   = "local"
 				}
@@ -552,7 +552,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				// missing required attribute: target
 				PlanOnly: true,
 				Config: `
-				resource "proxmox_virtual_environment_replication" "test" {
+				resource "proxmox_replication" "test" {
 				id   = "100-1"
 				type = "local"
 				}
@@ -563,7 +563,7 @@ func TestUnitResourceReplication_Validators(t *testing.T) {
 				// missing required attribute: type
 				PlanOnly: true,
 				Config: `
-				resource "proxmox_virtual_environment_replication" "test" {
+				resource "proxmox_replication" "test" {
 				id     = "100-1"
 				target = "pve2"
 				}

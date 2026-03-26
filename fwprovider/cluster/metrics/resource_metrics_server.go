@@ -21,6 +21,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 )
@@ -77,7 +78,8 @@ func (r *metricsServerResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages PVE metrics server.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_metrics_server"),
+		Description:        "Manages PVE metrics server.",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"name": schema.StringAttribute{
@@ -415,4 +417,51 @@ func (r *metricsServerResource) ImportState(
 	readModel.importFromAPI(req.ID, data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
+}
+
+// Short-name alias for the metrics server resource (ADR-007).
+
+var (
+	_ resource.Resource                = &metricsServerResourceShort{}
+	_ resource.ResourceWithConfigure   = &metricsServerResourceShort{}
+	_ resource.ResourceWithImportState = &metricsServerResourceShort{}
+	_ resource.ResourceWithMoveState   = &metricsServerResourceShort{}
+)
+
+type metricsServerResourceShort struct {
+	metricsServerResource
+}
+
+// NewMetricsServerShortResource creates a short-name alias for the metrics server resource.
+func NewMetricsServerShortResource() resource.Resource {
+	return &metricsServerResourceShort{}
+}
+
+func (r *metricsServerResourceShort) Metadata(
+	_ context.Context,
+	_ resource.MetadataRequest,
+	resp *resource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_metrics_server"
+}
+
+func (r *metricsServerResourceShort) Schema(
+	ctx context.Context,
+	req resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
+	r.metricsServerResource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
+}
+
+func (r *metricsServerResourceShort) MoveState(ctx context.Context) []resource.StateMover {
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+
+	return []resource.StateMover{
+		migration.PrefixMoveState(
+			"proxmox_virtual_environment_metrics_server",
+			&schemaResp.Schema,
+		),
+	}
 }

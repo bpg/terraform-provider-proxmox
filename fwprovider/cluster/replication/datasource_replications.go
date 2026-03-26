@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/replications"
 )
 
@@ -93,6 +94,7 @@ func (d *replicationsDataSource) Metadata(_ context.Context, req datasource.Meta
 // Schema defines the schema for the data source.
 func (d *replicationsDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		DeprecationMessage:  migration.DeprecationMessage("proxmox_replications"),
 		Description:         "Retrieves information about all Replications in Proxmox.",
 		MarkdownDescription: "Retrieves information about all Replications in Proxmox.",
 		Attributes: map[string]schema.Attribute{
@@ -169,4 +171,37 @@ func (d *replicationsDataSource) Read(ctx context.Context, req datasource.ReadRe
 // NewReplicationsDataSource returns a new data source for Replications.
 func NewReplicationsDataSource() datasource.DataSource {
 	return &replicationsDataSource{}
+}
+
+// Short-name alias for the replications data source (ADR-007).
+
+var (
+	_ datasource.DataSource              = &replicationsDataSourceShort{}
+	_ datasource.DataSourceWithConfigure = &replicationsDataSourceShort{}
+)
+
+type replicationsDataSourceShort struct {
+	replicationsDataSource
+}
+
+// NewReplicationsShortDataSource creates a short-name alias for the replications data source.
+func NewReplicationsShortDataSource() datasource.DataSource {
+	return &replicationsDataSourceShort{}
+}
+
+func (d *replicationsDataSourceShort) Metadata(
+	_ context.Context,
+	_ datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
+	resp.TypeName = "proxmox_replications"
+}
+
+func (d *replicationsDataSourceShort) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
+	d.replicationsDataSource.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = ""
 }

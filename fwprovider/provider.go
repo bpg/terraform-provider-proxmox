@@ -557,6 +557,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		hardwaremapping.NewUSBResource,
 		hardwaremapping.NewUSBResourceShort, // proxmox_hardware_mapping_usb
 		metrics.NewMetricsServerResource,
+		metrics.NewMetricsServerShortResource,
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
 		nodes.NewACMECertificateResource,
@@ -564,6 +565,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		nodes.NewOCIImageResource,
 		nodefirewall.NewNodeFirewallOptionsResource,
 		options.NewClusterOptionsResource,
+		options.NewClusterOptionsShortResource,
 		pools.NewPoolMembershipResource,
 		sdnapplier.NewResource,
 		sdnapplier.NewShortResource,
@@ -598,6 +600,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		storage.NewZFSPoolStorageResource,
 		vm.NewResource,
 		replication.NewResource,
+		replication.NewShortResource,
 	}
 }
 
@@ -633,6 +636,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewUSBDataSource,
 		hardwaremapping.NewUSBDataSourceShort, // proxmox_hardware_mapping_usb
 		metrics.NewMetricsServerDatasource,
+		metrics.NewMetricsServerShortDatasource,
 		file.NewFileDataSource,
 		file.NewListDataSource,
 		sdnsubnet.NewDataSource,
@@ -663,7 +667,9 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		sdnfabricnode.NewOSPFShortDataSource,
 		vm.NewDataSource,
 		replication.NewDataSource,
+		replication.NewShortDataSource,
 		replication.NewReplicationsDataSource,
+		replication.NewReplicationsShortDataSource,
 	}
 }
 
