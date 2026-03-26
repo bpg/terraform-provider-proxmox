@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -88,4 +90,5 @@ func (r *nfsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 	factory.WithDescription("Manages an NFS-based storage in Proxmox VE.")
 	factory.WithBackupBlock()
 	resp.Schema = *factory.Schema
+	resp.Schema.DeprecationMessage = migration.DeprecationMessage("proxmox_storage_nfs")
 }

@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_storage_directory
 
+~> **Deprecated:** Use [`proxmox_storage_directory`](storage_directory.md) instead. This resource will be removed in v1.0.
+
 Manages directory-based storage in Proxmox VE.
 
 ## Example Usage

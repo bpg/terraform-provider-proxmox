@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_storage_zfspool
 
+~> **Deprecated:** Use [`proxmox_storage_zfspool`](storage_zfspool.md) instead. This resource will be removed in v1.0.
+
 Manages ZFS-based storage in Proxmox VE.
 
 ## Example Usage

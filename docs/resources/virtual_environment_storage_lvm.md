@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_storage_lvm
 
+~> **Deprecated:** Use [`proxmox_storage_lvm`](storage_lvm.md) instead. This resource will be removed in v1.0.
+
 Manages LVM-based storage in Proxmox VE.
 
 ## Example Usage

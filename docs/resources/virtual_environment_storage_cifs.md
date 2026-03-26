@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_storage_cifs
 
+~> **Deprecated:** Use [`proxmox_storage_cifs`](storage_cifs.md) instead. This resource will be removed in v1.0.
+
 Manages an SMB/CIFS based storage server in Proxmox VE.
 
 ## Example Usage

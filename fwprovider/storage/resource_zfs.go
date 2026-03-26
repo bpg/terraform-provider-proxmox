@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -70,4 +72,5 @@ func (r *zfsPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequ
 	factory.WithAttributes(attributes)
 	factory.WithDescription("Manages ZFS-based storage in Proxmox VE.")
 	resp.Schema = *factory.Schema
+	resp.Schema.DeprecationMessage = migration.DeprecationMessage("proxmox_storage_zfspool")
 }
