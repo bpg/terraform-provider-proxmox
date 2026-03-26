@@ -537,7 +537,7 @@ func (r *clusterOptionsResource) Schema(
 			},
 			"ha_shutdown_policy": schema.StringAttribute{
 				Description: "Cluster wide HA shutdown policy.",
-				MarkdownDescription: "Cluster wide HA shutdown policy (). " +
+				MarkdownDescription: "Cluster wide HA shutdown policy. " +
 					"Must be `freeze` | `failover` | `migrate` | `conditional` (default is `conditional`).",
 				Optional: true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{

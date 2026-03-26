@@ -55,7 +55,7 @@ resource "proxmox_virtual_environment_cluster_options" "options" {
 - `crs_ha_rebalance_on_start` (Boolean) Cluster resource scheduling setting for HA rebalance on start.
 - `description` (String) Datacenter description. Shown in the web-interface datacenter notes panel. This is saved as comment inside the configuration file.
 - `email_from` (String) email address to send notification from (default is root@$hostname).
-- `ha_shutdown_policy` (String) Cluster wide HA shutdown policy (). Must be `freeze` | `failover` | `migrate` | `conditional` (default is `conditional`).
+- `ha_shutdown_policy` (String) Cluster wide HA shutdown policy. Must be `freeze` | `failover` | `migrate` | `conditional` (default is `conditional`).
 - `http_proxy` (String) Specify external http proxy which is used for downloads (example: `http://username:password@host:port/`).
 - `keyboard` (String) Default keyboard layout for vnc server. Must be `de` | `de-ch` | `da` | `en-gb` | `en-us` | `es` | `fi` | `fr` | `fr-be` | `fr-ca` | `fr-ch` | `hu` | `is` | `it` | `ja` | `lt` | `mk` | `nl` | `no` | `pl` | `pt` | `pt-br` | `sv` | `sl` | `tr`.
 - `language` (String) Default GUI language. Must be `ca` | `da` | `de` | `en` | `es` | `eu` | `fa` | `fr` | `he` | `it` | `ja` | `nb` | `nn` | `pl` | `pt_BR` | `ru` | `sl` | `sv` | `tr` | `zh_CN` | `zh_TW`.
