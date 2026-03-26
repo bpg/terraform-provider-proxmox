@@ -22,8 +22,10 @@ import (
 // --- CIFS ---
 
 var (
-	_ resource.Resource              = &cifsStorageShort{}
-	_ resource.ResourceWithMoveState = &cifsStorageShort{}
+	_ resource.Resource                = &cifsStorageShort{}
+	_ resource.ResourceWithConfigure   = &cifsStorageShort{}
+	_ resource.ResourceWithImportState = &cifsStorageShort{}
+	_ resource.ResourceWithMoveState   = &cifsStorageShort{}
 )
 
 type cifsStorageShort struct{ cifsStorageResource }
@@ -56,8 +58,10 @@ func (r *cifsStorageShort) MoveState(ctx context.Context) []resource.StateMover 
 // --- Directory ---
 
 var (
-	_ resource.Resource              = &directoryStorageShort{}
-	_ resource.ResourceWithMoveState = &directoryStorageShort{}
+	_ resource.Resource                = &directoryStorageShort{}
+	_ resource.ResourceWithConfigure   = &directoryStorageShort{}
+	_ resource.ResourceWithImportState = &directoryStorageShort{}
+	_ resource.ResourceWithMoveState   = &directoryStorageShort{}
 )
 
 type directoryStorageShort struct{ directoryStorageResource }
@@ -90,8 +94,10 @@ func (r *directoryStorageShort) MoveState(ctx context.Context) []resource.StateM
 // --- LVM ---
 
 var (
-	_ resource.Resource              = &lvmPoolStorageShort{}
-	_ resource.ResourceWithMoveState = &lvmPoolStorageShort{}
+	_ resource.Resource                = &lvmPoolStorageShort{}
+	_ resource.ResourceWithConfigure   = &lvmPoolStorageShort{}
+	_ resource.ResourceWithImportState = &lvmPoolStorageShort{}
+	_ resource.ResourceWithMoveState   = &lvmPoolStorageShort{}
 )
 
 type lvmPoolStorageShort struct{ lvmPoolStorageResource }
@@ -124,8 +130,10 @@ func (r *lvmPoolStorageShort) MoveState(ctx context.Context) []resource.StateMov
 // --- LVM Thin ---
 
 var (
-	_ resource.Resource              = &lvmThinPoolStorageShort{}
-	_ resource.ResourceWithMoveState = &lvmThinPoolStorageShort{}
+	_ resource.Resource                = &lvmThinPoolStorageShort{}
+	_ resource.ResourceWithConfigure   = &lvmThinPoolStorageShort{}
+	_ resource.ResourceWithImportState = &lvmThinPoolStorageShort{}
+	_ resource.ResourceWithMoveState   = &lvmThinPoolStorageShort{}
 )
 
 type lvmThinPoolStorageShort struct{ lvmThinPoolStorageResource }
@@ -158,8 +166,10 @@ func (r *lvmThinPoolStorageShort) MoveState(ctx context.Context) []resource.Stat
 // --- NFS ---
 
 var (
-	_ resource.Resource              = &nfsStorageShort{}
-	_ resource.ResourceWithMoveState = &nfsStorageShort{}
+	_ resource.Resource                = &nfsStorageShort{}
+	_ resource.ResourceWithConfigure   = &nfsStorageShort{}
+	_ resource.ResourceWithImportState = &nfsStorageShort{}
+	_ resource.ResourceWithMoveState   = &nfsStorageShort{}
 )
 
 type nfsStorageShort struct{ nfsStorageResource }
@@ -192,10 +202,14 @@ func (r *nfsStorageShort) MoveState(ctx context.Context) []resource.StateMover {
 // --- PBS ---
 
 var (
-	_ resource.Resource              = &pbsStorageShort{}
-	_ resource.ResourceWithMoveState = &pbsStorageShort{}
+	_ resource.Resource                = &pbsStorageShort{}
+	_ resource.ResourceWithConfigure   = &pbsStorageShort{}
+	_ resource.ResourceWithImportState = &pbsStorageShort{}
+	_ resource.ResourceWithMoveState   = &pbsStorageShort{}
 )
 
+// pbsStorageShort inherits the custom Create method from pbsStorageResource,
+// which handles PBS-specific encryption key extraction from the API response.
 type pbsStorageShort struct{ pbsStorageResource }
 
 // NewProxmoxBackupServerStorageShortResource creates the short-named proxmox_storage_pbs resource.
@@ -226,8 +240,10 @@ func (r *pbsStorageShort) MoveState(ctx context.Context) []resource.StateMover {
 // --- ZFS Pool ---
 
 var (
-	_ resource.Resource              = &zfsPoolStorageShort{}
-	_ resource.ResourceWithMoveState = &zfsPoolStorageShort{}
+	_ resource.Resource                = &zfsPoolStorageShort{}
+	_ resource.ResourceWithConfigure   = &zfsPoolStorageShort{}
+	_ resource.ResourceWithImportState = &zfsPoolStorageShort{}
+	_ resource.ResourceWithMoveState   = &zfsPoolStorageShort{}
 )
 
 type zfsPoolStorageShort struct{ zfsPoolStorageResource }
