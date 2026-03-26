@@ -18,7 +18,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-func TestAccResourceShortNameStorageDirectory(t *testing.T) {
+func TestAccResourceStorageDirectory(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
