@@ -26,12 +26,12 @@ import (
 
 // Note that some "hard-coded" values must be used because of the way how the Proxmox VE API for APT repositories works.
 const (
-	testAccResourceRepoSelector = "proxmox_virtual_environment_" + apt.ResourceRepoIDPrefix + ".test"
+	testAccResourceRepoSelector = "proxmox_" + apt.ResourceRepoIDPrefix + ".test"
 
 	// By default, this should be the main Debian package repository on any (new) Proxmox VE node.
 	testAccResourceRepoIndex = 0
 
-	testAccResourceStandardRepoSelector = "proxmox_virtual_environment_" + apt.ResourceStandardRepoIDPrefix + ".test"
+	testAccResourceStandardRepoSelector = "proxmox_" + apt.ResourceStandardRepoIDPrefix + ".test"
 
 	// Use an APT standard repository handle that is not enabled by default on any new Proxmox VE node.
 	testAccResourceStandardRepoHandle = "no-subscription"
@@ -50,7 +50,7 @@ func TestAccDataSourceRepo(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					data "proxmox_apt_repository" "test" {
-						file_path = "/etc/apt/sources.list.d/proxmox.sources"
+						file_path = "/etc/apt/sources.list.d/debian.sources"
 						index = 0
 						node = "{{.NodeName}}"
 					}`),
@@ -65,10 +65,9 @@ func TestAccDataSourceRepo(t *testing.T) {
 						resource.TestCheckResourceAttr(
 							"data.proxmox_apt_repository.test",
 							apt.SchemaAttrNameTerraformID,
-							"apt_repository_"+strings.ToLower(te.NodeName)+"_etc_apt_sources_list_d_proxmox_sources_0",
+							"apt_repository_"+strings.ToLower(te.NodeName)+"_etc_apt_sources_list_d_debian_sources_0",
 						),
 						test.ResourceAttributesSet("data.proxmox_apt_repository.test", []string{
-							"components.#",
 							"enabled",
 							"file_path",
 							"index",
@@ -225,7 +224,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 							tfjsonpath.New(apt.SchemaAttrNameURIs),
 							knownvalue.ListPartial(
 								map[int]knownvalue.Check{
-									0: knownvalue.StringRegexp(regexp.MustCompile(`https?://([a-z]+\.)?debian\.org/debian/`)),
+									0: knownvalue.StringRegexp(regexp.MustCompile(`https?://([a-z0-9]+\.)*debian\.org/debian/?`)),
 								},
 							),
 						),
