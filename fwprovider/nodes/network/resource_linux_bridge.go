@@ -29,6 +29,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
@@ -173,7 +174,8 @@ func (r *linuxBridgeResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a Linux Bridge network interface in a Proxmox VE node.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_network_linux_bridge"),
+		Description:        "Manages a Linux Bridge network interface in a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
 			// Base attributes
 			"id": attribute.ResourceID("A unique identifier with format `<node name>:<iface>`"),
@@ -468,7 +470,7 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 
 // Delete deletes a Linux Bridge interface.
 //
-//nolint:dupl
+
 func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state linuxBridgeResourceModel
 

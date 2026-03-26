@@ -27,6 +27,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	api "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt/repositories"
@@ -247,7 +248,8 @@ func (r *repositoryResource) Read(ctx context.Context, req resource.ReadRequest,
 // Schema defines the schema for the APT repository.
 func (r *repositoryResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages an APT repository of a Proxmox VE node.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_apt_repository"),
+		Description:        "Manages an APT repository of a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
 			SchemaAttrNameComment: schema.StringAttribute{
 				Computed:    true,

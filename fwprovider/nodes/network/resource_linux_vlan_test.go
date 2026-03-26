@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	accTestLinuxVLANName = "proxmox_virtual_environment_network_linux_vlan.test"
+	accTestLinuxVLANName = "proxmox_network_linux_vlan.test"
 )
 
 func TestAccResourceLinuxVLAN(t *testing.T) {
@@ -79,7 +79,7 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 
 func testAccResourceLinuxVLANCreatedConfig(iface string, vlan int) string {
 	return fmt.Sprintf(`
-	resource "proxmox_virtual_environment_network_linux_vlan" "test" {
+	resource "proxmox_network_linux_vlan" "test" {
 		comment = "created by terraform"
 		mtu = 1499
 		name = "%s.%d"
@@ -102,7 +102,7 @@ func testAccResourceLinuxVLANCreatedCheck(iface string, vlan int) resource.TestC
 
 func testAccResourceLinuxVLANCustomNameCreatedConfig(name string, iface string, vlan int) string {
 	return fmt.Sprintf(`
-	resource "proxmox_virtual_environment_network_linux_vlan" "%s" {
+	resource "proxmox_network_linux_vlan" "%s" {
 		comment = "created by terraform"
 		interface = "%s"
 		mtu = 1499
@@ -115,7 +115,7 @@ func testAccResourceLinuxVLANCustomNameCreatedConfig(name string, iface string, 
 }
 
 func testAccResourceLinuxVLANCustomNameCreatedCheck(name string, iface string, vlan int) resource.TestCheckFunc {
-	resourceName := fmt.Sprintf("proxmox_virtual_environment_network_linux_vlan.%s", name)
+	resourceName := fmt.Sprintf("proxmox_network_linux_vlan.%s", name)
 
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr(resourceName, "comment", "created by terraform"),
@@ -129,7 +129,7 @@ func testAccResourceLinuxVLANCustomNameCreatedCheck(name string, iface string, v
 
 func testAccResourceLinuxVLANUpdatedConfig(iface string, vlan int, ipV4cidr string) string {
 	return fmt.Sprintf(`
-	resource "proxmox_virtual_environment_network_linux_vlan" "test" {
+	resource "proxmox_network_linux_vlan" "test" {
 		address = "%s"
 		address6 = "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"
 		comment = "updated by terraform"
@@ -156,7 +156,7 @@ func testAccResourceLinuxVLANUpdatedCheck(iface string, vlan int, ipV4cidr strin
 
 func testAccResourceLinuxVLANAddressRemovedConfig(iface string, vlan int) string {
 	return fmt.Sprintf(`
-	resource "proxmox_virtual_environment_network_linux_vlan" "test" {
+	resource "proxmox_network_linux_vlan" "test" {
 		comment = "updated by terraform"
 		name = "%s.%d"
 		node_name = "{{.NodeName}}"

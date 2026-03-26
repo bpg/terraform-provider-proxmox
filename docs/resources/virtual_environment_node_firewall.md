@@ -10,6 +10,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_node_firewall
 
+~> **Deprecated:** Use [`proxmox_node_firewall`](node_firewall.md) instead. This resource will be removed in v1.0.
+
 Manages Proxmox VE Node Firewall options.
 
 ~> This resource in fact updates existing node firewall configuration created by PVE on bootstrap. All optional attributes have explicit defaults for deterministic behavior (PVE may change defaults in the future). See [API documentation](https://pve.proxmox.com/pve-docs/api-viewer/index.html#/nodes/{node}/firewall/options).

@@ -55,7 +55,7 @@ func TestAccResourceDownloadFileUpstreamChange(t *testing.T) {
 			{
 				// Step 1: Download file - local size matches URL size (15 bytes)
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_download_file" "upstream_test" {
+					resource "proxmox_download_file" "upstream_test" {
 						content_type        = "iso"
 						node_name           = "{{.NodeName}}"
 						datastore_id        = "{{.DatastoreID}}"
@@ -66,7 +66,7 @@ func TestAccResourceDownloadFileUpstreamChange(t *testing.T) {
 						verify              = false
 					}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_download_file.upstream_test", map[string]string{
+					test.ResourceAttributes("proxmox_download_file.upstream_test", map[string]string{
 						"size":      "15",
 						"overwrite": "true",
 					}),
@@ -81,7 +81,7 @@ func TestAccResourceDownloadFileUpstreamChange(t *testing.T) {
 					t.Log("Changed server to report Content-Length: 100 (was 15)")
 				},
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_download_file" "upstream_test" {
+					resource "proxmox_download_file" "upstream_test" {
 						content_type        = "iso"
 						node_name           = "{{.NodeName}}"
 						datastore_id        = "{{.DatastoreID}}"
@@ -95,14 +95,14 @@ func TestAccResourceDownloadFileUpstreamChange(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(
-							"proxmox_virtual_environment_download_file.upstream_test",
+							"proxmox_download_file.upstream_test",
 							plancheck.ResourceActionDestroyBeforeCreate,
 						),
 					},
 				},
 				// after apply, size should be 100 (the new reported size from URL)
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_download_file.upstream_test", map[string]string{
+					test.ResourceAttributes("proxmox_download_file.upstream_test", map[string]string{
 						"size": "100",
 					}),
 				),
@@ -134,7 +134,7 @@ func TestAccResourceDownloadFileUpstreamChangeIgnored(t *testing.T) {
 			{
 				// Step 1: Download file with overwrite=false
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_download_file" "no_check" {
+					resource "proxmox_download_file" "no_check" {
 						content_type        = "iso"
 						node_name           = "{{.NodeName}}"
 						datastore_id        = "{{.DatastoreID}}"
@@ -145,7 +145,7 @@ func TestAccResourceDownloadFileUpstreamChangeIgnored(t *testing.T) {
 						verify              = false
 					}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_download_file.no_check", map[string]string{
+					test.ResourceAttributes("proxmox_download_file.no_check", map[string]string{
 						"size":      "15",
 						"overwrite": "false",
 					}),
@@ -159,7 +159,7 @@ func TestAccResourceDownloadFileUpstreamChangeIgnored(t *testing.T) {
 					t.Log("Changed server to report Content-Length: 200 - but overwrite=false, so should be ignored")
 				},
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_download_file" "no_check" {
+					resource "proxmox_download_file" "no_check" {
 						content_type        = "iso"
 						node_name           = "{{.NodeName}}"
 						datastore_id        = "{{.DatastoreID}}"
@@ -203,7 +203,7 @@ func TestAccResourceDownloadFileUpstreamNoChange(t *testing.T) {
 			{
 				// Step 1: Download file
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_download_file" "stable" {
+					resource "proxmox_download_file" "stable" {
 						content_type        = "iso"
 						node_name           = "{{.NodeName}}"
 						datastore_id        = "{{.DatastoreID}}"
@@ -214,7 +214,7 @@ func TestAccResourceDownloadFileUpstreamNoChange(t *testing.T) {
 						verify              = false
 					}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_download_file.stable", map[string]string{
+					test.ResourceAttributes("proxmox_download_file.stable", map[string]string{
 						"size": "14",
 					}),
 				),
@@ -223,7 +223,7 @@ func TestAccResourceDownloadFileUpstreamNoChange(t *testing.T) {
 				// Step 2: Same config, no changes - should be empty plan
 				// URL is checked (overwrite=true) but sizes match
 				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_download_file" "stable" {
+					resource "proxmox_download_file" "stable" {
 						content_type        = "iso"
 						node_name           = "{{.NodeName}}"
 						datastore_id        = "{{.DatastoreID}}"

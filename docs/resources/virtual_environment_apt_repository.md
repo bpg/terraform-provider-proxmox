@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_apt_repository
 
+~> **Deprecated:** Use [`proxmox_apt_repository`](apt_repository.md) instead. This resource will be removed in v1.0.
+
 Manages an APT repository of a Proxmox VE node.
 
 ## Example Usage

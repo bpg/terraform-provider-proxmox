@@ -26,12 +26,12 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-						resource "proxmox_virtual_environment_node_firewall" "test" {
+						resource "proxmox_node_firewall" "test" {
 							node_name      = "{{.NodeName}}"
 						}
 					`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_node_firewall.test", map[string]string{
+					test.ResourceAttributes("proxmox_node_firewall.test", map[string]string{
 						"enabled":                              "true",
 						"log_level_in":                         "nolog",
 						"log_level_out":                        "nolog",
@@ -48,7 +48,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 			},
 			{
 				Config: te.RenderConfig(`
-						resource "proxmox_virtual_environment_node_firewall" "test" {
+						resource "proxmox_node_firewall" "test" {
 							node_name                            = "{{.NodeName}}"
 							enabled                              = true
 							log_level_in                         = "err"
@@ -64,7 +64,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 						}
 					`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_node_firewall.test", map[string]string{
+					test.ResourceAttributes("proxmox_node_firewall.test", map[string]string{
 						"enabled":                              "true",
 						"log_level_in":                         "err",
 						"log_level_out":                        "alert",
@@ -81,7 +81,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 			},
 			{
 				Config: te.RenderConfig(`
-						resource "proxmox_virtual_environment_node_firewall" "test" {
+						resource "proxmox_node_firewall" "test" {
 							node_name           = "{{.NodeName}}"
 							enabled             = true
 							log_level_in        = "alert"
@@ -95,7 +95,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 						}
 					`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_node_firewall.test", map[string]string{
+					test.ResourceAttributes("proxmox_node_firewall.test", map[string]string{
 						"enabled":             "true",
 						"log_level_in":        "alert",
 						"log_level_out":       "alert",
@@ -110,12 +110,12 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 			},
 			{
 				Config: te.RenderConfig(`
-						resource "proxmox_virtual_environment_node_firewall" "test" {
+						resource "proxmox_node_firewall" "test" {
 							node_name      = "{{.NodeName}}"
 						}
 					`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_node_firewall.test", map[string]string{
+					test.ResourceAttributes("proxmox_node_firewall.test", map[string]string{
 						"enabled":                              "true",
 						"log_level_in":                         "nolog",
 						"log_level_out":                        "nolog",
@@ -131,7 +131,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      "proxmox_virtual_environment_node_firewall.test",
+				ResourceName:      "proxmox_node_firewall.test",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

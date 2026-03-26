@@ -75,7 +75,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 	}{
 		{"missing url", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
+				resource "proxmox_download_file" "qcow2_image" {
 					content_type       = "iso"
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
@@ -86,7 +86,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 		}}},
 		{"download qcow2 file to iso storage", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
+				resource "proxmox_download_file" "qcow2_image" {
 					content_type       = "iso"
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
@@ -97,7 +97,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					overwrite_unmanaged = true
 				  }`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_download_file.qcow2_image", map[string]string{
+				test.ResourceAttributes("proxmox_download_file.qcow2_image", map[string]string{
 					"id":                 "local:iso/fake_qcow2_file.img",
 					"content_type":       "iso",
 					"node_name":          te.NodeName,
@@ -110,14 +110,14 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					"checksum":           checksum,
 					"checksum_algorithm": "sha256",
 				}),
-				test.NoResourceAttributesSet("proxmox_virtual_environment_download_file.qcow2_image", []string{
+				test.NoResourceAttributesSet("proxmox_download_file.qcow2_image", []string{
 					"decompression_algorithm",
 				}),
 			),
 		}}},
 		{"download qcow2 file to import storage", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
+				resource "proxmox_download_file" "qcow2_image" {
 					content_type       = "import"
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
@@ -133,7 +133,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 		{"download & update iso file", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "iso_image" {
+				resource "proxmox_download_file" "iso_image" {
 					content_type = "iso"
 					node_name    = "{{.NodeName}}"
 					datastore_id = "{{.DatastoreID}}"
@@ -141,7 +141,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					overwrite_unmanaged = true
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
+					test.ResourceAttributes("proxmox_download_file.iso_image", map[string]string{
 						"id":             "local:iso/fake_file.iso",
 						"node_name":      te.NodeName,
 						"datastore_id":   te.DatastoreID,
@@ -151,7 +151,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 						"size":           "3",
 						"verify":         "true",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
+					test.NoResourceAttributesSet("proxmox_download_file.iso_image", []string{
 						"checksum",
 						"checksum_algorithm",
 						"decompression_algorithm",
@@ -160,7 +160,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "iso_image" {
+				resource "proxmox_download_file" "iso_image" {
 					content_type   = "iso"
 					node_name      = "{{.NodeName}}"
 					datastore_id   = "{{.DatastoreID}}"
@@ -170,7 +170,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					overwrite_unmanaged = true
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
+					test.ResourceAttributes("proxmox_download_file.iso_image", map[string]string{
 						"id":             "local:iso/fake_iso_file.img",
 						"content_type":   "iso",
 						"node_name":      te.NodeName,
@@ -181,7 +181,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 						"size":           "3",
 						"verify":         "true",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
+					test.NoResourceAttributesSet("proxmox_download_file.iso_image", []string{
 						"checksum",
 						"checksum_algorithm",
 						"decompression_algorithm",
@@ -213,7 +213,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				})
 			},
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "iso_image3" {
+				resource "proxmox_download_file" "iso_image3" {
 					content_type        = "iso"
 					node_name           = "{{.NodeName}}"
 					datastore_id        = "{{.DatastoreID}}"
@@ -223,7 +223,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					overwrite           = false
 				  }`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_download_file.iso_image3", map[string]string{
+				test.ResourceAttributes("proxmox_download_file.iso_image3", map[string]string{
 					"id":           "local:iso/fake_iso_file3.iso",
 					"content_type": "iso",
 					"node_name":    te.NodeName,
@@ -233,7 +233,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					"size":         "3",
 					"verify":       "true",
 				}),
-				test.NoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image3", []string{
+				test.NoResourceAttributesSet("proxmox_download_file.iso_image3", []string{
 					"checksum",
 					"checksum_algorithm",
 					"decompression_algorithm",
@@ -246,7 +246,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				uploadIsoFile(t, isoFile)
 			},
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "iso_image3" {
+				resource "proxmox_download_file" "iso_image3" {
 					content_type        = "iso"
 					node_name           = "{{.NodeName}}"
 					datastore_id        = "{{.DatastoreID}}"
@@ -266,7 +266,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				uploadIsoFile(t, isoFile)
 			},
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_download_file" "iso_image3" {
+				resource "proxmox_download_file" "iso_image3" {
 					content_type        = "iso"
 					node_name           = "{{.NodeName}}"
 					datastore_id        = "{{.DatastoreID}}"
@@ -277,7 +277,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				}`),
 			ConfigPlanChecks: resource.ConfigPlanChecks{
 				PreApply: []plancheck.PlanCheck{
-					plancheck.ExpectResourceAction("proxmox_virtual_environment_download_file.iso_image3", plancheck.ResourceActionDestroyBeforeCreate),
+					plancheck.ExpectResourceAction("proxmox_download_file.iso_image3", plancheck.ResourceActionDestroyBeforeCreate),
 				},
 			},
 		}}},

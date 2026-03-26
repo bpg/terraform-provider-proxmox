@@ -31,6 +31,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
@@ -204,7 +205,8 @@ func (r *downloadFileResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages files upload using PVE download-url API. ",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_download_file"),
+		Description:        "Manages files upload using PVE download-url API. ",
 		MarkdownDescription: "Manages files upload using PVE download-url API. " +
 			"It can be fully compatible and faster replacement for image files created using " +
 			"`proxmox_virtual_environment_file`. Supports images for VMs (ISO and disk images) and LXC (CT Templates).",

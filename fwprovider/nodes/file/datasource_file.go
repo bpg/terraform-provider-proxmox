@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
@@ -52,7 +53,8 @@ func (d *fileDataSource) Metadata(_ context.Context, req datasource.MetadataRequ
 
 func (d *fileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves information about an existing file in a Proxmox Virtual Environment node.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_file"),
+		Description:        "Retrieves information about an existing file in a Proxmox Virtual Environment node.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The unique identifier of the file (volume ID).",

@@ -26,7 +26,7 @@ func TestAccDatasourceDatastores(t *testing.T) {
 		steps []resource.TestStep
 	}{
 		{"read datastores attributes", []resource.TestStep{{
-			Config: te.RenderConfig(`data "proxmox_virtual_environment_datastores" "test" {
+			Config: te.RenderConfig(`data "proxmox_datastores" "test" {
 				node_name = "{{.NodeName}}"
 				filters = {
 					content_types = ["iso"]
@@ -34,10 +34,10 @@ func TestAccDatasourceDatastores(t *testing.T) {
 			}`),
 
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributesSet("data.proxmox_virtual_environment_datastores.test", []string{
+				test.ResourceAttributesSet("data.proxmox_datastores.test", []string{
 					"node_name",
 				}),
-				test.ResourceAttributes("data.proxmox_virtual_environment_datastores.test", map[string]string{
+				test.ResourceAttributes("data.proxmox_datastores.test", map[string]string{
 					"datastores.#":        "1",
 					"datastores.0.active": "true",
 					"datastores.0.id":     "local",

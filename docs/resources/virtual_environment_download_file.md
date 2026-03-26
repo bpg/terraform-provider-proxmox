@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_virtual_environment_download_file
 
+~> **Deprecated:** Use [`proxmox_download_file`](download_file.md) instead. This resource will be removed in v1.0.
+
 Manages files upload using PVE download-url API. It can be fully compatible and faster replacement for image files created using `proxmox_virtual_environment_file`. Supports images for VMs (ISO and disk images) and LXC (CT Templates).
 
 ~> Besides the `Datastore.AllocateTemplate` privilege, this resource requires both the `Sys.Audit` and `Sys.Modify` privileges.<br><br>

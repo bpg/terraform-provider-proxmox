@@ -25,6 +25,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	nodefirewall "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/firewall"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -108,7 +109,8 @@ func (r *nodeFirewallOptionsResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Proxmox VE Node Firewall options.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_node_firewall"),
+		Description:        "Manages Proxmox VE Node Firewall options.",
 		MarkdownDescription: "Manages Proxmox VE Node Firewall options.\n\n" +
 			"~> This resource in fact updates existing node firewall configuration created by PVE on bootstrap. " +
 			"All optional attributes have explicit defaults for deterministic behavior (PVE may change defaults in the future). " +

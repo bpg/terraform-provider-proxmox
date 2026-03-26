@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_datastores
 
+~> **Deprecated:** Use [`proxmox_datastores`](datastores.md) instead. This data source will be removed in v1.0.
+
 Retrieves information about all the datastores available to a specific node.
 
 
