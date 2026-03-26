@@ -17,6 +17,7 @@ import (
 // --- OpenFabric ---
 
 var (
+	_ resource.Resource                     = &openFabricShort{}
 	_ resource.ResourceWithConfigure        = &openFabricShort{}
 	_ resource.ResourceWithImportState      = &openFabricShort{}
 	_ resource.ResourceWithConfigValidators = &openFabricShort{}
@@ -52,6 +53,7 @@ func (r *openFabricShort) MoveState(ctx context.Context) []resource.StateMover {
 // --- OSPF ---
 
 var (
+	_ resource.Resource                = &ospfFabricShort{}
 	_ resource.ResourceWithConfigure   = &ospfFabricShort{}
 	_ resource.ResourceWithImportState = &ospfFabricShort{}
 	_ resource.ResourceWithMoveState   = &ospfFabricShort{}

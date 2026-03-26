@@ -17,6 +17,7 @@ import (
 // --- OpenFabric Node ---
 
 var (
+	_ resource.Resource                     = &openFabricNodeShort{}
 	_ resource.ResourceWithConfigure        = &openFabricNodeShort{}
 	_ resource.ResourceWithImportState      = &openFabricNodeShort{}
 	_ resource.ResourceWithConfigValidators = &openFabricNodeShort{}
@@ -52,6 +53,7 @@ func (r *openFabricNodeShort) MoveState(ctx context.Context) []resource.StateMov
 // --- OSPF Node ---
 
 var (
+	_ resource.Resource                = &ospfFabricNodeShort{}
 	_ resource.ResourceWithConfigure   = &ospfFabricNodeShort{}
 	_ resource.ResourceWithImportState = &ospfFabricNodeShort{}
 	_ resource.ResourceWithMoveState   = &ospfFabricNodeShort{}

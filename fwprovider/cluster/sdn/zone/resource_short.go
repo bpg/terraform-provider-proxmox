@@ -17,6 +17,7 @@ import (
 // --- EVPN ---
 
 var (
+	_ resource.Resource                = &evpnZoneShort{}
 	_ resource.ResourceWithConfigure   = &evpnZoneShort{}
 	_ resource.ResourceWithImportState = &evpnZoneShort{}
 	_ resource.ResourceWithMoveState   = &evpnZoneShort{}
@@ -51,6 +52,7 @@ func (r *evpnZoneShort) MoveState(ctx context.Context) []resource.StateMover {
 // --- QinQ ---
 
 var (
+	_ resource.Resource                = &qinqZoneShort{}
 	_ resource.ResourceWithConfigure   = &qinqZoneShort{}
 	_ resource.ResourceWithImportState = &qinqZoneShort{}
 	_ resource.ResourceWithMoveState   = &qinqZoneShort{}
@@ -85,6 +87,7 @@ func (r *qinqZoneShort) MoveState(ctx context.Context) []resource.StateMover {
 // --- Simple ---
 
 var (
+	_ resource.Resource                = &simpleZoneShort{}
 	_ resource.ResourceWithConfigure   = &simpleZoneShort{}
 	_ resource.ResourceWithImportState = &simpleZoneShort{}
 	_ resource.ResourceWithMoveState   = &simpleZoneShort{}
@@ -119,6 +122,7 @@ func (r *simpleZoneShort) MoveState(ctx context.Context) []resource.StateMover {
 // --- VLAN ---
 
 var (
+	_ resource.Resource                = &vlanZoneShort{}
 	_ resource.ResourceWithConfigure   = &vlanZoneShort{}
 	_ resource.ResourceWithImportState = &vlanZoneShort{}
 	_ resource.ResourceWithMoveState   = &vlanZoneShort{}
@@ -153,6 +157,7 @@ func (r *vlanZoneShort) MoveState(ctx context.Context) []resource.StateMover {
 // --- VXLAN ---
 
 var (
+	_ resource.Resource                = &vxlanZoneShort{}
 	_ resource.ResourceWithConfigure   = &vxlanZoneShort{}
 	_ resource.ResourceWithImportState = &vxlanZoneShort{}
 	_ resource.ResourceWithMoveState   = &vxlanZoneShort{}
