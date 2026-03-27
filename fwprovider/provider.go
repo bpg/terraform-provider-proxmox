@@ -576,6 +576,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		options.NewClusterOptionsResource,
 		options.NewClusterOptionsShortResource,
 		pools.NewPoolMembershipResource,
+		pools.NewShortPoolMembershipResource,
 		sdnapplier.NewResource,
 		sdnapplier.NewShortResource,
 		sdnsubnet.NewResource,
@@ -618,13 +619,13 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		vm.NewShortResource,
 		replication.NewResource,
 		replication.NewShortResource,
-		pools.NewShortPoolMembershipResource,
 	}
 }
 
 func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewVersionDataSource,
+		NewShortVersionDataSource,
 		acme.NewACMEAccountDataSource,
 		acme.NewACMEAccountShortDataSource, // proxmox_acme_account
 		acme.NewACMEAccountsDataSource,
@@ -691,7 +692,6 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		vm.NewShortDataSource,
 		replication.NewDataSource,
 		replication.NewShortDataSource,
-		NewShortVersionDataSource,
 		replication.NewReplicationsDataSource,
 		replication.NewReplicationsShortDataSource,
 	}

@@ -16,12 +16,10 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-func TestAccDatasourceVersion(t *testing.T) {
-	t.Parallel()
-
+func TestAccDatasourceVersionShort(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{

@@ -30,8 +30,6 @@ import (
 )
 
 func TestAccPoolMembershipContainer(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 
 	imageFileName := gofakeit.Word() + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
@@ -66,7 +64,7 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 		require.NoError(t, e)
 	})
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
@@ -254,8 +252,6 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 }
 
 func TestAccPoolMembershipVm(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 	accTestVmID := 100000 + rand.Intn(99999)
 	accTestVmID2 := 100000 + rand.Intn(99999)
@@ -273,7 +269,7 @@ func TestAccPoolMembershipVm(t *testing.T) {
 		"TestPoolName2": accTestPoolName2,
 	})
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
@@ -406,8 +402,6 @@ func TestAccPoolMembershipVm(t *testing.T) {
 }
 
 func TestAccPoolMembershipStorage(t *testing.T) {
-	t.Parallel()
-
 	te := test.InitEnvironment(t)
 	accTestPoolName := gofakeit.Word()
 
@@ -421,7 +415,7 @@ func TestAccPoolMembershipStorage(t *testing.T) {
 		"TestPoolName2": accTestPoolName2,
 	})
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{

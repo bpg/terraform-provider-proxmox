@@ -18,7 +18,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-func TestAccResourceVM(t *testing.T) {
+func TestAccResourceVMShort(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
