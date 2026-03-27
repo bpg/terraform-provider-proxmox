@@ -1,15 +1,13 @@
 ---
 layout: page
-title: proxmox_virtual_environment_vm2
+title: proxmox_vm
 parent: Data Sources
 subcategory: Virtual Environment
 description: |-
   This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.
 ---
 
-# Data Source: proxmox_virtual_environment_vm2
-
-~> **Deprecated:** Use [`proxmox_vm2`](vm2.md) instead. This data-source will be removed in v1.0.
+# Data Source: proxmox_vm
 
 !> **DO NOT USE**
 This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.

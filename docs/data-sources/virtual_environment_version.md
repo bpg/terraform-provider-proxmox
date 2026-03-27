@@ -9,6 +9,8 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_version
 
+~> **Deprecated:** Use [`proxmox_version`](version.md) instead. This data source will be removed in v1.0.
+
 Retrieves API version details.
 
 ## Example Usage

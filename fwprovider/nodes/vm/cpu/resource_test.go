@@ -27,12 +27,12 @@ func TestAccResourceVM2CPU(t *testing.T) {
 	}{
 		{"create VM with no cpu params", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-cpu"
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					// default values that are set by PVE if not specified
 					"cpu.cores":   "1",
 					"cpu.sockets": "1",
@@ -42,7 +42,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 		}}},
 		{"create VM with some cpu params", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-cpu"
 				cpu = {
@@ -53,7 +53,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					"cpu.cores":   "2",
 					"cpu.sockets": "2",
 					"cpu.type":    "host",
@@ -65,7 +65,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 		{"create VM with all cpu params and then update them", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-cpu"
 					cpu = {
@@ -82,7 +82,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"cpu.cores":      "2",
 						"cpu.hotplugged": "2",
 						"cpu.limit":      "64",
@@ -95,7 +95,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 			},
 			{ // now update the cpu params and check if they are updated
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-cpu"
 					cpu = {
@@ -110,14 +110,14 @@ func TestAccResourceVM2CPU(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"cpu.cores":      "4",
 						"cpu.hotplugged": "2",
 						"cpu.sockets":    "1",     // default value, but it is a special case.
 						"cpu.type":       "kvm64", // default value, but it is a special case.
 						"cpu.units":      "2048",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+					test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 						"cpu.limit", // other defaults are not set in the state
 						"cpu.numa",
 						"cpu.flags",
@@ -130,7 +130,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 		}},
 		{"create VM with cpu units = 1", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-cpu-units-1"
 				cpu = {
@@ -141,7 +141,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					"cpu.cores":   "1",
 					"cpu.sockets": "1",
 					"cpu.type":    "kvm64",
@@ -153,7 +153,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 		{"create VM without cpu.units and verify no drift", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-cpu-units-default"
 				}`),
@@ -166,7 +166,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 		{"create VM with x86-64-v4 CPU type and verify no format drift", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-cpu-x86-64-v4"
 					cpu = {
@@ -176,7 +176,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"cpu.cores":   "1",
 						"cpu.sockets": "1",
 						"cpu.type":    "x86-64-v4",
@@ -191,7 +191,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 		{"create VM with CPU cores only (no type) and verify no CPUEmulation error", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-cpu-no-type"
 					cpu = {
@@ -199,7 +199,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"cpu.cores":   "2",
 						"cpu.sockets": "1",
 						"cpu.type":    "kvm64",

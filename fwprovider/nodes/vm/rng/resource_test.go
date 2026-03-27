@@ -27,11 +27,11 @@ func TestAccResourceVM2RNG(t *testing.T) {
 	}{
 		{"create VM with no rng params", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-rng"
 			}`),
-			Check: test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+			Check: test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 				"rng.source",
 				"rng.max_bytes",
 				"rng.period",
@@ -39,7 +39,7 @@ func TestAccResourceVM2RNG(t *testing.T) {
 		}}},
 		{"create VM with some rng params", []resource.TestStep{{
 			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
+			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-rng"
 				rng = {
@@ -47,10 +47,10 @@ func TestAccResourceVM2RNG(t *testing.T) {
 				}
 			}`, test.WithRootUser()),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					"rng.source": "/dev/urandom",
 				}),
-				test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+				test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 					"rng.max_bytes",
 					"rng.period",
 				}),
@@ -59,7 +59,7 @@ func TestAccResourceVM2RNG(t *testing.T) {
 		{"create VM with RNG params and then update them", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-rng"
 					rng = {
@@ -68,18 +68,18 @@ func TestAccResourceVM2RNG(t *testing.T) {
 					}
 				}`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"rng.source":    "/dev/urandom",
 						"rng.max_bytes": "1024",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+					test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 						"rng.period",
 					}),
 				),
 			},
 			{ // now update the rng params and check if they are updated
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
+				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-rng"
 					rng = {
@@ -88,11 +88,11 @@ func TestAccResourceVM2RNG(t *testing.T) {
 					}
 				}`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"rng.source": "/dev/random",
 						"rng.period": "1000",
 					}),
-					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+					test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 						"rng.max_bytes",
 					}),
 				),

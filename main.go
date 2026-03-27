@@ -105,6 +105,8 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_version.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_vm2.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/resources/acl.md ./docs/resources/
+//go:generate cp ./build/docs-gen/data-sources/version.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/vm.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/resources/backup_job.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/realm_ldap.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/realm_openid.md ./docs/resources/
@@ -195,6 +197,8 @@ import (
 //go:generate cp ./build/docs-gen/resources/storage_zfspool.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_user_token.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_vm2.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/pool_membership.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/vm.md ./docs/resources/
 
 // these will be set by the goreleaser configuration
 // to appropriate values for the compiled binary.

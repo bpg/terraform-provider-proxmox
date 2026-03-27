@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
@@ -26,7 +27,8 @@ func (d *Datasource) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_vm"),
+		Description:        "This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.",
 		Attributes: map[string]schema.Attribute{
 			"cpu": cpu.DataSourceSchema(),
 			"description": schema.StringAttribute{

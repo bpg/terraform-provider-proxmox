@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
@@ -34,7 +35,8 @@ func (r *Resource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "This is an experimental implementation of a Proxmox VM resource using Plugin Framework.",
+		DeprecationMessage: migration.DeprecationMessage("proxmox_vm"),
+		Description:        "This is an experimental implementation of a Proxmox VM resource using Plugin Framework.",
 		MarkdownDescription: "This is an experimental implementation of a Proxmox VM resource using Plugin Framework." +
 			"<br><br>It is a Proof of Concept, highly experimental and **will** change in future. " +
 			"It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.",
