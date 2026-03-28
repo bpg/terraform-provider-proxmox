@@ -58,6 +58,9 @@ func TestAccResourceContainer(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
+					cpu {
+						limit = 1.5
+					}
 					disk {
 						datastore_id = "local-lvm"
 						size         = 4
@@ -94,6 +97,7 @@ func TestAccResourceContainer(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"unprivileged":              "true",
+						"cpu.0.limit":               "1.5",
 						"description":               "my\ndescription\nvalue\n",
 						"device_passthrough.#":      "1",
 						"device_passthrough.0.mode": "0660",
@@ -126,6 +130,9 @@ func TestAccResourceContainer(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
+					cpu {
+						limit = 1.5
+					}
 					disk {
 						datastore_id = "local-lvm"
 						size         = 4
@@ -178,6 +185,9 @@ func TestAccResourceContainer(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
+					cpu {
+						limit = 1.5
+					}
 					disk {
 						datastore_id = "local-lvm"
 						size         = 4

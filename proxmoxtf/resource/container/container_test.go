@@ -105,12 +105,14 @@ func TestContainerSchema(t *testing.T) {
 	test.AssertOptionalArguments(t, cpuSchema, []string{
 		mkCPUArchitecture,
 		mkCPUCores,
+		mkCPULimit,
 		mkCPUUnits,
 	})
 
 	test.AssertValueTypes(t, cpuSchema, map[string]schema.ValueType{
 		mkCPUArchitecture: schema.TypeString,
 		mkCPUCores:        schema.TypeInt,
+		mkCPULimit:        schema.TypeFloat,
 		mkCPUUnits:        schema.TypeInt,
 	})
 
