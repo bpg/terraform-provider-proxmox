@@ -42,7 +42,7 @@ func DataSourceSchema() schema.Attribute {
 				Optional:    true,
 				Computed:    true,
 			},
-			"limit": schema.Int64Attribute{
+			"limit": schema.Float64Attribute{
 				Description: "Limit of CPU usage.",
 				Optional:    true,
 				Computed:    true,

@@ -73,7 +73,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 						# architecture = "x86_64"   only root can set architecture
 						cores = 2
 						hotplugged = 2
-						limit = 64
+						limit = 63.5
 						numa = false
 						sockets = 2
 						type = "host"
@@ -85,7 +85,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"cpu.cores":      "2",
 						"cpu.hotplugged": "2",
-						"cpu.limit":      "64",
+						"cpu.limit":      "63.5",
 						"cpu.numa":       "false",
 						"cpu.sockets":    "2",
 						"cpu.type":       "host",

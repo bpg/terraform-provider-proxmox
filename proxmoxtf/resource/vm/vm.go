@@ -71,7 +71,7 @@ const (
 	dvCPUArchitecture     = ""
 	dvCPUCores            = 1
 	dvCPUHotplugged       = 0
-	dvCPULimit            = 0
+	dvCPULimit            = float64(0)
 	dvCPUNUMA             = false
 	dvCPUSockets          = 1
 	dvCPUType             = "qemu64"
@@ -682,12 +682,12 @@ func VM() *schema.Resource {
 						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2304)),
 					},
 					mkCPULimit: {
-						Type:        schema.TypeInt,
+						Type:        schema.TypeFloat,
 						Description: "Limit of CPU usage",
 						Optional:    true,
 						Default:     dvCPULimit,
 						ValidateDiagFunc: validation.ToDiagFunc(
-							validation.IntBetween(0, 128),
+							validation.FloatBetween(0, 128),
 						),
 					},
 					mkCPUNUMA: {
@@ -2576,7 +2576,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		cpuCores := cpuBlock[mkCPUCores].(int)
 		cpuFlags := cpuBlock[mkCPUFlags].([]any)
 		cpuHotplugged := cpuBlock[mkCPUHotplugged].(int)
-		cpuLimit := cpuBlock[mkCPULimit].(int)
+		cpuLimit := cpuBlock[mkCPULimit].(float64)
 		cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
 		cpuSockets := cpuBlock[mkCPUSockets].(int)
 		cpuType := cpuBlock[mkCPUType].(string)
@@ -2610,7 +2610,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if cpuLimit > 0 {
-			updateBody.CPULimit = ptr.Ptr(int64(cpuLimit))
+			updateBody.CPULimit = &cpuLimit
 		}
 
 		if cpuUnits > 0 {
@@ -3050,7 +3050,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 	cpuCores := cpuBlock[mkCPUCores].(int)
 	cpuFlags := cpuBlock[mkCPUFlags].([]any)
 	cpuHotplugged := cpuBlock[mkCPUHotplugged].(int)
-	cpuLimit := cpuBlock[mkCPULimit].(int)
+	cpuLimit := cpuBlock[mkCPULimit].(float64)
 	cpuSockets := cpuBlock[mkCPUSockets].(int)
 	cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
 	cpuType := cpuBlock[mkCPUType].(string)
@@ -3354,7 +3354,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 	}
 
 	if cpuLimit > 0 {
-		createBody.CPULimit = ptr.Ptr(int64(cpuLimit))
+		createBody.CPULimit = &cpuLimit
 	}
 
 	if cpuUnits > 0 {
@@ -4541,10 +4541,10 @@ func vmReadCustom(
 	}
 
 	if vmConfig.CPULimit != nil {
-		cpu[mkCPULimit] = int(*vmConfig.CPULimit)
+		cpu[mkCPULimit] = float64(*vmConfig.CPULimit)
 	} else {
 		// Default value of "cpulimit" is "0" according to the API documentation.
-		cpu[mkCPULimit] = 0
+		cpu[mkCPULimit] = float64(0)
 	}
 
 	if vmConfig.NUMAEnabled != nil {
@@ -6044,7 +6044,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		cpuCores := cpuBlock[mkCPUCores].(int)
 		cpuFlags := cpuBlock[mkCPUFlags].([]any)
 		cpuHotplugged := cpuBlock[mkCPUHotplugged].(int)
-		cpuLimit := cpuBlock[mkCPULimit].(int)
+		cpuLimit := cpuBlock[mkCPULimit].(float64)
 		cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
 		cpuSockets := cpuBlock[mkCPUSockets].(int)
 		cpuType := cpuBlock[mkCPUType].(string)
@@ -6106,7 +6106,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		}
 
 		if cpuLimit > 0 {
-			updateBody.CPULimit = ptr.Ptr(int64(cpuLimit))
+			updateBody.CPULimit = &cpuLimit
 		} else {
 			del = append(del, "cpulimit")
 		}
