@@ -1242,7 +1242,12 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}),
 			),
 		}}},
-		{"clone with moving disk", []resource.TestStep{{
+		{"clone with moving disk to ZFS storage", []resource.TestStep{{
+			PreConfig: func() {
+				if te.ZfsDatastoreID == "" {
+					t.Skip("skipping: PROXMOX_VE_ACC_ZFS_DATASTORE_ID is not set")
+				}
+			},
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
 					node_name = "{{.NodeName}}"
@@ -1264,14 +1269,14 @@ func TestAccResourceVMDisks(t *testing.T) {
 						vm_id = proxmox_virtual_environment_vm.template.vm_id
 					}
 					disk {
-						datastore_id = "tank"
+						datastore_id = "{{.ZfsDatastoreID}}"
 						interface    = "virtio0"
 						size         = 20
 					}
 				}`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
-					"disk.0.datastore_id": "tank",
+					"disk.0.datastore_id": te.ZfsDatastoreID,
 				}),
 			),
 		}}},

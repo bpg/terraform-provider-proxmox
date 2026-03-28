@@ -61,6 +61,27 @@ Before running examples, ensure the following on your Proxmox node:
 3. Create the bind mount directory: `mkdir -p /mnt/bindmounts/shared`
 4. Create an API token (Datacenter -> Permissions -> API Tokens)
 
+### Optional: ZFS storage for disk tests
+
+Some acceptance tests (e.g., `TestAccResourceVMDisks/clone_with_moving_disk`) require a ZFS-backed storage pool. To set one up:
+
+1. SSH into your Proxmox node and create a ZFS pool. If you don't have a spare disk, you can use a file-backed pool for testing:
+
+   ```sh
+   dd if=/dev/zero of=/tank.img bs=1M count=4096
+   zpool create tank /tank.img
+   ```
+
+2. Add the ZFS pool as storage in Proxmox (Datacenter -> Storage -> Add -> ZFS, set ID to `tank`, select the `tank` pool).
+
+3. Set the environment variable in your `testacc.env`:
+
+   ```env
+   PROXMOX_VE_ACC_ZFS_DATASTORE_ID="tank"
+   ```
+
+Tests that require ZFS storage will be skipped if this variable is not set.
+
 ## SSH access
 
 The default provider configuration uses API token authentication. Since there is no password to inherit for SSH, you need one of the following:
