@@ -71,7 +71,7 @@ type CreateRequestBody struct {
 	CPUArchitecture      *string                        `json:"arch,omitempty"               url:"arch,omitempty"`
 	CPUCores             *int64                         `json:"cores,omitempty"              url:"cores,omitempty"`
 	CPUEmulation         *CustomCPUEmulation            `json:"cpu,omitempty"                url:"cpu,omitempty"`
-	CPULimit             *int64                         `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
+	CPULimit             *float64                       `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
 	CPUSockets           *int64                         `json:"sockets,omitempty"            url:"sockets,omitempty"`
 	CPUUnits             *int64                         `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
 	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
@@ -219,7 +219,7 @@ type GetResponseData struct {
 	CPUArchitecture      *string                         `json:"arch,omitempty"`
 	CPUCores             *int64                          `json:"cores,omitempty"`
 	CPUEmulation         *CustomCPUEmulation             `json:"cpu,omitempty"`
-	CPULimit             *types.CustomInt64              `json:"cpulimit,omitempty"`
+	CPULimit             *types.CustomFloat64            `json:"cpulimit,omitempty"`
 	CPUSockets           *int64                          `json:"sockets,omitempty"`
 	CPUUnits             *int64                          `json:"cpuunits,omitempty"`
 	CPUAffinity          *string                         `json:"affinity,omitempty"`

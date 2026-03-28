@@ -29,7 +29,7 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diag
 	cpu.Affinity = types.StringPointerValue(config.CPUAffinity)
 	cpu.Architecture = types.StringPointerValue(config.CPUArchitecture)
 	cpu.Hotplugged = types.Int64PointerValue(config.VirtualCPUCount)
-	cpu.Limit = types.Int64PointerValue(config.CPULimit.PointerInt64())
+	cpu.Limit = types.Float64PointerValue(config.CPULimit.PointerFloat64())
 	cpu.Numa = types.BoolPointerValue(config.NUMAEnabled.PointerBool())
 	cpu.Units = types.Int64PointerValue(config.CPUUnits)
 
@@ -96,7 +96,7 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 	}
 
 	if !plan.Limit.IsUnknown() {
-		body.CPULimit = plan.Limit.ValueInt64Pointer()
+		body.CPULimit = plan.Limit.ValueFloat64Pointer()
 	}
 
 	if !plan.Sockets.IsUnknown() {
@@ -188,7 +188,7 @@ func FillUpdateBody(
 		if attribute.ShouldBeRemoved(plan.Limit, state.Limit) {
 			del("CPULimit")
 		} else if attribute.IsDefined(plan.Sockets) {
-			updateBody.CPULimit = plan.Limit.ValueInt64Pointer()
+			updateBody.CPULimit = plan.Limit.ValueFloat64Pointer()
 		}
 	}
 
