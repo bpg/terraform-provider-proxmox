@@ -528,12 +528,12 @@ output "ubuntu_vm_public_key" {
 - `pool_id` - (Optional) The identifier for a pool to assign the virtual machine to.
 - `protection` - (Optional) Sets the protection flag of the VM. This will disable the remove VM and remove disk operations (defaults to `false`).
 - `reboot` - (Optional) Reboot the VM after initial creation (defaults to `false`).
-- `reboot_after_update` - (Optional) Whether the provider is allowed to
-    reboot the VM after an update when the change requires it (defaults to
-    `true`). Reboots are triggered by changes to non-hotpluggable settings
-    (e.g. BIOS, boot order, CPU type) and by disk resizes when `disk` is
-    excluded from `hotplug`. If set to `false`, the provider emits a warning
-    instead of rebooting.
+- `reboot_after_update` - (Optional) Whether the provider may automatically
+    reboot or power off the VM during update operations when required to apply
+    changes. If `false`, updates that require taking the VM offline fail
+    instead of being applied automatically. Changes that are applied
+    successfully but still need a later manual reboot emit a warning instead
+    (defaults to `true`).
 - `rng` - (Optional) The random number generator configuration. Can only be set by `root@pam.`
     - `source` - The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
     - `max_bytes` - (Optional) Maximum bytes of entropy allowed to get injected into the guest every `period` milliseconds (defaults to `1024`). Prefer a lower value when using `/dev/random` as source.
@@ -574,7 +574,10 @@ output "ubuntu_vm_public_key" {
     template is not sorted, then Proxmox will always report a difference on the
     resource. You may use the `ignore_changes` lifecycle meta-argument to ignore
     changes to this attribute.
-- `template` - (Optional) Whether to create a template (defaults to `false`).
+- `template` - (Optional) Whether the VM should be a template. Setting this
+    from `false` to `true` converts an existing VM to a template in place.
+    Converting a template back to a regular VM is not supported (defaults to
+    `false`).
 - `stop_on_destroy` - (Optional) Whether to stop rather than shutdown on VM destroy (defaults to `false`)
 - `purge_on_destroy` - (Optional) Whether to purge the VM from backup configurations on destroy (defaults to `true`)
 - `delete_unreferenced_disks_on_destroy` - (Optional) Whether to delete unreferenced disks on destroy (defaults to `true`)
