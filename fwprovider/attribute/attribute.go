@@ -17,7 +17,10 @@ import (
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
-// ResourceID generates an attribute definition suitable for the always-present resource `id` attribute.
+// ResourceID generates a Computed string attribute for server-assigned resource IDs.
+// It includes UseStateForUnknown() so the ID is preserved across plan/apply cycles.
+// Use this for resources where the server generates the ID (e.g., backup jobs, metrics servers).
+// For user-provided IDs, define the attribute manually with Required + RequiresReplace + validators.
 func ResourceID(desc ...string) schema.StringAttribute {
 	a := schema.StringAttribute{
 		Computed:    true,

@@ -2,34 +2,33 @@
 
 ## Purpose
 
-This document identifies the cleanest framework provider implementations in the codebase
-and annotates their key patterns. It serves as a copy-from guide for contributors adding
-new resources or datasources.
+This document identifies the cleanest framework provider implementations in the codebase and annotates their key patterns. It serves as a copy-from guide for contributors adding new resources or datasources.
 
-Three implementations were selected after reviewing all ~48 resources and ~35 datasources
-in `fwprovider/`:
+Three implementations were selected after auditing 47 resources and 36 datasources in `fwprovider/`:
 
-| Rank      | Implementation     | Why Selected                                                                             |
-|-----------|--------------------|------------------------------------------------------------------------------------------|
-| Primary   | **SDN VNet**       | Simplest clean implementation, perfect 3-file pattern (resource, model, datasource)      |
-| Secondary | **Metrics Server** | Richer schema with many optional fields, `attribute.ResourceID()`, separate `name`/`id`  |
-| Tertiary  | **ACL**            | Cross-field validation (`ConfigValidators`), custom import ID parsing, non-standard CRUD |
+| Rank      | Implementation   | Why Selected                                                                               |
+|-----------|------------------|--------------------------------------------------------------------------------------------|
+| Primary   | **SDN VNet**     | Simplest clean implementation, perfect 3-file pattern (resource, model, datasource)        |
+| Secondary | **Replication**  | Many optional fields, split create/update methods, perfect audit score (66/66)             |
+| Tertiary  | **Backup Job**   | `ConfigValidators`, comma-separated-to-list, nested objects, shared fillCommonFields       |
 
-Start with SDN VNet for any new resource. Refer to Metrics Server or ACL only when your
-resource needs the additional patterns they demonstrate.
+Start with SDN VNet for any new resource. Refer to Replication when you need many optional fields or split create/update shapes. Refer to Backup Job for `ConfigValidators`, comma-separated-to-list conversion, or nested objects.
 
 ---
 
 ## How to Use This Document
 
-| I need to...                                 | Start here                                                                                                                        |
-|----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| Create a basic resource                      | [SDN VNet walkthrough](#primary-reference-sdn-vnet)                                                                               |
-| Handle many optional fields                  | [Metrics Server](#secondary-reference-metrics-server)                                                                             |
-| Add cross-field validation                   | [ACL ConfigValidators](#tertiary-reference-acl)                                                                                   |
-| Need nested attributes?                      | [SDN Subnet `SingleNestedAttribute`](../../fwprovider/cluster/sdn/subnet/resource.go)                                             |
-| Add a datasource                             | [SDN VNet datasource](#datasource) and [Metrics Server datasource](../../fwprovider/cluster/metrics/datasource_metrics_server.go) |
-| Find advanced patterns (generics, factories) | [Advanced Patterns table](#advanced-patterns)                                                                                     |
+| I need to...                                 | Start here                                                                                                          |
+|----------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| Create a basic resource                      | [SDN VNet walkthrough](#primary-reference-sdn-vnet)                                                                 |
+| Handle many optional fields                  | [Replication walkthrough](#secondary-reference-replication)                                                         |
+| Handle split create/update patterns          | [Replication walkthrough](#secondary-reference-replication)                                                         |
+| Add cross-field validation                   | [Backup Job ConfigValidators](#configvalidators-for-mutually-exclusive-attributes)                                  |
+| Convert comma-separated API values to lists  | [Backup Job comma-sep-to-list](#comma-separated-api-values-as-terraform-lists)                                      |
+| Parse composite import IDs                   | [SDN Subnet ImportState](../../fwprovider/cluster/sdn/subnet/resource.go)                                           |
+| Need nested attributes?                      | [SDN Subnet `SingleNestedAttribute`](../../fwprovider/cluster/sdn/subnet/resource.go)                               |
+| Add a datasource                             | [SDN VNet datasource](#datasource) and [Replication datasource](../../fwprovider/cluster/replication/datasource.go) |
+| Find advanced patterns (generics, factories) | [Advanced Patterns table](#advanced-patterns)                                                                       |
 
 ---
 
@@ -44,8 +43,7 @@ resource needs the additional patterns they demonstrate.
 
 ### Interface Compliance Assertions
 
-Every resource file starts with compile-time interface checks. These ensure your struct
-satisfies all required interfaces before runtime.
+Every resource file starts with compile-time interface checks. These ensure your struct satisfies all required interfaces before runtime.
 
 ```go
 var (
@@ -55,14 +53,11 @@ var (
 )
 ```
 
-If your resource implements additional interfaces (e.g., `ResourceWithConfigValidators`),
-add them here. Using `&Resource{}` (pointer literal) is the standard style; the ACL
-example uses `(*aclResource)(nil)` which is equivalent.
+If your resource implements additional interfaces (e.g., `ResourceWithConfigValidators`), add them here. Using `&Resource{}` (pointer literal) is the standard style; the ACL example uses `(*aclResource)(nil)` which is equivalent.
 
 ### Resource Struct and Constructor
 
-The struct holds the typed API client. The constructor returns the zero-value struct
-(the client is injected later via `Configure`).
+The struct holds the typed API client. The constructor returns the zero-value struct (the client is injected later via `Configure`).
 
 ```go
 type Resource struct {
@@ -110,6 +105,9 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
     resp.Schema = schema.Schema{
         Description: "Manages Proxmox VE SDN VNet.",
         Attributes: map[string]schema.Attribute{
+            // User-provided ID: Required + RequiresReplace + validators.
+            // For server-assigned IDs, use attribute.ResourceID() instead
+            // (Computed + UseStateForUnknown).
             "id": schema.StringAttribute{
                 Description: "The unique identifier of the SDN VNet.",
                 Required:    true,
@@ -140,10 +138,12 @@ Patterns to note:
 - `RequiresReplace()` on immutable fields (forces destroy+recreate on change).
 - Validators from `fwprovider/validators` package for reusable rules.
 - Inline validators from `terraform-plugin-framework-validators` for one-off rules.
+- `Sensitive: true` on credential fields (tokens, passwords, API keys) to redact from plan output and state display.
+- `attribute.ResourceID()` helper (from `fwprovider/attribute/`) generates a computed ID attribute with `UseStateForUnknown()`. Use this when the resource ID is assigned by the server, not provided by the user.
 
 ### Create
 
-The full create flow: plan -> toAPI -> API call -> read back -> set state.
+The full create flow: plan -> toAPI -> API call -> read back -> fromAPI -> set state.
 
 ```go
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -176,7 +176,8 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 }
 ```
 
-Always read back after create. The API may normalize values or populate computed fields.
+> [!IMPORTANT]
+> Always read back from the API after create. Never save plan data directly to state — the API may normalize values or populate computed fields.
 
 ### Read (with not-found handling)
 
@@ -206,9 +207,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 }
 ```
 
-The critical pattern: when the API returns `api.ErrResourceDoesNotExist`, call
-`resp.State.RemoveResource(ctx)` to tell Terraform the resource was deleted outside of
-Terraform. This triggers a plan to recreate it.
+The critical pattern: when the API returns `api.ErrResourceDoesNotExist`, call `resp.State.RemoveResource(ctx)` to tell Terraform the resource was deleted outside of Terraform. This triggers a plan to recreate it.
 
 ### Update (with CheckDelete for optional fields)
 
@@ -240,10 +239,10 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 }
 ```
 
-`attribute.CheckDelete` (defined in `fwprovider/attribute/attribute.go:47-59`) adds
-the API field name to the delete list when the plan value is null but the state value
-is not. This tells the Proxmox API to remove the field. The third argument is the
-**API parameter name** (not the Terraform attribute name).
+`attribute.CheckDelete` (defined in `fwprovider/attribute/attribute.go`) adds the API field name to the delete list when the plan value is null but the state value is not. This tells the Proxmox API to remove the field.
+
+> [!NOTE]
+> The third argument to `CheckDelete` is the **Proxmox API parameter name**, which often differs from the Terraform attribute name (e.g., `"isolate-ports"` vs `isolate_ports`, `"api-path-prefix"` vs `influx_api_path_prefix`).
 
 ### Delete (ignore not-found)
 
@@ -263,13 +262,10 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 }
 ```
 
-Ignore `api.ErrResourceDoesNotExist` on delete -- the resource is already gone, which
-is the desired end state.
+Ignore `api.ErrResourceDoesNotExist` on delete -- the resource is already gone, which is the desired end state.
 
-> **Retry predicate note:** If your resource's domain client uses `retry.NewTaskOperation`
-> for delete, ensure the retry predicate excludes `ErrResourceDoesNotExist`. This error
-> can arrive via HTTP 500 (not just 404), so `IsTransientAPIError` alone will incorrectly
-> retry it. Use the combined predicate:
+> [!CAUTION]
+> If your resource's domain client uses `retry.NewTaskOperation` for delete, ensure the retry predicate excludes `ErrResourceDoesNotExist`. This error can arrive via HTTP 500 (not just 404), so `IsTransientAPIError` alone will incorrectly retry it. Use the combined predicate:
 >
 > ```go
 > retry.WithRetryIf(func(err error) bool {
@@ -301,8 +297,7 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 }
 ```
 
-For simple resources where the import ID maps directly to the API lookup key, this
-pattern is sufficient. For composite IDs, see [ACL's custom parsing](#custom-import-id-parsing).
+For simple resources where the import ID maps directly to the API lookup key, this pattern is sufficient. For composite IDs, see [SDN Subnet](../../fwprovider/cluster/sdn/subnet/resource.go) which parses `vnet-id/subnet-id` format.
 
 ### Model Struct (model.go)
 
@@ -339,9 +334,7 @@ func (m *model) toAPI() *vnets.VNet {
 }
 ```
 
-Pattern: optional fields use `ValueStringPointer()` / `ValueBoolPointer()` /
-`ValueInt64Pointer()` which return `nil` when the Terraform value is null. The API
-struct uses pointer fields to distinguish "not set" from zero values.
+Pattern: optional fields use `ValueStringPointer()` / `ValueBoolPointer()` /`ValueInt64Pointer()` which return `nil` when the Terraform value is null. The API struct uses pointer fields to distinguish "not set" from zero values.
 
 ### fromAPI Method
 
@@ -362,9 +355,7 @@ func (m *model) fromAPI(id string, data *vnets.VNetData) {
 }
 ```
 
-Pattern: use `types.StringPointerValue()`, `types.BoolPointerValue()`, etc. These
-return `types.StringNull()` when the pointer is `nil`. The SDN-specific `handleDeletedValue`
-and pending-state handling are domain-specific; most resources will not need them.
+Pattern: use `types.StringPointerValue()`, `types.BoolPointerValue()`, etc. These return `types.StringNull()` when the pointer is `nil`. The SDN-specific `handleDeletedValue` and pending-state handling are domain-specific; most resources will not need them.
 
 ### Datasource
 
@@ -405,8 +396,8 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 }
 ```
 
-Key difference from resource Read: datasource errors on not-found instead of removing
-from state, because a datasource that cannot find its target is a configuration error.
+> [!IMPORTANT]
+> Datasources must error on not-found — never call `RemoveResource`. A datasource that cannot find its target is a configuration error, not a drift signal.
 
 ### Acceptance Tests
 
@@ -433,8 +424,7 @@ tests := []struct {
 }{
 ```
 
-Each entry is a named scenario with one or more steps. Steps within a scenario
-run sequentially (create, then update, then import).
+Each entry is a named scenario with one or more steps. Steps within a scenario run sequentially (create, then update, then import).
 
 #### Multi-step test with import verification
 
@@ -480,244 +470,242 @@ for _, tt := range tests {
 }
 ```
 
-Use `resource.ParallelTest` (not `resource.Test`) for acceptance tests that can run
-concurrently.
+Use `resource.ParallelTest` (not `resource.Test`) for acceptance tests that can run concurrently. See the [Replication tests](#acceptance-tests-paralleltest-and-table-driven-subtests) for the canonical `ParallelTest` example.
 
----
-
-## Secondary Reference: Metrics Server
-
-**Files:**
-
-- `fwprovider/cluster/metrics/resource_metrics_server.go`
-- `fwprovider/cluster/metrics/metrics_server_model.go`
-- `fwprovider/cluster/metrics/resource_metrics_server_test.go`
-
-The Metrics Server demonstrates patterns beyond VNet. Only the differences are shown.
-
-### Sensitive Attributes
-
-The Metrics Server schema marks secret fields as sensitive so Terraform redacts them
-from plan output and state display:
-
-```go
-"influx_token": schema.StringAttribute{
-    Sensitive: true,
-    // ...
-},
-```
-
-### Validator Combinations
-
-The Metrics Server schema shows 18 attributes including fields specific to different
-backend types (InfluxDB, Graphite, OpenTelemetry).
-
-Notable patterns:
-
-- `int64validator.Between(512, 65536)` for numeric range validation.
-- `stringvalidator.OneOf("graphite", "influxdb", "opentelemetry")` for enum fields.
-- Multiple `RequiresReplace()` fields (on `name` and `type`).
-
-### Extensive CheckDelete in Update
-
-When a resource has many optional fields, the Update method needs a `CheckDelete` call
-for each one:
-
-```go
-var toDelete []string
-
-attribute.CheckDelete(plan.Disable, state.Disable, &toDelete, "disable")
-attribute.CheckDelete(plan.MTU, state.MTU, &toDelete, "mtu")
-attribute.CheckDelete(plan.Timeout, state.Timeout, &toDelete, "timeout")
-attribute.CheckDelete(plan.InfluxAPIPathPrefix, state.InfluxAPIPathPrefix, &toDelete, "api-path-prefix")
-attribute.CheckDelete(plan.InfluxBucket, state.InfluxBucket, &toDelete, "bucket")
-// ... 10 more CheckDelete calls
-```
-
-The third argument is always the **Proxmox API parameter name**, which often differs
-from the Terraform attribute name (e.g., `"api-path-prefix"` vs `influx_api_path_prefix`).
-
-### Bool to Int64 Conversion
-
-The Proxmox API uses `int64` values (0/1) to represent booleans for some fields. The
-Metrics Server model handles this conversion with helper functions:
-
-```go
-func boolToInt64Ptr(boolPtr *bool) *int64 {
-    if boolPtr != nil {
-        var result int64
-
-        if *boolPtr {
-            result = int64(1)
-        } else {
-            result = int64(0)
-        }
-
-        return &result
-    }
-
-    return nil
-}
-
-func int64ToBoolPtr(int64ptr *int64) *bool {
-    if int64ptr != nil {
-        var result bool
-
-        if *int64ptr == 0 {
-            result = false
-        } else {
-            result = true
-        }
-
-        return &result
-    }
-
-    return nil
-}
-```
-
-These are used in the model's `importFromAPI` and `toAPIRequestBody` methods to convert
-between Terraform's `types.Bool` and the API's `int64` representation:
-
-```go
-// toAPI
-data.Disable = boolToInt64Ptr(m.Disable.ValueBoolPointer())
-
-// fromAPI
-m.Disable = types.BoolPointerValue(int64ToBoolPtr(data.Disable))
-```
-
-Use this pattern when the Proxmox API represents a boolean concept as 0/1 integers.
+-> **Note:** The VNet test file currently uses `resource.Test` rather than `resource.ParallelTest`. This is a known deviation (D6=2 in the audit). New resources should follow the `ParallelTest` pattern shown in the Replication reference.
 
 ### Test: Verifying Unset Attributes
 
 ```go
 test.NoResourceAttributesSet(
-    "proxmox_virtual_environment_metrics_server.acc_influxdb_server",
+    "proxmox_virtual_environment_sdn_vnet.test_vnet",
     []string{
-        "disable",
-        "timeout",
-        "influx_api_path_prefix",
-        // ... more fields
+        "alias",
+        "isolate_ports",
+        "tag",
+        // ... optional fields that should be null/unset
     },
 ),
 ```
 
-Use `test.NoResourceAttributesSet` to verify optional fields that should be null/unset.
+Use `test.NoResourceAttributesSet` to verify optional fields that should be null/unset after a config change removes them. This complements `test.ResourceAttributes` for positive assertions.
 
 ---
 
-## Tertiary Reference: ACL
+## Secondary Reference: Replication
 
 **Files:**
 
-- `fwprovider/access/resource_acl.go`
-- `fwprovider/access/resource_acl_model.go`
-- `fwprovider/access/resource_acl_test.go`
+- `fwprovider/cluster/replication/resource.go` -- CRUD + schema
+- `fwprovider/cluster/replication/model.go` -- Terraform/API mapping
+- `fwprovider/cluster/replication/datasource.go` -- Read-only datasource
+- `fwprovider/cluster/replication/resource_test.go` -- Acceptance tests
 
-The ACL resource demonstrates patterns beyond VNet. Only the differences are shown.
+The Replication resource scored 66/66 (Grade A) in the framework audit -- the only perfect score. It demonstrates patterns beyond VNet. Only the differences are shown.
 
-### ConfigValidators for Cross-Field Validation
+### Split Create/Update API Methods
 
-The ACL resource implements `ResourceWithConfigValidators` to enforce that `group_id`,
-`token_id`, and `user_id` are mutually exclusive:
+The Proxmox API uses different request shapes for creating and updating a replication job. The create endpoint requires `target` and `type` (immutable), while the update endpoint does not accept them. The model reflects this with separate methods:
 
 ```go
-var (
-    _ resource.Resource                     = (*aclResource)(nil)
-    _ resource.ResourceWithConfigure        = (*aclResource)(nil)
-    _ resource.ResourceWithImportState      = (*aclResource)(nil)
-    _ resource.ResourceWithConfigValidators = (*aclResource)(nil)
-)
+// toAPICreate populates all fields including immutable ones (target, type).
+func (m *model) toAPICreate() *replications.ReplicationCreate {
+    data := &replications.ReplicationCreate{}
+    data.ID = m.ID.ValueString()
+    data.Target = m.Target.ValueString()  // immutable: only sent at creation
+    data.Type = m.Type.ValueString()      // immutable: only sent at creation
+    if !m.Comment.IsUnknown() {
+        data.Comment = m.Comment.ValueStringPointer()
+    }
+    data.Disable = (*proxmoxtypes.CustomBool)(m.Disable.ValueBoolPointer())
+    // ... rate, schedule
+    return data
+}
+
+// toAPIUpdate omits immutable fields -- API rejects them on update.
+func (m *model) toAPIUpdate() *replications.ReplicationUpdate {
+    data := &replications.ReplicationUpdate{}
+    data.ID = m.ID.ValueString()
+    if !m.Comment.IsUnknown() {
+        data.Comment = m.Comment.ValueStringPointer()
+    }
+    data.Disable = (*proxmoxtypes.CustomBool)(m.Disable.ValueBoolPointer())
+    // ... rate, schedule (same as create, but NO target/type)
+    return data
+}
 ```
 
+The CRUD methods call the matching model method:
+
 ```go
-func (r *aclResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
-    return []resource.ConfigValidator{
-        resourcevalidator.Conflicting(
-            path.MatchRoot("group_id"),
-            path.MatchRoot("token_id"),
-            path.MatchRoot("user_id"),
+// Create uses toAPICreate (includes target + type).
+repl := plan.toAPICreate()
+err := r.client.Replication(plan.ID.ValueString()).CreateReplication(ctx, repl)
+
+// Update uses toAPIUpdate (excludes target + type).
+repl := plan.toAPIUpdate()
+// ... CheckDelete, then set repl.Delete = toDelete ...
+err := r.client.Replication(plan.ID.ValueString()).UpdateReplication(ctx, repl)
+```
+
+**When to split:** If the API's create and update endpoints accept different fields (common when some fields are immutable after creation), use `toAPICreate()` and `toAPIUpdate()`. If both endpoints accept the same shape, a single `toAPI()` is fine (see VNet).
+
+### RequiresReplace on Immutable Fields
+
+Three fields are immutable after creation. Each gets `RequiresReplace()` so Terraform will destroy and recreate the resource if these change:
+
+```go
+"id": schema.StringAttribute{
+    Required: true,
+    PlanModifiers: []planmodifier.String{
+        stringplanmodifier.RequiresReplace(),
+    },
+    Validators: []validator.String{
+        stringvalidator.RegexMatches(
+            regexp.MustCompile(`^[0-9]+-[0-9]+$`),
+            "id must be <GUEST>-<JOBNUM>",
         ),
+    },
+},
+"target": schema.StringAttribute{
+    Required: true,
+    PlanModifiers: []planmodifier.String{
+        stringplanmodifier.RequiresReplace(),
+    },
+},
+```
+
+Note how `RequiresReplace` aligns with the split API methods: the fields that require replace are exactly the fields excluded from `toAPIUpdate()`.
+
+### Extensive CheckDelete in Update
+
+Every mutable optional field needs a `CheckDelete` call:
+
+```go
+var toDelete []string
+
+attribute.CheckDelete(plan.Comment, state.Comment, &toDelete, "comment")
+attribute.CheckDelete(plan.Disable, state.Disable, &toDelete, "disable")
+attribute.CheckDelete(plan.Rate, state.Rate, &toDelete, "rate")
+attribute.CheckDelete(plan.Schedule, state.Schedule, &toDelete, "schedule")
+
+repl.Delete = toDelete  // API uses `delete` param to remove fields
+```
+
+### BoolDefault for Optional+Computed Bool
+
+The `disable` field has a default value, so null in config means `false` (not "unset"):
+
+```go
+"disable": schema.BoolAttribute{
+    Optional:    true,
+    Computed:    true,
+    Default:     booldefault.StaticBool(false),
+    Description: "Flag to disable/deactivate this replication.",
+},
+```
+
+### fromAPI: Handling API Quirks
+
+The API omits `disable` from the response when the value is `false`. The `fromAPI` method normalizes this:
+
+```go
+func (m *model) fromAPI(id string, data *replications.ReplicationData) {
+    m.ID = types.StringValue(id)
+    m.Target = types.StringValue(data.Target)
+    m.Type = types.StringValue(data.Type)
+    m.Comment = types.StringPointerValue(data.Comment)
+
+    // API quirk: `disable` is omitted when false, not returned as false.
+    if v := data.Disable.PointerBool(); v != nil {
+        m.Disable = types.BoolValue(*v)
+    } else {
+        m.Disable = types.BoolValue(false)
+    }
+
+    m.Rate = types.Float64PointerValue(data.Rate)
+    m.Schedule = types.StringPointerValue(data.Schedule)
+}
+```
+
+### Short-Name Alias with MoveState
+
+Per [ADR-007](007-resource-type-name-migration.md), existing Framework resources are being migrated from the verbose `proxmox_virtual_environment_*` prefix to the shorter `proxmox_*` prefix. Both names coexist during the transition. `MoveState` enables users to migrate their state using Terraform's `moved` block (Terraform >= 1.8) without destroying and recreating resources.
+
+> [!NOTE]
+> **Do not add short-name aliases or `MoveState` to new resources or datasources.** New resources should use the `proxmox_` prefix directly in their `Metadata()` method. This pattern is only for migrating existing `proxmox_virtual_environment_*` resources.
+
+The alias embeds the original resource and overrides only `Metadata` and `Schema`:
+
+```go
+type resourceShort struct {
+    Resource  // embed: inherits all CRUD methods
+}
+
+func (r *resourceShort) Metadata(...) {
+    resp.TypeName = "proxmox_replication"  // short name
+}
+
+func (r *resourceShort) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+    r.Resource.Schema(ctx, req, resp)
+    resp.Schema.DeprecationMessage = ""  // remove deprecation from short name
+}
+
+func (r *resourceShort) MoveState(ctx context.Context) []resource.StateMover {
+    schemaResp := &resource.SchemaResponse{}
+    r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+    return []resource.StateMover{
+        migration.PrefixMoveState("proxmox_virtual_environment_replication", &schemaResp.Schema),
     }
 }
 ```
 
-The `resourcevalidator.Conflicting` validator (from `terraform-plugin-framework-validators`)
-produces a clear error when more than one of the listed attributes is set. This is
-validated at plan time, before any API calls.
+### Acceptance Tests: ParallelTest and Table-Driven Subtests
 
-### Custom Import ID Parsing
-
-When the import ID is a composite string (not a simple API identifier), parse it in
-`ImportState`:
+The test file demonstrates the preferred pattern with `resource.ParallelTest`:
 
 ```go
-func (r *aclResource) ImportState(
-    ctx context.Context,
-    req resource.ImportStateRequest,
-    resp *resource.ImportStateResponse,
-) {
-    model, err := parseACLResourceModelFromID(req.ID)
-    if err != nil {
-        resp.Diagnostics.AddError("Unable to import ACL",
-            "failed to parse ID: "+err.Error())
-        return
-    }
+tests := []struct {
+    name  string
+    steps []resource.TestStep
+}{
+    {"create and update minimal replication", func() []resource.TestStep {
+        cid := newCID()  // random ID avoids collisions between parallel tests
+        return []resource.TestStep{ /* create -> add fields -> import */ }
+    }()},
+    {"replication fields deletion", func() []resource.TestStep {
+        // Step 1: create with all fields. Step 2: remove all optional fields.
+        return []resource.TestStep{ /* ... */ }
+    }()},
+    {"replication fields deletion and re-addition", func() []resource.TestStep {
+        // Step 1: all fields. Step 2: remove all. Step 3: re-add all.
+        return []resource.TestStep{ /* ... */ }
+    }()},
+}
 
-    resp.Diagnostics.Append(resp.State.Set(ctx, model)...)
+for _, tt := range tests {
+    t.Run(tt.name, func(t *testing.T) {
+        resource.ParallelTest(t, resource.TestCase{
+            ProtoV6ProviderFactories: te.AccProviders,
+            Steps:                    tt.steps,
+        })
+    })
 }
 ```
 
-The parsing function splits the composite ID and populates the model:
+Key patterns:
+
+- **Random IDs** (`newCID()`) allow parallel subtests to run without resource collisions.
+- **Field deletion + re-addition** tests verify `CheckDelete` works end-to-end.
+- **Import verification** combined with the last step of multi-step tests.
+
+### Validation Tests (Unit, No Infrastructure)
+
+Validation rules are tested separately with `resource.UnitTest`:
 
 ```go
-const aclIDFormat = "{path}?{group|user@realm|user@realm!token}?{role}"
-
-func parseACLResourceModelFromID(id string) (*aclResourceModel, error) {
-    parts := strings.Split(id, "?")
-    if len(parts) != 3 {
-        return nil, fmt.Errorf("invalid ACL resource ID format %#v, expected %v", id, aclIDFormat)
-    }
-
-    path := parts[0]
-    entityID := parts[1]
-    roleID := parts[2]
-
-    model := &aclResourceModel{
-        ID:      types.StringValue(id),
-        GroupID: types.StringNull(),
-        Path:    path,
-        RoleID:  roleID,
-        TokenID: types.StringNull(),
-        UserID:  types.StringNull(),
-    }
-
-    switch {
-    case strings.Contains(entityID, "!"):
-        model.TokenID = types.StringValue(entityID)
-    case strings.Contains(entityID, "@"):
-        model.UserID = types.StringValue(entityID)
-    default:
-        model.GroupID = types.StringValue(entityID)
-    }
-
-    return model, nil
-}
-```
-
-Define the format as a constant so error messages are self-documenting. Initialize
-mutually exclusive fields to `types.StringNull()` to avoid nil-vs-empty confusion.
-
-### Validation Tests
-
-The ACL test file includes a dedicated validation test that verifies cross-field
-constraints without making API calls:
-
-```go
-func TestAccAcl_Validators(t *testing.T) {
+func TestUnitResourceReplication_Validators(t *testing.T) {
     t.Parallel()
-
     te := test.InitEnvironment(t)
 
     resource.UnitTest(t, resource.TestCase{
@@ -725,25 +713,187 @@ func TestAccAcl_Validators(t *testing.T) {
         Steps: []resource.TestStep{
             {
                 PlanOnly: true,
-                Config: `resource "proxmox_virtual_environment_acl" "test" {
-                    group_id = "test"
-                    path = "/"
-                    role_id = "test"
-                    token_id = "test"
-                }`,
-                ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
+                Config:   `resource "proxmox_replication" "test" { id = "invalidid" ... }`,
+                ExpectError: regexp.MustCompile(`id must be <GUEST>-<JOBNUM>`),
             },
-            // ... more validation cases
+            // ... regex edge cases, enum validators, missing required fields
         },
     })
 }
 ```
 
-Key patterns:
+Named `TestUnit*` (not `TestAcc*`) to signal it runs without acceptance infrastructure.
 
-- `resource.UnitTest` instead of `resource.Test` -- no real infrastructure needed.
-- `PlanOnly: true` -- validates during plan, no apply.
-- `ExpectError` with a regex -- asserts the expected validation error.
+---
+
+## Tertiary Reference: Backup Job
+
+**Files:**
+
+- `fwprovider/cluster/backup/resource.go` -- CRUD + schema + ConfigValidators
+- `fwprovider/cluster/backup/model.go` -- Terraform/API mapping
+- `fwprovider/cluster/backup/resource_test.go` -- Acceptance tests
+
+The Backup Job resource scored 64/66 (Grade A) in the framework audit. It demonstrates patterns beyond VNet and Replication. Only the differences are shown.
+
+### ConfigValidators for Mutually Exclusive Attributes
+
+The Backup Job implements `ResourceWithConfigValidators` to enforce that `all`, `vmid`, and `pool` are mutually exclusive selection modes:
+
+```go
+var (
+    _ resource.Resource                     = &backupJobResource{}
+    _ resource.ResourceWithConfigure        = &backupJobResource{}
+    _ resource.ResourceWithImportState      = &backupJobResource{}
+    _ resource.ResourceWithConfigValidators = &backupJobResource{}
+)
+```
+
+```go
+func (r *backupJobResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+    return []resource.ConfigValidator{
+        resourcevalidator.Conflicting(
+            path.MatchRoot("all"),
+            path.MatchRoot("vmid"),
+        ),
+        resourcevalidator.Conflicting(
+            path.MatchRoot("all"),
+            path.MatchRoot("pool"),
+        ),
+        resourcevalidator.Conflicting(
+            path.MatchRoot("vmid"),
+            path.MatchRoot("pool"),
+        ),
+    }
+}
+```
+
+Import `resourcevalidator` from `terraform-plugin-framework-validators/resourcevalidator`. Pairwise `Conflicting` calls produce more precise error messages than a single 3-way call. Validated at plan time, before any API calls.
+
+### Comma-Separated API Values as Terraform Lists
+
+The Proxmox API represents `vmid` as a comma-separated string (`"100,101,102"`), but the Terraform schema exposes it as a `types.List`:
+
+```go
+"vmid": schema.ListAttribute{
+    Description: "A list of guest VM/CT IDs to include in the backup job.",
+    Optional:    true,
+    ElementType: types.StringType,
+},
+```
+
+**toAPI (join):** Extract list elements and join:
+
+```go
+if !m.VMIDs.IsNull() && !m.VMIDs.IsUnknown() {
+    var vmids []string
+    d := m.VMIDs.ElementsAs(ctx, &vmids, false)
+    diags.Append(d...)
+    if !d.HasError() && len(vmids) > 0 {
+        vmidStr := strings.Join(vmids, ",")
+        common.VMID = &vmidStr
+    }
+}
+```
+
+**fromAPI (split):** Parse comma-separated string back to `types.List`:
+
+```go
+if data.VMID != nil && *data.VMID != "" {
+    ids := strings.Split(*data.VMID, ",")
+    vmidValues := make([]attr.Value, len(ids))
+    for i, id := range ids {
+        vmidValues[i] = types.StringValue(strings.TrimSpace(id))
+    }
+    listVal, d := types.ListValue(types.StringType, vmidValues)
+    diags.Append(d...)
+    m.VMIDs = listVal
+} else {
+    m.VMIDs = types.ListNull(types.StringType)
+}
+```
+
+> [!IMPORTANT]
+> When the API value is nil or empty, always set the Terraform field to `types.ListNull(types.StringType)` (not an empty list). This prevents spurious diffs between "not set" and "set to empty."
+
+See [ADR-004](004-schema-design-conventions.md#comma-separated-api-values--terraform-lists) for the design rationale.
+
+### Shared fillCommonFields for Create and Update
+
+When create and update API bodies share a common embedded struct, extract the shared field mapping into a single method to avoid duplicating 20+ field mappings:
+
+```go
+func (m *backupJobModel) toCreateAPI(ctx context.Context, diags *diag.Diagnostics) *backup.CreateRequestBody {
+    body := &backup.CreateRequestBody{}
+    body.ID = m.ID.ValueString()
+    body.Schedule = m.Schedule.ValueString()
+    m.fillCommonFields(ctx, &body.RequestBodyCommon, diags)
+    return body
+}
+
+func (m *backupJobModel) toUpdateAPI(ctx context.Context, state *backupJobModel, diags *diag.Diagnostics) *backup.UpdateRequestBody {
+    body := &backup.UpdateRequestBody{}
+    body.Schedule = m.Schedule.ValueStringPointer()
+    m.fillCommonFields(ctx, &body.RequestBodyCommon, diags)
+    // ... CheckDelete calls, body.Delete = toDelete ...
+    return body
+}
+```
+
+Compare with Replication's fully separate `toAPICreate()`/`toAPIUpdate()` -- use `fillCommonFields` when the overlap is large, and fully separate methods when the overlap is small.
+
+### Nested Object Attributes
+
+Backup Job uses `SingleNestedAttribute` for structured sub-objects like `fleecing` and `performance`. Each nested object needs a separate model struct and an `attrTypes()` function:
+
+```go
+type fleecingModel struct {
+    Enabled types.Bool   `tfsdk:"enabled"`
+    Storage types.String `tfsdk:"storage"`
+}
+
+func fleecingAttrTypes() map[string]attr.Type {
+    return map[string]attr.Type{
+        "enabled": types.BoolType,
+        "storage": types.StringType,
+    }
+}
+```
+
+In `fromAPI`, convert to `types.Object` using `types.ObjectValueFrom`:
+
+```go
+if data.Fleecing != nil {
+    fleecingVal := fleecingModel{
+        Enabled: types.BoolPointerValue(data.Fleecing.Enabled.PointerBool()),
+        Storage: types.StringPointerValue(data.Fleecing.Storage),
+    }
+    obj, d := types.ObjectValueFrom(ctx, fleecingAttrTypes(), fleecingVal)
+    diags.Append(d...)
+    m.Fleecing = obj
+} else {
+    m.Fleecing = types.ObjectNull(fleecingAttrTypes())
+}
+```
+
+In `toAPI`, extract the nested model from `types.Object`:
+
+```go
+if !m.Fleecing.IsNull() && !m.Fleecing.IsUnknown() {
+    var fleecing fleecingModel
+    d := m.Fleecing.As(ctx, &fleecing, basetypes.ObjectAsOptions{})
+    diags.Append(d...)
+    if !d.HasError() {
+        common.Fleecing = &backup.FleecingConfig{
+            Enabled: proxmoxtypes.CustomBoolPtr(fleecing.Enabled.ValueBoolPointer()),
+            Storage: fleecing.Storage.ValueStringPointer(),
+        }
+    }
+}
+```
+
+> [!NOTE]
+> For **custom composite import ID parsing** (e.g., `vnet-id/subnet-id`), see [SDN Subnet](../../fwprovider/cluster/sdn/subnet/resource.go) which splits `req.ID` on `/` and looks up the resource using both parts.
 
 ---
 
@@ -757,9 +907,61 @@ outgrows the simple 3-file pattern.
 | Generic factory resource | `fwprovider/cluster/sdn/zone/resource_generic.go` | Multiple resources sharing CRUD logic with different schemas |
 | Go generics | `fwprovider/storage/resource_generic.go` with `storageResource[T, M]` | API structure allows generic handling across similar resource types |
 | Modular sub-schemas | `fwprovider/nodes/vm/` with sub-packages `cdrom/`, `cpu/`, `memory/`, `rng/`, `vga/` | Very large resources that benefit from splitting into sub-packages |
+| Opt-in management | `fwprovider/nodes/clonedvm/resource.go` with `optInManagedAttribute()` | Cloned resources where only explicitly listed fields are managed |
 | `ValidateConfig` method | `fwprovider/cluster/sdn/subnet/resource.go` | Complex validation that requires reading multiple attributes |
 | Shared model | `fwprovider/cluster/acme/plugin_model.go` shared by `resource_acme_dns_plugin.go` and `resource_acme_account.go` | Multiple resources sharing one model file with common types |
 | Custom `stringset.Value` type | `fwprovider/types/stringset/` | Comma-separated list attributes (e.g., node lists) |
+| Comma-separated to List/Map | `fwprovider/cluster/backup/model.go` with `toCreateAPI()`/`fromAPI()` | API fields using comma-separated strings exposed as Terraform lists |
+
+---
+
+## Compliance Scoring Rubric
+
+Each Framework resource is scored on 7 dimensions (0-3), weighted by impact (max 66). Datasources skip D1/D4 (max 42). This is the canonical methodology for compliance assessment.
+
+**Grades (resources):** A >=58, B >=48, C >=36, D <36. **Grades (datasources):** A >=37, B >=30, C >=23, D <23. **Critical failure:** D1=0 or D3=0 caps grade at D regardless of total.
+
+### D1: CRUD Lifecycle (Weight 5)
+
+Checkpoints: (a) read-back after Create, (b) read-back after Update, (c) Read handles `ErrResourceDoesNotExist` with `RemoveResource`, (d) Delete ignores not-found, (e) ImportState implemented, (f) `CheckDelete` for every optional field.
+
+**0** = multiple critical violations. **1** = missing read-back or RemoveResource. **2** = all critical patterns present, minor gaps. **3** = fully canonical. Singletons (ClusterOptions, NodeFirewallOptions) may mark c/d N/A.
+
+### D2: Error Messages (Weight 2)
+
+Checkpoints: (a) consistent pattern within the resource, (b) summary includes resource name, (c) Title Case, (d) detail is `err.Error()` not double-wrapped, (e) distinct message per CRUD operation, (f) read-back errors distinguishable, (g) new code uses ADR-005 `"Unable to [Verb] [Resource]"`.
+
+**0** = inconsistent or malformed. **1** = consistent but missing resource name. **2** = good with minor gaps. **3** = fully consistent.
+
+### D3: Schema Design (Weight 4)
+
+Checkpoints: (a) `types.*` for all fields, (b) correct Required/Optional/Computed, (c) `RequiresReplace` on immutable fields, (d) validators on constrained fields, (e) `Sensitive: true` on credentials, (f) all attributes have Description, (g) comma-separated API values as List/Set.
+
+**0** = raw Go types, no validators. **1** = types.\* but missing validators/descriptions. **2** = mostly compliant. **3** = full compliance.
+
+### D4: Model Conversion (Weight 3)
+
+Checkpoints: (a) `toAPI()`/`fromAPI()` naming (or `toAPICreate()`/`toAPIUpdate()` for split shapes), (b) `Value*Pointer()` in toAPI, (c) `types.*PointerValue()` in fromAPI, (d) `proxmoxtypes.CustomBoolPtr()` for bool-int64, (e) model in separate file.
+
+**0** = inline conversion, no model file. **1** = non-standard names. **2** = correct patterns but legacy names. **3** = fully canonical.
+
+### D5: File Organization (Weight 2)
+
+Checkpoints: (a) 3-file pattern, (b) domain hierarchy, (c) interface assertions, (d) Configure nil guard, (e) zero-value constructor, (f) short-name alias with MoveState (for migrated resources; new `proxmox_` resources skip this).
+
+**0** = major structural violations. **1** = model inlined or missing assertions. **2** = missing one element. **3** = full compliance.
+
+### D6: Testing Quality (Weight 3)
+
+Checkpoints: (a) test file exists, (b) `//go:build acceptance || all`, (c) `t.Parallel()`, (d) `test.InitEnvironment`, (e) table-driven with named scenarios, (f) `resource.ParallelTest`, (g) import test, (h) functional coverage (create + update + field removal), (i) validation test if applicable, (j) `test.ResourceAttributes` / `test.NoResourceAttributesSet`.
+
+**0** = no tests. **1** = basic test, missing import/parallel. **2** = create + update + import with ParallelTest. **3** = comprehensive.
+
+### D7: Advanced Correctness (Weight 3)
+
+Checkpoints: (a) ImportState errors on not-found (not RemoveResource), (b) delete retry excludes `ErrResourceDoesNotExist`, (c) all `State.Set()` wrapped in `Diagnostics.Append()`, (d) domain client uses `%w`, (e) datasource uses `config.DataSource` and errors on not-found.
+
+**0** = multiple violations. **1** = notable gaps. **2** = minor issues. **3** = all correct.
 
 ---
 
@@ -779,14 +981,17 @@ relevant pattern in this document.
 - [ ] Interface compliance assertions (`var _ resource.Resource = ...`)
 - [ ] Resource struct with typed client field
 - [ ] Constructor returning zero-value struct (`NewResource()`)
-- [ ] `Metadata` returning `req.ProviderTypeName + "_your_resource"`
+- [ ] `Metadata` returning type name with `proxmox_` prefix for new resources (per ADR-007; no short-name alias needed)
 - [ ] `Configure` with nil guard, `config.Resource` type assertion, client extraction
-- [ ] `Schema` with descriptions, validators, and plan modifiers on immutable fields
+- [ ] `Schema` with descriptions, validators, plan modifiers on immutable fields, and `Sensitive: true` on credential fields
 - [ ] `Create`: plan -> toAPI -> API call -> read back -> set state
+- [ ] Read-back from API after Create (not saving plan directly)
 - [ ] `Read`: handle `api.ErrResourceDoesNotExist` with `RemoveResource`
 - [ ] `Update`: `CheckDelete` for every optional field, then update + read back
+- [ ] Read-back from API after Update (not saving plan directly)
 - [ ] `Delete`: ignore `api.ErrResourceDoesNotExist`
 - [ ] `ImportState`: simple ID pass-through or custom parsing
+- [ ] All `resp.State.Set()` calls wrapped in `resp.Diagnostics.Append()`
 
 ### model.go
 
@@ -794,10 +999,11 @@ relevant pattern in this document.
 - [ ] `types.*` for optional fields, plain Go types only for always-present fields
 - [ ] `toAPI()` method using `Value*Pointer()` for optional fields
 - [ ] `fromAPI()` method using `types.*PointerValue()` for optional fields
+- [ ] Bool-to-Int64 conversions use `proxmoxtypes.CustomBoolPtr()` / `.PointerBool()` (not local helpers)
 
 ### resource_test.go
 
-- [ ] `//go:build acceptance || all` build tag
+- [ ] Build tag includes `acceptance` (not just `all`): `//go:build acceptance || all`
 - [ ] `t.Parallel()` at top of test function
 - [ ] `test.InitEnvironment(t)` for provider factories and config rendering
 - [ ] Table-driven test structure with named scenarios
@@ -820,3 +1026,48 @@ relevant pattern in this document.
 - [ ] `./testacc TestAccYourResource` passes (acceptance tests)
 - [ ] API calls verified with mitmproxy
 - [ ] Domain client delete retry predicate excludes `ErrResourceDoesNotExist` (see [ADR-005](005-error-handling.md#retry-policies))
+
+---
+
+## Known Deviations and Migration Status
+
+As of 2026-03-27, a comprehensive audit scored all 47 Framework resources. Results:
+
+**Grade Distribution:** 11 A (23%) -- 17 B (36%) -- 16 C (34%) -- 3 D (6%)
+
+### Tier 1: Critical (Grade D -- need rework)
+
+| Resource    | Score | Primary Issues                                              |
+|-------------|-------|-------------------------------------------------------------|
+| UserToken   | 31/66 | Bare State.Set calls, no read-back, missing RemoveResource  |
+| ACMEAccount | 34/66 | No toAPI/fromAPI, no CheckDelete, credentials not Sensitive |
+| ACMEPlugin  | 34/66 | Incomplete read-back, no CheckDelete, copy-paste bug        |
+
+### Tier 2: High-ROI Fixes (fix shared code -- many resources improve)
+
+| Fix                                                     | Affected Resources     |
+|---------------------------------------------------------|------------------------|
+| Storage generic base: add CheckDelete, fix error prefix | 7 storage resources    |
+| HW Mapping shared.go: fix silent error swallowing       | 3 HW mapping resources |
+| Error message standardization codemod                   | ~33 resources          |
+
+### Weakest Dimension: D6 Testing (avg 1.66/3)
+
+11 resources have zero acceptance tests: HAGroup, HAResource, HARule,
+CIFS/LVM/LVMThin/ZFS Storage, Fabric OpenFabric/OSPF, FabricNode OpenFabric/OSPF.
+
+### Strongest Dimension: D3 Schema Design (avg 2.87/3)
+
+Nearly universal compliance with types.*, validators, and descriptions.
+
+### Reference Implementation Scores
+
+| Resource      | Score | Grade | Notes                                                         |
+|---------------|-------|-------|---------------------------------------------------------------|
+| Replication   | 66/66 | A     | Perfect score -- additional reference for split create/update |
+| BackupJob     | 64/66 | A     | Excellent -- uses `proxmox_` prefix natively per ADR-007      |
+| SDN VNet      | 63/66 | A     | Primary reference (gold standard)                             |
+| SDN Subnet    | 61/66 | A     | Good reference for SingleNestedAttribute                      |
+| SDN Zones (5) | 61/66 | A     | Good reference for generic base pattern                       |
+
+Full audit report and per-resource scorecards are maintained internally.
