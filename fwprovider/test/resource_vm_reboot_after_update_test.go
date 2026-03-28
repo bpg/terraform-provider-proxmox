@@ -21,10 +21,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-// These tests document the two reboot-after-update policy buckets:
+// These tests cover two of the three reboot-after-update policy buckets:
 //  1. changes that cannot be applied at all without taking the VM offline,
 //     which should fail when reboot_after_update = false
 //  2. the same changes succeeding when reboot_after_update = true.
+//
+// The third bucket — config changes that are applied but require a manual reboot,
+// emitting a warning via vmFinalizePowerState — is not covered here.
 func TestAccResourceVMRebootAfterUpdateTPMStatePolicy(t *testing.T) {
 	t.Parallel()
 
@@ -274,6 +277,99 @@ func TestAccResourceVMRebootAfterUpdateDiskMovePolicy(t *testing.T) {
 				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "disk.0.datastore_id", "local"),
+					checkVMStatus(te, &vmID, "running"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceVMRebootAfterUpdateDiskResizePolicy(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+	imageFileID := te.DownloadCloudImage()
+	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+	var vmID string
+
+	resourceName := "proxmox_virtual_environment_vm.test_reboot_after_update_disk_resize"
+
+	diskResizeConfig := func(rebootAfterUpdate bool, size int, aio string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_vm" "test_reboot_after_update_disk_resize" {
+				node_name           = "{{.NodeName}}"
+				name                = "test-reboot-after-update-disk-resize"
+				started             = true
+				stop_on_destroy     = true
+				reboot_after_update = %t
+
+				cpu {
+					cores = 2
+				}
+
+				memory {
+					dedicated = 2048
+				}
+
+				disk {
+					datastore_id = "local-lvm"
+					file_format  = "raw"
+					file_id      = "{{.ImageFileID}}"
+					interface    = "scsi0"
+					discard      = "on"
+					size         = %d
+					aio          = "%s"
+				}
+
+				initialization {
+					interface    = "scsi1"
+					datastore_id = "local-lvm"
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+
+				network_device {
+					bridge = "vmbr0"
+				}
+			}
+		`, rebootAfterUpdate, size, aio))
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create running VM with reboot_after_update=false
+				Config: diskResizeConfig(false, 20, "io_uring"),
+				Check: resource.ComposeTestCheckFunc(
+					captureVMID(resourceName, &vmID),
+					resource.TestCheckResourceAttr(resourceName, "disk.0.size", "20"),
+					resource.TestCheckResourceAttr(resourceName, "disk.0.aio", "io_uring"),
+					checkVMStatus(te, &vmID, "running"),
+				),
+			},
+			{
+				// Step 2: Change aio (triggers rebootRequired via disk.Update) AND resize disk
+				// with reboot_after_update=false → expect error
+				Config: diskResizeConfig(false, 25, "threads"),
+				PreConfig: func() {
+					ensureVMRunning(te, vmID)
+				},
+				ExpectError: regexp.MustCompile(`cannot resize disks`),
+			},
+			{
+				// Step 3: Same change with reboot_after_update=true → expect success
+				Config: diskResizeConfig(true, 25, "threads"),
+				PreConfig: func() {
+					ensureVMRunning(te, vmID)
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "disk.0.size", "25"),
+					resource.TestCheckResourceAttr(resourceName, "disk.0.aio", "threads"),
 					checkVMStatus(te, &vmID, "running"),
 				),
 			},

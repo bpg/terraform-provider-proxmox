@@ -2202,7 +2202,7 @@ func vmPowerOffForPendingChanges(
 	}
 
 	if vmStatus.Status == "stopped" || power.stoppedByProvider {
-		return vmPowerOffForPendingChangesResult{}
+		return vmPowerOffForPendingChangesResult{handledOffline: true}
 	}
 
 	canReboot := d.Get(mkRebootAfterUpdate).(bool)
@@ -2227,8 +2227,11 @@ func vmPowerOffForPendingChanges(
 }
 
 // Finalize the VM power state after all update operations are done.
-// - If the VM is stopped, but should be started, we start it.
-// - If a restart is required and the VM stayed running the entire time, we reboot it.
+//   - Templates must always be stopped.
+//   - If the VM is stopped but should be started, we start it.
+//   - If started changed to false and the VM is still running, we stop it.
+//   - If a restart is required and the VM stayed running the entire time, we reboot it
+//     (or emit a warning if reboot_after_update is false).
 func vmFinalizePowerState(
 	ctx context.Context,
 	vmAPI *vms.Client,
@@ -6614,7 +6617,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	template := d.Get(mkTemplate).(bool)
 	started := d.Get(mkStarted).(bool)
 
-	if cloudInitRebuildRequired {
+	if cloudInitRebuildRequired && !template {
 		if er := vmAPI.RebuildCloudInitDisk(ctx); er != nil {
 			return diag.FromErr(er)
 		}
@@ -6681,10 +6684,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	} else if diskChanges != nil && len(diskChanges.resizeBodies) > 0 {
 		// Only disk resizes are blocked here. Other pending reboot-required changes
 		// still follow the "applied, but manual reboot required later" path.
-		diags := rebootAfterUpdateDisabledError("resize disks")
-		diags = append(diags, vmRead(ctx, d, m)...)
+		updateDiags = append(updateDiags, rebootAfterUpdateDisabledError("resize disks")...)
+		updateDiags = append(updateDiags, vmRead(ctx, d, m)...)
 
-		return diags
+		return updateDiags
 	} else {
 		rebootRequired = false
 	}
@@ -6892,6 +6895,8 @@ func vmPlanDiskLocationAndSizeChanges(
 	return changes, nil
 }
 
+// vmUpdateDiskLocation moves disks between datastores.
+// The caller must ensure the VM is stopped when shutdownForDisksRequired is set.
 func vmUpdateDiskLocation(
 	ctx context.Context,
 	vmAPI *vms.Client,
@@ -6911,6 +6916,7 @@ func vmUpdateDiskLocation(
 	return nil
 }
 
+// vmUpdateDiskSize resizes disks that have grown.
 func vmUpdateDiskSize(
 	ctx context.Context,
 	vmAPI *vms.Client,

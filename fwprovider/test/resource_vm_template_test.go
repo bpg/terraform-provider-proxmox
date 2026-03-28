@@ -13,15 +13,9 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-
-	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 func TestAccResourceVMTemplateConversion(t *testing.T) {
-	if utils.GetAnyStringEnv("TF_ACC") == "" {
-		t.Skip("Acceptance tests are disabled")
-	}
-
 	t.Parallel()
 
 	te := InitEnvironment(t)
@@ -207,6 +201,8 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.step,
