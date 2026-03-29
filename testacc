@@ -25,6 +25,7 @@ Arguments:
 
 Options:
   --all                Run all acceptance tests (same as omitting TEST_NAME)
+  --parallel N         Max concurrent tests per package (default: 1)
   --no-proxy           Disable HTTP/HTTPS proxy for this test run
   --verbose            Show the exact command being executed
   -h, --help           Show this help message
@@ -37,6 +38,8 @@ Examples:
   ./testacc TestAccDatasourceFile -- -v        # Run with verbose go test output
   ./testacc --no-proxy TestAccDatasourceFile   # Run without proxy
   ./testacc --verbose TestAccDatasourceFile    # Show command being executed
+  ./testacc --parallel 1 TestAccDatasourceFile # Run with no parallelism
+  PARALLEL=8 ./testacc                         # Override via environment
 
 Notes:
   - Single test names use exact matching (^TestName$) for efficiency
@@ -109,10 +112,14 @@ TEST_NAME=""
 GO_FLAGS=""
 VERBOSE=""
 PARSE_GO_FLAGS=0
+EXPECT_PARALLEL=0
 
 for arg in "$@"; do
     if [ "$PARSE_GO_FLAGS" = "1" ]; then
         GO_FLAGS="${GO_FLAGS} ${arg}"
+    elif [ "$EXPECT_PARALLEL" = "1" ]; then
+        PARALLEL="$arg"
+        EXPECT_PARALLEL=0
     elif [ "$arg" = "--" ]; then
         PARSE_GO_FLAGS=1
     elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
@@ -120,6 +127,8 @@ for arg in "$@"; do
         exit 0
     elif [ "$arg" = "--all" ]; then
         TEST_NAME=""
+    elif [ "$arg" = "--parallel" ]; then
+        EXPECT_PARALLEL=1
     elif [ "$arg" = "--no-proxy" ]; then
         NO_PROXY="1"
     elif [ "$arg" = "--verbose" ]; then
@@ -196,12 +205,13 @@ fi
 PACKAGE_PATH=$(find_test_package "$TEST_NAME" "$IS_PATTERN")
 
 printf 'Package: %s\n' "$PACKAGE_PATH" >&2
+printf 'Parallel: %s\n' "${PARALLEL:-4}" >&2
 
 if [ -n "$VERBOSE" ]; then
     printf '\n' >&2
     printf 'Executing:\n' >&2
     printf '  TF_ACC=1 env $(grep -v '\''^#'\'' testacc.env | xargs) \\\n' >&2
-    printf '    go test -count 1 --tags=acceptance -timeout %s \\\n' "$DEFAULT_TIMEOUT" >&2
+    printf '    go test -count 1 -parallel %s --tags=acceptance -timeout %s \\\n' "${PARALLEL:-4}" "$DEFAULT_TIMEOUT" >&2
     if [ -n "$RUN_ARG" ]; then
         printf '    %s \\\n' "$RUN_ARG" >&2
     fi
@@ -218,5 +228,5 @@ printf '\n' >&2
 # Note: GO_FLAGS and RUN_ARG are intentionally unquoted for word splitting
 # shellcheck disable=SC2046,SC2086
 TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
-    go test -count 1 --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
+    go test -count 1 -p 1 -parallel "${PARALLEL:-1}" --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
     ${RUN_ARG} "$PACKAGE_PATH" ${GO_FLAGS}
