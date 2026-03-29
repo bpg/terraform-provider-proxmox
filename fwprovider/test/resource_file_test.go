@@ -18,7 +18,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 
@@ -41,7 +40,7 @@ const fallbackSnippetURL = "https://raw.githubusercontent.com/yaml/yaml-test-sui
 func TestAccResourceFile(t *testing.T) {
 	te := InitEnvironment(t)
 
-	snippetRaw := fmt.Sprintf("snippet-raw-%s.txt", gofakeit.Word())
+	snippetRaw := SafeResourceName("snippet-raw") + ".txt"
 	snippetFile1 := strings.ReplaceAll(CreateTempFile(t, "snippet-file-1-*.yaml", "test snippet 1 - file").Name(), `\`, `/`)
 	snippetFile2 := strings.ReplaceAll(CreateTempFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file").Name(), `\`, `/`)
 	fileISO := strings.ReplaceAll(CreateTempFile(t, "file-*.iso", "pretend this is an ISO").Name(), `\`, `/`)

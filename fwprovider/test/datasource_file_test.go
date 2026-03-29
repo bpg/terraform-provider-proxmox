@@ -15,7 +15,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 
@@ -102,7 +101,7 @@ func TestAccDatasourceFileImport(t *testing.T) {
 func TestAccDatasourceFileNotFound(t *testing.T) {
 	te := InitEnvironment(t)
 
-	nonExistentFileName := "non-existent-" + gofakeit.Word() + ".txt"
+	nonExistentFileName := SafeResourceName("non-existent") + ".txt"
 
 	te.AddTemplateVars(map[string]interface{}{
 		"NonExistentFileName": nonExistentFileName,
@@ -130,8 +129,8 @@ func TestAccDatasourceFileNotFound(t *testing.T) {
 func TestAccDatasourceFileContentTypeFiltering(t *testing.T) {
 	te := InitEnvironment(t)
 
-	vztmplFileName := gofakeit.Word() + "-template.tar.zst"
-	isoFileName := gofakeit.Word() + "-test.iso"
+	vztmplFileName := SafeResourceName("tpl") + "-template.tar.zst"
+	isoFileName := SafeResourceName("iso") + "-test.iso"
 
 	te.AddTemplateVars(map[string]interface{}{
 		"VZTmplFileName": vztmplFileName,
@@ -230,7 +229,7 @@ func TestAccDatasourceFileContentTypeFiltering(t *testing.T) {
 func TestAccDatasourceFileContentTypeMismatch(t *testing.T) {
 	te := InitEnvironment(t)
 
-	isoFileName := gofakeit.Word() + "-mismatch-test.iso"
+	isoFileName := SafeResourceName("iso") + "-mismatch-test.iso"
 
 	te.AddTemplateVars(map[string]interface{}{
 		"ISOFileName": isoFileName,

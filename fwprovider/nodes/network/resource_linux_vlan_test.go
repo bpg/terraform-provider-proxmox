@@ -33,7 +33,7 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 	}
 
 	vlan1 := gofakeit.Number(10, 4094)
-	customName := fmt.Sprintf("iface_%s", gofakeit.Word())
+	customName := fmt.Sprintf("iface_%s", gofakeit.LetterN(6))
 	vlan2 := gofakeit.Number(10, 4094)
 	ipV4cidr := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
 

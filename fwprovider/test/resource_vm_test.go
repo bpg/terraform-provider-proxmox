@@ -30,7 +30,7 @@ func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
 	te := InitEnvironment(t)
-	dirName := fmt.Sprintf("dir_%s", gofakeit.Word())
+	dirName := fmt.Sprintf("dir_%s", gofakeit.LetterN(8))
 	te.AddTemplateVars(map[string]interface{}{
 		"DirName": dirName,
 	})

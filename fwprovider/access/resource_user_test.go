@@ -24,7 +24,7 @@ import (
 func TestAccResourceUser(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
+	userID := fmt.Sprintf("%s@pve", gofakeit.LetterN(10))
 	te.AddTemplateVars(map[string]any{
 		"UserID": userID,
 	})
@@ -88,8 +88,8 @@ func TestAccResourceUser(t *testing.T) {
 
 func TestAccResourceUserToken(t *testing.T) {
 	te := test.InitEnvironment(t)
-	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
-	tokenName := gofakeit.Word()
+	userID := fmt.Sprintf("%s@pve", gofakeit.LetterN(10))
+	tokenName := gofakeit.LetterN(8)
 
 	te.AddTemplateVars(map[string]any{
 		"UserID":    userID,

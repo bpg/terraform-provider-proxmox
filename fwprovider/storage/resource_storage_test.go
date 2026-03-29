@@ -9,10 +9,8 @@
 package storage_test
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -21,7 +19,7 @@ import (
 func TestAccResourceStorageDirectoryShortName(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	storageID := fmt.Sprintf("dir-short-%s", gofakeit.Word())
+	storageID := test.SafeResourceName("dir-short")
 	te.AddTemplateVars(map[string]any{
 		"StorageID": storageID,
 	})
