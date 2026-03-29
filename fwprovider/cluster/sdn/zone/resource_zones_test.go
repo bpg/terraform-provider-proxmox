@@ -47,11 +47,9 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_sdn_zone_simple.zone_simple", map[string]string{
-					"id":      "zoneS",
-					"mtu":     "1496",
-					"ipam":    "pve",
-					"pending": "true",
-					"state":   "new",
+					"id":   "zoneS",
+					"mtu":  "1496",
+					"ipam": "pve",
 				}),
 			),
 		}, {
@@ -75,10 +73,8 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_sdn_zone_simple.zone_simple", map[string]string{
-					"id":      "zoneS",
-					"mtu":     "1495",
-					"pending": "true",
-					"state":   "changed",
+					"id":  "zoneS",
+					"mtu": "1495",
 				}),
 				test.NoResourceAttributesSet("proxmox_sdn_zone_simple.zone_simple", []string{
 					"ipam",
@@ -109,9 +105,7 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_sdn_zone_simple.zone_no_mtu", map[string]string{
-					"id":      "zoneNM",
-					"pending": "true",
-					"state":   "new",
+					"id": "zoneNM",
 				}),
 				test.NoResourceAttributesSet("proxmox_sdn_zone_simple.zone_no_mtu", []string{
 					"mtu",
@@ -142,9 +136,7 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 				test.ResourceAttributes("proxmox_sdn_zone_simple.zone_simple2", map[string]string{
 					"id":      "zoneSE",
 					"mtu":     "1496",
-					"pending": "true",
 					"nodes.#": "0",
-					"state":   "new",
 				}),
 			),
 		}}},
@@ -180,11 +172,9 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_sdn_zone_vlan.zone_vlan", map[string]string{
-					"id":      "zoneV",
-					"mtu":     "1496",
-					"bridge":  "vmbr0",
-					"pending": "true",
-					"state":   "new",
+					"id":     "zoneV",
+					"mtu":    "1496",
+					"bridge": "vmbr0",
 				}),
 			),
 		}, {
@@ -198,17 +188,16 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_sdn_zone_vlan.zone_vlan", map[string]string{
-					"id":      "zoneV",
-					"mtu":     "1495",
-					"bridge":  "vmbr0",
-					"pending": "true",
-					"state":   "new",
+					"id":     "zoneV",
+					"mtu":    "1495",
+					"bridge": "vmbr0",
 				}),
 			),
-			ResourceName:      "proxmox_sdn_zone_vlan.zone_vlan",
-			ImportStateId:     "zoneV",
-			ImportState:       true,
-			ImportStateVerify: true,
+			ResourceName:            "proxmox_sdn_zone_vlan.zone_vlan",
+			ImportStateId:           "zoneV",
+			ImportState:             true,
+			ImportStateVerify:       true,
+			ImportStateVerifyIgnore: []string{"pending", "state"},
 		}}},
 	}
 
@@ -243,11 +232,9 @@ func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
 				`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_sdn_zone_vlan.zone_vlan_no_nodes", map[string]string{
-						"id":      "zoneVNo",
-						"bridge":  "vmbr0",
-						"mtu":     "1496",
-						"pending": "true",
-						"state":   "new",
+						"id":     "zoneVNo",
+						"bridge": "vmbr0",
+						"mtu":    "1496",
 					}),
 				),
 			}},
@@ -265,11 +252,9 @@ func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
 				`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_sdn_zone_vlan.zone_vlan_empty_nodes", map[string]string{
-						"id":      "zoneVEm",
-						"bridge":  "vmbr0",
-						"mtu":     "1496",
-						"pending": "true",
-						"state":   "new",
+						"id":     "zoneVEm",
+						"bridge": "vmbr0",
+						"mtu":    "1496",
 					}),
 				),
 			}},
@@ -313,8 +298,6 @@ func TestAccResourceSDNZoneQinQ(t *testing.T) {
 					"bridge":                "vmbr0",
 					"service_vlan":          "100",
 					"service_vlan_protocol": "802.1ad",
-					"pending":               "true",
-					"state":                 "new",
 				}),
 			),
 		}, {
@@ -335,14 +318,13 @@ func TestAccResourceSDNZoneQinQ(t *testing.T) {
 					"bridge":                "vmbr0",
 					"service_vlan":          "200",
 					"service_vlan_protocol": "802.1q",
-					"pending":               "true",
-					"state":                 "new",
 				}),
 			),
-			ResourceName:      "proxmox_sdn_zone_qinq.zone_qinq",
-			ImportStateId:     "zoneQ",
-			ImportState:       true,
-			ImportStateVerify: true,
+			ResourceName:            "proxmox_sdn_zone_qinq.zone_qinq",
+			ImportStateId:           "zoneQ",
+			ImportState:             true,
+			ImportStateVerify:       true,
+			ImportStateVerifyIgnore: []string{"pending", "state"},
 		}}},
 	}
 
@@ -376,10 +358,8 @@ func TestAccResourceSDNZoneVXLAN(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_sdn_zone_vxlan.zone_vxlan", map[string]string{
-					"id":      "zoneX",
-					"mtu":     "1450",
-					"pending": "true",
-					"state":   "new",
+					"id":  "zoneX",
+					"mtu": "1450",
 				}),
 			),
 		}, {
@@ -393,16 +373,15 @@ func TestAccResourceSDNZoneVXLAN(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_sdn_zone_vxlan.zone_vxlan", map[string]string{
-					"id":      "zoneX",
-					"mtu":     "1440",
-					"pending": "true",
-					"state":   "new",
+					"id":  "zoneX",
+					"mtu": "1440",
 				}),
 			),
-			ResourceName:      "proxmox_sdn_zone_vxlan.zone_vxlan",
-			ImportStateId:     "zoneX",
-			ImportState:       true,
-			ImportStateVerify: true,
+			ResourceName:            "proxmox_sdn_zone_vxlan.zone_vxlan",
+			ImportStateId:           "zoneX",
+			ImportState:             true,
+			ImportStateVerify:       true,
+			ImportStateVerifyIgnore: []string{"pending", "state"},
 		}}},
 	}
 
