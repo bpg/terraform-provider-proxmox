@@ -1090,7 +1090,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						  - systemctl enable qemu-guest-agent
 						  - systemctl start qemu-guest-agent
 						EOF
-						file_name = "{{.TestName}}-cloud-config.yaml"
+						file_name = "{{.TestName}}-network1-cloud-config.yaml"
 					}
 				}
 
@@ -1153,7 +1153,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						  - systemctl enable qemu-guest-agent
 						  - systemctl start qemu-guest-agent
 						EOF
-						file_name = "{{.TestName}}-cloud-config.yaml"
+						file_name = "{{.TestName}}-wait-ipv4-cloud-config.yaml"
 					}
 				}
 
