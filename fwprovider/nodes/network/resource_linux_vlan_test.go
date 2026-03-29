@@ -25,6 +25,10 @@ const (
 )
 
 func TestAccResourceLinuxVLAN(t *testing.T) {
+	// Disabled: ifreload -a on single-NIC PVE setups bounces the management interface,
+	// causing "Nexthop has invalid gateway" errors. Needs a dedicated test interface.
+	t.Skip("skipping: ifreload -a is unreliable on single-NIC setups")
+
 	te := test.InitEnvironment(t)
 
 	iface := os.Getenv("PROXMOX_VE_ACC_IFACE_NAME")
