@@ -228,5 +228,5 @@ printf '\n' >&2
 # Note: GO_FLAGS and RUN_ARG are intentionally unquoted for word splitting
 # shellcheck disable=SC2046,SC2086
 TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
-    go test -count 1 -p 1 -parallel "${PARALLEL:-1}" --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
+    go test -count 1 -p 1 -parallel "${PARALLEL:-4}" --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
     ${RUN_ARG} "$PACKAGE_PATH" ${GO_FLAGS}
