@@ -2528,7 +2528,9 @@ func TestAccResourceClusterFirewallSecurityGroupCreateAlreadyExists(t *testing.T
 	})
 
 	t.Cleanup(func() {
-		_ = deleteSecurityGroupManually(te, sgName)
+		if err := deleteSecurityGroupManually(te, sgName); err != nil {
+			t.Logf("cleanup warning: failed to delete security group %q: %v", sgName, err)
+		}
 	})
 
 	resource.Test(t, resource.TestCase{
@@ -2570,7 +2572,9 @@ func TestAccResourceFirewallIPSetCreateAlreadyExists(t *testing.T) {
 	})
 
 	t.Cleanup(func() {
-		_ = deleteIPSetManually(te, ipsetName)
+		if err := deleteIPSetManually(te, ipsetName); err != nil {
+			t.Logf("cleanup warning: failed to delete IP set %q: %v", ipsetName, err)
+		}
 	})
 
 	resource.Test(t, resource.TestCase{
@@ -2629,8 +2633,9 @@ func TestAccResourceClusterFirewallSecurityGroupReadDeletedGroup(t *testing.T) {
 	})
 
 	t.Cleanup(func() {
-		// Best-effort cleanup in case the test fails mid-way.
-		_ = deleteSecurityGroupManually(te, sgName)
+		if err := deleteSecurityGroupManually(te, sgName); err != nil {
+			t.Logf("cleanup warning: failed to delete security group %q: %v", sgName, err)
+		}
 	})
 
 	resource.Test(t, resource.TestCase{

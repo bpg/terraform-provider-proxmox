@@ -49,7 +49,9 @@ func TestBatchCreate(t *testing.T) {
 	ids := make([]int, numVMs)
 
 	t.Cleanup(func() {
-		_ = te.NodeClient().VM(sourceID).DeleteVM(ctx, true, true) //nolint:errcheck
+		if err := te.NodeClient().VM(sourceID).DeleteVM(ctx, true, true); err != nil {
+			t.Logf("cleanup warning: failed to delete source VM %d: %v", sourceID, err)
+		}
 
 		var wg sync.WaitGroup
 		for _, id := range ids {
@@ -59,7 +61,9 @@ func TestBatchCreate(t *testing.T) {
 				defer wg.Done()
 
 				if id > 0 {
-					_ = te.NodeClient().VM(id).DeleteVM(ctx, true, true) //nolint:errcheck
+					if err := te.NodeClient().VM(id).DeleteVM(ctx, true, true); err != nil {
+						t.Logf("cleanup warning: failed to delete VM %d: %v", id, err)
+					}
 				}
 			}()
 		}
