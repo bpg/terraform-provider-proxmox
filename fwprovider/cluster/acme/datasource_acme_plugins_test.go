@@ -9,10 +9,8 @@
 package acme_test
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -20,8 +18,8 @@ import (
 
 func TestAccDatasourceACMEPlugins(t *testing.T) {
 	te := test.InitEnvironment(t)
-	pluginName1 := fmt.Sprintf("test-ds-plugins1-%s", gofakeit.Word())
-	pluginName2 := fmt.Sprintf("test-ds-plugins2-%s", gofakeit.Word())
+	pluginName1 := test.SafeResourceName("test-ds-plugins1")
+	pluginName2 := test.SafeResourceName("test-ds-plugins2")
 	te.AddTemplateVars(map[string]interface{}{
 		"PluginName1": pluginName1,
 		"PluginName2": pluginName2,
