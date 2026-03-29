@@ -22,11 +22,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
-// fallback URLs for when TestFileServer is not available.
-const (
-	fallbackISOURL    = "https://boot.netboot.xyz/ipxe/netboot.xyz.iso"
-	fallbackVZTmplURL = "http://download.proxmox.com/images/system/alpine-3.19-default_20240207_amd64.tar.xz"
-)
+// fallbackVZTmplURL is used for vztmpl files which require a real archive format that cannot be served from TestFileServer.
+const fallbackVZTmplURL = "http://download.proxmox.com/images/system/alpine-3.19-default_20240207_amd64.tar.xz"
 
 func TestAccDatasourceFile(t *testing.T) {
 	te := InitEnvironment(t)
@@ -137,22 +134,14 @@ func TestAccDatasourceFileContentTypeFiltering(t *testing.T) {
 		"ISOFileName":    isoFileName,
 	})
 
-	// Try to use local test server for ISO, fall back to external URLs if not configured
 	fileServer := NewTestFileServer(t)
-
-	var isoURL, vztmplURL string
-
-	if fileServer != nil {
-		isoContent := []byte("fake ISO content for testing")
-		isoURL = fileServer.AddFile("/test.iso", "test.iso", isoContent)
-		// vztmpl still needs external URL as it requires specific archive format
-		vztmplURL = fallbackVZTmplURL
-		t.Logf("Using local test file server at %s (vztmpl uses external URL)", fileServer.URL())
-	} else {
-		isoURL = fallbackISOURL
-		vztmplURL = fallbackVZTmplURL
-		t.Log("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - using external URLs")
+	if fileServer == nil {
+		t.Skip("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - skipping datasource file test")
 	}
+
+	isoContent := []byte("fake ISO content for testing")
+	isoURL := fileServer.AddFile("/test.iso", "test.iso", isoContent)
+	vztmplURL := fallbackVZTmplURL
 
 	// Upload a vztmpl file (container template) - must be a real archive format
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
@@ -235,19 +224,13 @@ func TestAccDatasourceFileContentTypeMismatch(t *testing.T) {
 		"ISOFileName": isoFileName,
 	})
 
-	// Try to use local test server, fall back to external URL if not configured
 	fileServer := NewTestFileServer(t)
-
-	var isoURL string
-
-	if fileServer != nil {
-		isoContent := []byte("fake ISO content for mismatch testing")
-		isoURL = fileServer.AddFile("/mismatch.iso", "mismatch.iso", isoContent)
-		t.Logf("Using local test file server at %s", fileServer.URL())
-	} else {
-		isoURL = fallbackISOURL
-		t.Log("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - using external URLs")
+	if fileServer == nil {
+		t.Skip("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - skipping datasource file test")
 	}
+
+	isoContent := []byte("fake ISO content for mismatch testing")
+	isoURL := fileServer.AddFile("/mismatch.iso", "mismatch.iso", isoContent)
 
 	// Upload an ISO file
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{

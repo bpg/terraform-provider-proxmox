@@ -34,9 +34,6 @@ func (c *nodeResolver) Resolve(_ context.Context, _ string) (ssh.ProxmoxNode, er
 	return c.node, nil
 }
 
-// fallback URL for when TestFileServer is not available.
-const fallbackSnippetURL = "https://raw.githubusercontent.com/yaml/yaml-test-suite/main/src/229Q.yaml"
-
 func TestAccResourceFile(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -45,20 +42,13 @@ func TestAccResourceFile(t *testing.T) {
 	snippetFile2 := strings.ReplaceAll(CreateTempFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file").Name(), `\`, `/`)
 	fileISO := strings.ReplaceAll(CreateTempFile(t, "file-*.iso", "pretend this is an ISO").Name(), `\`, `/`)
 
-	// Try to use local test server, fall back to external URL if not configured
 	fileServer := NewTestFileServer(t)
-
-	var snippetURL string
-
-	if fileServer != nil {
-		// Use local test server - independent of external resources
-		snippetContent := []byte("test: yaml\nkey: value\n")
-		snippetURL = fileServer.AddFile("/229Q.yaml", "229Q.yaml", snippetContent)
-		t.Logf("Using local test file server at %s", fileServer.URL())
-	} else {
-		snippetURL = fallbackSnippetURL
-		t.Log("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - using external URLs")
+	if fileServer == nil {
+		t.Skip("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - skipping file resource test")
 	}
+
+	snippetContent := []byte("test: yaml\nkey: value\n")
+	snippetURL := fileServer.AddFile("/229Q.yaml", "229Q.yaml", snippetContent)
 
 	te.AddTemplateVars(map[string]interface{}{
 		"SnippetRaw":   snippetRaw,
