@@ -22,9 +22,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
-// fallbackVZTmplURL is used for vztmpl files which require a real archive format that cannot be served from TestFileServer.
-const fallbackVZTmplURL = "http://download.proxmox.com/images/system/alpine-3.19-default_20240207_amd64.tar.xz"
-
 func TestAccDatasourceFile(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -141,9 +138,10 @@ func TestAccDatasourceFileContentTypeFiltering(t *testing.T) {
 
 	isoContent := []byte("fake ISO content for testing")
 	isoURL := fileServer.AddFile("/test.iso", "test.iso", isoContent)
-	vztmplURL := fallbackVZTmplURL
+	vztmplContent := []byte("fake vztmpl content for testing")
+	vztmplURL := fileServer.AddFile("/template.tar.zst", "template.tar.zst", vztmplContent)
 
-	// Upload a vztmpl file (container template) - must be a real archive format
+	// Upload a vztmpl file (container template)
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
 		Content:  ptr.Ptr("vztmpl"),
 		FileName: ptr.Ptr(vztmplFileName),

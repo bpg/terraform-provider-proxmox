@@ -192,7 +192,9 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			// Pool operations require sequential execution to avoid race conditions
+			// with VM creation and pool assignment under parallel load.
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
