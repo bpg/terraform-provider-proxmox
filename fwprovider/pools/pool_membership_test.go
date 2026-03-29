@@ -17,7 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -32,15 +31,11 @@ import (
 func TestAccPoolMembershipContainer(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	imageFileName := gofakeit.Word() + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
+	imageFileName := test.SafeResourceName("img") + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
 	accTestContainerID := 100000 + rand.Intn(99999)
 	accTestContainerID2 := 100000 + rand.Intn(99999)
-	accTestPoolName := gofakeit.Word()
-
-	accTestPoolName2 := gofakeit.Word()
-	for accTestPoolName == accTestPoolName2 {
-		accTestPoolName2 = gofakeit.Word()
-	}
+	accTestPoolName := test.SafeResourceName("pool")
+	accTestPoolName2 := test.SafeResourceName("pool2")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"ImageFileName":    imageFileName,
@@ -255,12 +250,8 @@ func TestAccPoolMembershipVm(t *testing.T) {
 	te := test.InitEnvironment(t)
 	accTestVmID := 100000 + rand.Intn(99999)
 	accTestVmID2 := 100000 + rand.Intn(99999)
-	accTestPoolName := gofakeit.Word()
-
-	accTestPoolName2 := gofakeit.Word()
-	for accTestPoolName == accTestPoolName2 {
-		accTestPoolName2 = gofakeit.Word()
-	}
+	accTestPoolName := test.SafeResourceName("pool")
+	accTestPoolName2 := test.SafeResourceName("pool2")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"TestVMID":      accTestVmID,
@@ -403,12 +394,8 @@ func TestAccPoolMembershipVm(t *testing.T) {
 
 func TestAccPoolMembershipStorage(t *testing.T) {
 	te := test.InitEnvironment(t)
-	accTestPoolName := gofakeit.Word()
-
-	accTestPoolName2 := gofakeit.Word()
-	for accTestPoolName == accTestPoolName2 {
-		accTestPoolName2 = gofakeit.Word()
-	}
+	accTestPoolName := test.SafeResourceName("pool")
+	accTestPoolName2 := test.SafeResourceName("pool2")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"TestPoolName":  accTestPoolName,

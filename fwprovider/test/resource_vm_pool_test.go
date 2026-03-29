@@ -9,11 +9,8 @@
 package test
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -27,8 +24,8 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 		steps []resource.TestStep
 	}{
 		{"vm pool membership detection", func() []resource.TestStep {
-			poolName1 := fmt.Sprintf("test-pool-%s-%d", gofakeit.Word(), time.Now().UnixNano())
-			poolName2 := fmt.Sprintf("test-pool-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+			poolName1 := SafeResourceName("test-pool")
+			poolName2 := SafeResourceName("test-pool")
 
 			te.AddTemplateVars(map[string]interface{}{
 				"PoolName1": poolName1,
@@ -72,8 +69,8 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 			}
 		}()},
 		{"vm pool membership change detection", func() []resource.TestStep {
-			poolName1 := fmt.Sprintf("test-pool-%s-%d", gofakeit.Word(), time.Now().UnixNano())
-			poolName2 := fmt.Sprintf("test-pool-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+			poolName1 := SafeResourceName("test-pool")
+			poolName2 := SafeResourceName("test-pool")
 
 			te.AddTemplateVars(map[string]interface{}{
 				"PoolName1": poolName1,
@@ -148,8 +145,8 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 			},
 		}},
 		{"vm pool drift detection", func() []resource.TestStep {
-			poolName1 := fmt.Sprintf("test-pool-%s-%d", gofakeit.Word(), time.Now().UnixNano())
-			poolName2 := fmt.Sprintf("test-pool-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+			poolName1 := SafeResourceName("test-pool")
+			poolName2 := SafeResourceName("test-pool")
 
 			te.AddTemplateVars(map[string]interface{}{
 				"PoolName1": poolName1,
@@ -210,8 +207,8 @@ func TestAccResourceVMPoolDetectionLegacy(t *testing.T) {
 	}
 
 	te := InitEnvironment(t)
-	poolName1 := fmt.Sprintf("test-pool-legacy-%s-%d", gofakeit.Word(), time.Now().Unix())
-	poolName2 := fmt.Sprintf("test-pool-legacy-%s-%d", gofakeit.Word(), time.Now().Unix())
+	poolName1 := SafeResourceName("test-pool-legacy")
+	poolName2 := SafeResourceName("test-pool-legacy")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"PoolName1": poolName1,
@@ -272,8 +269,8 @@ func TestAccResourceVMPoolDetectionLegacy(t *testing.T) {
 // TestAccResourceVMPoolDetectionManual tests manual pool changes outside Terraform
 func TestAccResourceVMPoolDetectionManual(t *testing.T) {
 	te := InitEnvironment(t)
-	poolName1 := fmt.Sprintf("test-pool-manual-%s-%d", gofakeit.Word(), time.Now().Unix())
-	poolName2 := fmt.Sprintf("test-pool-manual-%s-%d", gofakeit.Word(), time.Now().Unix())
+	poolName1 := SafeResourceName("test-pool-manual")
+	poolName2 := SafeResourceName("test-pool-manual")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"PoolName1": poolName1,
@@ -352,7 +349,7 @@ func TestAccResourceVMPoolDetectionManual(t *testing.T) {
 // when pool_id is not set in the VM resource configuration.
 func TestAccResourceVMPoolMembership(t *testing.T) {
 	te := InitEnvironment(t)
-	poolName := fmt.Sprintf("test-pool-2377-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+	poolName := SafeResourceName("test-pool-2377")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"PoolName": poolName,
@@ -416,7 +413,7 @@ func TestAccResourceVMPoolMembership(t *testing.T) {
 // when pool_id is not set in the legacy VM resource configuration.
 func TestAccResourceVMPoolMembershipLegacy(t *testing.T) {
 	te := InitEnvironment(t)
-	poolName := fmt.Sprintf("test-pool-2377-legacy-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+	poolName := SafeResourceName("test-pool-2377-legacy")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"PoolName": poolName,
@@ -498,8 +495,8 @@ func TestAccResourceVMPoolMembershipLegacy(t *testing.T) {
 // on the VM resource still works correctly alongside pool_membership.
 func TestAccResourceVMPoolMembershipWithExplicitPoolID(t *testing.T) {
 	te := InitEnvironment(t)
-	poolName1 := fmt.Sprintf("test-pool-explicit1-%s-%d", gofakeit.Word(), time.Now().UnixNano())
-	poolName2 := fmt.Sprintf("test-pool-explicit2-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+	poolName1 := SafeResourceName("test-pool-explicit1")
+	poolName2 := SafeResourceName("test-pool-explicit2")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"PoolName1": poolName1,
