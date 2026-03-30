@@ -16,6 +16,10 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
+// Pool tests use resource.Test (not ParallelTest) because pool operations and VM
+// creation/assignment race under parallel load, causing "pool_id not set" and
+// "VM is locked (create)" failures.
+
 func TestAccResourceVMPoolDetection(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -192,8 +196,6 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Pool operations require sequential execution to avoid race conditions
-			// with VM creation and pool assignment under parallel load.
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
@@ -260,7 +262,7 @@ func TestAccResourceVMPoolDetectionLegacy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -338,7 +340,7 @@ func TestAccResourceVMPoolDetectionManual(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -357,7 +359,7 @@ func TestAccResourceVMPoolMembership(t *testing.T) {
 		"PoolName": poolName,
 	})
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
@@ -421,7 +423,7 @@ func TestAccResourceVMPoolMembershipLegacy(t *testing.T) {
 		"PoolName": poolName,
 	})
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
@@ -505,7 +507,7 @@ func TestAccResourceVMPoolMembershipWithExplicitPoolID(t *testing.T) {
 		"PoolName2": poolName2,
 	})
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
