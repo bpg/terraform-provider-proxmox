@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -37,6 +38,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
+	vmcdrom "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
@@ -61,9 +63,6 @@ const (
 	dvAudioDeviceDriver   = "spice"
 	dvAudioDeviceEnabled  = true
 	dvBIOS                = "seabios"
-	dvCDROMEnabled        = false
-	dvCDROMFileID         = ""
-	dvCDROMInterface      = "ide3"
 	dvCloneDatastoreID    = ""
 	dvCloneNodeName       = ""
 	dvCloneFull           = true
@@ -182,10 +181,10 @@ const (
 	mkAudioDeviceDriver   = "driver"
 	mkAudioDeviceEnabled  = "enabled"
 	mkBIOS                = "bios"
-	mkCDROM               = "cdrom"
-	mkCDROMEnabled        = "enabled"
-	mkCDROMFileID         = "file_id"
-	mkCDROMInterface      = "interface"
+	mkCDROM               = vmcdrom.MkCDROM
+	mkCDROMEnabled        = vmcdrom.MkCDROMEnabled
+	mkCDROMFileID         = vmcdrom.MkCDROMFileID
+	mkCDROMInterface      = vmcdrom.MkCDROMInterface
 	mkClone               = "clone"
 	mkCloneRetries        = "retries"
 	mkCloneDatastoreID    = "datastore_id"
@@ -536,50 +535,7 @@ func VM() *schema.Resource {
 			Default:          dvBIOS,
 			ValidateDiagFunc: BIOSValidator(),
 		},
-		mkCDROM: {
-			Type:        schema.TypeList,
-			Description: "The CDROM drive",
-			Optional:    true,
-			DefaultFunc: func() (any, error) {
-				return []any{
-					map[string]any{
-						mkCDROMFileID:    dvCDROMFileID,
-						mkCDROMInterface: dvCDROMInterface,
-					},
-				}, nil
-			},
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					mkCDROMEnabled: {
-						Type:        schema.TypeBool,
-						Description: "Whether to enable the CDROM drive",
-						Optional:    true,
-						Default:     dvCDROMEnabled,
-						Deprecated: "Remove this attribute's configuration as it is no longer used and the attribute will " +
-							"be removed in the next version of the provider. Set `file_id` to `none` to leave the CDROM drive empty.",
-					},
-					mkCDROMFileID: {
-						Type:        schema.TypeString,
-						Description: "The file id",
-						Optional:    true,
-						Default:     dvCDROMFileID,
-						ValidateDiagFunc: validation.AnyDiag(
-							validation.ToDiagFunc(validation.StringInSlice([]string{"none", "cdrom"}, false)),
-							validators.FileID(),
-						),
-					},
-					mkCDROMInterface: {
-						Type:             schema.TypeString,
-						Description:      "The CDROM interface",
-						Optional:         true,
-						Default:          dvCDROMInterface,
-						ValidateDiagFunc: CDROMInterfaceValidator(),
-					},
-				},
-			},
-			MaxItems: 1,
-			MinItems: 0,
-		},
+		mkCDROM: vmcdrom.Schema()[mkCDROM],
 		mkClone: {
 			Type:        schema.TypeList,
 			Description: "The cloning configuration",
@@ -1747,6 +1703,7 @@ func VM() *schema.Resource {
 		DeleteContext: vmDelete,
 		CustomizeDiff: customdiff.All(
 			customdiff.All(network.CustomizeDiff()...),
+			validateCDROMInterfacesForMachineType,
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
@@ -1792,6 +1749,13 @@ func VM() *schema.Resource {
 			},
 		},
 	}
+}
+
+func validateCDROMInterfacesForMachineType(_ context.Context, d *schema.ResourceDiff, _ any) error {
+	machineType, _ := d.Get(mkMachine).(string)
+	cdromDevices, _ := d.Get(mkCDROM).([]any)
+
+	return vmcdrom.ValidateInterfacesForMachine(machineType, cdromDevices)
 }
 
 func forceNewOnTPMVersionChange(ctx context.Context, d *schema.ResourceDiff, _ any) error {
@@ -1934,16 +1898,6 @@ func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, default
 	}
 
 	return defaultValue, nil
-}
-
-// Return a pointer to the storage device configuration based on a name. The device name is assumed to be a
-// valid ide, sata, or scsi interface name.
-func getStorageDevice(vmConfig *vms.GetResponseData, deviceName string) *vms.CustomStorageDevice {
-	if dev, ok := vmConfig.StorageDevices[deviceName]; ok {
-		return dev
-	}
-
-	return nil
 }
 
 // Delete IDE interfaces that can then be used for CloudInit. The first interface will always
@@ -2551,23 +2505,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		updateBody.SCSIHardware = &scsiHardware
 	}
 
-	if len(cdrom) > 0 && cdrom[0] != nil {
-		cdromBlock := cdrom[0].(map[string]any)
-
-		cdromFileID := cdromBlock[mkCDROMFileID].(string)
-		cdromInterface := cdromBlock[mkCDROMInterface].(string)
-
-		if cdromFileID == "" {
-			cdromFileID = "cdrom"
-		}
-
-		cdromMedia := "cdrom"
-
-		ideDevices[cdromInterface] = &vms.CustomStorageDevice{
-			FileVolume: cdromFileID,
-			Media:      &cdromMedia,
-		}
-	}
+	vmcdrom.MergeCloneDevices(vmcdrom.GetCDROMDeviceObjects(cdrom), ideDevices)
 
 	if len(cpu) > 0 && cpu[0] != nil {
 		cpuBlock := cpu[0].(map[string]any)
@@ -2669,7 +2607,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		updateBody.USBDevices = vmGetHostUSBDeviceObjects(d)
 	}
 
-	if len(cdrom) > 0 || len(initialization) > 0 {
+	if len(ideDevices) > 0 || len(initialization) > 0 {
 		for iface, dev := range ideDevices {
 			updateBody.AddCustomStorageDevice(iface, *dev)
 		}
@@ -3017,19 +2955,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 
 	bios := d.Get(mkBIOS).(string)
 
-	cdromFileID := ""
-	cdromInterface := ""
-
 	cdrom := d.Get(mkCDROM).([]any)
-	if len(cdrom) > 0 {
-		cdromBlock := cdrom[0].(map[string]any)
-		cdromFileID = cdromBlock[mkCDROMFileID].(string)
-		cdromInterface = cdromBlock[mkCDROMInterface].(string)
-
-		if cdromFileID == "" {
-			cdromFileID = "cdrom"
-		}
-	}
+	cdromDeviceObjects := vmcdrom.GetCDROMDeviceObjects(cdrom)
 
 	initializationFileVolume := ""
 	initializationInterface := ""
@@ -3198,9 +3125,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 	bootOrder := d.Get(mkBootOrder).([]any)
 
 	if len(bootOrder) == 0 {
-		if cdromInterface != "" {
-			bootOrderConverted = []string{cdromInterface}
-		}
+		bootOrderConverted = append(bootOrderConverted, vmcdrom.OrderedInterfaces(cdrom, cdromDeviceObjects)...)
 
 		if _, ok := diskDeviceObjects["ide0"]; ok {
 			bootOrderConverted = append(bootOrderConverted, "ide0")
@@ -3233,8 +3158,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		cpuFlagsConverted[fi] = flag.(string)
 	}
 
-	cdromMedia := "cdrom"
-
 	if initializationInterface != "" {
 		device := &vms.CustomStorageDevice{
 			FileVolume: initializationFileVolume,
@@ -3247,12 +3170,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		diskDeviceObjects[initializationInterface] = device
 	}
 
-	if cdromInterface != "" {
-		diskDeviceObjects[cdromInterface] = &vms.CustomStorageDevice{
-			FileVolume: cdromFileID,
-			Media:      &cdromMedia,
-		}
-	}
+	maps.Copy(diskDeviceObjects, cdromDeviceObjects)
 
 	var memorySharedObject *vms.CustomSharedMemory
 
@@ -4479,42 +4397,7 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	// Compare the IDE devices to the CD-ROM configurations stored in the state.
-	currentInterface := dvCDROMInterface
-
-	currentCDROM := d.Get(mkCDROM).([]any)
-	if len(currentCDROM) > 0 && currentCDROM[0] != nil {
-		currentBlock := currentCDROM[0].(map[string]any)
-		currentInterface = currentBlock[mkCDROMInterface].(string)
-	}
-
-	cdromIDEDevice := getStorageDevice(vmConfig, currentInterface)
-
-	if cdromIDEDevice != nil {
-		cdrom := make([]any, 1)
-		cdromBlock := map[string]any{}
-
-		if len(clone) == 0 || len(currentCDROM) > 0 {
-			cdromBlock[mkCDROMFileID] = cdromIDEDevice.FileVolume
-			cdromBlock[mkCDROMInterface] = currentInterface
-
-			if len(currentCDROM) > 0 && currentCDROM[0] != nil {
-				currentBlock := currentCDROM[0].(map[string]any)
-
-				if currentBlock[mkCDROMFileID] == "" {
-					cdromBlock[mkCDROMFileID] = ""
-				}
-			}
-
-			cdrom[0] = cdromBlock
-
-			err := d.Set(mkCDROM, cdrom)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	} else {
-		err := d.Set(mkCDROM, []any{})
-		diags = append(diags, diag.FromErr(err)...)
-	}
+	diags = append(diags, vmcdrom.Read(d, vmcdrom.GetCDROMStorageDevices(vmConfig), len(clone) > 0)...)
 
 	// Compare the CPU configuration to the one stored in the state.
 	cpu := map[string]any{}
@@ -5982,49 +5865,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	// Prepare the new CD-ROM configuration.
 
-	if d.HasChange(mkCDROM) {
-		cdromBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{mkCDROM},
-			0,
-			true,
-		)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		cdromFileID := cdromBlock[mkCDROMFileID].(string)
-		cdromInterface := cdromBlock[mkCDROMInterface].(string)
-
-		old, _ := d.GetChange(mkCDROM)
-
-		if len(old.([]any)) > 0 && old.([]any)[0] != nil {
-			oldList := old.([]any)[0]
-			oldBlock := oldList.(map[string]any)
-
-			// If the interface is not set, use the default, for backward compatibility.
-			oldInterface, ok := oldBlock[mkCDROMInterface].(string)
-			if !ok || oldInterface == "" {
-				oldInterface = dvCDROMInterface
-			}
-
-			if oldInterface != cdromInterface {
-				del = append(del, oldInterface)
-			}
-		}
-
-		if cdromFileID == "" {
-			cdromFileID = "cdrom"
-		}
-
-		cdromMedia := "cdrom"
-
-		updateBody.AddCustomStorageDevice(cdromInterface, vms.CustomStorageDevice{
-			FileVolume: cdromFileID,
-			Media:      &cdromMedia,
-		})
-	}
+	del = vmcdrom.Update(d, updateBody, del)
 
 	// Prepare the new CPU configuration.
 

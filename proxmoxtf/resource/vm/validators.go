@@ -14,6 +14,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	vmcdrom "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/cdrom"
 )
 
 // VMIDValidator returns a schema validation function for a VM ID.
@@ -301,12 +303,9 @@ func SCSIHardwareValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-// CDROMInterfaceValidator is a schema validation function for IDE interfaces.
+// CDROMInterfaceValidator is a schema validation function for CD-ROM-capable storage interfaces.
 func CDROMInterfaceValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(validation.StringMatch(
-		regexp.MustCompile(`^(ide[0-3]|sata[0-5]|scsi([0-9]|1[0-3]))$`),
-		"must be one of `ide[0-3]`, `sata[0-5]`, `scsi[0-13]`",
-	))
+	return vmcdrom.InterfaceValidator()
 }
 
 // VirtiofsCacheValidator is a schema validation function for virtiofs cache configs.

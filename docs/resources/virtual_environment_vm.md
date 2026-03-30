@@ -49,6 +49,16 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     interface    = "scsi0"
   }
 
+  cdrom {
+    interface = "ide2"
+    file_id   = "none"
+  }
+
+  cdrom {
+    interface = "sata3"
+    file_id   = proxmox_virtual_environment_download_file.latest_ubuntu_22_jammy_qcow2_img.id
+  }
+
   initialization {
     # uncomment and specify the datastore for cloud-init disk if default `local-lvm` is not available
     # datastore_id = "local-lvm"
@@ -165,15 +175,15 @@ output "ubuntu_vm_public_key" {
     - `ovmf` - OVMF (UEFI).
     - `seabios` - SeaBIOS.
 - `boot_order` - (Optional) Specify a list of devices to boot from in the order they appear in the list.
-- `cdrom` - (Optional) The CD-ROM configuration.
+- `cdrom` - (Optional, repeatable) The CD-ROM configuration. Define one block per CD-ROM drive you want to manage. If no `cdrom` blocks are defined, the provider manages no CD-ROM devices.
     - `enabled` - (Optional) Whether to enable the CD-ROM drive (defaults
         to `false`). *Deprecated*. The attribute will be removed in the next version of the provider.
         Set `file_id` to `none` to leave the CD-ROM drive empty.
     - `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as
         in the physical drive). Use `none` to leave the CD-ROM drive empty.
-    - `interface` - (Optional) A hardware interface to connect CD-ROM drive to (defaults to `ide3`).
-      "Must be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. " +
-      "Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces.
+    - `interface` - (Required) A hardware interface to connect the CD-ROM drive to.
+      Must be one of `ideN`, `sataN`, `scsiN`, where `N` is the index of the interface.
+      Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces.
 - `clone` - (Optional) The cloning configuration.
     - `datastore_id` - (Optional) The identifier for the target datastore.
     - `node_name` - (Optional) The name of the source node (leave blank, if

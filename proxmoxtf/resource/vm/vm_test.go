@@ -128,14 +128,19 @@ func TestVMSchema(t *testing.T) {
 
 	cdromSchema := test.AssertNestedSchemaExistence(t, s, mkCDROM)
 
+	test.AssertRequiredArguments(t, cdromSchema, []string{
+		mkCDROMInterface,
+	})
+
 	test.AssertOptionalArguments(t, cdromSchema, []string{
 		mkCDROMEnabled,
 		mkCDROMFileID,
 	})
 
 	test.AssertValueTypes(t, cdromSchema, map[string]schema.ValueType{
-		mkCDROMEnabled: schema.TypeBool,
-		mkCDROMFileID:  schema.TypeString,
+		mkCDROMEnabled:   schema.TypeBool,
+		mkCDROMFileID:    schema.TypeString,
+		mkCDROMInterface: schema.TypeString,
 	})
 
 	cloneSchema := test.AssertNestedSchemaExistence(t, s, mkClone)

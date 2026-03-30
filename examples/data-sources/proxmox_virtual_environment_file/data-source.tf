@@ -56,7 +56,8 @@ resource "proxmox_virtual_environment_vm" "example" {
   vm_id     = 100
 
   cdrom {
-    file_id = data.proxmox_virtual_environment_file.ubuntu_iso.id
+    interface = "ide2"
+    file_id   = data.proxmox_virtual_environment_file.ubuntu_iso.id
   }
 
   cpu {

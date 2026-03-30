@@ -94,7 +94,8 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   name    = "terraform-provider-proxmox-example-template"
 
   cdrom {
-    file_id = "none"
+    interface = "ide2"
+    file_id   = "none"
   }
 
   network_device {

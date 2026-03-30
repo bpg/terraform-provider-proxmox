@@ -2046,6 +2046,287 @@ func TestAccResourceVMDiskCDROMNotInDiskBlock(t *testing.T) {
 	})
 }
 
+// TestAccResourceVMDiskImportKeepsInterfaceMapping verifies that importing a VM
+// with multiple disks on different interfaces and a CD-ROM keeps the correct
+// disk-to-interface mapping and produces no drift afterwards.
+// Regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2285
+func TestAccResourceVMDiskImportKeepsInterfaceMapping(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+
+	testVMID := 100000 + rand.Intn(99999) //nolint:gosec
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID": testVMID,
+	})
+
+	config := te.RenderConfig(`
+		resource "proxmox_virtual_environment_vm" "test_import_interface_mapping" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			vm_id     = {{.TestVMID}}
+			name      = "test-import-interface-mapping"
+
+			cdrom {
+				file_id   = "none"
+				interface = "ide2"
+			}
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "ide0"
+				size         = 11
+			}
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "scsi0"
+				size         = 23
+			}
+		}`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_import_interface_mapping", map[string]string{
+					"disk.#":            "2",
+					"cdrom.0.interface": "ide2",
+				}),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_vm.test_import_interface_mapping",
+				ImportState:       true,
+				ImportStateVerify: false,
+				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, testVMID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 instance state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+
+					if attrs["disk.#"] != "2" {
+						return fmt.Errorf("expected disk.# = 2 after import, got %s", attrs["disk.#"])
+					}
+
+					importedDisks := map[string]string{
+						attrs["disk.0.interface"]: attrs["disk.0.size"],
+						attrs["disk.1.interface"]: attrs["disk.1.size"],
+					}
+
+					if importedDisks["ide0"] != "11" {
+						return fmt.Errorf("expected ide0 disk size 11 after import, got %q", importedDisks["ide0"])
+					}
+
+					if importedDisks["scsi0"] != "23" {
+						return fmt.Errorf("expected scsi0 disk size 23 after import, got %q", importedDisks["scsi0"])
+					}
+
+					if attrs["cdrom.0.interface"] != "ide2" {
+						return fmt.Errorf("expected cdrom.0.interface = ide2 after import, got %s", attrs["cdrom.0.interface"])
+					}
+
+					return nil
+				},
+			},
+			{
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDiskImportKeepsDiskAndCDROMMappings verifies that importing a VM
+// with multiple disks and multiple CD-ROMs preserves the correct interface mapping
+// for all managed storage devices and produces no drift afterwards.
+func TestAccResourceVMDiskImportKeepsDiskAndCDROMMappings(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+
+	testVMID := 100000 + rand.Intn(99999) //nolint:gosec
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID": testVMID,
+	})
+
+	config := te.RenderConfig(`
+		resource "proxmox_virtual_environment_vm" "test_import_storage_mapping" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			vm_id     = {{.TestVMID}}
+			name      = "test-import-storage-mapping"
+
+			cdrom {
+				file_id   = "none"
+				interface = "ide2"
+			}
+
+			cdrom {
+				file_id   = "cdrom"
+				interface = "ide3"
+			}
+
+			cdrom {
+				file_id   = "none"
+				interface = "sata2"
+			}
+
+			cdrom {
+				file_id   = "cdrom"
+				interface = "scsi2"
+			}
+
+			cdrom {
+				file_id   = "none"
+				interface = "scsi3"
+			}
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "ide0"
+				size         = 11
+			}
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "scsi0"
+				size         = 23
+			}
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "scsi1"
+				size         = 31
+			}
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "virtio0"
+				size         = 43
+			}
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "sata0"
+				size         = 59
+			}
+		}`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_import_storage_mapping", map[string]string{
+					"disk.#":            "5",
+					"cdrom.#":           "5",
+					"cdrom.0.interface": "ide2",
+					"cdrom.1.interface": "ide3",
+					"cdrom.2.interface": "sata2",
+					"cdrom.3.interface": "scsi2",
+					"cdrom.4.interface": "scsi3",
+				}),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_vm.test_import_storage_mapping",
+				ImportState:       true,
+				ImportStateVerify: false,
+				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, testVMID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 instance state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+
+					if attrs["disk.#"] != "5" {
+						return fmt.Errorf("expected disk.# = 5 after import, got %s", attrs["disk.#"])
+					}
+
+					if attrs["cdrom.#"] != "5" {
+						return fmt.Errorf("expected cdrom.# = 5 after import, got %s", attrs["cdrom.#"])
+					}
+
+					importedDisks := map[string]string{
+						attrs["disk.0.interface"]: attrs["disk.0.size"],
+						attrs["disk.1.interface"]: attrs["disk.1.size"],
+						attrs["disk.2.interface"]: attrs["disk.2.size"],
+						attrs["disk.3.interface"]: attrs["disk.3.size"],
+						attrs["disk.4.interface"]: attrs["disk.4.size"],
+					}
+
+					if importedDisks["ide0"] != "11" {
+						return fmt.Errorf("expected ide0 disk size 11 after import, got %q", importedDisks["ide0"])
+					}
+
+					if importedDisks["scsi0"] != "23" {
+						return fmt.Errorf("expected scsi0 disk size 23 after import, got %q", importedDisks["scsi0"])
+					}
+
+					if importedDisks["scsi1"] != "31" {
+						return fmt.Errorf("expected scsi1 disk size 31 after import, got %q", importedDisks["scsi1"])
+					}
+
+					if importedDisks["virtio0"] != "43" {
+						return fmt.Errorf("expected virtio0 disk size 43 after import, got %q", importedDisks["virtio0"])
+					}
+
+					if importedDisks["sata0"] != "59" {
+						return fmt.Errorf("expected sata0 disk size 59 after import, got %q", importedDisks["sata0"])
+					}
+
+					importedCDROMs := map[string]string{
+						attrs["cdrom.0.interface"]: attrs["cdrom.0.file_id"],
+						attrs["cdrom.1.interface"]: attrs["cdrom.1.file_id"],
+						attrs["cdrom.2.interface"]: attrs["cdrom.2.file_id"],
+						attrs["cdrom.3.interface"]: attrs["cdrom.3.file_id"],
+						attrs["cdrom.4.interface"]: attrs["cdrom.4.file_id"],
+					}
+
+					if importedCDROMs["ide2"] != "none" {
+						return fmt.Errorf("expected ide2 cdrom file_id none after import, got %q", importedCDROMs["ide2"])
+					}
+
+					if importedCDROMs["ide3"] != "cdrom" {
+						return fmt.Errorf("expected ide3 cdrom file_id cdrom after import, got %q", importedCDROMs["ide3"])
+					}
+
+					if importedCDROMs["sata2"] != "none" {
+						return fmt.Errorf("expected sata2 cdrom file_id none after import, got %q", importedCDROMs["sata2"])
+					}
+
+					if importedCDROMs["scsi2"] != "cdrom" {
+						return fmt.Errorf("expected scsi2 cdrom file_id cdrom after import, got %q", importedCDROMs["scsi2"])
+					}
+
+					if importedCDROMs["scsi3"] != "none" {
+						return fmt.Errorf("expected scsi3 cdrom file_id none after import, got %q", importedCDROMs["scsi3"])
+					}
+
+					return nil
+				},
+			},
+			{
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
+}
+
 // TestAccResourceVMDiskResizeNonHotpluggable tests that resizing a disk on a running VM
 // triggers a reboot when disk is excluded from the hotplug setting.
 // Also tests the double-reboot scenario (AIO change + resize with non-hotpluggable disk).
