@@ -2408,7 +2408,7 @@ func TestAccResourceFirewallRulesIdentityFieldChange(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_firewall_rules" "test_proto" {
 					node_name = "{{.NodeName}}"
-					vm_id     = 9993
+					vm_id     = 9994
 					rule {
 						type    = "in"
 						action  = "ACCEPT"
