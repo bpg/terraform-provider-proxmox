@@ -651,6 +651,10 @@ func Update(
 			tmp.Serial = disk.Serial
 			tmp.SSD = disk.SSD
 
+			// Don't include size in config updates. Disk resizing is handled
+			// separately via the resize API endpoint (vmUpdateDiskSize).
+			tmp.Size = nil
+
 			updateBody.AddCustomStorageDevice(iface, *tmp)
 		}
 	}

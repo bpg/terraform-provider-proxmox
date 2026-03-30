@@ -6676,6 +6676,22 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			return updateDiags
 		}
 
+		// After resizing, re-send the disk config for resized disks to
+		// update any pending changes with the correct (post-resize) size.
+		// When disk properties (e.g. AIO, cache) change on a running VM,
+		// Proxmox stores the full disk specification — including the
+		// current size — as a pending change. If the disk is also resized,
+		// the pending change still has the old size. Re-sending the disk
+		// config after resize causes Proxmox to refresh the pending entry
+		// with the new volume size, preventing the reboot from reverting
+		// the resize.
+		if diskChanges != nil && len(diskChanges.resizeBodies) > 0 {
+			updateDiags = append(updateDiags, vmRefreshPendingDiskConfig(ctx, vmAPI, diskChanges, updateBody)...)
+			if updateDiags.HasError() {
+				return updateDiags
+			}
+		}
+
 		rebootRequired = rebootRequired || (!template &&
 			started &&
 			diskChanges != nil &&
@@ -6703,9 +6719,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		power,
 		d.HasChange(mkStarted),
 	)...)
-	if updateDiags.HasError() {
-		return updateDiags
-	}
 
 	updateDiags = append(updateDiags, vmRead(ctx, d, m)...)
 
@@ -6931,6 +6944,43 @@ func vmUpdateDiskSize(
 		if err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	return nil
+}
+
+// vmRefreshPendingDiskConfig re-sends the disk specification for resized disks
+// via PUT /config. This updates any pending changes with the correct post-resize
+// volume size, preventing a subsequent reboot from reverting the resize.
+func vmRefreshPendingDiskConfig(
+	ctx context.Context,
+	vmAPI *vms.Client,
+	changes *vmDiskLocationAndSizeChanges,
+	originalBody *vms.UpdateRequestBody,
+) diag.Diagnostics {
+	if changes == nil || originalBody == nil {
+		return nil
+	}
+
+	resizedDisks := make(map[string]struct{}, len(changes.resizeBodies))
+	for _, r := range changes.resizeBodies {
+		resizedDisks[r.Disk] = struct{}{}
+	}
+
+	refreshBody := &vms.UpdateRequestBody{}
+
+	for iface, device := range originalBody.CustomStorageDevices {
+		if _, resized := resizedDisks[iface]; resized && device != nil {
+			refreshBody.AddCustomStorageDevice(iface, *device)
+		}
+	}
+
+	if len(refreshBody.CustomStorageDevices) == 0 {
+		return nil
+	}
+
+	if err := vmAPI.UpdateVM(ctx, refreshBody); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
