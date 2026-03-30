@@ -149,6 +149,27 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}),
 			),
 		}}},
+		{"create VM with integer cpu limit and verify no drift", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-limit-int"
+					cpu = {
+						cores = 1
+						limit = 64
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
+						"cpu.limit": "64",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2353
 		{"create VM without cpu.units and verify no drift", []resource.TestStep{
 			{
