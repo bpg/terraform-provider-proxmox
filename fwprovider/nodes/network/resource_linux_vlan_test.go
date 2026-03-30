@@ -25,6 +25,10 @@ const (
 )
 
 func TestAccResourceLinuxVLAN(t *testing.T) {
+	// Disabled: ifreload -a on single-NIC PVE setups bounces the management interface,
+	// causing "Nexthop has invalid gateway" errors. Needs a dedicated test interface.
+	t.Skip("skipping: ifreload -a is unreliable on single-NIC setups")
+
 	te := test.InitEnvironment(t)
 
 	iface := os.Getenv("PROXMOX_VE_ACC_IFACE_NAME")
@@ -33,7 +37,7 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 	}
 
 	vlan1 := gofakeit.Number(10, 4094)
-	customName := fmt.Sprintf("iface_%s", gofakeit.Word())
+	customName := fmt.Sprintf("iface_%s", gofakeit.LetterN(6))
 	vlan2 := gofakeit.Number(10, 4094)
 	ipV4cidr := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
 

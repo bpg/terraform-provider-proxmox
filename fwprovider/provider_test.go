@@ -85,7 +85,9 @@ func TestIDGenerator_Sequence(t *testing.T) {
 				defer wg.Done()
 
 				if id > 100 {
-					_ = te.NodeClient().VM(id).DeleteVM(ctx, true, true) //nolint:errcheck
+					if err := te.NodeClient().VM(id).DeleteVM(ctx, true, true); err != nil {
+						t.Logf("cleanup warning: failed to delete VM %d: %v", id, err)
+					}
 				}
 			}()
 		}
@@ -138,7 +140,9 @@ func TestIDGenerator_Random(t *testing.T) {
 	t.Cleanup(func() {
 		for _, id := range ids {
 			if id > 100 {
-				_ = te.NodeClient().VM(id).DeleteVM(ctx, true, true) //nolint:errcheck
+				if err := te.NodeClient().VM(id).DeleteVM(ctx, true, true); err != nil {
+					t.Logf("cleanup warning: failed to delete VM %d: %v", id, err)
+				}
 			}
 		}
 	})

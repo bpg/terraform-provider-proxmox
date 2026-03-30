@@ -10,12 +10,22 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 )
+
+// SafeResourceName generates a Proxmox-safe resource identifier.
+// It returns "{prefix}-{8 random lowercase letters}", e.g. "test-pool-abcdefgh".
+// This avoids gofakeit.Word() which can produce dots, hyphens, and other
+// characters that violate Proxmox identifier validation rules.
+func SafeResourceName(prefix string) string {
+	return fmt.Sprintf("%s-%s", prefix, strings.ToLower(gofakeit.LetterN(8)))
+}
 
 // ResourceAttributes is a helper function to test resource attributes.
 func ResourceAttributes(res string, attrs map[string]string) resource.TestCheckFunc {

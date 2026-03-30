@@ -9,10 +9,8 @@
 package acme_test
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -20,7 +18,7 @@ import (
 
 func TestAccDatasourceACMEAccount(t *testing.T) {
 	te := test.InitEnvironment(t)
-	accountName := fmt.Sprintf("test-ds-account-%s", gofakeit.Word())
+	accountName := test.SafeResourceName("test-ds-account")
 	te.AddTemplateVars(map[string]interface{}{
 		"AccountName": accountName,
 	})

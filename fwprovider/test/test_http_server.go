@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"testing"
@@ -54,16 +55,20 @@ type TestFileServer struct {
 // NewTestFileServer creates a new test file server.
 // The server starts serving immediately on a random available port, bound to 0.0.0.0.
 //
-// Set PROXMOX_VE_ACC_TEST_FILE_SERVER_IP to the IP that Proxmox can use to reach
-// this machine. For example, if your test machine is 192.168.1.100, set:
+// The server needs to know the IP that Proxmox can use to reach this machine.
+// It tries these sources in order:
+//  1. PROXMOX_VE_ACC_TEST_FILE_SERVER_IP environment variable (explicit override)
+//  2. Auto-detect: the local IP on the route to the Proxmox node (from PROXMOX_VE_ACC_NODE_SSH_ADDRESS or PROXMOX_VE_ENDPOINT)
 //
-//	export PROXMOX_VE_ACC_TEST_FILE_SERVER_IP=192.168.1.100
-//
-// Returns nil if the environment variable is not set (test should be skipped).
+// Returns nil if the IP cannot be determined.
 func NewTestFileServer(t *testing.T) *TestFileServer {
 	t.Helper()
 
 	externalIP := utils.GetAnyStringEnv("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP")
+	if externalIP == "" {
+		externalIP = detectLocalIPForPVE(t)
+	}
+
 	if externalIP == "" {
 		return nil
 	}
@@ -251,4 +256,42 @@ func (s *TestFileServer) Close() {
 	if s.server != nil {
 		s.server.Close()
 	}
+}
+
+// detectLocalIPForPVE finds the local IP address that routes to the Proxmox node.
+// It uses a UDP dial (no actual traffic) to determine which local interface would be
+// used to reach the PVE host.
+func detectLocalIPForPVE(t *testing.T) string {
+	t.Helper()
+
+	// Try SSH address first (most direct), then parse endpoint URL
+	pveHost := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NODE_SSH_ADDRESS")
+	if pveHost == "" {
+		endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+		if endpoint != "" {
+			if u, err := url.Parse(endpoint); err == nil {
+				pveHost = u.Hostname()
+			}
+		}
+	}
+
+	if pveHost == "" {
+		t.Log("Cannot auto-detect test file server IP: no PVE host configured")
+		return ""
+	}
+
+	dialer := net.Dialer{}
+
+	conn, err := dialer.DialContext(context.Background(), "udp", net.JoinHostPort(pveHost, "80"))
+	if err != nil {
+		t.Logf("Cannot auto-detect test file server IP: %v", err)
+		return ""
+	}
+
+	defer conn.Close()
+
+	localIP := conn.LocalAddr().(*net.UDPAddr).IP.String()
+	t.Logf("Auto-detected test file server IP: %s (route to %s)", localIP, pveHost)
+
+	return localIP
 }

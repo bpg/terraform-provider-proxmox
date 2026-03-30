@@ -9,13 +9,9 @@
 package test
 
 import (
-	"fmt"
 	"regexp"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 
@@ -34,7 +30,7 @@ func TestAccResourceStorageNFS(t *testing.T) {
 
 	require.NotEmpty(t, nfsExport, "PROXMOX_VE_ACC_NFS_EXPORT must be set when PROXMOX_VE_ACC_NFS_SERVER is set")
 
-	storageID := fmt.Sprintf("nfs-%s-%d", strings.ToLower(gofakeit.Word()), time.Now().UnixNano())
+	storageID := SafeResourceName("nfs")
 	options1 := "vers=4"
 	options2 := "vers=4,proto=tcp"
 	preallocation := "off"

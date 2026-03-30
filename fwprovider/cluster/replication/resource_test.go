@@ -77,7 +77,7 @@ func TestAccResourceReplication(t *testing.T) {
 
 	skipReplication(t, te)
 
-	imageFileName := gofakeit.Word() + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
+	imageFileName := gofakeit.LetterN(8) + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
 
 	jobnum := "1"
 

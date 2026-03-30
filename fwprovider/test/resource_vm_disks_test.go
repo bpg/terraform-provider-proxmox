@@ -32,8 +32,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	tests := []struct {
-		name  string
-		steps []resource.TestStep
+		name   string
+		steps  []resource.TestStep
+		skipIf func() (bool, string)
 	}{
 		{"create disk with default parameters, then update it", []resource.TestStep{
 			{
@@ -113,7 +114,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					}),
 				),
 			},
-		}},
+		}, nil},
 		{"create disk from an image", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_disk" {
@@ -144,7 +145,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.ssd":               "false",
 				}),
 			),
-		}}},
+		}}, nil},
 		{"import disk from an image", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_download_file" "test_disk_image" {
@@ -183,7 +184,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.ssd":               "false",
 				}),
 			),
-		}}},
+		}}, nil},
 		{"clone default disk without overrides", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -217,7 +218,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"multiple disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -248,7 +249,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"disk ordering consistency", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -444,7 +445,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					},
 				},
 			},
-		}},
+		}, nil},
 		{"adding disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -498,7 +499,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"removing disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -553,7 +554,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"boot disk deletion protection", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -600,7 +601,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}`),
 				ExpectError: regexp.MustCompile(`cannot delete boot disk "scsi0"`),
 			},
-		}},
+		}, nil},
 		{"non-boot disk deletion works", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -658,7 +659,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"disk resize with cdrom in boot order", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -738,7 +739,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"issue #2172 exact bug scenario", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -899,7 +900,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"efi disk", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -923,7 +924,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"efi disk parameter change issue 1515", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -970,7 +971,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					},
 				},
 			},
-		}},
+		}, nil},
 		{"add efi disk to existing vm without replacement", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -1010,7 +1011,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					},
 				},
 			},
-		}},
+		}, nil},
 		{"ide disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -1055,7 +1056,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"clone disk with overrides", []resource.TestStep{
 			{
 				SkipFunc: func() (bool, error) {
@@ -1107,7 +1108,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 				Destroy:      false,
 			},
-		}},
+		}, nil},
 		{"clone with disk resize", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -1149,7 +1150,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"clone with adding disk", []resource.TestStep{
 			{
 				SkipFunc: func() (bool, error) {
@@ -1198,7 +1199,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"clone with updating disk attributes", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
@@ -1241,13 +1242,8 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.speed.0.iops_write_burstable": "800",
 				}),
 			),
-		}}},
+		}}, nil},
 		{"clone with moving disk to ZFS storage", []resource.TestStep{{
-			PreConfig: func() {
-				if te.ZfsDatastoreID == "" {
-					t.Skip("skipping: PROXMOX_VE_ACC_ZFS_DATASTORE_ID is not set")
-				}
-			},
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
 					node_name = "{{.NodeName}}"
@@ -1279,7 +1275,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.datastore_id": te.ZfsDatastoreID,
 				}),
 			),
-		}}},
+		}}, func() (bool, string) {
+			return te.ZfsDatastoreID == "", "skipping: PROXMOX_VE_ACC_ZFS_DATASTORE_ID is not set"
+		}},
 		{"update single disk without affecting boot disk with import_from", []resource.TestStep{
 			{
 				// Create VM with boot disk that has import_from and a second disk
@@ -1354,7 +1352,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_bootdisk_bug", "disk.1.size", "2"),
 				),
 			},
-		}},
+		}, nil},
 		{"resize boot disk with import_from should not trigger re-import", []resource.TestStep{
 			{
 				// Create VM with boot disk using import_from
@@ -1411,11 +1409,17 @@ func TestAccResourceVMDisks(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_boot_resize", "disk.0.size", "12"),
 				),
 			},
-		}},
+		}, nil},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.skipIf != nil {
+				if skip, msg := tt.skipIf(); skip {
+					t.Skip(msg)
+				}
+			}
+
 			t.Parallel()
 
 			resource.Test(t, resource.TestCase{
