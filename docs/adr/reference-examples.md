@@ -990,7 +990,7 @@ Use this checklist for the minimum viable implementation. All items must be comp
 
 - [ ] Model struct with `tfsdk` tags matching schema attributes exactly
 - [ ] `types.*` for all optional fields (never raw Go types)
-- [ ] `toAPI()` using `Value*Pointer()` for optional fields
+- [ ] toAPI() (or toAPICreate()/toAPIUpdate()) using Value*Pointer() for optional fields
 - [ ] `fromAPI()` using `types.*PointerValue()` for optional fields
 
 #### resource_test.go
