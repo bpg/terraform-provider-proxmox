@@ -6676,14 +6676,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			return updateDiags
 		}
 
-		// After resizing, re-send the disk config for resized disks to
-		// update any pending changes with the correct (post-resize) size.
-		// When disk properties (e.g. AIO, cache) change on a running VM,
-		// Proxmox stores the full disk specification — including the
-		// current size — as a pending change. If the disk is also resized,
-		// the pending change still has the old size. Re-sending the disk
-		// config after resize causes Proxmox to refresh the pending entry
-		// with the new volume size, preventing the reboot from reverting
+		// After resizing, re-send the disk config for resized disks to update any pending changes with the
+		// correct (post-resize) size. When disk properties (e.g. AIO, cache) change on a running VM, Proxmox
+		// stores the full disk specification — including the current size — as a pending change. If the disk is
+		// also resized, the pending change still has the old size. Re-sending the disk config after resize causes
+		// Proxmox to refresh the pending entry with the new volume size, preventing the reboot from reverting
 		// the resize.
 		if diskChanges != nil && len(diskChanges.resizeBodies) > 0 {
 			updateDiags = append(updateDiags, vmRefreshPendingDiskConfig(ctx, vmAPI, diskChanges, updateBody)...)
@@ -6949,9 +6946,9 @@ func vmUpdateDiskSize(
 	return nil
 }
 
-// vmRefreshPendingDiskConfig re-sends the disk specification for resized disks
-// via PUT /config. This updates any pending changes with the correct post-resize
-// volume size, preventing a subsequent reboot from reverting the resize.
+// vmRefreshPendingDiskConfig re-sends the disk specification for resized disks via PUT /config.
+// This updates any pending changes with the correct post-resize volume size, preventing a
+// subsequent reboot from reverting the resize.
 func vmRefreshPendingDiskConfig(
 	ctx context.Context,
 	vmAPI *vms.Client,

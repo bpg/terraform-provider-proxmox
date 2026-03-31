@@ -225,6 +225,7 @@ When handing off work:
 - **Go 1.25+** required
 - **golangci-lint 2.8.0** — installed automatically by `make lint`
 - **Line length limit:** 150 characters (enforced by linter)
+- **Comment line wrap:** ~120 characters (not 70–80; the linter allows 150, so narrow wrapping wastes vertical space)
 
 ### Overview
 
