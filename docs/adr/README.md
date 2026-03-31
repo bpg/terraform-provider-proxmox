@@ -30,8 +30,8 @@ When implementing a new resource, read the ADRs in this order:
 
 The [reference-examples.md](reference-examples.md) document provides annotated walkthroughs of three real resources at increasing complexity:
 
-1. **SDN VNet** — start here for any new resource
-2. **Metrics Server** — many optional fields, sensitive attributes
-3. **ACL** — cross-field validation, custom import parsing
+1. **SDN VNet** — start here for any new resource (simplest clean 3-file pattern)
+2. **Replication** — many optional fields, split create/update methods, perfect audit score
+3. **Backup Job** — ConfigValidators, comma-separated-to-list, nested objects
 
 It also includes a [checklist](reference-examples.md#checklist-for-new-resource-implementation) for new resource implementation.

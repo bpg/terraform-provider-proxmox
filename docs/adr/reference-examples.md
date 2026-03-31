@@ -823,7 +823,7 @@ See [ADR-004](004-schema-design-conventions.md#comma-separated-api-values--terra
 When create and update API bodies share a common embedded struct, extract the shared field mapping into a single method to avoid duplicating 20+ field mappings:
 
 ```go
-func (m *backupJobModel) toCreateAPI(ctx context.Context, diags *diag.Diagnostics) *backup.CreateRequestBody {
+func (m *backupJobModel) toAPICreate(ctx context.Context, diags *diag.Diagnostics) *backup.CreateRequestBody {
     body := &backup.CreateRequestBody{}
     body.ID = m.ID.ValueString()
     body.Schedule = m.Schedule.ValueString()
@@ -831,7 +831,7 @@ func (m *backupJobModel) toCreateAPI(ctx context.Context, diags *diag.Diagnostic
     return body
 }
 
-func (m *backupJobModel) toUpdateAPI(ctx context.Context, state *backupJobModel, diags *diag.Diagnostics) *backup.UpdateRequestBody {
+func (m *backupJobModel) toAPIUpdate(ctx context.Context, state *backupJobModel, diags *diag.Diagnostics) *backup.UpdateRequestBody {
     body := &backup.UpdateRequestBody{}
     body.Schedule = m.Schedule.ValueStringPointer()
     m.fillCommonFields(ctx, &body.RequestBodyCommon, diags)
@@ -911,7 +911,7 @@ outgrows the simple 3-file pattern.
 | `ValidateConfig` method | `fwprovider/cluster/sdn/subnet/resource.go` | Complex validation that requires reading multiple attributes |
 | Shared model | `fwprovider/cluster/acme/plugin_model.go` shared by `resource_acme_dns_plugin.go` and `resource_acme_account.go` | Multiple resources sharing one model file with common types |
 | Custom `stringset.Value` type | `fwprovider/types/stringset/` | Comma-separated list attributes (e.g., node lists) |
-| Comma-separated to List/Map | `fwprovider/cluster/backup/model.go` with `toCreateAPI()`/`fromAPI()` | API fields using comma-separated strings exposed as Terraform lists |
+| Comma-separated to List/Map | `fwprovider/cluster/backup/model.go` with `toAPICreate()`/`fromAPI()` | API fields using comma-separated strings exposed as Terraform lists |
 
 ---
 
@@ -967,65 +967,62 @@ Checkpoints: (a) ImportState errors on not-found (not RemoveResource), (b) delet
 
 ## Checklist for New Resource Implementation
 
-Use this checklist when implementing a new framework resource. Each item links to the
-relevant pattern in this document.
+### Merge Requirements (must pass before merge)
 
-### Setup
+Use this checklist for the minimum viable implementation. All items must be complete.
 
-- [ ] Create package directory under `fwprovider/` following domain hierarchy
-- [ ] Create `resource.go`, `model.go`, and `resource_test.go` (3-file pattern)
-- [ ] Add `datasource.go` if a read-only datasource is also needed
-
-### resource.go
+#### resource.go
 
 - [ ] Interface compliance assertions (`var _ resource.Resource = ...`)
 - [ ] Resource struct with typed client field
 - [ ] Constructor returning zero-value struct (`NewResource()`)
-- [ ] `Metadata` returning type name with `proxmox_` prefix for new resources (per ADR-007; no short-name alias needed)
-- [ ] `Configure` with nil guard, `config.Resource` type assertion, client extraction
-- [ ] `Schema` with descriptions, validators, plan modifiers on immutable fields, and `Sensitive: true` on credential fields
-- [ ] `Create`: plan -> toAPI -> API call -> read back -> set state
-- [ ] Read-back from API after Create (not saving plan directly)
+- [ ] `Metadata` returning type name with `proxmox_` prefix (per ADR-007)
+- [ ] `Configure` with nil guard and `config.Resource` type assertion
+- [ ] `Schema` with descriptions on all attributes and validators on constrained fields
+- [ ] `Create`: plan → toAPI → API call → **read back from API** → set state
 - [ ] `Read`: handle `api.ErrResourceDoesNotExist` with `RemoveResource`
-- [ ] `Update`: `CheckDelete` for every optional field, then update + read back
-- [ ] Read-back from API after Update (not saving plan directly)
+- [ ] `Update`: `CheckDelete` for every optional field, then update + **read back** → set state
 - [ ] `Delete`: ignore `api.ErrResourceDoesNotExist`
-- [ ] `ImportState`: simple ID pass-through or custom parsing
+- [ ] `ImportState`: implemented (simple or composite ID parsing)
 - [ ] All `resp.State.Set()` calls wrapped in `resp.Diagnostics.Append()`
 
-### model.go
+#### model.go
 
 - [ ] Model struct with `tfsdk` tags matching schema attributes exactly
-- [ ] `types.*` for optional fields, plain Go types only for always-present fields
-- [ ] `toAPI()` method using `Value*Pointer()` for optional fields
-- [ ] `fromAPI()` method using `types.*PointerValue()` for optional fields
-- [ ] Bool-to-Int64 conversions use `proxmoxtypes.CustomBoolPtr()` / `.PointerBool()` (not local helpers)
+- [ ] `types.*` for all optional fields (never raw Go types)
+- [ ] `toAPI()` using `Value*Pointer()` for optional fields
+- [ ] `fromAPI()` using `types.*PointerValue()` for optional fields
 
-### resource_test.go
+#### resource_test.go
 
-- [ ] Build tag includes `acceptance` (not just `all`): `//go:build acceptance || all`
+- [ ] Build tag: `//go:build acceptance || all`
 - [ ] `t.Parallel()` at top of test function
-- [ ] `test.InitEnvironment(t)` for provider factories and config rendering
-- [ ] Table-driven test structure with named scenarios
-- [ ] Create, update, and import steps
-- [ ] `test.ResourceAttributes` for bulk assertions
-- [ ] `resource.ParallelTest` for concurrent execution
-- [ ] Validation test with `PlanOnly: true` and `ExpectError` if applicable
+- [ ] `test.InitEnvironment(t)` for provider factories
+- [ ] At least create, update, and import test steps
+- [ ] `resource.ParallelTest` (not `resource.Test`)
 
-### Registration
+#### Registration & Build
 
-- [ ] Register resource in provider's resource list
-- [ ] Register datasource in provider's datasource list (if applicable)
-- [ ] Run `make docs` to regenerate documentation if schema changed
-
-### Verification
-
-- [ ] `make build` passes
-- [ ] `make lint` shows 0 issues
+- [ ] Resource registered in `fwprovider/provider.go`
+- [ ] `make build` and `make lint` pass
 - [ ] `make test` passes (unit tests)
-- [ ] `./testacc TestAccYourResource` passes (acceptance tests)
-- [ ] API calls verified with mitmproxy
+- [ ] Acceptance tests pass
+
+### Grade A Target (recommended, can be follow-up PR)
+
+These items bring the resource to full compliance (D6=3, Grade A in the scoring rubric).
+
+- [ ] `Sensitive: true` on credential fields (tokens, passwords, API keys)
+- [ ] `RequiresReplace()` on all immutable fields
+- [ ] Table-driven test structure with named scenarios
+- [ ] Validation test with `PlanOnly: true` and `ExpectError` (if applicable)
+- [ ] Field removal test (verifies `CheckDelete` end-to-end)
+- [ ] `test.ResourceAttributes` / `test.NoResourceAttributesSet` for bulk assertions
+- [ ] Bool-to-Int64 conversions use `proxmoxtypes.CustomBoolPtr()` / `.PointerBool()`
 - [ ] Domain client delete retry predicate excludes `ErrResourceDoesNotExist` (see [ADR-005](005-error-handling.md#retry-policies))
+- [ ] API calls verified with mitmproxy
+- [ ] Datasource added (if applicable) with `config.DataSource` and not-found error handling
+- [ ] `make docs` regenerates documentation
 
 ---
 
