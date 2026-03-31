@@ -911,7 +911,7 @@ outgrows the simple 3-file pattern.
 | `ValidateConfig` method | `fwprovider/cluster/sdn/subnet/resource.go` | Complex validation that requires reading multiple attributes |
 | Shared model | `fwprovider/cluster/acme/plugin_model.go` shared by `resource_acme_dns_plugin.go` and `resource_acme_account.go` | Multiple resources sharing one model file with common types |
 | Custom `stringset.Value` type | `fwprovider/types/stringset/` | Comma-separated list attributes (e.g., node lists) |
-| Comma-separated to List/Map | `fwprovider/cluster/backup/model.go` with `toAPICreate()`/`fromAPI()` | API fields using comma-separated strings exposed as Terraform lists |
+| Comma-separated to List/Map | fwprovider/cluster/backup/model.go with toAPICreate()/fromAPI() | API fields using comma-separated strings exposed as Terraform lists or maps |
 
 ---
 
