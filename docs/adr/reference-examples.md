@@ -971,6 +971,11 @@ Checkpoints: (a) ImportState errors on not-found (not RemoveResource), (b) delet
 
 Use this checklist for the minimum viable implementation. All items must be complete.
 
+#### Setup
+
+- [ ] Create package directory under `fwprovider/` following domain hierarchy ([ADR-003](003-resource-file-organization.md))
+- [ ] Create `resource.go`, `model.go`, and `resource_test.go` (3-file pattern)
+
 #### resource.go
 
 - [ ] Interface compliance assertions (`var _ resource.Resource = ...`)
@@ -978,7 +983,7 @@ Use this checklist for the minimum viable implementation. All items must be comp
 - [ ] Constructor returning zero-value struct (`NewResource()`)
 - [ ] `Metadata` returning type name with `proxmox_` prefix (per ADR-007)
 - [ ] `Configure` with nil guard and `config.Resource` type assertion
-- [ ] `Schema` with descriptions on all attributes and validators on constrained fields
+- [ ] `Schema` with descriptions on all attributes, validators on constrained fields, and `RequiresReplace()` on immutable fields
 - [ ] Create: plan → toAPI() (or toAPICreate()) → API call → **read back from API** → set state
 - [ ] `Read`: handle `api.ErrResourceDoesNotExist` with `RemoveResource`
 - [ ] `Update`: `CheckDelete` for every optional field, then update + **read back** → set state
@@ -1007,13 +1012,13 @@ Use this checklist for the minimum viable implementation. All items must be comp
 - [ ] `make build` and `make lint` pass
 - [ ] `make test` passes (unit tests)
 - [ ] Acceptance tests pass
+- [ ] `make docs` regenerates documentation
 
 ### Grade A Target (recommended, can be follow-up PR)
 
 These items bring the resource to full compliance (D6=3, Grade A in the scoring rubric).
 
 - [ ] `Sensitive: true` on credential fields (tokens, passwords, API keys)
-- [ ] `RequiresReplace()` on all immutable fields
 - [ ] Table-driven test structure with named scenarios
 - [ ] Validation test with `PlanOnly: true` and `ExpectError` (if applicable)
 - [ ] Field removal test (verifies `CheckDelete` end-to-end)
@@ -1022,7 +1027,6 @@ These items bring the resource to full compliance (D6=3, Grade A in the scoring 
 - [ ] Domain client delete retry predicate excludes `ErrResourceDoesNotExist` (see [ADR-005](005-error-handling.md#retry-policies))
 - [ ] API calls verified with mitmproxy
 - [ ] Datasource added (if applicable) with `config.DataSource` and not-found error handling
-- [ ] `make docs` regenerates documentation
 
 ---
 
