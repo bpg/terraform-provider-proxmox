@@ -979,7 +979,7 @@ Use this checklist for the minimum viable implementation. All items must be comp
 - [ ] `Metadata` returning type name with `proxmox_` prefix (per ADR-007)
 - [ ] `Configure` with nil guard and `config.Resource` type assertion
 - [ ] `Schema` with descriptions on all attributes and validators on constrained fields
-- [ ] `Create`: plan → toAPI → API call → **read back from API** → set state
+- [ ] Create: plan → toAPI() (or toAPICreate()) → API call → **read back from API** → set state
 - [ ] `Read`: handle `api.ErrResourceDoesNotExist` with `RemoveResource`
 - [ ] `Update`: `CheckDelete` for every optional field, then update + **read back** → set state
 - [ ] `Delete`: ignore `api.ErrResourceDoesNotExist`
