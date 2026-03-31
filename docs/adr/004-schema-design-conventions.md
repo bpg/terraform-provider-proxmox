@@ -40,7 +40,7 @@ Never use raw Go types (`string`, `bool`, `int`) for optional fields. The `types
 
 Use `Optional + Computed` when the Proxmox API supplies a default value for an omitted field. This allows Terraform to show the server-assigned value in state without requiring the user to specify it.
 
-Try to avoid setting `Computed: true` with Default values in the schema. This can lead to unexpected behavior if the default changes on the server side.
+Use `Computed: true` with `Default` only for boolean fields where the default is a fixed value that matches the API's omission behavior (e.g., `booldefault.StaticBool(false)` when the API treats omission as `false`). Avoid this pattern for string or numeric fields where server-side defaults may change independently of the provider. See the Replication resource's `disable` field in [reference-examples.md](reference-examples.md#booldefault-for-optionalcomputed-bool) for the canonical example.
 
 ### Immutable Fields
 
@@ -145,6 +145,8 @@ func (m *model) fromAPI(id string, data *vnets.VNetData) {
 
 For `CustomBool` fields, use `.PointerBool()` to convert `*CustomBool` → `*bool`, then `types.BoolPointerValue()` handles `nil` naturally — consistent with the other pointer value conversions.
 
+When the API's create and update endpoints accept different field sets (e.g., immutable fields only accepted at creation), use separate methods named `toAPICreate()` and `toAPIUpdate()`. See the [Replication reference](reference-examples.md#split-createupdate-api-methods) for the canonical example.
+
 ### Field Deletion on Update
 
 When an optional field is removed from configuration, the Proxmox API requires explicit deletion via a `delete` parameter. Use `attribute.CheckDelete()` to detect these transitions:
@@ -236,7 +238,7 @@ The project provides custom attribute types in `fwprovider/types/`:
 - Using `types.StringValue("")` instead of `types.StringNull()` for absent values — empty string and null are different in Terraform.
 - Forgetting `CheckDelete` calls in Update for optional fields — the Proxmox API won't clear the field.
 - Using the Terraform attribute name instead of the Proxmox API parameter name in `CheckDelete`.
-- Setting `Computed: true` with `Default` — leads to unexpected behavior when server defaults change.
+- Setting `Computed: true` with `Default` on string or numeric fields — leads to unexpected behavior when server defaults change. This combination is acceptable for boolean fields with fixed defaults (see guidance above).
 - Exposing comma-separated API values as a single `types.String` instead of `types.List` or `stringset.Value` — use proper Terraform list/set types so users get HCL list syntax and element-level operations.
 
 ## References

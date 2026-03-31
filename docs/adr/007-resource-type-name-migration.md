@@ -67,17 +67,16 @@ func (r *haGroupShort) Metadata(_ context.Context, _ resource.MetadataRequest, r
 }
 
 func (r *haGroupShort) MoveState(ctx context.Context) []resource.StateMover {
-    return []resource.StateMover{{
-        StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
-            if req.SourceTypeName != "proxmox_virtual_environment_hagroup" {
-                return
-            }
-            // Schema is identical — copy state as-is
-            resp.TargetState.Raw = req.SourceRawState
-        },
-    }}
+    schemaResp := &resource.SchemaResponse{}
+    r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+    return []resource.StateMover{
+        migration.PrefixMoveState("proxmox_virtual_environment_hagroup", &schemaResp.Schema),
+    }
 }
 ```
+
+> [!NOTE]
+> Use `migration.PrefixMoveState()` from the `fwprovider/migration/` package for all prefix-only state moves. The manual `StateMover` pattern shown in early implementations is equivalent but should not be used for new migrations.
 
 Users migrate at their own pace using Terraform's `moved` block (requires Terraform >= 1.8):
 

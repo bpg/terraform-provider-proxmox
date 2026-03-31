@@ -43,6 +43,12 @@ Standard summaries for the resource lifecycle:
 
 The detail string (second argument) should be `err.Error()`, which carries the full error chain from the API layer.
 
+### Diagnostic Severity
+
+Use `resp.Diagnostics.AddError()` for all failures that prevent the operation from completing. **Do not use `resp.Diagnostics.AddWarning()`** for API errors — if the operation failed, it's an error, not a warning.
+
+Warnings are acceptable only for non-fatal informational messages, such as deprecation notices emitted by the schema framework itself. Resource CRUD methods should not emit warnings.
+
 ### Three-Layer Error Architecture
 
 Errors flow through three layers. Each layer adds context while preserving the original error for inspection.
