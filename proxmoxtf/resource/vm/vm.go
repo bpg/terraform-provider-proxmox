@@ -6716,6 +6716,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		power,
 		d.HasChange(mkStarted),
 	)...)
+	if updateDiags.HasError() {
+		return updateDiags
+	}
 
 	updateDiags = append(updateDiags, vmRead(ctx, d, m)...)
 
