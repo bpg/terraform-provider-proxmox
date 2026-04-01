@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.100.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.99.0...v0.100.0) (2026-04-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **vm:** set power state of VM centrally ([#2508](https://github.com/bpg/terraform-provider-proxmox/issues/2508))
+
+### Features
+
+* **access:** add short-name aliases for access resources ([#2720](https://github.com/bpg/terraform-provider-proxmox/issues/2720)) ([8b690cf](https://github.com/bpg/terraform-provider-proxmox/commit/8b690cf835a507cf7c631b966815277f0d14fe42))
+* **acme:** add short-name aliases for ACME resources ([#2721](https://github.com/bpg/terraform-provider-proxmox/issues/2721)) ([d386759](https://github.com/bpg/terraform-provider-proxmox/commit/d386759ffca09a6d84eb06ff457a64b62022c2a7))
+* **cluster:** add short-name aliases for cluster resources ([#2725](https://github.com/bpg/terraform-provider-proxmox/issues/2725)) ([8fafc04](https://github.com/bpg/terraform-provider-proxmox/commit/8fafc043c699ea7cf4f2fefa71f5c8258a61c5da))
+* **ha:** add short-name aliases for HA resources ([#2722](https://github.com/bpg/terraform-provider-proxmox/issues/2722)) ([acd0d9f](https://github.com/bpg/terraform-provider-proxmox/commit/acd0d9f7fdc15c3059a6cbeb02e49c1f0a26b532))
+* **node:** add short-name aliases for node resources ([#2726](https://github.com/bpg/terraform-provider-proxmox/issues/2726)) ([33914d5](https://github.com/bpg/terraform-provider-proxmox/commit/33914d55808d25d97b9cf8123d54f501640dd290))
+* **provider:** add short-name aliases for vm, version, and pool resources ([#2728](https://github.com/bpg/terraform-provider-proxmox/issues/2728)) ([38dca5a](https://github.com/bpg/terraform-provider-proxmox/commit/38dca5a91f1ea739e49e4b97e57d164f5570ad7b))
+* **sdn:** add short-name aliases for SDN resources ([#2724](https://github.com/bpg/terraform-provider-proxmox/issues/2724)) ([0028588](https://github.com/bpg/terraform-provider-proxmox/commit/0028588ce3ed6a8808da5c50084755860e43d1ea))
+* **storage:** add short-name aliases for storage resources ([#2727](https://github.com/bpg/terraform-provider-proxmox/issues/2727)) ([798f1ea](https://github.com/bpg/terraform-provider-proxmox/commit/798f1ea2f74186659601365589904691b1f91e7d))
+
+
+### Bug Fixes
+
+* **cpu:** update docs, tests ([033b8f5](https://github.com/bpg/terraform-provider-proxmox/commit/033b8f5027eb2fdb83686de11bd4b67820201efb))
+* **docs:** update broken doc links ([#2754](https://github.com/bpg/terraform-provider-proxmox/issues/2754)) ([b7d0242](https://github.com/bpg/terraform-provider-proxmox/commit/b7d0242a81a6bb3d36662ac1fab8b1dfe1d7eb83))
+* **lychee:** update comments for clarity ([6fea54e](https://github.com/bpg/terraform-provider-proxmox/commit/6fea54e47f422cf03d0b3e333ff6eb96840c327c))
+* **vm:** mark disk size as computed to prevent passthrough drift ([#2718](https://github.com/bpg/terraform-provider-proxmox/issues/2718)) ([cba4dd6](https://github.com/bpg/terraform-provider-proxmox/commit/cba4dd6936276e73a9411375378c8c05d9a5ddc9))
+* **vm:** prevent disk resize revert when combined with config changes ([#2751](https://github.com/bpg/terraform-provider-proxmox/issues/2751)) ([f45cf78](https://github.com/bpg/terraform-provider-proxmox/commit/f45cf78cc7cba91ffe26f91feeb3cfcae5ad8a9a))
+* **vm:** set power state of VM centrally ([#2508](https://github.com/bpg/terraform-provider-proxmox/issues/2508)) ([b8ceecd](https://github.com/bpg/terraform-provider-proxmox/commit/b8ceecd5afb2ab799b60dc90672c42538cb925b8))
+* **vm:** support fractional cpulimit values ([#2745](https://github.com/bpg/terraform-provider-proxmox/issues/2745)) ([445e47c](https://github.com/bpg/terraform-provider-proxmox/commit/445e47c17c0764b0c1e3f8aadd73e9b505b8c06b))
+
+
+### Miscellaneous
+
+* **core:** add migration helpers for resource type name rename (ADR-007) ([#2719](https://github.com/bpg/terraform-provider-proxmox/issues/2719)) ([b2bb732](https://github.com/bpg/terraform-provider-proxmox/commit/b2bb7324d2660cc79b520a02626086ed7971d7b5))
+* **deps:** update golangci/golangci-lint (v2.11.3 → v2.11.4) ([#2729](https://github.com/bpg/terraform-provider-proxmox/issues/2729)) ([f95bc46](https://github.com/bpg/terraform-provider-proxmox/commit/f95bc4696720e2cb1bacac517301238a336812eb))
+* **dev:** update ADRs and reference examples ([#2752](https://github.com/bpg/terraform-provider-proxmox/issues/2752)) ([15afbe8](https://github.com/bpg/terraform-provider-proxmox/commit/15afbe849fe9594e3be6cb0257b155ef41bcb3e0))
+* **dev:** update code-review skill ([a7a489f](https://github.com/bpg/terraform-provider-proxmox/commit/a7a489f2924b70d5758deaebcd374b61653fc733))
+* **docs:** document usage of ZFS storage in  acc tests ([2eca921](https://github.com/bpg/terraform-provider-proxmox/commit/2eca921f9fde90bec3d883f46dc4b40a80638e04))
+* **docs:** update FWK reference examples documentation ([c20d0be](https://github.com/bpg/terraform-provider-proxmox/commit/c20d0be5ab4a632b7c340e3781e7f60250a41d7f))
+* **test:** add tier-based and resource-targeted test execution ([#2753](https://github.com/bpg/terraform-provider-proxmox/issues/2753)) ([31b4706](https://github.com/bpg/terraform-provider-proxmox/commit/31b4706600585700a4276c1b680ac3c5f58ef742))
+* **test:** improve acceptance test stability and reliability ([#2746](https://github.com/bpg/terraform-provider-proxmox/issues/2746)) ([f54fca2](https://github.com/bpg/terraform-provider-proxmox/commit/f54fca2e1ff119ce4c6733dc9ba1034cc90e050c))
+
 ## [0.99.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.98.1...v0.99.0) (2026-03-21)
 
 
