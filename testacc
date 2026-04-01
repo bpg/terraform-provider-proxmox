@@ -116,12 +116,52 @@ validate_env_file() {
 # Discover packages by testacc annotation.
 # Usage: discover_packages "tier" "light"
 # Returns: space-separated list of Go package paths
+#
+# For tier queries, only returns packages where ALL test files match the
+# requested tier. A package with both light and heavy tests is excluded
+# from --tier light (it belongs in --tier heavy).
 discover_packages() {
     annotation_key="$1"
     annotation_value="$2"
-    grep -rl "//testacc:${annotation_key}=${annotation_value}" ./fwprovider/ 2>/dev/null \
+
+    # Find packages containing files with the requested annotation
+    matching_dirs=$(grep -rl "//testacc:${annotation_key}=${annotation_value}" ./fwprovider/ 2>/dev/null \
         | xargs -I{} dirname {} \
-        | sort -u \
+        | sort -u)
+
+    if [ "$annotation_key" = "tier" ] && [ "$annotation_value" != "all" ]; then
+        # For tier filtering: exclude packages that also contain heavier tiers
+        exclude_tiers=""
+        case "$annotation_value" in
+            light)  exclude_tiers="medium\|heavy" ;;
+            medium) exclude_tiers="heavy" ;;
+            heavy)  exclude_tiers="" ;;
+        esac
+
+        if [ -n "$exclude_tiers" ]; then
+            heavier_dirs=$(grep -rl "//testacc:tier=\(${exclude_tiers}\)" ./fwprovider/ 2>/dev/null \
+                | xargs -I{} dirname {} \
+                | sort -u)
+            # Filter out packages that also have heavier tiers (POSIX-compatible)
+            filtered=""
+            for dir in $matching_dirs; do
+                excluded=0
+                for hdir in $heavier_dirs; do
+                    if [ "$dir" = "$hdir" ]; then
+                        excluded=1
+                        break
+                    fi
+                done
+                if [ "$excluded" = "0" ]; then
+                    filtered="$filtered
+$dir"
+                fi
+            done
+            matching_dirs=$(printf '%s' "$filtered" | sed '/^$/d')
+        fi
+    fi
+
+    printf '%s\n' "$matching_dirs" \
         | sed "s|^\./|${BASE_PKG}/|" \
         | tr '\n' ' '
 }
