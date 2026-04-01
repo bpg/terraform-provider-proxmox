@@ -18,7 +18,7 @@ We take the security of the Terraform Provider for Proxmox and its users serious
 
 Instead, please send an email to [bpg.github.com.tn75g@passmail.net](mailto:bpg.github.com.tn75g@passmail.net) or report it through GitHub's Security Advisory feature:
 
-1. Go to <https://github.com/bpg/terraform-provider-proxmox/security/advisories> and click "New draft security advisory"
+1. Go to <https://github.com/bpg/terraform-provider-proxmox/security/advisories> and click "Report a vulnerability"
 2. Provide a descriptive title
 3. Fill in a detailed description of the issue
 4. Click "Submit report"
