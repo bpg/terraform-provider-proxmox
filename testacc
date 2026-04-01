@@ -105,6 +105,29 @@ validate_env_file() {
     return 0
 }
 
+# Discover packages by testacc annotation.
+# Usage: discover_packages "tier" "light"
+# Returns: space-separated list of Go package paths
+discover_packages() {
+    annotation_key="$1"
+    annotation_value="$2"
+    grep -rl "//testacc:${annotation_key}=${annotation_value}" ./fwprovider/ 2>/dev/null \
+        | xargs -I{} dirname {} \
+        | sort -u \
+        | sed "s|^\./|${BASE_PKG}/|" \
+        | tr '\n' ' '
+}
+
+# Discover all unique values for an annotation key.
+# Usage: discover_values "resource"
+# Returns: newline-separated list of values
+discover_values() {
+    annotation_key="$1"
+    grep -roh "//testacc:${annotation_key}=[a-z_]*" ./fwprovider/ 2>/dev/null \
+        | sed "s|//testacc:${annotation_key}=||" \
+        | sort -u
+}
+
 # Parse arguments
 NO_PROXY=""
 TEST_NAME=""
