@@ -39,6 +39,7 @@ import (
 const (
 	dvCloneDatastoreID                  = ""
 	dvCloneNodeName                     = ""
+	dvCloneFull                         = true
 	dvConsoleEnabled                    = true
 	dvConsoleMode                       = "tty"
 	dvConsoleTTYCount                   = 2
@@ -102,6 +103,7 @@ const (
 
 	mkClone                             = "clone"
 	mkCloneDatastoreID                  = "datastore_id"
+	mkCloneFull                         = "full"
 	mkCloneNodeName                     = "node_name"
 	mkCloneVMID                         = "vm_id"
 	mkConsole                           = "console"
@@ -234,6 +236,13 @@ func Container() *schema.Resource {
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvCloneNodeName,
+						},
+						mkCloneFull: {
+							Type:        schema.TypeBool,
+							Description: "When cloning, create a full copy of all disks. Set to false to create a linked clone.",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvCloneFull,
 						},
 						mkCloneVMID: {
 							Type:             schema.TypeInt,
@@ -1254,7 +1263,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		}
 	}
 
-	fullCopy := types.CustomBool(true)
+	fullCopy := types.CustomBool(cloneBlock[mkCloneFull].(bool))
 
 	cloneBody := &containers.CloneRequestBody{
 		FullCopy: &fullCopy,

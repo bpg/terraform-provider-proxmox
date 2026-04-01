@@ -128,6 +128,8 @@ output "ubuntu_container_public_key" {
 
 - `clone` - (Optional) The cloning configuration.
     - `datastore_id` - (Optional) The identifier for the target datastore.
+    - `full` - (Optional) When cloning, create a full copy of all disks. Set
+        to `false` to create a linked clone (defaults to `true`).
     - `node_name` - (Optional) The name of the source node (leave blank, if
         equal to the `node_name` argument).
     - `vm_id` - (Required) The identifier for the source container.
