@@ -9,7 +9,7 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_vm2
 
-~> **Deprecated:** Use [`proxmox_vm2`](vm2.md) instead. This data-source will be removed in v1.0.
+~> **Deprecated:** Use [`proxmox_vm`](vm.md) instead. This data-source will be removed in v1.0.
 
 !> **DO NOT USE**
 This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.
