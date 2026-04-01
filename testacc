@@ -11,6 +11,8 @@ set -u
 
 BASE_PKG="github.com/bpg/terraform-provider-proxmox"
 DEFAULT_TIMEOUT="30m"
+KNOWN_TIERS="light medium heavy"
+KNOWN_RESOURCES="access acme apt backup container datastores file firewall ha hardwaremapping metrics misc network options pool replication sdn storage vm"
 
 show_help() {
     cat <<'EOF'
@@ -53,6 +55,7 @@ Notes:
   - Patterns with .* or * match multiple tests
   - The script automatically finds the package containing the test
   - Always quote pattern arguments to prevent shell expansion
+  - --tier and --resource cannot be combined with a TEST_NAME
 
 Environment:
   Acceptance tests require a testacc.env file in the project root with:
@@ -115,7 +118,7 @@ validate_env_file() {
 
 # Discover packages by testacc annotation.
 # Usage: discover_packages "tier" "light"
-# Returns: space-separated list of Go package paths
+# Returns: space-separated list of Go package paths (empty string if none found)
 #
 # For tier queries, only returns packages where ALL test files match the
 # requested tier. A package with both light and heavy tests is excluded
@@ -124,10 +127,12 @@ discover_packages() {
     annotation_key="$1"
     annotation_value="$2"
 
-    # Find packages containing files with the requested annotation
-    matching_dirs=$(grep -rl "//testacc:${annotation_key}=${annotation_value}" ./fwprovider/ 2>/dev/null \
+    # Find packages containing files with the requested annotation (anchored match)
+    matching_dirs=$(grep -rl "//testacc:${annotation_key}=${annotation_value}$" ./fwprovider/ 2>/dev/null \
         | xargs -I{} dirname {} \
         | sort -u)
+
+    [ -z "$matching_dirs" ] && return
 
     if [ "$annotation_key" = "tier" ] && [ "$annotation_value" != "all" ]; then
         # For tier filtering: exclude packages that also contain heavier tiers
@@ -139,7 +144,7 @@ discover_packages() {
         esac
 
         if [ -n "$exclude_tiers" ]; then
-            heavier_dirs=$(grep -rl "//testacc:tier=\(${exclude_tiers}\)" ./fwprovider/ 2>/dev/null \
+            heavier_dirs=$(grep -rl "//testacc:tier=\(${exclude_tiers}\)$" ./fwprovider/ 2>/dev/null \
                 | xargs -I{} dirname {} \
                 | sort -u)
             # Filter out packages that also have heavier tiers (POSIX-compatible)
@@ -161,6 +166,8 @@ $dir"
         fi
     fi
 
+    [ -z "$matching_dirs" ] && return
+
     printf '%s\n' "$matching_dirs" \
         | sed "s|^\./|${BASE_PKG}/|" \
         | tr '\n' ' '
@@ -171,9 +178,32 @@ $dir"
 # Returns: newline-separated list of values
 discover_values() {
     annotation_key="$1"
-    grep -roh "//testacc:${annotation_key}=[a-z_]*" ./fwprovider/ 2>/dev/null \
+    grep -roh "//testacc:${annotation_key}=[a-z0-9_]*" ./fwprovider/ 2>/dev/null \
         | sed "s|//testacc:${annotation_key}=||" \
         | sort -u
+}
+
+# Validate that all acceptance test files have tier annotations.
+# Warns about files that would be missed by --tier all.
+validate_annotations() {
+    missing=$(find ./fwprovider -name '*_test.go' -exec grep -l '//go:build acceptance\|//go:build all' {} \; 2>/dev/null \
+        | while read -r f; do grep -q '//testacc:tier=' "$f" || echo "$f"; done)
+    if [ -n "$missing" ]; then
+        printf 'Warning: acceptance test files without tier annotations (missed by --tier):\n' >&2
+        printf '%s\n' "$missing" >&2
+    fi
+
+    # Check for unknown tier values
+    unknown_tiers=""
+    for t in $(discover_values "tier"); do
+        case " $KNOWN_TIERS " in
+            *" $t "*) : ;;  # known tier, skip
+            *) unknown_tiers="$unknown_tiers $t" ;;
+        esac
+    done
+    if [ -n "$unknown_tiers" ]; then
+        printf 'Warning: unknown tier values found:%s\n' "$unknown_tiers" >&2
+    fi
 }
 
 # Parse arguments
@@ -232,6 +262,22 @@ for arg in "$@"; do
     fi
 done
 
+# Validate mutually exclusive options
+if [ -n "$TEST_NAME" ] && { [ -n "$TIER" ] || [ -n "$RESOURCE" ]; }; then
+    printf 'Error: --tier and --resource cannot be combined with a test name\n' >&2
+    exit 1
+fi
+
+if [ -n "$TIER" ] && [ -n "$RESOURCE" ]; then
+    printf 'Error: --tier and --resource cannot be combined\n' >&2
+    exit 1
+fi
+
+# Strip whitespace from comma-separated tier list
+if [ -n "$TIER" ]; then
+    TIER=$(printf '%s' "$TIER" | tr -d '[:space:]')
+fi
+
 # Check for testacc.env
 if [ ! -f "testacc.env" ]; then
     printf 'Error: testacc.env file not found in current directory\n' >&2
@@ -264,6 +310,33 @@ if [ -n "$NO_PROXY" ]; then
     printf 'Using NO_PROXY=%s\n' "$NO_PROXY" >&2
 fi
 
+# Run a go test command, with optional --show-command output.
+run_go_test() {
+    pkg_parallelism="$1"
+    test_parallelism="$2"
+    packages="$3"
+    shift 3
+
+    if [ -n "$VERBOSE" ]; then
+        printf 'Executing: go test -v -count 1 -p %s -parallel %s --tags=acceptance -timeout %s' \
+            "$pkg_parallelism" "$test_parallelism" "$DEFAULT_TIMEOUT" >&2
+        if [ -n "$RUN_ARG" ]; then
+            printf ' %s' "$RUN_ARG" >&2
+        fi
+        printf ' %s' "$packages" >&2
+        if [ -n "$GO_FLAGS" ]; then
+            printf ' %s' "$GO_FLAGS" >&2
+        fi
+        printf '\n' >&2
+    fi
+
+    # shellcheck disable=SC2046,SC2086
+    TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
+        go test -v -count 1 -p "$pkg_parallelism" -parallel "$test_parallelism" \
+        --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
+        ${RUN_ARG} ${packages} ${GO_FLAGS}
+}
+
 # Run tests for a single tier.
 run_tier() {
     tier_name="$1"
@@ -277,11 +350,7 @@ run_tier() {
 
     printf '\n=== Tier: %s (packages: -p %s, parallel: %s) ===\n' "$tier_name" "$tier_p" "${PARALLEL:-4}" >&2
 
-    # shellcheck disable=SC2046,SC2086
-    TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
-        go test -v -count 1 -p "$tier_p" -parallel "${PARALLEL:-4}" \
-        --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
-        ${RUN_ARG} ${tier_pkgs} ${GO_FLAGS}
+    run_go_test "$tier_p" "${PARALLEL:-4}" "$tier_pkgs"
 }
 
 # Run tests for a resource type.
@@ -297,11 +366,7 @@ run_resource() {
 
     printf '\n=== Resource: %s ===\n' "$resource_name" >&2
 
-    # shellcheck disable=SC2046,SC2086
-    TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
-        go test -v -count 1 -p "${PACKAGES:-1}" -parallel "${PARALLEL:-4}" \
-        --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
-        ${RUN_ARG} ${resource_pkgs} ${GO_FLAGS}
+    run_go_test "${PACKAGES:-1}" "${PARALLEL:-4}" "$resource_pkgs"
 }
 
 # Build test command and detect pattern
@@ -325,7 +390,9 @@ printf '\n' >&2
 
 # Run tests based on mode
 if [ -n "$TIER" ]; then
-    # Tier-based execution
+    # Validate annotations before tier-based execution
+    validate_annotations
+
     TIER_EXIT=0
     OLD_IFS="$IFS"
     IFS=','
@@ -350,7 +417,6 @@ if [ -n "$TIER" ]; then
     exit $TIER_EXIT
 
 elif [ -n "$RESOURCE" ]; then
-    # Resource-based execution
     run_resource "$RESOURCE"
 
 elif [ -n "$TEST_NAME" ]; then
@@ -359,11 +425,7 @@ elif [ -n "$TEST_NAME" ]; then
     printf 'Package: %s\n' "$PACKAGE_PATH" >&2
     printf 'Packages: %s, Parallel: %s\n' "${PACKAGES:-1}" "${PARALLEL:-4}" >&2
 
-    # shellcheck disable=SC2046,SC2086
-    TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
-        go test -v -count 1 -p "${PACKAGES:-1}" -parallel "${PARALLEL:-4}" \
-        --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
-        ${RUN_ARG} "$PACKAGE_PATH" ${GO_FLAGS}
+    run_go_test "${PACKAGES:-1}" "${PARALLEL:-4}" "$PACKAGE_PATH"
 
 else
     # Default: run all packages (existing behavior)
@@ -372,9 +434,5 @@ else
     printf 'Package: %s\n' "$PACKAGE_PATH" >&2
     printf 'Packages: %s, Parallel: %s\n' "${PACKAGES:-1}" "${PARALLEL:-4}" >&2
 
-    # shellcheck disable=SC2046,SC2086
-    TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
-        go test -v -count 1 -p "${PACKAGES:-1}" -parallel "${PARALLEL:-4}" \
-        --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
-        "$PACKAGE_PATH" ${GO_FLAGS}
+    run_go_test "${PACKAGES:-1}" "${PARALLEL:-4}" "$PACKAGE_PATH"
 fi
