@@ -25,20 +25,28 @@ Arguments:
 
 Options:
   --all                Run all acceptance tests (same as omitting TEST_NAME)
-  --packages N         Max concurrent packages (default: 1, safe for single-node PVE)
+  --tier TIERS         Run tests by tier: light, medium, heavy, or all
+                       Comma-separated for multiple: --tier light,medium
+  --resource NAME      Run tests for a resource type (e.g., vm, sdn, firewall)
+  --packages N         Max concurrent packages (default: varies by tier)
   --parallel N         Max concurrent tests per package (default: 4)
   --no-proxy           Disable HTTP/HTTPS proxy for this test run
   --show-command       Show the exact go test command being executed
   -h, --help           Show this help message
 
 Examples:
-  ./testacc                                    # Run all acceptance tests
-  ./testacc TestAccDatasourceFile              # Run only this specific test
-  ./testacc "TestAccDatasource.*"              # Run all matching tests
-  ./testacc --no-proxy TestAccDatasourceFile   # Run without proxy
-  ./testacc --parallel 1 TestAccDatasourceFile # Run fully serial
-  ./testacc --packages 2 --parallel 4          # 2 packages, 4 tests each
-  ./testacc TestAccDatasourceFile -- -count 2  # Pass extra flags to go test
+  ./testacc                                    # Run all tiers sequentially
+  ./testacc --tier light                       # Light tests only (~30s)
+  ./testacc --tier medium                      # Medium tests only (~3 min)
+  ./testacc --tier heavy                       # Heavy tests only (~15 min)
+  ./testacc --tier light,medium                # Light + medium (~3.5 min)
+  ./testacc --tier all                         # All tiers with smart parallelism
+  ./testacc --resource vm                      # All VM-related tests
+  ./testacc --resource sdn                     # All SDN tests
+  ./testacc TestAccResourceVM2CPU              # Single test by name
+  ./testacc "TestAccDatasource.*"              # Pattern match
+  ./testacc --no-proxy TestAccDatasourceFile   # Without proxy
+  ./testacc TestAccDatasourceFile -- -count 2  # Extra go test flags
 
 Notes:
   - Single test names use exact matching (^TestName$) for efficiency
@@ -136,6 +144,10 @@ VERBOSE=""
 PARSE_GO_FLAGS=0
 EXPECT_PARALLEL=0
 EXPECT_PACKAGES=0
+EXPECT_TIER=0
+EXPECT_RESOURCE=0
+TIER=""
+RESOURCE=""
 
 for arg in "$@"; do
     if [ "$PARSE_GO_FLAGS" = "1" ]; then
@@ -146,6 +158,12 @@ for arg in "$@"; do
     elif [ "$EXPECT_PACKAGES" = "1" ]; then
         PACKAGES="$arg"
         EXPECT_PACKAGES=0
+    elif [ "$EXPECT_TIER" = "1" ]; then
+        TIER="$arg"
+        EXPECT_TIER=0
+    elif [ "$EXPECT_RESOURCE" = "1" ]; then
+        RESOURCE="$arg"
+        EXPECT_RESOURCE=0
     elif [ "$arg" = "--" ]; then
         PARSE_GO_FLAGS=1
     elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
@@ -157,6 +175,10 @@ for arg in "$@"; do
         EXPECT_PARALLEL=1
     elif [ "$arg" = "--packages" ]; then
         EXPECT_PACKAGES=1
+    elif [ "$arg" = "--tier" ]; then
+        EXPECT_TIER=1
+    elif [ "$arg" = "--resource" ]; then
+        EXPECT_RESOURCE=1
     elif [ "$arg" = "--no-proxy" ]; then
         NO_PROXY="1"
     elif [ "$arg" = "--verbose" ] || [ "$arg" = "--show-command" ]; then
@@ -202,54 +224,117 @@ if [ -n "$NO_PROXY" ]; then
     printf 'Using NO_PROXY=%s\n' "$NO_PROXY" >&2
 fi
 
+# Run tests for a single tier.
+run_tier() {
+    tier_name="$1"
+    tier_p="$2"
+    tier_pkgs=$(discover_packages "tier" "$tier_name")
+
+    if [ -z "$tier_pkgs" ]; then
+        printf 'No packages found for tier: %s\n' "$tier_name" >&2
+        return 0
+    fi
+
+    printf '\n=== Tier: %s (packages: -p %s, parallel: %s) ===\n' "$tier_name" "$tier_p" "${PARALLEL:-4}" >&2
+
+    # shellcheck disable=SC2046,SC2086
+    TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
+        go test -v -count 1 -p "$tier_p" -parallel "${PARALLEL:-4}" \
+        --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
+        ${RUN_ARG} ${tier_pkgs} ${GO_FLAGS}
+}
+
+# Run tests for a resource type.
+run_resource() {
+    resource_name="$1"
+    resource_pkgs=$(discover_packages "resource" "$resource_name")
+
+    if [ -z "$resource_pkgs" ]; then
+        printf 'No packages found for resource: %s\n' "$resource_name" >&2
+        printf 'Available resources: %s\n' "$(discover_values resource | tr '\n' ' ')" >&2
+        return 1
+    fi
+
+    printf '\n=== Resource: %s ===\n' "$resource_name" >&2
+
+    # shellcheck disable=SC2046,SC2086
+    TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
+        go test -v -count 1 -p "${PACKAGES:-1}" -parallel "${PARALLEL:-4}" \
+        --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
+        ${RUN_ARG} ${resource_pkgs} ${GO_FLAGS}
+}
+
 # Build test command and detect pattern
 RUN_ARG=""
 IS_PATTERN=0
 if [ -n "$TEST_NAME" ]; then
-    # Check if test name contains wildcards/patterns
     case "$TEST_NAME" in
         *'*'*)
-            # Pattern matching - use as-is
             RUN_ARG="-run ${TEST_NAME}"
             IS_PATTERN=1
             printf 'Running tests matching pattern: %s\n' "$TEST_NAME" >&2
             ;;
         *)
-            # Exact test name - use anchored regex for efficiency
             RUN_ARG="-run ^${TEST_NAME}\$"
             printf 'Running single test: %s\n' "$TEST_NAME" >&2
             ;;
     esac
-else
-    printf 'Running all acceptance tests\n' >&2
-fi
-
-# Find package (after detecting pattern)
-PACKAGE_PATH=$(find_test_package "$TEST_NAME" "$IS_PATTERN")
-
-printf 'Package: %s\n' "$PACKAGE_PATH" >&2
-printf 'Packages: %s, Parallel: %s\n' "${PACKAGES:-1}" "${PARALLEL:-4}" >&2
-
-if [ -n "$VERBOSE" ]; then
-    printf '\n' >&2
-    printf 'Executing:\n' >&2
-    printf '  TF_ACC=1 env $(grep -v '\''^#'\'' testacc.env | xargs) \\\n' >&2
-    printf '    go test -v -count 1 -p %s -parallel %s --tags=acceptance -timeout %s \\\n' "${PACKAGES:-1}" "${PARALLEL:-4}" "$DEFAULT_TIMEOUT" >&2
-    if [ -n "$RUN_ARG" ]; then
-        printf '    %s \\\n' "$RUN_ARG" >&2
-    fi
-    printf '    %s' "$PACKAGE_PATH" >&2
-    if [ -n "$GO_FLAGS" ]; then
-        printf ' %s' "$GO_FLAGS" >&2
-    fi
-    printf '\n' >&2
 fi
 
 printf '\n' >&2
 
-# Run tests
-# Note: GO_FLAGS and RUN_ARG are intentionally unquoted for word splitting
-# shellcheck disable=SC2046,SC2086
-TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
-    go test -v -count 1 -p "${PACKAGES:-1}" -parallel "${PARALLEL:-4}" --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
-    ${RUN_ARG} "$PACKAGE_PATH" ${GO_FLAGS}
+# Run tests based on mode
+if [ -n "$TIER" ]; then
+    # Tier-based execution
+    TIER_EXIT=0
+    OLD_IFS="$IFS"
+    IFS=','
+    for tier in $TIER; do
+        IFS="$OLD_IFS"
+        case "$tier" in
+            light)  run_tier "light" "8" || TIER_EXIT=1 ;;
+            medium) run_tier "medium" "4" || TIER_EXIT=1 ;;
+            heavy)  run_tier "heavy" "1" || TIER_EXIT=1 ;;
+            all)
+                run_tier "light" "8" || TIER_EXIT=1
+                run_tier "medium" "4" || TIER_EXIT=1
+                run_tier "heavy" "1" || TIER_EXIT=1
+                ;;
+            *)
+                printf 'Error: Unknown tier '\''%s'\''. Use: light, medium, heavy, all\n' "$tier" >&2
+                exit 1
+                ;;
+        esac
+    done
+    IFS="$OLD_IFS"
+    exit $TIER_EXIT
+
+elif [ -n "$RESOURCE" ]; then
+    # Resource-based execution
+    run_resource "$RESOURCE"
+
+elif [ -n "$TEST_NAME" ]; then
+    # Single test or pattern (existing behavior)
+    PACKAGE_PATH=$(find_test_package "$TEST_NAME" "$IS_PATTERN")
+    printf 'Package: %s\n' "$PACKAGE_PATH" >&2
+    printf 'Packages: %s, Parallel: %s\n' "${PACKAGES:-1}" "${PARALLEL:-4}" >&2
+
+    # shellcheck disable=SC2046,SC2086
+    TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
+        go test -v -count 1 -p "${PACKAGES:-1}" -parallel "${PARALLEL:-4}" \
+        --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
+        ${RUN_ARG} "$PACKAGE_PATH" ${GO_FLAGS}
+
+else
+    # Default: run all packages (existing behavior)
+    printf 'Running all acceptance tests\n' >&2
+    PACKAGE_PATH="${BASE_PKG}/fwprovider/..."
+    printf 'Package: %s\n' "$PACKAGE_PATH" >&2
+    printf 'Packages: %s, Parallel: %s\n' "${PACKAGES:-1}" "${PARALLEL:-4}" >&2
+
+    # shellcheck disable=SC2046,SC2086
+    TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
+        go test -v -count 1 -p "${PACKAGES:-1}" -parallel "${PARALLEL:-4}" \
+        --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
+        "$PACKAGE_PATH" ${GO_FLAGS}
+fi
