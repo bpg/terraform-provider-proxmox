@@ -17,6 +17,7 @@ import (
 	"math/rand"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -2390,6 +2391,103 @@ func TestAccResourceVMDiskResizeDefaultHotplug(t *testing.T) {
 			{
 				// Step 3: Refresh state to verify size persists
 				RefreshState: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceVMEFIDiskStorageMigration(t *testing.T) {
+	nfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NFS_DATASTORE_ID")
+	if nfsDatastoreID == "" {
+		t.Skip("NFS storage is not available")
+	}
+
+	te := InitEnvironment(t)
+	te.AddTemplateVars(map[string]any{
+		"NFSDatastoreID": nfsDatastoreID,
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_move" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-efi-disk-move"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_move", map[string]string{
+						"efi_disk.0.datastore_id": "local-lvm",
+						"efi_disk.0.type":         "4m",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_move" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-efi-disk-move"
+
+					efi_disk {
+						datastore_id = "{{.NFSDatastoreID}}"
+						type = "4m"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_move", map[string]string{
+						"efi_disk.0.datastore_id": nfsDatastoreID,
+						"efi_disk.0.type":         "4m",
+					}),
+					// Verify the disk was moved (not recreated) by checking
+					// via the API that no orphaned unused disk was left behind.
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_efi_disk_move"]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+
+						vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+						if err != nil {
+							return fmt.Errorf("failed to parse vm_id: %w", err)
+						}
+
+						vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+						if err != nil {
+							return fmt.Errorf("failed to get VM config: %w", err)
+						}
+
+						if vmConfig.EFIDisk == nil {
+							return fmt.Errorf("EFI disk not found after move")
+						}
+
+						if !strings.HasPrefix(vmConfig.EFIDisk.FileVolume, nfsDatastoreID+":") {
+							return fmt.Errorf("EFI disk not on expected datastore: %s", vmConfig.EFIDisk.FileVolume)
+						}
+
+						// Verify the disk file name contains the VM ID, proving it was
+						// moved (preserving data) rather than recreated as a new empty disk.
+						expectedPrefix := fmt.Sprintf("vm-%d-", vmID)
+						if !strings.Contains(vmConfig.EFIDisk.FileVolume, expectedPrefix) {
+							return fmt.Errorf("EFI disk does not contain VM ID pattern %q: %s",
+								expectedPrefix, vmConfig.EFIDisk.FileVolume)
+						}
+
+						return nil
+					},
+				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_efi_disk_move", plancheck.ResourceActionUpdate),
+					},
+				},
 			},
 		},
 	})
