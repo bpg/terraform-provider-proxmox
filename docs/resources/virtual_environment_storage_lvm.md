@@ -42,3 +42,13 @@ resource "proxmox_virtual_environment_storage_lvm" "example" {
 - `nodes` (Set of String) A list of nodes where this storage is available.
 - `shared` (Boolean) Whether the storage is shared across all nodes.
 - `wipe_removed_volumes` (Boolean) Whether to zero-out data when removing LVMs.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+#!/usr/bin/env sh
+# Storage can be imported using its identifier, e.g.:
+terraform import proxmox_virtual_environment_storage_lvm.example local-lvm
+```
