@@ -3725,18 +3725,52 @@ func vmGetEfiDisk(d *schema.ResourceData, disk []any) *vms.CustomEFIDisk {
 	return efiDiskConfig
 }
 
+// vmEfiDiskDatastoreChanged returns true if the EFI disk datastore_id changed.
+func vmEfiDiskDatastoreChanged(d *schema.ResourceData) bool {
+	oldValue, newValue := d.GetChange(mkEFIDisk)
+
+	oldList, _ := oldValue.([]any)
+	newList, _ := newValue.([]any)
+
+	if len(oldList) == 0 || len(newList) == 0 || oldList[0] == nil || newList[0] == nil {
+		return false
+	}
+
+	oldBlock, _ := oldList[0].(map[string]any)
+	newBlock, _ := newList[0].(map[string]any)
+
+	return oldBlock[mkEFIDiskDatastoreID] != newBlock[mkEFIDiskDatastoreID]
+}
+
+// vmTPMStateDatastoreChanged returns true if the TPM state datastore_id changed.
+func vmTPMStateDatastoreChanged(d *schema.ResourceData) bool {
+	oldValue, newValue := d.GetChange(mkTPMState)
+
+	oldList, _ := oldValue.([]any)
+	newList, _ := newValue.([]any)
+
+	if len(oldList) == 0 || len(newList) == 0 || oldList[0] == nil || newList[0] == nil {
+		return false
+	}
+
+	oldBlock, _ := oldList[0].(map[string]any)
+	newBlock, _ := newList[0].(map[string]any)
+
+	return oldBlock[mkTPMStateDatastoreID] != newBlock[mkTPMStateDatastoreID]
+}
+
 func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []any) (*vms.CustomStorageDevice, error) {
 	efiDisk := vmGetEfiDisk(d, disk)
 
 	var storageDevice *vms.CustomStorageDevice
 
 	if efiDisk != nil {
-		id := "0"
+		datastoreID := strings.SplitN(efiDisk.FileVolume, ":", 2)[0]
 
 		storageDevice = &vms.CustomStorageDevice{
 			FileVolume:  efiDisk.FileVolume,
 			Format:      efiDisk.Format,
-			DatastoreID: &id,
+			DatastoreID: &datastoreID,
 		}
 
 		if efiDisk.Type != nil {
@@ -3785,10 +3819,10 @@ func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []any) *vms.Custo
 	var storageDevice *vms.CustomStorageDevice
 
 	if tpmState != nil {
-		id := "0"
+		datastoreID := strings.SplitN(tpmState.FileVolume, ":", 2)[0]
 		storageDevice = &vms.CustomStorageDevice{
 			FileVolume:  tpmState.FileVolume,
-			DatastoreID: &id,
+			DatastoreID: &datastoreID,
 		}
 	}
 
@@ -6181,10 +6215,17 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	rebootRequired = rebootRequired || rr
 
 	// Prepare the new efi disk configuration.
+	// Skip including the EFI disk in the config update when only the datastore
+	// changes — the move_disk API will handle storage migration properly,
+	// preserving UEFI variable data instead of creating a new empty disk.
 	if d.HasChange(mkEFIDisk) {
-		efiDisk := vmGetEfiDisk(d, nil)
-
-		updateBody.EFIDisk = efiDisk
+		if vmEfiDiskDatastoreChanged(d) {
+			tflog.Warn(ctx, "EFI disk datastore is changing; the disk will be moved via move_disk API. "+
+				"Any other EFI disk attribute changes in this apply will take effect on the next apply.")
+		} else {
+			efiDisk := vmGetEfiDisk(d, nil)
+			updateBody.EFIDisk = efiDisk
+		}
 
 		rebootRequired = true
 	}
@@ -6206,7 +6247,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		tpmState := vmGetTPMState(d, nil)
 
 		if tpmState != nil {
-			updateBody.TPMState = tpmState
+			if vmTPMStateDatastoreChanged(d) {
+				tflog.Warn(ctx, "TPM state datastore is changing; the disk will be moved via move_disk API. "+
+					"Any other TPM state attribute changes in this apply will take effect on the next apply.")
+			} else {
+				updateBody.TPMState = tpmState
+			}
 		} else {
 			del = append(del, "tpmstate0")
 		}
@@ -6743,6 +6789,9 @@ func vmPlanDiskLocationAndSizeChanges(
 
 	changes := &vmDiskLocationAndSizeChanges{}
 
+	diskOldEntries := map[string]*vms.CustomStorageDevice{}
+	diskNewEntries := map[string]*vms.CustomStorageDevice{}
+
 	// Determine if any of the disks are changing location and/or size.
 	//nolint: nestif
 	if d.HasChange(disk.MkDisk) {
@@ -6750,7 +6799,9 @@ func vmPlanDiskLocationAndSizeChanges(
 
 		resource := VM()
 
-		diskOldEntries, err := disk.GetDiskDeviceObjects(
+		var err error
+
+		diskOldEntries, err = disk.GetDiskDeviceObjects(
 			d,
 			resource,
 			diskOld.([]any),
@@ -6759,7 +6810,7 @@ func vmPlanDiskLocationAndSizeChanges(
 			return nil, diag.FromErr(err)
 		}
 
-		diskNewEntries, err := disk.GetDiskDeviceObjects(
+		diskNewEntries, err = disk.GetDiskDeviceObjects(
 			d,
 			resource,
 			diskNew.([]any),
@@ -6767,119 +6818,150 @@ func vmPlanDiskLocationAndSizeChanges(
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}
+	}
 
-		// Add efidisk if it has changes
-		if d.HasChange(mkEFIDisk) {
-			diskOld, diskNew := d.GetChange(mkEFIDisk)
+	// Add efidisk if it has changes (checked independently of regular disks).
+	if d.HasChange(mkEFIDisk) {
+		diskOld, diskNew := d.GetChange(mkEFIDisk)
 
-			oldEfiDisk, e := vmGetEfiDiskAsStorageDevice(d, diskOld.([]any))
+		oldEfiDisk, e := vmGetEfiDiskAsStorageDevice(d, diskOld.([]any))
+		if e != nil {
+			return nil, diag.FromErr(e)
+		}
+
+		newEfiDisk, e := vmGetEfiDiskAsStorageDevice(d, diskNew.([]any))
+		if e != nil {
+			return nil, diag.FromErr(e)
+		}
+
+		// The old EFI disk entry uses the allocation syntax (e.g. "local-lvm:1")
+		// from Terraform state, but the move logic needs the actual file volume
+		// (e.g. "local-lvm:vm-100-disk-0") to verify ownership. Fetch the real
+		// value from the current VM config.
+		if oldEfiDisk != nil {
+			vmConfig, e := vmAPI.GetVM(ctx)
 			if e != nil {
 				return nil, diag.FromErr(e)
 			}
 
-			newEfiDisk, e := vmGetEfiDiskAsStorageDevice(d, diskNew.([]any))
+			if vmConfig.EFIDisk != nil {
+				oldEfiDisk.FileVolume = vmConfig.EFIDisk.FileVolume
+			}
+
+			diskOldEntries["efidisk0"] = oldEfiDisk
+		}
+
+		if newEfiDisk != nil {
+			diskNewEntries["efidisk0"] = newEfiDisk
+		}
+
+		if oldEfiDisk != nil && newEfiDisk != nil &&
+			oldEfiDisk.Size != nil && newEfiDisk.Size != nil &&
+			*oldEfiDisk.Size != *newEfiDisk.Size {
+			return nil, diag.Errorf(
+				"resizing of efidisk is not supported.",
+			)
+		}
+	}
+
+	// Add tpm state if it has changes (checked independently of regular disks).
+	if d.HasChange(mkTPMState) {
+		diskOld, diskNew := d.GetChange(mkTPMState)
+
+		oldTPMState := vmGetTPMStateAsStorageDevice(d, diskOld.([]any))
+		newTPMState := vmGetTPMStateAsStorageDevice(d, diskNew.([]any))
+
+		// Same as EFI disk above: use the real file volume from the current VM
+		// config so that the ownership check works correctly.
+		if oldTPMState != nil {
+			vmConfig, e := vmAPI.GetVM(ctx)
 			if e != nil {
 				return nil, diag.FromErr(e)
 			}
 
-			if oldEfiDisk != nil {
-				diskOldEntries["efidisk0"] = oldEfiDisk
+			if vmConfig.TPMState != nil {
+				oldTPMState.FileVolume = vmConfig.TPMState.FileVolume
 			}
 
-			if newEfiDisk != nil {
-				diskNewEntries["efidisk0"] = newEfiDisk
-			}
+			diskOldEntries["tpmstate0"] = oldTPMState
+		}
 
-			if oldEfiDisk != nil && newEfiDisk != nil && oldEfiDisk.Size != newEfiDisk.Size {
+		if newTPMState != nil {
+			diskNewEntries["tpmstate0"] = newTPMState
+		}
+
+		if oldTPMState != nil && newTPMState != nil &&
+			oldTPMState.Size != nil && newTPMState.Size != nil &&
+			*oldTPMState.Size != *newTPMState.Size {
+			return nil, diag.Errorf(
+				"resizing of tpm state is not supported.",
+			)
+		}
+	}
+
+	for oldIface, oldDisk := range diskOldEntries {
+		// Skip deleted disks - they are handled earlier in vmUpdate
+		if _, present := diskNewEntries[oldIface]; !present {
+			continue
+		}
+
+		if *oldDisk.DatastoreID != *diskNewEntries[oldIface].DatastoreID {
+			if oldDisk.IsOwnedBy(vmID) {
+				deleteOriginalDisk := types.CustomBool(true)
+
+				changes.moveBodies = append(
+					changes.moveBodies,
+					&vms.MoveDiskRequestBody{
+						DeleteOriginalDisk: &deleteOriginalDisk,
+						Disk:               oldIface,
+						TargetStorage:      *diskNewEntries[oldIface].DatastoreID,
+					},
+				)
+
+				// Cannot be done while VM is running.
+				changes.shutdownForDisksRequired = true
+			} else {
 				return nil, diag.Errorf(
-					"resizing of efidisk is not supported.",
+					"Cannot move %s:%s to datastore %s in VM %d configuration, it is not owned by this VM!",
+					*oldDisk.DatastoreID,
+					*oldDisk.PathInDatastore(),
+					*diskNewEntries[oldIface].DatastoreID,
+					vmID,
 				)
 			}
 		}
 
-		// Add tpm state if it has changes
-		if d.HasChange(mkTPMState) {
-			diskOld, diskNew := d.GetChange(mkTPMState)
-
-			oldTPMState := vmGetTPMStateAsStorageDevice(d, diskOld.([]any))
-			newTPMState := vmGetTPMStateAsStorageDevice(d, diskNew.([]any))
-
-			if oldTPMState != nil {
-				diskOldEntries["tpmstate0"] = oldTPMState
-			}
-
-			if newTPMState != nil {
-				diskNewEntries["tpmstate0"] = newTPMState
-			}
-
-			if oldTPMState != nil && newTPMState != nil && oldTPMState.Size != newTPMState.Size {
-				return nil, diag.Errorf(
-					"resizing of tpm state is not supported.",
-				)
-			}
-		}
-
-		for oldIface, oldDisk := range diskOldEntries {
-			// Skip deleted disks - they are handled earlier in vmUpdate
-			if _, present := diskNewEntries[oldIface]; !present {
-				continue
-			}
-
-			if *oldDisk.DatastoreID != *diskNewEntries[oldIface].DatastoreID {
+		if oldDisk.Size != nil && diskNewEntries[oldIface].Size != nil &&
+			*oldDisk.Size != *diskNewEntries[oldIface].Size {
+			if *oldDisk.Size < *diskNewEntries[oldIface].Size {
 				if oldDisk.IsOwnedBy(vmID) {
-					deleteOriginalDisk := types.CustomBool(true)
-
-					changes.moveBodies = append(
-						changes.moveBodies,
-						&vms.MoveDiskRequestBody{
-							DeleteOriginalDisk: &deleteOriginalDisk,
-							Disk:               oldIface,
-							TargetStorage:      *diskNewEntries[oldIface].DatastoreID,
+					changes.resizeBodies = append(
+						changes.resizeBodies,
+						&vms.ResizeDiskRequestBody{
+							Disk: oldIface,
+							Size: *diskNewEntries[oldIface].Size,
 						},
 					)
-
-					// Cannot be done while VM is running.
-					changes.shutdownForDisksRequired = true
 				} else {
 					return nil, diag.Errorf(
-						"Cannot move %s:%s to datastore %s in VM %d configuration, it is not owned by this VM!",
-						*oldDisk.DatastoreID,
-						*oldDisk.PathInDatastore(),
-						*diskNewEntries[oldIface].DatastoreID,
-						vmID,
-					)
-				}
-			}
-
-			if *oldDisk.Size != *diskNewEntries[oldIface].Size {
-				if *oldDisk.Size < *diskNewEntries[oldIface].Size {
-					if oldDisk.IsOwnedBy(vmID) {
-						changes.resizeBodies = append(
-							changes.resizeBodies,
-							&vms.ResizeDiskRequestBody{
-								Disk: oldIface,
-								Size: *diskNewEntries[oldIface].Size,
-							},
-						)
-					} else {
-						return nil, diag.Errorf(
-							"Cannot resize %s:%s in VM %d, it is not owned by this VM!",
-							*oldDisk.DatastoreID,
-							*oldDisk.PathInDatastore(),
-							vmID,
-						)
-					}
-				} else {
-					return nil, diag.Errorf(
-						"Cannot shrink %s:%s in VM %d, it is not supported!",
+						"Cannot resize %s:%s in VM %d, it is not owned by this VM!",
 						*oldDisk.DatastoreID,
 						*oldDisk.PathInDatastore(),
 						vmID,
 					)
 				}
+			} else {
+				return nil, diag.Errorf(
+					"Cannot shrink %s:%s in VM %d, it is not supported!",
+					*oldDisk.DatastoreID,
+					*oldDisk.PathInDatastore(),
+					vmID,
+				)
 			}
 		}
+	}
 
+	if len(diskOldEntries) > 0 || len(diskNewEntries) > 0 {
 		vmConfig, err := vmAPI.GetVM(ctx)
 		if err != nil {
 			return nil, diag.FromErr(err)
