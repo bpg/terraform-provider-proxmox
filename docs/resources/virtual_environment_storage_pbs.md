@@ -73,3 +73,13 @@ Optional:
 - `keep_weekly` (Number) The number of weekly backups to keep. Older backups will be removed.
 - `keep_yearly` (Number) The number of yearly backups to keep. Older backups will be removed.
 - `max_protected_backups` (Number) The maximum number of protected backups per guest. Use '-1' for unlimited.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+#!/usr/bin/env sh
+# Storage can be imported using its identifier, e.g.:
+terraform import proxmox_virtual_environment_storage_pbs.example pbs-backup
+```
