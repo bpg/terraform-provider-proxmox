@@ -46,5 +46,5 @@ func PrefixMoveState(oldTypeName string, sourceSchema *schema.Schema) resource.S
 // DeprecationMessage returns the standard deprecation message for a resource
 // being renamed from its old proxmox_virtual_environment_* name to proxmox_*.
 func DeprecationMessage(newTypeName string) string {
-	return fmt.Sprintf("Use %s instead. This resource will be removed in v1.0.", newTypeName)
+	return fmt.Sprintf("Use %q instead. This resource will be removed in v1.0.", newTypeName)
 }
