@@ -486,8 +486,8 @@ func ensureVMRunning(te *Environment, vmID string) {
 		return
 	}
 
-	if _, err := vm.StartVM(ctx, 120); err != nil {
-		te.t.Fatalf("failed to start VM %s: %v", vmID, err)
+	if result := vm.StartVM(ctx, 120); result.Err() != nil {
+		te.t.Fatalf("failed to start VM %s: %v", vmID, result.Err())
 	}
 
 	if err := vm.WaitForVMStatus(ctx, "running"); err != nil {

@@ -111,9 +111,8 @@ func UpdateClone(
 
 			// Note: after disk move, the actual disk volume ID will be different: both datastore id *and*
 			// path in datastore will change.
-			err := vmAPI.MoveVMDisk(ctx, diskMoveBody)
-			if err != nil {
-				return fmt.Errorf("disk move fails: %w", err)
+			if result := vmAPI.MoveVMDisk(ctx, diskMoveBody); result.Err() != nil {
+				return fmt.Errorf("disk move fails: %w", result.Err())
 			}
 		}
 
@@ -123,9 +122,8 @@ func UpdateClone(
 				Size: *planDisk.Size,
 			}
 
-			err := vmAPI.ResizeVMDisk(ctx, diskResizeBody)
-			if err != nil {
-				return fmt.Errorf("disk resize fails: %w", err)
+			if result := vmAPI.ResizeVMDisk(ctx, diskResizeBody); result.Err() != nil {
+				return fmt.Errorf("disk resize fails: %w", result.Err())
 			}
 		}
 	}
@@ -350,12 +348,11 @@ func createCustomDisk(
 		"output": string(out),
 	})
 
-	err = client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
+	if result := client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
 		Disk: iface,
 		Size: *disk.Size,
-	})
-	if err != nil {
-		return fmt.Errorf("resizing disk: %w", err)
+	}); result.Err() != nil {
+		return fmt.Errorf("resizing disk: %w", result.Err())
 	}
 
 	return nil

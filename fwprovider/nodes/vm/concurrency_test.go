@@ -45,15 +45,15 @@ func TestBatchCreate(t *testing.T) {
 	sourceID, err := gen.NextID(ctx)
 	require.NoError(t, err)
 
-	err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: sourceID})
+	createResult := te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: sourceID})
 
-	require.NoError(t, err, "failed to create VM %d", sourceID)
+	require.NoError(t, createResult.Err(), "failed to create VM %d", sourceID)
 
 	ids := make([]int, numVMs)
 
 	t.Cleanup(func() {
-		if err := te.NodeClient().VM(sourceID).DeleteVM(ctx, true, true); err != nil {
-			t.Logf("cleanup warning: failed to delete source VM %d: %v", sourceID, err)
+		if result := te.NodeClient().VM(sourceID).DeleteVM(ctx, true, true); result.Err() != nil {
+			t.Logf("cleanup warning: failed to delete source VM %d: %v", sourceID, result.Err())
 		}
 
 		var wg sync.WaitGroup
@@ -64,8 +64,8 @@ func TestBatchCreate(t *testing.T) {
 				defer wg.Done()
 
 				if id > 0 {
-					if err := te.NodeClient().VM(id).DeleteVM(ctx, true, true); err != nil {
-						t.Logf("cleanup warning: failed to delete VM %d: %v", id, err)
+					if result := te.NodeClient().VM(id).DeleteVM(ctx, true, true); result.Err() != nil {
+						t.Logf("cleanup warning: failed to delete VM %d: %v", id, result.Err())
 					}
 				}
 			}()

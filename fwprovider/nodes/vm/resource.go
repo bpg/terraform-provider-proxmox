@@ -164,9 +164,8 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	// .VM(0) is used to create a new VM, the VM ID is not used in the API URL
 	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(0)
 
-	err := vmAPI.CreateVM(ctx, createBody)
-	if err != nil {
-		diags.AddError("Failed to create VM", err.Error())
+	if result := vmAPI.CreateVM(ctx, createBody); result.Err() != nil {
+		diags.AddError("Failed to create VM", result.Err().Error())
 		return
 	}
 
@@ -176,9 +175,8 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 
 		vmAPI = r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
 
-		err = vmAPI.ConvertToTemplate(ctx)
-		if err != nil {
-			diags.AddError("Failed to convert VM to template", err.Error())
+		if result := vmAPI.ConvertToTemplate(ctx); result.Err() != nil {
+			diags.AddError("Failed to convert VM to template", result.Err().Error())
 		}
 	}
 }
@@ -326,9 +324,8 @@ func (r *Resource) update(ctx context.Context, plan, state Model, diags *diag.Di
 				}
 			}
 
-			err = vmAPI.ConvertToTemplate(ctx)
-			if err != nil {
-				diags.AddError("Failed to convert VM to template", err.Error())
+			if result := vmAPI.ConvertToTemplate(ctx); result.Err() != nil {
+				diags.AddError("Failed to convert VM to template", result.Err().Error())
 				return
 			}
 		} else if oldTemplate && !newTemplate {
@@ -381,9 +378,9 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	purge := state.PurgeOnDestroy.ValueBool()
 	deleteUnreferencedDisks := state.DeleteUnreferencedDisksOnDestroy.ValueBool()
 
-	err = vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
-	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError("Failed to delete VM", err.Error())
+	result := vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
+	if result.Err() != nil && !errors.Is(result.Err(), api.ErrResourceDoesNotExist) {
+		resp.Diagnostics.AddError("Failed to delete VM", result.Err().Error())
 	}
 
 	if resp.Diagnostics.HasError() {
@@ -458,16 +455,15 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client) error {
 		shutdownTimeoutSec = int(time.Until(dl).Seconds())
 	}
 
-	err := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
+	result := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
 		ForceStop: proxmoxtypes.CustomBool(true).Pointer(),
 		Timeout:   &shutdownTimeoutSec,
 	})
-	if err != nil {
-		return fmt.Errorf("failed to initiate shut down of VM: %w", err)
+	if result.Err() != nil {
+		return fmt.Errorf("failed to initiate shut down of VM: %w", result.Err())
 	}
 
-	err = vmAPI.WaitForVMStatus(ctx, "stopped")
-	if err != nil {
+	if err := vmAPI.WaitForVMStatus(ctx, "stopped"); err != nil {
 		return fmt.Errorf("failed to wait for VM to shut down: %w", err)
 	}
 
@@ -478,13 +474,11 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client) error {
 func vmStop(ctx context.Context, vmAPI *vms.Client) error {
 	tflog.Debug(ctx, "Stopping VM")
 
-	err := vmAPI.StopVM(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to initiate stop of VM: %w", err)
+	if result := vmAPI.StopVM(ctx); result.Err() != nil {
+		return fmt.Errorf("failed to initiate stop of VM: %w", result.Err())
 	}
 
-	err = vmAPI.WaitForVMStatus(ctx, "stopped")
-	if err != nil {
+	if err := vmAPI.WaitForVMStatus(ctx, "stopped"); err != nil {
 		return fmt.Errorf("failed to wait for VM to stop: %w", err)
 	}
 

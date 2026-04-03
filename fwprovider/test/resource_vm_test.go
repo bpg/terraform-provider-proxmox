@@ -1975,7 +1975,7 @@ func stopVM(te *Environment, vmID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	return te.NodeClient().VM(id).StopVM(ctx)
+	return te.NodeClient().VM(id).StopVM(ctx).Err()
 }
 
 func waitForVMStopped(te *Environment, vmID string) {

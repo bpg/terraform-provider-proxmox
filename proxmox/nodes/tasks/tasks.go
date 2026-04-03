@@ -101,7 +101,8 @@ type TaskWaitOption interface {
 
 type withIgnoreWarnings struct{}
 
-// WithIgnoreWarnings is an option to ignore warnings when waiting for a task to complete.
+// WithIgnoreWarnings treats task warnings as non-fatal: the task is considered successful, and any warning lines
+// from the task log are captured in the returned TaskResult for propagation as Terraform diagnostics.
 func WithIgnoreWarnings() TaskWaitOption {
 	return withIgnoreWarnings{}
 }
@@ -191,12 +192,12 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 	return TaskOK()
 }
 
-// filterWarnings extracts warning lines from a task log, excluding the "TASK WARNINGS: N" summary.
+// filterWarnings extracts warning lines from a task log.
 func filterWarnings(lines []string) []string {
 	var warnings []string
 
 	for _, line := range lines {
-		if strings.Contains(line, "WARN") && !strings.HasPrefix(line, "TASK WARNINGS:") {
+		if strings.Contains(line, "WARN:") {
 			warnings = append(warnings, line)
 		}
 	}

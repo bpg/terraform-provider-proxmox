@@ -76,35 +76,46 @@ func (c *Client) CloneVMAsync(ctx context.Context, d *CloneRequestBody) (*string
 }
 
 // ConvertToTemplate converts a virtual machine to a template using proper endpoint.
-func (c *Client) ConvertToTemplate(ctx context.Context) error {
+func (c *Client) ConvertToTemplate(ctx context.Context) *tasks.TaskResult {
 	resBody := &UpdateAsyncResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("template"), nil, resBody)
 	if err != nil {
-		return fmt.Errorf("error converting VM %d to template: %w", c.VMID, err)
+		return tasks.TaskFailed(fmt.Errorf("error converting VM %d to template: %w", c.VMID, err))
 	}
 
 	if resBody.Data != nil {
-		err = c.Tasks().WaitForTask(ctx, *resBody.Data).Err()
-		if err != nil {
-			return fmt.Errorf("error waiting for VM %d template conversion: %w", c.VMID, err)
-		}
+		return c.Tasks().WaitForTask(ctx, *resBody.Data)
 	}
 
-	return nil
+	return tasks.TaskOK()
 }
 
 // CreateVM creates a virtual machine.
-func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) error {
+func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) *tasks.TaskResult {
+	var taskResult *tasks.TaskResult
+
 	op := retry.NewTaskOperation("VM create",
 		retry.WithRetryIf(retry.IsTransientAPIError),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return op.DoTask(ctx,
+	err := op.DoTask(ctx,
 		func() (*string, error) { return c.CreateVMAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID).Err() },
+		func(ctx context.Context, taskID string) error {
+			taskResult = c.Tasks().WaitForTask(ctx, taskID)
+			return taskResult.Err()
+		},
 	)
+	if err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	if taskResult != nil {
+		return taskResult
+	}
+
+	return tasks.TaskOK()
 }
 
 // CreateVMAsync creates a virtual machine asynchronously.
@@ -124,7 +135,7 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 }
 
 // DeleteVM deletes a virtual machine.
-func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDisks bool) error {
+func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDisks bool) *tasks.TaskResult {
 	purgeValue := 0
 	if purge {
 		purgeValue = 1
@@ -141,7 +152,9 @@ func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDi
 		}),
 	)
 
-	return op.DoTask(ctx,
+	var taskResult *tasks.TaskResult
+
+	err := op.DoTask(ctx,
 		func() (*string, error) {
 			resBody := &DeleteResponseBody{}
 			path := fmt.Sprintf("?destroy-unreferenced-disks=%d&purge=%d", destroyUnreferencedDisksValue, purgeValue)
@@ -157,8 +170,20 @@ func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDi
 
 			return resBody.TaskID, nil
 		},
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID).Err() },
+		func(ctx context.Context, taskID string) error {
+			taskResult = c.Tasks().WaitForTask(ctx, taskID)
+			return taskResult.Err()
+		},
 	)
+	if err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	if taskResult != nil {
+		return taskResult
+	}
+
+	return tasks.TaskOK()
 }
 
 // GetVM retrieves a virtual machine.
@@ -210,18 +235,13 @@ func (c *Client) GetVMStatus(ctx context.Context) (*GetStatusResponseData, error
 }
 
 // MigrateVM migrates a virtual machine.
-func (c *Client) MigrateVM(ctx context.Context, d *MigrateRequestBody) error {
+func (c *Client) MigrateVM(ctx context.Context, d *MigrateRequestBody) *tasks.TaskResult {
 	taskID, err := c.MigrateVMAsync(ctx, d)
 	if err != nil {
-		return err
+		return tasks.TaskFailed(err)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
-	if err != nil {
-		return fmt.Errorf("error waiting for VM migration: %w", err)
-	}
-
-	return nil
+	return c.Tasks().WaitForTask(ctx, *taskID)
 }
 
 // MigrateVMAsync migrates a virtual machine asynchronously.
@@ -241,23 +261,18 @@ func (c *Client) MigrateVMAsync(ctx context.Context, d *MigrateRequestBody) (*st
 }
 
 // MoveVMDisk moves a virtual machine disk.
-func (c *Client) MoveVMDisk(ctx context.Context, d *MoveDiskRequestBody) error {
+func (c *Client) MoveVMDisk(ctx context.Context, d *MoveDiskRequestBody) *tasks.TaskResult {
 	taskID, err := c.MoveVMDiskAsync(ctx, d)
 	if err != nil {
 		if strings.Contains(err.Error(), "you can't move to the same storage with same format") {
 			// if someone tries to move to the same storage, the move is considered to be successful
-			return nil
+			return tasks.TaskOK()
 		}
 
-		return err
+		return tasks.TaskFailed(err)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
-	if err != nil {
-		return fmt.Errorf("error waiting for VM disk move: %w", err)
-	}
-
-	return nil
+	return c.Tasks().WaitForTask(ctx, *taskID)
 }
 
 // MoveVMDiskAsync moves a virtual machine disk asynchronously.
@@ -303,37 +318,36 @@ func (c *Client) RebuildCloudInitDisk(ctx context.Context) error {
 }
 
 // RebootVMAndWaitForRunning reboots a virtual machine and waits for it to be running.
-func (c *Client) RebootVMAndWaitForRunning(ctx context.Context, rebootTimeoutSec int) error {
+func (c *Client) RebootVMAndWaitForRunning(ctx context.Context, rebootTimeoutSec int) *tasks.TaskResult {
 	// We add 3 seconds padding to the timeout to account for retries and delays down the callstack.
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(rebootTimeoutSec+3)*time.Second)
 	defer cancel()
 
-	err := c.RebootVM(
+	result := c.RebootVM(
 		ctx,
 		&RebootRequestBody{
 			Timeout: &rebootTimeoutSec,
 		},
 	)
-	if err != nil {
-		return err
+	if result.Err() != nil {
+		return result
 	}
 
-	return c.WaitForVMStatus(ctx, "running")
+	if err := c.WaitForVMStatus(ctx, "running"); err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	return result
 }
 
 // RebootVM reboots a virtual machine.
-func (c *Client) RebootVM(ctx context.Context, d *RebootRequestBody) error {
+func (c *Client) RebootVM(ctx context.Context, d *RebootRequestBody) *tasks.TaskResult {
 	taskID, err := c.RebootVMAsync(ctx, d)
 	if err != nil {
-		return err
+		return tasks.TaskFailed(err)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
-	if err != nil {
-		return fmt.Errorf("error waiting for VM reboot: %w", err)
-	}
-
-	return nil
+	return c.Tasks().WaitForTask(ctx, *taskID)
 }
 
 // RebootVMAsync reboots a virtual machine asynchronously.
@@ -353,7 +367,7 @@ func (c *Client) RebootVMAsync(ctx context.Context, d *RebootRequestBody) (*stri
 }
 
 // ResizeVMDisk resizes a virtual machine disk.
-func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) error {
+func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) *tasks.TaskResult {
 	// Retry wraps the entire operation (dispatch + wait) because "does not exist"
 	// errors can come from WaitForTask on NFS storage when a disk was just moved
 	// and the storage needs time to sync.
@@ -365,14 +379,26 @@ func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) err
 		}),
 	)
 
-	return op.Do(ctx, func() error {
+	var taskResult *tasks.TaskResult
+
+	if err := op.Do(ctx, func() error {
 		taskID, err := c.ResizeVMDiskAsync(ctx, d)
 		if err != nil {
 			return err
 		}
 
-		return c.Tasks().WaitForTask(ctx, *taskID).Err()
-	})
+		taskResult = c.Tasks().WaitForTask(ctx, *taskID)
+
+		return taskResult.Err()
+	}); err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	if taskResult != nil {
+		return taskResult
+	}
+
+	return tasks.TaskOK()
 }
 
 // ResizeVMDiskAsync resizes a virtual machine disk asynchronously.
@@ -392,18 +418,13 @@ func (c *Client) ResizeVMDiskAsync(ctx context.Context, d *ResizeDiskRequestBody
 }
 
 // ShutdownVM shuts down a virtual machine.
-func (c *Client) ShutdownVM(ctx context.Context, d *ShutdownRequestBody) error {
+func (c *Client) ShutdownVM(ctx context.Context, d *ShutdownRequestBody) *tasks.TaskResult {
 	taskID, err := c.ShutdownVMAsync(ctx, d)
 	if err != nil {
-		return err
+		return tasks.TaskFailed(err)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
-	if err != nil {
-		return fmt.Errorf("error waiting for VM shutdown: %w", err)
-	}
-
-	return nil
+	return c.Tasks().WaitForTask(ctx, *taskID)
 }
 
 // ShutdownVMAsync shuts down a virtual machine asynchronously.
@@ -423,24 +444,18 @@ func (c *Client) ShutdownVMAsync(ctx context.Context, d *ShutdownRequestBody) (*
 }
 
 // StartVM starts a virtual machine.
-// The returned TaskResult carries any warnings from the task log.
-// The error return is non-nil only if the async dispatch itself fails.
-func (c *Client) StartVM(ctx context.Context, timeoutSec int) (*tasks.TaskResult, error) {
+// The returned TaskResult carries any warnings from the task log, or an error if the dispatch or task fails.
+func (c *Client) StartVM(ctx context.Context, timeoutSec int) *tasks.TaskResult {
 	taskID, err := c.StartVMAsync(ctx, timeoutSec)
 	if err != nil {
-		return nil, err
+		return tasks.TaskFailed(err)
 	}
 
 	if taskID == nil {
-		return tasks.TaskOK(), nil
+		return tasks.TaskOK()
 	}
 
-	result := c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599), tasks.WithIgnoreWarnings())
-	if result.Err() != nil {
-		return result, fmt.Errorf("error waiting for VM start: %w", result.Err())
-	}
-
-	return result, nil
+	return c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599), tasks.WithIgnoreWarnings())
 }
 
 // StartVMAsync starts a virtual machine asynchronously.
@@ -482,18 +497,13 @@ func (c *Client) StartVMAsync(ctx context.Context, timeoutSec int) (*string, err
 }
 
 // StopVM stops a virtual machine.
-func (c *Client) StopVM(ctx context.Context) error {
+func (c *Client) StopVM(ctx context.Context) *tasks.TaskResult {
 	taskID, err := c.StopVMAsync(ctx)
 	if err != nil {
-		return err
+		return tasks.TaskFailed(err)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
-	if err != nil {
-		return fmt.Errorf("error waiting for VM stop: %w", err)
-	}
-
-	return nil
+	return c.Tasks().WaitForTask(ctx, *taskID)
 }
 
 // StopVMAsync stops a virtual machine asynchronously.

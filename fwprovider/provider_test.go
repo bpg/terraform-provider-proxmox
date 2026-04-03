@@ -55,8 +55,8 @@ func TestIDGenerator_Sequence(t *testing.T) {
 
 	for i := range numBusyIDs {
 		busyID := firstBusyID + i
-		err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: busyID})
-		require.NoError(t, err, "failed to create VM %d", busyID)
+		result := te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: busyID})
+		require.NoError(t, result.Err(), "failed to create VM %d", busyID)
 	}
 
 	t.Cleanup(func() {
@@ -69,8 +69,8 @@ func TestIDGenerator_Sequence(t *testing.T) {
 				defer wg.Done()
 
 				busyID := firstBusyID + i
-				err = te.NodeClient().VM(busyID).DeleteVM(ctx, true, true)
-				assert.NoError(t, err, "failed to delete VM %d", busyID)
+				result := te.NodeClient().VM(busyID).DeleteVM(ctx, true, true)
+				assert.NoError(t, result.Err(), "failed to delete VM %d", busyID)
 			}()
 		}
 
@@ -88,8 +88,8 @@ func TestIDGenerator_Sequence(t *testing.T) {
 				defer wg.Done()
 
 				if id > 100 {
-					if err := te.NodeClient().VM(id).DeleteVM(ctx, true, true); err != nil {
-						t.Logf("cleanup warning: failed to delete VM %d: %v", id, err)
+					if result := te.NodeClient().VM(id).DeleteVM(ctx, true, true); result.Err() != nil {
+						t.Logf("cleanup warning: failed to delete VM %d: %v", id, result.Err())
 					}
 				}
 			}()
@@ -108,8 +108,9 @@ func TestIDGenerator_Sequence(t *testing.T) {
 
 			id, err := gen.NextID(ctx)
 			if err == nil {
-				err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: id})
+				result := te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: id})
 				ids[i] = id
+				err = result.Err()
 			}
 
 			assert.NoError(t, err)
@@ -143,8 +144,8 @@ func TestIDGenerator_Random(t *testing.T) {
 	t.Cleanup(func() {
 		for _, id := range ids {
 			if id > 100 {
-				if err := te.NodeClient().VM(id).DeleteVM(ctx, true, true); err != nil {
-					t.Logf("cleanup warning: failed to delete VM %d: %v", id, err)
+				if result := te.NodeClient().VM(id).DeleteVM(ctx, true, true); result.Err() != nil {
+					t.Logf("cleanup warning: failed to delete VM %d: %v", id, result.Err())
 				}
 			}
 		}
@@ -153,10 +154,10 @@ func TestIDGenerator_Random(t *testing.T) {
 	for i := range numIDs {
 		id, err := gen.NextID(ctx)
 		require.NoError(t, err)
-		err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: id})
+		result := te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: id})
 		ids[i] = id
 
-		require.NoError(t, err)
+		require.NoError(t, result.Err())
 	}
 }
 

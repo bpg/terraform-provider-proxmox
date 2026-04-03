@@ -1978,9 +1978,9 @@ func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) dia
 
 	var diags diag.Diagnostics
 
-	result, e := vmAPI.StartVM(ctx, startTimeoutSec)
-	if e != nil {
-		return diag.FromErr(e)
+	result := vmAPI.StartVM(ctx, startTimeoutSec)
+	if result.Err() != nil {
+		return diag.FromErr(result.Err())
 	}
 
 	if result.HasWarnings() {
@@ -2003,12 +2003,11 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(shutdownTimeoutSec)*time.Second)
 	defer cancel()
 
-	e := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
+	if result := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
 		ForceStop: &forceStop,
 		Timeout:   &shutdownTimeoutSec,
-	})
-	if e != nil {
-		return diag.FromErr(e)
+	}); result.Err() != nil {
+		return diag.FromErr(result.Err())
 	}
 
 	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
@@ -2023,9 +2022,8 @@ func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(stopTimeout)*time.Second)
 	defer cancel()
 
-	e := vmAPI.StopVM(ctx)
-	if e != nil {
-		return diag.FromErr(e)
+	if result := vmAPI.StopVM(ctx); result.Err() != nil {
+		return diag.FromErr(result.Err())
 	}
 
 	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
@@ -2139,8 +2137,8 @@ func vmRestartRunning(
 	if agentEnabled {
 		rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
 
-		if e := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); e != nil {
-			return diag.FromErr(e)
+		if result := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); result.Err() != nil {
+			return diag.FromErr(result.Err())
 		}
 
 		return nil
@@ -2442,9 +2440,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 				migrateBody.TargetStorage = &cloneDatastoreID
 			}
 
-			err = client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody)
-			if err != nil {
-				return diag.FromErr(err)
+			if result := client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody); result.Err() != nil {
+				return diag.FromErr(result.Err())
 			}
 		}
 	} else {
@@ -2903,9 +2900,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if moveDisk {
-			e = vmAPI.MoveVMDisk(ctx, diskMoveBody)
-			if e != nil {
-				return diag.FromErr(e)
+			if result := vmAPI.MoveVMDisk(ctx, diskMoveBody); result.Err() != nil {
+				return diag.FromErr(result.Err())
 			}
 		}
 	}
@@ -2954,9 +2950,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if moveDisk {
-			e = vmAPI.MoveVMDisk(ctx, diskMoveBody)
-			if e != nil {
-				return diag.FromErr(e)
+			if result := vmAPI.MoveVMDisk(ctx, diskMoveBody); result.Err() != nil {
+				return diag.FromErr(result.Err())
 			}
 		}
 	}
@@ -2964,9 +2959,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if template {
 		tflog.Info(ctx, fmt.Sprintf("Converting cloned VM %d to template", vmID))
 
-		e = vmAPI.ConvertToTemplate(ctx)
-		if e != nil {
-			return diag.FromErr(e)
+		if result := vmAPI.ConvertToTemplate(ctx); result.Err() != nil {
+			return diag.FromErr(result.Err())
 		}
 	}
 
@@ -3420,9 +3414,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		createBody.HookScript = &hookScript
 	}
 
-	err = client.Node(nodeName).VM(0).CreateVM(ctx, createBody)
-	if err != nil {
-		return diag.FromErr(err)
+	if result := client.Node(nodeName).VM(0).CreateVM(ctx, createBody); result.Err() != nil {
+		return diag.FromErr(result.Err())
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -3441,12 +3434,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		for idev, device := range resizeDisks {
 			tflog.Info(ctx, fmt.Sprintf("VM %d: Resizing disk %s", vmID, idev))
 
-			err = client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
+			if result := client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
 				Size: *device.Size,
 				Disk: idev,
-			})
-			if err != nil {
-				return diag.FromErr(err)
+			}); result.Err() != nil {
+				return diag.FromErr(result.Err())
 			}
 		}
 	}
@@ -3455,9 +3447,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 	if d.Get(mkTemplate).(bool) {
 		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
 
-		err = client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx)
-		if err != nil {
-			return diag.FromErr(err)
+		if result := client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx); result.Err() != nil {
+			return diag.FromErr(result.Err())
 		}
 	}
 
@@ -6665,9 +6656,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 				return powerOffForTemplate.diags
 			}
 
-			e = vmAPI.ConvertToTemplate(ctx)
-			if e != nil {
-				return diag.FromErr(e)
+			if result := vmAPI.ConvertToTemplate(ctx); result.Err() != nil {
+				return diag.FromErr(result.Err())
 			}
 
 			rebootRequired = false
@@ -7019,9 +7009,8 @@ func vmUpdateDiskLocation(
 	}
 
 	for _, reqBody := range changes.moveBodies {
-		err := vmAPI.MoveVMDisk(ctx, reqBody)
-		if err != nil {
-			return diag.FromErr(err)
+		if result := vmAPI.MoveVMDisk(ctx, reqBody); result.Err() != nil {
+			return diag.FromErr(result.Err())
 		}
 	}
 
@@ -7039,9 +7028,8 @@ func vmUpdateDiskSize(
 	}
 
 	for _, reqBody := range changes.resizeBodies {
-		err := vmAPI.ResizeVMDisk(ctx, reqBody)
-		if err != nil {
-			return diag.FromErr(err)
+		if result := vmAPI.ResizeVMDisk(ctx, reqBody); result.Err() != nil {
+			return diag.FromErr(result.Err())
 		}
 	}
 
@@ -7141,14 +7129,14 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	purge := d.Get(mkPurgeOnDestroy).(bool)
 	deleteUnreferencedDisks := d.Get(mkDeleteUnreferencedDisksOnDestroy).(bool)
 
-	err = vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
+	deleteResult := vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
+	if deleteResult.Err() != nil {
+		if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
 			d.SetId("")
 			return nil
 		}
 
-		return diag.FromErr(err)
+		return diag.FromErr(deleteResult.Err())
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
@@ -7501,7 +7489,7 @@ func migrateNonHAVM(
 		OnlineMigration: &trueValue,
 	}
 
-	return vmAPI.MigrateVM(ctx, migrateBody)
+	return vmAPI.MigrateVM(ctx, migrateBody).Err()
 }
 
 // waitForVMOnNode polls until the VM is located on the specified node and unlocked.
