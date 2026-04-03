@@ -190,8 +190,8 @@ func (r *linuxBridgeResource) Schema(
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]{0,9}$`),
-						`must be an alphanumeric string that starts with a character and is at most 10 characters long`,
+						regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,9}$`),
+						`must contain only letters, numbers, and underscores (_), start with a letter, and be no longer than 10 characters`,
 					),
 				},
 				PlanModifiers: []planmodifier.String{
