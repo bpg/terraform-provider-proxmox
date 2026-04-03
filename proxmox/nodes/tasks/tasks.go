@@ -14,10 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v5"
+	retrylib "github.com/avast/retry-go/v5"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 )
 
 // GetTaskStatus retrieves the status of a task.
@@ -124,6 +125,27 @@ func (w withIgnoreStatus) apply(opts *taskWaitOptions) {
 	opts.ignoreStatusCode = w.statusCode
 }
 
+// DoTask dispatches an async PVE task with retry and waits for its result.
+// On dispatch failure, the returned TaskResult wraps the dispatch error.
+// On success or task failure, the TaskResult comes directly from WaitForTask.
+func (c *Client) DoTask(
+	ctx context.Context,
+	op *retry.Operation,
+	dispatchFn func() (*string, error),
+	waitOpts ...TaskWaitOption,
+) TaskResult {
+	var result TaskResult
+
+	if err := op.DoTask(ctx, dispatchFn, func(ctx context.Context, taskID string) error {
+		result = c.WaitForTask(ctx, taskID, waitOpts...)
+		return result.Err()
+	}); err != nil && result.Err() == nil {
+		return TaskFailed(err)
+	}
+
+	return result
+}
+
 // WaitForTask waits for a specific task to complete and returns a TaskResult
 // that carries the outcome (error and/or warnings extracted from the task log).
 func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitOption) TaskResult {
@@ -135,9 +157,9 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 		opt.apply(options)
 	}
 
-	status, err := retry.NewWithData[*GetTaskStatusResponseData](
-		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
+	status, err := retrylib.NewWithData[*GetTaskStatusResponseData](
+		retrylib.Context(ctx),
+		retrylib.RetryIf(func(err error) bool {
 			var target *api.HTTPError
 			if errors.As(err, &target) {
 				if target.Code == http.StatusBadRequest {
@@ -154,10 +176,10 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 
 			return errors.Is(err, errStillRunning)
 		}),
-		retry.LastErrorOnly(true),
-		retry.UntilSucceeded(),
-		retry.DelayType(retry.FixedDelay),
-		retry.Delay(time.Second),
+		retrylib.LastErrorOnly(true),
+		retrylib.UntilSucceeded(),
+		retrylib.DelayType(retrylib.FixedDelay),
+		retrylib.Delay(time.Second),
 	).Do(
 		func() (*GetTaskStatusResponseData, error) {
 			status, err := c.GetTaskStatus(ctx, upid)

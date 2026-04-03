@@ -25,26 +25,16 @@ var errContainerAlreadyRunning = errors.New("container is already running")
 // CloneContainer clones a container.
 // The returned TaskResult carries any warnings from the task log.
 func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) tasks.TaskResult {
-	var taskResult tasks.TaskResult
-
 	op := retry.NewTaskOperation("container clone",
 		retry.WithBaseDelay(10*time.Second),
 		retry.WithRetryIf(retry.IsTransientAPIError),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	err := op.DoTask(ctx,
+	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CloneContainerAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error {
-			taskResult = c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
-			return taskResult.Err()
-		},
+		tasks.WithIgnoreWarnings(),
 	)
-	if err != nil {
-		return tasks.TaskFailed(err)
-	}
-
-	return taskResult
 }
 
 // CloneContainerAsync clones a container asynchronously.
@@ -66,25 +56,15 @@ func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (
 // CreateContainer creates a container.
 // The returned TaskResult carries any warnings from the task log.
 func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) tasks.TaskResult {
-	var taskResult tasks.TaskResult
-
 	op := retry.NewTaskOperation("container create",
 		retry.WithRetryIf(retry.IsTransientAPIError),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	err := op.DoTask(ctx,
+	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CreateContainerAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error {
-			taskResult = c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
-			return taskResult.Err()
-		},
+		tasks.WithIgnoreWarnings(),
 	)
-	if err != nil {
-		return tasks.TaskFailed(err)
-	}
-
-	return taskResult
 }
 
 // CreateContainerAsync creates a container asynchronously.
@@ -104,16 +84,15 @@ func (c *Client) CreateContainerAsync(ctx context.Context, d *CreateRequestBody)
 }
 
 // DeleteContainer deletes a container.
-func (c *Client) DeleteContainer(ctx context.Context) error {
+func (c *Client) DeleteContainer(ctx context.Context) tasks.TaskResult {
 	op := retry.NewTaskOperation("container delete",
 		retry.WithRetryIf(func(err error) bool {
 			return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
 	)
 
-	return op.DoTask(ctx,
+	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.DeleteContainerAsync(ctx) },
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID).Err() },
 	)
 }
 
@@ -296,18 +275,13 @@ func (c *Client) checkIPAddresses(
 }
 
 // RebootContainer reboots a container.
-func (c *Client) RebootContainer(ctx context.Context, d *RebootRequestBody) error {
+func (c *Client) RebootContainer(ctx context.Context, d *RebootRequestBody) tasks.TaskResult {
 	taskID, err := c.RebootContainerAsync(ctx, d)
 	if err != nil {
-		return err
+		return tasks.TaskFailed(err)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
-	if err != nil {
-		return fmt.Errorf("error waiting for container reboot: %w", err)
-	}
-
-	return nil
+	return c.Tasks().WaitForTask(ctx, *taskID)
 }
 
 // RebootContainerAsync reboots a container asynchronously.
@@ -327,18 +301,13 @@ func (c *Client) RebootContainerAsync(ctx context.Context, d *RebootRequestBody)
 }
 
 // ShutdownContainer shuts down a container.
-func (c *Client) ShutdownContainer(ctx context.Context, d *ShutdownRequestBody) error {
+func (c *Client) ShutdownContainer(ctx context.Context, d *ShutdownRequestBody) tasks.TaskResult {
 	taskID, err := c.ShutdownContainerAsync(ctx, d)
 	if err != nil {
-		return err
+		return tasks.TaskFailed(err)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
-	if err != nil {
-		return fmt.Errorf("error waiting for container shut down: %w", err)
-	}
-
-	return nil
+	return c.Tasks().WaitForTask(ctx, *taskID)
 }
 
 // ShutdownContainerAsync shuts down a container asynchronously.
@@ -369,31 +338,27 @@ func (c *Client) StartContainer(ctx context.Context) tasks.TaskResult {
 		return tasks.TaskOK()
 	}
 
-	var taskResult tasks.TaskResult
-
 	op := retry.NewTaskOperation("container start",
 		retry.WithRetryIf(retry.ErrorContains("got no worker upid")),
 	)
 
-	if err := op.DoTask(ctx,
+	result := c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.StartContainerAsync(ctx) },
-		func(ctx context.Context, taskID string) error {
-			taskResult = c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
-			return taskResult.Err()
-		},
-	); err != nil {
-		if errors.Is(err, errContainerAlreadyRunning) {
+		tasks.WithIgnoreWarnings(),
+	)
+	if result.Err() != nil {
+		if errors.Is(result.Err(), errContainerAlreadyRunning) {
 			return tasks.TaskOK()
 		}
 
-		return tasks.TaskFailed(err)
+		return result
 	}
 
 	if err := c.WaitForContainerStatus(ctx, "running"); err != nil {
 		return tasks.TaskFailed(err)
 	}
 
-	return taskResult
+	return result
 }
 
 // StartContainerAsync starts a container asynchronously.
@@ -508,14 +473,13 @@ func (c *Client) WaitForContainerConfigUnlock(ctx context.Context, ignoreErrorRe
 }
 
 // ResizeContainerDisk resizes a container disk.
-func (c *Client) ResizeContainerDisk(ctx context.Context, d *ResizeRequestBody) error {
+func (c *Client) ResizeContainerDisk(ctx context.Context, d *ResizeRequestBody) tasks.TaskResult {
 	op := retry.NewTaskOperation("container disk resize",
 		retry.WithRetryIf(retry.IsTransientAPIError),
 	)
 
-	return op.DoTask(ctx,
+	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.ResizeContainerDiskAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID).Err() },
 	)
 }
 

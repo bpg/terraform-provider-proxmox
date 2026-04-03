@@ -3413,12 +3413,11 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		if !ptr.Eq(oldSize, size) {
-			err = containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
+			if result := containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
 				Disk: "rootfs",
 				Size: size.String(),
-			})
-			if err != nil {
-				return diag.FromErr(err)
+			}); result.Err() != nil {
+				return diag.FromErr(result.Err())
 			}
 		}
 
@@ -3866,16 +3865,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			// Needs to be refactored to a common function
 			shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
 
-			e = containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
+			if result := containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeoutSec,
-			})
-			if e != nil {
-				return diag.FromErr(e)
+			}); result.Err() != nil {
+				return diag.FromErr(result.Err())
 			}
 
-			e = containerAPI.WaitForContainerStatus(ctx, "stopped")
-			if e != nil {
+			if e = containerAPI.WaitForContainerStatus(ctx, "stopped"); e != nil {
 				return diag.FromErr(e)
 			}
 
@@ -3887,14 +3884,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	if !template && started && rebootRequired {
 		rebootTimeout := 300
 
-		e = containerAPI.RebootContainer(
+		if result := containerAPI.RebootContainer(
 			ctx,
 			&containers.RebootRequestBody{
 				Timeout: &rebootTimeout,
 			},
-		)
-		if e != nil {
-			return diag.FromErr(e)
+		); result.Err() != nil {
+			return diag.FromErr(result.Err())
 		}
 	}
 
@@ -3932,7 +3928,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	if status.Status != "stopped" {
 		forceStop := types.CustomBool(true)
 
-		err = containerAPI.ShutdownContainer(
+		if result := containerAPI.ShutdownContainer(
 			ctx,
 			&containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
@@ -3940,9 +3936,8 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 				// otherwise the context will be cancelled before PVE forcefully stops the container
 				Timeout: ptr.Ptr(max(1, deleteTimeoutSec-5)),
 			},
-		)
-		if err != nil {
-			return diag.FromErr(err)
+		); result.Err() != nil {
+			return diag.FromErr(result.Err())
 		}
 
 		err = containerAPI.WaitForContainerStatus(ctx, "stopped")
@@ -3951,15 +3946,15 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 	}
 
-	err = containerAPI.DeleteContainer(ctx)
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
+	deleteResult := containerAPI.DeleteContainer(ctx)
+	if deleteResult.Err() != nil {
+		if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
 			d.SetId("")
 
 			return nil
 		}
 
-		return diag.FromErr(err)
+		return diag.FromErr(deleteResult.Err())
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.

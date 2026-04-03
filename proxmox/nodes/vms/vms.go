@@ -32,8 +32,6 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 		retries = 1
 	}
 
-	var taskResult tasks.TaskResult
-
 	op := retry.NewTaskOperation("VM clone",
 		retry.WithAttempts(uint(retries)),
 		retry.WithBaseDelay(10*time.Second),
@@ -41,18 +39,10 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	err := op.DoTask(ctx,
+	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CloneVMAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error {
-			taskResult = c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
-			return taskResult.Err()
-		},
+		tasks.WithIgnoreWarnings(),
 	)
-	if err != nil {
-		return tasks.TaskFailed(err)
-	}
-
-	return taskResult
 }
 
 // CloneVMAsync clones a virtual machine asynchronously.
@@ -89,25 +79,15 @@ func (c *Client) ConvertToTemplate(ctx context.Context) tasks.TaskResult {
 
 // CreateVM creates a virtual machine.
 func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) tasks.TaskResult {
-	var taskResult tasks.TaskResult
-
 	op := retry.NewTaskOperation("VM create",
 		retry.WithRetryIf(retry.IsTransientAPIError),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	err := op.DoTask(ctx,
+	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CreateVMAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error {
-			taskResult = c.Tasks().WaitForTask(ctx, taskID)
-			return taskResult.Err()
-		},
+		tasks.WithIgnoreWarnings(),
 	)
-	if err != nil {
-		return tasks.TaskFailed(err)
-	}
-
-	return taskResult
 }
 
 // CreateVMAsync creates a virtual machine asynchronously.
@@ -144,34 +124,21 @@ func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDi
 		}),
 	)
 
-	var taskResult tasks.TaskResult
+	return c.Tasks().DoTask(ctx, op, func() (*string, error) {
+		resBody := &DeleteResponseBody{}
+		path := fmt.Sprintf("?destroy-unreferenced-disks=%d&purge=%d", destroyUnreferencedDisksValue, purgeValue)
 
-	err := op.DoTask(ctx,
-		func() (*string, error) {
-			resBody := &DeleteResponseBody{}
-			path := fmt.Sprintf("?destroy-unreferenced-disks=%d&purge=%d", destroyUnreferencedDisksValue, purgeValue)
+		err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(path), nil, resBody)
+		if err != nil {
+			return nil, fmt.Errorf("error deleting VM: %w", err)
+		}
 
-			err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(path), nil, resBody)
-			if err != nil {
-				return nil, fmt.Errorf("error deleting VM: %w", err)
-			}
+		if resBody.TaskID == nil {
+			return nil, api.ErrNoDataObjectInResponse
+		}
 
-			if resBody.TaskID == nil {
-				return nil, api.ErrNoDataObjectInResponse
-			}
-
-			return resBody.TaskID, nil
-		},
-		func(ctx context.Context, taskID string) error {
-			taskResult = c.Tasks().WaitForTask(ctx, taskID)
-			return taskResult.Err()
-		},
-	)
-	if err != nil {
-		return tasks.TaskFailed(err)
-	}
-
-	return taskResult
+		return resBody.TaskID, nil
+	})
 }
 
 // GetVM retrieves a virtual machine.
@@ -378,7 +345,7 @@ func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) tas
 		taskResult = c.Tasks().WaitForTask(ctx, *taskID)
 
 		return taskResult.Err()
-	}); err != nil {
+	}); err != nil && taskResult.Err() == nil {
 		return tasks.TaskFailed(err)
 	}
 

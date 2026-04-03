@@ -179,8 +179,8 @@ func TestDeleteContainerWaitsForTask(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.DeleteContainer(t.Context())
-	require.NoError(t, err)
+	result := client.DeleteContainer(t.Context())
+	require.NoError(t, result.Err())
 }
 
 func TestResizeContainerDiskWaitsForTask(t *testing.T) {
@@ -201,11 +201,11 @@ func TestResizeContainerDiskWaitsForTask(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.ResizeContainerDisk(t.Context(), &ResizeRequestBody{
+	result := client.ResizeContainerDisk(t.Context(), &ResizeRequestBody{
 		Disk: "rootfs",
 		Size: "+1G",
 	})
-	require.NoError(t, err)
+	require.NoError(t, result.Err())
 }
 
 // TestCreateContainerRetries verifies that CreateContainer retries on HTTP 500
