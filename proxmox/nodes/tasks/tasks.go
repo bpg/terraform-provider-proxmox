@@ -191,6 +191,19 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 	return TaskOK()
 }
 
+// filterWarnings extracts warning lines from a task log, excluding the "TASK WARNINGS: N" summary.
+func filterWarnings(lines []string) []string {
+	var warnings []string
+
+	for _, line := range lines {
+		if strings.Contains(line, "WARN") && !strings.HasPrefix(line, "TASK WARNINGS:") {
+			warnings = append(warnings, line)
+		}
+	}
+
+	return warnings
+}
+
 // getTaskWarnings fetches the task log and returns any warning lines.
 // This is best-effort: if the log cannot be fetched, a warning is logged and nil is returned.
 func (c *Client) getTaskWarnings(ctx context.Context, upid string) []string {
@@ -204,15 +217,7 @@ func (c *Client) getTaskWarnings(ctx context.Context, upid string) []string {
 		return nil
 	}
 
-	var warnings []string
-
-	for _, line := range lines {
-		if strings.Contains(line, "WARN") && !strings.HasPrefix(line, "TASK WARNINGS:") {
-			warnings = append(warnings, line)
-		}
-	}
-
-	return warnings
+	return filterWarnings(lines)
 }
 
 // taskFailedResult fetches the task log and returns a *TaskResult that includes both the exit code and
@@ -237,15 +242,7 @@ func (c *Client) taskFailedResult(ctx context.Context, upid string, exitCode str
 		upid, exitCode, strings.Join(lines, "\n  "),
 	)
 
-	var warnings []string
-
-	for _, line := range lines {
-		if strings.Contains(line, "WARN") && !strings.HasPrefix(line, "TASK WARNINGS:") {
-			warnings = append(warnings, line)
-		}
-	}
-
-	if len(warnings) > 0 {
+	if warnings := filterWarnings(lines); len(warnings) > 0 {
 		return TaskFailedWithWarnings(taskErr, warnings)
 	}
 

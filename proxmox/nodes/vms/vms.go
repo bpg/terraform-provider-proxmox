@@ -435,12 +435,8 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) (*tasks.TaskResult
 		return tasks.TaskOK(), nil
 	}
 
-	result := c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599))
+	result := c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599), tasks.WithIgnoreWarnings())
 	if result.Err() != nil {
-		if result.HasWarnings() {
-			return tasks.TaskOKWithWarnings(result.Warnings()), nil
-		}
-
 		return result, fmt.Errorf("error waiting for VM start: %w", result.Err())
 	}
 
