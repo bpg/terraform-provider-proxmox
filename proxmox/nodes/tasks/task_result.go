@@ -9,55 +9,45 @@ package tasks
 // TaskResult holds the outcome of a Proxmox task, including any warnings
 // from the task log. This allows callers to surface warnings as Terraform
 // diagnostics rather than silently ignoring them.
+//
+// The zero value is a valid successful result with no warnings.
 type TaskResult struct {
 	warnings []string
 	err      error
 }
 
 // TaskOK returns a successful result with no warnings.
-func TaskOK() *TaskResult {
-	return &TaskResult{}
+func TaskOK() TaskResult {
+	return TaskResult{}
 }
 
 // TaskFailed returns a result with an error and no warnings.
-func TaskFailed(err error) *TaskResult {
-	return &TaskResult{err: err}
+func TaskFailed(err error) TaskResult {
+	return TaskResult{err: err}
 }
 
 // TaskOKWithWarnings returns a successful result that carries warning lines
 // from the task log.
-func TaskOKWithWarnings(warnings []string) *TaskResult {
-	return &TaskResult{warnings: warnings}
+func TaskOKWithWarnings(warnings []string) TaskResult {
+	return TaskResult{warnings: warnings}
 }
 
 // TaskFailedWithWarnings returns a result with both an error and warning lines.
-func TaskFailedWithWarnings(err error, warnings []string) *TaskResult {
-	return &TaskResult{err: err, warnings: warnings}
+func TaskFailedWithWarnings(err error, warnings []string) TaskResult {
+	return TaskResult{err: err, warnings: warnings}
 }
 
 // Err returns the error if the task failed, or nil on success.
-func (r *TaskResult) Err() error {
-	if r == nil {
-		return nil
-	}
-
+func (r TaskResult) Err() error {
 	return r.err
 }
 
 // HasWarnings returns true if the task produced warning lines.
-func (r *TaskResult) HasWarnings() bool {
-	if r == nil {
-		return false
-	}
-
+func (r TaskResult) HasWarnings() bool {
 	return len(r.warnings) > 0
 }
 
 // Warnings returns the warning lines from the task log.
-func (r *TaskResult) Warnings() []string {
-	if r == nil {
-		return nil
-	}
-
+func (r TaskResult) Warnings() []string {
 	return r.warnings
 }

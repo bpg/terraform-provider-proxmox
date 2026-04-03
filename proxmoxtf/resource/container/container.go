@@ -1278,7 +1278,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		cloneBody.PoolID = &poolID
 	}
 
-	var cloneResult *tasks.TaskResult
+	var cloneResult tasks.TaskResult
 
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName

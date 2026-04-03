@@ -124,9 +124,9 @@ func (w withIgnoreStatus) apply(opts *taskWaitOptions) {
 	opts.ignoreStatusCode = w.statusCode
 }
 
-// WaitForTask waits for a specific task to complete and returns a *TaskResult
+// WaitForTask waits for a specific task to complete and returns a TaskResult
 // that carries the outcome (error and/or warnings extracted from the task log).
-func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitOption) *TaskResult {
+func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitOption) TaskResult {
 	errStillRunning := errors.New("still running")
 
 	options := &taskWaitOptions{}
@@ -221,9 +221,9 @@ func (c *Client) getTaskWarnings(ctx context.Context, upid string) []string {
 	return filterWarnings(lines)
 }
 
-// taskFailedResult fetches the task log and returns a *TaskResult that includes both the exit code and
+// taskFailedResult fetches the task log and returns a TaskResult that includes both the exit code and
 // the log output, so users can see what went wrong without checking the Proxmox task history.
-func (c *Client) taskFailedResult(ctx context.Context, upid string, exitCode string) *TaskResult {
+func (c *Client) taskFailedResult(ctx context.Context, upid string, exitCode string) TaskResult {
 	lines, err := c.GetTaskLog(ctx, upid)
 	if err != nil {
 		tflog.Warn(ctx, "failed to fetch task log for error details", map[string]any{

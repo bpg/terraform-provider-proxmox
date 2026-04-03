@@ -24,8 +24,8 @@ var errContainerAlreadyRunning = errors.New("container is already running")
 
 // CloneContainer clones a container.
 // The returned TaskResult carries any warnings from the task log.
-func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) *tasks.TaskResult {
-	var taskResult *tasks.TaskResult
+func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) tasks.TaskResult {
+	var taskResult tasks.TaskResult
 
 	op := retry.NewTaskOperation("container clone",
 		retry.WithBaseDelay(10*time.Second),
@@ -44,11 +44,7 @@ func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) *tasks
 		return tasks.TaskFailed(err)
 	}
 
-	if taskResult != nil {
-		return taskResult
-	}
-
-	return tasks.TaskOK()
+	return taskResult
 }
 
 // CloneContainerAsync clones a container asynchronously.
@@ -69,8 +65,8 @@ func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (
 
 // CreateContainer creates a container.
 // The returned TaskResult carries any warnings from the task log.
-func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) *tasks.TaskResult {
-	var taskResult *tasks.TaskResult
+func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) tasks.TaskResult {
+	var taskResult tasks.TaskResult
 
 	op := retry.NewTaskOperation("container create",
 		retry.WithRetryIf(retry.IsTransientAPIError),
@@ -88,11 +84,7 @@ func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) *tas
 		return tasks.TaskFailed(err)
 	}
 
-	if taskResult != nil {
-		return taskResult
-	}
-
-	return tasks.TaskOK()
+	return taskResult
 }
 
 // CreateContainerAsync creates a container asynchronously.
@@ -367,7 +359,7 @@ func (c *Client) ShutdownContainerAsync(ctx context.Context, d *ShutdownRequestB
 
 // StartContainer starts a container if is not already running.
 // The returned TaskResult carries any warnings from the task log.
-func (c *Client) StartContainer(ctx context.Context) *tasks.TaskResult {
+func (c *Client) StartContainer(ctx context.Context) tasks.TaskResult {
 	status, err := c.GetContainerStatus(ctx)
 	if err != nil {
 		return tasks.TaskFailed(fmt.Errorf("error retrieving container status: %w", err))
@@ -377,7 +369,7 @@ func (c *Client) StartContainer(ctx context.Context) *tasks.TaskResult {
 		return tasks.TaskOK()
 	}
 
-	var taskResult *tasks.TaskResult
+	var taskResult tasks.TaskResult
 
 	op := retry.NewTaskOperation("container start",
 		retry.WithRetryIf(retry.ErrorContains("got no worker upid")),
@@ -401,11 +393,7 @@ func (c *Client) StartContainer(ctx context.Context) *tasks.TaskResult {
 		return tasks.TaskFailed(err)
 	}
 
-	if taskResult != nil {
-		return taskResult
-	}
-
-	return tasks.TaskOK()
+	return taskResult
 }
 
 // StartContainerAsync starts a container asynchronously.
