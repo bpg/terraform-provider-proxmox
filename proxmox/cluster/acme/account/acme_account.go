@@ -65,7 +65,7 @@ func (c *Client) Create(ctx context.Context, data *ACMEAccountCreateRequestBody)
 		return api.ErrNoDataObjectInResponse
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+	err = c.Tasks().WaitForTask(ctx, *resBody.Data).Err()
 	if err != nil {
 		return fmt.Errorf(
 			"error updating ACME account: failed waiting for task: %w",
@@ -89,7 +89,7 @@ func (c *Client) Update(ctx context.Context, accountName string, data *ACMEAccou
 		return api.ErrNoDataObjectInResponse
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+	err = c.Tasks().WaitForTask(ctx, *resBody.Data).Err()
 	if err != nil {
 		return fmt.Errorf(
 			"error updating ACME account: failed waiting for task: %w",
@@ -113,7 +113,7 @@ func (c *Client) Delete(ctx context.Context, accountName string) error {
 		return api.ErrNoDataObjectInResponse
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+	err = c.Tasks().WaitForTask(ctx, *resBody.Data).Err()
 	if err != nil {
 		return fmt.Errorf(
 			"error deleting ACME account: failed waiting for task: %w",

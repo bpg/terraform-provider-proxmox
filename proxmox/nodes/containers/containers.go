@@ -33,7 +33,7 @@ func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error 
 	return op.DoTask(ctx,
 		func() (*string, error) { return c.CloneContainerAsync(ctx, d) },
 		func(ctx context.Context, taskID string) error {
-			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings()).Err()
 		},
 	)
 }
@@ -64,7 +64,7 @@ func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) erro
 	return op.DoTask(ctx,
 		func() (*string, error) { return c.CreateContainerAsync(ctx, d) },
 		func(ctx context.Context, taskID string) error {
-			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings()).Err()
 		},
 	)
 }
@@ -95,7 +95,7 @@ func (c *Client) DeleteContainer(ctx context.Context) error {
 
 	return op.DoTask(ctx,
 		func() (*string, error) { return c.DeleteContainerAsync(ctx) },
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID).Err() },
 	)
 }
 
@@ -284,7 +284,7 @@ func (c *Client) RebootContainer(ctx context.Context, d *RebootRequestBody) erro
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
 	if err != nil {
 		return fmt.Errorf("error waiting for container reboot: %w", err)
 	}
@@ -315,7 +315,7 @@ func (c *Client) ShutdownContainer(ctx context.Context, d *ShutdownRequestBody) 
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
 	if err != nil {
 		return fmt.Errorf("error waiting for container shut down: %w", err)
 	}
@@ -357,7 +357,7 @@ func (c *Client) StartContainer(ctx context.Context) error {
 	if err := op.DoTask(ctx,
 		func() (*string, error) { return c.StartContainerAsync(ctx) },
 		func(ctx context.Context, taskID string) error {
-			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings()).Err()
 		},
 	); err != nil {
 		if errors.Is(err, errContainerAlreadyRunning) {
@@ -489,7 +489,7 @@ func (c *Client) ResizeContainerDisk(ctx context.Context, d *ResizeRequestBody) 
 
 	return op.DoTask(ctx,
 		func() (*string, error) { return c.ResizeContainerDiskAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID).Err() },
 	)
 }
 

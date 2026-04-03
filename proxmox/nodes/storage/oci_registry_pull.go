@@ -30,7 +30,7 @@ func (c *Client) DownloadOCIImageByReference(
 		return api.ErrNoDataObjectInResponse
 	}
 
-	taskErr := c.Tasks().WaitForTask(ctx, *resBody.TaskID)
+	taskErr := c.Tasks().WaitForTask(ctx, *resBody.TaskID).Err()
 	if taskErr != nil {
 		err = fmt.Errorf(
 			"error download OCI image to datastore %s: failed waiting for OCI image download: %w",

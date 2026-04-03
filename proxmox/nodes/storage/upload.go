@@ -154,7 +154,7 @@ func (c *Client) APIUpload(
 		return nil, fmt.Errorf("error uploading file to datastore %s: no uploadID", c.StorageName)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *resBody.UploadID)
+	err = c.Tasks().WaitForTask(ctx, *resBody.UploadID).Err()
 	if err != nil {
 		return nil, fmt.Errorf("error uploading file to datastore %s: failed waiting for upload - %w", c.StorageName, err)
 	}

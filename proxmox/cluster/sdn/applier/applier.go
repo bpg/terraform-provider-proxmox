@@ -40,7 +40,7 @@ func (c *Client) ApplyConfig(ctx context.Context) error {
 		return fmt.Errorf("SDN apply did not return a task UPID")
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+	err = c.Tasks().WaitForTask(ctx, *resBody.Data).Err()
 	if err != nil {
 		return fmt.Errorf("error waiting for SDN apply: %w", err)
 	}

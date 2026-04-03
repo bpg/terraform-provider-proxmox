@@ -41,7 +41,7 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 	return op.DoTask(ctx,
 		func() (*string, error) { return c.CloneVMAsync(ctx, d) },
 		func(ctx context.Context, taskID string) error {
-			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings()).Err()
 		},
 	)
 }
@@ -72,7 +72,7 @@ func (c *Client) ConvertToTemplate(ctx context.Context) error {
 	}
 
 	if resBody.Data != nil {
-		err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+		err = c.Tasks().WaitForTask(ctx, *resBody.Data).Err()
 		if err != nil {
 			return fmt.Errorf("error waiting for VM %d template conversion: %w", c.VMID, err)
 		}
@@ -90,7 +90,7 @@ func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) error {
 
 	return op.DoTask(ctx,
 		func() (*string, error) { return c.CreateVMAsync(ctx, d) },
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID).Err() },
 	)
 }
 
@@ -144,7 +144,7 @@ func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDi
 
 			return resBody.TaskID, nil
 		},
-		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID) },
+		func(ctx context.Context, taskID string) error { return c.Tasks().WaitForTask(ctx, taskID).Err() },
 	)
 }
 
@@ -203,7 +203,7 @@ func (c *Client) MigrateVM(ctx context.Context, d *MigrateRequestBody) error {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
 	if err != nil {
 		return fmt.Errorf("error waiting for VM migration: %w", err)
 	}
@@ -239,7 +239,7 @@ func (c *Client) MoveVMDisk(ctx context.Context, d *MoveDiskRequestBody) error {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
 	if err != nil {
 		return fmt.Errorf("error waiting for VM disk move: %w", err)
 	}
@@ -315,7 +315,7 @@ func (c *Client) RebootVM(ctx context.Context, d *RebootRequestBody) error {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
 	if err != nil {
 		return fmt.Errorf("error waiting for VM reboot: %w", err)
 	}
@@ -358,7 +358,7 @@ func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) err
 			return err
 		}
 
-		return c.Tasks().WaitForTask(ctx, *taskID)
+		return c.Tasks().WaitForTask(ctx, *taskID).Err()
 	})
 }
 
@@ -385,7 +385,7 @@ func (c *Client) ShutdownVM(ctx context.Context, d *ShutdownRequestBody) error {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
 	if err != nil {
 		return fmt.Errorf("error waiting for VM shutdown: %w", err)
 	}
@@ -421,7 +421,7 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) ([]string, error) 
 		return nil, nil
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599))
+	err = c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599)).Err()
 	if err != nil {
 		log, e := c.Tasks().GetTaskLog(ctx, *taskID)
 		if e != nil {
@@ -488,7 +488,7 @@ func (c *Client) StopVM(ctx context.Context) error {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+	err = c.Tasks().WaitForTask(ctx, *taskID).Err()
 	if err != nil {
 		return fmt.Errorf("error waiting for VM stop: %w", err)
 	}
