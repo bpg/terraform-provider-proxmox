@@ -193,10 +193,16 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	if plan.Started.ValueBool() {
 		tflog.Debug(ctx, "Starting VM after clone")
 
-		_, err = vmAPI.StartVM(ctx, int(timeout.Seconds()))
+		startResult, err := vmAPI.StartVM(ctx, int(timeout.Seconds()))
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to start VM", err.Error())
 			return
+		}
+
+		if startResult.HasWarnings() {
+			for _, w := range startResult.Warnings() {
+				resp.Diagnostics.AddWarning("VM start warning", w)
+			}
 		}
 
 		err = vmAPI.WaitForVMStatus(ctx, "running")
@@ -303,10 +309,16 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		if plan.Started.ValueBool() {
 			tflog.Debug(ctx, "Starting VM")
 
-			_, err = vmAPI.StartVM(ctx, int(timeout.Seconds()))
+			startResult, err := vmAPI.StartVM(ctx, int(timeout.Seconds()))
 			if err != nil {
 				resp.Diagnostics.AddError("Failed to start VM", err.Error())
 				return
+			}
+
+			if startResult.HasWarnings() {
+				for _, w := range startResult.Warnings() {
+					resp.Diagnostics.AddWarning("VM start warning", w)
+				}
 			}
 
 			err = vmAPI.WaitForVMStatus(ctx, "running")

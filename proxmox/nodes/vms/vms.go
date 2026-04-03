@@ -410,37 +410,28 @@ func (c *Client) ShutdownVMAsync(ctx context.Context, d *ShutdownRequestBody) (*
 }
 
 // StartVM starts a virtual machine.
-// Returns the task log if the VM had warnings at startup, or fails to start.
-func (c *Client) StartVM(ctx context.Context, timeoutSec int) ([]string, error) {
+// The returned TaskResult carries any warnings from the task log.
+// The error return is non-nil only if the async dispatch itself fails.
+func (c *Client) StartVM(ctx context.Context, timeoutSec int) (*tasks.TaskResult, error) {
 	taskID, err := c.StartVMAsync(ctx, timeoutSec)
 	if err != nil {
 		return nil, err
 	}
 
 	if taskID == nil {
-		return nil, nil
+		return tasks.TaskOK(), nil
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599)).Err()
-	if err != nil {
-		log, e := c.Tasks().GetTaskLog(ctx, *taskID)
-		if e != nil {
-			tflog.Error(ctx, "error retrieving task log", map[string]any{
-				"task_id": *taskID,
-				"error":   e.Error(),
-			})
-
-			log = []string{}
+	result := c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599))
+	if result.Err() != nil {
+		if result.HasWarnings() {
+			return tasks.TaskOKWithWarnings(result.Warnings()), nil
 		}
 
-		if strings.Contains(err.Error(), "WARNING") && len(log) > 0 {
-			return log, nil
-		}
-
-		return log, fmt.Errorf("error waiting for VM start: %w", err)
+		return result, fmt.Errorf("error waiting for VM start: %w", result.Err())
 	}
 
-	return nil, nil
+	return result, nil
 }
 
 // StartVMAsync starts a virtual machine asynchronously.
