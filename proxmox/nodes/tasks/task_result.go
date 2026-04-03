@@ -37,15 +37,27 @@ func TaskFailedWithWarnings(err error, warnings []string) *TaskResult {
 
 // Err returns the error if the task failed, or nil on success.
 func (r *TaskResult) Err() error {
+	if r == nil {
+		return nil
+	}
+
 	return r.err
 }
 
 // HasWarnings returns true if the task produced warning lines.
 func (r *TaskResult) HasWarnings() bool {
+	if r == nil {
+		return false
+	}
+
 	return len(r.warnings) > 0
 }
 
 // Warnings returns the warning lines from the task log.
 func (r *TaskResult) Warnings() []string {
+	if r == nil {
+		return nil
+	}
+
 	return r.warnings
 }

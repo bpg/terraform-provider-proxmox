@@ -1984,11 +1984,9 @@ func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) dia
 	}
 
 	if result.HasWarnings() {
-		lines := "\n\t| " + strings.Join(result.Warnings(), "\n\t| ")
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  fmt.Sprintf("the VM startup task finished with a warning, task log:\n%s", lines),
-		})
+		for _, w := range result.Warnings() {
+			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+		}
 	}
 
 	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "running"))...)

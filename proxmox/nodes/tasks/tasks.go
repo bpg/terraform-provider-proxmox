@@ -207,7 +207,7 @@ func (c *Client) getTaskWarnings(ctx context.Context, upid string) []string {
 	var warnings []string
 
 	for _, line := range lines {
-		if strings.Contains(line, "WARN") {
+		if strings.Contains(line, "WARN") && !strings.HasPrefix(line, "TASK WARNINGS:") {
 			warnings = append(warnings, line)
 		}
 	}
@@ -240,7 +240,7 @@ func (c *Client) taskFailedResult(ctx context.Context, upid string, exitCode str
 	var warnings []string
 
 	for _, line := range lines {
-		if strings.Contains(line, "WARN") {
+		if strings.Contains(line, "WARN") && !strings.HasPrefix(line, "TASK WARNINGS:") {
 			warnings = append(warnings, line)
 		}
 	}

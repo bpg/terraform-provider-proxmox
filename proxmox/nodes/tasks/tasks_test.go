@@ -161,5 +161,6 @@ func TestWaitForTask_IgnoredWarningsIncludesLogInContext(t *testing.T) {
 	require.NoError(t, result.Err(), "WaitForTask should succeed when ignoring warnings")
 
 	assert.True(t, result.HasWarnings(), "result should carry warning lines")
+	assert.Len(t, result.Warnings(), 1, "TASK WARNINGS summary line should be filtered out")
 	assert.Contains(t, result.Warnings()[0], "Systemd 258")
 }

@@ -836,7 +836,7 @@ resource "proxmox_virtual_environment_vm" "data_user_vm" {
   # remainder of VM configuration
   ...
 }
-```
+````
 
 ## Example: Disk pass-through
 
