@@ -25,11 +25,14 @@ import (
 )
 
 // CloneVM clones a virtual machine.
-func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) error {
+// The returned TaskResult carries any warnings from the task log.
+func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) *tasks.TaskResult {
 	// just a guard in case someone sets retries to zero unknowingly
 	if retries <= 0 {
 		retries = 1
 	}
+
+	var taskResult *tasks.TaskResult
 
 	op := retry.NewTaskOperation("VM clone",
 		retry.WithAttempts(uint(retries)),
@@ -38,12 +41,22 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return op.DoTask(ctx,
+	err := op.DoTask(ctx,
 		func() (*string, error) { return c.CloneVMAsync(ctx, d) },
 		func(ctx context.Context, taskID string) error {
-			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings()).Err()
+			taskResult = c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+			return taskResult.Err()
 		},
 	)
+	if err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	if taskResult != nil {
+		return taskResult
+	}
+
+	return tasks.TaskOK()
 }
 
 // CloneVMAsync clones a virtual machine asynchronously.

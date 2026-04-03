@@ -133,8 +133,8 @@ func TestCreateContainerSucceedsWithWarnings(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CreateContainer(t.Context(), &CreateRequestBody{})
-	require.NoError(t, err, "CreateContainer should succeed when task completes with warnings")
+	result := client.CreateContainer(t.Context(), &CreateRequestBody{})
+	require.NoError(t, result.Err(), "CreateContainer should succeed when task completes with warnings")
 }
 
 // TestCloneContainerSucceedsWithWarnings verifies that CloneContainer succeeds
@@ -157,8 +157,8 @@ func TestCloneContainerSucceedsWithWarnings(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CloneContainer(t.Context(), &CloneRequestBody{})
-	require.NoError(t, err, "CloneContainer should succeed when task completes with warnings")
+	result := client.CloneContainer(t.Context(), &CloneRequestBody{})
+	require.NoError(t, result.Err(), "CloneContainer should succeed when task completes with warnings")
 }
 
 func TestDeleteContainerWaitsForTask(t *testing.T) {
@@ -242,8 +242,8 @@ func TestCreateContainerRetries(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CreateContainer(t.Context(), &CreateRequestBody{})
-	require.NoError(t, err)
+	result := client.CreateContainer(t.Context(), &CreateRequestBody{})
+	require.NoError(t, result.Err())
 
 	assert.Equal(t, 2, captures.countPOST("/lxc"),
 		"expected exactly 2 POST calls (1 failure + 1 success), proving retry occurred")
@@ -272,8 +272,8 @@ func TestCreateContainerNoRetryOn400(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CreateContainer(t.Context(), &CreateRequestBody{})
-	require.Error(t, err)
+	result := client.CreateContainer(t.Context(), &CreateRequestBody{})
+	require.Error(t, result.Err())
 
 	assert.Equal(t, 1, captures.countPOST("/lxc"),
 		"expected exactly 1 POST call (no retry on 400)")
@@ -311,8 +311,8 @@ func TestCloneContainerRetries(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CloneContainer(t.Context(), &CloneRequestBody{})
-	require.NoError(t, err)
+	result := client.CloneContainer(t.Context(), &CloneRequestBody{})
+	require.NoError(t, result.Err())
 
 	assert.Equal(t, 2, captures.countPOST("/clone"),
 		"expected exactly 2 POST calls (1 failure + 1 success), proving retry occurred")
@@ -376,8 +376,8 @@ func TestStartContainerAlreadyRunningOnFirstAttempt(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.StartContainer(t.Context())
-	require.NoError(t, err, "StartContainer should succeed when API returns 'already running'")
+	result := client.StartContainer(t.Context())
+	require.NoError(t, result.Err(), "StartContainer should succeed when API returns 'already running'")
 
 	assert.Equal(t, 1, captures.countPOST("/status/start"),
 		"expected exactly 1 start attempt")
@@ -404,8 +404,8 @@ func TestStartContainerAlreadyRunningDetectedByPreCheck(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.StartContainer(t.Context())
-	require.NoError(t, err)
+	result := client.StartContainer(t.Context())
+	require.NoError(t, result.Err())
 
 	assert.Equal(t, 0, captures.countPOST("/status/start"),
 		"expected no start calls when container is already running")
@@ -460,8 +460,8 @@ func TestStartContainerRetriesOnNoWorkerUpid(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.StartContainer(t.Context())
-	require.NoError(t, err)
+	result := client.StartContainer(t.Context())
+	require.NoError(t, result.Err())
 
 	assert.Equal(t, 2, captures.countPOST("/status/start"),
 		"expected exactly 2 start calls (1 failure + 1 success), proving retry occurred")
@@ -509,8 +509,8 @@ func TestStartContainerAlreadyRunningOnRetry(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.StartContainer(t.Context())
-	require.NoError(t, err, "should succeed when retry finds container already running")
+	result := client.StartContainer(t.Context())
+	require.NoError(t, result.Err(), "should succeed when retry finds container already running")
 
 	assert.Equal(t, 2, captures.countPOST("/status/start"),
 		"expected exactly 2 start calls (1 transient failure + 1 already running)")
@@ -538,8 +538,8 @@ func TestCloneContainerNoRetryOn400(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CloneContainer(t.Context(), &CloneRequestBody{})
-	require.Error(t, err)
+	result := client.CloneContainer(t.Context(), &CloneRequestBody{})
+	require.Error(t, result.Err())
 
 	assert.Equal(t, 1, captures.countPOST("/clone"),
 		"expected exactly 1 POST call (no retry on 400)")

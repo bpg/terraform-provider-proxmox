@@ -27,6 +27,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
@@ -1277,16 +1278,26 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		cloneBody.PoolID = &poolID
 	}
 
+	var cloneResult *tasks.TaskResult
+
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = client.Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
+		cloneResult = client.Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	} else {
-		err = client.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
+		cloneResult = client.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	}
 
-	if err != nil {
-		return diag.FromErr(err)
+	if cloneResult.Err() != nil {
+		return diag.FromErr(cloneResult.Err())
+	}
+
+	var diags diag.Diagnostics
+
+	if cloneResult.HasWarnings() {
+		for _, w := range cloneResult.Warnings() {
+			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+		}
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -1654,7 +1665,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		}
 	}
 
-	return containerCreateStart(ctx, d, m)
+	return append(diags, containerCreateStart(ctx, d, m)...)
 }
 
 func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -2156,9 +2167,17 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		createBody.EnvironmentVariables = environmentVariables
 	}
 
-	err = client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
-	if err != nil {
-		return diag.FromErr(err)
+	createResult := client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
+	if createResult.Err() != nil {
+		return diag.FromErr(createResult.Err())
+	}
+
+	var diags diag.Diagnostics
+
+	if createResult.HasWarnings() {
+		for _, w := range createResult.Warnings() {
+			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+		}
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -2179,7 +2198,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		}
 	}
 
-	return containerCreateStart(ctx, d, m)
+	return append(diags, containerCreateStart(ctx, d, m)...)
 }
 
 func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -2207,12 +2226,20 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Start the container and wait for it to reach a running state before continuing.
-	err = containerAPI.StartContainer(ctx)
-	if err != nil {
-		return diag.FromErr(err)
+	startResult := containerAPI.StartContainer(ctx)
+	if startResult.Err() != nil {
+		return diag.FromErr(startResult.Err())
 	}
 
-	return containerRead(ctx, d, m)
+	var diags diag.Diagnostics
+
+	if startResult.HasWarnings() {
+		for _, w := range startResult.Warnings() {
+			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+		}
+	}
+
+	return append(diags, containerRead(ctx, d, m)...)
 }
 
 func containerGetEnvironmentVariables(d *schema.ResourceData) *containers.CustomEnvironmentVariables {
@@ -3816,11 +3843,19 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	started := d.Get(mkStarted).(bool)
 	template := d.Get(mkTemplate).(bool)
 
+	var updateDiags diag.Diagnostics
+
 	if d.HasChange(mkStarted) && !template {
 		if started {
-			e = containerAPI.StartContainer(ctx)
-			if e != nil {
-				return diag.FromErr(e)
+			startResult := containerAPI.StartContainer(ctx)
+			if startResult.Err() != nil {
+				return diag.FromErr(startResult.Err())
+			}
+
+			if startResult.HasWarnings() {
+				for _, w := range startResult.Warnings() {
+					updateDiags = append(updateDiags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+				}
 			}
 		} else {
 			forceStop := types.CustomBool(true)
@@ -3863,7 +3898,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 	}
 
-	return containerRead(ctx, d, m)
+	return append(updateDiags, containerRead(ctx, d, m)...)
 }
 
 func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {

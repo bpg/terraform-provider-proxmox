@@ -160,10 +160,16 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 	retries := int(plan.Clone.Retries.ValueInt64())
 
-	err := sourceVM.CloneVM(ctx, retries, cloneBody)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to clone VM", err.Error())
+	cloneResult := sourceVM.CloneVM(ctx, retries, cloneBody)
+	if cloneResult.Err() != nil {
+		resp.Diagnostics.AddError("Failed to clone VM", cloneResult.Err().Error())
 		return
+	}
+
+	if cloneResult.HasWarnings() {
+		for _, w := range cloneResult.Warnings() {
+			resp.Diagnostics.AddWarning("VM clone warning", w)
+		}
 	}
 
 	vmAPI := r.client.Node(targetNode).VM(int(plan.ID.ValueInt64()))

@@ -84,7 +84,11 @@ func TestBatchCreate(t *testing.T) {
 
 			id := 999900 + i
 			if err == nil {
-				err = te.NodeClient().VM(sourceID).CloneVM(ctx, 5, &vms.CloneRequestBody{VMIDNew: id})
+				cloneResult := te.NodeClient().VM(sourceID).CloneVM(ctx, 5, &vms.CloneRequestBody{VMIDNew: id})
+				if cloneResult.Err() != nil {
+					err = cloneResult.Err()
+				}
+
 				ids[i] = id
 			}
 

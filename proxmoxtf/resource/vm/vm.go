@@ -2367,6 +2367,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		cloneBody.PoolID = &poolID
 	}
 
+	var cloneDiags diag.Diagnostics
+
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		// Check if any used datastores of the source VM are not shared
 		vmConfig, err := client.Node(cloneNodeName).VM(cloneVMID).GetVM(ctx)
@@ -2396,9 +2398,15 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			//  on a different node is currently not supported by proxmox.
 			cloneBody.TargetNodeName = &nodeName
 
-			err = client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-			if err != nil {
-				return diag.FromErr(err)
+			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
+			if cloneResult.Err() != nil {
+				return diag.FromErr(cloneResult.Err())
+			}
+
+			if cloneResult.HasWarnings() {
+				for _, w := range cloneResult.Warnings() {
+					cloneDiags = append(cloneDiags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+				}
 			}
 		} else { //nolint:wsl
 			// If the source and the target node are not the same and any used datastore in the source VM is
@@ -2407,9 +2415,15 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			//  https://forum.proxmox.com/threads/500-cant-clone-to-non-shared-storage-local.49078/#post-229727
 
 			// Temporarily clone to local node
-			err = client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-			if err != nil {
-				return diag.FromErr(err)
+			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
+			if cloneResult.Err() != nil {
+				return diag.FromErr(cloneResult.Err())
+			}
+
+			if cloneResult.HasWarnings() {
+				for _, w := range cloneResult.Warnings() {
+					cloneDiags = append(cloneDiags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+				}
 			}
 
 			// Wait for the virtual machine to be created and its configuration lock to be released before migrating.
@@ -2436,11 +2450,16 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			}
 		}
 	} else {
-		e = client.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-	}
+		cloneResult := client.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
+		if cloneResult.Err() != nil {
+			return diag.FromErr(cloneResult.Err())
+		}
 
-	if e != nil {
-		return diag.FromErr(e)
+		if cloneResult.HasWarnings() {
+			for _, w := range cloneResult.Warnings() {
+				cloneDiags = append(cloneDiags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+			}
+		}
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -2953,7 +2972,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 	}
 
-	return vmCreateStart(ctx, d, m)
+	return append(cloneDiags, vmCreateStart(ctx, d, m)...)
 }
 
 func setCPUArchitecture(

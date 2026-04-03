@@ -23,19 +23,32 @@ import (
 var errContainerAlreadyRunning = errors.New("container is already running")
 
 // CloneContainer clones a container.
-func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error {
+// The returned TaskResult carries any warnings from the task log.
+func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) *tasks.TaskResult {
+	var taskResult *tasks.TaskResult
+
 	op := retry.NewTaskOperation("container clone",
 		retry.WithBaseDelay(10*time.Second),
 		retry.WithRetryIf(retry.IsTransientAPIError),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return op.DoTask(ctx,
+	err := op.DoTask(ctx,
 		func() (*string, error) { return c.CloneContainerAsync(ctx, d) },
 		func(ctx context.Context, taskID string) error {
-			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings()).Err()
+			taskResult = c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+			return taskResult.Err()
 		},
 	)
+	if err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	if taskResult != nil {
+		return taskResult
+	}
+
+	return tasks.TaskOK()
 }
 
 // CloneContainerAsync clones a container asynchronously.
@@ -55,18 +68,31 @@ func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (
 }
 
 // CreateContainer creates a container.
-func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) error {
+// The returned TaskResult carries any warnings from the task log.
+func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) *tasks.TaskResult {
+	var taskResult *tasks.TaskResult
+
 	op := retry.NewTaskOperation("container create",
 		retry.WithRetryIf(retry.IsTransientAPIError),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return op.DoTask(ctx,
+	err := op.DoTask(ctx,
 		func() (*string, error) { return c.CreateContainerAsync(ctx, d) },
 		func(ctx context.Context, taskID string) error {
-			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings()).Err()
+			taskResult = c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+			return taskResult.Err()
 		},
 	)
+	if err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	if taskResult != nil {
+		return taskResult
+	}
+
+	return tasks.TaskOK()
 }
 
 // CreateContainerAsync creates a container asynchronously.
@@ -340,15 +366,18 @@ func (c *Client) ShutdownContainerAsync(ctx context.Context, d *ShutdownRequestB
 }
 
 // StartContainer starts a container if is not already running.
-func (c *Client) StartContainer(ctx context.Context) error {
+// The returned TaskResult carries any warnings from the task log.
+func (c *Client) StartContainer(ctx context.Context) *tasks.TaskResult {
 	status, err := c.GetContainerStatus(ctx)
 	if err != nil {
-		return fmt.Errorf("error retrieving container status: %w", err)
+		return tasks.TaskFailed(fmt.Errorf("error retrieving container status: %w", err))
 	}
 
 	if status.Status == "running" {
-		return nil
+		return tasks.TaskOK()
 	}
+
+	var taskResult *tasks.TaskResult
 
 	op := retry.NewTaskOperation("container start",
 		retry.WithRetryIf(retry.ErrorContains("got no worker upid")),
@@ -357,17 +386,26 @@ func (c *Client) StartContainer(ctx context.Context) error {
 	if err := op.DoTask(ctx,
 		func() (*string, error) { return c.StartContainerAsync(ctx) },
 		func(ctx context.Context, taskID string) error {
-			return c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings()).Err()
+			taskResult = c.Tasks().WaitForTask(ctx, taskID, tasks.WithIgnoreWarnings())
+			return taskResult.Err()
 		},
 	); err != nil {
 		if errors.Is(err, errContainerAlreadyRunning) {
-			return nil
+			return tasks.TaskOK()
 		}
 
-		return err
+		return tasks.TaskFailed(err)
 	}
 
-	return c.WaitForContainerStatus(ctx, "running")
+	if err := c.WaitForContainerStatus(ctx, "running"); err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	if taskResult != nil {
+		return taskResult
+	}
+
+	return tasks.TaskOK()
 }
 
 // StartContainerAsync starts a container asynchronously.
