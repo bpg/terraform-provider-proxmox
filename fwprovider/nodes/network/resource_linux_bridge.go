@@ -186,7 +186,7 @@ func (r *linuxBridgeResource) Schema(
 			"name": schema.StringAttribute{
 				Description: "The interface name.",
 				MarkdownDescription: "The interface name. Commonly vmbr[N], where 0 ≤ N ≤ 4094 (vmbr0 - vmbr4094), but " +
-					"can be any alphanumeric string that starts with a character and is at most 10 characters long.",
+					"can be any string containing only letters, numbers, and underscores (_), starting with a letter and at most 10 characters long.",
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
