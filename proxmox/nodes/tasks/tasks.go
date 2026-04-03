@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v5"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -122,8 +123,9 @@ func (w withIgnoreStatus) apply(opts *taskWaitOptions) {
 	opts.ignoreStatusCode = w.statusCode
 }
 
-// WaitForTask waits for a specific task to complete.
-func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitOption) error {
+// WaitForTask waits for a specific task to complete and returns a *TaskResult
+// that carries the outcome (error and/or warnings extracted from the task log).
+func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitOption) *TaskResult {
 	errStillRunning := errors.New("still running")
 
 	options := &taskWaitOptions{}
@@ -170,21 +172,82 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 		},
 	)
 	if errors.Is(err, context.DeadlineExceeded) {
-		return fmt.Errorf("timeout while waiting for task %q to complete", upid)
+		return TaskFailed(fmt.Errorf("timeout while waiting for task %q to complete", upid))
 	}
 
 	if err != nil {
-		return fmt.Errorf("error while waiting for task %q to complete: %w", upid, err)
+		return TaskFailed(fmt.Errorf("error while waiting for task %q to complete: %w", upid, err))
 	}
 
 	if status.ExitCode != "OK" {
 		if options.ignoreWarnings &&
 			strings.HasPrefix(status.ExitCode, "WARNINGS: ") && !strings.Contains(status.ExitCode, "ERROR") {
-			return nil
+			return TaskOKWithWarnings(c.getTaskWarnings(ctx, upid))
 		}
 
-		return fmt.Errorf("task %q failed to complete with exit code: %s", upid, status.ExitCode)
+		return c.taskFailedResult(ctx, upid, status.ExitCode)
 	}
 
-	return nil
+	return TaskOK()
+}
+
+// getTaskWarnings fetches the task log and returns any warning lines.
+// This is best-effort: if the log cannot be fetched, a warning is logged and nil is returned.
+func (c *Client) getTaskWarnings(ctx context.Context, upid string) []string {
+	lines, err := c.GetTaskLog(ctx, upid)
+	if err != nil {
+		tflog.Warn(ctx, "failed to fetch task log for warnings", map[string]any{
+			"task_id": upid,
+			"error":   err.Error(),
+		})
+
+		return nil
+	}
+
+	var warnings []string
+
+	for _, line := range lines {
+		if strings.Contains(line, "WARN") {
+			warnings = append(warnings, line)
+		}
+	}
+
+	return warnings
+}
+
+// taskFailedResult fetches the task log and returns a *TaskResult that includes both the exit code and
+// the log output, so users can see what went wrong without checking the Proxmox task history.
+func (c *Client) taskFailedResult(ctx context.Context, upid string, exitCode string) *TaskResult {
+	lines, err := c.GetTaskLog(ctx, upid)
+	if err != nil {
+		tflog.Warn(ctx, "failed to fetch task log for error details", map[string]any{
+			"task_id": upid,
+			"error":   err.Error(),
+		})
+
+		return TaskFailed(fmt.Errorf("task %q failed to complete with exit code: %s", upid, exitCode))
+	}
+
+	if len(lines) == 0 {
+		return TaskFailed(fmt.Errorf("task %q failed to complete with exit code: %s", upid, exitCode))
+	}
+
+	taskErr := fmt.Errorf(
+		"task %q failed to complete with exit code: %s\ntask log:\n  %s",
+		upid, exitCode, strings.Join(lines, "\n  "),
+	)
+
+	var warnings []string
+
+	for _, line := range lines {
+		if strings.Contains(line, "WARN") {
+			warnings = append(warnings, line)
+		}
+	}
+
+	if len(warnings) > 0 {
+		return TaskFailedWithWarnings(taskErr, warnings)
+	}
+
+	return TaskFailed(taskErr)
 }

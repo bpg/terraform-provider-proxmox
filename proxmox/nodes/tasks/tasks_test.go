@@ -79,12 +79,12 @@ func TestWaitForTask_FailedTaskIncludesLog(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.WaitForTask(t.Context(), testUPID)
-	require.Error(t, err, "WaitForTask should return error for non-OK exit code")
+	result := client.WaitForTask(t.Context(), testUPID)
+	require.Error(t, result.Err(), "WaitForTask should return error for non-OK exit code")
 
 	// The error message should include the task log lines.
-	assert.Contains(t, err.Error(), "Systemd 258 detected")
-	assert.Contains(t, err.Error(), "TASK WARNINGS: 1")
+	assert.Contains(t, result.Err().Error(), "Systemd 258 detected")
+	assert.Contains(t, result.Err().Error(), "TASK WARNINGS: 1")
 }
 
 // TestWaitForTask_FailedTaskWithLogFetchError verifies that when a task fails
@@ -115,11 +115,11 @@ func TestWaitForTask_FailedTaskWithLogFetchError(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.WaitForTask(t.Context(), testUPID)
-	require.Error(t, err)
+	result := client.WaitForTask(t.Context(), testUPID)
+	require.Error(t, result.Err())
 
 	// Should still have the basic error info even if log fetch failed.
-	assert.Contains(t, err.Error(), "failed to complete with exit code: ERROR")
+	assert.Contains(t, result.Err().Error(), "failed to complete with exit code: ERROR")
 }
 
 // TestWaitForTask_IgnoredWarningsIncludesLogInContext verifies that when
@@ -127,8 +127,6 @@ func TestWaitForTask_FailedTaskWithLogFetchError(t *testing.T) {
 // but the warning text is available (not silently swallowed).
 func TestWaitForTask_IgnoredWarningsIncludesLogInContext(t *testing.T) {
 	t.Parallel()
-
-	var logRequested bool
 
 	mux := http.NewServeMux()
 
@@ -145,8 +143,6 @@ func TestWaitForTask_IgnoredWarningsIncludesLogInContext(t *testing.T) {
 
 	// Task log: verify it gets fetched even when warnings are ignored.
 	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/log", func(w http.ResponseWriter, r *http.Request) {
-		logRequested = true
-
 		w.Header().Set("Content-Type", "application/json")
 		writeJSON(w, map[string]any{
 			"data": []map[string]any{
@@ -161,8 +157,9 @@ func TestWaitForTask_IgnoredWarningsIncludesLogInContext(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.WaitForTask(t.Context(), testUPID, WithIgnoreWarnings())
-	require.NoError(t, err, "WaitForTask should succeed when ignoring warnings")
+	result := client.WaitForTask(t.Context(), testUPID, WithIgnoreWarnings())
+	require.NoError(t, result.Err(), "WaitForTask should succeed when ignoring warnings")
 
-	assert.True(t, logRequested, "task log should be fetched to surface warnings even when ignoring them")
+	assert.True(t, result.HasWarnings(), "result should carry warning lines")
+	assert.Contains(t, result.Warnings()[0], "Systemd 258")
 }
