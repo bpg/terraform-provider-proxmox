@@ -32,6 +32,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -1910,6 +1911,25 @@ func forceNewOnEFIDiskTypeChange(ctx context.Context, d *schema.ResourceDiff, _ 
 	return nil
 }
 
+// sdkDiagAccumulator adapts SDK v2 diag.Diagnostics to satisfy tasks.DiagnosticAccumulator.
+type sdkDiagAccumulator struct {
+	diags *diag.Diagnostics
+}
+
+func (s *sdkDiagAccumulator) AddError(summary, detail string) {
+	*s.diags = append(*s.diags, diag.Diagnostic{Severity: diag.Error, Summary: summary, Detail: detail})
+}
+
+func (s *sdkDiagAccumulator) AddWarning(summary, detail string) {
+	*s.diags = append(*s.diags, diag.Diagnostic{Severity: diag.Warning, Summary: summary, Detail: detail})
+}
+
+// TaskResultDiags adds the TaskResult's error and warnings to SDK diagnostics.
+// Returns true if the result contains an error.
+func TaskResultDiags(result tasks.TaskResult, diags *diag.Diagnostics, summary string) bool {
+	return result.AddDiags(&sdkDiagAccumulator{diags}, summary)
+}
+
 func vmCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	clone := d.Get(mkClone).([]any)
 
@@ -1979,14 +1999,8 @@ func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) dia
 	var diags diag.Diagnostics
 
 	result := vmAPI.StartVM(ctx, startTimeoutSec)
-	if result.Err() != nil {
-		return diag.FromErr(result.Err())
-	}
-
-	if result.HasWarnings() {
-		for _, w := range result.Warnings() {
-			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-		}
+	if TaskResultDiags(result, &diags, "VM start") {
+		return diags
 	}
 
 	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "running"))...)
@@ -2363,7 +2377,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		cloneBody.PoolID = &poolID
 	}
 
-	var cloneDiags diag.Diagnostics
+	var cloneDiags diag.Diagnostics //nolint:prealloc
 
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		// Check if any used datastores of the source VM are not shared
@@ -2395,14 +2409,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			cloneBody.TargetNodeName = &nodeName
 
 			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-			if cloneResult.Err() != nil {
-				return diag.FromErr(cloneResult.Err())
-			}
-
-			if cloneResult.HasWarnings() {
-				for _, w := range cloneResult.Warnings() {
-					cloneDiags = append(cloneDiags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-				}
+			if TaskResultDiags(cloneResult, &cloneDiags, "VM clone") {
+				return cloneDiags
 			}
 		} else { //nolint:wsl
 			// If the source and the target node are not the same and any used datastore in the source VM is
@@ -2412,14 +2420,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 			// Temporarily clone to local node
 			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-			if cloneResult.Err() != nil {
-				return diag.FromErr(cloneResult.Err())
-			}
-
-			if cloneResult.HasWarnings() {
-				for _, w := range cloneResult.Warnings() {
-					cloneDiags = append(cloneDiags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-				}
+			if TaskResultDiags(cloneResult, &cloneDiags, "VM clone") {
+				return cloneDiags
 			}
 
 			// Wait for the virtual machine to be created and its configuration lock to be released before migrating.
@@ -2440,20 +2442,15 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 				migrateBody.TargetStorage = &cloneDatastoreID
 			}
 
-			if result := client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody); result.Err() != nil {
-				return diag.FromErr(result.Err())
+			migrateResult := client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody)
+			if TaskResultDiags(migrateResult, &cloneDiags, "VM migrate") {
+				return cloneDiags
 			}
 		}
 	} else {
 		cloneResult := client.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-		if cloneResult.Err() != nil {
-			return diag.FromErr(cloneResult.Err())
-		}
-
-		if cloneResult.HasWarnings() {
-			for _, w := range cloneResult.Warnings() {
-				cloneDiags = append(cloneDiags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-			}
+		if TaskResultDiags(cloneResult, &cloneDiags, "VM clone") {
+			return cloneDiags
 		}
 	}
 
@@ -7011,15 +7008,8 @@ func vmUpdateDiskLocation(
 	var diags diag.Diagnostics
 
 	for _, reqBody := range changes.moveBodies {
-		result := vmAPI.MoveVMDisk(ctx, reqBody)
-		if result.Err() != nil {
-			return append(diags, diag.FromErr(result.Err())...)
-		}
-
-		if result.HasWarnings() {
-			for _, w := range result.Warnings() {
-				diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-			}
+		if TaskResultDiags(vmAPI.MoveVMDisk(ctx, reqBody), &diags, "VM disk move") {
+			return diags
 		}
 	}
 
@@ -7039,15 +7029,8 @@ func vmUpdateDiskSize(
 	var diags diag.Diagnostics
 
 	for _, reqBody := range changes.resizeBodies {
-		result := vmAPI.ResizeVMDisk(ctx, reqBody)
-		if result.Err() != nil {
-			return append(diags, diag.FromErr(result.Err())...)
-		}
-
-		if result.HasWarnings() {
-			for _, w := range result.Warnings() {
-				diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-			}
+		if TaskResultDiags(vmAPI.ResizeVMDisk(ctx, reqBody), &diags, "VM disk resize") {
+			return diags
 		}
 	}
 
@@ -7159,11 +7142,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	var diags diag.Diagnostics
 
-	if deleteResult.HasWarnings() {
-		for _, w := range deleteResult.Warnings() {
-			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-		}
-	}
+	TaskResultDiags(deleteResult, &diags, "VM delete")
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
 	err = vmAPI.WaitForVMStatus(ctx, "")

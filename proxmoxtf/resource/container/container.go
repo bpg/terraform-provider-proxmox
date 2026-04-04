@@ -1288,16 +1288,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		cloneResult = client.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	}
 
-	if cloneResult.Err() != nil {
-		return diag.FromErr(cloneResult.Err())
-	}
-
 	var diags diag.Diagnostics
 
-	if cloneResult.HasWarnings() {
-		for _, w := range cloneResult.Warnings() {
-			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-		}
+	if resource.TaskResultDiags(cloneResult, &diags, "Container clone") {
+		return diags
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -2168,16 +2162,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 	}
 
 	createResult := client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
-	if createResult.Err() != nil {
-		return diag.FromErr(createResult.Err())
-	}
 
 	var diags diag.Diagnostics
-
-	if createResult.HasWarnings() {
-		for _, w := range createResult.Warnings() {
-			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-		}
+	if resource.TaskResultDiags(createResult, &diags, "Container create") {
+		return diags
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -2227,16 +2215,10 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 
 	// Start the container and wait for it to reach a running state before continuing.
 	startResult := containerAPI.StartContainer(ctx)
-	if startResult.Err() != nil {
-		return diag.FromErr(startResult.Err())
-	}
-
 	var diags diag.Diagnostics
 
-	if startResult.HasWarnings() {
-		for _, w := range startResult.Warnings() {
-			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-		}
+	if resource.TaskResultDiags(startResult, &diags, "Container start") {
+		return diags
 	}
 
 	return append(diags, containerRead(ctx, d, m)...)
@@ -3842,19 +3824,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	started := d.Get(mkStarted).(bool)
 	template := d.Get(mkTemplate).(bool)
 
-	var updateDiags diag.Diagnostics
+	var updateDiags diag.Diagnostics //nolint:prealloc
 
 	if d.HasChange(mkStarted) && !template {
 		if started {
 			startResult := containerAPI.StartContainer(ctx)
-			if startResult.Err() != nil {
-				return diag.FromErr(startResult.Err())
-			}
-
-			if startResult.HasWarnings() {
-				for _, w := range startResult.Warnings() {
-					updateDiags = append(updateDiags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
-				}
+			if resource.TaskResultDiags(startResult, &updateDiags, "Container start") {
+				return updateDiags
 			}
 		} else {
 			forceStop := types.CustomBool(true)

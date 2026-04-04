@@ -205,7 +205,12 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 	if status.ExitCode != "OK" {
 		if !options.failOnWarnings &&
 			strings.HasPrefix(status.ExitCode, "WARNINGS: ") && !strings.Contains(status.ExitCode, "ERROR") {
-			return TaskOKWithWarnings(c.getTaskWarnings(ctx, upid))
+			warnings := c.getTaskWarnings(ctx, upid)
+			if len(warnings) == 0 {
+				warnings = []string{fmt.Sprintf("task %q completed with warnings (exit code: %s)", upid, status.ExitCode)}
+			}
+
+			return TaskOKWithWarnings(warnings)
 		}
 
 		return c.taskFailedResult(ctx, upid, status.ExitCode)

@@ -51,3 +51,37 @@ func (r TaskResult) HasWarnings() bool {
 func (r TaskResult) Warnings() []string {
 	return r.warnings
 }
+
+// DiagnosticAccumulator can accumulate error and warning diagnostics.
+// This interface is satisfied by the Terraform Plugin Framework's diag.Diagnostics (via pointer).
+type DiagnosticAccumulator interface {
+	AddError(summary, detail string)
+	AddWarning(summary, detail string)
+}
+
+// AddDiags adds the TaskResult's error and warnings to a DiagnosticAccumulator.
+// The summary is used as the diagnostic summary for both errors and warnings.
+// Returns true if the result contains an error.
+func (r TaskResult) AddDiags(diags DiagnosticAccumulator, summary string) bool {
+	if r.err != nil {
+		diags.AddError(summary, r.err.Error())
+	}
+
+	for _, w := range r.warnings {
+		diags.AddWarning(summary, w)
+	}
+
+	return r.err != nil
+}
+
+// AddDiagsAsWarnings adds both errors and warnings from the TaskResult as warning-level diagnostics.
+// Use this when the operation's failure is non-fatal (e.g., stop/shutdown during delete).
+func (r TaskResult) AddDiagsAsWarnings(diags DiagnosticAccumulator, summary string) {
+	if r.err != nil {
+		diags.AddWarning(summary, r.err.Error())
+	}
+
+	for _, w := range r.warnings {
+		diags.AddWarning(summary, w)
+	}
+}
