@@ -18,7 +18,7 @@ Manages a Linux Bridge network interface in a Proxmox VE node.
 
 ### Required
 
-- `name` (String) The interface name. Commonly vmbr[N], where 0 ≤ N ≤ 4094 (vmbr0 - vmbr4094), but can be any alphanumeric string that starts with a character and is at most 10 characters long.
+- `name` (String) The interface name. Commonly vmbr[N], where 0 ≤ N ≤ 4094 (vmbr0 - vmbr4094), but can be any string containing only letters, numbers, and underscores (_), starting with a letter and at most 10 characters long.
 - `node_name` (String) The name of the node.
 
 ### Optional
