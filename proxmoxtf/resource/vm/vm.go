@@ -5852,9 +5852,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		oldNodeNameValue, _ := d.GetChange(mkNodeName)
 		oldNodeName := oldNodeNameValue.(string)
 
-		err := migrateVM(migrateCtx, client, vmID, oldNodeName, nodeName)
-		if err != nil {
-			return diag.FromErr(err)
+		if migrateDiags := migrateVM(migrateCtx, client, vmID, oldNodeName, nodeName); migrateDiags.HasError() {
+			return migrateDiags
 		}
 	}
 
@@ -7318,13 +7317,13 @@ func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (strin
 // For running HA-managed VMs, it uses the HA migrate endpoint which properly sequences the migration.
 // For stopped HA-managed VMs, it temporarily removes from HA, migrates, then re-adds to HA
 // because Proxmox HA migration for stopped VMs only sets a preference without actually moving.
-func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode, targetNode string) error {
+func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode, targetNode string) diag.Diagnostics {
 	vmAPI := client.Node(sourceNode).VM(vmID)
 
 	// check if VM is running
 	vmStatus, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get VM %d status: %w", vmID, err)
+		return diag.FromErr(fmt.Errorf("failed to get VM %d status: %w", vmID, err))
 	}
 
 	isRunning := vmStatus.Status == "running"
@@ -7337,12 +7336,12 @@ func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode,
 
 	isHAManaged, err := client.Cluster().HA().Resources().Exists(ctx, haResourceID)
 	if err != nil {
-		return fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err)
+		return diag.FromErr(fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err))
 	}
 
 	// for running HA-managed VMs, use HA migration
 	if isRunning && isHAManaged {
-		return migrateHAVM(ctx, client, vmID, haResourceID, targetNode)
+		return diag.FromErr(migrateHAVM(ctx, client, vmID, haResourceID, targetNode))
 	}
 
 	// for stopped HA-managed VMs, temporarily remove from HA to allow standard migration
@@ -7401,7 +7400,7 @@ func migrateStoppedHAVM(
 	vmID int,
 	haResourceID types.HAResourceID,
 	sourceNode, targetNode string,
-) error {
+) diag.Diagnostics {
 	tflog.Info(ctx, "migrating stopped HA-managed VM (temporarily removing from HA)", map[string]any{
 		"vm_id":       vmID,
 		"source_node": sourceNode,
@@ -7413,7 +7412,7 @@ func migrateStoppedHAVM(
 	// get current HA resource configuration to restore after migration
 	haConfig, err := haClient.Get(ctx, haResourceID)
 	if err != nil {
-		return fmt.Errorf("failed to get HA resource config for VM %d: %w", vmID, err)
+		return diag.FromErr(fmt.Errorf("failed to get HA resource config for VM %d: %w", vmID, err))
 	}
 
 	// remove from HA
@@ -7421,7 +7420,7 @@ func migrateStoppedHAVM(
 
 	err = haClient.Delete(ctx, haResourceID)
 	if err != nil {
-		return fmt.Errorf("failed to remove VM %d from HA: %w", vmID, err)
+		return diag.FromErr(fmt.Errorf("failed to remove VM %d from HA: %w", vmID, err))
 	}
 
 	// perform standard migration
@@ -7431,8 +7430,8 @@ func migrateStoppedHAVM(
 		"target_node": targetNode,
 	})
 
-	err = migrateNonHAVM(ctx, client, vmID, sourceNode, targetNode)
-	if err != nil {
+	migrateDiags := migrateNonHAVM(ctx, client, vmID, sourceNode, targetNode)
+	if migrateDiags.HasError() {
 		// try to re-add to HA even if migration failed
 		if haErr := readdToHA(ctx, haClient, haResourceID, haConfig); haErr != nil {
 			tflog.Warn(ctx, "failed to re-add VM to HA after migration failure", map[string]any{
@@ -7441,7 +7440,7 @@ func migrateStoppedHAVM(
 			})
 		}
 
-		return fmt.Errorf("failed to migrate VM %d: %w", vmID, err)
+		return migrateDiags
 	}
 
 	// re-add to HA with the same configuration
@@ -7449,10 +7448,11 @@ func migrateStoppedHAVM(
 
 	err = readdToHA(ctx, haClient, haResourceID, haConfig)
 	if err != nil {
-		return fmt.Errorf("failed to re-add VM %d to HA after migration: %w", vmID, err)
+		migrateDiags = append(migrateDiags, diag.FromErr(fmt.Errorf("failed to re-add VM %d to HA after migration: %w", vmID, err))...)
+		return migrateDiags
 	}
 
-	return nil
+	return migrateDiags
 }
 
 // readdToHA re-adds a VM to HA with the given configuration.
@@ -7482,7 +7482,7 @@ func migrateNonHAVM(
 	client proxmox.Client,
 	vmID int,
 	sourceNode, targetNode string,
-) error {
+) diag.Diagnostics {
 	vmAPI := client.Node(sourceNode).VM(vmID)
 
 	trueValue := types.CustomBool(true)
@@ -7492,7 +7492,7 @@ func migrateNonHAVM(
 		OnlineMigration: &trueValue,
 	}
 
-	return vmAPI.MigrateVM(ctx, migrateBody).Err()
+	return sdkresource.TaskResultDiags(vmAPI.MigrateVM(ctx, migrateBody), "VM migrate")
 }
 
 // waitForVMOnNode polls until the VM is located on the specified node and unlocked.
