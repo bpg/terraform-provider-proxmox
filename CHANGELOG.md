@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.101.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.100.0...v0.101.0) (2026-04-04)
+
+
+### Features
+
+* **core:** surface PVE task warnings from VM/container operations ([#2761](https://github.com/bpg/terraform-provider-proxmox/issues/2761)) ([28850c8](https://github.com/bpg/terraform-provider-proxmox/commit/28850c82c257bed169f0bb878fe92372f37a162a))
+
+
+### Bug Fixes
+
+* **docs:** add storage import docs ([#2759](https://github.com/bpg/terraform-provider-proxmox/issues/2759)) ([079902f](https://github.com/bpg/terraform-provider-proxmox/commit/079902ff7733613202269b9d454e98892bf20f4e))
+* **network:** adjust Linux Bridge name validator to PVE UI constraint ([#2762](https://github.com/bpg/terraform-provider-proxmox/issues/2762)) ([190f7fa](https://github.com/bpg/terraform-provider-proxmox/commit/190f7fab74cc27ebacb267b84307f111779d71aa))
+* **vm:** use move_disk API for EFI disk and TPM state storage migration ([#2757](https://github.com/bpg/terraform-provider-proxmox/issues/2757)) ([c78c873](https://github.com/bpg/terraform-provider-proxmox/commit/c78c8735727f4619981b3548cd1c8b303108cd79))
+
+
+### Miscellaneous
+
+* **deps:** update module github.com/hashicorp/go-version (v1.8.0 → v1.9.0) ([#2760](https://github.com/bpg/terraform-provider-proxmox/issues/2760)) ([7362ba5](https://github.com/bpg/terraform-provider-proxmox/commit/7362ba5ed2b2b9790593572c1a82d7feddd487ac))
+
 ## [0.100.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.99.0...v0.100.0) (2026-04-01)
 
 
