@@ -32,6 +32,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -160,9 +161,8 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 	retries := int(plan.Clone.Retries.ValueInt64())
 
-	err := sourceVM.CloneVM(ctx, retries, cloneBody)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to clone VM", err.Error())
+	cloneResult := sourceVM.CloneVM(ctx, retries, cloneBody)
+	if cloneResult.AddDiags(&resp.Diagnostics, "VM clone") {
 		return
 	}
 
@@ -193,14 +193,12 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	if plan.Started.ValueBool() {
 		tflog.Debug(ctx, "Starting VM after clone")
 
-		_, err = vmAPI.StartVM(ctx, int(timeout.Seconds()))
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to start VM", err.Error())
+		startResult := vmAPI.StartVM(ctx, int(timeout.Seconds()))
+		if startResult.AddDiags(&resp.Diagnostics, "VM start") {
 			return
 		}
 
-		err = vmAPI.WaitForVMStatus(ctx, "running")
-		if err != nil {
+		if err := vmAPI.WaitForVMStatus(ctx, "running"); err != nil {
 			resp.Diagnostics.AddError("Failed waiting for VM to start", err.Error())
 			return
 		}
@@ -303,26 +301,22 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		if plan.Started.ValueBool() {
 			tflog.Debug(ctx, "Starting VM")
 
-			_, err = vmAPI.StartVM(ctx, int(timeout.Seconds()))
-			if err != nil {
-				resp.Diagnostics.AddError("Failed to start VM", err.Error())
+			startResult := vmAPI.StartVM(ctx, int(timeout.Seconds()))
+			if startResult.AddDiags(&resp.Diagnostics, "VM start") {
 				return
 			}
 
-			err = vmAPI.WaitForVMStatus(ctx, "running")
-			if err != nil {
+			if err := vmAPI.WaitForVMStatus(ctx, "running"); err != nil {
 				resp.Diagnostics.AddError("Failed waiting for VM to start", err.Error())
 				return
 			}
 		} else {
 			if plan.StopOnDestroy.ValueBool() {
-				if err = vmStop(ctx, vmAPI); err != nil {
-					resp.Diagnostics.AddError("Failed to stop VM", err.Error())
+				if vmStop(ctx, vmAPI).AddDiags(&resp.Diagnostics, "VM stop") {
 					return
 				}
 			} else {
-				if err = vmShutdown(ctx, vmAPI); err != nil {
-					resp.Diagnostics.AddError("Failed to shut down VM", err.Error())
+				if vmShutdown(ctx, vmAPI).AddDiags(&resp.Diagnostics, "VM shutdown") {
 					return
 				}
 			}
@@ -377,20 +371,21 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	}
 
 	if status != nil && status.Status != "stopped" {
+		// Stop/shutdown failures during delete are non-fatal — reported as warnings.
 		if state.StopOnDestroy.ValueBool() {
-			if e := vmStop(ctx, vmAPI); e != nil {
-				resp.Diagnostics.AddWarning("Failed to stop VM", e.Error())
-			}
+			vmStop(ctx, vmAPI).AddDiagsAsWarnings(&resp.Diagnostics, "VM stop/shutdown")
 		} else {
-			if e := vmShutdown(ctx, vmAPI); e != nil {
-				resp.Diagnostics.AddWarning("Failed to shut down VM", e.Error())
-			}
+			vmShutdown(ctx, vmAPI).AddDiagsAsWarnings(&resp.Diagnostics, "VM stop/shutdown")
 		}
 	}
 
-	err = vmAPI.DeleteVM(ctx, state.PurgeOnDestroy.ValueBool(), state.DeleteUnreferencedDisksOnDestroy.ValueBool())
-	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError("Failed to delete VM", err.Error())
+	deleteResult := vmAPI.DeleteVM(ctx, state.PurgeOnDestroy.ValueBool(), state.DeleteUnreferencedDisksOnDestroy.ValueBool())
+	if deleteResult.Err() != nil && !errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
+		resp.Diagnostics.AddError("Unable to Delete VM", deleteResult.Err().Error())
+	}
+
+	for _, w := range deleteResult.Warnings() {
+		resp.Diagnostics.AddWarning("VM delete", w)
 	}
 
 	if resp.Diagnostics.HasError() {
@@ -583,8 +578,7 @@ func applyManaged(ctx context.Context, vmAPI *vms.Client, plan Model, currentCon
 	}
 
 	for _, resize := range diskResizes {
-		if err := vmAPI.ResizeVMDisk(ctx, resize); err != nil {
-			diags.AddError("Failed to resize VM disk", err.Error())
+		if vmAPI.ResizeVMDisk(ctx, resize).AddDiags(diags, "VM disk resize") {
 			return
 		}
 	}
@@ -1016,7 +1010,7 @@ func isValidDiskSlot(slot string) bool {
 }
 
 // Shutdown the VM, then wait for it to actually shut down.
-func vmShutdown(ctx context.Context, vmAPI *vms.Client) error {
+func vmShutdown(ctx context.Context, vmAPI *vms.Client) tasks.TaskResult {
 	tflog.Debug(ctx, "Shutting down VM")
 
 	shutdownTimeoutSec := int(defaultShutdownTimeout.Seconds())
@@ -1025,35 +1019,39 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client) error {
 		shutdownTimeoutSec = int(time.Until(dl).Seconds())
 	}
 
-	err := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
+	result := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
 		ForceStop: proxmoxtypes.CustomBool(true).Pointer(),
 		Timeout:   &shutdownTimeoutSec,
 	})
-	if err != nil {
-		return fmt.Errorf("failed to initiate shut down of VM: %w", err)
+	if result.Err() != nil {
+		return result
 	}
 
-	err = vmAPI.WaitForVMStatus(ctx, "stopped")
-	if err != nil {
-		return fmt.Errorf("failed to wait for VM to shut down: %w", err)
+	if err := vmAPI.WaitForVMStatus(ctx, "stopped"); err != nil {
+		return tasks.TaskFailedWithWarnings(
+			fmt.Errorf("failed to wait for VM to shut down: %w", err),
+			result.Warnings(),
+		)
 	}
 
-	return nil
+	return result
 }
 
 // Forcefully stop the VM, then wait for it to actually stop.
-func vmStop(ctx context.Context, vmAPI *vms.Client) error {
+func vmStop(ctx context.Context, vmAPI *vms.Client) tasks.TaskResult {
 	tflog.Debug(ctx, "Stopping VM")
 
-	err := vmAPI.StopVM(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to initiate stop of VM: %w", err)
+	result := vmAPI.StopVM(ctx)
+	if result.Err() != nil {
+		return result
 	}
 
-	err = vmAPI.WaitForVMStatus(ctx, "stopped")
-	if err != nil {
-		return fmt.Errorf("failed to wait for VM to stop: %w", err)
+	if err := vmAPI.WaitForVMStatus(ctx, "stopped"); err != nil {
+		return tasks.TaskFailedWithWarnings(
+			fmt.Errorf("failed to wait for VM to stop: %w", err),
+			result.Warnings(),
+		)
 	}
 
-	return nil
+	return result
 }

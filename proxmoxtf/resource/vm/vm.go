@@ -36,6 +36,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	sdkresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
@@ -1976,19 +1977,9 @@ func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) dia
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(startTimeoutSec)*time.Second)
 	defer cancel()
 
-	var diags diag.Diagnostics
-
-	log, e := vmAPI.StartVM(ctx, startTimeoutSec)
-	if e != nil {
-		return diag.FromErr(e)
-	}
-
-	if len(log) > 0 {
-		lines := "\n\t| " + strings.Join(log, "\n\t| ")
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  fmt.Sprintf("the VM startup task finished with a warning, task log:\n%s", lines),
-		})
+	diags := sdkresource.TaskResultDiags(vmAPI.StartVM(ctx, startTimeoutSec), "VM start")
+	if diags.HasError() {
+		return diags
 	}
 
 	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "running"))...)
@@ -2005,15 +1996,15 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(shutdownTimeoutSec)*time.Second)
 	defer cancel()
 
-	e := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
+	diags := sdkresource.TaskResultDiags(vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
 		ForceStop: &forceStop,
 		Timeout:   &shutdownTimeoutSec,
-	})
-	if e != nil {
-		return diag.FromErr(e)
+	}), "VM shutdown")
+	if diags.HasError() {
+		return diags
 	}
 
-	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
+	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))...)
 }
 
 // Forcefully stop the VM, then wait for it to actually stop.
@@ -2025,12 +2016,12 @@ func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(stopTimeout)*time.Second)
 	defer cancel()
 
-	e := vmAPI.StopVM(ctx)
-	if e != nil {
-		return diag.FromErr(e)
+	diags := sdkresource.TaskResultDiags(vmAPI.StopVM(ctx), "VM stop")
+	if diags.HasError() {
+		return diags
 	}
 
-	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
+	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))...)
 }
 
 type vmPowerTracker struct {
@@ -2141,11 +2132,12 @@ func vmRestartRunning(
 	if agentEnabled {
 		rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
 
-		if e := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); e != nil {
-			return diag.FromErr(e)
+		rebootDiags := sdkresource.TaskResultDiags(vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec), "VM reboot")
+		if rebootDiags.HasError() {
+			return rebootDiags
 		}
 
-		return nil
+		return rebootDiags
 	}
 
 	if power == nil {
@@ -2367,6 +2359,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		cloneBody.PoolID = &poolID
 	}
 
+	var cloneDiags diag.Diagnostics
+
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		// Check if any used datastores of the source VM are not shared
 		vmConfig, err := client.Node(cloneNodeName).VM(cloneVMID).GetVM(ctx)
@@ -2396,9 +2390,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			//  on a different node is currently not supported by proxmox.
 			cloneBody.TargetNodeName = &nodeName
 
-			err = client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-			if err != nil {
-				return diag.FromErr(err)
+			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
+
+			cloneDiags = sdkresource.TaskResultDiags(cloneResult, "VM clone")
+			if cloneDiags.HasError() {
+				return cloneDiags
 			}
 		} else { //nolint:wsl
 			// If the source and the target node are not the same and any used datastore in the source VM is
@@ -2407,9 +2403,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			//  https://forum.proxmox.com/threads/500-cant-clone-to-non-shared-storage-local.49078/#post-229727
 
 			// Temporarily clone to local node
-			err = client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-			if err != nil {
-				return diag.FromErr(err)
+			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
+
+			cloneDiags = sdkresource.TaskResultDiags(cloneResult, "VM clone")
+			if cloneDiags.HasError() {
+				return cloneDiags
 			}
 
 			// Wait for the virtual machine to be created and its configuration lock to be released before migrating.
@@ -2430,17 +2428,20 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 				migrateBody.TargetStorage = &cloneDatastoreID
 			}
 
-			err = client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody)
-			if err != nil {
-				return diag.FromErr(err)
+			migrateResult := client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody)
+
+			cloneDiags = append(cloneDiags, sdkresource.TaskResultDiags(migrateResult, "VM migrate")...)
+			if cloneDiags.HasError() {
+				return cloneDiags
 			}
 		}
 	} else {
-		e = client.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-	}
+		cloneResult := client.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
 
-	if e != nil {
-		return diag.FromErr(e)
+		cloneDiags = sdkresource.TaskResultDiags(cloneResult, "VM clone")
+		if cloneDiags.HasError() {
+			return cloneDiags
+		}
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -2826,9 +2827,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		return diag.FromErr(e)
 	}
 
-	e = disk.UpdateClone(ctx, planDisks, clonedDiskInfo, vmAPI)
-	if e != nil {
-		return diag.FromErr(e)
+	cloneDiags = append(cloneDiags, disk.UpdateClone(ctx, planDisks, clonedDiskInfo, vmAPI)...)
+	if cloneDiags.HasError() {
+		return cloneDiags
 	}
 
 	efiDisk := d.Get(mkEFIDisk).([]any)
@@ -2886,9 +2887,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if moveDisk {
-			e = vmAPI.MoveVMDisk(ctx, diskMoveBody)
-			if e != nil {
-				return diag.FromErr(e)
+			cloneDiags = append(cloneDiags, sdkresource.TaskResultDiags(vmAPI.MoveVMDisk(ctx, diskMoveBody), "VM disk move")...)
+			if cloneDiags.HasError() {
+				return cloneDiags
 			}
 		}
 	}
@@ -2937,9 +2938,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if moveDisk {
-			e = vmAPI.MoveVMDisk(ctx, diskMoveBody)
-			if e != nil {
-				return diag.FromErr(e)
+			cloneDiags = append(cloneDiags, sdkresource.TaskResultDiags(vmAPI.MoveVMDisk(ctx, diskMoveBody), "VM disk move")...)
+			if cloneDiags.HasError() {
+				return cloneDiags
 			}
 		}
 	}
@@ -2947,13 +2948,13 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if template {
 		tflog.Info(ctx, fmt.Sprintf("Converting cloned VM %d to template", vmID))
 
-		e = vmAPI.ConvertToTemplate(ctx)
-		if e != nil {
-			return diag.FromErr(e)
+		cloneDiags = append(cloneDiags, sdkresource.TaskResultDiags(vmAPI.ConvertToTemplate(ctx), "VM convert to template")...)
+		if cloneDiags.HasError() {
+			return cloneDiags
 		}
 	}
 
-	return vmCreateStart(ctx, d, m)
+	return append(cloneDiags, vmCreateStart(ctx, d, m)...)
 }
 
 func setCPUArchitecture(
@@ -3403,16 +3404,16 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		createBody.HookScript = &hookScript
 	}
 
-	err = client.Node(nodeName).VM(0).CreateVM(ctx, createBody)
-	if err != nil {
-		return diag.FromErr(err)
+	customDiags := sdkresource.TaskResultDiags(client.Node(nodeName).VM(0).CreateVM(ctx, createBody), "VM create")
+	if customDiags.HasError() {
+		return customDiags
 	}
 
 	d.SetId(strconv.Itoa(vmID))
 
-	diags := disk.CreateCustomDisks(ctx, client, nodeName, vmID, diskDeviceObjects)
-	if diags.HasError() {
-		return diags
+	customDiags = append(customDiags, disk.CreateCustomDisks(ctx, client, nodeName, vmID, diskDeviceObjects)...)
+	if customDiags.HasError() {
+		return customDiags
 	}
 
 	resizeDisks := diskDeviceObjects.Filter(func(device *vms.CustomStorageDevice) bool {
@@ -3424,12 +3425,12 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		for idev, device := range resizeDisks {
 			tflog.Info(ctx, fmt.Sprintf("VM %d: Resizing disk %s", vmID, idev))
 
-			err = client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
+			customDiags = append(customDiags, sdkresource.TaskResultDiags(client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
 				Size: *device.Size,
 				Disk: idev,
-			})
-			if err != nil {
-				return diag.FromErr(err)
+			}), "VM disk resize")...)
+			if customDiags.HasError() {
+				return customDiags
 			}
 		}
 	}
@@ -3438,13 +3439,13 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 	if d.Get(mkTemplate).(bool) {
 		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
 
-		err = client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx)
-		if err != nil {
-			return diag.FromErr(err)
+		customDiags = append(customDiags, sdkresource.TaskResultDiags(client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx), "VM convert to template")...)
+		if customDiags.HasError() {
+			return customDiags
 		}
 	}
 
-	return vmCreateStart(ctx, d, m)
+	return append(customDiags, vmCreateStart(ctx, d, m)...)
 }
 
 func vmCreateStart(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -5851,9 +5852,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		oldNodeNameValue, _ := d.GetChange(mkNodeName)
 		oldNodeName := oldNodeNameValue.(string)
 
-		err := migrateVM(migrateCtx, client, vmID, oldNodeName, nodeName)
-		if err != nil {
-			return diag.FromErr(err)
+		if migrateDiags := migrateVM(migrateCtx, client, vmID, oldNodeName, nodeName); migrateDiags.HasError() {
+			return migrateDiags
 		}
 	}
 
@@ -6207,9 +6207,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		}
 	}
 
-	rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
-	if err != nil {
-		return diag.FromErr(err)
+	rr, diskUpdateWarnings := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
+	if diskUpdateWarnings.HasError() {
+		return diskUpdateWarnings
 	}
 
 	rebootRequired = rebootRequired || rr
@@ -6648,9 +6648,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 				return powerOffForTemplate.diags
 			}
 
-			e = vmAPI.ConvertToTemplate(ctx)
-			if e != nil {
-				return diag.FromErr(e)
+			convertDiags := sdkresource.TaskResultDiags(vmAPI.ConvertToTemplate(ctx), "VM convert to template")
+			if convertDiags.HasError() {
+				return convertDiags
 			}
 
 			rebootRequired = false
@@ -6670,6 +6670,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	}
 
 	var updateDiags diag.Diagnostics
+
+	updateDiags = append(updateDiags, diskUpdateWarnings...)
 
 	diskChanges, diskDiags := vmPlanDiskLocationAndSizeChanges(ctx, vmAPI, d)
 
@@ -7001,14 +7003,16 @@ func vmUpdateDiskLocation(
 		return nil
 	}
 
+	var diags diag.Diagnostics
+
 	for _, reqBody := range changes.moveBodies {
-		err := vmAPI.MoveVMDisk(ctx, reqBody)
-		if err != nil {
-			return diag.FromErr(err)
+		diags = append(diags, sdkresource.TaskResultDiags(vmAPI.MoveVMDisk(ctx, reqBody), "VM disk move")...)
+		if diags.HasError() {
+			return diags
 		}
 	}
 
-	return nil
+	return diags
 }
 
 // vmUpdateDiskSize resizes disks that have grown.
@@ -7021,14 +7025,16 @@ func vmUpdateDiskSize(
 		return nil
 	}
 
+	var diags diag.Diagnostics
+
 	for _, reqBody := range changes.resizeBodies {
-		err := vmAPI.ResizeVMDisk(ctx, reqBody)
-		if err != nil {
-			return diag.FromErr(err)
+		diags = append(diags, sdkresource.TaskResultDiags(vmAPI.ResizeVMDisk(ctx, reqBody), "VM disk resize")...)
+		if diags.HasError() {
+			return diags
 		}
 	}
 
-	return nil
+	return diags
 }
 
 // vmRefreshPendingDiskConfig re-sends the disk specification for resized disks via PUT /config.
@@ -7124,14 +7130,15 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	purge := d.Get(mkPurgeOnDestroy).(bool)
 	deleteUnreferencedDisks := d.Get(mkDeleteUnreferencedDisksOnDestroy).(bool)
 
-	err = vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			d.SetId("")
-			return nil
-		}
+	deleteResult := vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
+	if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
+		d.SetId("")
+		return nil
+	}
 
-		return diag.FromErr(err)
+	diags := sdkresource.TaskResultDiags(deleteResult, "VM delete")
+	if diags.HasError() {
+		return diags
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
@@ -7142,7 +7149,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	d.SetId("")
 
-	return nil
+	return diags
 }
 
 // getDiskDatastores returns a list of the used datastores in a VM.
@@ -7310,13 +7317,13 @@ func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (strin
 // For running HA-managed VMs, it uses the HA migrate endpoint which properly sequences the migration.
 // For stopped HA-managed VMs, it temporarily removes from HA, migrates, then re-adds to HA
 // because Proxmox HA migration for stopped VMs only sets a preference without actually moving.
-func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode, targetNode string) error {
+func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode, targetNode string) diag.Diagnostics {
 	vmAPI := client.Node(sourceNode).VM(vmID)
 
 	// check if VM is running
 	vmStatus, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get VM %d status: %w", vmID, err)
+		return diag.FromErr(fmt.Errorf("failed to get VM %d status: %w", vmID, err))
 	}
 
 	isRunning := vmStatus.Status == "running"
@@ -7329,12 +7336,12 @@ func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode,
 
 	isHAManaged, err := client.Cluster().HA().Resources().Exists(ctx, haResourceID)
 	if err != nil {
-		return fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err)
+		return diag.FromErr(fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err))
 	}
 
 	// for running HA-managed VMs, use HA migration
 	if isRunning && isHAManaged {
-		return migrateHAVM(ctx, client, vmID, haResourceID, targetNode)
+		return diag.FromErr(migrateHAVM(ctx, client, vmID, haResourceID, targetNode))
 	}
 
 	// for stopped HA-managed VMs, temporarily remove from HA to allow standard migration
@@ -7393,7 +7400,7 @@ func migrateStoppedHAVM(
 	vmID int,
 	haResourceID types.HAResourceID,
 	sourceNode, targetNode string,
-) error {
+) diag.Diagnostics {
 	tflog.Info(ctx, "migrating stopped HA-managed VM (temporarily removing from HA)", map[string]any{
 		"vm_id":       vmID,
 		"source_node": sourceNode,
@@ -7405,7 +7412,7 @@ func migrateStoppedHAVM(
 	// get current HA resource configuration to restore after migration
 	haConfig, err := haClient.Get(ctx, haResourceID)
 	if err != nil {
-		return fmt.Errorf("failed to get HA resource config for VM %d: %w", vmID, err)
+		return diag.FromErr(fmt.Errorf("failed to get HA resource config for VM %d: %w", vmID, err))
 	}
 
 	// remove from HA
@@ -7413,7 +7420,7 @@ func migrateStoppedHAVM(
 
 	err = haClient.Delete(ctx, haResourceID)
 	if err != nil {
-		return fmt.Errorf("failed to remove VM %d from HA: %w", vmID, err)
+		return diag.FromErr(fmt.Errorf("failed to remove VM %d from HA: %w", vmID, err))
 	}
 
 	// perform standard migration
@@ -7423,8 +7430,8 @@ func migrateStoppedHAVM(
 		"target_node": targetNode,
 	})
 
-	err = migrateNonHAVM(ctx, client, vmID, sourceNode, targetNode)
-	if err != nil {
+	migrateDiags := migrateNonHAVM(ctx, client, vmID, sourceNode, targetNode)
+	if migrateDiags.HasError() {
 		// try to re-add to HA even if migration failed
 		if haErr := readdToHA(ctx, haClient, haResourceID, haConfig); haErr != nil {
 			tflog.Warn(ctx, "failed to re-add VM to HA after migration failure", map[string]any{
@@ -7433,7 +7440,7 @@ func migrateStoppedHAVM(
 			})
 		}
 
-		return fmt.Errorf("failed to migrate VM %d: %w", vmID, err)
+		return migrateDiags
 	}
 
 	// re-add to HA with the same configuration
@@ -7441,10 +7448,11 @@ func migrateStoppedHAVM(
 
 	err = readdToHA(ctx, haClient, haResourceID, haConfig)
 	if err != nil {
-		return fmt.Errorf("failed to re-add VM %d to HA after migration: %w", vmID, err)
+		migrateDiags = append(migrateDiags, diag.FromErr(fmt.Errorf("failed to re-add VM %d to HA after migration: %w", vmID, err))...)
+		return migrateDiags
 	}
 
-	return nil
+	return migrateDiags
 }
 
 // readdToHA re-adds a VM to HA with the given configuration.
@@ -7474,7 +7482,7 @@ func migrateNonHAVM(
 	client proxmox.Client,
 	vmID int,
 	sourceNode, targetNode string,
-) error {
+) diag.Diagnostics {
 	vmAPI := client.Node(sourceNode).VM(vmID)
 
 	trueValue := types.CustomBool(true)
@@ -7484,7 +7492,7 @@ func migrateNonHAVM(
 		OnlineMigration: &trueValue,
 	}
 
-	return vmAPI.MigrateVM(ctx, migrateBody)
+	return sdkresource.TaskResultDiags(vmAPI.MigrateVM(ctx, migrateBody), "VM migrate")
 }
 
 // waitForVMOnNode polls until the VM is located on the specified node and unlocked.

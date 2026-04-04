@@ -355,8 +355,8 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	require.NoError(t, err)
 
 	// Call the Update function
-	_, err = Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
-	require.NoError(t, err)
+	_, diags := Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
+	require.False(t, diags.HasError())
 
 	// The update body should only contain scsi1, not scsi0
 	// This prevents the "can't unplug bootdisk 'scsi0'" error
@@ -436,8 +436,8 @@ func TestImportFromDiskNotReimportedOnSizeChange(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
-	require.NoError(t, err)
+	_, diags := Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
+	require.False(t, diags.HasError())
 
 	// the update body should NOT contain ImportFrom - we're updating existing disk, not re-importing
 	if updateBody.CustomStorageDevices != nil && updateBody.CustomStorageDevices["scsi0"] != nil {

@@ -27,11 +27,13 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	sdkresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
-	resource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm"
+	vmresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -240,7 +242,7 @@ func Container() *schema.Resource {
 							Description:      "The ID of the source container",
 							Required:         true,
 							ForceNew:         true,
-							ValidateDiagFunc: resource.VMIDValidator(),
+							ValidateDiagFunc: vmresource.VMIDValidator(),
 						},
 					},
 				},
@@ -525,7 +527,7 @@ func Container() *schema.Resource {
 							Description:      "The hostname. Must be a valid DNS name.",
 							Optional:         true,
 							Default:          dvInitializationHostname,
-							ValidateDiagFunc: resource.HostnameValidator(),
+							ValidateDiagFunc: vmresource.HostnameValidator(),
 						},
 						mkInitializationIPConfig: {
 							Type:        schema.TypeList,
@@ -1109,7 +1111,7 @@ func Container() *schema.Resource {
 				Description:      "The VM identifier",
 				Optional:         true,
 				Computed:         true,
-				ValidateDiagFunc: resource.VMIDValidator(),
+				ValidateDiagFunc: vmresource.VMIDValidator(),
 			},
 		},
 		CreateContext: containerCreate,
@@ -1277,16 +1279,19 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		cloneBody.PoolID = &poolID
 	}
 
+	var cloneResult tasks.TaskResult
+
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = client.Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
+		cloneResult = client.Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	} else {
-		err = client.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
+		cloneResult = client.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	}
 
-	if err != nil {
-		return diag.FromErr(err)
+	diags := sdkresource.TaskResultDiags(cloneResult, "Container clone")
+	if diags.HasError() {
+		return diags
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -1654,7 +1659,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		}
 	}
 
-	return containerCreateStart(ctx, d, m)
+	return append(diags, containerCreateStart(ctx, d, m)...)
 }
 
 func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -2156,9 +2161,11 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		createBody.EnvironmentVariables = environmentVariables
 	}
 
-	err = client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
-	if err != nil {
-		return diag.FromErr(err)
+	createResult := client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
+
+	diags := sdkresource.TaskResultDiags(createResult, "Container create")
+	if diags.HasError() {
+		return diags
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -2179,7 +2186,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		}
 	}
 
-	return containerCreateStart(ctx, d, m)
+	return append(diags, containerCreateStart(ctx, d, m)...)
 }
 
 func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -2207,12 +2214,12 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Start the container and wait for it to reach a running state before continuing.
-	err = containerAPI.StartContainer(ctx)
-	if err != nil {
-		return diag.FromErr(err)
+	diags := sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
+	if diags.HasError() {
+		return diags
 	}
 
-	return containerRead(ctx, d, m)
+	return append(diags, containerRead(ctx, d, m)...)
 }
 
 func containerGetEnvironmentVariables(d *schema.ResourceData) *containers.CustomEnvironmentVariables {
@@ -3261,6 +3268,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 }
 
 func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+	var updateDiags diag.Diagnostics
+
 	updateTimeoutSec := d.Get(mkTimeoutUpdate).(int)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(updateTimeoutSec)*time.Second)
@@ -3386,13 +3395,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		if !ptr.Eq(oldSize, size) {
-			err = containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
+			resizeDiags := sdkresource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
 				Disk: "rootfs",
 				Size: size.String(),
-			})
-			if err != nil {
-				return diag.FromErr(err)
+			}), "Container disk resize")
+			if resizeDiags.HasError() {
+				return resizeDiags
 			}
+
+			updateDiags = append(updateDiags, resizeDiags...)
 		}
 
 		rootFS.ACL = &acl
@@ -3818,9 +3829,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	if d.HasChange(mkStarted) && !template {
 		if started {
-			e = containerAPI.StartContainer(ctx)
-			if e != nil {
-				return diag.FromErr(e)
+			updateDiags = sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
+			if updateDiags.HasError() {
+				return updateDiags
 			}
 		} else {
 			forceStop := types.CustomBool(true)
@@ -3831,17 +3842,18 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			// Needs to be refactored to a common function
 			shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
 
-			e = containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
+			shutdownDiags := sdkresource.TaskResultDiags(containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeoutSec,
-			})
-			if e != nil {
-				return diag.FromErr(e)
+			}), "Container shutdown")
+			if shutdownDiags.HasError() {
+				return shutdownDiags
 			}
 
-			e = containerAPI.WaitForContainerStatus(ctx, "stopped")
-			if e != nil {
-				return diag.FromErr(e)
+			updateDiags = append(updateDiags, shutdownDiags...)
+
+			if e = containerAPI.WaitForContainerStatus(ctx, "stopped"); e != nil {
+				return append(updateDiags, diag.FromErr(e)...)
 			}
 
 			rebootRequired = false
@@ -3852,18 +3864,20 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	if !template && started && rebootRequired {
 		rebootTimeout := 300
 
-		e = containerAPI.RebootContainer(
+		rebootDiags := sdkresource.TaskResultDiags(containerAPI.RebootContainer(
 			ctx,
 			&containers.RebootRequestBody{
 				Timeout: &rebootTimeout,
 			},
-		)
-		if e != nil {
-			return diag.FromErr(e)
+		), "Container reboot")
+		if rebootDiags.HasError() {
+			return rebootDiags
 		}
+
+		updateDiags = append(updateDiags, rebootDiags...)
 	}
 
-	return containerRead(ctx, d, m)
+	return append(updateDiags, containerRead(ctx, d, m)...)
 }
 
 func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -3894,10 +3908,12 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		return diag.FromErr(err)
 	}
 
+	var diags diag.Diagnostics
+
 	if status.Status != "stopped" {
 		forceStop := types.CustomBool(true)
 
-		err = containerAPI.ShutdownContainer(
+		shutdownDiags := sdkresource.TaskResultDiags(containerAPI.ShutdownContainer(
 			ctx,
 			&containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
@@ -3905,26 +3921,29 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 				// otherwise the context will be cancelled before PVE forcefully stops the container
 				Timeout: ptr.Ptr(max(1, deleteTimeoutSec-5)),
 			},
-		)
-		if err != nil {
-			return diag.FromErr(err)
+		), "Container shutdown")
+		if shutdownDiags.HasError() {
+			return shutdownDiags
 		}
+
+		diags = append(diags, shutdownDiags...)
 
 		err = containerAPI.WaitForContainerStatus(ctx, "stopped")
 		if err != nil {
-			return diag.FromErr(err)
+			return append(diags, diag.FromErr(err)...)
 		}
 	}
 
-	err = containerAPI.DeleteContainer(ctx)
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			d.SetId("")
+	deleteResult := containerAPI.DeleteContainer(ctx)
+	if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
+		d.SetId("")
 
-			return nil
-		}
+		return diags
+	}
 
-		return diag.FromErr(err)
+	diags = append(diags, sdkresource.TaskResultDiags(deleteResult, "Container delete")...)
+	if diags.HasError() {
+		return diags
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
@@ -3935,7 +3954,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	d.SetId("")
 
-	return nil
+	return diags
 }
 
 func getContainerWaitForIPConfig(d *schema.ResourceData) *containers.WaitForIPConfig {

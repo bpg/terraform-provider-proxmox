@@ -24,6 +24,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	sdkresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -60,7 +61,9 @@ func UpdateClone(
 	planDisks vms.CustomStorageDevices,
 	allDiskInfo vms.CustomStorageDevices,
 	vmAPI *vms.Client,
-) error {
+) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	for diskInterface, planDisk := range planDisks {
 		currentDisk := allDiskInfo[diskInterface]
 
@@ -69,17 +72,20 @@ func UpdateClone(
 			diskUpdateBody.AddCustomStorageDevice(diskInterface, *planDisk)
 
 			if err := vmAPI.UpdateVM(ctx, diskUpdateBody); err != nil {
-				return fmt.Errorf("disk update fails: %w", err)
+				diags = append(diags, diag.FromErr(fmt.Errorf("disk update fails: %w", err))...)
+				return diags
 			}
 
 			continue
 		}
 
 		if planDisk.Size.InMegabytes() < currentDisk.Size.InMegabytes() {
-			return fmt.Errorf("disk resize failure: requested size (%s) is lower than current size (%s)",
+			diags = append(diags, diag.FromErr(fmt.Errorf("disk resize failure: requested size (%s) is lower than current size (%s)",
 				planDisk.Size.String(),
 				currentDisk.Size.String(),
-			)
+			))...)
+
+			return diags
 		}
 
 		// update other disk parameters
@@ -89,7 +95,8 @@ func UpdateClone(
 			diskUpdateBody.AddCustomStorageDevice(diskInterface, *currentDisk)
 
 			if err := vmAPI.UpdateVM(ctx, diskUpdateBody); err != nil {
-				return fmt.Errorf("disk update fails: %w", err)
+				diags = append(diags, diag.FromErr(fmt.Errorf("disk update fails: %w", err))...)
+				return diags
 			}
 		}
 
@@ -111,9 +118,9 @@ func UpdateClone(
 
 			// Note: after disk move, the actual disk volume ID will be different: both datastore id *and*
 			// path in datastore will change.
-			err := vmAPI.MoveVMDisk(ctx, diskMoveBody)
-			if err != nil {
-				return fmt.Errorf("disk move fails: %w", err)
+			diags = append(diags, sdkresource.TaskResultDiags(vmAPI.MoveVMDisk(ctx, diskMoveBody), "Disk move")...)
+			if diags.HasError() {
+				return diags
 			}
 		}
 
@@ -123,14 +130,14 @@ func UpdateClone(
 				Size: *planDisk.Size,
 			}
 
-			err := vmAPI.ResizeVMDisk(ctx, diskResizeBody)
-			if err != nil {
-				return fmt.Errorf("disk resize fails: %w", err)
+			diags = append(diags, sdkresource.TaskResultDiags(vmAPI.ResizeVMDisk(ctx, diskResizeBody), "Disk resize")...)
+			if diags.HasError() {
+				return diags
 			}
 		}
 	}
 
-	return nil
+	return diags
 }
 
 // DigitPrefix returns the prefix of a string that is not a digit.
@@ -294,17 +301,19 @@ func CreateCustomDisks(
 	vmID int,
 	storageDevices vms.CustomStorageDevices,
 ) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	for iface, disk := range storageDevices {
 		if disk != nil && disk.FileID != nil && *disk.FileID != "" {
 			// only custom disks with defined file ID
-			err := createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)
-			if err != nil {
-				return diag.FromErr(err)
+			diags = append(diags, createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)...)
+			if diags.HasError() {
+				return diags
 			}
 		}
 	}
 
-	return nil
+	return diags
 }
 
 func createCustomDisk(
@@ -314,7 +323,7 @@ func createCustomDisk(
 	vmID int,
 	iface string,
 	disk vms.CustomStorageDevice,
-) error {
+) diag.Diagnostics {
 	// use "old default" specifically here.
 	fileFormat := "qcow2"
 	if disk.Format != nil && *disk.Format != "" {
@@ -343,22 +352,19 @@ func createCustomDisk(
 			err = ssh.NewErrUserHasNoPermission(client.SSH().Username())
 		}
 
-		return fmt.Errorf("creating custom disk: %w", err)
+		return diag.FromErr(fmt.Errorf("creating custom disk: %w", err))
 	}
 
 	tflog.Debug(ctx, "vmCreateCustomDisks: commands", map[string]any{
 		"output": string(out),
 	})
 
-	err = client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
+	result := client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
 		Disk: iface,
 		Size: *disk.Size,
 	})
-	if err != nil {
-		return fmt.Errorf("resizing disk: %w", err)
-	}
 
-	return nil
+	return sdkresource.TaskResultDiags(result, "Disk resize")
 }
 
 // Read reads the disk configuration of a VM.
@@ -591,7 +597,9 @@ func Update(
 	planDisks vms.CustomStorageDevices,
 	currentDisks vms.CustomStorageDevices,
 	updateBody *vms.UpdateRequestBody,
-) (bool, error) {
+) (bool, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	rebootRequired := false
 
 	if d.HasChange(MkDisk) {
@@ -602,9 +610,9 @@ func Update(
 			case currentDisks[iface] == nil && disk != nil:
 				if disk.FileID != nil && *disk.FileID != "" {
 					// only disks with defined file ID are custom image disks that need to be created via import.
-					err := createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)
-					if err != nil {
-						return false, fmt.Errorf("creating custom disk: %w", err)
+					diags = append(diags, createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)...)
+					if diags.HasError() {
+						return false, diags
 					}
 				} else {
 					// otherwise this is a blank disk that can be added directly via update API
@@ -620,7 +628,8 @@ func Update(
 				tmp = currentDisks[iface]
 			default:
 				// something went wrong
-				return false, fmt.Errorf("missing device %s", iface)
+				diags = append(diags, diag.FromErr(fmt.Errorf("missing device %s", iface))...)
+				return false, diags
 			}
 
 			if tmp == nil || disk == nil {
@@ -659,5 +668,5 @@ func Update(
 		}
 	}
 
-	return rebootRequired, nil
+	return rebootRequired, diags
 }

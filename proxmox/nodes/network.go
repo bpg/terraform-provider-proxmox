@@ -97,7 +97,7 @@ func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
 				return api.ErrNoDataObjectInResponse
 			}
 
-			return c.Tasks().WaitForTask(ctx, *resBody.Data)
+			return c.Tasks().WaitForTask(ctx, *resBody.Data).Err()
 		},
 	)
 	if err != nil {
