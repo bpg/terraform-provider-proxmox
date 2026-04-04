@@ -42,34 +42,31 @@ func writeJSON(w http.ResponseWriter, v any) {
 	}
 }
 
-// TestWaitForTask_FailedTaskIncludesLog verifies that when a task fails,
-// the error message includes the task log output so users can see what went wrong.
+// TestWaitForTask_FailedTaskIncludesLog verifies that when a task fails with an
+// actual error (not warnings), the error message includes the task log output.
 func TestWaitForTask_FailedTaskIncludesLog(t *testing.T) {
 	t.Parallel()
 
 	mux := http.NewServeMux()
 
-	// Task status: completed with warnings.
+	// Task status: completed with an error exit code.
 	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		writeJSON(w, map[string]any{
 			"data": map[string]any{
 				"status":     "stopped",
-				"exitstatus": "WARNINGS: 1",
+				"exitstatus": "ERROR: command failed",
 			},
 		})
 	})
 
-	// Task log: return lines including the warning.
+	// Task log: return lines including the error.
 	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/log", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		writeJSON(w, map[string]any{
 			"data": []map[string]any{
-				{"n": 1, "t": "extracting archive '/var/lib/vz/template/cache/fedora.tar.xz'"},
-				{"n": 2, "t": "Total bytes read: 594892800"},
-				{"n": 3, "t": "Creating SSH host key 'ssh_host_ed25519_key'"},
-				{"n": 4, "t": "WARN: Systemd 258 detected. You may need to enable nesting."},
-				{"n": 5, "t": "TASK WARNINGS: 1"},
+				{"n": 1, "t": "starting task"},
+				{"n": 2, "t": "TASK ERROR: command failed"},
 			},
 		})
 	})
@@ -82,9 +79,7 @@ func TestWaitForTask_FailedTaskIncludesLog(t *testing.T) {
 	result := client.WaitForTask(t.Context(), testUPID)
 	require.Error(t, result.Err(), "WaitForTask should return error for non-OK exit code")
 
-	// The error message should include the task log lines.
-	assert.Contains(t, result.Err().Error(), "Systemd 258 detected")
-	assert.Contains(t, result.Err().Error(), "TASK WARNINGS: 1")
+	assert.Contains(t, result.Err().Error(), "command failed")
 }
 
 // TestWaitForTask_FailedTaskWithLogFetchError verifies that when a task fails
@@ -122,10 +117,9 @@ func TestWaitForTask_FailedTaskWithLogFetchError(t *testing.T) {
 	assert.Contains(t, result.Err().Error(), "failed to complete with exit code: ERROR")
 }
 
-// TestWaitForTask_IgnoredWarningsIncludesLogInContext verifies that when
-// WithIgnoreWarnings is set and the task has warnings, WaitForTask succeeds
-// but the warning text is available (not silently swallowed).
-func TestWaitForTask_IgnoredWarningsIncludesLogInContext(t *testing.T) {
+// TestWaitForTask_WarningsAreNonFatalByDefault verifies that when a task completes
+// with warnings, WaitForTask succeeds and the warning text is available.
+func TestWaitForTask_WarningsAreNonFatalByDefault(t *testing.T) {
 	t.Parallel()
 
 	mux := http.NewServeMux()
@@ -157,8 +151,8 @@ func TestWaitForTask_IgnoredWarningsIncludesLogInContext(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	result := client.WaitForTask(t.Context(), testUPID, WithIgnoreWarnings())
-	require.NoError(t, result.Err(), "WaitForTask should succeed when ignoring warnings")
+	result := client.WaitForTask(t.Context(), testUPID)
+	require.NoError(t, result.Err(), "WaitForTask should succeed — warnings are non-fatal by default")
 
 	assert.True(t, result.HasWarnings(), "result should carry warning lines")
 	assert.Len(t, result.Warnings(), 1, "TASK WARNINGS summary line should be filtered out")

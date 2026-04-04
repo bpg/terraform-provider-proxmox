@@ -91,7 +91,7 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 }
 
 type taskWaitOptions struct {
-	ignoreWarnings   bool
+	failOnWarnings   bool
 	ignoreStatusCode int
 }
 
@@ -100,16 +100,16 @@ type TaskWaitOption interface {
 	apply(opts *taskWaitOptions)
 }
 
-type withIgnoreWarnings struct{}
+type withFailOnWarnings struct{}
 
-// WithIgnoreWarnings treats task warnings as non-fatal: the task is considered successful, and any warning lines
-// from the task log are captured in the returned TaskResult for propagation as Terraform diagnostics.
-func WithIgnoreWarnings() TaskWaitOption {
-	return withIgnoreWarnings{}
+// WithFailOnWarnings treats task warnings as fatal errors instead of the default behavior
+// of capturing them as non-fatal warnings in the returned TaskResult.
+func WithFailOnWarnings() TaskWaitOption {
+	return withFailOnWarnings{}
 }
 
-func (w withIgnoreWarnings) apply(opts *taskWaitOptions) {
-	opts.ignoreWarnings = true
+func (w withFailOnWarnings) apply(opts *taskWaitOptions) {
+	opts.failOnWarnings = true
 }
 
 type withIgnoreStatus struct {
@@ -203,7 +203,7 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 	}
 
 	if status.ExitCode != "OK" {
-		if options.ignoreWarnings &&
+		if !options.failOnWarnings &&
 			strings.HasPrefix(status.ExitCode, "WARNINGS: ") && !strings.Contains(status.ExitCode, "ERROR") {
 			return TaskOKWithWarnings(c.getTaskWarnings(ctx, upid))
 		}

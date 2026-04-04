@@ -41,7 +41,6 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 
 	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CloneVMAsync(ctx, d) },
-		tasks.WithIgnoreWarnings(),
 	)
 }
 
@@ -86,7 +85,6 @@ func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) tasks.TaskR
 
 	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CreateVMAsync(ctx, d) },
-		tasks.WithIgnoreWarnings(),
 	)
 }
 
@@ -406,7 +404,7 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) tasks.TaskResult {
 		return tasks.TaskOK()
 	}
 
-	return c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599), tasks.WithIgnoreWarnings())
+	return c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599))
 }
 
 // StartVMAsync starts a virtual machine asynchronously.

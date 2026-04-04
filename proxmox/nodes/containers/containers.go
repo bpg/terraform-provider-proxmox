@@ -33,7 +33,6 @@ func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) tasks.
 
 	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CloneContainerAsync(ctx, d) },
-		tasks.WithIgnoreWarnings(),
 	)
 }
 
@@ -63,7 +62,6 @@ func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) task
 
 	return c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CreateContainerAsync(ctx, d) },
-		tasks.WithIgnoreWarnings(),
 	)
 }
 
@@ -344,7 +342,6 @@ func (c *Client) StartContainer(ctx context.Context) tasks.TaskResult {
 
 	result := c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.StartContainerAsync(ctx) },
-		tasks.WithIgnoreWarnings(),
 	)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), errContainerAlreadyRunning) {
