@@ -32,11 +32,11 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	sdkresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
@@ -1911,27 +1911,6 @@ func forceNewOnEFIDiskTypeChange(ctx context.Context, d *schema.ResourceDiff, _ 
 	return nil
 }
 
-// sdkDiagAccumulator adapts SDK v2 diag.Diagnostics to satisfy tasks.DiagnosticAccumulator.
-type sdkDiagAccumulator struct {
-	diags *diag.Diagnostics
-}
-
-func (s *sdkDiagAccumulator) AddError(summary, detail string) {
-	*s.diags = append(*s.diags, diag.Diagnostic{Severity: diag.Error, Summary: summary, Detail: detail})
-}
-
-func (s *sdkDiagAccumulator) AddWarning(summary, detail string) {
-	*s.diags = append(*s.diags, diag.Diagnostic{Severity: diag.Warning, Summary: summary, Detail: detail})
-}
-
-// TaskResultDiags converts a TaskResult into SDK diagnostics containing any errors and warnings.
-func TaskResultDiags(result tasks.TaskResult, summary string) diag.Diagnostics {
-	var diags diag.Diagnostics
-	result.AddDiags(&sdkDiagAccumulator{&diags}, summary)
-
-	return diags
-}
-
 func vmCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	clone := d.Get(mkClone).([]any)
 
@@ -1998,7 +1977,7 @@ func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) dia
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(startTimeoutSec)*time.Second)
 	defer cancel()
 
-	diags := TaskResultDiags(vmAPI.StartVM(ctx, startTimeoutSec), "VM start")
+	diags := sdkresource.TaskResultDiags(vmAPI.StartVM(ctx, startTimeoutSec), "VM start")
 	if diags.HasError() {
 		return diags
 	}
@@ -2017,7 +1996,7 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(shutdownTimeoutSec)*time.Second)
 	defer cancel()
 
-	diags := TaskResultDiags(vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
+	diags := sdkresource.TaskResultDiags(vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
 		ForceStop: &forceStop,
 		Timeout:   &shutdownTimeoutSec,
 	}), "VM shutdown")
@@ -2037,7 +2016,7 @@ func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(stopTimeout)*time.Second)
 	defer cancel()
 
-	diags := TaskResultDiags(vmAPI.StopVM(ctx), "VM stop")
+	diags := sdkresource.TaskResultDiags(vmAPI.StopVM(ctx), "VM stop")
 	if diags.HasError() {
 		return diags
 	}
@@ -2153,7 +2132,7 @@ func vmRestartRunning(
 	if agentEnabled {
 		rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
 
-		rebootDiags := TaskResultDiags(vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec), "VM reboot")
+		rebootDiags := sdkresource.TaskResultDiags(vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec), "VM reboot")
 		if rebootDiags.HasError() {
 			return rebootDiags
 		}
@@ -2413,7 +2392,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
 
-			cloneDiags = TaskResultDiags(cloneResult, "VM clone")
+			cloneDiags = sdkresource.TaskResultDiags(cloneResult, "VM clone")
 			if cloneDiags.HasError() {
 				return cloneDiags
 			}
@@ -2426,7 +2405,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			// Temporarily clone to local node
 			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
 
-			cloneDiags = TaskResultDiags(cloneResult, "VM clone")
+			cloneDiags = sdkresource.TaskResultDiags(cloneResult, "VM clone")
 			if cloneDiags.HasError() {
 				return cloneDiags
 			}
@@ -2451,7 +2430,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 			migrateResult := client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody)
 
-			cloneDiags = append(cloneDiags, TaskResultDiags(migrateResult, "VM migrate")...)
+			cloneDiags = append(cloneDiags, sdkresource.TaskResultDiags(migrateResult, "VM migrate")...)
 			if cloneDiags.HasError() {
 				return cloneDiags
 			}
@@ -2459,7 +2438,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	} else {
 		cloneResult := client.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
 
-		cloneDiags = TaskResultDiags(cloneResult, "VM clone")
+		cloneDiags = sdkresource.TaskResultDiags(cloneResult, "VM clone")
 		if cloneDiags.HasError() {
 			return cloneDiags
 		}
@@ -2908,7 +2887,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if moveDisk {
-			cloneDiags = append(cloneDiags, TaskResultDiags(vmAPI.MoveVMDisk(ctx, diskMoveBody), "VM disk move")...)
+			cloneDiags = append(cloneDiags, sdkresource.TaskResultDiags(vmAPI.MoveVMDisk(ctx, diskMoveBody), "VM disk move")...)
 			if cloneDiags.HasError() {
 				return cloneDiags
 			}
@@ -2959,7 +2938,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if moveDisk {
-			cloneDiags = append(cloneDiags, TaskResultDiags(vmAPI.MoveVMDisk(ctx, diskMoveBody), "VM disk move")...)
+			cloneDiags = append(cloneDiags, sdkresource.TaskResultDiags(vmAPI.MoveVMDisk(ctx, diskMoveBody), "VM disk move")...)
 			if cloneDiags.HasError() {
 				return cloneDiags
 			}
@@ -2969,7 +2948,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if template {
 		tflog.Info(ctx, fmt.Sprintf("Converting cloned VM %d to template", vmID))
 
-		cloneDiags = append(cloneDiags, TaskResultDiags(vmAPI.ConvertToTemplate(ctx), "VM convert to template")...)
+		cloneDiags = append(cloneDiags, sdkresource.TaskResultDiags(vmAPI.ConvertToTemplate(ctx), "VM convert to template")...)
 		if cloneDiags.HasError() {
 			return cloneDiags
 		}
@@ -3425,7 +3404,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		createBody.HookScript = &hookScript
 	}
 
-	customDiags := TaskResultDiags(client.Node(nodeName).VM(0).CreateVM(ctx, createBody), "VM create")
+	customDiags := sdkresource.TaskResultDiags(client.Node(nodeName).VM(0).CreateVM(ctx, createBody), "VM create")
 	if customDiags.HasError() {
 		return customDiags
 	}
@@ -3446,7 +3425,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		for idev, device := range resizeDisks {
 			tflog.Info(ctx, fmt.Sprintf("VM %d: Resizing disk %s", vmID, idev))
 
-			customDiags = append(customDiags, TaskResultDiags(client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
+			customDiags = append(customDiags, sdkresource.TaskResultDiags(client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
 				Size: *device.Size,
 				Disk: idev,
 			}), "VM disk resize")...)
@@ -3460,7 +3439,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 	if d.Get(mkTemplate).(bool) {
 		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
 
-		customDiags = append(customDiags, TaskResultDiags(client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx), "VM convert to template")...)
+		customDiags = append(customDiags, sdkresource.TaskResultDiags(client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx), "VM convert to template")...)
 		if customDiags.HasError() {
 			return customDiags
 		}
@@ -6670,7 +6649,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 				return powerOffForTemplate.diags
 			}
 
-			convertDiags := TaskResultDiags(vmAPI.ConvertToTemplate(ctx), "VM convert to template")
+			convertDiags := sdkresource.TaskResultDiags(vmAPI.ConvertToTemplate(ctx), "VM convert to template")
 			if convertDiags.HasError() {
 				return convertDiags
 			}
@@ -7026,7 +7005,7 @@ func vmUpdateDiskLocation(
 	var diags diag.Diagnostics
 
 	for _, reqBody := range changes.moveBodies {
-		diags = append(diags, TaskResultDiags(vmAPI.MoveVMDisk(ctx, reqBody), "VM disk move")...)
+		diags = append(diags, sdkresource.TaskResultDiags(vmAPI.MoveVMDisk(ctx, reqBody), "VM disk move")...)
 		if diags.HasError() {
 			return diags
 		}
@@ -7048,7 +7027,7 @@ func vmUpdateDiskSize(
 	var diags diag.Diagnostics
 
 	for _, reqBody := range changes.resizeBodies {
-		diags = append(diags, TaskResultDiags(vmAPI.ResizeVMDisk(ctx, reqBody), "VM disk resize")...)
+		diags = append(diags, sdkresource.TaskResultDiags(vmAPI.ResizeVMDisk(ctx, reqBody), "VM disk resize")...)
 		if diags.HasError() {
 			return diags
 		}
@@ -7160,7 +7139,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(deleteResult.Err())
 	}
 
-	diags := TaskResultDiags(deleteResult, "VM delete")
+	diags := sdkresource.TaskResultDiags(deleteResult, "VM delete")
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
 	err = vmAPI.WaitForVMStatus(ctx, "")
