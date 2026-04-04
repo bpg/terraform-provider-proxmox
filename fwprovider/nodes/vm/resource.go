@@ -455,10 +455,7 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client) tasks.TaskResult {
 		Timeout:   &shutdownTimeoutSec,
 	})
 	if result.Err() != nil {
-		return tasks.TaskFailedWithWarnings(
-			fmt.Errorf("failed to initiate shut down of VM: %w", result.Err()),
-			result.Warnings(),
-		)
+		return result
 	}
 
 	if err := vmAPI.WaitForVMStatus(ctx, "stopped"); err != nil {
@@ -477,10 +474,7 @@ func vmStop(ctx context.Context, vmAPI *vms.Client) tasks.TaskResult {
 
 	result := vmAPI.StopVM(ctx)
 	if result.Err() != nil {
-		return tasks.TaskFailedWithWarnings(
-			fmt.Errorf("failed to initiate stop of VM: %w", result.Err()),
-			result.Warnings(),
-		)
+		return result
 	}
 
 	if err := vmAPI.WaitForVMStatus(ctx, "stopped"); err != nil {
