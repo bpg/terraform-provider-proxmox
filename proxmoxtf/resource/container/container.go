@@ -3267,6 +3267,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 }
 
 func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+	var updateDiags diag.Diagnostics
+
 	updateTimeoutSec := d.Get(mkTimeoutUpdate).(int)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(updateTimeoutSec)*time.Second)
@@ -3392,12 +3394,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		if !ptr.Eq(oldSize, size) {
-			if result := containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
+			resizeDiags := resource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
 				Disk: "rootfs",
 				Size: size.String(),
-			}); result.Err() != nil {
-				return diag.FromErr(result.Err())
+			}), "Container disk resize")
+			if resizeDiags.HasError() {
+				return resizeDiags
 			}
+
+			updateDiags = append(updateDiags, resizeDiags...)
 		}
 
 		rootFS.ACL = &acl
@@ -3821,8 +3826,6 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	started := d.Get(mkStarted).(bool)
 	template := d.Get(mkTemplate).(bool)
 
-	var updateDiags diag.Diagnostics
-
 	if d.HasChange(mkStarted) && !template {
 		if started {
 			updateDiags = resource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
@@ -3838,15 +3841,18 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			// Needs to be refactored to a common function
 			shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
 
-			if result := containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
+			shutdownDiags := resource.TaskResultDiags(containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeoutSec,
-			}); result.Err() != nil {
-				return diag.FromErr(result.Err())
+			}), "Container shutdown")
+			if shutdownDiags.HasError() {
+				return shutdownDiags
 			}
 
+			updateDiags = append(updateDiags, shutdownDiags...)
+
 			if e = containerAPI.WaitForContainerStatus(ctx, "stopped"); e != nil {
-				return diag.FromErr(e)
+				return append(updateDiags, diag.FromErr(e)...)
 			}
 
 			rebootRequired = false
@@ -3857,14 +3863,17 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	if !template && started && rebootRequired {
 		rebootTimeout := 300
 
-		if result := containerAPI.RebootContainer(
+		rebootDiags := resource.TaskResultDiags(containerAPI.RebootContainer(
 			ctx,
 			&containers.RebootRequestBody{
 				Timeout: &rebootTimeout,
 			},
-		); result.Err() != nil {
-			return diag.FromErr(result.Err())
+		), "Container reboot")
+		if rebootDiags.HasError() {
+			return rebootDiags
 		}
+
+		updateDiags = append(updateDiags, rebootDiags...)
 	}
 
 	return append(updateDiags, containerRead(ctx, d, m)...)
@@ -3898,10 +3907,12 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		return diag.FromErr(err)
 	}
 
+	var diags diag.Diagnostics
+
 	if status.Status != "stopped" {
 		forceStop := types.CustomBool(true)
 
-		if result := containerAPI.ShutdownContainer(
+		shutdownDiags := resource.TaskResultDiags(containerAPI.ShutdownContainer(
 			ctx,
 			&containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
@@ -3909,13 +3920,16 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 				// otherwise the context will be cancelled before PVE forcefully stops the container
 				Timeout: ptr.Ptr(max(1, deleteTimeoutSec-5)),
 			},
-		); result.Err() != nil {
-			return diag.FromErr(result.Err())
+		), "Container shutdown")
+		if shutdownDiags.HasError() {
+			return shutdownDiags
 		}
+
+		diags = append(diags, shutdownDiags...)
 
 		err = containerAPI.WaitForContainerStatus(ctx, "stopped")
 		if err != nil {
-			return diag.FromErr(err)
+			return append(diags, diag.FromErr(err)...)
 		}
 	}
 
@@ -3924,11 +3938,13 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
 			d.SetId("")
 
-			return nil
+			return diags
 		}
 
-		return diag.FromErr(deleteResult.Err())
+		return append(diags, diag.FromErr(deleteResult.Err())...)
 	}
+
+	diags = append(diags, resource.TaskResultDiags(deleteResult, "Container delete")...)
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
 	err = containerAPI.WaitForContainerStatus(ctx, "")
@@ -3938,7 +3954,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	d.SetId("")
 
-	return nil
+	return diags
 }
 
 func getContainerWaitForIPConfig(d *schema.ResourceData) *containers.WaitForIPConfig {

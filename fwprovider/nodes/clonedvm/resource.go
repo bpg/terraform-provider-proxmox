@@ -384,6 +384,10 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		resp.Diagnostics.AddError("Failed to delete VM", deleteResult.Err().Error())
 	}
 
+	for _, w := range deleteResult.Warnings() {
+		resp.Diagnostics.AddWarning("VM delete", w)
+	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}

@@ -52,12 +52,12 @@ func (c *Client) GetTaskLog(ctx context.Context, upid string) ([]string, error) 
 
 	path, err := c.BuildPath(upid, "log")
 	if err != nil {
-		return lines, fmt.Errorf("error building path for task status: %w", err)
+		return lines, fmt.Errorf("error building path for task log: %w", err)
 	}
 
 	err = c.DoRequest(ctx, http.MethodGet, path, nil, resBody)
 	if err != nil {
-		return lines, fmt.Errorf("error retrieving task status: %w", err)
+		return lines, fmt.Errorf("error retrieving task log: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -127,7 +127,9 @@ func (w withIgnoreStatus) apply(opts *taskWaitOptions) {
 
 // DoTask dispatches an async PVE task with retry and waits for its result.
 // On dispatch failure, the returned TaskResult wraps the dispatch error.
-// On success or task failure, the TaskResult comes directly from WaitForTask.
+// On success or task failure, the TaskResult comes from WaitForTask. When the task
+// was already done (e.g. retry's isAlreadyDone predicate) or the dispatch returned
+// no task ID (e.g. VM already running), a zero-value TaskOK() is returned.
 func (c *Client) DoTask(
 	ctx context.Context,
 	op *retry.Operation,
