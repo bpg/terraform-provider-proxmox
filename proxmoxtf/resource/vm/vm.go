@@ -2153,11 +2153,12 @@ func vmRestartRunning(
 	if agentEnabled {
 		rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
 
-		if result := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); result.Err() != nil {
-			return diag.FromErr(result.Err())
+		rebootDiags := TaskResultDiags(vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec), "VM reboot")
+		if rebootDiags.HasError() {
+			return rebootDiags
 		}
 
-		return nil
+		return rebootDiags
 	}
 
 	if power == nil {
@@ -2907,8 +2908,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if moveDisk {
-			if result := vmAPI.MoveVMDisk(ctx, diskMoveBody); result.Err() != nil {
-				return diag.FromErr(result.Err())
+			cloneDiags = append(cloneDiags, TaskResultDiags(vmAPI.MoveVMDisk(ctx, diskMoveBody), "VM disk move")...)
+			if cloneDiags.HasError() {
+				return cloneDiags
 			}
 		}
 	}
@@ -2957,8 +2959,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if moveDisk {
-			if result := vmAPI.MoveVMDisk(ctx, diskMoveBody); result.Err() != nil {
-				return diag.FromErr(result.Err())
+			cloneDiags = append(cloneDiags, TaskResultDiags(vmAPI.MoveVMDisk(ctx, diskMoveBody), "VM disk move")...)
+			if cloneDiags.HasError() {
+				return cloneDiags
 			}
 		}
 	}
@@ -2966,8 +2969,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if template {
 		tflog.Info(ctx, fmt.Sprintf("Converting cloned VM %d to template", vmID))
 
-		if result := vmAPI.ConvertToTemplate(ctx); result.Err() != nil {
-			return diag.FromErr(result.Err())
+		cloneDiags = append(cloneDiags, TaskResultDiags(vmAPI.ConvertToTemplate(ctx), "VM convert to template")...)
+		if cloneDiags.HasError() {
+			return cloneDiags
 		}
 	}
 
@@ -3421,15 +3425,16 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		createBody.HookScript = &hookScript
 	}
 
-	if result := client.Node(nodeName).VM(0).CreateVM(ctx, createBody); result.Err() != nil {
-		return diag.FromErr(result.Err())
+	customDiags := TaskResultDiags(client.Node(nodeName).VM(0).CreateVM(ctx, createBody), "VM create")
+	if customDiags.HasError() {
+		return customDiags
 	}
 
 	d.SetId(strconv.Itoa(vmID))
 
-	diags := disk.CreateCustomDisks(ctx, client, nodeName, vmID, diskDeviceObjects)
-	if diags.HasError() {
-		return diags
+	customDiags = append(customDiags, disk.CreateCustomDisks(ctx, client, nodeName, vmID, diskDeviceObjects)...)
+	if customDiags.HasError() {
+		return customDiags
 	}
 
 	resizeDisks := diskDeviceObjects.Filter(func(device *vms.CustomStorageDevice) bool {
@@ -3441,11 +3446,12 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 		for idev, device := range resizeDisks {
 			tflog.Info(ctx, fmt.Sprintf("VM %d: Resizing disk %s", vmID, idev))
 
-			if result := client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
+			customDiags = append(customDiags, TaskResultDiags(client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
 				Size: *device.Size,
 				Disk: idev,
-			}); result.Err() != nil {
-				return diag.FromErr(result.Err())
+			}), "VM disk resize")...)
+			if customDiags.HasError() {
+				return customDiags
 			}
 		}
 	}
@@ -3454,12 +3460,13 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 	if d.Get(mkTemplate).(bool) {
 		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
 
-		if result := client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx); result.Err() != nil {
-			return diag.FromErr(result.Err())
+		customDiags = append(customDiags, TaskResultDiags(client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx), "VM convert to template")...)
+		if customDiags.HasError() {
+			return customDiags
 		}
 	}
 
-	return vmCreateStart(ctx, d, m)
+	return append(customDiags, vmCreateStart(ctx, d, m)...)
 }
 
 func vmCreateStart(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -6663,8 +6670,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 				return powerOffForTemplate.diags
 			}
 
-			if result := vmAPI.ConvertToTemplate(ctx); result.Err() != nil {
-				return diag.FromErr(result.Err())
+			convertDiags := TaskResultDiags(vmAPI.ConvertToTemplate(ctx), "VM convert to template")
+			if convertDiags.HasError() {
+				return convertDiags
 			}
 
 			rebootRequired = false
