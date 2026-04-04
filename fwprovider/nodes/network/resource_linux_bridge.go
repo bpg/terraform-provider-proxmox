@@ -186,12 +186,12 @@ func (r *linuxBridgeResource) Schema(
 			"name": schema.StringAttribute{
 				Description: "The interface name.",
 				MarkdownDescription: "The interface name. Commonly vmbr[N], where 0 ≤ N ≤ 4094 (vmbr0 - vmbr4094), but " +
-					"can be any alphanumeric string that starts with a character and is at most 10 characters long.",
+					"can be any string containing only letters, numbers, and underscores (_), starting with a letter and at most 10 characters long.",
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]{0,9}$`),
-						`must be an alphanumeric string that starts with a character and is at most 10 characters long`,
+						regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,9}$`),
+						`must contain only letters, numbers, and underscores (_), start with a letter, and be no longer than 10 characters`,
 					),
 				},
 				PlanModifiers: []planmodifier.String{
