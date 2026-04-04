@@ -381,7 +381,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 
 	deleteResult := vmAPI.DeleteVM(ctx, state.PurgeOnDestroy.ValueBool(), state.DeleteUnreferencedDisksOnDestroy.ValueBool())
 	if deleteResult.Err() != nil && !errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError("Failed to delete VM", deleteResult.Err().Error())
+		resp.Diagnostics.AddError("Unable to Delete VM", deleteResult.Err().Error())
 	}
 
 	for _, w := range deleteResult.Warnings() {

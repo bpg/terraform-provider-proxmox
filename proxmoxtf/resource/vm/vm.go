@@ -2827,9 +2827,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		return diag.FromErr(e)
 	}
 
-	e = disk.UpdateClone(ctx, planDisks, clonedDiskInfo, vmAPI)
-	if e != nil {
-		return diag.FromErr(e)
+	cloneDiags = append(cloneDiags, disk.UpdateClone(ctx, planDisks, clonedDiskInfo, vmAPI)...)
+	if cloneDiags.HasError() {
+		return cloneDiags
 	}
 
 	efiDisk := d.Get(mkEFIDisk).([]any)
@@ -6208,9 +6208,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		}
 	}
 
-	rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
-	if err != nil {
-		return diag.FromErr(err)
+	rr, diskUpdateWarnings := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
+	if diskUpdateWarnings.HasError() {
+		return diskUpdateWarnings
 	}
 
 	rebootRequired = rebootRequired || rr
@@ -6672,6 +6672,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	var updateDiags diag.Diagnostics
 
+	updateDiags = append(updateDiags, diskUpdateWarnings...)
+
 	diskChanges, diskDiags := vmPlanDiskLocationAndSizeChanges(ctx, vmAPI, d)
 
 	updateDiags = append(updateDiags, diskDiags...)
@@ -7130,16 +7132,15 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	deleteUnreferencedDisks := d.Get(mkDeleteUnreferencedDisksOnDestroy).(bool)
 
 	deleteResult := vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
-	if deleteResult.Err() != nil {
-		if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
-			d.SetId("")
-			return nil
-		}
-
-		return diag.FromErr(deleteResult.Err())
+	if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
+		d.SetId("")
+		return nil
 	}
 
 	diags := sdkresource.TaskResultDiags(deleteResult, "VM delete")
+	if diags.HasError() {
+		return diags
+	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
 	err = vmAPI.WaitForVMStatus(ctx, "")

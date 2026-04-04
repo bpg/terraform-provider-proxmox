@@ -3935,17 +3935,16 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	deleteResult := containerAPI.DeleteContainer(ctx)
-	if deleteResult.Err() != nil {
-		if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
-			d.SetId("")
+	if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
+		d.SetId("")
 
-			return diags
-		}
-
-		return append(diags, diag.FromErr(deleteResult.Err())...)
+		return diags
 	}
 
 	diags = append(diags, sdkresource.TaskResultDiags(deleteResult, "Container delete")...)
+	if diags.HasError() {
+		return diags
+	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
 	err = containerAPI.WaitForContainerStatus(ctx, "")

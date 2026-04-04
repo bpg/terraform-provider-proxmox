@@ -269,14 +269,33 @@ func (c *Client) taskFailedResult(ctx context.Context, upid string, exitCode str
 		return TaskFailed(fmt.Errorf("task %q failed to complete with exit code: %s", upid, exitCode))
 	}
 
+	if warnings := filterWarnings(lines); len(warnings) > 0 {
+		// Exclude WARN: lines from the error detail since they are surfaced as separate warning diagnostics.
+		nonWarningLines := make([]string, 0, len(lines))
+
+		for _, line := range lines {
+			if !strings.Contains(line, "WARN:") {
+				nonWarningLines = append(nonWarningLines, line)
+			}
+		}
+
+		var taskErr error
+		if len(nonWarningLines) > 0 {
+			taskErr = fmt.Errorf(
+				"task %q failed to complete with exit code: %s\ntask log:\n  %s",
+				upid, exitCode, strings.Join(nonWarningLines, "\n  "),
+			)
+		} else {
+			taskErr = fmt.Errorf("task %q failed to complete with exit code: %s", upid, exitCode)
+		}
+
+		return TaskFailedWithWarnings(taskErr, warnings)
+	}
+
 	taskErr := fmt.Errorf(
 		"task %q failed to complete with exit code: %s\ntask log:\n  %s",
 		upid, exitCode, strings.Join(lines, "\n  "),
 	)
-
-	if warnings := filterWarnings(lines); len(warnings) > 0 {
-		return TaskFailedWithWarnings(taskErr, warnings)
-	}
 
 	return TaskFailed(taskErr)
 }
