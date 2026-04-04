@@ -68,7 +68,7 @@ func (c *Client) Create(ctx context.Context, data *ACMEAccountCreateRequestBody)
 	err = c.Tasks().WaitForTask(ctx, *resBody.Data).Err()
 	if err != nil {
 		return fmt.Errorf(
-			"error updating ACME account: failed waiting for task: %w",
+			"error creating ACME account: failed waiting for task: %w",
 			err,
 		)
 	}

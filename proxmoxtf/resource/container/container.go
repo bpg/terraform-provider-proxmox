@@ -1288,9 +1288,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		cloneResult = client.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	}
 
-	var diags diag.Diagnostics
-
-	if resource.TaskResultDiags(cloneResult, &diags, "Container clone") {
+	diags := resource.TaskResultDiags(cloneResult, "Container clone")
+	if diags.HasError() {
 		return diags
 	}
 
@@ -2163,8 +2162,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	createResult := client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
 
-	var diags diag.Diagnostics
-	if resource.TaskResultDiags(createResult, &diags, "Container create") {
+	diags := resource.TaskResultDiags(createResult, "Container create")
+	if diags.HasError() {
 		return diags
 	}
 
@@ -2214,10 +2213,8 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Start the container and wait for it to reach a running state before continuing.
-	startResult := containerAPI.StartContainer(ctx)
-	var diags diag.Diagnostics
-
-	if resource.TaskResultDiags(startResult, &diags, "Container start") {
+	diags := resource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
+	if diags.HasError() {
 		return diags
 	}
 
@@ -3824,12 +3821,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	started := d.Get(mkStarted).(bool)
 	template := d.Get(mkTemplate).(bool)
 
-	var updateDiags diag.Diagnostics //nolint:prealloc
+	var updateDiags diag.Diagnostics
 
 	if d.HasChange(mkStarted) && !template {
 		if started {
-			startResult := containerAPI.StartContainer(ctx)
-			if resource.TaskResultDiags(startResult, &updateDiags, "Container start") {
+			updateDiags = resource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
+			if updateDiags.HasError() {
 				return updateDiags
 			}
 		} else {

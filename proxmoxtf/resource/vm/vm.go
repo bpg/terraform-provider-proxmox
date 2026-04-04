@@ -1924,10 +1924,12 @@ func (s *sdkDiagAccumulator) AddWarning(summary, detail string) {
 	*s.diags = append(*s.diags, diag.Diagnostic{Severity: diag.Warning, Summary: summary, Detail: detail})
 }
 
-// TaskResultDiags adds the TaskResult's error and warnings to SDK diagnostics.
-// Returns true if the result contains an error.
-func TaskResultDiags(result tasks.TaskResult, diags *diag.Diagnostics, summary string) bool {
-	return result.AddDiags(&sdkDiagAccumulator{diags}, summary)
+// TaskResultDiags converts a TaskResult into SDK diagnostics containing any errors and warnings.
+func TaskResultDiags(result tasks.TaskResult, summary string) diag.Diagnostics {
+	var diags diag.Diagnostics
+	result.AddDiags(&sdkDiagAccumulator{&diags}, summary)
+
+	return diags
 }
 
 func vmCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -1996,10 +1998,8 @@ func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) dia
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(startTimeoutSec)*time.Second)
 	defer cancel()
 
-	var diags diag.Diagnostics
-
-	result := vmAPI.StartVM(ctx, startTimeoutSec)
-	if TaskResultDiags(result, &diags, "VM start") {
+	diags := TaskResultDiags(vmAPI.StartVM(ctx, startTimeoutSec), "VM start")
+	if diags.HasError() {
 		return diags
 	}
 
@@ -2017,14 +2017,15 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(shutdownTimeoutSec)*time.Second)
 	defer cancel()
 
-	if result := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
+	diags := TaskResultDiags(vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
 		ForceStop: &forceStop,
 		Timeout:   &shutdownTimeoutSec,
-	}); result.Err() != nil {
-		return diag.FromErr(result.Err())
+	}), "VM shutdown")
+	if diags.HasError() {
+		return diags
 	}
 
-	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
+	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))...)
 }
 
 // Forcefully stop the VM, then wait for it to actually stop.
@@ -2036,11 +2037,12 @@ func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(stopTimeout)*time.Second)
 	defer cancel()
 
-	if result := vmAPI.StopVM(ctx); result.Err() != nil {
-		return diag.FromErr(result.Err())
+	diags := TaskResultDiags(vmAPI.StopVM(ctx), "VM stop")
+	if diags.HasError() {
+		return diags
 	}
 
-	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
+	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))...)
 }
 
 type vmPowerTracker struct {
@@ -2377,7 +2379,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		cloneBody.PoolID = &poolID
 	}
 
-	var cloneDiags diag.Diagnostics //nolint:prealloc
+	var cloneDiags diag.Diagnostics
 
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		// Check if any used datastores of the source VM are not shared
@@ -2409,7 +2411,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			cloneBody.TargetNodeName = &nodeName
 
 			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-			if TaskResultDiags(cloneResult, &cloneDiags, "VM clone") {
+
+			cloneDiags = TaskResultDiags(cloneResult, "VM clone")
+			if cloneDiags.HasError() {
 				return cloneDiags
 			}
 		} else { //nolint:wsl
@@ -2420,7 +2424,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 			// Temporarily clone to local node
 			cloneResult := client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-			if TaskResultDiags(cloneResult, &cloneDiags, "VM clone") {
+
+			cloneDiags = TaskResultDiags(cloneResult, "VM clone")
+			if cloneDiags.HasError() {
 				return cloneDiags
 			}
 
@@ -2443,13 +2449,17 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			}
 
 			migrateResult := client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody)
-			if TaskResultDiags(migrateResult, &cloneDiags, "VM migrate") {
+
+			cloneDiags = append(cloneDiags, TaskResultDiags(migrateResult, "VM migrate")...)
+			if cloneDiags.HasError() {
 				return cloneDiags
 			}
 		}
 	} else {
 		cloneResult := client.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
-		if TaskResultDiags(cloneResult, &cloneDiags, "VM clone") {
+
+		cloneDiags = TaskResultDiags(cloneResult, "VM clone")
+		if cloneDiags.HasError() {
 			return cloneDiags
 		}
 	}
@@ -7008,7 +7018,8 @@ func vmUpdateDiskLocation(
 	var diags diag.Diagnostics
 
 	for _, reqBody := range changes.moveBodies {
-		if TaskResultDiags(vmAPI.MoveVMDisk(ctx, reqBody), &diags, "VM disk move") {
+		diags = append(diags, TaskResultDiags(vmAPI.MoveVMDisk(ctx, reqBody), "VM disk move")...)
+		if diags.HasError() {
 			return diags
 		}
 	}
@@ -7029,7 +7040,8 @@ func vmUpdateDiskSize(
 	var diags diag.Diagnostics
 
 	for _, reqBody := range changes.resizeBodies {
-		if TaskResultDiags(vmAPI.ResizeVMDisk(ctx, reqBody), &diags, "VM disk resize") {
+		diags = append(diags, TaskResultDiags(vmAPI.ResizeVMDisk(ctx, reqBody), "VM disk resize")...)
+		if diags.HasError() {
 			return diags
 		}
 	}
@@ -7140,9 +7152,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(deleteResult.Err())
 	}
 
-	var diags diag.Diagnostics
-
-	TaskResultDiags(deleteResult, &diags, "VM delete")
+	diags := TaskResultDiags(deleteResult, "VM delete")
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
 	err = vmAPI.WaitForVMStatus(ctx, "")
