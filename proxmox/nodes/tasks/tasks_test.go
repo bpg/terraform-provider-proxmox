@@ -196,4 +196,63 @@ func TestWaitForTask_WithFailOnWarningsTreatsWarningsAsErrors(t *testing.T) {
 	result := client.WaitForTask(t.Context(), testUPID, WithFailOnWarnings())
 	require.Error(t, result.Err(), "WaitForTask with WithFailOnWarnings should return error on warnings")
 	assert.Contains(t, result.Err().Error(), "WARNINGS: 1", "error should include the exit code")
+
+	// The WARN: line must also be surfaced as a separate warning so callers can emit it as a diagnostic.
+	assert.True(t, result.HasWarnings(), "result should carry the warning lines")
+	require.Len(t, result.Warnings(), 1)
+	assert.Contains(t, result.Warnings()[0], "some warning")
+}
+
+// TestWaitForTask_FailedTaskWithWarningsDoesNotDuplicateWarnLines verifies that when a task
+// fails and the log contains both error lines and WARN: lines, the WARN: text appears only in
+// the separate warnings — not duplicated inside the error message.
+func TestWaitForTask_FailedTaskWithWarningsDoesNotDuplicateWarnLines(t *testing.T) {
+	t.Parallel()
+
+	mux := http.NewServeMux()
+
+	// Task status: failed with an error exit code.
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/status", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{
+			"data": map[string]any{
+				"status":     "stopped",
+				"exitstatus": "ERROR: allocation failed",
+			},
+		})
+	})
+
+	// Task log: mixed error and warning lines.
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/log", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{
+			"data": []map[string]any{
+				{"n": 1, "t": "starting task"},
+				{"n": 2, "t": "WARN: disk is nearly full"},
+				{"n": 3, "t": "ERROR: allocation failed"},
+				{"n": 4, "t": "TASK ERROR: allocation failed"},
+			},
+		})
+	})
+
+	server := httptest.NewTLSServer(mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	result := client.WaitForTask(t.Context(), testUPID)
+	require.Error(t, result.Err())
+
+	// The error message should contain the non-warning log lines.
+	assert.Contains(t, result.Err().Error(), "allocation failed")
+	assert.Contains(t, result.Err().Error(), "starting task")
+
+	// The WARN: line must NOT appear in the error detail — it is surfaced separately as a warning.
+	assert.NotContains(t, result.Err().Error(), "disk is nearly full",
+		"WARN: lines should be excluded from the error detail to avoid duplication")
+
+	// The warning should be available as a separate diagnostic.
+	assert.True(t, result.HasWarnings(), "result should carry warning lines from the task log")
+	require.Len(t, result.Warnings(), 1)
+	assert.Contains(t, result.Warnings()[0], "disk is nearly full")
 }
