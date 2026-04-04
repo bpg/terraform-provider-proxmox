@@ -76,6 +76,8 @@ func TestBatchCreate(t *testing.T) {
 
 	var wg sync.WaitGroup
 
+	errs := make([]error, numVMs)
+
 	for i := range numVMs {
 		wg.Add(1)
 
@@ -83,18 +85,16 @@ func TestBatchCreate(t *testing.T) {
 			defer wg.Done()
 
 			id := 999900 + i
-			if err == nil {
-				cloneResult := te.NodeClient().VM(sourceID).CloneVM(ctx, 5, &vms.CloneRequestBody{VMIDNew: id})
-				if cloneResult.Err() != nil {
-					err = cloneResult.Err()
-				}
+			cloneResult := te.NodeClient().VM(sourceID).CloneVM(ctx, 5, &vms.CloneRequestBody{VMIDNew: id})
 
-				ids[i] = id
-			}
-
-			assert.NoError(t, err)
+			errs[i] = cloneResult.Err()
+			ids[i] = id
 		}()
 	}
 
 	wg.Wait()
+
+	for i, cloneErr := range errs {
+		assert.NoError(t, cloneErr, "clone VM %d failed", ids[i])
+	}
 }

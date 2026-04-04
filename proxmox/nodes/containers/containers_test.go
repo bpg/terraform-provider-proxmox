@@ -112,8 +112,24 @@ func taskCompletedWithWarningsHandler(captures *requestCaptures) http.HandlerFun
 	return taskStatusHandler(captures, "WARNINGS: 1")
 }
 
+// taskLogWithWarningsHandler returns a handler that responds with a task log containing warning lines.
+func taskLogWithWarningsHandler(captures *requestCaptures) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{
+			"data": []map[string]any{
+				{"n": 1, "t": "starting task"},
+				{"n": 2, "t": "WARN: Systemd 255 detected. You may need to enable nesting."},
+				{"n": 3, "t": "TASK WARNINGS: 1"},
+			},
+		})
+	}
+}
+
 // TestCreateContainerSucceedsWithWarnings verifies that CreateContainer succeeds
-// when the PVE task completes with warnings (e.g., "WARNINGS: 1") rather than "OK".
+// when the PVE task completes with warnings (e.g., "WARNINGS: 1") rather than "OK",
+// and that the warnings are captured in the returned TaskResult.
 // This is a common scenario with Ubuntu 24.04 templates on systemd 255+.
 func TestCreateContainerSucceedsWithWarnings(t *testing.T) {
 	t.Parallel()
@@ -126,7 +142,10 @@ func TestCreateContainerSucceedsWithWarnings(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		writeJSON(w, map[string]any{"data": testUPID})
 	})
-	mux.HandleFunc("GET /api2/json/nodes/", taskCompletedWithWarningsHandler(captures))
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/status",
+		taskCompletedWithWarningsHandler(captures))
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/log",
+		taskLogWithWarningsHandler(captures))
 
 	server := newTestServer(t, mux)
 	defer server.Close()
@@ -135,10 +154,13 @@ func TestCreateContainerSucceedsWithWarnings(t *testing.T) {
 
 	result := client.CreateContainer(t.Context(), &CreateRequestBody{})
 	require.NoError(t, result.Err(), "CreateContainer should succeed when task completes with warnings")
+	assert.True(t, result.HasWarnings(), "expected warnings to be captured in TaskResult")
+	assert.Contains(t, result.Warnings()[0], "WARN:", "expected warning text from task log")
 }
 
 // TestCloneContainerSucceedsWithWarnings verifies that CloneContainer succeeds
-// when the PVE task completes with warnings rather than "OK".
+// when the PVE task completes with warnings rather than "OK", and that the
+// warnings are captured in the returned TaskResult.
 func TestCloneContainerSucceedsWithWarnings(t *testing.T) {
 	t.Parallel()
 
@@ -150,7 +172,10 @@ func TestCloneContainerSucceedsWithWarnings(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		writeJSON(w, map[string]any{"data": testUPID})
 	})
-	mux.HandleFunc("GET /api2/json/nodes/", taskCompletedWithWarningsHandler(captures))
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/status",
+		taskCompletedWithWarningsHandler(captures))
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/log",
+		taskLogWithWarningsHandler(captures))
 
 	server := newTestServer(t, mux)
 	defer server.Close()
@@ -159,6 +184,8 @@ func TestCloneContainerSucceedsWithWarnings(t *testing.T) {
 
 	result := client.CloneContainer(t.Context(), &CloneRequestBody{})
 	require.NoError(t, result.Err(), "CloneContainer should succeed when task completes with warnings")
+	assert.True(t, result.HasWarnings(), "expected warnings to be captured in TaskResult")
+	assert.Contains(t, result.Warnings()[0], "WARN:", "expected warning text from task log")
 }
 
 func TestDeleteContainerWaitsForTask(t *testing.T) {

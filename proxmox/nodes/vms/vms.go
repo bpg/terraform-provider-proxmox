@@ -287,7 +287,7 @@ func (c *Client) RebootVMAndWaitForRunning(ctx context.Context, rebootTimeoutSec
 	}
 
 	if err := c.WaitForVMStatus(ctx, "running"); err != nil {
-		return tasks.TaskFailed(err)
+		return tasks.TaskFailedWithWarnings(err, result.Warnings())
 	}
 
 	return result

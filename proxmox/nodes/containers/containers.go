@@ -352,7 +352,7 @@ func (c *Client) StartContainer(ctx context.Context) tasks.TaskResult {
 	}
 
 	if err := c.WaitForContainerStatus(ctx, "running"); err != nil {
-		return tasks.TaskFailed(err)
+		return tasks.TaskFailedWithWarnings(err, result.Warnings())
 	}
 
 	return result

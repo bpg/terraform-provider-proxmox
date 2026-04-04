@@ -158,3 +158,42 @@ func TestWaitForTask_WarningsAreNonFatalByDefault(t *testing.T) {
 	assert.Len(t, result.Warnings(), 1, "TASK WARNINGS summary line should be filtered out")
 	assert.Contains(t, result.Warnings()[0], "Systemd 258")
 }
+
+// TestWaitForTask_WithFailOnWarningsTreatsWarningsAsErrors verifies that when
+// WithFailOnWarnings is used, a task completing with warnings returns an error.
+func TestWaitForTask_WithFailOnWarningsTreatsWarningsAsErrors(t *testing.T) {
+	t.Parallel()
+
+	mux := http.NewServeMux()
+
+	// Task status: completed with warnings.
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/status", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{
+			"data": map[string]any{
+				"status":     "stopped",
+				"exitstatus": "WARNINGS: 1",
+			},
+		})
+	})
+
+	// Task log: return warning lines (used by taskFailedResult when failOnWarnings is active).
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/log", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{
+			"data": []map[string]any{
+				{"n": 1, "t": "WARN: some warning"},
+				{"n": 2, "t": "TASK WARNINGS: 1"},
+			},
+		})
+	})
+
+	server := httptest.NewTLSServer(mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	result := client.WaitForTask(t.Context(), testUPID, WithFailOnWarnings())
+	require.Error(t, result.Err(), "WaitForTask with WithFailOnWarnings should return error on warnings")
+	assert.Contains(t, result.Err().Error(), "WARNINGS: 1", "error should include the exit code")
+}

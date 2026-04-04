@@ -167,6 +167,10 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	if result := vmAPI.CreateVM(ctx, createBody); result.Err() != nil {
 		diags.AddError("Failed to create VM", result.Err().Error())
 		return
+	} else if result.HasWarnings() {
+		for _, w := range result.Warnings() {
+			diags.AddWarning("VM create warning", w)
+		}
 	}
 
 	// Convert to template if requested
@@ -177,6 +181,10 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 
 		if result := vmAPI.ConvertToTemplate(ctx); result.Err() != nil {
 			diags.AddError("Failed to convert VM to template", result.Err().Error())
+		} else if result.HasWarnings() {
+			for _, w := range result.Warnings() {
+				diags.AddWarning("VM template conversion warning", w)
+			}
 		}
 	}
 }

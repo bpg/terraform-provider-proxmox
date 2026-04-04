@@ -228,7 +228,9 @@ func filterWarnings(lines []string) []string {
 }
 
 // getTaskWarnings fetches the task log and returns any warning lines.
-// This is best-effort: if the log cannot be fetched, a warning is logged and nil is returned.
+// This is best-effort: if the log cannot be fetched, a fallback warning is returned so that
+// callers still know the task produced warnings even when the details are unavailable.
+// Note: GetTaskLog uses the PVE API default of 50 lines; warnings beyond that will be missed.
 func (c *Client) getTaskWarnings(ctx context.Context, upid string) []string {
 	lines, err := c.GetTaskLog(ctx, upid)
 	if err != nil {
@@ -237,7 +239,7 @@ func (c *Client) getTaskWarnings(ctx context.Context, upid string) []string {
 			"error":   err.Error(),
 		})
 
-		return nil
+		return []string{"task completed with warnings but the task log could not be retrieved"}
 	}
 
 	return filterWarnings(lines)

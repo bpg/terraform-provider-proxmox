@@ -7008,13 +7008,22 @@ func vmUpdateDiskLocation(
 		return nil
 	}
 
+	var diags diag.Diagnostics
+
 	for _, reqBody := range changes.moveBodies {
-		if result := vmAPI.MoveVMDisk(ctx, reqBody); result.Err() != nil {
-			return diag.FromErr(result.Err())
+		result := vmAPI.MoveVMDisk(ctx, reqBody)
+		if result.Err() != nil {
+			return append(diags, diag.FromErr(result.Err())...)
+		}
+
+		if result.HasWarnings() {
+			for _, w := range result.Warnings() {
+				diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+			}
 		}
 	}
 
-	return nil
+	return diags
 }
 
 // vmUpdateDiskSize resizes disks that have grown.
@@ -7027,13 +7036,22 @@ func vmUpdateDiskSize(
 		return nil
 	}
 
+	var diags diag.Diagnostics
+
 	for _, reqBody := range changes.resizeBodies {
-		if result := vmAPI.ResizeVMDisk(ctx, reqBody); result.Err() != nil {
-			return diag.FromErr(result.Err())
+		result := vmAPI.ResizeVMDisk(ctx, reqBody)
+		if result.Err() != nil {
+			return append(diags, diag.FromErr(result.Err())...)
+		}
+
+		if result.HasWarnings() {
+			for _, w := range result.Warnings() {
+				diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+			}
 		}
 	}
 
-	return nil
+	return diags
 }
 
 // vmRefreshPendingDiskConfig re-sends the disk specification for resized disks via PUT /config.
@@ -7139,6 +7157,14 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(deleteResult.Err())
 	}
 
+	var diags diag.Diagnostics
+
+	if deleteResult.HasWarnings() {
+		for _, w := range deleteResult.Warnings() {
+			diags = append(diags, diag.Diagnostic{Severity: diag.Warning, Summary: w})
+		}
+	}
+
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
 	err = vmAPI.WaitForVMStatus(ctx, "")
 	if err == nil {
@@ -7147,7 +7173,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	d.SetId("")
 
-	return nil
+	return diags
 }
 
 // getDiskDatastores returns a list of the used datastores in a VM.
