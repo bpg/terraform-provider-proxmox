@@ -332,14 +332,22 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 			}
 		} else {
 			if plan.StopOnDestroy.ValueBool() {
-				if err = vmStop(ctx, vmAPI); err != nil {
+				if warnings, err := vmStop(ctx, vmAPI); err != nil {
 					resp.Diagnostics.AddError("Failed to stop VM", err.Error())
 					return
+				} else {
+					for _, w := range warnings {
+						resp.Diagnostics.AddWarning("VM stop warning", w)
+					}
 				}
 			} else {
-				if err = vmShutdown(ctx, vmAPI); err != nil {
+				if warnings, err := vmShutdown(ctx, vmAPI); err != nil {
 					resp.Diagnostics.AddError("Failed to shut down VM", err.Error())
 					return
+				} else {
+					for _, w := range warnings {
+						resp.Diagnostics.AddWarning("VM shutdown warning", w)
+					}
 				}
 			}
 		}
@@ -394,12 +402,20 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 
 	if status != nil && status.Status != "stopped" {
 		if state.StopOnDestroy.ValueBool() {
-			if e := vmStop(ctx, vmAPI); e != nil {
+			if warnings, e := vmStop(ctx, vmAPI); e != nil {
 				resp.Diagnostics.AddWarning("Failed to stop VM", e.Error())
+			} else {
+				for _, w := range warnings {
+					resp.Diagnostics.AddWarning("VM stop warning", w)
+				}
 			}
 		} else {
-			if e := vmShutdown(ctx, vmAPI); e != nil {
+			if warnings, e := vmShutdown(ctx, vmAPI); e != nil {
 				resp.Diagnostics.AddWarning("Failed to shut down VM", e.Error())
+			} else {
+				for _, w := range warnings {
+					resp.Diagnostics.AddWarning("VM shutdown warning", w)
+				}
 			}
 		}
 	}
@@ -1032,7 +1048,7 @@ func isValidDiskSlot(slot string) bool {
 }
 
 // Shutdown the VM, then wait for it to actually shut down.
-func vmShutdown(ctx context.Context, vmAPI *vms.Client) error {
+func vmShutdown(ctx context.Context, vmAPI *vms.Client) ([]string, error) {
 	tflog.Debug(ctx, "Shutting down VM")
 
 	shutdownTimeoutSec := int(defaultShutdownTimeout.Seconds())
@@ -1046,27 +1062,28 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client) error {
 		Timeout:   &shutdownTimeoutSec,
 	})
 	if result.Err() != nil {
-		return fmt.Errorf("failed to initiate shut down of VM: %w", result.Err())
+		return result.Warnings(), fmt.Errorf("failed to initiate shut down of VM: %w", result.Err())
 	}
 
 	if err := vmAPI.WaitForVMStatus(ctx, "stopped"); err != nil {
-		return fmt.Errorf("failed to wait for VM to shut down: %w", err)
+		return result.Warnings(), fmt.Errorf("failed to wait for VM to shut down: %w", err)
 	}
 
-	return nil
+	return result.Warnings(), nil
 }
 
 // Forcefully stop the VM, then wait for it to actually stop.
-func vmStop(ctx context.Context, vmAPI *vms.Client) error {
+func vmStop(ctx context.Context, vmAPI *vms.Client) ([]string, error) {
 	tflog.Debug(ctx, "Stopping VM")
 
-	if result := vmAPI.StopVM(ctx); result.Err() != nil {
-		return fmt.Errorf("failed to initiate stop of VM: %w", result.Err())
+	result := vmAPI.StopVM(ctx)
+	if result.Err() != nil {
+		return result.Warnings(), fmt.Errorf("failed to initiate stop of VM: %w", result.Err())
 	}
 
 	if err := vmAPI.WaitForVMStatus(ctx, "stopped"); err != nil {
-		return fmt.Errorf("failed to wait for VM to stop: %w", err)
+		return result.Warnings(), fmt.Errorf("failed to wait for VM to stop: %w", err)
 	}
 
-	return nil
+	return result.Warnings(), nil
 }
