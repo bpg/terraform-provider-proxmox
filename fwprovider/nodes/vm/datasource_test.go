@@ -1,6 +1,6 @@
 //go:build acceptance || all
 
-//testacc:tier=light
+//testacc:tier=medium
 //testacc:resource=vm
 
 /*
@@ -19,6 +19,35 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
+
+func TestAccDatasourceVM(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	datasourceName := "data.proxmox_virtual_environment_vm2.test"
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+					}
+
+					data "proxmox_virtual_environment_vm2" "test" {
+						node_name = "{{.NodeName}}"
+						id        = proxmox_vm.test_vm.id
+					}
+				`),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "node_name", te.NodeName),
+					resource.TestCheckResourceAttr(datasourceName, "status", "stopped"),
+					resource.TestCheckResourceAttrSet(datasourceName, "id"),
+				),
+			},
+		},
+	})
+}
 
 func TestAccDatasourceVMNotFound(t *testing.T) {
 	te := test.InitEnvironment(t)

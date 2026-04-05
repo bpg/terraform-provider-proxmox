@@ -29,7 +29,7 @@ func (d *Datasource) Schema(
 ) {
 	resp.Schema = schema.Schema{
 		DeprecationMessage: migration.DeprecationMessage("proxmox_vm"),
-		Description:        "This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.",
+		Description:        "Retrieves information about a specific VM.",
 		Attributes: map[string]schema.Attribute{
 			"cdrom": cdrom.DataSourceSchema(),
 			"cpu":   cpu.DataSourceSchema(),
@@ -49,7 +49,11 @@ func (d *Datasource) Schema(
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
 			},
-			"rng":  rng.DataSourceSchema(),
+			"rng": rng.DataSourceSchema(),
+			"status": schema.StringAttribute{
+				Description: "The status of the VM (e.g., `running`, `stopped`).",
+				Computed:    true,
+			},
 			"tags": stringset.ResourceAttribute("The tags assigned to the VM.", ""),
 			"template": schema.BoolAttribute{
 				Description: "Whether the VM is a template.",

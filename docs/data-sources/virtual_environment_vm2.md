@@ -4,15 +4,14 @@ title: proxmox_virtual_environment_vm2
 parent: Data Sources
 subcategory: Virtual Environment
 description: |-
-  This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.
+  Retrieves information about a specific VM.
 ---
 
 # Data Source: proxmox_virtual_environment_vm2
 
 ~> **Deprecated:** Use [`proxmox_vm`](vm.md) instead. This data-source will be removed in v1.0.
 
-!> **DO NOT USE**
-This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.
+Retrieves information about a specific VM.
 
 
 
@@ -38,6 +37,7 @@ This is an experimental implementation of a Proxmox VM datasource using Plugin F
 ### Read-Only
 
 - `cdrom` (Attributes Map) The CD-ROM configuration. (see [below for nested schema](#nestedatt--cdrom))
+- `status` (String) The status of the VM (e.g., `running`, `stopped`).
 
 <a id="nestedatt--cpu"></a>
 ### Nested Schema for `cpu`

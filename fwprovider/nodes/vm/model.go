@@ -56,6 +56,7 @@ type DatasourceModel struct {
 	Name        types.String    `tfsdk:"name"`
 	NodeName    types.String    `tfsdk:"node_name"`
 	RNG         rng.Value       `tfsdk:"rng"`
+	Status      types.String    `tfsdk:"status"`
 	Tags        stringset.Value `tfsdk:"tags"`
 	Template    types.Bool      `tfsdk:"template"`
 	Timeouts    timeouts.Value  `tfsdk:"timeouts"`
@@ -90,6 +91,7 @@ func readForDatasource(ctx context.Context, client proxmox.Client, model *Dataso
 	model.ID = types.Int64Value(int64(*status.VMID))
 	model.Description = types.StringPointerValue(config.Description)
 	model.Name = types.StringPointerValue(config.Name)
+	model.Status = types.StringValue(status.Status)
 	model.Tags = stringset.NewValueString(config.Tags, diags)
 	model.Template = types.BoolPointerValue(config.Template.PointerBool())
 
