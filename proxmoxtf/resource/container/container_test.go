@@ -91,11 +91,13 @@ func TestContainerSchema(t *testing.T) {
 
 	test.AssertOptionalArguments(t, cloneSchema, []string{
 		mkCloneDatastoreID,
+		mkCloneFull,
 		mkCloneNodeName,
 	})
 
 	test.AssertValueTypes(t, cloneSchema, map[string]schema.ValueType{
 		mkCloneDatastoreID: schema.TypeString,
+		mkCloneFull:        schema.TypeBool,
 		mkCloneNodeName:    schema.TypeString,
 		mkCloneVMID:        schema.TypeInt,
 	})
