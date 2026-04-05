@@ -4,13 +4,12 @@ title: proxmox_vm
 parent: Data Sources
 subcategory: Virtual Environment
 description: |-
-  This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.
+  Retrieves information about a specific VM.
 ---
 
 # Data Source: proxmox_vm
 
-!> **DO NOT USE**
-This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.
+Retrieves information about a specific VM.
 
 
 
@@ -32,6 +31,11 @@ This is an experimental implementation of a Proxmox VM datasource using Plugin F
 - `template` (Boolean) Whether the VM is a template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 - `vga` (Attributes) The VGA configuration. (see [below for nested schema](#nestedatt--vga))
+
+### Read-Only
+
+- `cdrom` (Attributes Map) The CD-ROM configuration. (see [below for nested schema](#nestedatt--cdrom))
+- `status` (String) The status of the VM (e.g., `running`, `stopped`).
 
 <a id="nestedatt--cpu"></a>
 ### Nested Schema for `cpu`
@@ -76,3 +80,11 @@ Optional:
 - `clipboard` (String) Enable a specific clipboard.
 - `memory` (Number) The VGA memory in megabytes (4-512 MB). Has no effect with serial display.
 - `type` (String) The VGA type.
+
+
+<a id="nestedatt--cdrom"></a>
+### Nested Schema for `cdrom`
+
+Read-Only:
+
+- `file_id` (String) The file ID of the CD-ROM.

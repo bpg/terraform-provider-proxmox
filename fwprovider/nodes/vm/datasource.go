@@ -11,7 +11,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -65,9 +64,8 @@ func (d *Datasource) Configure(
 	d.client = cfg.Client
 }
 
-//nolint:dupl
 func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var model Model
+	var model DatasourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &model)...)
 
@@ -81,17 +79,17 @@ func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	exists := read(ctx, d.client, &model, &resp.Diagnostics)
+	exists := readForDatasource(ctx, d.client, &model, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	if !exists {
-		tflog.Info(ctx, "VM does not exist, removing from the state", map[string]any{
-			"id": model.ID.ValueInt64(),
-		})
-		resp.State.RemoveResource(ctx)
+		resp.Diagnostics.AddError(
+			"VM Not Found",
+			fmt.Sprintf("VM with ID %d was not found on node '%s'.", model.ID.ValueInt64(), model.NodeName.ValueString()),
+		)
 
 		return
 	}

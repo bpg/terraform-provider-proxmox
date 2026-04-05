@@ -4,7 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-//nolint:dupl
 package datasource
 
 import (
@@ -86,10 +85,8 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics
 
 	vmStatus, err := client.Node(nodeName).VM(vmID).GetVMStatus(ctx)
 	if err != nil {
-		if errors.Is(err, api.ErrNoDataObjectInResponse) {
-			d.SetId("")
-
-			return nil
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			return diag.Errorf("VM %d not found on node %q", vmID, nodeName)
 		}
 
 		return diag.FromErr(err)
