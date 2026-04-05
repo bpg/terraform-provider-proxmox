@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
@@ -30,7 +31,8 @@ func (d *Datasource) Schema(
 		DeprecationMessage: migration.DeprecationMessage("proxmox_vm"),
 		Description:        "This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.",
 		Attributes: map[string]schema.Attribute{
-			"cpu": cpu.DataSourceSchema(),
+			"cdrom": cdrom.DataSourceSchema(),
+			"cpu":   cpu.DataSourceSchema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
 				Optional:    true,

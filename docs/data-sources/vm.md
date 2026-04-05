@@ -33,6 +33,10 @@ This is an experimental implementation of a Proxmox VM datasource using Plugin F
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 - `vga` (Attributes) The VGA configuration. (see [below for nested schema](#nestedatt--vga))
 
+### Read-Only
+
+- `cdrom` (Attributes Map) The CD-ROM configuration. (see [below for nested schema](#nestedatt--cdrom))
+
 <a id="nestedatt--cpu"></a>
 ### Nested Schema for `cpu`
 
@@ -76,3 +80,11 @@ Optional:
 - `clipboard` (String) Enable a specific clipboard.
 - `memory` (Number) The VGA memory in megabytes (4-512 MB). Has no effect with serial display.
 - `type` (String) The VGA type.
+
+
+<a id="nestedatt--cdrom"></a>
+### Nested Schema for `cdrom`
+
+Read-Only:
+
+- `file_id` (String) The file ID of the CD-ROM.
