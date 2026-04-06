@@ -65,9 +65,10 @@ func ResourceAttribute(desc, markdownDesc string, options ...ResourceAttributeOp
 	return attribute
 }
 
-// DataSourceAttribute returns a data source schema attribute for string set.
-func DataSourceAttribute(desc, markdownDesc string, optional bool) schema.SetAttribute {
-	attribute := schema.SetAttribute{
+// DataSourceAttribute returns a computed-only data source schema attribute for string set.
+// Use this for read-only output attributes in datasources.
+func DataSourceAttribute(desc, markdownDesc string) schema.SetAttribute {
+	return schema.SetAttribute{
 		CustomType: Type{
 			SetType: types.SetType{
 				ElemType: types.StringType,
@@ -76,13 +77,22 @@ func DataSourceAttribute(desc, markdownDesc string, optional bool) schema.SetAtt
 		Description:         desc,
 		MarkdownDescription: markdownDesc,
 		ElementType:         types.StringType,
+		Computed:            true,
 	}
+}
 
-	if optional {
-		attribute.Optional = true
-	} else {
-		attribute.Required = true
+// DataSourceFilterAttribute returns an optional data source schema attribute for string set.
+// Use this for input filter attributes in datasources.
+func DataSourceFilterAttribute(desc, markdownDesc string) schema.SetAttribute {
+	return schema.SetAttribute{
+		CustomType: Type{
+			SetType: types.SetType{
+				ElemType: types.StringType,
+			},
+		},
+		Description:         desc,
+		MarkdownDescription: markdownDesc,
+		ElementType:         types.StringType,
+		Optional:            true,
 	}
-
-	return attribute
 }

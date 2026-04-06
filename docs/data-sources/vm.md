@@ -23,24 +23,40 @@ Retrieves information about a specific VM.
 
 ### Optional
 
-- `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
-- `description` (String) The description of the VM.
-- `name` (String) The name of the VM.
-- `rng` (Attributes) The RNG (Random Number Generator) configuration. (see [below for nested schema](#nestedatt--rng))
-- `tags` (Set of String) The tags assigned to the VM.
-- `template` (Boolean) Whether the VM is a template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
-- `vga` (Attributes) The VGA configuration. (see [below for nested schema](#nestedatt--vga))
 
 ### Read-Only
 
 - `cdrom` (Attributes Map) The CD-ROM configuration. (see [below for nested schema](#nestedatt--cdrom))
+- `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
+- `description` (String) The description of the VM.
+- `name` (String) The name of the VM.
+- `rng` (Attributes) The RNG (Random Number Generator) configuration. (see [below for nested schema](#nestedatt--rng))
 - `status` (String) The status of the VM (e.g., `running`, `stopped`).
+- `tags` (Set of String) The tags assigned to the VM.
+- `template` (Boolean) Whether the VM is a template.
+- `vga` (Attributes) The VGA configuration. (see [below for nested schema](#nestedatt--vga))
+
+<a id="nestedatt--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
+
+<a id="nestedatt--cdrom"></a>
+### Nested Schema for `cdrom`
+
+Read-Only:
+
+- `file_id` (String) The file ID of the CD-ROM.
+
 
 <a id="nestedatt--cpu"></a>
 ### Nested Schema for `cpu`
 
-Optional:
+Read-Only:
 
 - `affinity` (String) List of host cores used to execute guest processes, for example: '0,5,8-11'
 - `architecture` (String) The CPU architecture.
@@ -57,34 +73,18 @@ Optional:
 <a id="nestedatt--rng"></a>
 ### Nested Schema for `rng`
 
-Optional:
+Read-Only:
 
 - `max_bytes` (Number) Maximum bytes of entropy allowed to get injected into the guest every period.
 - `period` (Number) Period in milliseconds to limit entropy injection to the guest.
 - `source` (String) The entropy source for the RNG device.
 
 
-<a id="nestedatt--timeouts"></a>
-### Nested Schema for `timeouts`
-
-Optional:
-
-- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-
-
 <a id="nestedatt--vga"></a>
 ### Nested Schema for `vga`
 
-Optional:
+Read-Only:
 
 - `clipboard` (String) Enable a specific clipboard.
 - `memory` (Number) The VGA memory in megabytes (4-512 MB). Has no effect with serial display.
 - `type` (String) The VGA type.
-
-
-<a id="nestedatt--cdrom"></a>
-### Nested Schema for `cdrom`
-
-Read-Only:
-
-- `file_id` (String) The file ID of the CD-ROM.

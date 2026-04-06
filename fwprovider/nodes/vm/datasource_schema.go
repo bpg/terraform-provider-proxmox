@@ -35,7 +35,7 @@ func (d *Datasource) Schema(
 			"cpu":   cpu.DataSourceSchema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
-				Optional:    true,
+				Computed:    true,
 			},
 			"id": schema.Int64Attribute{
 				Required:    true,
@@ -43,7 +43,7 @@ func (d *Datasource) Schema(
 			},
 			"name": schema.StringAttribute{
 				Description: "The name of the VM.",
-				Optional:    true,
+				Computed:    true,
 			},
 			"node_name": schema.StringAttribute{
 				Description: "The name of the node where the VM is provisioned.",
@@ -54,10 +54,10 @@ func (d *Datasource) Schema(
 				Description: "The status of the VM (e.g., `running`, `stopped`).",
 				Computed:    true,
 			},
-			"tags": stringset.ResourceAttribute("The tags assigned to the VM.", ""),
+			"tags": stringset.DataSourceAttribute("The tags assigned to the VM.", ""),
 			"template": schema.BoolAttribute{
 				Description: "Whether the VM is a template.",
-				Optional:    true,
+				Computed:    true,
 			},
 			"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
 				Read: true,

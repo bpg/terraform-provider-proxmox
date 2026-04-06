@@ -89,11 +89,23 @@ func readForDatasource(ctx context.Context, client proxmox.Client, model *Dataso
 	}
 
 	model.ID = types.Int64Value(int64(*status.VMID))
-	model.Description = types.StringPointerValue(config.Description)
-	model.Name = types.StringPointerValue(config.Name)
 	model.Status = types.StringValue(status.Status)
 	model.Tags = stringset.NewValueString(config.Tags, diags)
-	model.Template = types.BoolPointerValue(config.Template.PointerBool())
+
+	model.Description = types.StringValue("")
+	if config.Description != nil {
+		model.Description = types.StringValue(*config.Description)
+	}
+
+	model.Name = types.StringValue("")
+	if config.Name != nil {
+		model.Name = types.StringValue(*config.Name)
+	}
+
+	model.Template = types.BoolValue(false)
+	if config.Template != nil {
+		model.Template = config.Template.ToValue()
+	}
 
 	model.CPU = cpu.NewValue(ctx, config, diags)
 	model.RNG = rng.NewValue(ctx, config, diags)

@@ -327,6 +327,21 @@ schema.StringAttribute{
 resp.Diagnostics.AddError("Unable to Create Resource", err.Error())
 ```
 
+### Datasource Schema Attributes
+
+In a **datasource**, attributes that are purely output (populated by the provider during Read) must be `Computed: true` only — never `Optional`. This applies to all attributes except lookup keys (which are `Required`).
+
+| Attribute role | Schema flags | Example |
+| -------------- | ------------ | ------- |
+| Lookup key | `Required: true` | `id`, `node_name` |
+| Read-only output | `Computed: true` | `name`, `status`, `tags`, `cpu` block |
+
+**Why not `Optional` on outputs?** `Optional` on a datasource output lets users write values in config that are silently ignored — misleading UX and confusing docs (attributes appear under "Optional" instead of "Read-Only").
+
+**Nil API values in Computed fields:** After Read, Computed attributes must have a known value — null means "unknown" which is only valid during planning. Convert nil API pointers to sensible defaults: `""` for strings, `false` for bools, empty collections for sets/maps. Use `types.StringValue("")` instead of `types.StringPointerValue(nil)`.
+
+**Nested blocks in datasources** (e.g., `cpu`, `vga`, `rng`): The datasource should have its own `DataSourceSchema()` with `Computed: true` on the block and all inner attributes. Do not reuse `ResourceSchema()` which has `Optional: true, Computed: true` for resource write semantics.
+
 ### Comma-Separated API Values
 
 When the Proxmox API uses comma-separated strings (e.g., `vmid=100,101,102`), **always expose them as Terraform list or set attributes** — never as raw comma-separated strings. Convert in `toAPI()` (join) and `fromAPI()` (split). See [ADR-004](docs/adr/004-schema-design-conventions.md#comma-separated-api-values--terraform-lists) for details and code examples.
