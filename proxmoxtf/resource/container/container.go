@@ -41,6 +41,7 @@ import (
 const (
 	dvCloneDatastoreID                  = ""
 	dvCloneNodeName                     = ""
+	dvCloneFull                         = true
 	dvConsoleEnabled                    = true
 	dvConsoleMode                       = "tty"
 	dvConsoleTTYCount                   = 2
@@ -104,6 +105,7 @@ const (
 
 	mkClone                             = "clone"
 	mkCloneDatastoreID                  = "datastore_id"
+	mkCloneFull                         = "full"
 	mkCloneNodeName                     = "node_name"
 	mkCloneVMID                         = "vm_id"
 	mkConsole                           = "console"
@@ -236,6 +238,21 @@ func Container() *schema.Resource {
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvCloneNodeName,
+						},
+						mkCloneFull: {
+							Type: schema.TypeBool,
+							Description: "When cloning, create a full copy of all disks. Set to false to create a linked " +
+								"clone. Linked clones require the source container to be a template on storage that supports " +
+								"copy-on-write (e.g. Ceph RBD). Defaults to true.",
+							Optional: true,
+							ForceNew: true,
+							Default:  dvCloneFull,
+							DiffSuppressFunc: func(_, oldVal, newVal string, d *schema.ResourceData) bool {
+								// Suppress diff when upgrading from a provider version that didn't have this attribute.
+								// In that case oldVal is "" (missing from state) and newVal is "true" (from Default).
+								// Only suppress for existing resources (d.Id() != ""), not during creation.
+								return d.Id() != "" && oldVal == "" && newVal == "true"
+							},
 						},
 						mkCloneVMID: {
 							Type:             schema.TypeInt,
@@ -1256,7 +1273,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		}
 	}
 
-	fullCopy := types.CustomBool(true)
+	fullCopy := types.CustomBool(cloneBlock[mkCloneFull].(bool))
 
 	cloneBody := &containers.CloneRequestBody{
 		FullCopy: &fullCopy,

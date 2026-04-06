@@ -545,6 +545,135 @@ func TestAccResourceContainerClone(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerCloneFullFlag tests the `full` flag in the clone block.
+// It verifies that full=true creates a full clone, and that full=false (linked clone)
+// is correctly sent to the API (which rejects it when storage doesn't support COW).
+func TestAccResourceContainerCloneFullFlag(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDFullClone := 100000 + rand.Intn(99999)
+	accTestContainerIDLinkedClone := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":              imageFileName,
+		"TestContainerID":            accTestContainerID,
+		"TestContainerIDFullClone":   accTestContainerIDFullClone,
+		"TestContainerIDLinkedClone": accTestContainerIDLinkedClone,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			// Step 1: full=true creates a full clone successfully
+			{
+				Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				template  = true
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test"
+					ip_config {
+						ipv4 {
+						  address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+
+			resource "proxmox_virtual_environment_container" "test_full_clone" {
+				depends_on = [proxmox_virtual_environment_container.test_container]
+				node_name  = "{{.NodeName}}"
+				vm_id      = {{.TestContainerIDFullClone}}
+
+				clone {
+					vm_id = proxmox_virtual_environment_container.test_container.id
+					full  = true
+				}
+
+				initialization {
+					hostname = "test-full-clone"
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_full_clone", map[string]string{
+						"clone.0.full": "true",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerIDFullClone)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get full clone container")
+						require.NotNil(te.t, ctInfo, "full clone container info should not be nil")
+
+						return nil
+					},
+				),
+			},
+			// Step 2: full=false sends linked clone request to the API. On storage that doesn't
+			// support COW (like local-lvm), Proxmox rejects with "Linked clone feature ... is not available".
+			// This proves full=false is correctly passed through to the API.
+			{
+				Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				template  = true
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test"
+					ip_config {
+						ipv4 {
+						  address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+
+			resource "proxmox_virtual_environment_container" "test_linked_clone" {
+				depends_on = [proxmox_virtual_environment_container.test_container]
+				node_name  = "{{.NodeName}}"
+				vm_id      = {{.TestContainerIDLinkedClone}}
+
+				clone {
+					vm_id = proxmox_virtual_environment_container.test_container.id
+					full  = false
+				}
+
+				initialization {
+					hostname = "test-linked-clone"
+				}
+			}`, WithRootUser()),
+				ExpectError: regexp.MustCompile(`Linked clone feature .* is not available`),
+			},
+		},
+	})
+}
+
 // Test that mount_point blocks specified in clone config are provisioned
 // See https://github.com/bpg/terraform-provider-proxmox/issues/2518
 func TestAccResourceContainerCloneMountPoint(t *testing.T) {
