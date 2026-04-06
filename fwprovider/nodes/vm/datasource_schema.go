@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
@@ -28,12 +29,13 @@ func (d *Datasource) Schema(
 ) {
 	resp.Schema = schema.Schema{
 		DeprecationMessage: migration.DeprecationMessage("proxmox_vm"),
-		Description:        "This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.",
+		Description:        "Retrieves information about a specific VM.",
 		Attributes: map[string]schema.Attribute{
-			"cpu": cpu.DataSourceSchema(),
+			"cdrom": cdrom.DataSourceSchema(),
+			"cpu":   cpu.DataSourceSchema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
-				Optional:    true,
+				Computed:    true,
 			},
 			"id": schema.Int64Attribute{
 				Required:    true,
@@ -41,17 +43,21 @@ func (d *Datasource) Schema(
 			},
 			"name": schema.StringAttribute{
 				Description: "The name of the VM.",
-				Optional:    true,
+				Computed:    true,
 			},
 			"node_name": schema.StringAttribute{
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
 			},
-			"rng":  rng.DataSourceSchema(),
-			"tags": stringset.ResourceAttribute("The tags assigned to the VM.", ""),
+			"rng": rng.DataSourceSchema(),
+			"status": schema.StringAttribute{
+				Description: "The status of the VM (e.g., `running`, `stopped`).",
+				Computed:    true,
+			},
+			"tags": stringset.DataSourceAttribute("The tags assigned to the VM.", ""),
 			"template": schema.BoolAttribute{
 				Description: "Whether the VM is a template.",
-				Optional:    true,
+				Computed:    true,
 			},
 			"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
 				Read: true,

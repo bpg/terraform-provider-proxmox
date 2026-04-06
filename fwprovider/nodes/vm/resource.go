@@ -178,7 +178,6 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	}
 }
 
-//nolint:dupl
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state Model
 

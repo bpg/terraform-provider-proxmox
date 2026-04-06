@@ -195,6 +195,7 @@ a. **Guidelines compliance:** Audit the changes against `CONTRIBUTING.md` (the p
    - **New resources/data sources:** must follow [ADR-007](docs/adr/007-resource-type-name-migration.md) Phase 1 — `Metadata` must hardcode `resp.TypeName = "proxmox_..."` instead of using `req.ProviderTypeName + "_suffix"`
    - **Functional test coverage** per [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement) — tests must cover all major use cases (different input modes, list attributes with multiple elements, compound fields, nested objects, import round-trips), not just one happy path
    - **Comma-separated API values** per [ADR-004](docs/adr/004-schema-design-conventions.md#comma-separated-api-values--terraform-lists) — must be exposed as Terraform list/set attributes, not raw strings
+   - **Datasource schema attributes** per CLAUDE.md "Datasource Schema Attributes" — output attributes in datasources must be `Computed: true` only (never `Optional`). Only lookup keys should be `Required`. Nested blocks must use datasource-specific schemas with `Computed`-only attributes, not reuse resource schemas that have `Optional+Computed`. Nil API values in Computed fields must map to defaults (`""`, `false`, empty collections), not null.
 
    Note: CLAUDE.md is guidance for Claude agents, so not all of its instructions apply during code review of human contributions.
 

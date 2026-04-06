@@ -45,6 +45,76 @@ type Model struct {
 	VGA                              vga.Value       `tfsdk:"vga"`
 }
 
+// DatasourceModel represents the VM datasource model.
+// It excludes resource-only lifecycle fields (stop_on_destroy, purge_on_destroy,
+// delete_unreferenced_disks_on_destroy) that have no API representation.
+type DatasourceModel struct {
+	CDROM       cdrom.Value     `tfsdk:"cdrom"`
+	CPU         cpu.Value       `tfsdk:"cpu"`
+	Description types.String    `tfsdk:"description"`
+	ID          types.Int64     `tfsdk:"id"`
+	Name        types.String    `tfsdk:"name"`
+	NodeName    types.String    `tfsdk:"node_name"`
+	RNG         rng.Value       `tfsdk:"rng"`
+	Status      types.String    `tfsdk:"status"`
+	Tags        stringset.Value `tfsdk:"tags"`
+	Template    types.Bool      `tfsdk:"template"`
+	Timeouts    timeouts.Value  `tfsdk:"timeouts"`
+	VGA         vga.Value       `tfsdk:"vga"`
+}
+
+// readForDatasource retrieves the VM from the API and populates the datasource model.
+// Returns false if the resource does not exist.
+func readForDatasource(ctx context.Context, client proxmox.Client, model *DatasourceModel, diags *diag.Diagnostics) bool {
+	vmAPI := client.Node(model.NodeName.ValueString()).VM(int(model.ID.ValueInt64()))
+
+	config, err := vmAPI.GetVM(ctx)
+	if err != nil {
+		if !errors.Is(err, api.ErrResourceDoesNotExist) {
+			diags.AddError("Unable to Read VM", err.Error())
+		}
+
+		return false
+	}
+
+	status, err := vmAPI.GetVMStatus(ctx)
+	if err != nil {
+		diags.AddError("Unable to Read VM Status", err.Error())
+		return false
+	}
+
+	if status.VMID == nil {
+		diags.AddError("VM ID is missing in status API response", "")
+		return false
+	}
+
+	model.ID = types.Int64Value(int64(*status.VMID))
+	model.Status = types.StringValue(status.Status)
+	model.Tags = stringset.NewValueString(config.Tags, diags)
+
+	model.Description = types.StringValue("")
+	if config.Description != nil {
+		model.Description = types.StringValue(*config.Description)
+	}
+
+	model.Name = types.StringValue("")
+	if config.Name != nil {
+		model.Name = types.StringValue(*config.Name)
+	}
+
+	model.Template = types.BoolValue(false)
+	if config.Template != nil {
+		model.Template = config.Template.ToValue()
+	}
+
+	model.CPU = cpu.NewValue(ctx, config, diags)
+	model.RNG = rng.NewValue(ctx, config, diags)
+	model.VGA = vga.NewValue(ctx, config, diags)
+	model.CDROM = cdrom.NewValue(ctx, config, diags)
+
+	return true
+}
+
 // read retrieves the current state of the resource from the API and updates the state.
 // Returns false if the resource does not exist, so the caller can remove it from the state if necessary.
 func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.Diagnostics) bool {
