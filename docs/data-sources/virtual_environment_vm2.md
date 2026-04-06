@@ -9,7 +9,7 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_vm2
 
-~> **Deprecated:** Use [`proxmox_vm`](vm.md) instead. This data-source will be removed in v1.0.
+~> **Deprecated:** Use [`proxmox_vm`](vm.md) instead. This data source will be removed in v1.0.
 
 Retrieves information about a specific VM.
 

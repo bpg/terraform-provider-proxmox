@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -32,6 +33,7 @@ const (
 // VM returns a resource for a single Proxmox VM.
 func VM() *schema.Resource {
 	return &schema.Resource{
+		DeprecationMessage: migration.DeprecationMessage("proxmox_vm"),
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentVMName: {
 				Type:        schema.TypeString,

@@ -119,7 +119,7 @@ func TestDeprecationMessage(t *testing.T) {
 	t.Parallel()
 
 	got := DeprecationMessage("proxmox_example")
-	expected := `Use "proxmox_example" instead. This resource will be removed in v1.0.`
+	expected := `Use "proxmox_example" instead. This resource / data source will be removed in v1.0.`
 
 	if got != expected {
 		t.Errorf("expected %q, got %q", expected, got)
