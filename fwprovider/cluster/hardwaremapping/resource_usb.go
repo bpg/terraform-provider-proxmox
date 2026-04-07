@@ -56,7 +56,7 @@ func (r *usbResource) read(ctx context.Context, hm *modelUSB) (bool, diag.Diagno
 			return false, diags
 		}
 
-		diags.AddError("Could not read USB hardware mapping", err.Error())
+		diags.AddError(fmt.Sprintf("Could not read USB hardware mapping %q", hmName), err.Error())
 
 		return false, diags
 	}
@@ -123,7 +123,7 @@ func (r *usbResource) Create(ctx context.Context, req resource.CreateRequest, re
 
 	if err := r.client.Create(ctx, proxmoxtypes.TypeUSB, apiReq); err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Could not create USB hardware mapping %q.", hmName),
+			fmt.Sprintf("Could not create USB hardware mapping %q", hmName),
 			err.Error(),
 		)
 
@@ -155,7 +155,7 @@ func (r *usbResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 				),
 			)
 		} else {
-			resp.Diagnostics.AddError(fmt.Sprintf("Could not delete USB hardware mapping %q.", hmID), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("Could not delete USB hardware mapping %q", hmID), err.Error())
 		}
 	}
 }
@@ -281,7 +281,7 @@ func (r *usbResource) Update(ctx context.Context, req resource.UpdateRequest, re
 
 	if err := r.client.Update(ctx, proxmoxtypes.TypeUSB, hmName, apiReq); err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Could not update USB hardware mapping %q.", hmName),
+			fmt.Sprintf("Could not update USB hardware mapping %q", hmName),
 			err.Error(),
 		)
 

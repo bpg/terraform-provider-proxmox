@@ -338,7 +338,7 @@ func (r *haResourceResource) read(ctx context.Context, data *ResourceModel) (boo
 	res, err := r.client.Get(ctx, resID)
 	if err != nil {
 		if !errors.Is(err, api.ErrResourceDoesNotExist) {
-			diags.AddError("Could not read HA resource", err.Error())
+			diags.AddError(fmt.Sprintf("Could not read HA resource %q", resID), err.Error())
 		}
 
 		return false, diags

@@ -315,7 +315,7 @@ func (r *hagroupResource) read(ctx context.Context, data *GroupModel) (bool, dia
 		diags := diag.Diagnostics{}
 
 		if !errors.Is(err, api.ErrResourceDoesNotExist) {
-			diags.AddError("Could not read HA group", err.Error())
+			diags.AddError(fmt.Sprintf("Could not read HA group %q", name), err.Error())
 		}
 
 		return false, diags

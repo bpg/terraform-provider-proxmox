@@ -55,7 +55,7 @@ func (r *dirResource) read(ctx context.Context, hm *modelDir) (bool, diag.Diagno
 			return false, diags
 		}
 
-		diags.AddError("Could not read directory mapping", err.Error())
+		diags.AddError(fmt.Sprintf("Could not read directory mapping %q", hmName), err.Error())
 
 		return false, diags
 	}
@@ -122,7 +122,7 @@ func (r *dirResource) Create(ctx context.Context, req resource.CreateRequest, re
 
 	if err := r.client.Create(ctx, proxmoxtypes.TypeDir, apiReq); err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Could not create directory mapping %q.", hmName),
+			fmt.Sprintf("Could not create directory mapping %q", hmName),
 			err.Error(),
 		)
 
@@ -154,7 +154,7 @@ func (r *dirResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 				),
 			)
 		} else {
-			resp.Diagnostics.AddError(fmt.Sprintf("Could not delete directory mapping %q.", hmID), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("Could not delete directory mapping %q", hmID), err.Error())
 		}
 	}
 }
@@ -268,7 +268,7 @@ func (r *dirResource) Update(ctx context.Context, req resource.UpdateRequest, re
 
 	if err := r.client.Update(ctx, proxmoxtypes.TypeDir, hmName, apiReq); err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Could not update directory mapping %q.", hmName),
+			fmt.Sprintf("Could not update directory mapping %q", hmName),
 			err.Error(),
 		)
 
