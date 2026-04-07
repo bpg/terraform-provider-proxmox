@@ -8,6 +8,7 @@ package ha
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -26,6 +27,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
@@ -247,7 +249,7 @@ func (r *hagroupResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 	err := r.client.Delete(ctx, groupID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no such ha group") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddWarning(
 				"HA group does not exist",
 				fmt.Sprintf(
@@ -312,7 +314,7 @@ func (r *hagroupResource) read(ctx context.Context, data *GroupModel) (bool, dia
 	if err != nil {
 		diags := diag.Diagnostics{}
 
-		if !strings.Contains(err.Error(), "no such ha group") {
+		if !errors.Is(err, api.ErrResourceDoesNotExist) {
 			diags.AddError("Could not read HA group", err.Error())
 		}
 
