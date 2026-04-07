@@ -54,7 +54,7 @@ type CreateRequestBody struct {
 	ConsoleMode          *string                     `json:"cmode,omitempty"                url:"cmode,omitempty"`
 	CPUArchitecture      *string                     `json:"arch,omitempty"                 url:"arch,omitempty"`
 	CPUCores             *int                        `json:"cores,omitempty"                url:"cores,omitempty"`
-	CPULimit             *int                        `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
+	CPULimit             *float64                    `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
 	CPUUnits             *int                        `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
 	DatastoreID          *string                     `json:"storage,omitempty"              url:"storage,omitempty"`
 	DedicatedMemory      *int                        `json:"memory,omitempty"               url:"memory,omitempty"`
@@ -215,7 +215,7 @@ type GetResponseData struct {
 	ConsoleMode          *string                     `json:"cmode,omitempty"`
 	CPUArchitecture      *string                     `json:"arch,omitempty"`
 	CPUCores             *int                        `json:"cores,omitempty"`
-	CPULimit             *types.CustomInt            `json:"cpulimit,omitempty"`
+	CPULimit             *types.CustomFloat64        `json:"cpulimit,omitempty"`
 	CPUUnits             *int                        `json:"cpuunits,omitempty"`
 	DedicatedMemory      *int                        `json:"memory,omitempty"`
 	Description          *string                     `json:"description,omitempty"`

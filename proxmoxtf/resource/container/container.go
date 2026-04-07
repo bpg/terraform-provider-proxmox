@@ -53,6 +53,7 @@ const (
 	dvInitializationEntrypoint          = ""
 	dvCPUArchitecture                   = "amd64"
 	dvCPUCores                          = 1
+	dvCPULimit                          = float64(0)
 	dvCPUUnits                          = 1024
 	dvDescription                       = ""
 	dvDevicePassthroughMode             = "0660"
@@ -111,6 +112,7 @@ const (
 	mkCPU                               = "cpu"
 	mkCPUArchitecture                   = "architecture"
 	mkCPUCores                          = "cores"
+	mkCPULimit                          = "limit"
 	mkCPUUnits                          = "units"
 	mkDescription                       = "description"
 	mkDisk                              = "disk"
@@ -296,6 +298,7 @@ func Container() *schema.Resource {
 						map[string]any{
 							mkCPUArchitecture: dvCPUArchitecture,
 							mkCPUCores:        dvCPUCores,
+							mkCPULimit:        dvCPULimit,
 							mkCPUUnits:        dvCPUUnits,
 						},
 					}, nil
@@ -315,6 +318,15 @@ func Container() *schema.Resource {
 							Optional:         true,
 							Default:          dvCPUCores,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 128)),
+						},
+						mkCPULimit: {
+							Type:        schema.TypeFloat,
+							Description: "Limit of CPU usage. Value 0 indicates no limit (defaults to 0).",
+							Optional:    true,
+							Default:     dvCPULimit,
+							ValidateDiagFunc: validation.ToDiagFunc(
+								validation.FloatBetween(0, 8192),
+							),
 						},
 						mkCPUUnits: {
 							Type:        schema.TypeInt,
@@ -1334,10 +1346,16 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 
 		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
 		cpuCores := cpuBlock[mkCPUCores].(int)
+		cpuLimit := cpuBlock[mkCPULimit].(float64)
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
 
 		updateBody.CPUArchitecture = &cpuArchitecture
 		updateBody.CPUCores = &cpuCores
+
+		if cpuLimit > 0 {
+			updateBody.CPULimit = &cpuLimit
+		}
+
 		updateBody.CPUUnits = &cpuUnits
 	}
 
@@ -1720,6 +1738,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
 	cpuCores := cpuBlock[mkCPUCores].(int)
+	cpuLimit := cpuBlock[mkCPULimit].(float64)
 	cpuUnits := cpuBlock[mkCPUUnits].(int)
 
 	description := d.Get(mkDescription).(string)
@@ -2090,6 +2109,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
 		CPUCores:             &cpuCores,
+		CPULimit:             &cpuLimit,
 		CPUUnits:             &cpuUnits,
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
@@ -2609,6 +2629,13 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		cpu[mkCPUCores] = 1
 	}
 
+	if containerConfig.CPULimit != nil {
+		cpu[mkCPULimit] = float64(*containerConfig.CPULimit)
+	} else {
+		// Default value of "cpulimit" is "0" according to the API documentation.
+		cpu[mkCPULimit] = float64(0)
+	}
+
 	if containerConfig.CPUUnits != nil {
 		cpu[mkCPUUnits] = *containerConfig.CPUUnits
 	} else {
@@ -2626,6 +2653,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	} else if len(currentCPU) > 0 ||
 		cpu[mkCPUArchitecture] != dvCPUArchitecture ||
 		cpu[mkCPUCores] != dvCPUCores ||
+		cpu[mkCPULimit] != dvCPULimit ||
 		cpu[mkCPUUnits] != dvCPUUnits {
 		err := d.Set(mkCPU, []any{cpu})
 		diags = append(diags, diag.FromErr(err)...)
@@ -3345,10 +3373,18 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
 		cpuCores := cpuBlock[mkCPUCores].(int)
+		cpuLimit := cpuBlock[mkCPULimit].(float64)
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
 
 		updateBody.CPUArchitecture = &cpuArchitecture
 		updateBody.CPUCores = &cpuCores
+
+		if cpuLimit > 0 {
+			updateBody.CPULimit = &cpuLimit
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "cpulimit")
+		}
+
 		updateBody.CPUUnits = &cpuUnits
 	}
 
