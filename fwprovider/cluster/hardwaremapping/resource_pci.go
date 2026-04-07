@@ -8,8 +8,8 @@ package hardwaremapping
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -27,6 +27,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
@@ -52,9 +53,11 @@ func (r *pciResource) read(ctx context.Context, hm *modelPCI) (bool, diag.Diagno
 
 	data, err := r.client.Get(ctx, proxmoxtypes.TypePCI, hmName)
 	if err != nil {
-		if strings.Contains(err.Error(), "no such resource") {
-			diags.AddError("Could not read PCI hardware mapping", err.Error())
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			return false, diags
 		}
+
+		diags.AddError(fmt.Sprintf("Could not read PCI hardware mapping %q", hmName), err.Error())
 
 		return false, diags
 	}
@@ -119,7 +122,7 @@ func (r *pciResource) Create(ctx context.Context, req resource.CreateRequest, re
 
 	if err := r.client.Create(ctx, proxmoxtypes.TypePCI, hm.toCreateRequest()); err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Could not create PCI hardware mapping %q.", hmName),
+			fmt.Sprintf("Could not create PCI hardware mapping %q", hmName),
 			err.Error(),
 		)
 
@@ -142,7 +145,7 @@ func (r *pciResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 	hmID := hm.Name.ValueString()
 
 	if err := r.client.Delete(ctx, proxmoxtypes.TypePCI, hmID); err != nil {
-		if strings.Contains(err.Error(), "no such resource") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddWarning(
 				"PCI hardware mapping does not exist",
 				fmt.Sprintf(
@@ -151,7 +154,7 @@ func (r *pciResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 				),
 			)
 		} else {
-			resp.Diagnostics.AddError(fmt.Sprintf("Could not delete PCI hardware mapping %q.", hmID), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("Could not delete PCI hardware mapping %q", hmID), err.Error())
 		}
 	}
 }
@@ -297,7 +300,7 @@ func (r *pciResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		hmPlan.toUpdateRequest(&hmCurrent),
 	); err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Could not update PCI hardware mapping %q.", hmName),
+			fmt.Sprintf("Could not update PCI hardware mapping %q", hmName),
 			err.Error(),
 		)
 
