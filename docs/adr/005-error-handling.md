@@ -41,6 +41,8 @@ Standard summaries for the resource lifecycle:
 | Import                         | `"Unable to Import [Resource]"`              | `"Unable to Import SDN VNet"`                    |
 | Not found (import/datasource)  | `"[Resource] Not Found"`                     | `"SDN VNet Not Found"`                           |
 
+When the resource name or ID is available, include it in the summary using `fmt.Sprintf` (e.g., `fmt.Sprintf("Unable to Read SDN VNet %q", id)`). Domain clients do not consistently include the resource identity in their error messages, so the summary is the only reliable place for it.
+
 The detail string (second argument) should be `err.Error()`, which carries the full error chain from the API layer.
 
 ### Diagnostic Severity

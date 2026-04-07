@@ -327,6 +327,8 @@ schema.StringAttribute{
 resp.Diagnostics.AddError("Unable to Create Resource", err.Error())
 ```
 
+**Error diagnostic conventions:** New code should use `"Unable to [Action] [Resource]"` format (see [ADR-005](docs/adr/005-error-handling.md)). Include the resource name/ID in the summary (e.g., `fmt.Sprintf("Unable to Read VM %q", name)`) — domain clients do not reliably include it in `err.Error()`. No trailing period. Pass `err.Error()` as the detail string — never double-wrap. Legacy prefixes ("Could not", "Error") are acceptable in existing code.
+
 ### Datasource Schema Attributes
 
 In a **datasource**, attributes that are purely output (populated by the provider during Read) must be `Computed: true` only — never `Optional`. This applies to all attributes except lookup keys (which are `Required`).
