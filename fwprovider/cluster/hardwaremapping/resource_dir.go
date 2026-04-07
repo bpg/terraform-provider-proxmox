@@ -8,8 +8,8 @@ package hardwaremapping
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -25,6 +25,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
@@ -50,9 +51,11 @@ func (r *dirResource) read(ctx context.Context, hm *modelDir) (bool, diag.Diagno
 
 	data, err := r.client.Get(ctx, proxmoxtypes.TypeDir, hmName)
 	if err != nil {
-		if strings.Contains(err.Error(), "no such resource") {
-			diags.AddError("Could not read directory mapping", err.Error())
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			return false, diags
 		}
+
+		diags.AddError("Could not read directory mapping", err.Error())
 
 		return false, diags
 	}
@@ -142,7 +145,7 @@ func (r *dirResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 	hmID := hm.Name.ValueString()
 
 	if err := r.client.Delete(ctx, proxmoxtypes.TypeDir, hmID); err != nil {
-		if strings.Contains(err.Error(), "no such resource") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddWarning(
 				"directory mapping does not exist",
 				fmt.Sprintf(
