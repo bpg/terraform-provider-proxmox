@@ -513,6 +513,7 @@ func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteReq
 	}
 }
 
+//nolint:dupl
 func (r *linuxBridgeResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,

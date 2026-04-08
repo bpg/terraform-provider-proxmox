@@ -8,6 +8,7 @@ package network
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -23,7 +24,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -32,6 +32,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -179,10 +180,10 @@ type linuxBondResource struct {
 
 func (r *linuxBondResource) Metadata(
 	_ context.Context,
-	req resource.MetadataRequest,
+	_ resource.MetadataRequest,
 	resp *resource.MetadataResponse,
 ) {
-	resp.TypeName = req.ProviderTypeName + "_network_linux_bond"
+	resp.TypeName = "proxmox_network_linux_bond"
 }
 
 // Schema defines the schema for the resource.
@@ -267,12 +268,11 @@ func (r *linuxBondResource) Schema(
 				ElementType:         types.StringType,
 			},
 			"bond_mode": schema.StringAttribute{
-				Description: "The bonding mode (defaults to `balance-rr`).",
+				Description: "The bonding mode.",
 				MarkdownDescription: "The bonding mode. Possible values are `balance-rr`, `active-backup`, `balance-xor`, " +
-					"`broadcast`, `802.3ad`, `balance-tlb`, `balance-alb` (defaults to `balance-rr`).",
+					"`broadcast`, `802.3ad`, `balance-tlb`, `balance-alb`.",
 				Optional: true,
 				Computed: true,
-				Default:  stringdefault.StaticString("balance-rr"),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"balance-rr",
@@ -330,7 +330,6 @@ func (r *linuxBondResource) Configure(
 	r.client = cfg.Client
 }
 
-//nolint:dupl
 func (r *linuxBondResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan linuxBondResourceModel
 
@@ -346,8 +345,8 @@ func (r *linuxBondResource) Create(ctx context.Context, req resource.CreateReque
 	err := r.client.Node(plan.NodeName.ValueString()).CreateNetworkInterface(ctx, body)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating Linux Bond interface",
-			"Could not create Linux Bond, unexpected error: "+err.Error(),
+			"Unable to Create Linux Bond",
+			err.Error(),
 		)
 
 		return
@@ -363,17 +362,16 @@ func (r *linuxBondResource) Create(ctx context.Context, req resource.CreateReque
 
 	if !found {
 		resp.Diagnostics.AddError(
-			"Linux Bond interface not found after creation",
+			"Unable to Read Linux Bond After Creation",
 			fmt.Sprintf(
-				"Interface %q on node %q could not be read after creation",
+				"Interface %q on node %q could not be found",
 				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
 
 		return
 	}
 
-	resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
 	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
 	defer cancel()
@@ -381,9 +379,8 @@ func (r *linuxBondResource) Create(ctx context.Context, req resource.CreateReque
 	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				plan.NodeName.ValueString(), err.Error()),
+			"Unable to Reload Network Configuration",
+			err.Error(),
 		)
 	}
 }
@@ -392,8 +389,8 @@ func (r *linuxBondResource) read(ctx context.Context, model *linuxBondResourceMo
 	ifaces, err := r.client.Node(model.NodeName.ValueString()).ListNetworkInterfaces(ctx)
 	if err != nil {
 		diags.AddError(
-			"Error listing network interfaces",
-			"Could not list network interfaces, unexpected error: "+err.Error(),
+			"Unable to List Network Interfaces",
+			err.Error(),
 		)
 
 		return false
@@ -407,8 +404,8 @@ func (r *linuxBondResource) read(ctx context.Context, model *linuxBondResourceMo
 		err = model.importFromNetworkInterfaceList(ctx, iface)
 		if err != nil {
 			diags.AddError(
-				"Error converting network interface to a model",
-				"Could not import network interface from API response, unexpected error: "+err.Error(),
+				"Unable to Read Linux Bond",
+				err.Error(),
 			)
 
 			return false
@@ -466,6 +463,7 @@ func (r *linuxBondResource) Update(ctx context.Context, req resource.UpdateReque
 	attribute.CheckDelete(plan.MTU, state.MTU, &toDelete, "mtu")
 	attribute.CheckDelete(plan.Gateway, state.Gateway, &toDelete, "gateway")
 	attribute.CheckDelete(plan.Gateway6, state.Gateway6, &toDelete, "gateway6")
+	attribute.CheckDelete(plan.Comment, state.Comment, &toDelete, "comments")
 	attribute.CheckDelete(plan.BondPrimary, state.BondPrimary, &toDelete, "bond-primary")
 	attribute.CheckDelete(plan.BondXmitHashPolicy, state.BondXmitHashPolicy, &toDelete, "bond_xmit_hash_policy")
 
@@ -476,8 +474,8 @@ func (r *linuxBondResource) Update(ctx context.Context, req resource.UpdateReque
 	err := r.client.Node(plan.NodeName.ValueString()).UpdateNetworkInterface(ctx, plan.Name.ValueString(), body)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error updating Linux Bond interface",
-			"Could not update Linux Bond, unexpected error: "+err.Error(),
+			"Unable to Update Linux Bond",
+			err.Error(),
 		)
 
 		return
@@ -491,9 +489,9 @@ func (r *linuxBondResource) Update(ctx context.Context, req resource.UpdateReque
 
 	if !found {
 		resp.Diagnostics.AddError(
-			"Linux Bond interface not found after update",
+			"Unable to Read Linux Bond After Update",
 			fmt.Sprintf(
-				"Interface %q on node %q could not be read after update",
+				"Interface %q on node %q could not be found",
 				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
 
@@ -508,16 +506,13 @@ func (r *linuxBondResource) Update(ctx context.Context, req resource.UpdateReque
 	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				plan.NodeName.ValueString(), err.Error()),
+			"Unable to Reload Network Configuration",
+			err.Error(),
 		)
 	}
 }
 
 // Delete deletes a Linux Bond interface.
-//
-//nolint:dupl
 func (r *linuxBondResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state linuxBondResourceModel
 
@@ -529,20 +524,11 @@ func (r *linuxBondResource) Delete(ctx context.Context, req resource.DeleteReque
 	}
 
 	err := r.client.Node(state.NodeName.ValueString()).DeleteNetworkInterface(ctx, state.Name.ValueString())
-	if err != nil {
-		if strings.Contains(err.Error(), "interface does not exist") {
-			resp.Diagnostics.AddWarning(
-				"Linux Bond interface does not exist",
-				fmt.Sprintf("Could not delete Linux Bond '%s', interface does not exist, "+
-					"or has already been deleted outside of Terraform.", state.Name.ValueString()),
-			)
-		} else {
-			resp.Diagnostics.AddError(
-				"Error deleting Linux Bond interface",
-				fmt.Sprintf("Could not delete Linux Bond '%s', unexpected error: %s",
-					state.Name.ValueString(), err.Error()),
-			)
-		}
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
+		resp.Diagnostics.AddError(
+			"Unable to Delete Linux Bond",
+			err.Error(),
+		)
 
 		return
 	}
@@ -553,13 +539,13 @@ func (r *linuxBondResource) Delete(ctx context.Context, req resource.DeleteReque
 	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				state.NodeName.ValueString(), err.Error()),
+			"Unable to Reload Network Configuration",
+			err.Error(),
 		)
 	}
 }
 
+//nolint:dupl
 func (r *linuxBondResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
@@ -568,7 +554,7 @@ func (r *linuxBondResource) ImportState(
 	idParts := strings.Split(req.ID, ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
+			"Unable to Import Linux Bond",
 			fmt.Sprintf("Expected import identifier with format: `node_name:iface`. Got: %q", req.ID),
 		)
 
@@ -592,8 +578,8 @@ func (r *linuxBondResource) ImportState(
 
 	if !found {
 		resp.Diagnostics.AddError(
-			"Linux Bond interface not found",
-			fmt.Sprintf("Interface %q on node %q could not be imported", iface, nodeName),
+			"Linux Bond Not Found",
+			fmt.Sprintf("Interface %q on node %q was not found", iface, nodeName),
 		)
 
 		return
