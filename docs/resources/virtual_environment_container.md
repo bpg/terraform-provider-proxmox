@@ -150,6 +150,7 @@ output "ubuntu_container_public_key" {
         - `armhf` - ARM (32 bit).
         - `i386` - x86 (32 bit).
     - `cores` - (Optional) The number of CPU cores (defaults to `1`).
+    - `limit` - (Optional) Limit of CPU usage. Value `0` indicates no limit (defaults to `0`).
     - `units` - (Optional) The CPU units (defaults to `1024`).
 - `description` - (Optional) The description.
 - `disk` - (Optional) The disk configuration.
