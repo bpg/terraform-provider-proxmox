@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=heavy
+//testacc:resource=vm
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -14,6 +17,7 @@ import (
 	"math/rand"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -32,8 +36,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
 	tests := []struct {
-		name  string
-		steps []resource.TestStep
+		name   string
+		steps  []resource.TestStep
+		skipIf func() (bool, string)
 	}{
 		{"create disk with default parameters, then update it", []resource.TestStep{
 			{
@@ -113,7 +118,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					}),
 				),
 			},
-		}},
+		}, nil},
 		{"create disk from an image", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_disk" {
@@ -144,7 +149,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.ssd":               "false",
 				}),
 			),
-		}}},
+		}}, nil},
 		{"import disk from an image", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_download_file" "test_disk_image" {
@@ -183,7 +188,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.ssd":               "false",
 				}),
 			),
-		}}},
+		}}, nil},
 		{"clone default disk without overrides", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -217,7 +222,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"multiple disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -248,7 +253,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"disk ordering consistency", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -444,7 +449,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					},
 				},
 			},
-		}},
+		}, nil},
 		{"adding disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -498,7 +503,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"removing disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -553,7 +558,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"boot disk deletion protection", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -600,7 +605,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}`),
 				ExpectError: regexp.MustCompile(`cannot delete boot disk "scsi0"`),
 			},
-		}},
+		}, nil},
 		{"non-boot disk deletion works", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -658,7 +663,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"disk resize with cdrom in boot order", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -738,7 +743,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"issue #2172 exact bug scenario", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -899,7 +904,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"efi disk", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -923,7 +928,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"efi disk parameter change issue 1515", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -970,7 +975,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					},
 				},
 			},
-		}},
+		}, nil},
 		{"add efi disk to existing vm without replacement", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -1010,7 +1015,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					},
 				},
 			},
-		}},
+		}, nil},
 		{"ide disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -1055,7 +1060,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"clone disk with overrides", []resource.TestStep{
 			{
 				SkipFunc: func() (bool, error) {
@@ -1107,7 +1112,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 				Destroy:      false,
 			},
-		}},
+		}, nil},
 		{"clone with disk resize", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -1149,7 +1154,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"clone with adding disk", []resource.TestStep{
 			{
 				SkipFunc: func() (bool, error) {
@@ -1198,7 +1203,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 			{
 				RefreshState: true,
 			},
-		}},
+		}, nil},
 		{"clone with updating disk attributes", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
@@ -1241,13 +1246,8 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.speed.0.iops_write_burstable": "800",
 				}),
 			),
-		}}},
+		}}, nil},
 		{"clone with moving disk to ZFS storage", []resource.TestStep{{
-			PreConfig: func() {
-				if te.ZfsDatastoreID == "" {
-					t.Skip("skipping: PROXMOX_VE_ACC_ZFS_DATASTORE_ID is not set")
-				}
-			},
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
 					node_name = "{{.NodeName}}"
@@ -1279,7 +1279,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.datastore_id": te.ZfsDatastoreID,
 				}),
 			),
-		}}},
+		}}, func() (bool, string) {
+			return te.ZfsDatastoreID == "", "skipping: PROXMOX_VE_ACC_ZFS_DATASTORE_ID is not set"
+		}},
 		{"update single disk without affecting boot disk with import_from", []resource.TestStep{
 			{
 				// Create VM with boot disk that has import_from and a second disk
@@ -1354,7 +1356,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_bootdisk_bug", "disk.1.size", "2"),
 				),
 			},
-		}},
+		}, nil},
 		{"resize boot disk with import_from should not trigger re-import", []resource.TestStep{
 			{
 				// Create VM with boot disk using import_from
@@ -1411,11 +1413,17 @@ func TestAccResourceVMDisks(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_boot_resize", "disk.0.size", "12"),
 				),
 			},
-		}},
+		}, nil},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.skipIf != nil {
+				if skip, msg := tt.skipIf(); skip {
+					t.Skip(msg)
+				}
+			}
+
 			t.Parallel()
 
 			resource.Test(t, resource.TestCase{
@@ -2383,6 +2391,103 @@ func TestAccResourceVMDiskResizeDefaultHotplug(t *testing.T) {
 			{
 				// Step 3: Refresh state to verify size persists
 				RefreshState: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceVMEFIDiskStorageMigration(t *testing.T) {
+	nfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NFS_DATASTORE_ID")
+	if nfsDatastoreID == "" {
+		t.Skip("NFS storage is not available")
+	}
+
+	te := InitEnvironment(t)
+	te.AddTemplateVars(map[string]any{
+		"NFSDatastoreID": nfsDatastoreID,
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_move" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-efi-disk-move"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_move", map[string]string{
+						"efi_disk.0.datastore_id": "local-lvm",
+						"efi_disk.0.type":         "4m",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_move" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-efi-disk-move"
+
+					efi_disk {
+						datastore_id = "{{.NFSDatastoreID}}"
+						type = "4m"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_move", map[string]string{
+						"efi_disk.0.datastore_id": nfsDatastoreID,
+						"efi_disk.0.type":         "4m",
+					}),
+					// Verify the disk was moved (not recreated) by checking
+					// via the API that no orphaned unused disk was left behind.
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_efi_disk_move"]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+
+						vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+						if err != nil {
+							return fmt.Errorf("failed to parse vm_id: %w", err)
+						}
+
+						vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+						if err != nil {
+							return fmt.Errorf("failed to get VM config: %w", err)
+						}
+
+						if vmConfig.EFIDisk == nil {
+							return fmt.Errorf("EFI disk not found after move")
+						}
+
+						if !strings.HasPrefix(vmConfig.EFIDisk.FileVolume, nfsDatastoreID+":") {
+							return fmt.Errorf("EFI disk not on expected datastore: %s", vmConfig.EFIDisk.FileVolume)
+						}
+
+						// Verify the disk file name contains the VM ID, proving it was
+						// moved (preserving data) rather than recreated as a new empty disk.
+						expectedPrefix := fmt.Sprintf("vm-%d-", vmID)
+						if !strings.Contains(vmConfig.EFIDisk.FileVolume, expectedPrefix) {
+							return fmt.Errorf("EFI disk does not contain VM ID pattern %q: %s",
+								expectedPrefix, vmConfig.EFIDisk.FileVolume)
+						}
+
+						return nil
+					},
+				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_efi_disk_move", plancheck.ResourceActionUpdate),
+					},
+				},
 			},
 		},
 	})

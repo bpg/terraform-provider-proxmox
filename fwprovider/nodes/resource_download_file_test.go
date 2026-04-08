@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=heavy
+//testacc:resource=file
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -32,36 +35,18 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-// fallback URLs for when TestFileServer is not available (PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set)
-const (
-	fallbackFakeFileISO   = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
-	fallbackFakeFileQCOW2 = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
-	// SHA256 checksums for the fallback files (content: "asd" = 3 bytes)
-	fallbackChecksum = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
-)
-
 func TestAccResourceDownloadFile(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	// Try to use local test server, fall back to external URLs if not configured
 	fileServer := test.NewTestFileServer(t)
-
-	var fakeFileISO, fakeFileQCOW2, checksum string
-
-	if fileServer != nil {
-		// Use local test server - independent of external resources
-		content := []byte("asd") // 3 bytes, same as the original fake files
-		fakeFileISO = fileServer.AddFile("/fake_file.iso", "fake_file.iso", content)
-		fakeFileQCOW2 = fileServer.AddFile("/fake_file.qcow2", "fake_file.qcow2", content)
-		checksum = fileServer.GetFileSHA256("/fake_file.iso")
-		t.Logf("Using local test file server at %s", fileServer.URL())
-	} else {
-		// Fall back to external URLs
-		fakeFileISO = fallbackFakeFileISO
-		fakeFileQCOW2 = fallbackFakeFileQCOW2
-		checksum = fallbackChecksum
-		t.Log("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - using external URLs")
+	if fileServer == nil {
+		t.Skip("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - skipping download file test")
 	}
+
+	content := []byte("asd")
+	fakeFileISO := fileServer.AddFile("/fake_file.iso", "fake_file.iso", content)
+	fakeFileQCOW2 := fileServer.AddFile("/fake_file.qcow2", "fake_file.qcow2", content)
+	checksum := fileServer.GetFileSHA256("/fake_file.iso")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"FakeFileISO":   fakeFileISO,

@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=heavy
+//testacc:resource=vm
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -30,7 +33,7 @@ func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
 	te := InitEnvironment(t)
-	dirName := fmt.Sprintf("dir_%s", gofakeit.Word())
+	dirName := fmt.Sprintf("dir_%s", gofakeit.LetterN(8))
 	te.AddTemplateVars(map[string]interface{}{
 		"DirName": dirName,
 	})
@@ -1090,7 +1093,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						  - systemctl enable qemu-guest-agent
 						  - systemctl start qemu-guest-agent
 						EOF
-						file_name = "{{.TestName}}-cloud-config.yaml"
+						file_name = "{{.TestName}}-network1-cloud-config.yaml"
 					}
 				}
 
@@ -1153,7 +1156,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						  - systemctl enable qemu-guest-agent
 						  - systemctl start qemu-guest-agent
 						EOF
-						file_name = "{{.TestName}}-cloud-config.yaml"
+						file_name = "{{.TestName}}-wait-ipv4-cloud-config.yaml"
 					}
 				}
 
@@ -1972,7 +1975,7 @@ func stopVM(te *Environment, vmID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	return te.NodeClient().VM(id).StopVM(ctx)
+	return te.NodeClient().VM(id).StopVM(ctx).Err()
 }
 
 func waitForVMStopped(te *Environment, vmID string) {

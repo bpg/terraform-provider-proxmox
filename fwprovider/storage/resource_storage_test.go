@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=medium
+//testacc:resource=storage
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,10 +12,8 @@
 package storage_test
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -21,7 +22,7 @@ import (
 func TestAccResourceStorageDirectoryShortName(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	storageID := fmt.Sprintf("dir-short-%s", gofakeit.Word())
+	storageID := test.SafeResourceName("dir-short")
 	te.AddTemplateVars(map[string]any{
 		"StorageID": storageID,
 	})

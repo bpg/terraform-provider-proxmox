@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=heavy
+//testacc:resource=network
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -19,6 +22,10 @@ import (
 )
 
 func TestAccResourceLinuxBridge(t *testing.T) {
+	// Disabled: ifreload -a on single-NIC PVE setups bounces the management interface,
+	// causing "Nexthop has invalid gateway" errors. Needs a dedicated test interface.
+	t.Skip("skipping: ifreload -a is unreliable on single-NIC setups")
+
 	te := test.InitEnvironment(t)
 
 	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))

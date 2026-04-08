@@ -8,9 +8,9 @@ package ha
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -27,6 +27,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -261,7 +262,7 @@ func (r *haResourceResource) Delete(
 
 	err = r.client.Delete(ctx, resID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no such resource") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddWarning(
 				"HA resource does not exist",
 				fmt.Sprintf(
@@ -336,8 +337,8 @@ func (r *haResourceResource) read(ctx context.Context, data *ResourceModel) (boo
 
 	res, err := r.client.Get(ctx, resID)
 	if err != nil {
-		if !strings.Contains(err.Error(), "no such resource") {
-			diags.AddError("Could not read HA resource", err.Error())
+		if !errors.Is(err, api.ErrResourceDoesNotExist) {
+			diags.AddError(fmt.Sprintf("Could not read HA resource %q", resID), err.Error())
 		}
 
 		return false, diags

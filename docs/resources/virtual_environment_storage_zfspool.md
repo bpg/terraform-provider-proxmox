@@ -46,3 +46,13 @@ resource "proxmox_virtual_environment_storage_zfspool" "example" {
 ### Read-Only
 
 - `shared` (Boolean) Whether the storage is shared across all nodes.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+#!/usr/bin/env sh
+# Storage can be imported using its identifier, e.g.:
+terraform import proxmox_virtual_environment_storage_zfspool.example local-zfs
+```

@@ -125,7 +125,7 @@ func customIntPtrToInt64Ptr(v *proxmoxtypes.CustomInt) *int64 {
 	return &i
 }
 
-func (m *backupJobModel) toCreateAPI(ctx context.Context, diags *diag.Diagnostics) *backup.CreateRequestBody {
+func (m *backupJobModel) toAPICreate(ctx context.Context, diags *diag.Diagnostics) *backup.CreateRequestBody {
 	body := &backup.CreateRequestBody{}
 
 	body.ID = m.ID.ValueString()
@@ -137,7 +137,7 @@ func (m *backupJobModel) toCreateAPI(ctx context.Context, diags *diag.Diagnostic
 	return body
 }
 
-func (m *backupJobModel) toUpdateAPI(
+func (m *backupJobModel) toAPIUpdate(
 	ctx context.Context,
 	state *backupJobModel,
 	diags *diag.Diagnostics,

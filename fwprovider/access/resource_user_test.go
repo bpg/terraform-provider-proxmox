@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=light
+//testacc:resource=access
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24,7 +27,7 @@ import (
 func TestAccResourceUser(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
+	userID := fmt.Sprintf("%s@pve", gofakeit.LetterN(10))
 	te.AddTemplateVars(map[string]any{
 		"UserID": userID,
 	})
@@ -88,8 +91,8 @@ func TestAccResourceUser(t *testing.T) {
 
 func TestAccResourceUserToken(t *testing.T) {
 	te := test.InitEnvironment(t)
-	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
-	tokenName := gofakeit.Word()
+	userID := fmt.Sprintf("%s@pve", gofakeit.LetterN(10))
+	tokenName := gofakeit.LetterN(8)
 
 	te.AddTemplateVars(map[string]any{
 		"UserID":    userID,

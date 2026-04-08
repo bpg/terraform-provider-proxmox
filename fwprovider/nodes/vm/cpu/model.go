@@ -13,16 +13,16 @@ import (
 
 // Model represents the CPU model.
 type Model struct {
-	Affinity     types.String `tfsdk:"affinity"`
-	Architecture types.String `tfsdk:"architecture"`
-	Cores        types.Int64  `tfsdk:"cores"`
-	Flags        types.Set    `tfsdk:"flags"`
-	Hotplugged   types.Int64  `tfsdk:"hotplugged"`
-	Limit        types.Int64  `tfsdk:"limit"`
-	Numa         types.Bool   `tfsdk:"numa"`
-	Sockets      types.Int64  `tfsdk:"sockets"`
-	Type         types.String `tfsdk:"type"`
-	Units        types.Int64  `tfsdk:"units"`
+	Affinity     types.String  `tfsdk:"affinity"`
+	Architecture types.String  `tfsdk:"architecture"`
+	Cores        types.Int64   `tfsdk:"cores"`
+	Flags        types.Set     `tfsdk:"flags"`
+	Hotplugged   types.Int64   `tfsdk:"hotplugged"`
+	Limit        types.Float64 `tfsdk:"limit"`
+	Numa         types.Bool    `tfsdk:"numa"`
+	Sockets      types.Int64   `tfsdk:"sockets"`
+	Type         types.String  `tfsdk:"type"`
+	Units        types.Int64   `tfsdk:"units"`
 }
 
 func attributeTypes() map[string]attr.Type {
@@ -32,7 +32,7 @@ func attributeTypes() map[string]attr.Type {
 		"cores":        types.Int64Type,
 		"flags":        types.SetType{ElemType: types.StringType},
 		"hotplugged":   types.Int64Type,
-		"limit":        types.Int64Type,
+		"limit":        types.Float64Type,
 		"numa":         types.BoolType,
 		"sockets":      types.Int64Type,
 		"type":         types.StringType,

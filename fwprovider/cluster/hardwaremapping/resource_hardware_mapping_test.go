@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=light
+//testacc:resource=hardwaremapping
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -916,4 +919,70 @@ func TestAccResourceHardwareMappingUSBInvalidInput(t *testing.T) {
 			},
 		},
 	)
+}
+
+// TestAccResourceHardwareMappingDirImportNonExistent verifies that importing a non-existent directory mapping
+// returns an error instead of silently removing it from state.
+func TestAccResourceHardwareMappingDirImportNonExistent(t *testing.T) {
+	_, te := testAccResourceHardwareMappingInit(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: `resource "proxmox_hardware_mapping_dir" "test" {
+					name = "nonexistent-dir-mapping"
+					map  = [{ node = "pve", path = "/tmp" }]
+				}`,
+				ResourceName:  accTestHardwareMappingNameDir,
+				ImportState:   true,
+				ImportStateId: "nonexistent-dir-mapping",
+				ExpectError:   regexp.MustCompile(`Cannot import non-existent remote object|not found`),
+			},
+		},
+	})
+}
+
+// TestAccResourceHardwareMappingPCIImportNonExistent verifies that importing a non-existent PCI mapping
+// returns an error instead of silently removing it from state.
+func TestAccResourceHardwareMappingPCIImportNonExistent(t *testing.T) {
+	_, te := testAccResourceHardwareMappingInit(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: `resource "proxmox_hardware_mapping_pci" "test" {
+					name = "nonexistent-pci-mapping"
+					map  = [{ id = "0000:0000", node = "pve", path = "0000:00:00.0" }]
+				}`,
+				ResourceName:  accTestHardwareMappingNamePCI,
+				ImportState:   true,
+				ImportStateId: "nonexistent-pci-mapping",
+				ExpectError:   regexp.MustCompile(`Cannot import non-existent remote object|not found`),
+			},
+		},
+	})
+}
+
+// TestAccResourceHardwareMappingUSBImportNonExistent verifies that importing a non-existent USB mapping
+// returns an error instead of silently removing it from state.
+func TestAccResourceHardwareMappingUSBImportNonExistent(t *testing.T) {
+	_, te := testAccResourceHardwareMappingInit(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: `resource "proxmox_hardware_mapping_usb" "test" {
+					name = "nonexistent-usb-mapping"
+					map  = [{ id = "0000:0000", node = "pve" }]
+				}`,
+				ResourceName:  accTestHardwareMappingNameUSB,
+				ImportState:   true,
+				ImportStateId: "nonexistent-usb-mapping",
+				ExpectError:   regexp.MustCompile(`Cannot import non-existent remote object|not found`),
+			},
+		},
+	})
 }

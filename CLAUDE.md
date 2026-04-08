@@ -92,10 +92,28 @@ npx --yes markdownlint-cli2 --fix "path/to/*.md"  # Lint markdown files
 ```bash
 ./testacc TestAccResourceVM           # Run single test
 ./testacc "TestAccResource.*"         # Run tests matching pattern
+./testacc --tier light                # Light tests only (~30s)
+./testacc --tier medium               # Medium tests only (~3 min)
+./testacc --tier heavy                # Heavy tests only (~15 min)
+./testacc --tier light,medium         # Combine tiers
+./testacc --tier all                  # All tiers with smart parallelism (~15 min)
+./testacc --resource vm               # All VM-related tests
+./testacc --resource sdn              # All SDN tests
 ./testacc --no-proxy TestName         # Run without mitmproxy
-./testacc --verbose TestName          # Verbose output
-./testacc TestName -- -v              # Pass flags through to go test
+./testacc TestName -- -count 2        # Pass flags through to go test
 ```
+
+### Test Tiers
+
+Tests are classified via `//testacc:tier=X` annotations in test files:
+
+| Tier   | Description                    | Parallelism | Time    |
+| ------ | ------------------------------ | ----------- | ------- |
+| light  | API-only, no VMs or containers | -p 8        | ~30s    |
+| medium | Simple VMs with unique IDs     | -p 4        | ~3 min  |
+| heavy  | Cloud images, shared state     | -p 1        | ~15 min |
+
+Resource targeting via `//testacc:resource=X` annotations: `vm`, `container`, `firewall`, `sdn`, `file`, `pool`, `acme`, `access`, `backup`, `ha`, `hardwaremapping`, `metrics`, `options`, `replication`, `apt`, `datastores`, `storage`, `network`, `misc`
 
 Requires `testacc.env` with:
 
@@ -225,6 +243,7 @@ When handing off work:
 - **Go 1.25+** required
 - **golangci-lint 2.8.0** — installed automatically by `make lint`
 - **Line length limit:** 150 characters (enforced by linter)
+- **Comment line wrap:** ~120 characters (not 70–80; the linter allows 150, so narrow wrapping wastes vertical space)
 
 ### Overview
 
@@ -307,6 +326,23 @@ schema.StringAttribute{
 }
 resp.Diagnostics.AddError("Unable to Create Resource", err.Error())
 ```
+
+**Error diagnostic conventions:** New code should use `"Unable to [Action] [Resource]"` format (see [ADR-005](docs/adr/005-error-handling.md)). Include the resource name/ID in the summary (e.g., `fmt.Sprintf("Unable to Read VM %q", name)`) — domain clients do not reliably include it in `err.Error()`. No trailing period. Pass `err.Error()` as the detail string — never double-wrap. Legacy prefixes ("Could not", "Error") are acceptable in existing code.
+
+### Datasource Schema Attributes
+
+In a **datasource**, attributes that are purely output (populated by the provider during Read) must be `Computed: true` only — never `Optional`. This applies to all attributes except lookup keys (which are `Required`).
+
+| Attribute role | Schema flags | Example |
+| -------------- | ------------ | ------- |
+| Lookup key | `Required: true` | `id`, `node_name` |
+| Read-only output | `Computed: true` | `name`, `status`, `tags`, `cpu` block |
+
+**Why not `Optional` on outputs?** `Optional` on a datasource output lets users write values in config that are silently ignored — misleading UX and confusing docs (attributes appear under "Optional" instead of "Read-Only").
+
+**Nil API values in Computed fields:** After Read, Computed attributes must have a known value — null means "unknown" which is only valid during planning. Convert nil API pointers to sensible defaults: `""` for strings, `false` for bools, empty collections for sets/maps. Use `types.StringValue("")` instead of `types.StringPointerValue(nil)`.
+
+**Nested blocks in datasources** (e.g., `cpu`, `vga`, `rng`): The datasource should have its own `DataSourceSchema()` with `Computed: true` on the block and all inner attributes. Do not reuse `ResourceSchema()` which has `Optional: true, Computed: true` for resource write semantics.
 
 ### Comma-Separated API Values
 

@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=medium
+//testacc:resource=vm
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -42,14 +45,16 @@ func TestBatchCreate(t *testing.T) {
 	sourceID, err := gen.NextID(ctx)
 	require.NoError(t, err)
 
-	err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: sourceID})
+	createResult := te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: sourceID})
 
-	require.NoError(t, err, "failed to create VM %d", sourceID)
+	require.NoError(t, createResult.Err(), "failed to create VM %d", sourceID)
 
 	ids := make([]int, numVMs)
 
 	t.Cleanup(func() {
-		_ = te.NodeClient().VM(sourceID).DeleteVM(ctx, true, true) //nolint:errcheck
+		if result := te.NodeClient().VM(sourceID).DeleteVM(ctx, true, true); result.Err() != nil {
+			t.Logf("cleanup warning: failed to delete source VM %d: %v", sourceID, result.Err())
+		}
 
 		var wg sync.WaitGroup
 		for _, id := range ids {
@@ -59,7 +64,9 @@ func TestBatchCreate(t *testing.T) {
 				defer wg.Done()
 
 				if id > 0 {
-					_ = te.NodeClient().VM(id).DeleteVM(ctx, true, true) //nolint:errcheck
+					if result := te.NodeClient().VM(id).DeleteVM(ctx, true, true); result.Err() != nil {
+						t.Logf("cleanup warning: failed to delete VM %d: %v", id, result.Err())
+					}
 				}
 			}()
 		}
@@ -69,6 +76,8 @@ func TestBatchCreate(t *testing.T) {
 
 	var wg sync.WaitGroup
 
+	errs := make([]error, numVMs)
+
 	for i := range numVMs {
 		wg.Add(1)
 
@@ -76,14 +85,16 @@ func TestBatchCreate(t *testing.T) {
 			defer wg.Done()
 
 			id := 999900 + i
-			if err == nil {
-				err = te.NodeClient().VM(sourceID).CloneVM(ctx, 5, &vms.CloneRequestBody{VMIDNew: id})
-				ids[i] = id
-			}
+			cloneResult := te.NodeClient().VM(sourceID).CloneVM(ctx, 5, &vms.CloneRequestBody{VMIDNew: id})
 
-			assert.NoError(t, err)
+			errs[i] = cloneResult.Err()
+			ids[i] = id
 		}()
 	}
 
 	wg.Wait()
+
+	for i, cloneErr := range errs {
+		assert.NoError(t, cloneErr, "clone VM %d failed", ids[i])
+	}
 }

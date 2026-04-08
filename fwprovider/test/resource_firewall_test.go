@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=heavy
+//testacc:resource=firewall
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -2408,7 +2411,7 @@ func TestAccResourceFirewallRulesIdentityFieldChange(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_firewall_rules" "test_proto" {
 					node_name = "{{.NodeName}}"
-					vm_id     = 9993
+					vm_id     = 9994
 					rule {
 						type    = "in"
 						action  = "ACCEPT"
@@ -2528,7 +2531,9 @@ func TestAccResourceClusterFirewallSecurityGroupCreateAlreadyExists(t *testing.T
 	})
 
 	t.Cleanup(func() {
-		_ = deleteSecurityGroupManually(te, sgName)
+		if err := deleteSecurityGroupManually(te, sgName); err != nil {
+			t.Logf("cleanup warning: failed to delete security group %q: %v", sgName, err)
+		}
 	})
 
 	resource.Test(t, resource.TestCase{
@@ -2570,7 +2575,9 @@ func TestAccResourceFirewallIPSetCreateAlreadyExists(t *testing.T) {
 	})
 
 	t.Cleanup(func() {
-		_ = deleteIPSetManually(te, ipsetName)
+		if err := deleteIPSetManually(te, ipsetName); err != nil {
+			t.Logf("cleanup warning: failed to delete IP set %q: %v", ipsetName, err)
+		}
 	})
 
 	resource.Test(t, resource.TestCase{
@@ -2629,8 +2636,9 @@ func TestAccResourceClusterFirewallSecurityGroupReadDeletedGroup(t *testing.T) {
 	})
 
 	t.Cleanup(func() {
-		// Best-effort cleanup in case the test fails mid-way.
-		_ = deleteSecurityGroupManually(te, sgName)
+		if err := deleteSecurityGroupManually(te, sgName); err != nil {
+			t.Logf("cleanup warning: failed to delete security group %q: %v", sgName, err)
+		}
 	})
 
 	resource.Test(t, resource.TestCase{

@@ -18,22 +18,18 @@ func DataSourceSchema() schema.Attribute {
 			AttrTypes: attributeTypes(),
 		},
 		Description: "The RNG (Random Number Generator) configuration.",
-		Optional:    true,
 		Computed:    true,
 		Attributes: map[string]schema.Attribute{
 			"source": schema.StringAttribute{
 				Description: "The entropy source for the RNG device.",
-				Optional:    true,
 				Computed:    true,
 			},
 			"max_bytes": schema.Int64Attribute{
 				Description: "Maximum bytes of entropy allowed to get injected into the guest every period.",
-				Optional:    true,
 				Computed:    true,
 			},
 			"period": schema.Int64Attribute{
 				Description: "Period in milliseconds to limit entropy injection to the guest.",
-				Optional:    true,
 				Computed:    true,
 			},
 		},

@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=light
+//testacc:resource=replication
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -77,7 +80,7 @@ func TestAccResourceReplication(t *testing.T) {
 
 	skipReplication(t, te)
 
-	imageFileName := gofakeit.Word() + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
+	imageFileName := gofakeit.LetterN(8) + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
 
 	jobnum := "1"
 

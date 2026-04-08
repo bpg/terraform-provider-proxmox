@@ -213,7 +213,8 @@ output "ubuntu_vm_public_key" {
             protection for AMD models.
     - `hotplugged` - (Optional) The number of hotplugged vCPUs (defaults
         to `0`).
-    - `limit` - (Optional) Limit of CPU usage, `0...128`. (defaults to `0` -- no limit).
+    - `limit` - (Optional) Limit of CPU usage, `0...128` (supports
+        fractional values, e.g. `63.5`). (defaults to `0` -- no limit).
     - `numa` - (Boolean) Enable/disable NUMA. (default to `false`)
     - `sockets` - (Optional) The number of CPU sockets (defaults to `1`).
     - `type` - (Optional) The emulated CPU type, it's recommended to
@@ -835,7 +836,7 @@ resource "proxmox_virtual_environment_vm" "data_user_vm" {
   # remainder of VM configuration
   ...
 }
-````
+```
 
 ## Example: Disk pass-through
 

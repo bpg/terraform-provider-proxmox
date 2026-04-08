@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=heavy
+//testacc:resource=vm
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -483,8 +486,8 @@ func ensureVMRunning(te *Environment, vmID string) {
 		return
 	}
 
-	if _, err := vm.StartVM(ctx, 120); err != nil {
-		te.t.Fatalf("failed to start VM %s: %v", vmID, err)
+	if result := vm.StartVM(ctx, 120); result.Err() != nil {
+		te.t.Fatalf("failed to start VM %s: %v", vmID, result.Err())
 	}
 
 	if err := vm.WaitForVMStatus(ctx, "running"); err != nil {

@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=medium
+//testacc:resource=vm
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -73,7 +76,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 						# architecture = "x86_64"   only root can set architecture
 						cores = 2
 						hotplugged = 2
-						limit = 64
+						limit = 63.5
 						numa = false
 						sockets = 2
 						type = "host"
@@ -85,7 +88,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"cpu.cores":      "2",
 						"cpu.hotplugged": "2",
-						"cpu.limit":      "64",
+						"cpu.limit":      "63.5",
 						"cpu.numa":       "false",
 						"cpu.sockets":    "2",
 						"cpu.type":       "host",
@@ -149,6 +152,27 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}),
 			),
 		}}},
+		{"create VM with integer cpu limit and verify no drift", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-limit-int"
+					cpu = {
+						cores = 1
+						limit = 64
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
+						"cpu.limit": "64",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2353
 		{"create VM without cpu.units and verify no drift", []resource.TestStep{
 			{

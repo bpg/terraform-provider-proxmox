@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=light
+//testacc:resource=misc
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,11 +12,8 @@
 package test
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -25,7 +25,7 @@ func TestAccResourceGroupImport(t *testing.T) {
 	}
 
 	te := InitEnvironment(t)
-	groupID := fmt.Sprintf("test-group-import-%s-%d", gofakeit.Word(), time.Now().UnixMicro())
+	groupID := SafeResourceName("test-group-import")
 
 	te.AddTemplateVars(map[string]interface{}{
 		"GroupID": groupID,

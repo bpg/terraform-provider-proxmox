@@ -341,7 +341,7 @@ func (r *backupJobResource) Create(
 		return
 	}
 
-	createBody := plan.toCreateAPI(ctx, &resp.Diagnostics)
+	createBody := plan.toAPICreate(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -406,7 +406,7 @@ func (r *backupJobResource) Update(
 		return
 	}
 
-	updateBody := plan.toUpdateAPI(ctx, &state, &resp.Diagnostics)
+	updateBody := plan.toAPIUpdate(ctx, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

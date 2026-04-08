@@ -34,7 +34,7 @@ func (d *Datasource) Schema(
 				Description: "The filters to apply to the stores.",
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
-					"content_types": stringset.DataSourceAttribute("Only list stores with the given content types.", "", true),
+					"content_types": stringset.DataSourceFilterAttribute("Only list stores with the given content types.", ""),
 					"id": schema.StringAttribute{
 						Description: "Only list stores with the given ID.",
 						Optional:    true,
@@ -55,7 +55,7 @@ func (d *Datasource) Schema(
 							Description: "Whether the store is active.",
 							Optional:    true,
 						},
-						"content_types": stringset.DataSourceAttribute("Allowed store content types.", "", false),
+						"content_types": stringset.DataSourceAttribute("Allowed store content types.", ""),
 						"enabled": schema.BoolAttribute{
 							Description: "Whether the store is enabled.",
 							Optional:    true,

@@ -9,6 +9,8 @@ allowed-tools:
   - Glob
   - AskUserQuestion
   - Write
+  - Edit
+  - Skill
 ---
 
 <objective>
@@ -312,7 +314,56 @@ If schema not changed:
 
 ---
 
-## Step 7: Summary and Proof of Work Report
+## Step 7: Implementation Scrutiny
+
+**This step is mandatory. Do NOT rubber-stamp the implementation.**
+
+After all mechanical checks pass, critically examine the actual code changes. The goal is to catch logic errors, missed edge cases, incomplete fixes, and pattern violations that automated tools cannot detect.
+
+### 7a: Read the full diff
+
+```bash
+git diff main...HEAD
+# If no commits yet, fall back to unstaged diff:
+git diff
+```
+
+### 7b: Self-review checklist
+
+For each changed file, answer these questions. Write your answers out explicitly — do not skip any:
+
+1. **Correctness:** Does this change actually fix the reported problem / implement the requested feature? Trace through the code path mentally. Could a caller still hit the original bug through a different path?
+2. **Completeness:** Are there other locations in the codebase with the same pattern that also need fixing? Search proactively:
+   ```bash
+   # Search for the OLD pattern that was replaced — if it still exists elsewhere, flag it
+   ```
+3. **Edge cases:** What inputs, error conditions, or timing scenarios could break this? Consider: nil/empty values, concurrent access, error wrapping chains, API behavior differences across PVE versions.
+4. **Consistency:** Does the fix follow the same pattern used by other resources in the codebase? Find at least one reference example and compare.
+5. **Regression risk:** Could this change break existing behavior? Consider callers of the modified functions — do they all handle the new behavior correctly?
+6. **Error handling:** Are errors properly propagated, wrapped, or classified? Check `errors.Is`/`errors.As` chains, sentinel error usage, and diagnostic messages.
+7. **Test coverage gap:** If acceptance tests don't cover the specific changed behavior, is there a concrete reason (e.g., can't inject API errors), or is the test just missing?
+
+### 7c: Evaluate and decide
+
+**If you find issues:** Stop, report each issue with file path and line number, and provide a concrete fix recommendation. Do NOT continue to the summary step. The issues must be fixed and this step re-run.
+
+**If the change involves non-obvious design decisions** (e.g., choosing between approaches, new patterns, behavioral trade-offs): Invoke the `/grill-me` skill to interrogate the user about those decisions before proceeding. Examples of when to grill:
+- The fix changes observable behavior (not just error messages)
+- The approach differs from what the issue suggested
+- There are multiple valid ways to solve it and the trade-offs aren't obvious
+- The change touches shared/core code that many resources depend on
+
+**If the implementation is clean:** State explicitly what you verified and why you're confident, then proceed.
+
+**Result:**
+
+- All questions answered satisfactorily: "SCRUTINY PASSED"
+- Issues found: "SCRUTINY FAILED — {list of issues}"
+- Design decisions need validation: invoke `/grill-me`, then re-evaluate
+
+---
+
+## Step 8: Summary and Proof of Work Report
 
 Generate summary:
 
@@ -331,6 +382,7 @@ Date: $(date +%Y-%m-%d)
 | Acceptance Tests | ${ACC_STATUS} |
 | API Verification | ${API_STATUS} |
 | Documentation | ${DOCS_STATUS} |
+| Scrutiny | ${SCRUTINY_STATUS} |
 
 Overall: ${OVERALL_STATUS}
 ```
@@ -434,7 +486,7 @@ Failed steps: ${FAILED_STEPS}
 Fix the issues above and run /bpg:ready again.
 ```
 
-## Step 8: Update Session State
+## Step 9: Update Session State
 
 Detect issue number and update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read and Edit tools:
 
@@ -458,6 +510,8 @@ Detect issue number and update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read a
 - [ ] Acceptance tests pass (or explicitly skipped)
 - [ ] API verification done (or explicitly skipped for non-API changes)
 - [ ] Documentation regenerated (if schema changed)
+- [ ] Implementation scrutiny passed (all 7 questions answered, no issues found)
+- [ ] `/grill-me` invoked if non-obvious design decisions detected
 - [ ] Summary presented to user
 - [ ] Session state updated with results
 </success_criteria>

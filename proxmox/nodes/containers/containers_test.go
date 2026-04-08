@@ -112,8 +112,24 @@ func taskCompletedWithWarningsHandler(captures *requestCaptures) http.HandlerFun
 	return taskStatusHandler(captures, "WARNINGS: 1")
 }
 
+// taskLogWithWarningsHandler returns a handler that responds with a task log containing warning lines.
+func taskLogWithWarningsHandler(captures *requestCaptures) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		writeJSON(w, map[string]any{
+			"data": []map[string]any{
+				{"n": 1, "t": "starting task"},
+				{"n": 2, "t": "WARN: Systemd 255 detected. You may need to enable nesting."},
+				{"n": 3, "t": "TASK WARNINGS: 1"},
+			},
+		})
+	}
+}
+
 // TestCreateContainerSucceedsWithWarnings verifies that CreateContainer succeeds
-// when the PVE task completes with warnings (e.g., "WARNINGS: 1") rather than "OK".
+// when the PVE task completes with warnings (e.g., "WARNINGS: 1") rather than "OK",
+// and that the warnings are captured in the returned TaskResult.
 // This is a common scenario with Ubuntu 24.04 templates on systemd 255+.
 func TestCreateContainerSucceedsWithWarnings(t *testing.T) {
 	t.Parallel()
@@ -126,19 +142,25 @@ func TestCreateContainerSucceedsWithWarnings(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		writeJSON(w, map[string]any{"data": testUPID})
 	})
-	mux.HandleFunc("GET /api2/json/nodes/", taskCompletedWithWarningsHandler(captures))
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/status",
+		taskCompletedWithWarningsHandler(captures))
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/log",
+		taskLogWithWarningsHandler(captures))
 
 	server := newTestServer(t, mux)
 	defer server.Close()
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CreateContainer(t.Context(), &CreateRequestBody{})
-	require.NoError(t, err, "CreateContainer should succeed when task completes with warnings")
+	result := client.CreateContainer(t.Context(), &CreateRequestBody{})
+	require.NoError(t, result.Err(), "CreateContainer should succeed when task completes with warnings")
+	assert.True(t, result.HasWarnings(), "expected warnings to be captured in TaskResult")
+	assert.Contains(t, result.Warnings()[0], "WARN:", "expected warning text from task log")
 }
 
 // TestCloneContainerSucceedsWithWarnings verifies that CloneContainer succeeds
-// when the PVE task completes with warnings rather than "OK".
+// when the PVE task completes with warnings rather than "OK", and that the
+// warnings are captured in the returned TaskResult.
 func TestCloneContainerSucceedsWithWarnings(t *testing.T) {
 	t.Parallel()
 
@@ -150,15 +172,20 @@ func TestCloneContainerSucceedsWithWarnings(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		writeJSON(w, map[string]any{"data": testUPID})
 	})
-	mux.HandleFunc("GET /api2/json/nodes/", taskCompletedWithWarningsHandler(captures))
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/status",
+		taskCompletedWithWarningsHandler(captures))
+	mux.HandleFunc("GET /api2/json/nodes/pve/tasks/"+testUPID+"/log",
+		taskLogWithWarningsHandler(captures))
 
 	server := newTestServer(t, mux)
 	defer server.Close()
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CloneContainer(t.Context(), &CloneRequestBody{})
-	require.NoError(t, err, "CloneContainer should succeed when task completes with warnings")
+	result := client.CloneContainer(t.Context(), &CloneRequestBody{})
+	require.NoError(t, result.Err(), "CloneContainer should succeed when task completes with warnings")
+	assert.True(t, result.HasWarnings(), "expected warnings to be captured in TaskResult")
+	assert.Contains(t, result.Warnings()[0], "WARN:", "expected warning text from task log")
 }
 
 func TestDeleteContainerWaitsForTask(t *testing.T) {
@@ -179,8 +206,8 @@ func TestDeleteContainerWaitsForTask(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.DeleteContainer(t.Context())
-	require.NoError(t, err)
+	result := client.DeleteContainer(t.Context())
+	require.NoError(t, result.Err())
 }
 
 func TestResizeContainerDiskWaitsForTask(t *testing.T) {
@@ -201,11 +228,11 @@ func TestResizeContainerDiskWaitsForTask(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.ResizeContainerDisk(t.Context(), &ResizeRequestBody{
+	result := client.ResizeContainerDisk(t.Context(), &ResizeRequestBody{
 		Disk: "rootfs",
 		Size: "+1G",
 	})
-	require.NoError(t, err)
+	require.NoError(t, result.Err())
 }
 
 // TestCreateContainerRetries verifies that CreateContainer retries on HTTP 500
@@ -242,8 +269,8 @@ func TestCreateContainerRetries(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CreateContainer(t.Context(), &CreateRequestBody{})
-	require.NoError(t, err)
+	result := client.CreateContainer(t.Context(), &CreateRequestBody{})
+	require.NoError(t, result.Err())
 
 	assert.Equal(t, 2, captures.countPOST("/lxc"),
 		"expected exactly 2 POST calls (1 failure + 1 success), proving retry occurred")
@@ -272,8 +299,8 @@ func TestCreateContainerNoRetryOn400(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CreateContainer(t.Context(), &CreateRequestBody{})
-	require.Error(t, err)
+	result := client.CreateContainer(t.Context(), &CreateRequestBody{})
+	require.Error(t, result.Err())
 
 	assert.Equal(t, 1, captures.countPOST("/lxc"),
 		"expected exactly 1 POST call (no retry on 400)")
@@ -311,8 +338,8 @@ func TestCloneContainerRetries(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CloneContainer(t.Context(), &CloneRequestBody{})
-	require.NoError(t, err)
+	result := client.CloneContainer(t.Context(), &CloneRequestBody{})
+	require.NoError(t, result.Err())
 
 	assert.Equal(t, 2, captures.countPOST("/clone"),
 		"expected exactly 2 POST calls (1 failure + 1 success), proving retry occurred")
@@ -376,8 +403,8 @@ func TestStartContainerAlreadyRunningOnFirstAttempt(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.StartContainer(t.Context())
-	require.NoError(t, err, "StartContainer should succeed when API returns 'already running'")
+	result := client.StartContainer(t.Context())
+	require.NoError(t, result.Err(), "StartContainer should succeed when API returns 'already running'")
 
 	assert.Equal(t, 1, captures.countPOST("/status/start"),
 		"expected exactly 1 start attempt")
@@ -404,8 +431,8 @@ func TestStartContainerAlreadyRunningDetectedByPreCheck(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.StartContainer(t.Context())
-	require.NoError(t, err)
+	result := client.StartContainer(t.Context())
+	require.NoError(t, result.Err())
 
 	assert.Equal(t, 0, captures.countPOST("/status/start"),
 		"expected no start calls when container is already running")
@@ -460,8 +487,8 @@ func TestStartContainerRetriesOnNoWorkerUpid(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.StartContainer(t.Context())
-	require.NoError(t, err)
+	result := client.StartContainer(t.Context())
+	require.NoError(t, result.Err())
 
 	assert.Equal(t, 2, captures.countPOST("/status/start"),
 		"expected exactly 2 start calls (1 failure + 1 success), proving retry occurred")
@@ -509,8 +536,8 @@ func TestStartContainerAlreadyRunningOnRetry(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.StartContainer(t.Context())
-	require.NoError(t, err, "should succeed when retry finds container already running")
+	result := client.StartContainer(t.Context())
+	require.NoError(t, result.Err(), "should succeed when retry finds container already running")
 
 	assert.Equal(t, 2, captures.countPOST("/status/start"),
 		"expected exactly 2 start calls (1 transient failure + 1 already running)")
@@ -538,8 +565,8 @@ func TestCloneContainerNoRetryOn400(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	err := client.CloneContainer(t.Context(), &CloneRequestBody{})
-	require.Error(t, err)
+	result := client.CloneContainer(t.Context(), &CloneRequestBody{})
+	require.Error(t, result.Err())
 
 	assert.Equal(t, 1, captures.countPOST("/clone"),
 		"expected exactly 1 POST call (no retry on 400)")

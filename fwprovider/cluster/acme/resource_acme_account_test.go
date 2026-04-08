@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=light
+//testacc:resource=acme
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -13,7 +16,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -23,7 +25,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
-	accountName := fmt.Sprintf("test-account-%s", gofakeit.Word())
+	accountName := test.SafeResourceName("test-account")
 	te.AddTemplateVars(map[string]interface{}{
 		"AccountName": accountName,
 	})

@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=heavy
+//testacc:resource=file
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -15,18 +18,11 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
-)
-
-// fallback URLs for when TestFileServer is not available.
-const (
-	fallbackISOURL    = "https://boot.netboot.xyz/ipxe/netboot.xyz.iso"
-	fallbackVZTmplURL = "http://download.proxmox.com/images/system/alpine-3.19-default_20240207_amd64.tar.xz"
 )
 
 func TestAccDatasourceFile(t *testing.T) {
@@ -102,7 +98,7 @@ func TestAccDatasourceFileImport(t *testing.T) {
 func TestAccDatasourceFileNotFound(t *testing.T) {
 	te := InitEnvironment(t)
 
-	nonExistentFileName := "non-existent-" + gofakeit.Word() + ".txt"
+	nonExistentFileName := SafeResourceName("non-existent") + ".txt"
 
 	te.AddTemplateVars(map[string]interface{}{
 		"NonExistentFileName": nonExistentFileName,
@@ -130,32 +126,25 @@ func TestAccDatasourceFileNotFound(t *testing.T) {
 func TestAccDatasourceFileContentTypeFiltering(t *testing.T) {
 	te := InitEnvironment(t)
 
-	vztmplFileName := gofakeit.Word() + "-template.tar.zst"
-	isoFileName := gofakeit.Word() + "-test.iso"
+	vztmplFileName := SafeResourceName("tpl") + "-template.tar.zst"
+	isoFileName := SafeResourceName("iso") + "-test.iso"
 
 	te.AddTemplateVars(map[string]interface{}{
 		"VZTmplFileName": vztmplFileName,
 		"ISOFileName":    isoFileName,
 	})
 
-	// Try to use local test server for ISO, fall back to external URLs if not configured
 	fileServer := NewTestFileServer(t)
-
-	var isoURL, vztmplURL string
-
-	if fileServer != nil {
-		isoContent := []byte("fake ISO content for testing")
-		isoURL = fileServer.AddFile("/test.iso", "test.iso", isoContent)
-		// vztmpl still needs external URL as it requires specific archive format
-		vztmplURL = fallbackVZTmplURL
-		t.Logf("Using local test file server at %s (vztmpl uses external URL)", fileServer.URL())
-	} else {
-		isoURL = fallbackISOURL
-		vztmplURL = fallbackVZTmplURL
-		t.Log("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - using external URLs")
+	if fileServer == nil {
+		t.Skip("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - skipping datasource file test")
 	}
 
-	// Upload a vztmpl file (container template) - must be a real archive format
+	isoContent := []byte("fake ISO content for testing")
+	isoURL := fileServer.AddFile("/test.iso", "test.iso", isoContent)
+	vztmplContent := []byte("fake vztmpl content for testing")
+	vztmplURL := fileServer.AddFile("/template.tar.zst", "template.tar.zst", vztmplContent)
+
+	// Upload a vztmpl file (container template)
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
 		Content:  ptr.Ptr("vztmpl"),
 		FileName: ptr.Ptr(vztmplFileName),
@@ -230,25 +219,19 @@ func TestAccDatasourceFileContentTypeFiltering(t *testing.T) {
 func TestAccDatasourceFileContentTypeMismatch(t *testing.T) {
 	te := InitEnvironment(t)
 
-	isoFileName := gofakeit.Word() + "-mismatch-test.iso"
+	isoFileName := SafeResourceName("iso") + "-mismatch-test.iso"
 
 	te.AddTemplateVars(map[string]interface{}{
 		"ISOFileName": isoFileName,
 	})
 
-	// Try to use local test server, fall back to external URL if not configured
 	fileServer := NewTestFileServer(t)
-
-	var isoURL string
-
-	if fileServer != nil {
-		isoContent := []byte("fake ISO content for mismatch testing")
-		isoURL = fileServer.AddFile("/mismatch.iso", "mismatch.iso", isoContent)
-		t.Logf("Using local test file server at %s", fileServer.URL())
-	} else {
-		isoURL = fallbackISOURL
-		t.Log("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - using external URLs")
+	if fileServer == nil {
+		t.Skip("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - skipping datasource file test")
 	}
+
+	isoContent := []byte("fake ISO content for mismatch testing")
+	isoURL := fileServer.AddFile("/mismatch.iso", "mismatch.iso", isoContent)
 
 	// Upload an ISO file
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{

@@ -254,6 +254,11 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hensou"><img src="https://avatars.githubusercontent.com/u/1756077?v=4?s=100" width="100px;" alt="Henrique Sousa"/><br /><sub><b>Henrique Sousa</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=hensou" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/bl0way"><img src="https://avatars.githubusercontent.com/u/79900311?v=4?s=100" width="100px;" alt="bl0way"/><br /><sub><b>bl0way</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=bl0way" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/pepunfold"><img src="https://avatars.githubusercontent.com/u/265082672?v=4?s=100" width="100px;" alt="pepunfold"/><br /><sub><b>pepunfold</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=pepunfold" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/BeckMario"><img src="https://avatars.githubusercontent.com/u/128150642?v=4?s=100" width="100px;" alt="BeckMario"/><br /><sub><b>BeckMario</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=BeckMario" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/vaexey"><img src="https://avatars.githubusercontent.com/u/110781228?v=4?s=100" width="100px;" alt="ᵛᵃᵉˣᵉʸ"/><br /><sub><b>ᵛᵃᵉˣᵉʸ</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=vaexey" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/vishn9893"><img src="https://avatars.githubusercontent.com/u/48808713?v=4?s=100" width="100px;" alt="Vishnudhat Natarajan "/><br /><sub><b>Vishnudhat Natarajan </b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=vishn9893" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>

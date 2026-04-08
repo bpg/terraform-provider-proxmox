@@ -14,9 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v5"
+	retrylib "github.com/avast/retry-go/v5"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 )
 
 // GetTaskStatus retrieves the status of a task.
@@ -50,12 +52,12 @@ func (c *Client) GetTaskLog(ctx context.Context, upid string) ([]string, error) 
 
 	path, err := c.BuildPath(upid, "log")
 	if err != nil {
-		return lines, fmt.Errorf("error building path for task status: %w", err)
+		return lines, fmt.Errorf("error building path for task log: %w", err)
 	}
 
 	err = c.DoRequest(ctx, http.MethodGet, path, nil, resBody)
 	if err != nil {
-		return lines, fmt.Errorf("error retrieving task status: %w", err)
+		return lines, fmt.Errorf("error retrieving task log: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -89,7 +91,7 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 }
 
 type taskWaitOptions struct {
-	ignoreWarnings   bool
+	failOnWarnings   bool
 	ignoreStatusCode int
 }
 
@@ -98,15 +100,16 @@ type TaskWaitOption interface {
 	apply(opts *taskWaitOptions)
 }
 
-type withIgnoreWarnings struct{}
+type withFailOnWarnings struct{}
 
-// WithIgnoreWarnings is an option to ignore warnings when waiting for a task to complete.
-func WithIgnoreWarnings() TaskWaitOption {
-	return withIgnoreWarnings{}
+// WithFailOnWarnings treats task warnings as fatal errors instead of the default behavior
+// of capturing them as non-fatal warnings in the returned TaskResult.
+func WithFailOnWarnings() TaskWaitOption {
+	return withFailOnWarnings{}
 }
 
-func (w withIgnoreWarnings) apply(opts *taskWaitOptions) {
-	opts.ignoreWarnings = true
+func (w withFailOnWarnings) apply(opts *taskWaitOptions) {
+	opts.failOnWarnings = true
 }
 
 type withIgnoreStatus struct {
@@ -122,8 +125,32 @@ func (w withIgnoreStatus) apply(opts *taskWaitOptions) {
 	opts.ignoreStatusCode = w.statusCode
 }
 
-// WaitForTask waits for a specific task to complete.
-func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitOption) error {
+// DoTask dispatches an async PVE task with retry and waits for its result.
+// On dispatch failure, the returned TaskResult wraps the dispatch error.
+// On success or task failure, the TaskResult comes from WaitForTask. When the task
+// was already done (e.g. retry's isAlreadyDone predicate) or the dispatch returned
+// no task ID (e.g. VM already running), a zero-value TaskOK() is returned.
+func (c *Client) DoTask(
+	ctx context.Context,
+	op *retry.Operation,
+	dispatchFn func() (*string, error),
+	waitOpts ...TaskWaitOption,
+) TaskResult {
+	var result TaskResult
+
+	if err := op.DoTask(ctx, dispatchFn, func(ctx context.Context, taskID string) error {
+		result = c.WaitForTask(ctx, taskID, waitOpts...)
+		return result.Err()
+	}); err != nil && result.Err() == nil {
+		return TaskFailed(err)
+	}
+
+	return result
+}
+
+// WaitForTask waits for a specific task to complete and returns a TaskResult
+// that carries the outcome (error and/or warnings extracted from the task log).
+func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitOption) TaskResult {
 	errStillRunning := errors.New("still running")
 
 	options := &taskWaitOptions{}
@@ -132,9 +159,9 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 		opt.apply(options)
 	}
 
-	status, err := retry.NewWithData[*GetTaskStatusResponseData](
-		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
+	status, err := retrylib.NewWithData[*GetTaskStatusResponseData](
+		retrylib.Context(ctx),
+		retrylib.RetryIf(func(err error) bool {
 			var target *api.HTTPError
 			if errors.As(err, &target) {
 				if target.Code == http.StatusBadRequest {
@@ -151,10 +178,10 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 
 			return errors.Is(err, errStillRunning)
 		}),
-		retry.LastErrorOnly(true),
-		retry.UntilSucceeded(),
-		retry.DelayType(retry.FixedDelay),
-		retry.Delay(time.Second),
+		retrylib.LastErrorOnly(true),
+		retrylib.UntilSucceeded(),
+		retrylib.DelayType(retrylib.FixedDelay),
+		retrylib.Delay(time.Second),
 	).Do(
 		func() (*GetTaskStatusResponseData, error) {
 			status, err := c.GetTaskStatus(ctx, upid)
@@ -170,21 +197,105 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 		},
 	)
 	if errors.Is(err, context.DeadlineExceeded) {
-		return fmt.Errorf("timeout while waiting for task %q to complete", upid)
+		return TaskFailed(fmt.Errorf("timeout while waiting for task %q to complete", upid))
 	}
 
 	if err != nil {
-		return fmt.Errorf("error while waiting for task %q to complete: %w", upid, err)
+		return TaskFailed(fmt.Errorf("error while waiting for task %q to complete: %w", upid, err))
 	}
 
 	if status.ExitCode != "OK" {
-		if options.ignoreWarnings &&
+		if !options.failOnWarnings &&
 			strings.HasPrefix(status.ExitCode, "WARNINGS: ") && !strings.Contains(status.ExitCode, "ERROR") {
-			return nil
+			warnings := c.getTaskWarnings(ctx, upid)
+			if len(warnings) == 0 {
+				warnings = []string{fmt.Sprintf("task %q completed with warnings (exit code: %s)", upid, status.ExitCode)}
+			}
+
+			return TaskOKWithWarnings(warnings)
 		}
 
-		return fmt.Errorf("task %q failed to complete with exit code: %s", upid, status.ExitCode)
+		return c.taskFailedResult(ctx, upid, status.ExitCode)
 	}
 
-	return nil
+	return TaskOK()
+}
+
+// filterWarnings extracts warning lines from a task log.
+func filterWarnings(lines []string) []string {
+	var warnings []string
+
+	for _, line := range lines {
+		if strings.Contains(line, "WARN:") {
+			warnings = append(warnings, line)
+		}
+	}
+
+	return warnings
+}
+
+// getTaskWarnings fetches the task log and returns any warning lines.
+// This is best-effort: if the log cannot be fetched, a fallback warning is returned so that
+// callers still know the task produced warnings even when the details are unavailable.
+// Note: GetTaskLog uses the PVE API default of 50 lines; warnings beyond that will be missed.
+func (c *Client) getTaskWarnings(ctx context.Context, upid string) []string {
+	lines, err := c.GetTaskLog(ctx, upid)
+	if err != nil {
+		tflog.Warn(ctx, "failed to fetch task log for warnings", map[string]any{
+			"task_id": upid,
+			"error":   err.Error(),
+		})
+
+		return []string{"task completed with warnings but the task log could not be retrieved"}
+	}
+
+	return filterWarnings(lines)
+}
+
+// taskFailedResult fetches the task log and returns a TaskResult that includes both the exit code and
+// the log output, so users can see what went wrong without checking the Proxmox task history.
+func (c *Client) taskFailedResult(ctx context.Context, upid string, exitCode string) TaskResult {
+	lines, err := c.GetTaskLog(ctx, upid)
+	if err != nil {
+		tflog.Warn(ctx, "failed to fetch task log for error details", map[string]any{
+			"task_id": upid,
+			"error":   err.Error(),
+		})
+
+		return TaskFailed(fmt.Errorf("task %q failed to complete with exit code: %s", upid, exitCode))
+	}
+
+	if len(lines) == 0 {
+		return TaskFailed(fmt.Errorf("task %q failed to complete with exit code: %s", upid, exitCode))
+	}
+
+	if warnings := filterWarnings(lines); len(warnings) > 0 {
+		// Exclude WARN: lines from the error detail since they are surfaced as separate warning diagnostics.
+		nonWarningLines := make([]string, 0, len(lines))
+
+		for _, line := range lines {
+			if !strings.Contains(line, "WARN:") {
+				nonWarningLines = append(nonWarningLines, line)
+			}
+		}
+
+		var taskErr error
+		if len(nonWarningLines) > 0 {
+			taskErr = fmt.Errorf(
+				"task %q failed to complete with exit code: %s\ntask log:\n  %s",
+				upid, exitCode, strings.Join(nonWarningLines, "\n  "),
+			)
+		} else {
+			taskErr = fmt.Errorf("task %q failed to complete with exit code: %s", upid, exitCode)
+		}
+
+		return TaskFailedWithWarnings(taskErr, warnings)
+	}
+
+	taskErr := fmt.Errorf(
+		"task %q failed to complete with exit code: %s\ntask log:\n  %s",
+		upid, exitCode, strings.Join(lines, "\n  "),
+	)
+
+	return TaskFailed(taskErr)
 }

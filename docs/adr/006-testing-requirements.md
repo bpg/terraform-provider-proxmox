@@ -122,6 +122,9 @@ Additional scenarios when applicable:
 5. **Validation errors** — use `resource.UnitTest` with `PlanOnly: true` and `ExpectError`
 6. **Field removal** — verify optional fields can be unset (tests the `CheckDelete` path)
 
+> [!NOTE]
+> Meeting the requirements above (create + update + import + field removal) corresponds to a D6 score of 2/3 in the [compliance scoring rubric](reference-examples.md#d6-testing-quality-weight-3). For Grade A compliance (D6=3), also add table-driven structure with named scenarios, validation tests, and `test.ResourceAttributes` / `test.NoResourceAttributesSet` bulk assertions.
+
 ### Functional Coverage Requirement
 
 Acceptance tests must cover **all major use cases** for the resource, not just the happy path. PRs that only test one basic scenario will be rejected during review. For example, a backup job resource that only tests `all = true` but never tests targeting specific VMs by ID is incomplete — the VM targeting is a core use case.

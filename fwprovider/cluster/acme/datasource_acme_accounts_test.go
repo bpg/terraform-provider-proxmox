@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=light
+//testacc:resource=acme
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,10 +12,8 @@
 package acme_test
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -20,8 +21,8 @@ import (
 
 func TestAccDatasourceACMEAccounts(t *testing.T) {
 	te := test.InitEnvironment(t)
-	accountName1 := fmt.Sprintf("test-ds-accounts1-%s", gofakeit.Word())
-	accountName2 := fmt.Sprintf("test-ds-accounts2-%s", gofakeit.Word())
+	accountName1 := test.SafeResourceName("test-ds-accounts1")
+	accountName2 := test.SafeResourceName("test-ds-accounts2")
 	te.AddTemplateVars(map[string]interface{}{
 		"AccountName1": accountName1,
 		"AccountName2": accountName2,

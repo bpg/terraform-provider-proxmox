@@ -1,5 +1,8 @@
 //go:build acceptance || all
 
+//testacc:tier=light
+//testacc:resource=misc
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,13 +12,9 @@
 package test
 
 import (
-	"fmt"
 	"regexp"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -24,7 +23,7 @@ import (
 func TestAccResourceStorageDirectory(t *testing.T) {
 	te := InitEnvironment(t)
 
-	storageID := fmt.Sprintf("dir-%s-%d", strings.ToLower(gofakeit.Word()), time.Now().UnixNano())
+	storageID := SafeResourceName("dir")
 	dirPath := utils.GetAnyStringEnv("PROXMOX_VE_ACC_STORAGE_DIR_PATH")
 	if dirPath == "" {
 		dirPath = "/var/lib/vz"
@@ -259,7 +258,7 @@ func TestAccResourceStorageDirectory(t *testing.T) {
 func TestAccResourceStorageDirectoryRemoveBackups(t *testing.T) {
 	te := InitEnvironment(t)
 
-	storageID := fmt.Sprintf("dir-%s-%d", strings.ToLower(gofakeit.Word()), time.Now().UnixNano())
+	storageID := SafeResourceName("dir")
 	dirPath := utils.GetAnyStringEnv("PROXMOX_VE_ACC_STORAGE_DIR_PATH")
 	if dirPath == "" {
 		dirPath = "/var/lib/vz"

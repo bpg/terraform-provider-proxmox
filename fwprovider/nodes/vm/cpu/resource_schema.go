@@ -9,6 +9,7 @@ package cpu
 import (
 	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/float64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -88,13 +89,13 @@ func ResourceSchema() schema.Attribute {
 					int64validator.Between(1, 1024),
 				},
 			},
-			"limit": schema.Int64Attribute{
+			"limit": schema.Float64Attribute{
 				Description:         "Limit of CPU usage.",
 				MarkdownDescription: "Limit of CPU usage (defaults to `0` which means no limit).",
 				Optional:            true,
 				Computed:            true,
-				Validators: []validator.Int64{
-					int64validator.Between(1, 128),
+				Validators: []validator.Float64{
+					float64validator.Between(0, 128),
 				},
 			},
 			"numa": schema.BoolAttribute{

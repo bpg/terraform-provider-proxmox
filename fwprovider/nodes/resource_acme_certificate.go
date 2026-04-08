@@ -288,13 +288,7 @@ func (r *acmeCertificateResource) Create(
 
 	// Wait for the task to complete
 	if taskID != nil && *taskID != "" {
-		err = nodeClient.Tasks().WaitForTask(ctx, *taskID)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Certificate order task failed",
-				fmt.Sprintf("The certificate order task for node %s failed: %s", nodeName, err.Error()),
-			)
-
+		if nodeClient.Tasks().WaitForTask(ctx, *taskID).AddDiags(&resp.Diagnostics, "Certificate order task") {
 			return
 		}
 	}
@@ -417,13 +411,7 @@ func (r *acmeCertificateResource) Update(
 
 		// Wait for the task to complete
 		if taskID != nil && *taskID != "" {
-			err = nodeClient.Tasks().WaitForTask(ctx, *taskID)
-			if err != nil {
-				resp.Diagnostics.AddError(
-					"Certificate renewal task failed",
-					fmt.Sprintf("The certificate renewal task for node %s failed: %s", nodeName, err.Error()),
-				)
-
+			if nodeClient.Tasks().WaitForTask(ctx, *taskID).AddDiags(&resp.Diagnostics, "Certificate renewal task") {
 				return
 			}
 		}

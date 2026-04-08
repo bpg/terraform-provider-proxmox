@@ -30,7 +30,6 @@ Retrieves information about all the datastores available to a specific node.
 
 Required:
 
-- `content_types` (Set of String) Allowed store content types.
 - `id` (String) The ID of the store.
 - `node_name` (String) The name of the node the store is on.
 - `type` (String) Store type.
@@ -44,6 +43,10 @@ Optional:
 - `space_total` (Number) Total store space in bytes.
 - `space_used` (Number) Used store space in bytes.
 - `space_used_fraction` (Number) Used fraction (used/total).
+
+Read-Only:
+
+- `content_types` (Set of String) Allowed store content types.
 
 
 <a id="nestedatt--filters"></a>
