@@ -8,6 +8,7 @@ package network
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -29,20 +30,20 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 var (
-	_ resource.Resource                = &linuxBridgeResource{}
-	_ resource.ResourceWithConfigure   = &linuxBridgeResource{}
-	_ resource.ResourceWithImportState = &linuxBridgeResource{}
+	_ resource.Resource                = &linuxBondResource{}
+	_ resource.ResourceWithConfigure   = &linuxBondResource{}
+	_ resource.ResourceWithImportState = &linuxBondResource{}
 )
 
-type linuxBridgeResourceModel struct {
+type linuxBondResourceModel struct {
 	// Base attributes
 	ID        types.String            `tfsdk:"id"`
 	NodeName  types.String            `tfsdk:"node_name"`
@@ -55,15 +56,17 @@ type linuxBridgeResourceModel struct {
 	MTU       types.Int64             `tfsdk:"mtu"`
 	Comment   types.String            `tfsdk:"comment"`
 	Timeout   types.Int64             `tfsdk:"timeout_reload"`
-	// Linux bridge attributes
-	Ports     []types.String `tfsdk:"ports"`
-	VLANAware types.Bool     `tfsdk:"vlan_aware"`
+	// Linux bond attributes
+	Slaves             []types.String `tfsdk:"slaves"`
+	BondMode           types.String   `tfsdk:"bond_mode"`
+	BondPrimary        types.String   `tfsdk:"bond_primary"`
+	BondXmitHashPolicy types.String   `tfsdk:"bond_xmit_hash_policy"`
 }
 
-func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nodes.NetworkInterfaceCreateUpdateRequestBody {
+func (m *linuxBondResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nodes.NetworkInterfaceCreateUpdateRequestBody {
 	body := &nodes.NetworkInterfaceCreateUpdateRequestBody{
 		Iface:     m.Name.ValueString(),
-		Type:      "bridge",
+		Type:      "bond",
 		Autostart: proxmoxtypes.CustomBool(m.Autostart.ValueBool()).Pointer(),
 	}
 
@@ -71,37 +74,36 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 	body.Gateway = m.Gateway.ValueStringPointer()
 	body.CIDR6 = m.Address6.ValueStringPointer()
 	body.Gateway6 = m.Gateway6.ValueStringPointer()
+	body.Comments = m.Comment.ValueStringPointer()
 
 	if !m.MTU.IsUnknown() {
 		body.MTU = m.MTU.ValueInt64Pointer()
 	}
 
-	body.Comments = m.Comment.ValueStringPointer()
+	var sanitizedSlaves []string
 
-	var sanitizedPorts []string
-
-	for _, port := range m.Ports {
-		port := strings.TrimSpace(port.ValueString())
-		if len(port) > 0 {
-			sanitizedPorts = append(sanitizedPorts, port)
+	for _, slave := range m.Slaves {
+		s := strings.TrimSpace(slave.ValueString())
+		if len(s) > 0 {
+			sanitizedSlaves = append(sanitizedSlaves, s)
 		}
 	}
 
-	sort.Strings(sanitizedPorts)
-	bridgePorts := strings.Join(sanitizedPorts, " ")
+	sort.Strings(sanitizedSlaves)
+	slaves := strings.Join(sanitizedSlaves, " ")
 
-	if len(bridgePorts) > 0 {
-		body.BridgePorts = &bridgePorts
+	if len(slaves) > 0 {
+		body.Slaves = &slaves
 	}
 
-	if m.VLANAware.ValueBool() {
-		body.BridgeVLANAware = proxmoxtypes.CustomBool(true).Pointer()
-	}
+	body.BondMode = m.BondMode.ValueStringPointer()
+	body.BondPrimary = m.BondPrimary.ValueStringPointer()
+	body.BondXmitHashPolicy = m.BondXmitHashPolicy.ValueStringPointer()
 
 	return body
 }
 
-func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
+func (m *linuxBondResourceModel) importFromNetworkInterfaceList(
 	ctx context.Context,
 	iface *nodes.NetworkInterfaceListResponseData,
 ) error {
@@ -118,64 +120,81 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 	if iface.MTU != nil {
 		if v, err := strconv.Atoi(*iface.MTU); err == nil {
 			m.MTU = types.Int64Value(int64(v))
+		} else {
+			m.MTU = types.Int64Null()
 		}
 	} else {
 		m.MTU = types.Int64Null()
 	}
 
-	// Comments can be set to an empty string in plant, which will translate to a "no value" in PVE
+	// Comments can be set to an empty string in plan, which will translate to a "no value" in PVE
 	// So we don't want to set it to null if it's empty, as this will be indicated as a plan drift
 	if iface.Comments != nil {
 		m.Comment = types.StringValue(strings.TrimSpace(*iface.Comments))
 	}
 
-	if iface.BridgeVLANAware != nil {
-		m.VLANAware = types.BoolPointerValue(iface.BridgeVLANAware.PointerBool())
+	if iface.BondMode != nil {
+		m.BondMode = types.StringValue(*iface.BondMode)
 	} else {
-		m.VLANAware = types.BoolValue(false)
+		m.BondMode = types.StringNull()
 	}
 
-	if iface.BridgePorts != nil && len(*iface.BridgePorts) > 0 {
-		ports, diags := types.ListValueFrom(ctx, types.StringType, strings.Split(*iface.BridgePorts, " "))
+	if iface.BondPrimary != nil && *iface.BondPrimary != "" {
+		m.BondPrimary = types.StringValue(*iface.BondPrimary)
+	} else {
+		m.BondPrimary = types.StringNull()
+	}
+
+	if iface.BondXmitHashPolicy != nil && *iface.BondXmitHashPolicy != "" {
+		m.BondXmitHashPolicy = types.StringValue(*iface.BondXmitHashPolicy)
+	} else {
+		m.BondXmitHashPolicy = types.StringNull()
+	}
+
+	if iface.Slaves != nil && len(*iface.Slaves) > 0 {
+		parsed := strings.Split(*iface.Slaves, " ")
+		sort.Strings(parsed)
+
+		slaves, diags := types.ListValueFrom(ctx, types.StringType, parsed)
 		if diags.HasError() {
-			return fmt.Errorf("failed to parse bridge ports: %s", *iface.BridgePorts)
+			return fmt.Errorf("failed to parse bond slaves: %s", *iface.Slaves)
 		}
 
-		diags = ports.ElementsAs(ctx, &m.Ports, false)
+		diags = slaves.ElementsAs(ctx, &m.Slaves, false)
 		if diags.HasError() {
-			return fmt.Errorf("failed to build bridge ports list: %s", *iface.BridgePorts)
+			return fmt.Errorf("failed to build bond slaves list: %s", *iface.Slaves)
 		}
 	}
 
 	return nil
 }
 
-// NewLinuxBridgeResource creates a new resource for managing Linux Bridge network interfaces.
-func NewLinuxBridgeResource() resource.Resource {
-	return &linuxBridgeResource{}
+// NewLinuxBondResource creates a new resource for managing Linux Bond network interfaces.
+func NewLinuxBondResource() resource.Resource {
+	return &linuxBondResource{}
 }
 
-type linuxBridgeResource struct {
+type linuxBondResource struct {
 	client proxmox.Client
 }
 
-func (r *linuxBridgeResource) Metadata(
+func (r *linuxBondResource) Metadata(
 	_ context.Context,
-	req resource.MetadataRequest,
+	_ resource.MetadataRequest,
 	resp *resource.MetadataResponse,
 ) {
-	resp.TypeName = req.ProviderTypeName + "_network_linux_bridge"
+	resp.TypeName = "proxmox_network_linux_bond"
 }
 
 // Schema defines the schema for the resource.
-func (r *linuxBridgeResource) Schema(
+func (r *linuxBondResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		DeprecationMessage: migration.DeprecationMessage("proxmox_network_linux_bridge"),
-		Description:        "Manages a Linux Bridge network interface in a Proxmox VE node.",
+		Description:         "Manages a Linux Bond network interface in a Proxmox VE node.",
+		MarkdownDescription: "Manages a Linux Bond network interface in a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
 			// Base attributes
 			"id": attribute.ResourceID("A unique identifier with format `<node name>:<iface>`"),
@@ -185,13 +204,13 @@ func (r *linuxBridgeResource) Schema(
 			},
 			"name": schema.StringAttribute{
 				Description: "The interface name.",
-				MarkdownDescription: "The interface name. Commonly vmbr[N], where 0 ≤ N ≤ 4094 (vmbr0 - vmbr4094), but " +
-					"can be any string containing only letters, numbers, and underscores (_), starting with a letter and at most 10 characters long.",
+				MarkdownDescription: "The interface name. Must be `bond[N]`, where 0 ≤ N (e.g. bond0, bond1), " +
+					"or any alphanumeric string that starts with a character and is at most 10 characters long.",
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,9}$`),
-						`must contain only letters, numbers, and underscores (_), start with a letter, and be no longer than 10 characters`,
+						regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]{0,9}$`),
+						`must be an alphanumeric string that starts with a character and is at most 10 characters long`,
 					),
 				},
 				PlanModifiers: []planmodifier.String{
@@ -241,22 +260,55 @@ func (r *linuxBridgeResource) Schema(
 					int64validator.AtLeast(5),
 				},
 			},
-			// Linux Bridge attributes
-			"ports": schema.ListAttribute{
-				Description: "The interface bridge ports.",
-				Optional:    true,
-				ElementType: types.StringType,
+			// Linux Bond attributes
+			"slaves": schema.ListAttribute{
+				Description:         "The interface bond slaves (member interfaces).",
+				MarkdownDescription: "The interface bond slaves (member interfaces).",
+				Required:            true,
+				ElementType:         types.StringType,
 			},
-			"vlan_aware": schema.BoolAttribute{
-				Description: "Whether the interface bridge is VLAN aware (defaults to `false`).",
-				Optional:    true,
-				Computed:    true,
+			"bond_mode": schema.StringAttribute{
+				Description: "The bonding mode.",
+				MarkdownDescription: "The bonding mode. Possible values are `balance-rr`, `active-backup`, `balance-xor`, " +
+					"`broadcast`, `802.3ad`, `balance-tlb`, `balance-alb`.",
+				Optional: true,
+				Computed: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"balance-rr",
+						"active-backup",
+						"balance-xor",
+						"broadcast",
+						"802.3ad",
+						"balance-tlb",
+						"balance-alb",
+					),
+				},
+			},
+			"bond_primary": schema.StringAttribute{
+				Description: "The primary interface for active-backup bond mode.",
+				MarkdownDescription: "The primary interface for `active-backup` bond mode. " +
+					"Specifies which slave interface should be the active one.",
+				Optional: true,
+			},
+			"bond_xmit_hash_policy": schema.StringAttribute{
+				Description: "The transmit hash policy for balance-xor and 802.3ad bond modes.",
+				MarkdownDescription: "The transmit hash policy for `balance-xor` and `802.3ad` bond modes. " +
+					"Possible values are `layer2`, `layer2+3`, `layer3+4`.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"layer2",
+						"layer2+3",
+						"layer3+4",
+					),
+				},
 			},
 		},
 	}
 }
 
-func (r *linuxBridgeResource) Configure(
+func (r *linuxBondResource) Configure(
 	_ context.Context,
 	req resource.ConfigureRequest,
 	resp *resource.ConfigureResponse,
@@ -278,9 +330,8 @@ func (r *linuxBridgeResource) Configure(
 	r.client = cfg.Client
 }
 
-//nolint:dupl
-func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan linuxBridgeResourceModel
+func (r *linuxBondResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan linuxBondResourceModel
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -294,8 +345,8 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 	err := r.client.Node(plan.NodeName.ValueString()).CreateNetworkInterface(ctx, body)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating Linux Bridge interface",
-			"Could not create Linux Bridge, unexpected error: "+err.Error(),
+			"Unable to Create Linux Bond",
+			err.Error(),
 		)
 
 		return
@@ -311,17 +362,16 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 
 	if !found {
 		resp.Diagnostics.AddError(
-			"Linux Bridge interface not found after creation",
+			"Unable to Read Linux Bond After Creation",
 			fmt.Sprintf(
-				"Interface %q on node %q could not be read after creation",
+				"Interface %q on node %q could not be found",
 				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
 
 		return
 	}
 
-	resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
 	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
 	defer cancel()
@@ -329,19 +379,18 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				plan.NodeName.ValueString(), err.Error()),
+			"Unable to Reload Network Configuration",
+			err.Error(),
 		)
 	}
 }
 
-func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResourceModel, diags *diag.Diagnostics) bool {
+func (r *linuxBondResource) read(ctx context.Context, model *linuxBondResourceModel, diags *diag.Diagnostics) bool {
 	ifaces, err := r.client.Node(model.NodeName.ValueString()).ListNetworkInterfaces(ctx)
 	if err != nil {
 		diags.AddError(
-			"Error listing network interfaces",
-			"Could not list network interfaces, unexpected error: "+err.Error(),
+			"Unable to List Network Interfaces",
+			err.Error(),
 		)
 
 		return false
@@ -355,8 +404,8 @@ func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResour
 		err = model.importFromNetworkInterfaceList(ctx, iface)
 		if err != nil {
 			diags.AddError(
-				"Error converting network interface to a model",
-				"Could not import network interface from API response, unexpected error: "+err.Error(),
+				"Unable to Read Linux Bond",
+				err.Error(),
 			)
 
 			return false
@@ -368,10 +417,9 @@ func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResour
 	return false
 }
 
-// Read reads a Linux Bridge interface.
-func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Get current state
-	var state linuxBridgeResourceModel
+// Read reads a Linux Bond interface.
+func (r *linuxBondResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state linuxBondResourceModel
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -395,9 +443,9 @@ func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest
 	resp.Diagnostics.Append(diags...)
 }
 
-// Update updates a Linux Bridge interface.
-func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state linuxBridgeResourceModel
+// Update updates a Linux Bond interface.
+func (r *linuxBondResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state linuxBondResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -415,12 +463,9 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 	attribute.CheckDelete(plan.MTU, state.MTU, &toDelete, "mtu")
 	attribute.CheckDelete(plan.Gateway, state.Gateway, &toDelete, "gateway")
 	attribute.CheckDelete(plan.Gateway6, state.Gateway6, &toDelete, "gateway6")
-
-	// VLANAware is computed with a default, will never be null
-	if !plan.VLANAware.Equal(state.VLANAware) && !plan.VLANAware.ValueBool() {
-		toDelete = append(toDelete, "bridge_vlan_aware")
-		body.BridgeVLANAware = nil
-	}
+	attribute.CheckDelete(plan.Comment, state.Comment, &toDelete, "comments")
+	attribute.CheckDelete(plan.BondPrimary, state.BondPrimary, &toDelete, "bond-primary")
+	attribute.CheckDelete(plan.BondXmitHashPolicy, state.BondXmitHashPolicy, &toDelete, "bond_xmit_hash_policy")
 
 	if len(toDelete) > 0 {
 		body.Delete = toDelete
@@ -429,8 +474,8 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 	err := r.client.Node(plan.NodeName.ValueString()).UpdateNetworkInterface(ctx, plan.Name.ValueString(), body)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error updating Linux Bridge interface",
-			"Could not update Linux Bridge, unexpected error: "+err.Error(),
+			"Unable to Update Linux Bond",
+			err.Error(),
 		)
 
 		return
@@ -444,9 +489,9 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 
 	if !found {
 		resp.Diagnostics.AddError(
-			"Linux Bridge interface not found after update",
+			"Unable to Read Linux Bond After Update",
 			fmt.Sprintf(
-				"Interface %q on node %q could not be read after update",
+				"Interface %q on node %q could not be found",
 				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
 
@@ -461,18 +506,15 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				plan.NodeName.ValueString(), err.Error()),
+			"Unable to Reload Network Configuration",
+			err.Error(),
 		)
 	}
 }
 
-// Delete deletes a Linux Bridge interface.
-//
-
-func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state linuxBridgeResourceModel
+// Delete deletes a Linux Bond interface.
+func (r *linuxBondResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state linuxBondResourceModel
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -482,20 +524,11 @@ func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteReq
 	}
 
 	err := r.client.Node(state.NodeName.ValueString()).DeleteNetworkInterface(ctx, state.Name.ValueString())
-	if err != nil {
-		if strings.Contains(err.Error(), "interface does not exist") {
-			resp.Diagnostics.AddWarning(
-				"Linux Bridge interface does not exist",
-				fmt.Sprintf("Could not delete Linux Bridge '%s', interface does not exist, "+
-					"or has already been deleted outside of Terraform.", state.Name.ValueString()),
-			)
-		} else {
-			resp.Diagnostics.AddError(
-				"Error deleting Linux Bridge interface",
-				fmt.Sprintf("Could not delete Linux Bridge '%s', unexpected error: %s",
-					state.Name.ValueString(), err.Error()),
-			)
-		}
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
+		resp.Diagnostics.AddError(
+			"Unable to Delete Linux Bond",
+			err.Error(),
+		)
 
 		return
 	}
@@ -506,15 +539,14 @@ func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteReq
 	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				state.NodeName.ValueString(), err.Error()),
+			"Unable to Reload Network Configuration",
+			err.Error(),
 		)
 	}
 }
 
 //nolint:dupl
-func (r *linuxBridgeResource) ImportState(
+func (r *linuxBondResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -522,7 +554,7 @@ func (r *linuxBridgeResource) ImportState(
 	idParts := strings.Split(req.ID, ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
+			"Unable to Import Linux Bond",
 			fmt.Sprintf("Expected import identifier with format: `node_name:iface`. Got: %q", req.ID),
 		)
 
@@ -532,7 +564,7 @@ func (r *linuxBridgeResource) ImportState(
 	nodeName := idParts[0]
 	iface := idParts[1]
 
-	state := linuxBridgeResourceModel{
+	state := linuxBondResourceModel{
 		ID:       types.StringValue(req.ID),
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),
@@ -546,8 +578,8 @@ func (r *linuxBridgeResource) ImportState(
 
 	if !found {
 		resp.Diagnostics.AddError(
-			"Linux Bridge interface not found",
-			fmt.Sprintf("Interface %q on node %q could not be imported", iface, nodeName),
+			"Linux Bond Not Found",
+			fmt.Sprintf("Interface %q on node %q was not found", iface, nodeName),
 		)
 
 		return

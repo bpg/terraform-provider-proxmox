@@ -471,6 +471,7 @@ func (r *linuxVLANResource) Delete(ctx context.Context, req resource.DeleteReque
 	}
 }
 
+//nolint:dupl
 func (r *linuxVLANResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,

@@ -561,6 +561,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		hardwaremapping.NewUSBResourceShort, // proxmox_hardware_mapping_usb
 		metrics.NewMetricsServerResource,
 		metrics.NewMetricsServerShortResource,
+		network.NewLinuxBondResource,
 		network.NewLinuxBridgeResource,
 		network.NewShortLinuxBridgeResource,
 		network.NewLinuxVLANResource,
