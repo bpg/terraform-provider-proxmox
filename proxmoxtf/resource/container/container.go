@@ -1354,6 +1354,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 
 		if cpuLimit > 0 {
 			updateBody.CPULimit = &cpuLimit
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "cpulimit")
 		}
 
 		updateBody.CPUUnits = &cpuUnits
