@@ -74,11 +74,9 @@ func (m *linuxBondResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nod
 	body.Gateway = m.Gateway.ValueStringPointer()
 	body.CIDR6 = m.Address6.ValueStringPointer()
 	body.Gateway6 = m.Gateway6.ValueStringPointer()
-	body.Comments = m.Comment.ValueStringPointer()
+	body.Comments = attribute.StringPtrFromValue(m.Comment)
 
-	if attribute.IsDefined(m.MTU) {
-		body.MTU = m.MTU.ValueInt64Pointer()
-	}
+	body.MTU = attribute.Int64PtrFromValue(m.MTU)
 
 	var sanitizedSlaves []string
 
@@ -96,12 +94,10 @@ func (m *linuxBondResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nod
 		body.Slaves = &slaves
 	}
 
-	if attribute.IsDefined(m.BondMode) {
-		body.BondMode = m.BondMode.ValueStringPointer()
-	}
+	body.BondMode = attribute.StringPtrFromValue(m.BondMode)
 
-	body.BondPrimary = m.BondPrimary.ValueStringPointer()
-	body.BondXmitHashPolicy = m.BondXmitHashPolicy.ValueStringPointer()
+	body.BondPrimary = attribute.StringPtrFromValue(m.BondPrimary)
+	body.BondXmitHashPolicy = attribute.StringPtrFromValue(m.BondXmitHashPolicy)
 
 	return body
 }

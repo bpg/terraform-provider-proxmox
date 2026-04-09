@@ -329,6 +329,36 @@ resp.Diagnostics.AddError("Unable to Create Resource", err.Error())
 
 **Error diagnostic conventions:** New code should use `"Unable to [Action] [Resource]"` format (see [ADR-005](docs/adr/005-error-handling.md)). Include the resource name/ID in the summary (e.g., `fmt.Sprintf("Unable to Read VM %q", name)`) — domain clients do not reliably include it in `err.Error()`. No trailing period. Pass `err.Error()` as the detail string — never double-wrap. Legacy prefixes ("Could not", "Error") are acceptable in existing code.
 
+### Attribute Helper Functions (fwprovider/attribute/)
+
+When exporting model fields to API request bodies, **always use the `attribute` package helpers** instead of manual `IsDefined` + `ValueXxxPointer()` patterns:
+
+```go
+// GOOD — use helpers for model → API body assignments
+body.Comment = attribute.StringPtrFromValue(m.Comment)
+body.MTU = attribute.Int64PtrFromValue(m.MTU)
+body.Disable = attribute.CustomBoolPtrFromValue(m.Disable)
+body.Rate = attribute.Float64PtrFromValue(m.Rate)
+
+// BAD — don't use manual IsDefined + pointer extraction
+if attribute.IsDefined(m.MTU) {
+    body.MTU = m.MTU.ValueInt64Pointer()
+}
+```
+
+Available helpers (all return nil for null/unknown, pointer to value otherwise):
+
+| Helper | Input type | Output type |
+| ------ | ---------- | ----------- |
+| `attribute.StringPtrFromValue` | `types.String` | `*string` |
+| `attribute.Int64PtrFromValue` | `types.Int64` | `*int64` |
+| `attribute.Float64PtrFromValue` | `types.Float64` | `*float64` |
+| `attribute.CustomBoolPtrFromValue` | `types.Bool` | `*proxmoxtypes.CustomBool` |
+
+Use `attribute.IsDefined()` only when you need to branch on whether a field has a value (e.g., conditional logic), not for simple pointer extraction.
+
+**Custom types** (`customtypes.IPCIDRValue`, `customtypes.IPAddrValue`, etc.) cannot use these helpers since they accept only `types.String`/`types.Int64`/`types.Bool`. For custom types, continue using `.ValueStringPointer()` directly — these are Optional-only fields so null/unknown handling is safe.
+
 ### Datasource Schema Attributes
 
 In a **datasource**, attributes that are purely output (populated by the provider during Read) must be `Computed: true` only — never `Optional`. This applies to all attributes except lookup keys (which are `Required`).
@@ -472,6 +502,7 @@ For multi-step work, maintain session state using [.dev/SESSION_STATE_TEMPLATE.m
 | `/bpg:ready` | Run production readiness checklist |
 | `/bpg:debug-api` | Debug API calls with mitmproxy |
 | `/bpg:prepare-pr` | Prepare PR body from template with proof of work |
+| `/bpg:done` | Wrap up session — extract learnings, finalize state, archive files |
 
 See [.dev/README.md](.dev/README.md#working-with-llm-agents) for detailed workflow documentation and how skills connect together.
 

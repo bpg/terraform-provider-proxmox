@@ -76,6 +76,15 @@ func Int64PtrFromValue(v types.Int64) *int64 {
 	return v.ValueInt64Pointer()
 }
 
+// Float64PtrFromValue returns a *float64 from a types.Float64, returning nil for null or unknown values.
+func Float64PtrFromValue(v types.Float64) *float64 {
+	if v.IsNull() || v.IsUnknown() {
+		return nil
+	}
+
+	return v.ValueFloat64Pointer()
+}
+
 // CheckDelete adds an API field name to the delete list if the plan field is null but the state field is not null.
 // This is used to handle attribute deletion in API calls.
 func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName string) {

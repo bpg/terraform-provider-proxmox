@@ -72,11 +72,9 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 	body.CIDR6 = m.Address6.ValueStringPointer()
 	body.Gateway6 = m.Gateway6.ValueStringPointer()
 
-	if attribute.IsDefined(m.MTU) {
-		body.MTU = m.MTU.ValueInt64Pointer()
-	}
+	body.MTU = attribute.Int64PtrFromValue(m.MTU)
 
-	body.Comments = m.Comment.ValueStringPointer()
+	body.Comments = attribute.StringPtrFromValue(m.Comment)
 
 	var sanitizedPorts []string
 

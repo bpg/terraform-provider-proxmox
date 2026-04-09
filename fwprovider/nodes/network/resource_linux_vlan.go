@@ -69,19 +69,11 @@ func (m *linuxVLANResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nod
 	body.Gateway = m.Gateway.ValueStringPointer()
 	body.CIDR6 = m.Address6.ValueStringPointer()
 	body.Gateway6 = m.Gateway6.ValueStringPointer()
-	body.Comments = m.Comment.ValueStringPointer()
+	body.Comments = attribute.StringPtrFromValue(m.Comment)
 
-	if attribute.IsDefined(m.MTU) {
-		body.MTU = m.MTU.ValueInt64Pointer()
-	}
-
-	if attribute.IsDefined(m.Interface) {
-		body.VLANRawDevice = m.Interface.ValueStringPointer()
-	}
-
-	if attribute.IsDefined(m.VLAN) {
-		body.VLANID = m.VLAN.ValueInt64Pointer()
-	}
+	body.MTU = attribute.Int64PtrFromValue(m.MTU)
+	body.VLANRawDevice = attribute.StringPtrFromValue(m.Interface)
+	body.VLANID = attribute.Int64PtrFromValue(m.VLAN)
 
 	return body
 }

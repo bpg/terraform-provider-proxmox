@@ -324,17 +324,17 @@ Rules for model structs:
 func (m *model) toAPI() *vnets.VNet {
     data := &vnets.VNet{}
 
-    data.Zone = m.Zone.ValueStringPointer()
-    data.Alias = m.Alias.ValueStringPointer()
-    data.IsolatePorts = proxmoxtypes.CustomBoolPtr(m.IsolatePorts.ValueBoolPointer())
-    data.Tag = m.Tag.ValueInt64Pointer()
-    data.VlanAware = proxmoxtypes.CustomBoolPtr(m.VlanAware.ValueBoolPointer())
+    data.Zone = attribute.StringPtrFromValue(m.Zone)
+    data.Alias = attribute.StringPtrFromValue(m.Alias)
+    data.IsolatePorts = attribute.CustomBoolPtrFromValue(m.IsolatePorts)
+    data.Tag = attribute.Int64PtrFromValue(m.Tag)
+    data.VlanAware = attribute.CustomBoolPtrFromValue(m.VlanAware)
 
     return data
 }
 ```
 
-Pattern: optional fields use `ValueStringPointer()` / `ValueBoolPointer()` /`ValueInt64Pointer()` which return `nil` when the Terraform value is null. The API struct uses pointer fields to distinguish "not set" from zero values.
+Pattern: use the `attribute` package helpers (`StringPtrFromValue`, `Int64PtrFromValue`, `CustomBoolPtrFromValue`) which return `nil` for both null and unknown values. This is safer than raw `Value*Pointer()` methods, which return `&""` / `&0` for unknown values. The API struct uses pointer fields to distinguish "not set" from zero values.
 
 ### fromAPI Method
 
@@ -514,11 +514,10 @@ func (m *model) toAPICreate() *replications.ReplicationCreate {
     data.ID = m.ID.ValueString()
     data.Target = m.Target.ValueString()  // immutable: only sent at creation
     data.Type = m.Type.ValueString()      // immutable: only sent at creation
-    if !m.Comment.IsUnknown() {
-        data.Comment = m.Comment.ValueStringPointer()
-    }
-    data.Disable = (*proxmoxtypes.CustomBool)(m.Disable.ValueBoolPointer())
-    // ... rate, schedule
+    data.Comment = attribute.StringPtrFromValue(m.Comment)
+    data.Disable = attribute.CustomBoolPtrFromValue(m.Disable)
+    data.Rate = attribute.Float64PtrFromValue(m.Rate)
+    data.Schedule = attribute.StringPtrFromValue(m.Schedule)
     return data
 }
 
@@ -526,11 +525,10 @@ func (m *model) toAPICreate() *replications.ReplicationCreate {
 func (m *model) toAPIUpdate() *replications.ReplicationUpdate {
     data := &replications.ReplicationUpdate{}
     data.ID = m.ID.ValueString()
-    if !m.Comment.IsUnknown() {
-        data.Comment = m.Comment.ValueStringPointer()
-    }
-    data.Disable = (*proxmoxtypes.CustomBool)(m.Disable.ValueBoolPointer())
-    // ... rate, schedule (same as create, but NO target/type)
+    data.Comment = attribute.StringPtrFromValue(m.Comment)
+    data.Disable = attribute.CustomBoolPtrFromValue(m.Disable)
+    data.Rate = attribute.Float64PtrFromValue(m.Rate)
+    data.Schedule = attribute.StringPtrFromValue(m.Schedule)
     return data
 }
 ```
@@ -782,10 +780,10 @@ The Proxmox API represents `vmid` as a comma-separated string (`"100,101,102"`),
 },
 ```
 
-**toAPI (join):** Extract list elements and join:
+**toAPI (join):** Extract list elements and join (use `attribute.IsDefined()` for list/set fields where typed helpers are not available):
 
 ```go
-if !m.VMIDs.IsNull() && !m.VMIDs.IsUnknown() {
+if attribute.IsDefined(m.VMIDs) {
     var vmids []string
     d := m.VMIDs.ElementsAs(ctx, &vmids, false)
     diags.Append(d...)
@@ -833,7 +831,7 @@ func (m *backupJobModel) toAPICreate(ctx context.Context, diags *diag.Diagnostic
 
 func (m *backupJobModel) toAPIUpdate(ctx context.Context, state *backupJobModel, diags *diag.Diagnostics) *backup.UpdateRequestBody {
     body := &backup.UpdateRequestBody{}
-    body.Schedule = m.Schedule.ValueStringPointer()
+    body.Schedule = attribute.StringPtrFromValue(m.Schedule)
     m.fillCommonFields(ctx, &body.RequestBodyCommon, diags)
     // ... CheckDelete calls, body.Delete = toDelete ...
     return body
@@ -884,9 +882,11 @@ if !m.Fleecing.IsNull() && !m.Fleecing.IsUnknown() {
     d := m.Fleecing.As(ctx, &fleecing, basetypes.ObjectAsOptions{})
     diags.Append(d...)
     if !d.HasError() {
+        // Inner fields are always known here (outer guard ensures the object is not null/unknown),
+        // so raw Value*Pointer() is safe. Using helpers would also work.
         common.Fleecing = &backup.FleecingConfig{
-            Enabled: proxmoxtypes.CustomBoolPtr(fleecing.Enabled.ValueBoolPointer()),
-            Storage: fleecing.Storage.ValueStringPointer(),
+            Enabled: attribute.CustomBoolPtrFromValue(fleecing.Enabled),
+            Storage: attribute.StringPtrFromValue(fleecing.Storage),
         }
     }
 }
@@ -941,7 +941,7 @@ Checkpoints: (a) `types.*` for all fields, (b) correct Required/Optional/Compute
 
 ### D4: Model Conversion (Weight 3)
 
-Checkpoints: (a) `toAPI()`/`fromAPI()` naming (or `toAPICreate()`/`toAPIUpdate()` for split shapes), (b) `Value*Pointer()` in toAPI, (c) `types.*PointerValue()` in fromAPI, (d) `proxmoxtypes.CustomBoolPtr()` for bool-int64, (e) model in separate file.
+Checkpoints: (a) `toAPI()`/`fromAPI()` naming (or `toAPICreate()`/`toAPIUpdate()` for split shapes), (b) `attribute.*PtrFromValue()` helpers in toAPI (not raw `Value*Pointer()`), (c) `types.*PointerValue()` in fromAPI, (d) `attribute.CustomBoolPtrFromValue()` for bool-int64, (e) model in separate file.
 
 **0** = inline conversion, no model file. **1** = non-standard names. **2** = correct patterns but legacy names. **3** = fully canonical.
 
@@ -995,7 +995,7 @@ Use this checklist for the minimum viable implementation. All items must be comp
 
 - [ ] Model struct with `tfsdk` tags matching schema attributes exactly
 - [ ] `types.*` for all optional fields (never raw Go types)
-- [ ] toAPI() (or toAPICreate()/toAPIUpdate()) using Value*Pointer() for optional fields
+- [ ] toAPI() (or toAPICreate()/toAPIUpdate()) using `attribute.*PtrFromValue()` helpers for optional fields
 - [ ] `fromAPI()` using `types.*PointerValue()` for optional fields
 
 #### resource_test.go
