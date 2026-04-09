@@ -225,7 +225,8 @@ See [docs/adr/reference-examples.md](docs/adr/reference-examples.md) for annotat
 | Complexity | Reference | When to use |
 | ---------- | --------- | ----------- |
 | Basic CRUD | SDN VNet (`fwprovider/cluster/sdn/vnet/`) | Start here for any new resource |
-| Many optional fields | Metrics Server (`fwprovider/cluster/metrics/`) | Sensitive attributes, bool-to-int conversion |
+| Many optional fields | Replication (`fwprovider/cluster/replication/`) | Split create/update, `CheckDelete`, `attribute.*PtrFromValue` |
+| Sensitive attributes | Metrics Server (`fwprovider/cluster/metrics/`) | Sensitive fields, bool-to-int conversion |
 | Cross-field validation | ACL (`fwprovider/access/`) | `ConfigValidators`, custom import ID parsing |
 
 Architecture decisions are documented in [docs/adr/](docs/adr/README.md).
@@ -299,7 +300,7 @@ For more details, see the [Terraform Plugin Framework documentation on descripti
 
 - Keep validation logic consistent across framework components.
 - Place acceptance tests alongside the implementation (same package/folder).
-- Reuse shared helpers from `fwprovider/attribute/` and `fwprovider/validators/`.
+- Reuse shared helpers from `fwprovider/attribute/` (e.g., `StringPtrFromValue`, `Int64PtrFromValue`, `CustomBoolPtrFromValue`, `CheckDelete`) and `fwprovider/validators/`.
 
 ## Coding conventions
 

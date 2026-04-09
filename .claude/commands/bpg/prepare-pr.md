@@ -284,9 +284,15 @@ Keep all HTML comments from the template. Keep the Community Note section verbat
 - Please do not leave "+1" or other comments that do not add relevant new information or questions, they generate extra noise for pull request followers and do not help prioritize the request
 
 {CLOSES_OR_RELATES} #{ISSUE_NUM}
+
+---
+
+🤖 *This PR was authored with the help of [Claude Code](https://www.anthropic.com/claude-code) ({MODEL_NAME}). All changes have been reviewed and verified by a human.*
 ```
 
 Replace each placeholder with actual gathered values.
+
+For `{MODEL_NAME}`: use your model name as shown in the `Co-Authored-By` trailer (e.g. "Claude Opus 4.6", "Claude Sonnet 4").
 
 For checklist items: use `x` if verified, space if not done/not applicable.
 

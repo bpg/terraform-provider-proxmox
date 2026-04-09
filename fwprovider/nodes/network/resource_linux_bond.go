@@ -74,11 +74,9 @@ func (m *linuxBondResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nod
 	body.Gateway = m.Gateway.ValueStringPointer()
 	body.CIDR6 = m.Address6.ValueStringPointer()
 	body.Gateway6 = m.Gateway6.ValueStringPointer()
-	body.Comments = m.Comment.ValueStringPointer()
+	body.Comments = attribute.StringPtrFromValue(m.Comment)
 
-	if !m.MTU.IsUnknown() {
-		body.MTU = m.MTU.ValueInt64Pointer()
-	}
+	body.MTU = attribute.Int64PtrFromValue(m.MTU)
 
 	var sanitizedSlaves []string
 
@@ -96,9 +94,10 @@ func (m *linuxBondResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nod
 		body.Slaves = &slaves
 	}
 
-	body.BondMode = m.BondMode.ValueStringPointer()
-	body.BondPrimary = m.BondPrimary.ValueStringPointer()
-	body.BondXmitHashPolicy = m.BondXmitHashPolicy.ValueStringPointer()
+	body.BondMode = attribute.StringPtrFromValue(m.BondMode)
+
+	body.BondPrimary = attribute.StringPtrFromValue(m.BondPrimary)
+	body.BondXmitHashPolicy = attribute.StringPtrFromValue(m.BondXmitHashPolicy)
 
 	return body
 }
@@ -127,8 +126,9 @@ func (m *linuxBondResourceModel) importFromNetworkInterfaceList(
 		m.MTU = types.Int64Null()
 	}
 
-	// Comments can be set to an empty string in plan, which will translate to a "no value" in PVE
-	// So we don't want to set it to null if it's empty, as this will be indicated as a plan drift
+	// When comments is nil in PVE (e.g. after setting comment=""), we preserve the model's
+	// current value to avoid "inconsistent result after apply" errors. The CheckDelete in
+	// Update handles actual comment removal.
 	if iface.Comments != nil {
 		m.Comment = types.StringValue(strings.TrimSpace(*iface.Comments))
 	}
@@ -273,6 +273,9 @@ func (r *linuxBondResource) Schema(
 					"`broadcast`, `802.3ad`, `balance-tlb`, `balance-alb`.",
 				Optional: true,
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"balance-rr",

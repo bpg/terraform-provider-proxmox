@@ -116,20 +116,22 @@ Mark secret fields (tokens, passwords) as sensitive so Terraform redacts them:
 
 Every model implements two conversion methods:
 
-**`toAPI()`** — Terraform model to API request struct. Use `Value*Pointer()` methods so null values map to `nil`:
+**`toAPI()`** — Terraform model to API request struct. Use the `attribute` package helpers so null and unknown values both map to `nil`:
 
 ```go
 func (m *model) toAPI() *vnets.VNet {
     data := &vnets.VNet{}
-    data.Zone = m.Zone.ValueStringPointer()
-    data.Alias = m.Alias.ValueStringPointer()
-    data.Tag = m.Tag.ValueInt64Pointer()
-    data.IsolatePorts = proxmoxtypes.CustomBoolPtr(m.IsolatePorts.ValueBoolPointer())
+    data.Zone = attribute.StringPtrFromValue(m.Zone)
+    data.Alias = attribute.StringPtrFromValue(m.Alias)
+    data.Tag = attribute.Int64PtrFromValue(m.Tag)
+    data.IsolatePorts = attribute.CustomBoolPtrFromValue(m.IsolatePorts)
     return data
 }
 ```
 
-For `CustomBool` fields (API uses `0`/`1` integers for booleans), use `proxmoxtypes.CustomBoolPtr()` which converts `*bool` → `*CustomBool`.
+The helpers `StringPtrFromValue`, `Int64PtrFromValue`, `Float64PtrFromValue`, and `CustomBoolPtrFromValue` (all in `fwprovider/attribute/`) return nil for null **and** unknown values, making them safe for Optional+Computed fields. Prefer these over raw `Value*Pointer()` methods, which return `&""` / `&0` / `&false` for unknown values — a common source of bugs.
+
+> **Note:** Custom attribute types (`customtypes.IPCIDRValue`, etc.) cannot use these helpers. For those, continue using `.ValueStringPointer()` directly.
 
 **`fromAPI()`** — API response to Terraform model. Use `types.*PointerValue()` so `nil` maps to null:
 
