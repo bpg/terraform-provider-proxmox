@@ -71,15 +71,15 @@ func (m *linuxVLANResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nod
 	body.Gateway6 = m.Gateway6.ValueStringPointer()
 	body.Comments = m.Comment.ValueStringPointer()
 
-	if !m.MTU.IsUnknown() {
+	if attribute.IsDefined(m.MTU) {
 		body.MTU = m.MTU.ValueInt64Pointer()
 	}
 
-	if !m.Interface.IsUnknown() {
+	if attribute.IsDefined(m.Interface) {
 		body.VLANRawDevice = m.Interface.ValueStringPointer()
 	}
 
-	if !m.VLAN.IsUnknown() {
+	if attribute.IsDefined(m.VLAN) {
 		body.VLANID = m.VLAN.ValueInt64Pointer()
 	}
 
@@ -379,6 +379,7 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 	attribute.CheckDelete(plan.MTU, state.MTU, &toDelete, "mtu")
 	attribute.CheckDelete(plan.Gateway, state.Gateway, &toDelete, "gateway")
 	attribute.CheckDelete(plan.Gateway6, state.Gateway6, &toDelete, "gateway6")
+	attribute.CheckDelete(plan.Comment, state.Comment, &toDelete, "comments")
 
 	if len(toDelete) > 0 {
 		body.Delete = toDelete
