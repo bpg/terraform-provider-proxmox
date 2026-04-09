@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.101.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.100.0...v0.101.0) (2026-04-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **vm:** fix and improve VM datasources, deprecate SDK datasource ([#2764](https://github.com/bpg/terraform-provider-proxmox/issues/2764))
+
+### Features
+
+* **core:** surface PVE task warnings from VM/container operations ([#2761](https://github.com/bpg/terraform-provider-proxmox/issues/2761)) ([28850c8](https://github.com/bpg/terraform-provider-proxmox/commit/28850c82c257bed169f0bb878fe92372f37a162a))
+* **lxc:** add `cpu.limit` attribute for containers ([#2744](https://github.com/bpg/terraform-provider-proxmox/issues/2744)) ([cb25180](https://github.com/bpg/terraform-provider-proxmox/commit/cb25180262b01eb61fa30194f9926cb1fb016e0a))
+* **lxc:** add `full` flag to clone block ([#2755](https://github.com/bpg/terraform-provider-proxmox/issues/2755)) ([f7010e1](https://github.com/bpg/terraform-provider-proxmox/commit/f7010e1de932c2e7c3c3aa4964d67484d5e2bed5))
+* **network:** add linux bond interface resource ([5db6deb](https://github.com/bpg/terraform-provider-proxmox/commit/5db6deb0ac7ae3bebb28adce96be8f36b9bc2a1f)), closes [#1980](https://github.com/bpg/terraform-provider-proxmox/issues/1980)
+
+
+### Bug Fixes
+
+* **docs:** add storage import docs ([#2759](https://github.com/bpg/terraform-provider-proxmox/issues/2759)) ([079902f](https://github.com/bpg/terraform-provider-proxmox/commit/079902ff7733613202269b9d454e98892bf20f4e))
+* **hwmapping,ha:** better 'not-found' detection in read and delete ([#2767](https://github.com/bpg/terraform-provider-proxmox/issues/2767)) ([ac53f8c](https://github.com/bpg/terraform-provider-proxmox/commit/ac53f8c19e500395e313171dce43fdc40ff203f5))
+* **network:** adjust Linux Bridge name validator to PVE UI constraint ([#2762](https://github.com/bpg/terraform-provider-proxmox/issues/2762)) ([190f7fa](https://github.com/bpg/terraform-provider-proxmox/commit/190f7fab74cc27ebacb267b84307f111779d71aa))
+* **network:** improve consistency of linux network interface resources ([#2776](https://github.com/bpg/terraform-provider-proxmox/issues/2776)) ([57a97ce](https://github.com/bpg/terraform-provider-proxmox/commit/57a97ce4cce760756cf63706c5ed583f84faceb2))
+* **vm:** fix and improve VM datasources, deprecate SDK datasource ([#2764](https://github.com/bpg/terraform-provider-proxmox/issues/2764)) ([0ce6d0c](https://github.com/bpg/terraform-provider-proxmox/commit/0ce6d0c0b936a6183508c8c41f4260649903057f))
+* **vm:** use move_disk API for EFI disk and TPM state storage migration ([#2757](https://github.com/bpg/terraform-provider-proxmox/issues/2757)) ([c78c873](https://github.com/bpg/terraform-provider-proxmox/commit/c78c8735727f4619981b3548cd1c8b303108cd79))
+
+
+### Miscellaneous
+
+* **deps:** update module github.com/hashicorp/go-version (v1.8.0 → v1.9.0) ([#2760](https://github.com/bpg/terraform-provider-proxmox/issues/2760)) ([7362ba5](https://github.com/bpg/terraform-provider-proxmox/commit/7362ba5ed2b2b9790593572c1a82d7feddd487ac))
+* **docs:** update terraform local (2.7.0 → 2.8.0) ([#2765](https://github.com/bpg/terraform-provider-proxmox/issues/2765)) ([0424b01](https://github.com/bpg/terraform-provider-proxmox/commit/0424b0169e3041db538b13abca391b148479aaa6))
+
 ## [0.100.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.99.0...v0.100.0) (2026-04-01)
 
 
