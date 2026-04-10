@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
-#Tokens can be imported using they identifiers in format `user_id!token_name` format, e.g.:
+# Tokens can be imported using their identifiers in the format `user_id!token_name`, e.g.:
 terraform import proxmox_user_token.token1 user@pve!token1
