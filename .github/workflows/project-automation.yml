@@ -37,7 +37,7 @@ jobs:
           echo "Priority: $PRIORITY"
 
       - name: Remove other priority labels
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -62,7 +62,7 @@ jobs:
             }
 
       - name: Update Priority field in project
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
@@ -175,7 +175,7 @@ jobs:
 
       - name: Add to project and move to column
         if: steps.column.outputs.column != ''
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
@@ -267,7 +267,7 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'opened'
     steps:
       - name: Add in-progress label to linked issues
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -300,7 +300,7 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
     steps:
       - name: Update linked issues
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
