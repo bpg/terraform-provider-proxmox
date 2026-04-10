@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.101.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.101.0...v0.101.1) (2026-04-10)
+
+
+### Bug Fixes
+
+* **docs:** add missing examples and import sections for short-name aliases ([#2784](https://github.com/bpg/terraform-provider-proxmox/issues/2784)) ([5f59d52](https://github.com/bpg/terraform-provider-proxmox/commit/5f59d5263d112163ba5fb8eaeff0ff1af459fda7))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/github-script action (v8 → v9) ([#2782](https://github.com/bpg/terraform-provider-proxmox/issues/2782)) ([c8c9823](https://github.com/bpg/terraform-provider-proxmox/commit/c8c98237d813d2b1b4963f342d139701a9ef499a))
+* **deps:** update image golang (1.26.1 → 1.26.2) ([#2778](https://github.com/bpg/terraform-provider-proxmox/issues/2778)) ([6805a82](https://github.com/bpg/terraform-provider-proxmox/commit/6805a82aae8a84fa7ab10e2ee48113001d2e373a))
+* **deps:** update image golang (595c784 → cd78d88) ([#2777](https://github.com/bpg/terraform-provider-proxmox/issues/2777)) ([ef0c04d](https://github.com/bpg/terraform-provider-proxmox/commit/ef0c04db7285be60474accc6c5caec3a99bf09f2))
+* **deps:** update module golang.org/x/crypto (v0.49.0 → v0.50.0) ([#2780](https://github.com/bpg/terraform-provider-proxmox/issues/2780)) ([a963a30](https://github.com/bpg/terraform-provider-proxmox/commit/a963a30ef9dfdeb9988369700053132e44d00c9a))
+* **deps:** update module golang.org/x/net (v0.52.0 → v0.53.0) ([#2781](https://github.com/bpg/terraform-provider-proxmox/issues/2781)) ([d167c32](https://github.com/bpg/terraform-provider-proxmox/commit/d167c32feb8cea5eb4dbe3068d5441da534c8300))
+
 ## [0.101.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.100.0...v0.101.0) (2026-04-09)
 
 
