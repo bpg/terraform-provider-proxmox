@@ -85,7 +85,7 @@ enable: 0
 FWEOF
 
 echo "=== Cleaning Stale NFS Mounts ==="
-mount | grep 'type nfs' | grep -v '/mnt/pve/nfs ' | awk '{print $3}' | while read -r mnt; do
+findmnt -t nfs,nfs4 -n -o TARGET | grep -v '^/mnt/pve/nfs$' | while read -r mnt; do
   umount "$mnt" 2>/dev/null && echo "  unmounted $mnt"
   rmdir "$mnt" 2>/dev/null
 done
