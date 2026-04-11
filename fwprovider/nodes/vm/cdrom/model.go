@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 )
 
@@ -33,7 +32,7 @@ func NullValue() Value {
 func (m *Model) exportToCustomStorageDevice() vms.CustomStorageDevice {
 	return vms.CustomStorageDevice{
 		FileVolume: m.FileID.ValueString(),
-		Media:      ptr.Ptr("cdrom"),
+		Media:      new("cdrom"),
 	}
 }
 

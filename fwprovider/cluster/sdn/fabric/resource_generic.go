@@ -26,7 +26,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -160,7 +159,7 @@ func (r *genericFabricResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	newFabric.Protocol = ptr.Ptr(r.config.fabricProtocol)
+	newFabric.Protocol = new(r.config.fabricProtocol)
 
 	if err := r.client.CreateFabric(ctx, newFabric); err != nil {
 		resp.Diagnostics.AddError("Unable to Create SDN Fabric", err.Error())

@@ -13,7 +13,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 // GetSubnet retrieves a single Subnet by ID and containing Vnet's ID.
@@ -60,7 +59,7 @@ func (c *Client) GetSubnetsWithParams(ctx context.Context, params *sdn.QueryPara
 
 // CreateSubnet creates a new Subnet in the defined Vnet.
 func (c *Client) CreateSubnet(ctx context.Context, subnet *Subnet) error {
-	subnet.Type = ptr.Ptr("subnet")
+	subnet.Type = new("subnet")
 
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(""), subnet, nil)
 	if err != nil {

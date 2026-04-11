@@ -17,8 +17,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 // CustomBool allows a JSON boolean value to also be an integer.
@@ -51,7 +49,7 @@ func CustomBoolPtr(b *bool) *CustomBool {
 		return nil
 	}
 
-	return ptr.Ptr(CustomBool(*b))
+	return new(CustomBool(*b))
 }
 
 // MarshalJSON converts a CustomBool to a JSON integer (1 or 0).

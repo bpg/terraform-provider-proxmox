@@ -23,7 +23,6 @@ import (
 	"github.com/rogpeppe/go-internal/lockedfile"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 const (
@@ -117,7 +116,7 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 		func() (*int, error) {
 			if g.config.RandomIDs {
 				//nolint:gosec
-				newID = ptr.Ptr(rand.Intn(g.config.RandomIDEnd-g.config.RandomIDStat) + g.config.RandomIDStat)
+				newID = new(rand.Intn(g.config.RandomIDEnd-g.config.RandomIDStat) + g.config.RandomIDStat)
 			} else if newID == nil {
 				newID, err = nextSequentialID(g.config.seqFName)
 				if err != nil {
@@ -161,5 +160,5 @@ func nextSequentialID(seqFName string) (*int, error) {
 		return nil, fmt.Errorf("unable to parse the ID generator file: %w", err)
 	}
 
-	return ptr.Ptr(id + 1), nil
+	return new(id + 1), nil
 }

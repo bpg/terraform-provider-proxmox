@@ -23,7 +23,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -50,7 +49,7 @@ func TestIDGenerator_Sequence(t *testing.T) {
 
 	firstBusyID := firstID + 5
 
-	_, err = te.ClusterClient().GetNextID(ctx, ptr.Ptr(firstBusyID))
+	_, err = te.ClusterClient().GetNextID(ctx, new(firstBusyID))
 	require.NoError(t, err, "the VM ID %d should be available", firstBusyID)
 
 	for i := range numBusyIDs {

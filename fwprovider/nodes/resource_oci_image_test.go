@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
@@ -177,9 +176,9 @@ func TestAccResourceOCIImage(t *testing.T) {
 				// Pull OCI image outside of Terraform
 				filenameWithoutTar := "test_override_image"
 				err := te.NodeStorageClient().DownloadOCIImageByReference(ctx, &storage.OCIRegistryPullRequestBody{
-					Storage:   ptr.Ptr(te.DatastoreID),
+					Storage:   new(te.DatastoreID),
 					FileName:  &filenameWithoutTar,
-					Reference: ptr.Ptr(testOCIImage),
+					Reference: new(testOCIImage),
 				})
 				require.NoError(t, err)
 
@@ -224,9 +223,9 @@ func TestAccResourceOCIImage(t *testing.T) {
 				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, fileID) //nolint: errcheck
 
 				err := te.NodeStorageClient().DownloadOCIImageByReference(ctx, &storage.OCIRegistryPullRequestBody{
-					Storage:   ptr.Ptr(te.DatastoreID),
+					Storage:   new(te.DatastoreID),
 					FileName:  &filenameWithoutTar,
-					Reference: ptr.Ptr(testOCIImage),
+					Reference: new(testOCIImage),
 				})
 				require.NoError(t, err)
 			},
@@ -256,9 +255,9 @@ func TestAccResourceOCIImage(t *testing.T) {
 				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, fileID) //nolint: errcheck
 
 				err := te.NodeStorageClient().DownloadOCIImageByReference(ctx, &storage.OCIRegistryPullRequestBody{
-					Storage:   ptr.Ptr(te.DatastoreID),
+					Storage:   new(te.DatastoreID),
 					FileName:  &filenameWithoutTar,
-					Reference: ptr.Ptr(testOCIImageAlpine),
+					Reference: new(testOCIImageAlpine),
 				})
 				require.NoError(t, err)
 			},

@@ -30,7 +30,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -244,7 +243,7 @@ func (r *genericFabricNodeResource) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
-	newFabricNode.Protocol = ptr.Ptr(r.config.fabricProtocol)
+	newFabricNode.Protocol = new(r.config.fabricProtocol)
 
 	client := r.client.SDNFabricNodes(plan.getGenericModel().FabricID.ValueString(), r.config.fabricProtocol)
 

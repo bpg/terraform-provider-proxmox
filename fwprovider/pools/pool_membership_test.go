@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 )
@@ -49,11 +48,11 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 	})
 
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-		Content:  ptr.Ptr("vztmpl"),
+		Content:  new("vztmpl"),
 		FileName: &imageFileName,
 		Node:     &te.NodeName,
 		Storage:  &te.DatastoreID,
-		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.04-standard_24.04-2_amd64.tar.zst", te.ContainerImagesServer)),
+		URL:      new(fmt.Sprintf("%s/images/system/ubuntu-24.04-standard_24.04-2_amd64.tar.zst", te.ContainerImagesServer)),
 	})
 	require.NoError(t, err)
 

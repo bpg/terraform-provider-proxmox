@@ -18,10 +18,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 )
 
-func ptr[T any](v T) *T {
-	return &v
-}
-
 func createDomainsListValue(t *testing.T, domains []acmeDomainModel) types.List {
 	t.Helper()
 
@@ -64,9 +60,9 @@ func TestFindMatchingCertificate(t *testing.T) {
 			},
 			certificates: []nodes.CertificateListResponseData{
 				{
-					Issuer:                  ptr("CN=Let's Encrypt"),
-					Subject:                 ptr("CN=example.com"),
-					SubjectAlternativeNames: ptr([]string{"example.com"}),
+					Issuer:                  new("CN=Let's Encrypt"),
+					Subject:                 new("CN=example.com"),
+					SubjectAlternativeNames: new([]string{"example.com"}),
 				},
 			},
 			wantIssuer: "CN=Let's Encrypt",
@@ -79,8 +75,8 @@ func TestFindMatchingCertificate(t *testing.T) {
 			},
 			certificates: []nodes.CertificateListResponseData{
 				{
-					Issuer:  ptr("CN=Let's Encrypt"),
-					Subject: ptr("CN=example.com"),
+					Issuer:  new("CN=Let's Encrypt"),
+					Subject: new("CN=example.com"),
 				},
 			},
 			wantIssuer: "CN=Let's Encrypt",
@@ -93,14 +89,14 @@ func TestFindMatchingCertificate(t *testing.T) {
 			},
 			certificates: []nodes.CertificateListResponseData{
 				{
-					Issuer:                  ptr("CN=Proxmox Virtual Environment"),
-					Subject:                 ptr("CN=pve.example.com"),
-					SubjectAlternativeNames: ptr([]string{"pve.example.com"}),
+					Issuer:                  new("CN=Proxmox Virtual Environment"),
+					Subject:                 new("CN=pve.example.com"),
+					SubjectAlternativeNames: new([]string{"pve.example.com"}),
 				},
 				{
-					Issuer:                  ptr("CN=Let's Encrypt"),
-					Subject:                 ptr("CN=pve.example.com"),
-					SubjectAlternativeNames: ptr([]string{"pve.example.com"}),
+					Issuer:                  new("CN=Let's Encrypt"),
+					Subject:                 new("CN=pve.example.com"),
+					SubjectAlternativeNames: new([]string{"pve.example.com"}),
 				},
 			},
 			wantIssuer: "CN=Let's Encrypt",
@@ -114,14 +110,14 @@ func TestFindMatchingCertificate(t *testing.T) {
 			},
 			certificates: []nodes.CertificateListResponseData{
 				{
-					Issuer:                  ptr("CN=Partial Match"),
-					Subject:                 ptr("CN=example.com"),
-					SubjectAlternativeNames: ptr([]string{"example.com"}),
+					Issuer:                  new("CN=Partial Match"),
+					Subject:                 new("CN=example.com"),
+					SubjectAlternativeNames: new([]string{"example.com"}),
 				},
 				{
-					Issuer:                  ptr("CN=Full Match"),
-					Subject:                 ptr("CN=example.com"),
-					SubjectAlternativeNames: ptr([]string{"example.com", "www.example.com"}),
+					Issuer:                  new("CN=Full Match"),
+					Subject:                 new("CN=example.com"),
+					SubjectAlternativeNames: new([]string{"example.com", "www.example.com"}),
 				},
 			},
 			wantIssuer: "CN=Full Match",
@@ -134,14 +130,14 @@ func TestFindMatchingCertificate(t *testing.T) {
 			},
 			certificates: []nodes.CertificateListResponseData{
 				{
-					Issuer:                  ptr("CN=Proxmox Virtual Environment"),
-					Subject:                 ptr("CN=pve.local"),
-					SubjectAlternativeNames: ptr([]string{"pve.local"}),
+					Issuer:                  new("CN=Proxmox Virtual Environment"),
+					Subject:                 new("CN=pve.local"),
+					SubjectAlternativeNames: new([]string{"pve.local"}),
 				},
 				{
-					Issuer:                  ptr("CN=Let's Encrypt"),
-					Subject:                 ptr("CN=example.com"),
-					SubjectAlternativeNames: ptr([]string{"example.com"}),
+					Issuer:                  new("CN=Let's Encrypt"),
+					Subject:                 new("CN=example.com"),
+					SubjectAlternativeNames: new([]string{"example.com"}),
 				},
 			},
 			wantIssuer: "CN=Let's Encrypt",
@@ -158,12 +154,12 @@ func TestFindMatchingCertificate(t *testing.T) {
 			domains: []acmeDomainModel{},
 			certificates: []nodes.CertificateListResponseData{
 				{
-					Issuer:  ptr("CN=Proxmox Virtual Environment"),
-					Subject: ptr("CN=pve.local"),
+					Issuer:  new("CN=Proxmox Virtual Environment"),
+					Subject: new("CN=pve.local"),
 				},
 				{
-					Issuer:  ptr("CN=PVE Cluster Node"),
-					Subject: ptr("CN=pve2.local"),
+					Issuer:  new("CN=PVE Cluster Node"),
+					Subject: new("CN=pve2.local"),
 				},
 			},
 			wantIssuer: "CN=Proxmox Virtual Environment",
@@ -176,9 +172,9 @@ func TestFindMatchingCertificate(t *testing.T) {
 			},
 			certificates: []nodes.CertificateListResponseData{
 				{
-					Issuer:  ptr("CN=Let's Encrypt"),
-					Subject: ptr("CN=example.com"),
-					SubjectAlternativeNames: ptr([]string{
+					Issuer:  new("CN=Let's Encrypt"),
+					Subject: new("CN=example.com"),
+					SubjectAlternativeNames: new([]string{
 						"example.com",
 						"www.example.com",
 						"api.example.com",
@@ -196,8 +192,8 @@ func TestFindMatchingCertificate(t *testing.T) {
 			},
 			certificates: []nodes.CertificateListResponseData{
 				{
-					Issuer:  ptr("/C=US/O=Let's Encrypt/CN=R12"),
-					Subject: ptr("/CN=pve.bpghome.net"),
+					Issuer:  new("/C=US/O=Let's Encrypt/CN=R12"),
+					Subject: new("/CN=pve.bpghome.net"),
 				},
 			},
 			wantIssuer: "/C=US/O=Let's Encrypt/CN=R12",
@@ -210,8 +206,8 @@ func TestFindMatchingCertificate(t *testing.T) {
 			},
 			certificates: []nodes.CertificateListResponseData{
 				{
-					Issuer:  ptr("/CN=Proxmox Virtual Environment"),
-					Subject: ptr("/OU=PVE Cluster Node/O=Proxmox Virtual Environment/CN=pve.bpglabs.net"),
+					Issuer:  new("/CN=Proxmox Virtual Environment"),
+					Subject: new("/OU=PVE Cluster Node/O=Proxmox Virtual Environment/CN=pve.bpglabs.net"),
 				},
 			},
 			wantIssuer: "/CN=Proxmox Virtual Environment",
@@ -256,17 +252,17 @@ func TestIsProxmoxGeneratedCertificate(t *testing.T) {
 	}{
 		{
 			name:   "Proxmox in issuer",
-			issuer: ptr("CN=Proxmox Virtual Environment"),
+			issuer: new("CN=Proxmox Virtual Environment"),
 			want:   true,
 		},
 		{
 			name:   "PVE in issuer",
-			issuer: ptr("CN=PVE Cluster Node"),
+			issuer: new("CN=PVE Cluster Node"),
 			want:   true,
 		},
 		{
 			name:   "Let's Encrypt issuer",
-			issuer: ptr("CN=Let's Encrypt"),
+			issuer: new("CN=Let's Encrypt"),
 			want:   false,
 		},
 		{
@@ -276,7 +272,7 @@ func TestIsProxmoxGeneratedCertificate(t *testing.T) {
 		},
 		{
 			name:   "empty issuer",
-			issuer: ptr(""),
+			issuer: new(""),
 			want:   false,
 		},
 	}

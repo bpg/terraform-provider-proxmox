@@ -9,7 +9,6 @@ package vms
 import (
 	"testing"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -26,14 +25,14 @@ func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 			name: "id only usb device",
 			line: `"host=0000:81"`,
 			want: &CustomUSBDevice{
-				HostDevice: ptr.Ptr("0000:81"),
+				HostDevice: new("0000:81"),
 			},
 		},
 		{
 			name: "usb device with more details",
 			line: `"host=81:00,usb3=0"`,
 			want: &CustomUSBDevice{
-				HostDevice: ptr.Ptr("81:00"),
+				HostDevice: new("81:00"),
 				USB3:       types.CustomBool(false).Pointer(),
 			},
 		},
@@ -42,7 +41,7 @@ func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 			line: `"mapping=mappeddevice,usb=0"`,
 			want: &CustomUSBDevice{
 				HostDevice: nil,
-				Mapping:    ptr.Ptr("mappeddevice"),
+				Mapping:    new("mappeddevice"),
 				USB3:       types.CustomBool(false).Pointer(),
 			},
 		},
@@ -50,7 +49,7 @@ func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 			name: "spice usb device",
 			line: `"spice"`,
 			want: &CustomUSBDevice{
-				HostDevice: ptr.Ptr("spice"),
+				HostDevice: new("spice"),
 			},
 		},
 	}

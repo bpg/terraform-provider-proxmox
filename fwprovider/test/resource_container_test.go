@@ -24,7 +24,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
@@ -2231,11 +2230,11 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
 	t.Helper()
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-		Content:  ptr.Ptr("vztmpl"),
-		FileName: ptr.Ptr(imageFileName),
-		Node:     ptr.Ptr(te.NodeName),
-		Storage:  ptr.Ptr(te.DatastoreID),
-		URL:      ptr.Ptr(getTemplateURL(t, te.ContainerImagesServer)),
+		Content:  new("vztmpl"),
+		FileName: new(imageFileName),
+		Node:     new(te.NodeName),
+		Storage:  new(te.DatastoreID),
+		URL:      new(getTemplateURL(t, te.ContainerImagesServer)),
 	})
 	require.NoError(t, err)
 

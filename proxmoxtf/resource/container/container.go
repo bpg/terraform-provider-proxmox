@@ -3974,7 +3974,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 				ForceStop: &forceStop,
 				// the timeout here must be less that the context timeout set above,
 				// otherwise the context will be cancelled before PVE forcefully stops the container
-				Timeout: ptr.Ptr(max(1, deleteTimeoutSec-5)),
+				Timeout: new(max(1, deleteTimeoutSec-5)),
 			},
 		), "Container shutdown")
 		if shutdownDiags.HasError() {

@@ -28,7 +28,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -183,12 +182,12 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, "iso/fake_file.iso") //nolint: errcheck
 
 				err := te.NodeStorageClient().DownloadFileByURL(ctx, &storage.DownloadURLPostRequestBody{
-					Content:  ptr.Ptr("iso"),
-					FileName: ptr.Ptr("fake_file.iso"),
-					Node:     ptr.Ptr(te.NodeName),
-					Storage:  ptr.Ptr(te.DatastoreID),
-					URL:      ptr.Ptr(fakeFileISO),
-					Verify:   ptr.Ptr(types.CustomBool(false)),
+					Content:  new("iso"),
+					FileName: new("fake_file.iso"),
+					Node:     new(te.NodeName),
+					Storage:  new(te.DatastoreID),
+					URL:      new(fakeFileISO),
+					Verify:   new(types.CustomBool(false)),
 				})
 				require.NoError(t, err)
 

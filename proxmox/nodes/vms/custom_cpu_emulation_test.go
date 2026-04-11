@@ -12,7 +12,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -55,7 +54,7 @@ func TestCustomCPUEmulation_EncodeValues(t *testing.T) {
 			name: "type with hv-vendor-id - should output cputype= format",
 			emulation: &CustomCPUEmulation{
 				Type:       "x86-64-v4",
-				HVVendorID: ptr.Ptr("vendor123"),
+				HVVendorID: new("vendor123"),
 			},
 			key:      "cpu",
 			expected: "cputype=x86-64-v4,hv-vendor-id=vendor123",
@@ -66,7 +65,7 @@ func TestCustomCPUEmulation_EncodeValues(t *testing.T) {
 				Type:       "x86-64-v4",
 				Flags:      &[]string{"+avx"},
 				Hidden:     types.CustomBool(false).Pointer(),
-				HVVendorID: ptr.Ptr("vendor123"),
+				HVVendorID: new("vendor123"),
 			},
 			key:      "cpu",
 			expected: "cputype=x86-64-v4,flags=+avx,hidden=0,hv-vendor-id=vendor123",
@@ -145,7 +144,7 @@ func TestCustomCPUEmulation_UnmarshalJSON(t *testing.T) {
 			line: `"cputype=x86-64-v4,hv-vendor-id=vendor123"`,
 			want: &CustomCPUEmulation{
 				Type:       "x86-64-v4",
-				HVVendorID: ptr.Ptr("vendor123"),
+				HVVendorID: new("vendor123"),
 			},
 		},
 		{
@@ -155,7 +154,7 @@ func TestCustomCPUEmulation_UnmarshalJSON(t *testing.T) {
 				Type:       "x86-64-v4",
 				Flags:      &[]string{"+avx"},
 				Hidden:     types.CustomBool(false).Pointer(),
-				HVVendorID: ptr.Ptr("vendor123"),
+				HVVendorID: new("vendor123"),
 			},
 		},
 		{

@@ -21,7 +21,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
@@ -146,21 +145,21 @@ func TestAccDatasourceFileContentTypeFiltering(t *testing.T) {
 
 	// Upload a vztmpl file (container template)
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-		Content:  ptr.Ptr("vztmpl"),
-		FileName: ptr.Ptr(vztmplFileName),
-		Node:     ptr.Ptr(te.NodeName),
-		Storage:  ptr.Ptr("local"),
-		URL:      ptr.Ptr(vztmplURL),
+		Content:  new("vztmpl"),
+		FileName: new(vztmplFileName),
+		Node:     new(te.NodeName),
+		Storage:  new("local"),
+		URL:      new(vztmplURL),
 	})
 	require.NoError(t, err)
 
 	// Upload an ISO file
 	err = te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-		Content:  ptr.Ptr("iso"),
-		FileName: ptr.Ptr(isoFileName),
-		Node:     ptr.Ptr(te.NodeName),
-		Storage:  ptr.Ptr("local"),
-		URL:      ptr.Ptr(isoURL),
+		Content:  new("iso"),
+		FileName: new(isoFileName),
+		Node:     new(te.NodeName),
+		Storage:  new("local"),
+		URL:      new(isoURL),
 	})
 	require.NoError(t, err)
 
@@ -235,11 +234,11 @@ func TestAccDatasourceFileContentTypeMismatch(t *testing.T) {
 
 	// Upload an ISO file
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-		Content:  ptr.Ptr("iso"),
-		FileName: ptr.Ptr(isoFileName),
-		Node:     ptr.Ptr(te.NodeName),
-		Storage:  ptr.Ptr("local"),
-		URL:      ptr.Ptr(isoURL),
+		Content:  new("iso"),
+		FileName: new(isoFileName),
+		Node:     new(te.NodeName),
+		Storage:  new("local"),
+		URL:      new(isoURL),
 	})
 	require.NoError(t, err)
 

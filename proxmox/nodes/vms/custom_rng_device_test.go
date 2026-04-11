@@ -11,8 +11,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 func TestCustomRNGDevice_UnmarshalJSON(t *testing.T) {
@@ -36,8 +34,8 @@ func TestCustomRNGDevice_UnmarshalJSON(t *testing.T) {
 			line: `"source=/dev/random,max_bytes=1024,period=1000"`,
 			want: &CustomRNGDevice{
 				Source:   "/dev/random",
-				MaxBytes: ptr.Ptr(1024),
-				Period:   ptr.Ptr(1000),
+				MaxBytes: new(1024),
+				Period:   new(1000),
 			},
 		},
 		{
@@ -45,7 +43,7 @@ func TestCustomRNGDevice_UnmarshalJSON(t *testing.T) {
 			line: `"source=urandom,max_bytes=2048"`,
 			want: &CustomRNGDevice{
 				Source:   "urandom",
-				MaxBytes: ptr.Ptr(2048),
+				MaxBytes: new(2048),
 			},
 		},
 		{
@@ -53,7 +51,7 @@ func TestCustomRNGDevice_UnmarshalJSON(t *testing.T) {
 			line: `"source=urandom,period=2000"`,
 			want: &CustomRNGDevice{
 				Source: "urandom",
-				Period: ptr.Ptr(2000),
+				Period: new(2000),
 			},
 		},
 		{
@@ -119,8 +117,8 @@ func TestCustomRNGDevice_EncodeValues(t *testing.T) {
 			name: "all options",
 			device: &CustomRNGDevice{
 				Source:   "/dev/random",
-				MaxBytes: ptr.Ptr(1024),
-				Period:   ptr.Ptr(1000),
+				MaxBytes: new(1024),
+				Period:   new(1000),
 			},
 			key:      "rng0",
 			expected: "source=/dev/random,max_bytes=1024,period=1000",
@@ -129,7 +127,7 @@ func TestCustomRNGDevice_EncodeValues(t *testing.T) {
 			name: "source with max_bytes",
 			device: &CustomRNGDevice{
 				Source:   "urandom",
-				MaxBytes: ptr.Ptr(2048),
+				MaxBytes: new(2048),
 			},
 			key:      "rng0",
 			expected: "source=urandom,max_bytes=2048",
@@ -138,7 +136,7 @@ func TestCustomRNGDevice_EncodeValues(t *testing.T) {
 			name: "source with period",
 			device: &CustomRNGDevice{
 				Source: "urandom",
-				Period: ptr.Ptr(2000),
+				Period: new(2000),
 			},
 			key:      "rng0",
 			expected: "source=urandom,period=2000",

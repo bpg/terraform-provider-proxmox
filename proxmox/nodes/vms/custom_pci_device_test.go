@@ -11,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -48,7 +47,7 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			line: `"mapping=mappeddevice,pcie=0,rombar=1,x-vga=0"`,
 			want: &CustomPCIDevice{
 				DeviceIDs:  nil,
-				Mapping:    ptr.Ptr("mappeddevice"),
+				Mapping:    new("mappeddevice"),
 				MDev:       nil,
 				PCIExpress: types.CustomBool(false).Pointer(),
 				ROMBAR:     types.CustomBool(true).Pointer(),

@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -643,15 +642,15 @@ func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
 	currentDisks := vms.CustomStorageDevices{
 		"scsi0": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(32),
-			DatastoreID: ptr.Ptr("local"),
+			DatastoreID: new("local"),
 		},
 		"scsi1": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(20),
-			DatastoreID: ptr.Ptr("local"),
+			DatastoreID: new("local"),
 		},
 		"scsi7": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(4),
-			DatastoreID: ptr.Ptr("local"),
+			DatastoreID: new("local"),
 		},
 	}
 
@@ -659,11 +658,11 @@ func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
 	planDisksWithBootDiskRemoved := vms.CustomStorageDevices{
 		"scsi1": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(20),
-			DatastoreID: ptr.Ptr("local"),
+			DatastoreID: new("local"),
 		},
 		"scsi7": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(4),
-			DatastoreID: ptr.Ptr("local"),
+			DatastoreID: new("local"),
 		},
 	}
 
@@ -687,11 +686,11 @@ func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
 	planDisksWithNonBootDiskRemoved := vms.CustomStorageDevices{
 		"scsi0": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(32),
-			DatastoreID: ptr.Ptr("local"),
+			DatastoreID: new("local"),
 		},
 		"scsi1": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(20),
-			DatastoreID: ptr.Ptr("local"),
+			DatastoreID: new("local"),
 		},
 	}
 
@@ -721,35 +720,35 @@ func TestOriginalBugScenario(t *testing.T) {
 	originalDisks := vms.CustomStorageDevices{
 		"scsi0": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(32),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi1": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(20),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi2": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(1),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi3": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(50),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi4": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(1),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi5": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(50),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi6": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(1),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi7": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(4),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 	}
 
@@ -757,31 +756,31 @@ func TestOriginalBugScenario(t *testing.T) {
 	newDisks := vms.CustomStorageDevices{
 		"scsi0": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(32),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi1": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(20),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi2": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(1),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi3": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(50),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi4": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(1),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi5": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(50),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 		"scsi6": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(1),
-			DatastoreID: ptr.Ptr("local-lvm"),
+			DatastoreID: new("local-lvm"),
 		},
 	}
 
