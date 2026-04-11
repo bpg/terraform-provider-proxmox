@@ -24,7 +24,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -126,7 +125,7 @@ func (r *poolMembershipResource) Create(ctx context.Context, req resource.Create
 	poolID := plan.PoolID.ValueString()
 
 	body := &pools.PoolUpdateRequestBody{
-		AllowMove: ptr.Ptr(proxmoxtypes.CustomBool(true)),
+		AllowMove: new(proxmoxtypes.CustomBool(true)),
 	}
 
 	if membershipType, err := plan.deduceMembershipType(); err != nil {
@@ -247,7 +246,7 @@ func (r *poolMembershipResource) Delete(ctx context.Context, req resource.Delete
 	}
 
 	body := &pools.PoolUpdateRequestBody{
-		Delete: ptr.Ptr(proxmoxtypes.CustomBool(true)),
+		Delete: new(proxmoxtypes.CustomBool(true)),
 	}
 
 	switch membershipType {

@@ -9,7 +9,6 @@ package vms
 import (
 	"testing"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -34,7 +33,7 @@ func TestCustomVirtiofsShare_UnmarshalJSON(t *testing.T) {
 			line: `"folder,cache=always"`,
 			want: &CustomVirtiofsShare{
 				DirId: "folder",
-				Cache: ptr.Ptr("always"),
+				Cache: new("always"),
 			},
 		},
 		{
@@ -42,7 +41,7 @@ func TestCustomVirtiofsShare_UnmarshalJSON(t *testing.T) {
 			line: `"folder,cache=never,direct-io=1,expose-acl=1"`,
 			want: &CustomVirtiofsShare{
 				DirId:       "folder",
-				Cache:       ptr.Ptr("never"),
+				Cache:       new("never"),
 				DirectIo:    types.CustomBool(true).Pointer(),
 				ExposeAcl:   types.CustomBool(true).Pointer(),
 				ExposeXattr: types.CustomBool(true).Pointer(),

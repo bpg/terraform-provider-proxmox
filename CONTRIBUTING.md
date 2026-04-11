@@ -44,7 +44,7 @@ For common issues during development, see [Development Troubleshooting](docs/gui
 > `$GOPATH` is the path to your Go workspace. If undefined, it defaults to `$HOME/go` on Linux and macOS, and `%USERPROFILE%\go` on Windows.
 
 > [!NOTE]
-> The provider requires Go 1.25 or later to build.
+> The provider requires Go 1.26 or later to build.
 
 - Clone the repository to: `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
 

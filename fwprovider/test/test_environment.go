@@ -31,7 +31,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
@@ -293,11 +292,11 @@ func (e *Environment) DownloadCloudImage() string {
 	fileName := "ubuntu-24.04-minimal-cloudimg-amd64.img"
 	imageFileName := fmt.Sprintf("%d-%s", time.Now().UnixMicro(), fileName)
 	err := e.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-		Content:  ptr.Ptr("iso"),
-		FileName: ptr.Ptr(imageFileName),
-		Node:     ptr.Ptr(e.NodeName),
-		Storage:  ptr.Ptr("local"),
-		URL:      ptr.Ptr(fmt.Sprintf("%s/minimal/releases/noble/release/%s", e.CloudImagesServer, fileName)),
+		Content:  new("iso"),
+		FileName: new(imageFileName),
+		Node:     new(e.NodeName),
+		Storage:  new("local"),
+		URL:      new(fmt.Sprintf("%s/minimal/releases/noble/release/%s", e.CloudImagesServer, fileName)),
 	})
 	require.NoError(e.t, err)
 

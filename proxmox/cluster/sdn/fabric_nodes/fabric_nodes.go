@@ -13,7 +13,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 // GetFabricNode retrieves a single SDN Fabric Node by Fabric Node ID.
@@ -78,7 +77,7 @@ func (c *Client) CreateFabricNode(ctx context.Context, data *FabricNode) error {
 
 // UpdateFabricNode Updates an existing Fabric Node.
 func (c *Client) UpdateFabricNode(ctx context.Context, data *FabricNodeUpdate) error {
-	data.Protocol = ptr.Ptr(c.FabricProtocol)
+	data.Protocol = new(c.FabricProtocol)
 	data.FabricID = c.FabricID
 
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(data.NodeID), data, nil)

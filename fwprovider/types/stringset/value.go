@@ -14,8 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 // Ensure the implementations satisfy the required interfaces.
@@ -85,7 +83,7 @@ func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics, 
 
 	o := defaultOptions(opts...)
 
-	return ptr.Ptr(strings.Join(elems, o.separator))
+	return new(strings.Join(elems, o.separator))
 }
 
 // NewValueList converts a slice of items to a new string set value.

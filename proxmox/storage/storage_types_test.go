@@ -17,10 +17,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
-func intPtr(i int) *int {
-	return &i
-}
-
 func customInt64Ptr(i int64) *types.CustomInt64 {
 	c := types.CustomInt64(i)
 	return &c
@@ -42,52 +38,52 @@ func TestDataStoreWithBackups_String(t *testing.T) {
 		},
 		{
 			name:     "KeepLast only",
-			input:    DataStoreWithBackups{KeepLast: intPtr(5)},
+			input:    DataStoreWithBackups{KeepLast: new(5)},
 			expected: "keep-last=5",
 		},
 		{
 			name:     "KeepHourly only",
-			input:    DataStoreWithBackups{KeepHourly: intPtr(24)},
+			input:    DataStoreWithBackups{KeepHourly: new(24)},
 			expected: "keep-hourly=24",
 		},
 		{
 			name:     "KeepDaily only",
-			input:    DataStoreWithBackups{KeepDaily: intPtr(7)},
+			input:    DataStoreWithBackups{KeepDaily: new(7)},
 			expected: "keep-daily=7",
 		},
 		{
 			name:     "KeepWeekly only",
-			input:    DataStoreWithBackups{KeepWeekly: intPtr(4)},
+			input:    DataStoreWithBackups{KeepWeekly: new(4)},
 			expected: "keep-weekly=4",
 		},
 		{
 			name:     "KeepMonthly only",
-			input:    DataStoreWithBackups{KeepMonthly: intPtr(12)},
+			input:    DataStoreWithBackups{KeepMonthly: new(12)},
 			expected: "keep-monthly=12",
 		},
 		{
 			name:     "KeepYearly only",
-			input:    DataStoreWithBackups{KeepYearly: intPtr(3)},
+			input:    DataStoreWithBackups{KeepYearly: new(3)},
 			expected: "keep-yearly=3",
 		},
 		{
 			name: "Multiple values",
 			input: DataStoreWithBackups{
-				KeepDaily:  intPtr(30),
-				KeepWeekly: intPtr(8),
-				KeepYearly: intPtr(10),
+				KeepDaily:  new(30),
+				KeepWeekly: new(8),
+				KeepYearly: new(10),
 			},
 			expected: "keep-daily=30,keep-weekly=8,keep-yearly=10",
 		},
 		{
 			name: "All values set",
 			input: DataStoreWithBackups{
-				KeepLast:    intPtr(1),
-				KeepHourly:  intPtr(2),
-				KeepDaily:   intPtr(3),
-				KeepWeekly:  intPtr(4),
-				KeepMonthly: intPtr(5),
-				KeepYearly:  intPtr(6),
+				KeepLast:    new(1),
+				KeepHourly:  new(2),
+				KeepDaily:   new(3),
+				KeepWeekly:  new(4),
+				KeepMonthly: new(5),
+				KeepYearly:  new(6),
 			},
 			expected: "keep-last=1,keep-hourly=2,keep-daily=3,keep-weekly=4,keep-monthly=5,keep-yearly=6",
 		},
@@ -113,7 +109,7 @@ func TestDataStoreWithBackups_EncodeValues(t *testing.T) {
 
 	input := DataStoreWithBackups{
 		MaxProtectedBackups: customInt64Ptr(10),
-		KeepDaily:           intPtr(7),
+		KeepDaily:           new(7),
 	}
 
 	values := url.Values{}
@@ -131,7 +127,7 @@ func TestStorageCreateRequest_QueryEncoding_Backups(t *testing.T) {
 		NFSStorageMutableFields: NFSStorageMutableFields{
 			Backups: DataStoreWithBackups{
 				MaxProtectedBackups: customInt64Ptr(9),
-				KeepHourly:          intPtr(24),
+				KeepHourly:          new(24),
 			},
 		},
 	}

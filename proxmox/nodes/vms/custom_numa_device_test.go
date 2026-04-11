@@ -8,8 +8,6 @@ package vms
 
 import (
 	"testing"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 func TestCustomNUMADevice_UnmarshalJSON(t *testing.T) {
@@ -27,8 +25,8 @@ func TestCustomNUMADevice_UnmarshalJSON(t *testing.T) {
 			want: &CustomNUMADevice{
 				CPUIDs:        []string{"1-2", "3-4"},
 				HostNodeNames: &[]string{"1-2"},
-				Memory:        ptr.Ptr(1024),
-				Policy:        ptr.Ptr("preferred"),
+				Memory:        new(1024),
+				Policy:        new("preferred"),
 			},
 		},
 		{
@@ -36,7 +34,7 @@ func TestCustomNUMADevice_UnmarshalJSON(t *testing.T) {
 			line: `"cpus=1-2,memory=1024"`,
 			want: &CustomNUMADevice{
 				CPUIDs: []string{"1-2"},
-				Memory: ptr.Ptr(1024),
+				Memory: new(1024),
 			},
 		},
 	}

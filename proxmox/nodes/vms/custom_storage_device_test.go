@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -30,8 +29,8 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			name: "simple volume",
 			line: `"local-lvm:vm-2041-disk-0,discard=on,ssd=1,iothread=1,size=8G,cache=writeback"`,
 			want: &CustomStorageDevice{
-				Cache:      ptr.Ptr("writeback"),
-				Discard:    ptr.Ptr("on"),
+				Cache:      new("writeback"),
+				Discard:    new("on"),
 				FileVolume: "local-lvm:vm-2041-disk-0",
 				IOThread:   types.CustomBool(true).Pointer(),
 				Size:       ds8gig,
@@ -42,8 +41,8 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			name: "volume with dot",
 			line: `"volumes.hdd:base-269-disk-0,cache=writeback,discard=on,iothread=1,size=8G,ssd=1"`,
 			want: &CustomStorageDevice{
-				Cache:      ptr.Ptr("writeback"),
-				Discard:    ptr.Ptr("on"),
+				Cache:      new("writeback"),
+				Discard:    new("on"),
 				FileVolume: "volumes.hdd:base-269-disk-0",
 				IOThread:   types.CustomBool(true).Pointer(),
 				Size:       ds8gig,
@@ -54,9 +53,9 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			name: "raw volume type",
 			line: `"nfs:2041/vm-2041-disk-0.raw,discard=ignore,ssd=1,iothread=1,size=8G"`,
 			want: &CustomStorageDevice{
-				Discard:    ptr.Ptr("ignore"),
+				Discard:    new("ignore"),
 				FileVolume: "nfs:2041/vm-2041-disk-0.raw",
-				Format:     ptr.Ptr("raw"),
+				Format:     new("raw"),
 				IOThread:   types.CustomBool(true).Pointer(),
 				Size:       ds8gig,
 				SSD:        types.CustomBool(true).Pointer(),
@@ -95,21 +94,21 @@ func TestCustomStorageDevice_IsCloudInitDrive(t *testing.T) {
 		}, {
 			name: "on directory storage",
 			device: CustomStorageDevice{
-				Media:      ptr.Ptr("cdrom"),
+				Media:      new("cdrom"),
 				FileVolume: "local:131/vm-131-cloudinit.qcow2",
 			},
 			want: true,
 		}, {
 			name: "on block storage",
 			device: CustomStorageDevice{
-				Media:      ptr.Ptr("cdrom"),
+				Media:      new("cdrom"),
 				FileVolume: "local-lvm:vm-131-cloudinit",
 			},
 			want: true,
 		}, {
 			name: "wrong VM ID",
 			device: CustomStorageDevice{
-				Media:      ptr.Ptr("cdrom"),
+				Media:      new("cdrom"),
 				FileVolume: "local-lvm:vm-123-cloudinit",
 			},
 			want: false,

@@ -31,7 +31,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -2594,20 +2593,20 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			return diag.FromErr(err)
 		}
 
-		updateBody.CPUCores = ptr.Ptr(int64(cpuCores))
+		updateBody.CPUCores = new(int64(cpuCores))
 		updateBody.CPUEmulation = &vms.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
 			Type:  cpuType,
 		}
 		updateBody.NUMAEnabled = &cpuNUMA
-		updateBody.CPUSockets = ptr.Ptr(int64(cpuSockets))
+		updateBody.CPUSockets = new(int64(cpuSockets))
 
 		if cpuAffinity != "" {
 			updateBody.CPUAffinity = &cpuAffinity
 		}
 
 		if cpuHotplugged > 0 {
-			updateBody.VirtualCPUCount = ptr.Ptr(int64(cpuHotplugged))
+			updateBody.VirtualCPUCount = new(int64(cpuHotplugged))
 		}
 
 		if cpuLimit > 0 {
@@ -2615,7 +2614,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		if cpuUnits > 0 {
-			updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
+			updateBody.CPUUnits = new(int64(cpuUnits))
 		}
 	}
 
@@ -3085,7 +3084,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 
 	tpmState := vmGetTPMState(d, nil)
 	if tpmState != nil && (tpmState.Version == nil || *tpmState.Version == "") {
-		tpmState.Version = ptr.Ptr(dvTPMStateVersion)
+		tpmState.Version = new(dvTPMStateVersion)
 	}
 
 	rng := vmGetRNGDevice(d)
@@ -3307,12 +3306,12 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 			Order: &bootOrderConverted,
 		},
 		CloudInitConfig: initializationConfig,
-		CPUCores:        ptr.Ptr(int64(cpuCores)),
+		CPUCores:        new(int64(cpuCores)),
 		CPUEmulation: &vms.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
 			Type:  cpuType,
 		},
-		CPUSockets:           ptr.Ptr(int64(cpuSockets)),
+		CPUSockets:           new(int64(cpuSockets)),
 		DedicatedMemory:      &memoryDedicated,
 		DeletionProtection:   &protection,
 		EFIDisk:              efiDisk,
@@ -3346,7 +3345,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 	}
 
 	if cpuHotplugged > 0 {
-		createBody.VirtualCPUCount = ptr.Ptr(int64(cpuHotplugged))
+		createBody.VirtualCPUCount = new(int64(cpuHotplugged))
 	}
 
 	// Only set hotplug if explicitly configured, otherwise let PVE use its default
@@ -3359,7 +3358,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 	}
 
 	if cpuUnits > 0 {
-		createBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
+		createBody.CPUUnits = new(int64(cpuUnits))
 	}
 
 	if cpuAffinity != "" {
@@ -4047,7 +4046,7 @@ func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 		}
 
 		if smbios.UUID == nil || *smbios.UUID == "" {
-			smbios.UUID = ptr.Ptr(uuid.New().String())
+			smbios.UUID = new(uuid.New().String())
 		}
 
 		return &smbios
@@ -4152,7 +4151,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) *vms.CustomVGADevice {
 		}
 
 		if vgaMemory > 0 {
-			vgaDevice.Memory = ptr.Ptr(int64(vgaMemory))
+			vgaDevice.Memory = new(int64(vgaMemory))
 		}
 
 		if vgaType != "" {
@@ -6114,12 +6113,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			return diag.FromErr(err)
 		}
 
-		updateBody.CPUCores = ptr.Ptr(int64(cpuCores))
-		updateBody.CPUSockets = ptr.Ptr(int64(cpuSockets))
+		updateBody.CPUCores = new(int64(cpuCores))
+		updateBody.CPUSockets = new(int64(cpuSockets))
 		updateBody.NUMAEnabled = &cpuNUMA
 
 		if cpuUnits > 0 {
-			updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
+			updateBody.CPUUnits = new(int64(cpuUnits))
 		}
 
 		// CPU affinity is a special case, only root can change it.
@@ -6134,7 +6133,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		}
 
 		if cpuHotplugged > 0 {
-			updateBody.VirtualCPUCount = ptr.Ptr(int64(cpuHotplugged))
+			updateBody.VirtualCPUCount = new(int64(cpuHotplugged))
 		} else {
 			del = append(del, "vcpus")
 		}

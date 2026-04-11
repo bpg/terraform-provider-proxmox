@@ -13,7 +13,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 const (
@@ -83,7 +82,7 @@ func (c *Client) CreateFabric(ctx context.Context, data *Fabric) error {
 
 // UpdateFabric Updates an existing Fabric.
 func (c *Client) UpdateFabric(ctx context.Context, data *FabricUpdate) error {
-	data.Protocol = ptr.Ptr(c.Protocol)
+	data.Protocol = new(c.Protocol)
 
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(data.ID), data, nil)
 	if err != nil {

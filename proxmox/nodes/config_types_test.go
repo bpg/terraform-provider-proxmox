@@ -9,8 +9,6 @@ package nodes
 import (
 	"net/url"
 	"testing"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 func TestACMEConfig_UnmarshalJSON(t *testing.T) {
@@ -25,7 +23,7 @@ func TestACMEConfig_UnmarshalJSON(t *testing.T) {
 		{
 			name: "account only",
 			config: ACMEConfig{
-				Account: ptr.Ptr("foo"),
+				Account: new("foo"),
 				Domains: nil,
 			},
 			str: `"account=foo"`,
@@ -33,7 +31,7 @@ func TestACMEConfig_UnmarshalJSON(t *testing.T) {
 		{
 			name: "account and domains",
 			config: ACMEConfig{
-				Account: ptr.Ptr("foo"),
+				Account: new("foo"),
 				Domains: []string{"bar", "baz"},
 			},
 			str: `"account=foo,domains=bar;baz"`,
@@ -75,7 +73,7 @@ func TestACMEConfig_EncodeValues(t *testing.T) {
 		{
 			name: "account only",
 			config: ACMEConfig{
-				Account: ptr.Ptr("foo"),
+				Account: new("foo"),
 				Domains: nil,
 			},
 			args: args{
@@ -88,7 +86,7 @@ func TestACMEConfig_EncodeValues(t *testing.T) {
 		{
 			name: "account and domains",
 			config: ACMEConfig{
-				Account: ptr.Ptr("foo"),
+				Account: new("foo"),
 				Domains: []string{"bar", "baz"},
 			},
 			args: args{
@@ -151,7 +149,7 @@ func TestACMEDomainConfig_UnmarshalJSON(t *testing.T) {
 			name: "domain and alias",
 			config: ACMEDomainConfig{
 				Domain: "foo",
-				Alias:  ptr.Ptr("bar"),
+				Alias:  new("bar"),
 			},
 			str: `"domain=foo,alias=bar"`,
 		},
@@ -159,7 +157,7 @@ func TestACMEDomainConfig_UnmarshalJSON(t *testing.T) {
 			name: "domain and plugin",
 			config: ACMEDomainConfig{
 				Domain: "foo",
-				Plugin: ptr.Ptr("bar"),
+				Plugin: new("bar"),
 			},
 			str: `"domain=foo,plugin=bar"`,
 		},
@@ -167,8 +165,8 @@ func TestACMEDomainConfig_UnmarshalJSON(t *testing.T) {
 			name: "domain, alias, and plugin",
 			config: ACMEDomainConfig{
 				Domain: "foo",
-				Alias:  ptr.Ptr("bar"),
-				Plugin: ptr.Ptr("baz"),
+				Alias:  new("bar"),
+				Plugin: new("baz"),
 			},
 			str: `"domain=foo,alias=bar,plugin=baz"`,
 		},
@@ -214,7 +212,7 @@ func TestACMEDomainConfig_EncodeValues(t *testing.T) {
 			name: "domain and alias",
 			config: ACMEDomainConfig{
 				Domain: "foo",
-				Alias:  ptr.Ptr("bar"),
+				Alias:  new("bar"),
 			},
 			args: args{
 				"acme",
@@ -228,7 +226,7 @@ func TestACMEDomainConfig_EncodeValues(t *testing.T) {
 			name: "domain and plugin",
 			config: ACMEDomainConfig{
 				Domain: "foo",
-				Plugin: ptr.Ptr("bar"),
+				Plugin: new("bar"),
 			},
 			args: args{
 				"acme",
@@ -242,8 +240,8 @@ func TestACMEDomainConfig_EncodeValues(t *testing.T) {
 			name: "domain, alias, and plugin",
 			config: ACMEDomainConfig{
 				Domain: "foo",
-				Alias:  ptr.Ptr("bar"),
-				Plugin: ptr.Ptr("baz"),
+				Alias:  new("bar"),
+				Plugin: new("baz"),
 			},
 			args: args{
 				"acme",
@@ -293,7 +291,7 @@ func TestWakeOnLandConfig_UnmarshalJSON(t *testing.T) {
 			name: "mac and bind interface",
 			config: WakeOnLandConfig{
 				MACAddress:    "00:11:22:33:44:55",
-				BindInterface: ptr.Ptr("eth0"),
+				BindInterface: new("eth0"),
 			},
 			str: `"mac=00:11:22:33:44:55,bind-interface=eth0"`,
 		},
@@ -301,7 +299,7 @@ func TestWakeOnLandConfig_UnmarshalJSON(t *testing.T) {
 			name: "mac and broadcast address",
 			config: WakeOnLandConfig{
 				MACAddress:       "00:11:22:33:44:55",
-				BroadcastAddress: ptr.Ptr("192.168.0.155"),
+				BroadcastAddress: new("192.168.0.155"),
 			},
 			str: `"mac=00:11:22:33:44:55,broadcast-address=192.168.0.255"`,
 		},
@@ -309,8 +307,8 @@ func TestWakeOnLandConfig_UnmarshalJSON(t *testing.T) {
 			name: "mac, bind interface, and broadcast address",
 			config: WakeOnLandConfig{
 				MACAddress:       "00:11:22:33:44:55",
-				BindInterface:    ptr.Ptr("eth0"),
-				BroadcastAddress: ptr.Ptr("192.168.0.255"),
+				BindInterface:    new("eth0"),
+				BroadcastAddress: new("192.168.0.255"),
 			},
 			str: `"mac=00:11:22:33:44:55,bind-interface=eth0,broadcast-address=192.168.0.255"`,
 		},
@@ -356,7 +354,7 @@ func TestWakeOnLandConfig_EncodeValues(t *testing.T) {
 			name: "mac and bind interface",
 			config: WakeOnLandConfig{
 				MACAddress:    "00:11:22:33:44:55",
-				BindInterface: ptr.Ptr("eth0"),
+				BindInterface: new("eth0"),
 			},
 			args: args{
 				"wakeonlan",
@@ -370,7 +368,7 @@ func TestWakeOnLandConfig_EncodeValues(t *testing.T) {
 			name: "mac and broadcast address",
 			config: WakeOnLandConfig{
 				MACAddress:       "00:11:22:33:44:55",
-				BroadcastAddress: ptr.Ptr("192.168.0.255"),
+				BroadcastAddress: new("192.168.0.255"),
 			},
 			args: args{
 				"wakeonlan",
@@ -384,8 +382,8 @@ func TestWakeOnLandConfig_EncodeValues(t *testing.T) {
 			name: "mac, bind interface, and broadcast address",
 			config: WakeOnLandConfig{
 				MACAddress:       "00:11:22:33:44:55",
-				BindInterface:    ptr.Ptr("eth0"),
-				BroadcastAddress: ptr.Ptr("10.255.255.255"),
+				BindInterface:    new("eth0"),
+				BroadcastAddress: new("10.255.255.255"),
 			},
 			args: args{
 				"wakeonlan",

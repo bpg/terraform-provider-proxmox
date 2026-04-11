@@ -28,7 +28,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -282,7 +281,7 @@ func (r *genericZoneResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	newZone.Type = ptr.Ptr(r.config.zoneType)
+	newZone.Type = new(r.config.zoneType)
 
 	if err := r.client.CreateZone(ctx, newZone); err != nil {
 		resp.Diagnostics.AddError("Unable to Create SDN Zone", err.Error())
