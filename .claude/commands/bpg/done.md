@@ -15,10 +15,11 @@ allowed-tools:
 <objective>
 Wrap up work on an issue by:
 
-1. Reviewing the session for learnings worth preserving
-2. Writing new or updating existing memory files
-3. Finalizing the session state file
-4. Archiving all issue-related files from `.dev/` to `.dev/archive/`
+1. Verifying the actual work status on the remote (PR state, merge status)
+2. Reviewing the session for learnings worth preserving
+3. Writing new or updating existing memory files
+4. Finalizing the session state file (using verified remote status)
+5. Archiving all issue-related files from `.dev/` to `.dev/archive/`
 
 Use this skill when:
 
@@ -48,7 +49,40 @@ ISSUE_NUM=$(git branch --show-current | grep -oE '(fix|feat)/[0-9]+' | grep -oE 
 
 If still unclear, ask the user.
 
-## Step 1: Extract Learnings
+## Step 1: Verify Work Status on Remote
+
+Before wrapping up, check GitHub to determine the actual state of the work:
+
+```bash
+# Check for PRs associated with this issue
+gh pr list --search "${ISSUE_NUM}" --state all --json number,title,state,mergedAt,headRefName --limit 5
+```
+
+```bash
+# Also check if the current branch has an associated PR
+BRANCH=$(git branch --show-current)
+gh pr view "$BRANCH" --json number,title,state,mergedAt,url 2>/dev/null
+```
+
+```bash
+# Check if main on the remote contains the changes (i.e., branch was merged)
+git fetch origin main --quiet
+git log origin/main --oneline --grep="${ISSUE_NUM}" --limit 5 2>/dev/null
+```
+
+Determine the work status:
+
+| Remote State | Status |
+|---|---|
+| PR merged | "Merged" |
+| PR open, approved | "PR Approved" |
+| PR open, not reviewed | "PR Created" |
+| No PR found, changes committed locally | "Ready for PR" |
+| No PR found, changes uncommitted | "In Progress" |
+
+Store this status — it determines the `Status:` field in the session state and the summary.
+
+## Step 2: Extract Learnings
 
 Review the conversation history and identify learnings that would help future sessions on this project. Look for:
 
@@ -104,19 +138,19 @@ Should I save these? Any corrections or additions?
 
 Wait for user confirmation before writing.
 
-## Step 2: Finalize Session State
+## Step 3: Finalize Session State
 
 Read the session state file `.dev/{issue}_SESSION_STATE.md` and update it with final details:
 
 - `Last Updated:` → current date
-- `Status:` → "Complete" (or "PR Created" / "Merged" if applicable)
+- `Status:` → Use the verified status from Step 1 ("Merged", "PR Created", "Ready for PR", etc.)
 - `Current state:` → final summary of what was accomplished
 - `Immediate next action:` → "Archived. No further action needed." (or link to open PR if applicable)
 - Ensure the **What Was Done** section is complete and accurate
 - Ensure **Verification Results** reflect the final test run
 - Add a **Session Log** entry with date and summary
 
-## Step 3: Archive Files
+## Step 4: Archive Files
 
 Move all issue-related files from `.dev/` to `.dev/archive/`:
 
@@ -137,7 +171,7 @@ ls .dev/${ISSUE_NUM}_* 2>/dev/null && echo "WARNING: files still in .dev/" || ec
 ls .dev/archive/${ISSUE_NUM}_*
 ```
 
-## Step 4: Switch to Main Branch
+## Step 5: Switch to Main Branch
 
 Return to the main branch so the workspace is clean for the next task:
 
@@ -145,7 +179,7 @@ Return to the main branch so the workspace is clean for the next task:
 git checkout main
 ```
 
-## Step 5: Summary
+## Step 6: Summary
 
 Present a brief summary:
 
@@ -168,9 +202,10 @@ Switched to: main
 
 <success_criteria>
 
+- [ ] Work status verified against remote (PR state, merge status)
 - [ ] Learnings identified and presented to user for confirmation
 - [ ] Memory files created or updated (with index updated)
-- [ ] Session state finalized with complete summary
+- [ ] Session state finalized with verified status
 - [ ] All `.dev/{issue}_*` files moved to `.dev/archive/`
 - [ ] Switched to `main` branch
 - [ ] Summary presented to user
