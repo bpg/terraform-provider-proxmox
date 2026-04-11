@@ -96,7 +96,6 @@ const (
 	dvInitializationIPConfigIPv4Gateway = ""
 	dvInitializationIPConfigIPv6Address = ""
 	dvInitializationIPConfigIPv6Gateway = ""
-	dvInitializationUpgrade             = true
 	dvInitializationUserAccountPassword = ""
 	dvKeyboardLayout                    = "en-us"
 	dvKVMArguments                      = ""
@@ -1025,10 +1024,12 @@ func VM() *schema.Resource {
 						ValidateDiagFunc: CloudInitTypeValidator(),
 					},
 					mkInitializationUpgrade: {
-						Type:        schema.TypeBool,
-						Description: "Whether to do an automatic package upgrade after the first boot",
-						Optional:    true,
-						Default:     dvInitializationUpgrade,
+						Type: schema.TypeBool,
+						Description: "Whether to do an automatic package upgrade after the first boot" +
+							" (defaults to `true` in Proxmox)." +
+							" Setting this is only allowed for `root@pam` authenticated user.",
+						Optional: true,
+						Computed: true,
 					},
 				},
 			},
@@ -3695,8 +3696,11 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		initializationConfig.Type = &initializationType
 	}
 
-	upgrade := types.CustomBool(initializationBlock[mkInitializationUpgrade].(bool))
-	initializationConfig.Upgrade = &upgrade
+	//nolint:staticcheck
+	if v, ok := d.GetOkExists(fmt.Sprintf("%s.0.%s", mkInitialization, mkInitializationUpgrade)); ok {
+		upgrade := types.CustomBool(v.(bool))
+		initializationConfig.Upgrade = &upgrade
+	}
 
 	return initializationConfig
 }
@@ -5145,7 +5149,7 @@ func vmReadCustom(
 		initialization[mkInitializationUpgrade] = bool(*vmConfig.CloudInitUpgrade)
 	} else if len(initialization) > 0 {
 		// Default to true, matching Proxmox default behavior
-		initialization[mkInitializationUpgrade] = dvInitializationUpgrade
+		initialization[mkInitializationUpgrade] = true
 	}
 
 	currentInitialization := d.Get(mkInitialization).([]any)
