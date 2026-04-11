@@ -55,11 +55,35 @@ Use the short form (`resource.go`, `model.go`) when the package contains a singl
 
 Optional additional files:
 
-| File                                      | When to Add                                              |
-|-------------------------------------------|----------------------------------------------------------|
-| `datasource.go` or `datasource_{name}.go` | Read-only data source for the same API object            |
-| `resource_schema.go`                      | Schema definition is large enough to warrant separation  |
-| `datasource_schema.go`                    | Data source schema is large enough to warrant separation |
+| File                                      | When to Add                                                              |
+|-------------------------------------------|--------------------------------------------------------------------------|
+| `datasource.go` or `datasource_{name}.go` | Read-only data source (see [ADR-005: Datasource Error Handling][ds-err]) |
+| `resource_schema.go`                      | Schema definition is large enough to warrant separation                  |
+| `datasource_schema.go`                    | Data source schema is large enough to warrant separation                 |
+
+[ds-err]: 005-error-handling.md#datasource-error-handling
+
+### Singleton Resources
+
+Some Proxmox resources represent pre-existing cluster or node configuration that always exists (e.g., cluster options, node firewall options). These "singleton" resources have modified lifecycle semantics:
+
+| Operation | Singleton Behavior                                                    |
+|-----------|-----------------------------------------------------------------------|
+| Create    | Applies settings via PUT (the resource already exists)                |
+| Read      | Fetches current settings (not-found handling is N/A)                  |
+| Update    | Applies changed settings via PUT                                      |
+| Delete    | Resets all managed fields to defaults (does not destroy the resource) |
+| Import    | Reads current settings (always succeeds for valid node/cluster)       |
+
+Singleton resources follow the same 3-file pattern and naming conventions. The Delete method should enumerate all managed fields and send them in a `delete` list to reset them to Proxmox defaults.
+
+Singleton resources use the same error message format as regular resources. Since the underlying resource always exists, not-found handling in Read and Delete is typically N/A.
+
+**Common Mistakes:**
+
+- Implementing a no-op Delete that leaves managed fields in their configured state.
+- Checking for `ErrResourceDoesNotExist` in Read when the resource always exists.
+- Not reading back after Create/Update (this requirement still applies to singletons). See [ADR-005](005-error-handling.md#read-back-after-create-and-update).
 
 ### Naming Conventions
 

@@ -51,6 +51,32 @@ Use `resp.Diagnostics.AddError()` for all failures that prevent the operation fr
 
 Warnings are acceptable only for non-fatal informational messages, such as deprecation notices emitted by the schema framework itself. Resource CRUD methods should not emit warnings.
 
+### Read-Back After Create and Update
+
+After a successful Create or Update API call, **always read back the resource from the API** before setting state. Never save the plan directly to state.
+
+```go
+// Create: after successful API call
+data, err := r.client.GetResource(ctx, id)
+if err != nil {
+    resp.Diagnostics.AddError("Unable to Read [Resource] After Creation", err.Error())
+    return
+}
+
+readModel := &model{}
+readModel.fromAPI(id, data)
+resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
+```
+
+The same pattern applies to Update — read back and use `"Unable to Read [Resource] After Update"` as the error summary.
+
+**Why this matters:**
+
+- The Proxmox API may normalize values (e.g., trimming whitespace, canonicalizing paths)
+- Computed fields are only available from the API response, not the plan
+- Server-side defaults for Optional+Computed fields must be captured
+- Saving plan data directly creates state drift that is only detected on the next refresh
+
 ### Three-Layer Error Architecture
 
 Errors flow through three layers. Each layer adds context while preserving the original error for inspection.
@@ -127,6 +153,48 @@ if errors.Is(err, api.ErrResourceDoesNotExist) {
 }
 ```
 
+### State Set Error Propagation
+
+Every call to `resp.State.Set(ctx, ...)` **must** be wrapped in `resp.Diagnostics.Append()`:
+
+```go
+// Correct: errors from State.Set are propagated
+resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
+```
+
+**Never** use a bare `resp.State.Set()` call:
+
+```go
+// WRONG: errors from State.Set are silently discarded
+resp.State.Set(ctx, &plan)
+```
+
+If `State.Set` fails (e.g., due to a type mismatch between the model struct and the schema), the error will be silently lost. Terraform will report success while the state is incomplete or corrupted.
+
+### Datasource Error Handling
+
+Datasources differ from resources in their error handling for not-found scenarios:
+
+| Scenario         | Resource Behavior                                      | Datasource Behavior                                                            |
+|------------------|--------------------------------------------------------|--------------------------------------------------------------------------------|
+| Target not found | `resp.State.RemoveResource(ctx)` (triggers recreation) | `resp.Diagnostics.AddError("[Resource] Not Found", ...)` (configuration error) |
+| Read source      | `req.State.Get(ctx, &state)`                           | `req.Config.Get(ctx, &config)`                                                 |
+| Configure type   | `config.Resource`                                      | `config.DataSource`                                                            |
+
+**A datasource must never call `resp.State.RemoveResource(ctx)`.** If the queried resource does not exist, this is a configuration error — the user specified an invalid ID. Return an error diagnostic instead:
+
+```go
+if errors.Is(err, api.ErrResourceDoesNotExist) {
+    resp.Diagnostics.AddError("[Resource] Not Found",
+        fmt.Sprintf("[Resource] with ID '%s' was not found", id))
+    return
+}
+```
+
+After a successful Read, all Computed attributes must have a known value — null means "unknown" which is only valid during planning. Convert nil API pointers to sensible defaults: `""` for strings, `false` for bools, empty collections for sets/maps.
+
+For list datasources that return collections (e.g., `proxmox_backup_jobs`), an empty result set is valid and should not produce an error.
+
 ### Error Inspection
 
 Use standard Go error inspection:
@@ -196,6 +264,9 @@ Do not retry on:
 - Wrapping errors with `fmt.Errorf("...: %v", err)` instead of `%w` — breaks error chain inspection.
 - Forgetting `resp.State.RemoveResource(ctx)` in Read when the resource no longer exists.
 - Using `IsTransientAPIError` alone as a delete retry predicate — it will retry on `ErrResourceDoesNotExist` when it arrives via HTTP 500. Always combine with `!errors.Is(err, api.ErrResourceDoesNotExist)`. See [Retry Policies](#retry-policies).
+- Saving `plan` directly to state after Create (`resp.State.Set(ctx, &plan)`) — always read back from the API. See [Read-Back After Create and Update](#read-back-after-create-and-update).
+- Using bare `resp.State.Set()` without wrapping in `resp.Diagnostics.Append()` — silently discards state serialization errors. See [State Set Error Propagation](#state-set-error-propagation).
+- Calling `resp.State.RemoveResource(ctx)` in a datasource Read — datasources must error on not-found, not remove state. See [Datasource Error Handling](#datasource-error-handling).
 
 ## References
 
