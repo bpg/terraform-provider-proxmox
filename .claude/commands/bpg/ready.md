@@ -312,6 +312,35 @@ If schema not changed:
 
 - "DOCS SKIPPED (no schema changes detected)"
 
+### Breaking Changes → Upgrade Guide
+
+Check if the branch contains breaking changes. If so, verify `docs/guides/upgrade.md` was updated:
+
+```bash
+echo "=== Step 6b: Upgrade Guide Check ==="
+# Detect breaking changes: conventional commit `!` suffix or BREAKING in message
+BREAKING=$(git log main...HEAD --oneline | grep -iE '!:|BREAKING')
+if [ -n "$BREAKING" ]; then
+  echo "Breaking changes detected:"
+  echo "$BREAKING"
+  # Check if upgrade guide was modified
+  UPGRADE_CHANGED=$(git diff --name-only main...HEAD | grep -c 'docs/guides/upgrade.md')
+  if [ "$UPGRADE_CHANGED" -eq 0 ]; then
+    echo "UPGRADE GUIDE NOT UPDATED"
+  else
+    echo "Upgrade guide updated"
+  fi
+else
+  echo "No breaking changes detected"
+fi
+```
+
+**Result:**
+
+- No breaking changes: "UPGRADE GUIDE SKIPPED (no breaking changes)"
+- Breaking changes + guide updated: "UPGRADE GUIDE PASSED"
+- Breaking changes + guide NOT updated: "UPGRADE GUIDE FAILED — Breaking changes must be documented in `docs/guides/upgrade.md`. Add a section for the new version with: description of the change, before/after behavior, and action required."
+
 ---
 
 ## Step 7: Implementation Scrutiny
@@ -382,6 +411,7 @@ Date: $(date +%Y-%m-%d)
 | Acceptance Tests | ${ACC_STATUS} |
 | API Verification | ${API_STATUS} |
 | Documentation | ${DOCS_STATUS} |
+| Upgrade Guide | ${UPGRADE_GUIDE_STATUS} |
 | Scrutiny | ${SCRUTINY_STATUS} |
 
 Overall: ${OVERALL_STATUS}
@@ -417,6 +447,7 @@ Write a `.dev/${ISSUE_NUM}_REPORT.md` file containing the proof of work evidence
 | Acceptance Tests | PASSED/FAILED/SKIPPED |
 | API Verification | PASSED/SKIPPED |
 | Documentation | PASSED/SKIPPED |
+| Upgrade Guide | PASSED/SKIPPED |
 
 ## Acceptance Test Output
 
@@ -510,6 +541,7 @@ Detect issue number and update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read a
 - [ ] Acceptance tests pass (or explicitly skipped)
 - [ ] API verification done (or explicitly skipped for non-API changes)
 - [ ] Documentation regenerated (if schema changed)
+- [ ] Upgrade guide updated (if breaking changes detected)
 - [ ] Implementation scrutiny passed (all 7 questions answered, no issues found)
 - [ ] `/grill-me` invoked if non-obvious design decisions detected
 - [ ] Summary presented to user

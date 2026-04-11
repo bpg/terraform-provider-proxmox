@@ -20,7 +20,8 @@
                 "examples/guides/cloud-image/ubuntu-img/provider.tf",
                 "examples/guides/cloud-init/custom/provider.tf",
                 "examples/guides/cloud-init/native/provider.tf",
-                "examples/guides/vm-lifecycle/provider.tf"
+                "examples/guides/vm-lifecycle/provider.tf",
+                "docs/guides/upgrade.md"
             ],
             "changelog-sections": [
                 {

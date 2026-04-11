@@ -19,7 +19,7 @@ This guide documents breaking changes across provider versions and the recommend
      required_providers {
        proxmox = {
          source  = "bpg/proxmox"
-         version = "~> 0.96.0"
+         version = "~> 0.101.1" # x-release-please-version
        }
      }
    }
@@ -36,6 +36,121 @@ This guide documents breaking changes across provider versions and the recommend
 6. Apply when satisfied.
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
+
+## v0.101.0
+
+### VM datasources error on not-found
+
+Both VM datasources now return an error when the specified VM does not exist, instead of silently returning empty or broken state.
+
+- **Framework** (`proxmox_virtual_environment_vm2` / `proxmox_vm`): Was previously non-functional (`Value Conversion Error` on every call). Now works correctly but errors on missing VMs.
+- **SDK** (`proxmox_virtual_environment_vm`): Previously returned an unclear raw error. Now returns a proper "not found" diagnostic. This datasource is also now **deprecated** in favor of `proxmox_vm`.
+
+**Action required:** If your configuration depends on a VM datasource not erroring when the VM doesn't exist, switch to the `proxmox_virtual_environment_vms` list datasource — it returns an empty list when no VMs match. Note that this datasource supports filtering by `name`, `template`, `status`, and `node_name`, but not by `vm_id` directly. To find a specific VM by ID, post-filter the results:
+
+```terraform
+data "proxmox_virtual_environment_vms" "all" {
+  node_name = "pve"
+}
+
+locals {
+  my_vm = [for vm in data.proxmox_virtual_environment_vms.all.vms : vm if vm.vm_id == 999]
+}
+```
+
+## v0.100.0
+
+### `template` attribute no longer forces recreation
+
+The `template` attribute on `proxmox_virtual_environment_vm` no longer forces resource recreation. Converting a VM to a template (or back) now happens in-place.
+
+**Before:** Changing `template = true` caused Terraform to destroy and recreate the VM.
+
+**After:** The conversion is applied in-place without recreation.
+
+**Action required:** If you relied on the destroy-and-recreate behavior (for example, to get a fresh VM when toggling `template`), you may need to use `terraform taint` or add a `replace_triggered_by` lifecycle rule.
+
+### Shutdown operations fail when `reboot_after_update = false`
+
+Operations that require a VM shutdown — TPM state migration, cloud-init disk move, template conversion, and disk move — now fail with an error when `reboot_after_update = false`, instead of silently powering off the VM.
+
+**Before:** The provider would silently shut down a running VM even when `reboot_after_update = false`.
+
+**After:** The provider returns an error, respecting the `reboot_after_update = false` setting.
+
+**Action required:** If you perform operations that require a shutdown (TPM, cloud-init move, template conversion, disk move), either:
+
+- Set `reboot_after_update = true` (default), or
+- Shut down the VM before applying changes
+
+### Short-name resource aliases (`proxmox_*` prefix)
+
+All existing Framework resources now have shorter aliases using the `proxmox_` prefix instead of `proxmox_virtual_environment_`. Both names work simultaneously — the old names emit a deprecation warning. New resources added from v0.99.0 onward (such as `proxmox_backup_job` and `proxmox_harule`) use the short prefix exclusively. See [ADR-007](https://github.com/bpg/terraform-provider-proxmox/blob/main/docs/adr/007-resource-type-name-migration.md) for full details.
+
+Examples of the new short names:
+
+| Old name                                           | New name                       |
+|----------------------------------------------------|--------------------------------|
+| `proxmox_virtual_environment_vm2` (resource)       | `proxmox_vm`                   |
+| `proxmox_virtual_environment_download_file`        | `proxmox_download_file`        |
+| `proxmox_virtual_environment_network_linux_bridge` | `proxmox_network_linux_bridge` |
+| `proxmox_virtual_environment_hagroup`              | `proxmox_hagroup`              |
+| `proxmox_virtual_environment_acl`                  | `proxmox_acl`                  |
+
+**Action required:** No immediate action needed — old names continue to work. To migrate at your own pace, use Terraform's `moved` block (requires Terraform >= 1.8):
+
+```terraform
+moved {
+  from = proxmox_virtual_environment_network_linux_bridge.example
+  to   = proxmox_network_linux_bridge.example
+}
+```
+
+Then update the resource block to use the new name. After a successful `terraform apply`, the `moved` block can be removed.
+
+For Terraform < 1.8, use `terraform state mv`:
+
+```shell
+terraform state mv proxmox_virtual_environment_vm.example proxmox_vm.example
+```
+
+## v0.98.1
+
+### `network_device.enabled` deprecated
+
+The `enabled` attribute on the `network_device` block in `proxmox_virtual_environment_vm` is deprecated and will be removed in a future release.
+
+**Action required:**
+
+- If you use `enabled = true` (or rely on the default): remove the `enabled` line — the device is enabled by default.
+- If you use `enabled = false` to disable a device: remove the entire `network_device` block instead.
+
+```terraform
+# Before
+resource "proxmox_virtual_environment_vm" "example" {
+  # ...
+  network_device {
+    bridge  = "vmbr0"
+    enabled = true  # drop this line
+  }
+}
+
+# After
+resource "proxmox_virtual_environment_vm" "example" {
+  # ...
+  network_device {
+    bridge = "vmbr0"
+  }
+}
+```
+
+## v0.97.1
+
+### VM and container name validation
+
+The `name` attribute on `proxmox_virtual_environment_vm` and the `hostname` in `proxmox_virtual_environment_container` `initialization` block now validate that the value is a valid DNS name. Previously, invalid names were accepted by Terraform and rejected at apply time by the Proxmox API.
+
+**Action required:** If you have VMs or containers with names that are not valid DNS names (for example, names starting with `.` or containing special characters), update them to valid DNS names.
 
 ## v0.95.0
 
