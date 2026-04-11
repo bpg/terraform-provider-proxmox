@@ -55,6 +55,18 @@ Fields that cannot be changed after resource creation must use `RequiresReplace(
 },
 ```
 
+### Resource ID Attribute
+
+Use the `attribute.ResourceID()` helper from `fwprovider/attribute/` to define the `id` attribute for resources where the ID is server-assigned or derived:
+
+```go
+"id": attribute.ResourceID(),
+```
+
+This helper returns a `schema.StringAttribute` with `Computed: true`, `UseStateForUnknown()`, and `RequiresReplace()` plan modifiers and a standard description.
+
+For resources where the user provides the ID (e.g., SDN VNet's `id` is user-specified), define the attribute manually with `Required: true` and `RequiresReplace()`.
+
 ### Validators
 
 Use validators from the `terraform-plugin-framework-validators` module for standard rules. Use project-specific validators from `fwprovider/validators/` for reusable domain rules (e.g., `validators.SDNID()`).
@@ -112,9 +124,34 @@ Mark secret fields (tokens, passwords) as sensitive so Terraform redacts them:
 },
 ```
 
+### Attribute Descriptions
+
+Every schema attribute must have a non-empty `Description`. This text appears in Terraform CLI output (`terraform show`, `terraform plan`) and in auto-generated documentation.
+
+| Field                 | When to Use                                                     | Format                   |
+|-----------------------|-----------------------------------------------------------------|--------------------------|
+| `Description`         | **Always**                                                      | Plain text, one sentence |
+| `MarkdownDescription` | Only when the description needs formatting (links, code, lists) | Markdown syntax          |
+
+When both are set, `MarkdownDescription` is used for documentation generation and `Description` is used for CLI output. When only `Description` is set, it is used for both. For most attributes, `Description` alone is sufficient.
+
 ### Model-API Conversion
 
-Every model implements two conversion methods:
+Every model implements conversion methods for mapping between Terraform state and API request/response structs.
+
+**Method Naming Convention:**
+
+| Method                             | Purpose                                                                                               |
+|------------------------------------|-------------------------------------------------------------------------------------------------------|
+| `toAPI()`                          | Convert Terraform model to a single API request struct (when create and update share the same shape)  |
+| `toAPICreate()` / `toAPIUpdate()`  | Convert to separate create and update request structs (when they differ)                              |
+| `fromAPI()`                        | Convert API response to Terraform model                                                               |
+
+When create and update request types differ (e.g., create includes immutable fields while update does not), use `toAPICreate()` and `toAPIUpdate()` rather than a single `toAPI()`. A shared helper (e.g., `fillCommonFields()`) can reduce duplication when the overlap is large. See the [Replication reference](reference-examples.md#split-createupdate-api-methods) for the canonical example.
+
+Avoid alternative naming patterns such as `importFromAPI()`, `toAPIRequestBody()`, `toOptionsRequestBody()`, `toCreateRequest()`, `toCreateAPIRequest()`, or `intoUpdateBody()`. While functionally equivalent, consistent naming makes patterns discoverable across resources.
+
+> **Legacy code note:** Existing resources may use older naming patterns. New code must use the standard names above. Existing resources will be migrated over time.
 
 **`toAPI()`** — Terraform model to API request struct. Use the `attribute` package helpers so null and unknown values both map to `nil`:
 
@@ -147,7 +184,7 @@ func (m *model) fromAPI(id string, data *vnets.VNetData) {
 
 For `CustomBool` fields, use `.PointerBool()` to convert `*CustomBool` → `*bool`, then `types.BoolPointerValue()` handles `nil` naturally — consistent with the other pointer value conversions.
 
-When the API's create and update endpoints accept different field sets (e.g., immutable fields only accepted at creation), use separate methods named `toAPICreate()` and `toAPIUpdate()`. See the [Replication reference](reference-examples.md#split-createupdate-api-methods) for the canonical example.
+> **When the API type uses `*int64` instead of `*CustomBool`:** The preferred approach is to update the API struct to use `*proxmoxtypes.CustomBool`. If that is not feasible, use the project-wide `CustomBoolPtr()` and `.PointerBool()` methods rather than defining local conversion helpers (e.g., `boolToInt64Ptr()` / `int64ToBoolPtr()`).
 
 ### Field Deletion on Update
 
@@ -242,6 +279,9 @@ The project provides custom attribute types in `fwprovider/types/`:
 - Using the Terraform attribute name instead of the Proxmox API parameter name in `CheckDelete`.
 - Setting `Computed: true` with `Default` on string or numeric fields — leads to unexpected behavior when server defaults change. This combination is acceptable for boolean fields with fixed defaults (see guidance above).
 - Exposing comma-separated API values as a single `types.String` instead of `types.List` or `stringset.Value` — use proper Terraform list/set types so users get HCL list syntax and element-level operations.
+- Using non-standard model method names (`importFromAPI`, `toAPIRequestBody`, `toCreateRequest`, etc.) instead of the canonical `toAPI()` / `toAPICreate()` / `toAPIUpdate()` / `fromAPI()`. See [Model-API Conversion](#model-api-conversion).
+- Omitting `Description` on schema attributes — every attribute must have a non-empty description.
+- Defining local bool-to-int64 conversion helpers instead of updating the API type to use `*proxmoxtypes.CustomBool`.
 
 ## References
 
