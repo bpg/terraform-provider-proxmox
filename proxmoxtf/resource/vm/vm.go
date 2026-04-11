@@ -96,6 +96,7 @@ const (
 	dvInitializationIPConfigIPv4Gateway = ""
 	dvInitializationIPConfigIPv6Address = ""
 	dvInitializationIPConfigIPv6Gateway = ""
+	dvInitializationUpgrade             = true
 	dvInitializationUserAccountPassword = ""
 	dvKeyboardLayout                    = "en-us"
 	dvKVMArguments                      = ""
@@ -245,6 +246,7 @@ const (
 	mkInitializationIPConfigIPv6Address = "address"
 	mkInitializationIPConfigIPv6Gateway = "gateway"
 	mkInitializationType                = "type"
+	mkInitializationUpgrade             = "upgrade"
 	mkInitializationUserAccount         = "user_account"
 	mkInitializationUserAccountKeys     = "keys"
 	mkInitializationUserAccountPassword = "password"
@@ -1021,6 +1023,12 @@ func VM() *schema.Resource {
 						Computed:         true,
 						ForceNew:         true,
 						ValidateDiagFunc: CloudInitTypeValidator(),
+					},
+					mkInitializationUpgrade: {
+						Type:        schema.TypeBool,
+						Description: "Whether to do an automatic package upgrade after the first boot",
+						Optional:    true,
+						Default:     dvInitializationUpgrade,
 					},
 				},
 			},
@@ -3687,6 +3695,9 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		initializationConfig.Type = &initializationType
 	}
 
+	upgrade := types.CustomBool(initializationBlock[mkInitializationUpgrade].(bool))
+	initializationConfig.Upgrade = &upgrade
+
 	return initializationConfig
 }
 
@@ -5128,6 +5139,13 @@ func vmReadCustom(
 		initialization[mkInitializationType] = *vmConfig.CloudInitType
 	} else if len(initialization) > 0 {
 		initialization[mkInitializationType] = ""
+	}
+
+	if vmConfig.CloudInitUpgrade != nil {
+		initialization[mkInitializationUpgrade] = bool(*vmConfig.CloudInitUpgrade)
+	} else if len(initialization) > 0 {
+		// Default to true, matching Proxmox default behavior
+		initialization[mkInitializationUpgrade] = dvInitializationUpgrade
 	}
 
 	currentInitialization := d.Get(mkInitialization).([]any)

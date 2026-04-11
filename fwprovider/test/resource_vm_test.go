@@ -1056,6 +1056,67 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				"initialization.0.dns.0.servers.0": "1.1.1.1",
 			}),
 		}}},
+		{"cloud-init upgrade disabled", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_upgrade" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						upgrade = false
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_upgrade", map[string]string{
+				"initialization.0.upgrade": "false",
+			}),
+		}}},
+		{"cloud-init upgrade default is true", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_upgrade_default" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_upgrade_default", map[string]string{
+				"initialization.0.upgrade": "true",
+			}),
+		}}},
+		{"cloud-init upgrade update", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_upgrade_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						upgrade = true
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_upgrade_update", map[string]string{
+				"initialization.0.upgrade": "true",
+			}),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_upgrade_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						upgrade = false
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_upgrade_update", map[string]string{
+				"initialization.0.upgrade": "false",
+			}),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_upgrade_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						upgrade = true
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_upgrade_update", map[string]string{
+				"initialization.0.upgrade": "true",
+			}),
+		}}},
 	}
 
 	for _, tt := range tests {
