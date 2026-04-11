@@ -90,7 +90,7 @@ The default provider configuration uses API token authentication. Since there is
 - **Explicit password:** Add `password = var.virtual_environment_root_password` inside the `ssh { }` block in `example/main.tf`.
 - **Private key file:** Set `private_key` inside the `ssh { }` block.
 
-For more details, see the [SSH Agent](https://registry.terraform.io/providers/bpg/proxmox/latest/docs#ssh-agent) section in the provider documentation.
+For more details, see the [SSH Agent](https://bpg.sh/docs#ssh-agent) section in the provider documentation.
 
 ## Configuring the provider
 
@@ -125,7 +125,7 @@ If you see an error like:
 the datastore "local" does not support content type "snippets"
 ```
 
-You need to enable snippets on the datastore. See the [file resource documentation](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_file#snippets) for instructions.
+You need to enable snippets on the datastore. See the [file resource documentation](https://bpg.sh/docs/resources/virtual_environment_file#snippets) for instructions.
 
 ### Timezone not set on fresh Proxmox installs
 

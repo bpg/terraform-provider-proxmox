@@ -96,7 +96,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
 }
 ```
 
-The `file_mode` attribute can be used to make a script file executable, e.g. when referencing the file in the `hook_script_file_id` attribute of [a container](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_container#hook_script_file_id) or [a VM](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_vm#hook_script_file_id) resource which is a requirement enforced by the Proxmox VE API.
+The `file_mode` attribute can be used to make a script file executable, e.g. when referencing the file in the `hook_script_file_id` attribute of [a container](https://bpg.sh/docs/resources/virtual_environment_container#hook-script-file-id) or [a VM](https://bpg.sh/docs/resources/virtual_environment_vm#hook-script-file-id) resource which is a requirement enforced by the Proxmox VE API.
 
 ```hcl
 resource "proxmox_virtual_environment_file" "hook_script" {

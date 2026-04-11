@@ -221,7 +221,7 @@ You may see errors like
 `Permission check failed (user != root@pam)` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
 The workaround is to use password authentication for those operations.
 
--> You can also configure additional Proxmox users and roles using [`virtual_environment_user`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_user) and [`virtual_environment_role`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_role) resources of the provider.
+-> You can also configure additional Proxmox users and roles using [`virtual_environment_user`](https://bpg.sh/docs/resources/virtual_environment_user) and [`virtual_environment_role`](https://bpg.sh/docs/resources/virtual_environment_role) resources of the provider.
 
 ### Pre-Authentication, or Passing an Authentication Ticket into the provider
 

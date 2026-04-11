@@ -152,6 +152,6 @@ For simpler clone scenarios, consider using `proxmox_virtual_environment_vm` wit
 
 ## See Also
 
-- [Resource Documentation](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_cloned_vm)
-- [Clone VM Guide](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/guides/clone-vm)
-- [VM Clone Migration Guide](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/guides/migration-vm-clone)
+- [Resource Documentation](https://bpg.sh/docs/resources/cloned_vm)
+- [Clone VM Guide](https://bpg.sh/docs/guides/clone-vm)
+- [VM Clone Migration Guide](https://bpg.sh/docs/guides/migration-vm-clone)

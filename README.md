@@ -45,7 +45,7 @@ However, we will try to maintain backward compatibility between provider version
 
 ## Using the Provider
 
-You can find the latest release and its documentation in the [Terraform Registry](https://registry.terraform.io/providers/bpg/proxmox/latest) or [OpenTofu Registry](https://search.opentofu.org/provider/bpg/proxmox/latest).
+You can find the latest release in the [Terraform Registry](https://registry.terraform.io/providers/bpg/proxmox/latest) or [OpenTofu Registry](https://search.opentofu.org/provider/bpg/proxmox/latest), and the documentation at [bpg.sh/docs](https://bpg.sh/docs).
 
 For manual provider installation, you can download the binaries from the [Releases](https://github.com/bpg/terraform-provider-proxmox/releases) page.
 You also can use `gh` tool to verify the binaries provenance, see more details [here](https://github.com/bpg/terraform-provider-proxmox/attestations/).
@@ -78,7 +78,7 @@ The following assumptions are made about the test environment:
 - Default Linux Bridge "vmbr0" is VLAN aware (datacenter -> pve -> network -> edit & apply)
 - The directory `/mnt/bindmounts/shared` exists
 - An API token, which you can get by going to datacenter -> permissions -> API Tokens
-- A working `ssh-agent` with a key authorized on the Proxmox host (see [SSH Agent](https://registry.terraform.io/providers/bpg/proxmox/latest/docs#ssh-agent) in the provider docs). The default provider config uses API token auth, so there is no password to fall back to for SSH — you must either have `ssh-agent` configured or explicitly set the SSH `password` / `private_key` in the provider block.
+- A working `ssh-agent` with a key authorized on the Proxmox host (see [SSH Agent](https://bpg.sh/docs#ssh-agent) in the provider docs). The default provider config uses API token auth, so there is no password to fall back to for SSH — you must either have `ssh-agent` configured or explicitly set the SSH `password` / `private_key` in the provider block.
 - DHCP v4 available on the network connected to `vmbr0` (required by the trunks example, which waits for an IP from the QEMU guest agent)
 
 Create `example/terraform.tfvars` with the following variables:

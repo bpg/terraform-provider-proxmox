@@ -440,7 +440,7 @@ A: Terraform stops managing it but does NOT delete it from the VM. Use the `dele
 
 ## Getting Help
 
-- [cloned_vm resource documentation](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_cloned_vm)
-- [Clone VM guide](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/guides/clone-vm)
-- [VM Lifecycle Management guide](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/guides/vm-lifecycle) — destroy semantics and default differences between `vm` and `cloned_vm`
+- [cloned_vm resource documentation](https://bpg.sh/docs/resources/cloned_vm)
+- [Clone VM guide](https://bpg.sh/docs/guides/clone-vm)
+- [VM Lifecycle Management guide](https://bpg.sh/docs/guides/vm-lifecycle) — destroy semantics and default differences between `vm` and `cloned_vm`
 - [GitHub Issues](https://github.com/bpg/terraform-provider-proxmox/issues)
