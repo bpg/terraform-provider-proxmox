@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // CustomCloudInitConfig handles QEMU cloud-init parameters.
@@ -22,9 +24,8 @@ type CustomCloudInitConfig struct {
 	SearchDomain *string                   `json:"searchdomain,omitempty" url:"searchdomain,omitempty"`
 	SSHKeys      *CustomCloudInitSSHKeys   `json:"sshkeys,omitempty"      url:"sshkeys,omitempty"`
 	Type         *string                   `json:"citype,omitempty"       url:"citype,omitempty"`
-	// Can't be reliably set, it is TRUE by default in PVE
-	// Upgrade      *types.CustomBool         `json:"ciupgrade,omitempty"    url:"ciupgrade,omitempty,int"`
-	Username *string `json:"ciuser,omitempty" url:"ciuser,omitempty"`
+	Upgrade      *types.CustomBool         `json:"ciupgrade,omitempty"    url:"ciupgrade,omitempty,int"`
+	Username     *string                   `json:"ciuser,omitempty"       url:"ciuser,omitempty"`
 }
 
 // CustomCloudInitFiles handles QEMU cloud-init custom files parameters.
@@ -121,6 +122,14 @@ func (r CustomCloudInitConfig) EncodeValues(_ string, v *url.Values) error {
 
 	if r.Type != nil {
 		v.Add("citype", *r.Type)
+	}
+
+	if r.Upgrade != nil {
+		if *r.Upgrade {
+			v.Add("ciupgrade", "1")
+		} else {
+			v.Add("ciupgrade", "0")
+		}
 	}
 
 	if r.Username != nil {

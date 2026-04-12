@@ -245,6 +245,7 @@ const (
 	mkInitializationIPConfigIPv6Address = "address"
 	mkInitializationIPConfigIPv6Gateway = "gateway"
 	mkInitializationType                = "type"
+	mkInitializationUpgrade             = "upgrade"
 	mkInitializationUserAccount         = "user_account"
 	mkInitializationUserAccountKeys     = "keys"
 	mkInitializationUserAccountPassword = "password"
@@ -1021,6 +1022,14 @@ func VM() *schema.Resource {
 						Computed:         true,
 						ForceNew:         true,
 						ValidateDiagFunc: CloudInitTypeValidator(),
+					},
+					mkInitializationUpgrade: {
+						Type: schema.TypeBool,
+						Description: "Whether to do an automatic package upgrade after the first boot" +
+							" (defaults to `true` in Proxmox)." +
+							" Setting this is only allowed for `root@pam` authenticated user.",
+						Optional: true,
+						Computed: true,
 					},
 				},
 			},
@@ -3687,6 +3696,24 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		initializationConfig.Type = &initializationType
 	}
 
+	if d.IsNewResource() {
+		// Create: GetOkExists correctly detects "user never set this" because state is empty.
+		//nolint:staticcheck
+		if v, ok := d.GetOkExists(fmt.Sprintf("%s.0.%s", mkInitialization, mkInitializationUpgrade)); ok {
+			upgrade := types.CustomBool(v.(bool))
+			initializationConfig.Upgrade = &upgrade
+		}
+	} else {
+		// Update: only send ciupgrade when the upgrade field itself changed, not when other
+		// initialization fields change. This protects non-root users from HTTP 500 errors
+		// caused by spurious ciupgrade=1 being sent due to the Read-path default.
+		upgradePath := fmt.Sprintf("%s.0.%s", mkInitialization, mkInitializationUpgrade)
+		if d.HasChange(upgradePath) {
+			upgrade := types.CustomBool(d.Get(upgradePath).(bool))
+			initializationConfig.Upgrade = &upgrade
+		}
+	}
+
 	return initializationConfig
 }
 
@@ -5128,6 +5155,13 @@ func vmReadCustom(
 		initialization[mkInitializationType] = *vmConfig.CloudInitType
 	} else if len(initialization) > 0 {
 		initialization[mkInitializationType] = ""
+	}
+
+	if vmConfig.CloudInitUpgrade != nil {
+		initialization[mkInitializationUpgrade] = bool(*vmConfig.CloudInitUpgrade)
+	} else if len(initialization) > 0 {
+		// Default to true, matching Proxmox default behavior
+		initialization[mkInitializationUpgrade] = true
 	}
 
 	currentInitialization := d.Get(mkInitialization).([]any)
