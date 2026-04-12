@@ -523,6 +523,30 @@ func isAgentNotReadyError(err error) bool {
 	return false
 }
 
+// WaitForAgentReady waits for the QEMU guest agent to become responsive by polling the agent/ping endpoint.
+// This should be called before any operation that requires the guest agent (e.g., reboot via agent),
+// because the agent may not be ready immediately after VM start — the guest OS needs time to boot
+// and start the qemu-guest-agent service.
+func (c *Client) WaitForAgentReady(ctx context.Context) error {
+	op := retry.NewPollOperation("VM agent ready",
+		retry.WithRetryIf(isAgentNotReadyError),
+	)
+
+	err := op.DoPoll(ctx, func() error {
+		return c.DoRequest(ctx, http.MethodPost, c.ExpandPath("agent/ping"), nil, nil)
+	})
+
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return fmt.Errorf("timeout while waiting for the QEMU agent on VM %d to become ready", c.VMID)
+	}
+
+	if err != nil {
+		return fmt.Errorf("error waiting for QEMU agent on VM %d: %w", c.VMID, err)
+	}
+
+	return nil
+}
+
 // WaitForNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
 func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	ctx context.Context,
