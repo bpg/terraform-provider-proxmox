@@ -1117,6 +1117,40 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				"initialization.0.upgrade": "true",
 			}),
 		}}},
+		// Verifies that updating other initialization fields without setting upgrade
+		// does not spuriously send ciupgrade to the API (which would cause HTTP 500
+		// for non-root users).
+		{"cloud-init update other fields without upgrade set", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_no_upgrade" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						dns {
+							servers = ["1.1.1.1"]
+						}
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_no_upgrade", map[string]string{
+				"initialization.0.upgrade":         "true",
+				"initialization.0.dns.0.servers.0": "1.1.1.1",
+			}),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_no_upgrade" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						dns {
+							servers = ["8.8.8.8"]
+						}
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_no_upgrade", map[string]string{
+				"initialization.0.upgrade":         "true",
+				"initialization.0.dns.0.servers.0": "8.8.8.8",
+			}),
+		}}},
 	}
 
 	for _, tt := range tests {
