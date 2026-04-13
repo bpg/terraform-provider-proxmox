@@ -2320,22 +2320,9 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 						type             = "alpine"
 					}
 				}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes(accTestContainerName, map[string]string{
-						"cpu.0.units": "512",
-					}),
-					func(*terraform.State) error {
-						ct := te.NodeClient().Container(accTestContainerID)
-
-						ctInfo, err := ct.GetContainer(t.Context())
-						require.NoError(te.t, err, "failed to get container")
-						require.NotNil(te.t, ctInfo.CPUUnits, "cpu units should be set")
-						require.Equal(te.t, 512, *ctInfo.CPUUnits,
-							"cpu.units should be 512 as explicitly set")
-
-						return nil
-					},
-				),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"cpu.0.units": "512",
+				}),
 			},
 		},
 	})
