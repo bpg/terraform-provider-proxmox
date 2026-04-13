@@ -2140,6 +2140,15 @@ func vmRestartRunning(
 	if agentEnabled {
 		rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
 
+		rebootCtx, cancel := context.WithTimeout(ctx, time.Duration(rebootTimeoutSec)*time.Second)
+		defer cancel()
+
+		tflog.Debug(ctx, "Waiting for QEMU guest agent to become ready before reboot")
+
+		if err := vmAPI.WaitForAgentReady(rebootCtx); err != nil {
+			return diag.FromErr(err)
+		}
+
 		rebootDiags := sdkresource.TaskResultDiags(vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec), "VM reboot")
 		if rebootDiags.HasError() {
 			return rebootDiags

@@ -500,7 +500,9 @@ func (c *Client) UpdateVMAsync(ctx context.Context, d *UpdateRequestBody) (*stri
 
 // isAgentNotReadyError checks if an HTTP error indicates the agent is not ready yet.
 // This includes HTTP 500 errors with messages like "QEMU guest agent is not running"
-// which can occur with certain SCSI controller types (e.g., virtio-scsi-single).
+// which can occur with certain SCSI controller types (e.g., virtio-scsi-single),
+// and "qmp command 'guest-ping' failed - got timeout" which occurs when the QMP socket
+// is connected but the guest agent process hasn't fully initialized yet.
 func isAgentNotReadyError(err error) bool {
 	var httpError *api.HTTPError
 	if !errors.As(err, &httpError) {
@@ -514,13 +516,43 @@ func isAgentNotReadyError(err error) bool {
 	if httpError.Code == http.StatusInternalServerError {
 		msg := strings.ToLower(httpError.Message)
 
-		return strings.Contains(msg, "qemu guest agent") &&
+		if strings.Contains(msg, "qemu guest agent") &&
 			(strings.Contains(msg, "not running") ||
 				strings.Contains(msg, "not available") ||
-				strings.Contains(msg, "not ready"))
+				strings.Contains(msg, "not ready")) {
+			return true
+		}
+
+		if strings.Contains(msg, "got timeout") {
+			return true
+		}
 	}
 
 	return false
+}
+
+// WaitForAgentReady waits for the QEMU guest agent to become responsive by polling the agent/ping endpoint.
+// This should be called before any operation that requires the guest agent (e.g., reboot via agent),
+// because the agent may not be ready immediately after VM start — the guest OS needs time to boot
+// and start the qemu-guest-agent service.
+func (c *Client) WaitForAgentReady(ctx context.Context) error {
+	op := retry.NewPollOperation("VM agent ready",
+		retry.WithRetryIf(isAgentNotReadyError),
+	)
+
+	err := op.DoPoll(ctx, func() error {
+		return c.DoRequest(ctx, http.MethodPost, c.ExpandPath("agent/ping"), nil, nil)
+	})
+
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return fmt.Errorf("timeout while waiting for the QEMU agent on VM %d to become ready", c.VMID)
+	}
+
+	if err != nil {
+		return fmt.Errorf("error waiting for QEMU agent on VM %d: %w", c.VMID, err)
+	}
+
+	return nil
 }
 
 // WaitForNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
