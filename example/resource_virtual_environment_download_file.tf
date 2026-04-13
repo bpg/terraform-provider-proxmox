@@ -1,6 +1,6 @@
 ## Debian and ubuntu image download
 
-resource "proxmox_virtual_environment_download_file" "ubuntu_24_04_lxc_img" {
+resource "proxmox_download_file" "ubuntu_24_04_lxc_img" {
   content_type        = "vztmpl"
   datastore_id        = "local"
   node_name           = data.proxmox_virtual_environment_nodes.example.names[0]
@@ -9,7 +9,7 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_24_04_lxc_img" {
   overwrite_unmanaged = true
 }
 
-resource "proxmox_virtual_environment_download_file" "latest_debian_12_bookworm_qcow2_img" {
+resource "proxmox_download_file" "latest_debian_12_bookworm_qcow2_img" {
   content_type        = "import"
   datastore_id        = "local"
   file_name           = "debian-12-generic-amd64.qcow2"

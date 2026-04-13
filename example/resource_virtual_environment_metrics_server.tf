@@ -1,4 +1,4 @@
-resource "proxmox_virtual_environment_metrics_server" "influxdb_server" {
+resource "proxmox_metrics_server" "influxdb_server" {
   name   = "example_influxdb_server"
   server = "192.168.3.2"
   port   = 18089
@@ -6,14 +6,14 @@ resource "proxmox_virtual_environment_metrics_server" "influxdb_server" {
 
 }
 
-resource "proxmox_virtual_environment_metrics_server" "graphite_server" {
+resource "proxmox_metrics_server" "graphite_server" {
   name   = "example_graphite_server"
   server = "192.168.4.2"
   port   = 20033
   type   = "graphite"
 }
 
-resource "proxmox_virtual_environment_metrics_server" "graphite_server2" {
+resource "proxmox_metrics_server" "graphite_server2" {
   name           = "example_graphite_server2"
   server         = "192.168.4.3"
   port           = 20033
@@ -25,7 +25,7 @@ resource "proxmox_virtual_environment_metrics_server" "graphite_server2" {
 
 # OpenTelemetry server need to be up and running to test this.
 
-# resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server" {
+# resource "proxmox_metrics_server" "opentelemetry_server" {
 #   name                = "example_opentelemetry_server"
 #   server              = "192.168.5.2"
 #   port                = 4318
@@ -34,7 +34,7 @@ resource "proxmox_virtual_environment_metrics_server" "graphite_server2" {
 #   opentelemetry_path  = "/v1/metrics"
 # }
 
-# resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server_https" {
+# resource "proxmox_metrics_server" "opentelemetry_server_https" {
 #   name                = "example_opentelemetry_server_https"
 #   server              = "192.168.5.3"
 #   port                = 4319

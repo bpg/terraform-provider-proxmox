@@ -1,4 +1,4 @@
-resource "proxmox_virtual_environment_cluster_options" "options" {
+resource "proxmox_cluster_options" "options" {
   language                  = "en"
   keyboard                  = "pl"
   email_from                = "ged@gont.earthsea"
