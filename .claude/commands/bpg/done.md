@@ -173,10 +173,11 @@ ls .dev/archive/${ISSUE_NUM}_*
 
 ## Step 5: Switch to Main Branch
 
-Return to the main branch so the workspace is clean for the next task:
+Return to the main branch and pull latest so the workspace is up to date for the next task:
 
 ```bash
 git checkout main
+git pull
 ```
 
 ## Step 6: Summary

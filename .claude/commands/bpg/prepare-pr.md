@@ -235,6 +235,30 @@ AskUserQuestion(
 )
 ```
 
+## Step 8b: Upgrade Guide Check (Breaking Changes Only)
+
+If the PR title contains `!` (breaking change), verify `docs/guides/upgrade.md` has been updated:
+
+```bash
+# Check if upgrade guide was modified (committed or uncommitted)
+UPGRADE_CHANGED=$(git diff --name-only main...HEAD -- docs/guides/upgrade.md 2>/dev/null | wc -l)
+UPGRADE_UNSTAGED=$(git diff --name-only -- docs/guides/upgrade.md 2>/dev/null | wc -l)
+if [ "$UPGRADE_CHANGED" -eq 0 ] && [ "$UPGRADE_UNSTAGED" -eq 0 ]; then
+  echo "UPGRADE GUIDE NOT UPDATED"
+else
+  echo "Upgrade guide updated"
+fi
+```
+
+If not updated, stop and add a section to `docs/guides/upgrade.md` with:
+
+- Version heading (next version)
+- Description of the breaking change
+- Before/after behavior
+- Action required for users
+
+Then continue to Step 9.
+
 ## Step 9: Generate PR Body
 
 Ensure `.dev/` directory exists:
@@ -336,6 +360,7 @@ Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read and Edit tools:
 - [ ] Proof of Work section filled with test output
 - [ ] Issue link set (Closes/Relates)
 - [ ] Breaking changes section included if applicable
+- [ ] Upgrade guide (`docs/guides/upgrade.md`) updated if breaking changes present
 - [ ] PR body written to `.dev/{ISSUE}_PR_BODY.md` with title on first line
 - [ ] PR creation command provided to user (with `--title` and `--body-file`)
 - [ ] Session state updated with PR preparation status

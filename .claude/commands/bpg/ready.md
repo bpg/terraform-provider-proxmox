@@ -318,20 +318,23 @@ Check if the branch contains breaking changes. If so, verify `docs/guides/upgrad
 
 ```bash
 echo "=== Step 6b: Upgrade Guide Check ==="
-# Detect breaking changes: conventional commit `!` suffix or BREAKING in message
-BREAKING=$(git log main...HEAD --oneline | grep -iE '!:|BREAKING')
+# Detect breaking changes from committed messages
+BREAKING=$(git log main...HEAD --oneline 2>/dev/null | grep -iE '!:|BREAKING')
 if [ -n "$BREAKING" ]; then
   echo "Breaking changes detected:"
   echo "$BREAKING"
-  # Check if upgrade guide was modified
-  UPGRADE_CHANGED=$(git diff --name-only main...HEAD | grep -c 'docs/guides/upgrade.md')
+  # Check if upgrade guide was modified (committed or uncommitted)
+  UPGRADE_CHANGED=0
+  git diff --name-only main...HEAD 2>/dev/null | grep -qc 'docs/guides/upgrade.md' && UPGRADE_CHANGED=1
+  git diff --name-only 2>/dev/null | grep -qc 'docs/guides/upgrade.md' && UPGRADE_CHANGED=1
   if [ "$UPGRADE_CHANGED" -eq 0 ]; then
     echo "UPGRADE GUIDE NOT UPDATED"
   else
     echo "Upgrade guide updated"
   fi
 else
-  echo "No breaking changes detected"
+  echo "No breaking changes detected in commits"
+  echo "Note: if breaking changes are identified during PR preparation, /bpg:prepare-pr will check the upgrade guide"
 fi
 ```
 
