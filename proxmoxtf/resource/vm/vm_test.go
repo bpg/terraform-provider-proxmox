@@ -205,6 +205,7 @@ func TestVMSchema(t *testing.T) {
 		mkInitializationFileFormat,
 		mkInitializationDNS,
 		mkInitializationIPConfig,
+		mkInitializationUpgrade,
 		mkInitializationUserAccount,
 	})
 
@@ -214,6 +215,7 @@ func TestVMSchema(t *testing.T) {
 		mkInitializationFileFormat:  schema.TypeString,
 		mkInitializationDNS:         schema.TypeList,
 		mkInitializationIPConfig:    schema.TypeList,
+		mkInitializationUpgrade:     schema.TypeBool,
 		mkInitializationUserAccount: schema.TypeList,
 	})
 
