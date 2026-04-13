@@ -2140,7 +2140,7 @@ func vmRestartRunning(
 			return diag.FromErr(err)
 		}
 
-		rebootDiags := sdkresource.TaskResultDiags(vmAPI.RebootVMAndWaitForRunning(rebootCtx, rebootTimeoutSec), "VM reboot")
+		rebootDiags := sdkresource.TaskResultDiags(vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec), "VM reboot")
 		if rebootDiags.HasError() {
 			return rebootDiags
 		}

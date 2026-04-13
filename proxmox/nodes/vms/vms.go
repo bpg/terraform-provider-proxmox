@@ -500,7 +500,9 @@ func (c *Client) UpdateVMAsync(ctx context.Context, d *UpdateRequestBody) (*stri
 
 // isAgentNotReadyError checks if an HTTP error indicates the agent is not ready yet.
 // This includes HTTP 500 errors with messages like "QEMU guest agent is not running"
-// which can occur with certain SCSI controller types (e.g., virtio-scsi-single).
+// which can occur with certain SCSI controller types (e.g., virtio-scsi-single),
+// and "qmp command 'guest-ping' failed - got timeout" which occurs when the QMP socket
+// is connected but the guest agent process hasn't fully initialized yet.
 func isAgentNotReadyError(err error) bool {
 	var httpError *api.HTTPError
 	if !errors.As(err, &httpError) {
@@ -514,10 +516,16 @@ func isAgentNotReadyError(err error) bool {
 	if httpError.Code == http.StatusInternalServerError {
 		msg := strings.ToLower(httpError.Message)
 
-		return strings.Contains(msg, "qemu guest agent") &&
+		if strings.Contains(msg, "qemu guest agent") &&
 			(strings.Contains(msg, "not running") ||
 				strings.Contains(msg, "not available") ||
-				strings.Contains(msg, "not ready"))
+				strings.Contains(msg, "not ready")) {
+			return true
+		}
+
+		if strings.Contains(msg, "got timeout") {
+			return true
+		}
 	}
 
 	return false

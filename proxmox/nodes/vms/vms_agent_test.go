@@ -55,6 +55,12 @@ func TestIsAgentNotReadyError(t *testing.T) {
 			comment: "Case-insensitive matching should work",
 		},
 		{
+			name:    "HTTP 500 with 'qmp command guest-ping failed - got timeout'",
+			err:     &api.HTTPError{Code: http.StatusInternalServerError, Message: "qmp command 'guest-ping' failed - got timeout"},
+			want:    true,
+			comment: "HTTP 500 with QMP ping timeout should be retried",
+		},
+		{
 			name:    "HTTP 500 with different error message",
 			err:     &api.HTTPError{Code: http.StatusInternalServerError, Message: "Internal Server Error"},
 			want:    false,
