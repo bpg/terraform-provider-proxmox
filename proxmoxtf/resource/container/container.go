@@ -57,7 +57,7 @@ const (
 	dvCPUArchitecture                   = "amd64"
 	dvCPUCores                          = 1
 	dvCPULimit                          = float64(0)
-	dvCPUUnits                          = 1024
+	dvCPUUnits                          = 0
 	dvDescription                       = ""
 	dvDevicePassthroughMode             = "0660"
 	dvDiskACL                           = false
@@ -351,9 +351,9 @@ func Container() *schema.Resource {
 							Type:        schema.TypeInt,
 							Description: "The CPU units",
 							Optional:    true,
-							Default:     dvCPUUnits,
+							Computed:    true,
 							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.IntBetween(0, 500000),
+								validation.IntBetween(1, 500000),
 							),
 						},
 					},
@@ -1380,7 +1380,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 			updateBody.Delete = append(updateBody.Delete, "cpulimit")
 		}
 
-		updateBody.CPUUnits = &cpuUnits
+		if cpuUnits > 0 {
+			updateBody.CPUUnits = &cpuUnits
+		}
 	}
 
 	hookScript := d.Get(mkHookScriptFileID).(string)
@@ -2134,7 +2136,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		CPUArchitecture:      &cpuArchitecture,
 		CPUCores:             &cpuCores,
 		CPULimit:             &cpuLimit,
-		CPUUnits:             &cpuUnits,
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
 		PassthroughDevices:   passthroughDevices,
@@ -2153,6 +2154,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		TTY:                  &consoleTTYCount,
 		Unprivileged:         &unprivileged,
 		VMID:                 &vmID,
+	}
+
+	if cpuUnits > 0 {
+		createBody.CPUUnits = &cpuUnits
 	}
 
 	if description != "" {
@@ -2665,8 +2670,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if containerConfig.CPUUnits != nil {
 		cpu[mkCPUUnits] = *containerConfig.CPUUnits
 	} else {
-		// Default value of "cpuunits" is "1024" according to the API documentation.
-		cpu[mkCPUUnits] = 1024
+		cpu[mkCPUUnits] = 0
 	}
 
 	currentCPU := d.Get(mkCPU).([]any)
@@ -3413,7 +3417,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			updateBody.Delete = append(updateBody.Delete, "cpulimit")
 		}
 
-		updateBody.CPUUnits = &cpuUnits
+		if cpuUnits > 0 {
+			updateBody.CPUUnits = &cpuUnits
+		}
 	}
 
 	if d.HasChange(mkDisk) {

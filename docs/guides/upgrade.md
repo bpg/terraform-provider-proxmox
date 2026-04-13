@@ -37,6 +37,27 @@ This guide documents breaking changes across provider versions and the recommend
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
 
+## v0.102.0
+
+### LXC `cpu.units` no longer defaults to 1024
+
+The `cpu.units` attribute on `proxmox_virtual_environment_container` no longer defaults to `1024`. Instead, the Proxmox server's own default is used (`100` on cgroup2, `1024` on cgroup1).
+
+**Before:** When `cpu.units` was not specified, the provider always sent `cpuunits=1024` to the API, overriding the server default.
+
+**After:** When `cpu.units` is not specified, the provider does not send `cpuunits` at all, letting the server use its own default.
+
+**Action required:** If you rely on `cpu.units = 1024` and are on a cgroup2 system, explicitly set it in your configuration:
+
+```terraform
+resource "proxmox_virtual_environment_container" "example" {
+  # ...
+  cpu {
+    units = 1024
+  }
+}
+```
+
 ## v0.101.0
 
 ### VM datasources error on not-found
