@@ -99,6 +99,8 @@ type proxmoxProviderModel struct {
 		Socks5Username  types.String `tfsdk:"socks5_username"`
 		Socks5Password  types.String `tfsdk:"socks5_password"`
 
+		NodeAddressSource types.String `tfsdk:"node_address_source"`
+
 		Nodes []struct {
 			Name    types.String `tfsdk:"name"`
 			Address types.String `tfsdk:"address"`
@@ -242,6 +244,17 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 							Description: "The username for the SOCKS5 proxy server. " +
 								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_USERNAME` environment variable.",
 							Optional: true,
+						},
+						"node_address_source": schema.StringAttribute{
+							Description: "The method used to resolve node IP addresses for SSH connections. " +
+								"Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. " +
+								"DNS resolution prefers IPv4 but falls back to IPv6 if no IPv4 addresses are available. " +
+								"Useful in multi-subnet environments where the API may return an inaccessible IP. " +
+								"Defaults to `api`.",
+							Optional: true,
+							Validators: []validator.String{
+								stringvalidator.OneOf("api", "dns"),
+							},
 						},
 						"username": schema.StringAttribute{
 							Description: "The username used for the SSH connection. " +
@@ -479,13 +492,30 @@ func (p *proxmoxProvider) Configure(
 		sshPassword = creds.UserCredentials.Password
 	}
 
+	var nodeResolver ssh.NodeResolver
+
+	nodeAddressSource := "api"
+	if len(cfg.SSH) > 0 && !cfg.SSH[0].NodeAddressSource.IsNull() {
+		nodeAddressSource = cfg.SSH[0].NodeAddressSource.ValueString()
+	}
+
+	switch nodeAddressSource {
+	case "dns":
+		nodeResolver = &resolverWithOverrides{
+			inner:     &dnsResolver{},
+			overrides: nodeOverrides,
+		}
+	default:
+		nodeResolver = &resolverWithOverrides{
+			inner:     &apiResolver{c: apiClient},
+			overrides: nodeOverrides,
+		}
+	}
+
 	sshClient, err := ssh.NewClient(
 		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshAgentForwarding, sshPrivateKey,
 		sshSocks5Server, sshSocks5Username, sshSocks5Password,
-		&apiResolverWithOverrides{
-			ar:        apiResolver{c: apiClient},
-			overrides: nodeOverrides,
-		},
+		nodeResolver,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -775,15 +805,43 @@ func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.Proxmox
 	return node, nil
 }
 
-type apiResolverWithOverrides struct {
-	ar        apiResolver
+var _ ssh.NodeResolver = (*dnsResolver)(nil)
+
+type dnsResolver struct{}
+
+func (r *dnsResolver) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
+	tflog.Debug(ctx, fmt.Sprintf("Resolving node %q address via DNS lookup", nodeName))
+
+	resolver := &net.Resolver{}
+
+	ips, err := resolver.LookupIPAddr(ctx, nodeName)
+	if err != nil {
+		return ssh.ProxmoxNode{}, fmt.Errorf("failed to resolve node %q via DNS: %w", nodeName, err)
+	}
+
+	// Prefer IPv4, fall back to IPv6
+	for _, ip := range ips {
+		if ipv4 := ip.IP.To4(); ipv4 != nil {
+			return ssh.ProxmoxNode{Address: ipv4.String(), Port: 22}, nil
+		}
+	}
+
+	if len(ips) > 0 {
+		return ssh.ProxmoxNode{Address: ips[0].IP.String(), Port: 22}, nil
+	}
+
+	return ssh.ProxmoxNode{}, fmt.Errorf("DNS lookup for node %q returned no addresses", nodeName)
+}
+
+type resolverWithOverrides struct {
+	inner     ssh.NodeResolver
 	overrides map[string]ssh.ProxmoxNode
 }
 
-func (r *apiResolverWithOverrides) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
+func (r *resolverWithOverrides) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
 	if node, ok := r.overrides[nodeName]; ok {
 		return node, nil
 	}
 
-	return r.ar.Resolve(ctx, nodeName)
+	return r.inner.Resolve(ctx, nodeName)
 }

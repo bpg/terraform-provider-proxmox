@@ -575,6 +575,7 @@ In addition to [generic provider arguments](https://developer.hashicorp.com/terr
     - `socks5_server` - (Optional) The address of the SOCKS5 proxy server to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_SERVER`.
     - `socks5_username` - (Optional) The username to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_USERNAME`.
     - `socks5_password` - (Optional) The password to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_PASSWORD`.
+    - `node_address_source` - (Optional) The method used to resolve node IP addresses for SSH connections. Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. DNS resolution prefers IPv4 but falls back to IPv6 if no IPv4 addresses are available. Useful in multi-subnet environments where the API may return an inaccessible IP (e.g., a Ceph network address). Defaults to `api`.
     - `node` - (Optional) The node configuration for the SSH connection. Can be specified multiple times to provide configuration for multiple nodes.
         - `name` - (Required) The name of the node.
         - `address` - (Required) The FQDN/IP address of the node.

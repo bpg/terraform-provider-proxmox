@@ -193,6 +193,26 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		}
 	}
 
+	nodeAddressSource := "api"
+	if v, ok := sshConf[mkProviderSSHNodeAddressSource]; ok && v.(string) != "" {
+		nodeAddressSource = v.(string)
+	}
+
+	var nodeResolver ssh.NodeResolver
+
+	switch nodeAddressSource {
+	case "dns":
+		nodeResolver = &resolverWithOverrides{
+			inner:     &dnsResolver{},
+			overrides: nodeOverrides,
+		}
+	default:
+		nodeResolver = &resolverWithOverrides{
+			inner:     &apiResolver{c: apiClient},
+			overrides: nodeOverrides,
+		}
+	}
+
 	sshClient, err = ssh.NewClient(
 		sshConf[mkProviderSSHUsername].(string),
 		sshConf[mkProviderSSHPassword].(string),
@@ -203,10 +223,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		sshConf[mkProviderSSHSocks5Server].(string),
 		sshConf[mkProviderSSHSocks5Username].(string),
 		sshConf[mkProviderSSHSocks5Password].(string),
-		&apiResolverWithOverrides{
-			ar:        apiResolver{c: apiClient},
-			overrides: nodeOverrides,
-		},
+		nodeResolver,
 	)
 	if err != nil {
 		return nil, diag.Errorf("error creating SSH client: %s", err)
@@ -318,15 +335,41 @@ func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.Proxmox
 	return node, nil
 }
 
-type apiResolverWithOverrides struct {
-	ar        apiResolver
+type dnsResolver struct{}
+
+func (r *dnsResolver) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
+	tflog.Debug(ctx, fmt.Sprintf("Resolving node %q address via DNS lookup", nodeName))
+
+	resolver := &net.Resolver{}
+
+	ips, err := resolver.LookupIPAddr(ctx, nodeName)
+	if err != nil {
+		return ssh.ProxmoxNode{}, fmt.Errorf("failed to resolve node %q via DNS: %w", nodeName, err)
+	}
+
+	// Prefer IPv4, fall back to IPv6
+	for _, ip := range ips {
+		if ipv4 := ip.IP.To4(); ipv4 != nil {
+			return ssh.ProxmoxNode{Address: ipv4.String(), Port: 22}, nil
+		}
+	}
+
+	if len(ips) > 0 {
+		return ssh.ProxmoxNode{Address: ips[0].IP.String(), Port: 22}, nil
+	}
+
+	return ssh.ProxmoxNode{}, fmt.Errorf("DNS lookup for node %q returned no addresses", nodeName)
+}
+
+type resolverWithOverrides struct {
+	inner     ssh.NodeResolver
 	overrides map[string]ssh.ProxmoxNode
 }
 
-func (r *apiResolverWithOverrides) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
+func (r *resolverWithOverrides) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
 	if node, ok := r.overrides[nodeName]; ok {
 		return node, nil
 	}
 
-	return r.ar.Resolve(ctx, nodeName)
+	return r.inner.Resolve(ctx, nodeName)
 }
