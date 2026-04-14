@@ -14,29 +14,30 @@ import (
 )
 
 const (
-	mkProviderEndpoint            = "endpoint"
-	mkProviderInsecure            = "insecure"
-	mkProviderMinTLS              = "min_tls"
-	mkProviderAuthTicket          = "auth_ticket"
-	mkProviderCSRFPreventionToken = "csrf_prevention_token" // #nosec G101
-	mkProviderAPIToken            = "api_token"
-	mkProviderOTP                 = "otp"
-	mkProviderPassword            = "password"
-	mkProviderUsername            = "username"
-	mkProviderTmpDir              = "tmp_dir"
-	mkProviderRandomVMIDs         = "random_vm_ids"
-	mkProviderRandomVMIDStart     = "random_vm_id_start"
-	mkProviderRandomVMIDEnd       = "random_vm_id_end"
-	mkProviderSSH                 = "ssh"
-	mkProviderSSHUsername         = "username"
-	mkProviderSSHPassword         = "password"
-	mkProviderSSHAgent            = "agent"
-	mkProviderSSHAgentSocket      = "agent_socket"
-	mkProviderSSHAgentForwarding  = "agent_forwarding"
-	mkProviderSSHPrivateKey       = "private_key"
-	mkProviderSSHSocks5Server     = "socks5_server"
-	mkProviderSSHSocks5Username   = "socks5_username"
-	mkProviderSSHSocks5Password   = "socks5_password"
+	mkProviderEndpoint             = "endpoint"
+	mkProviderInsecure             = "insecure"
+	mkProviderMinTLS               = "min_tls"
+	mkProviderAuthTicket           = "auth_ticket"
+	mkProviderCSRFPreventionToken  = "csrf_prevention_token" // #nosec G101
+	mkProviderAPIToken             = "api_token"
+	mkProviderOTP                  = "otp"
+	mkProviderPassword             = "password"
+	mkProviderUsername             = "username"
+	mkProviderTmpDir               = "tmp_dir"
+	mkProviderRandomVMIDs          = "random_vm_ids"
+	mkProviderRandomVMIDStart      = "random_vm_id_start"
+	mkProviderRandomVMIDEnd        = "random_vm_id_end"
+	mkProviderSSH                  = "ssh"
+	mkProviderSSHUsername          = "username"
+	mkProviderSSHPassword          = "password"
+	mkProviderSSHAgent             = "agent"
+	mkProviderSSHAgentSocket       = "agent_socket"
+	mkProviderSSHAgentForwarding   = "agent_forwarding"
+	mkProviderSSHPrivateKey        = "private_key"
+	mkProviderSSHSocks5Server      = "socks5_server"
+	mkProviderSSHSocks5Username    = "socks5_username"
+	mkProviderSSHSocks5Password    = "socks5_password"
+	mkProviderSSHNodeAddressSource = "node_address_source"
 
 	mkProviderSSHNode        = "node"
 	mkProviderSSHNodeName    = "name"
@@ -225,6 +226,16 @@ func createSchema() map[string]*schema.Schema {
 							nil,
 						),
 						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHNodeAddressSource: {
+						Type:     schema.TypeString,
+						Optional: true,
+						Default:  "api",
+						Description: "The method used to resolve node IP addresses for SSH connections. " +
+							"Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. " +
+							"Useful in multi-subnet environments where the API may return an inaccessible IP. " +
+							"Defaults to `api`.",
+						ValidateFunc: validation.StringInSlice([]string{"api", "dns"}, false),
 					},
 					mkProviderSSHNode: {
 						Type:        schema.TypeList,
