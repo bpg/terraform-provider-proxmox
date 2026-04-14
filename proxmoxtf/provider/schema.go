@@ -233,6 +233,7 @@ func createSchema() map[string]*schema.Schema {
 						Default:  "api",
 						Description: "The method used to resolve node IP addresses for SSH connections. " +
 							"Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. " +
+							"DNS resolution prefers IPv4 but falls back to IPv6 if no IPv4 addresses are available. " +
 							"Useful in multi-subnet environments where the API may return an inaccessible IP. " +
 							"Defaults to `api`.",
 						ValidateFunc: validation.StringInSlice([]string{"api", "dns"}, false),

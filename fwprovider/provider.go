@@ -248,6 +248,7 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 						"node_address_source": schema.StringAttribute{
 							Description: "The method used to resolve node IP addresses for SSH connections. " +
 								"Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. " +
+								"DNS resolution prefers IPv4 but falls back to IPv6 if no IPv4 addresses are available. " +
 								"Useful in multi-subnet environments where the API may return an inaccessible IP. " +
 								"Defaults to `api`.",
 							Optional: true,
