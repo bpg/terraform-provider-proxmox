@@ -99,6 +99,8 @@ type proxmoxProviderModel struct {
 		Socks5Username  types.String `tfsdk:"socks5_username"`
 		Socks5Password  types.String `tfsdk:"socks5_password"`
 
+		NodeAddressSource types.String `tfsdk:"node_address_source"`
+
 		Nodes []struct {
 			Name    types.String `tfsdk:"name"`
 			Address types.String `tfsdk:"address"`
@@ -242,6 +244,16 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 							Description: "The username for the SOCKS5 proxy server. " +
 								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_USERNAME` environment variable.",
 							Optional: true,
+						},
+						"node_address_source": schema.StringAttribute{
+							Description: "The method used to resolve node IP addresses for SSH connections. " +
+								"Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. " +
+								"Useful in multi-subnet environments where the API may return an inaccessible IP. " +
+								"Defaults to `api`.",
+							Optional: true,
+							Validators: []validator.String{
+								stringvalidator.OneOf("api", "dns"),
+							},
 						},
 						"username": schema.StringAttribute{
 							Description: "The username used for the SSH connection. " +
@@ -479,13 +491,30 @@ func (p *proxmoxProvider) Configure(
 		sshPassword = creds.UserCredentials.Password
 	}
 
+	var nodeResolver ssh.NodeResolver
+
+	nodeAddressSource := "api"
+	if len(cfg.SSH) > 0 && !cfg.SSH[0].NodeAddressSource.IsNull() {
+		nodeAddressSource = cfg.SSH[0].NodeAddressSource.ValueString()
+	}
+
+	switch nodeAddressSource {
+	case "dns":
+		nodeResolver = &resolverWithOverrides{
+			inner:     &dnsResolver{},
+			overrides: nodeOverrides,
+		}
+	default:
+		nodeResolver = &resolverWithOverrides{
+			inner:     &apiResolver{c: apiClient},
+			overrides: nodeOverrides,
+		}
+	}
+
 	sshClient, err := ssh.NewClient(
 		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshAgentForwarding, sshPrivateKey,
 		sshSocks5Server, sshSocks5Username, sshSocks5Password,
-		&resolverWithOverrides{
-			inner:     &apiResolver{c: apiClient},
-			overrides: nodeOverrides,
-		},
+		nodeResolver,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
