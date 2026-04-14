@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.102.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.101.1...v0.102.0) (2026-04-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lxc:** use computed `cpu.units` value instead of hardcoded 1024 ([#2791](https://github.com/bpg/terraform-provider-proxmox/issues/2791))
+
+### Features
+
+* **provider:** add `node_address_source` ssh attribute for DNS-based node resolution ([#2792](https://github.com/bpg/terraform-provider-proxmox/issues/2792)) ([87d0abb](https://github.com/bpg/terraform-provider-proxmox/commit/87d0abb07a08f67599051b2711e572f69e292a96))
+* **vm:** add `upgrade` attribute to cloud-init initialization block ([#2788](https://github.com/bpg/terraform-provider-proxmox/issues/2788)) ([e828b52](https://github.com/bpg/terraform-provider-proxmox/commit/e828b52f5028b3def9231e2617ced4550a161f84))
+* **vm:** wait for guest agent readiness before reboot ([#2790](https://github.com/bpg/terraform-provider-proxmox/issues/2790)) ([40317ec](https://github.com/bpg/terraform-provider-proxmox/commit/40317ec995ba22ed713457502e35277276d8458e))
+
+
+### Bug Fixes
+
+* **example:** update /example/* to use short aliases ([d6f1680](https://github.com/bpg/terraform-provider-proxmox/commit/d6f168092f16e76e3bc4e5cd90e86eb3fdb63815))
+* **lxc:** use computed `cpu.units` value instead of hardcoded 1024 ([#2791](https://github.com/bpg/terraform-provider-proxmox/issues/2791)) ([b54e6c5](https://github.com/bpg/terraform-provider-proxmox/commit/b54e6c5ce014a74a7ffe3440800d3e9d6a194b18))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v3.0.0 → v3.1.1) ([#2796](https://github.com/bpg/terraform-provider-proxmox/issues/2796)) ([8397ff6](https://github.com/bpg/terraform-provider-proxmox/commit/8397ff69c37d2ea3d67c84897f2046e83746ffc4))
+* **ci:** update actions/setup-go digest (4b73464 → 4a36011) ([#2793](https://github.com/bpg/terraform-provider-proxmox/issues/2793)) ([bfbf78c](https://github.com/bpg/terraform-provider-proxmox/commit/bfbf78c3b803c3348d0de7d5f988ac8f15cc17fe))
+* **ci:** update actions/upload-artifact digest (bbbca2d → 043fb46) ([#2794](https://github.com/bpg/terraform-provider-proxmox/issues/2794)) ([5c82af8](https://github.com/bpg/terraform-provider-proxmox/commit/5c82af893e3c569fab33933ba575851359171a54))
+* **ci:** update googleapis/release-please-action action (v4.4.0 → v4.4.1) ([#2798](https://github.com/bpg/terraform-provider-proxmox/issues/2798)) ([7b10d95](https://github.com/bpg/terraform-provider-proxmox/commit/7b10d9523c68054f5b2e78c2da48c138225c8bb2))
+* **code:** update to use Golang 1.26.x ([#2785](https://github.com/bpg/terraform-provider-proxmox/issues/2785)) ([d2f3c70](https://github.com/bpg/terraform-provider-proxmox/commit/d2f3c7039fcffc28060077c8b83a70986f2ea75a))
+* **deps:** update image golang (2a2b4b5 → fcdb3e4) ([#2797](https://github.com/bpg/terraform-provider-proxmox/issues/2797)) ([32d0937](https://github.com/bpg/terraform-provider-proxmox/commit/32d09376caef3019f3dc733be8393cc1ad0227f4))
+* **deps:** update module github.com/hashicorp/terraform-plugin-mux (v0.23.0 → v0.23.1) ([#2795](https://github.com/bpg/terraform-provider-proxmox/issues/2795)) ([19925da](https://github.com/bpg/terraform-provider-proxmox/commit/19925da906ed176b96f4550b4f4070adfdba159e))
+* **docs:** codify audit-discovered conventions into ADR-003/004/005 ([#2787](https://github.com/bpg/terraform-provider-proxmox/issues/2787)) ([d8c8c75](https://github.com/bpg/terraform-provider-proxmox/commit/d8c8c75a46ff8b1f90dce9067ebc9332b145b3ac))
+* **docs:** update links to reference bpg.sh for documentation ([b36528a](https://github.com/bpg/terraform-provider-proxmox/commit/b36528a6faf3012eca92bed4ed5e0ee1acef648f))
+* **docs:** update upgrade.md guide ([befb41d](https://github.com/bpg/terraform-provider-proxmox/commit/befb41dc80f73c9e62e2e8199685821a8653aea0))
+
 ## [0.101.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.101.0...v0.101.1) (2026-04-10)
 
 
