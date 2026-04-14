@@ -76,7 +76,7 @@ jobs:
           go test -json --timeout=30m --tags=acceptance -count=1 -v github.com/bpg/terraform-provider-proxmox/fwprovider/... 2>&1 | tee ${{ runner.temp }}/gotest-${{ matrix.os }}.log | gotestfmt -hide empty-packages
 
       - name: Upload test log
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: always()
         with:
           name: test-log-${{ matrix.os }}
