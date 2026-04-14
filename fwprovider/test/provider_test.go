@@ -47,22 +47,38 @@ func TestAccProviderSSHNodeAddressSource(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{{
-			Config: fmt.Sprintf(`
-				provider "proxmox" {
-					ssh {
-						node_address_source = "dns"
-						node {
-							name    = %q
-							address = %q
-							port    = %s
+		Steps: []resource.TestStep{
+			{
+				// Verify attribute is accepted alongside node overrides
+				Config: fmt.Sprintf(`
+					provider "proxmox" {
+						ssh {
+							node_address_source = "dns"
+							node {
+								name    = %q
+								address = %q
+								port    = %s
+							}
 						}
 					}
-				}
 
-				data "proxmox_virtual_environment_version" "test" {}
-			`, nodeName, nodeAddress, nodePort),
-			Check: resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_version.test", "version"),
-		}},
+					data "proxmox_virtual_environment_version" "test" {}
+				`, nodeName, nodeAddress, nodePort),
+				Check: resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_version.test", "version"),
+			},
+			{
+				// Verify DNS resolution actually works without node overrides
+				Config: `
+					provider "proxmox" {
+						ssh {
+							node_address_source = "dns"
+						}
+					}
+
+					data "proxmox_virtual_environment_version" "test" {}
+				`,
+				Check: resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_version.test", "version"),
+			},
+		},
 	})
 }
