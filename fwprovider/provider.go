@@ -45,6 +45,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/file"
 	nodefirewall "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/firewall"
+	nodeHardware "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/hardware"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
@@ -672,6 +673,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		backup.NewDataSource,
 		datastores.NewDataSource,
 		datastores.NewShortDataSource,
+		nodeHardware.NewPCIDataSource,
 		ha.NewHAGroupDataSource,
 		ha.NewHAGroupShortDataSource, // proxmox_hagroup
 		ha.NewHAGroupsDataSource,
