@@ -52,6 +52,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/files.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/hardware_pci.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/hagroup.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/hagroups.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/haresource.md ./docs/data-sources/
