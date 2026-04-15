@@ -15,6 +15,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	nodefirewall "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/hardware"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
@@ -66,6 +67,13 @@ func (c *Client) Storage(storageName string) *storage.Client {
 // Tasks returns a client for managing VM tasks.
 func (c *Client) Tasks() *tasks.Client {
 	return &tasks.Client{
+		Client: c,
+	}
+}
+
+// Hardware returns a client for managing node hardware information.
+func (c *Client) Hardware() *hardware.Client {
+	return &hardware.Client{
 		Client: c,
 	}
 }
