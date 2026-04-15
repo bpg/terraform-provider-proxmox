@@ -64,6 +64,8 @@ coverage.out
 *_PR_BODY.md
 *_COMMENT.md
 .dev/archive/
+.dev/plans/
+.dev/specs/
 
 # Python cache
 __pycache__/

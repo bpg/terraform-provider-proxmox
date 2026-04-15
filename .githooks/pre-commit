@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Pre-commit hook: lint staged Go and Markdown files before committing.
+# Bypass with: git commit --no-verify
+
+set -euo pipefail
+
+# Check for staged Go files
+GO_STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.go' || true)
+if [[ -n "$GO_STAGED" ]]; then
+    echo "pre-commit: running make lint..."
+    if ! make lint; then
+        echo "pre-commit: make lint failed. Fix issues and re-stage."
+        exit 1
+    fi
+fi
+
+# Check for staged Markdown files
+MD_STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.md' || true)
+if [[ -n "$MD_STAGED" ]]; then
+    echo "pre-commit: running markdownlint on staged .md files..."
+    # shellcheck disable=SC2086
+    if ! npx --yes markdownlint-cli2 $MD_STAGED; then
+        echo "pre-commit: markdownlint failed. Run: npx --yes markdownlint-cli2 --fix <file>"
+        exit 1
+    fi
+fi

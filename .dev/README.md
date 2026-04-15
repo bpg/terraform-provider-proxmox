@@ -284,6 +284,91 @@ This allows:
 - `/bpg:resume` to note existing logs from previous runs
 - Session state to accumulate context across the workflow
 
+### Agent Development Practices
+
+#### Parallel Agents
+
+Use parallel agents for independent tasks to speed up work:
+
+**Good candidates for parallel execution:**
+
+- Research tasks (explore different parts of codebase simultaneously)
+- Running independent test suites
+- Searching for patterns across different directories
+- Gathering context from multiple unrelated files
+
+**Not suitable for parallel execution:**
+
+- Tasks with dependencies (B needs output of A)
+- File modifications (risk of conflicts)
+- Sequential workflows (test → fix → verify)
+
+**How to request:** Ask for agents to run "in parallel" explicitly.
+
+#### State Persistence
+
+LLMs have no memory between sessions. Externalize state to files:
+
+- **Session state file** — The agent's memory across context resets
+- **Update before ANY context switch** — End of session, new task, long operation
+- **Write "next action" for a stranger** — Assume no prior context
+
+#### Track Decisions, Not Just Actions
+
+- **User decisions** — Never re-ask; record in session state
+- **Agent assumptions** — Make explicit; mark verified/rejected
+- **Reasoning** — "Why" matters more than "what"
+
+#### Hypothesis-Driven Debugging
+
+- Form hypothesis → test → record result
+- Prevents circular debugging across sessions
+- Use "Hypotheses Tested" table in session state
+
+#### Minimize Re-exploration
+
+- Cache code patterns and file locations in session state
+- Record dead ends so they're not re-explored
+- Note key file:line references for quick restoration
+
+#### Atomic Commits
+
+- Each commit = working, resumable state
+- If session dies mid-work, resume from last commit
+
+#### Proof Over Trust
+
+- "Tests pass" ≠ correct behavior
+- Verify with mitmproxy when available, OR use behavioral assertions in tests (uptime checks, API status queries) to prove the behavior change
+- Include evidence in PR proof of work section
+- **Scrutinize implementation against plan** before declaring done — check every condition, test case, and step. Plans encode reasoning (e.g., why a guard should NOT be present); implementation must match.
+
+#### Context Window Management
+
+For long-running tasks:
+
+- **Checkpoint frequently** — Update session state after every successful test run
+- **Summarize completed work** — Don't keep raw exploration in context; distill findings
+- **Chunk large changes** — Break into atomic commits to create resume points
+- **Use `/bpg:resume`** — Start new sessions by loading session state, not from memory
+
+#### Error Recovery
+
+When things go wrong:
+
+- **Test failures** — Record in session state, add to "Hypotheses Tested", don't mark complete
+- **API errors** — Capture in mitmproxy log, document in session state
+- **Context loss** — Always resume from session state file using `/bpg:resume`
+- **Blocked work** — Update session status to "Blocked", document blocker, move to next task
+
+#### Session Handoff
+
+When handing off work:
+
+- **To another agent** — Ensure "Quick Context Restore" is complete and current
+- **To human** — Create PR using `/bpg:prepare-pr`, reference session state location
+- **From human** — Use `/bpg:resume`, ask about any "Unverified" assumptions
+
 ### Tips for Effective Agent-Assisted Development
 
 1. **Always start with `/bpg:start-issue`** — Sets up proper branch naming and session tracking

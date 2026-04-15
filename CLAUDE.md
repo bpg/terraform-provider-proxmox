@@ -16,10 +16,13 @@ Instructions for Claude Code working on this Terraform Provider for Proxmox VE.
 | Commit without running linter | Always `make lint` first |
 | Commit without explicit user request | User controls git operations |
 | Add changes beyond what's requested | Only implement what's asked |
+| Post comments to GitHub issues/PRs | Provide text for user to post themselves |
+| Add Co-Authored-By lines to commits | Use only `-s` flag for DCO sign-off |
 
 | Always Do | Reason |
 | --------- | ------ |
 | Verify GitHub issue exists first | No issue = flag deficiency, offer to help |
+| Talk to maintainer before code investigation | Leverage domain knowledge, avoid wasted exploration |
 | Ask questions when uncertain | Never assume; clarify before proceeding |
 | Create acceptance test BEFORE fixing | Proves issue exists, proves fix works |
 | Verify API calls with mitmproxy | Tests passing ≠ correct API calls |
@@ -83,9 +86,9 @@ npx --yes markdownlint-cli2 --fix "path/to/*.md"  # Lint markdown files
 **Never manually format or lint code. Always use the appropriate linter tool.**
 
 | File type | Linter command                                 | When to run                  |
-|-----------|------------------------------------------------|------------------------------|
+| --------- | ---------------------------------------------- | ---------------------------- |
 | Go `.go`  | `make lint`                                    | After editing any `.go` file |
-| Markdown  | `npx --yes markdownlint-cli2 --fix "file.md"` | After editing any `.md` file |
+| Markdown  | `npx --yes markdownlint-cli2 --fix "file.md"`  | After editing any `.md` file |
 
 ### Acceptance Test Script (`./testacc`)
 
@@ -115,16 +118,7 @@ Tests are classified via `//testacc:tier=X` annotations in test files:
 
 Resource targeting via `//testacc:resource=X` annotations: `vm`, `container`, `firewall`, `sdn`, `file`, `pool`, `acme`, `access`, `backup`, `ha`, `hardwaremapping`, `metrics`, `options`, `replication`, `apt`, `datastores`, `storage`, `network`, `misc`
 
-Requires `testacc.env` with:
-
-```bash
-TF_ACC=1
-PROXMOX_VE_API_TOKEN="root@pam!<token>=<value>"
-PROXMOX_VE_ENDPOINT="https://<host>:8006/"
-PROXMOX_VE_SSH_AGENT="true"
-PROXMOX_VE_SSH_USERNAME="root"
-# Optional: PROXMOX_VE_ACC_NODE_NAME, PROXMOX_VE_ACC_NODE_SSH_ADDRESS, etc.
-```
+Requires `testacc.env` — see [CONTRIBUTING.md](CONTRIBUTING.md#acceptance-tests) for setup.
 
 ### Production Readiness Checklist
 
@@ -147,92 +141,20 @@ See [CONTRIBUTING.md](CONTRIBUTING.md#commit-message-conventions). Key rules:
 - **Scopes:** `vm`, `lxc`, `provider`, `core`, `docs`, `ci`
 - Lowercase, no period, under 72 chars, NO issue numbers
 - **DCO sign-off required:** use `git commit -s` (adds `Signed-off-by` line)
+- **No Claude attribution:** never add `Co-Authored-By` trailers
 
 ---
 
 ## Agent Development Practices
 
-### Parallel Agents
+See [.dev/README.md](.dev/README.md#agent-development-practices) for detailed guidance on state persistence, debugging, context management, error recovery, and session handoff.
 
-Use parallel agents for independent tasks to speed up work:
+Key principles:
 
-**Good candidates for parallel execution:**
-
-- Research tasks (explore different parts of codebase simultaneously)
-- Running independent test suites
-- Searching for patterns across different directories
-- Gathering context from multiple unrelated files
-
-**Not suitable for parallel execution:**
-
-- Tasks with dependencies (B needs output of A)
-- File modifications (risk of conflicts)
-- Sequential workflows (test → fix → verify)
-
-**How to request:** Ask for agents to run "in parallel" explicitly.
-
-### State Persistence
-
-LLMs have no memory between sessions. Externalize state to files:
-
-- **Session state file** — The agent's memory across context resets
-- **Update before ANY context switch** — End of session, new task, long operation
-- **Write "next action" for a stranger** — Assume no prior context
-
-### Track Decisions, Not Just Actions
-
-- **User decisions** — Never re-ask; record in session state
-- **Agent assumptions** — Make explicit; mark verified/rejected
-- **Reasoning** — "Why" matters more than "what"
-
-### Hypothesis-Driven Debugging
-
-- Form hypothesis → test → record result
-- Prevents circular debugging across sessions
-- Use "Hypotheses Tested" table in session state
-
-### Minimize Re-exploration
-
-- Cache code patterns and file locations in session state
-- Record dead ends so they're not re-explored
-- Note key file:line references for quick restoration
-
-### Atomic Commits
-
-- Each commit = working, resumable state
-- If session dies mid-work, resume from last commit
-
-### Proof Over Trust
-
-- "Tests pass" ≠ correct behavior
-- Verify with mitmproxy when available, OR use behavioral assertions in tests (uptime checks, API status queries) to prove the behavior change
-- Include evidence in PR proof of work section
-
-### Context Window Management
-
-For long-running tasks:
-
-- **Checkpoint frequently** — Update session state after every successful test run
-- **Summarize completed work** — Don't keep raw exploration in context; distill findings
-- **Chunk large changes** — Break into atomic commits to create resume points
-- **Use `/bpg:resume`** — Start new sessions by loading session state, not from memory
-
-### Error Recovery
-
-When things go wrong:
-
-- **Test failures** — Record in session state, add to "Hypotheses Tested", don't mark complete
-- **API errors** — Capture in mitmproxy log, document in session state
-- **Context loss** — Always resume from session state file using `/bpg:resume`
-- **Blocked work** — Update session status to "Blocked", document blocker, move to next task
-
-### Session Handoff
-
-When handing off work:
-
-- **To another agent** — Ensure "Quick Context Restore" is complete and current
-- **To human** — Create PR using `/bpg:prepare-pr`, reference session state location
-- **From human** — Use `/bpg:resume`, ask about any "Unverified" assumptions
+- **Proof over trust** — "Tests pass" ≠ correct behavior. Verify with mitmproxy or behavioral assertions. Scrutinize implementation against plan before declaring done.
+- **Atomic commits** — Each commit = working, resumable state
+- **Parallel agents** — Use for independent research tasks; avoid for file modifications or sequential workflows
+- **Session state** — Update before any context switch; write "next action" for a stranger
 
 ---
 
@@ -292,22 +214,24 @@ proxmox.Client
 1. **Verify GitHub issue exists** — Flag deficiency if not
 2. **Create branch:** `fix/{issue}-description`
 3. **Create session state:** `.dev/{issue}_SESSION_STATE.md`
-4. **Create acceptance test** that reproduces the issue
-5. **Verify test fails** with current code
-6. **Implement fix**
-7. **Verify test passes**
-8. **Run linter:** `make lint`
-9. **Verify with mitmproxy**
-10. **Complete checklist**
+4. **Talk to maintainer** — Before diving into code, ask about: known regression status, scope (isolated or systemic), which code path (Framework/SDK/both), initial hunches, fix scope (narrow or broad). Assess the user's workflow/config yourself.
+5. **Create acceptance test** that reproduces the issue
+6. **Verify test fails** with current code
+7. **Implement fix**
+8. **Verify test passes**
+9. **Run linter:** `make lint`
+10. **Verify with mitmproxy**
+11. **Complete checklist**
 
 ### Adding Features
 
 1. **Verify GitHub issue exists** — Flag deficiency if not
 2. **Create branch:** `feat/{issue}-description`
 3. **Create session state:** `.dev/{issue}_SESSION_STATE.md`
-4. Implement in Framework provider only (`fwprovider/`)
-5. Add validation, acceptance tests, documentation
-6. **Complete checklist**
+4. **Talk to maintainer** — Discuss scope, design choices, and any constraints before implementation.
+5. Implement in Framework provider only (`fwprovider/`)
+6. Add validation, acceptance tests, documentation
+7. **Complete checklist**
 
 ---
 
@@ -426,8 +350,8 @@ When fixing validation issues, update BOTH providers where applicable.
 - **VMs with `started = true`** need boot disk with cloud image; use `stop_on_destroy = true`
 - **Naming:** Descriptive names only, NO issue numbers
 - **API verification:** Use `/bpg:debug-api` for mitmproxy workflow
-- **Behavioral assertions:** When verifying side effects (reboots, state changes), use direct API checks in test check functions rather than relying only on Terraform state attributes. Example: use `te.NodeClient().VM(vmID).GetVMStatus(ctx)` to check uptime before/after to detect reboots. See `resource_vm_hotplug_test.go` and `resource_vm_disks_test.go` for patterns.
-- **TDD acceptance tests:** Tests MUST actually fail without the fix. If a test passes both with and without the fix, it doesn't prove anything — add behavioral assertions (uptime, status, API checks) that detect the actual behavior change.
+- **TDD with behavioral assertions:** Tests MUST actually fail without the fix — if a test passes both with and without the fix, it doesn't prove anything. Don't rely only on Terraform state attributes; use direct API checks (e.g., `te.NodeClient().VM(vmID).GetVMStatus(ctx)` to check uptime before/after to detect reboots). See `resource_vm_hotplug_test.go` and `resource_vm_disks_test.go` for patterns.
+- **Connection issues:** If acceptance tests fail due to Proxmox host unreachable or similar, ask the user — don't work around it with unit tests or other substitutes
 - **Functional coverage:** Tests must cover ALL major use cases for the resource — not just one happy path. Different input modes (e.g., `all` vs `vmid` vs `pool`), list attributes with multiple elements, compound fields, nested objects, and import round-trips must each have test scenarios. PRs with insufficient functional coverage will be rejected. See [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement).
 
 ---
@@ -461,24 +385,7 @@ For Pattern A guides, edit the template — `docs/guides/<name>.md` is auto-gene
 
 ## Session Management
 
-For multi-step work, maintain session state using [.dev/SESSION_STATE_TEMPLATE.md](.dev/SESSION_STATE_TEMPLATE.md).
-
-**Location:** `.dev/{issue}_SESSION_STATE.md`
-
-**Key sections to maintain:**
-
-- Quick Context Restore — For fast agent bootstrap
-- User Decisions — Prevent re-asking
-- Assumptions Made — Track verification status
-- Context Gathered — Save re-reading files
-- Hypotheses Tested — For debugging sessions
-
-**Update triggers:**
-
-- Before ending session
-- Before context-heavy operations
-- After completing a phase
-- When blocked or switching tasks
+For multi-step work, maintain session state in `.dev/{issue}_SESSION_STATE.md` using [the template](.dev/SESSION_STATE_TEMPLATE.md). Update before ending session, before context-heavy operations, after completing a phase, or when blocked.
 
 ---
 
@@ -490,6 +397,13 @@ For multi-step work, maintain session state using [.dev/SESSION_STATE_TEMPLATE.m
 | Use technical terminology | Summarize changes made |
 | Explain reasoning | Make up information |
 | Admit uncertainty | Show implementation unless asked |
+| Use friendly, conversational tone in ticket notes | Use formal/corporate language |
+| Lead with key finding, skip preamble | Write verbose preambles |
+
+**Code comments:** Minimal — explain "why", not "what". One concise comment per block, skip when code is self-explanatory.
+
+- Good: `// Reboot before resize: pending changes include old disk size`
+- Bad: `// Update the size in the update body to match the plan size when the disk is growing. Without this, the UpdateVM API call creates a pending change with the OLD size, and a subsequent reboot would revert the resize done by ResizeVMDisk.`
 
 ---
 
