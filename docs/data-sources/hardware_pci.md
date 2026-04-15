@@ -54,7 +54,6 @@ data "proxmox_hardware_pci" "gpus" {
 - `devices` (Attributes List) The list of PCI devices. (see [below for nested schema](#nestedatt--devices))
 
 <a id="nestedatt--filters"></a>
-
 ### Nested Schema for `filters`
 
 Optional:
@@ -64,8 +63,8 @@ Optional:
 - `id` (String) Filter by PCI address prefix (e.g. `0000:01` to match all devices on bus 01).
 - `vendor_id` (String) Filter by vendor ID prefix (e.g. `8086` for Intel devices). The `0x` prefix in vendor IDs is stripped before matching.
 
-<a id="nestedatt--devices"></a>
 
+<a id="nestedatt--devices"></a>
 ### Nested Schema for `devices`
 
 Read-Only:
