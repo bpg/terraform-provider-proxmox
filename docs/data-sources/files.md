@@ -64,6 +64,7 @@ output "all_file_names" {
 ### Optional
 
 - `content_type` (String) The content type to filter by. When set, only files of this type are returned. Valid values are `backup`, `images`, `import`, `iso`, `rootdir`, `snippets`, `vztmpl`.
+- `file_name_regex` (String) A regular expression to filter files by name. When set, only files whose name matches the expression are returned.
 
 ### Read-Only
 

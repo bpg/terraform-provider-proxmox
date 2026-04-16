@@ -9,6 +9,7 @@ package file
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -18,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
@@ -29,10 +31,11 @@ var (
 
 // listModel is the data model for the files list data source.
 type listModel struct {
-	NodeName    types.String    `tfsdk:"node_name"`
-	DatastoreID types.String    `tfsdk:"datastore_id"`
-	ContentType types.String    `tfsdk:"content_type"`
-	Files       []listFileEntry `tfsdk:"files"`
+	NodeName      types.String    `tfsdk:"node_name"`
+	DatastoreID   types.String    `tfsdk:"datastore_id"`
+	ContentType   types.String    `tfsdk:"content_type"`
+	FileNameRegex types.String    `tfsdk:"file_name_regex"`
+	Files         []listFileEntry `tfsdk:"files"`
 }
 
 // listFileEntry represents a single file in the list data source output.
@@ -94,6 +97,14 @@ func (d *listDatasource) Schema(
 				Optional: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(storage.ValidContentTypes()...),
+				},
+			},
+			"file_name_regex": schema.StringAttribute{
+				Description: "A regular expression to filter files by name. When set, only files " +
+					"whose name matches the expression are returned.",
+				Optional: true,
+				Validators: []validator.String{
+					validators.IsValidRegularExpression(),
 				},
 			},
 			"files": schema.ListNestedAttribute{
@@ -186,6 +197,20 @@ func (d *listDatasource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
+	var nameRegex *regexp.Regexp
+
+	if !model.FileNameRegex.IsNull() && !model.FileNameRegex.IsUnknown() {
+		nameRegex, err = regexp.Compile(model.FileNameRegex.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to Read Files",
+				fmt.Sprintf("Invalid file_name_regex: %s", err.Error()),
+			)
+
+			return
+		}
+	}
+
 	model.Files = make([]listFileEntry, 0, len(apiFiles))
 
 	for _, apiFile := range apiFiles {
@@ -200,6 +225,10 @@ func (d *listDatasource) Read(ctx context.Context, req datasource.ReadRequest, r
 			if _, afterSlash, foundSlash := strings.Cut(afterColon, "/"); foundSlash {
 				fileName = afterSlash
 			}
+		}
+
+		if nameRegex != nil && !nameRegex.MatchString(fileName) {
+			continue
 		}
 
 		file := listFileEntry{
