@@ -123,10 +123,6 @@ func TestAccDatasourceFilesNameRegexMatch(t *testing.T) {
 
 	datasourceName := "data.proxmox_files.test_regex"
 
-	te.AddTemplateVars(map[string]interface{}{
-		"TestFileName": fileName,
-	})
-
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
