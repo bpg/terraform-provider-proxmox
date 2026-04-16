@@ -111,6 +111,48 @@ Compose a clear, concise summary:
 
 Base this on: commit messages, changed files, session state, and the issue context.
 
+## Step 5b: Add Usage Examples
+
+If the PR adds or modifies a resource or data source, include a usage example showing the new/changed functionality. This helps reviewers and users understand the intended UX.
+
+**Detect whether examples are needed:**
+
+```bash
+# Check for schema or resource/datasource changes
+RESOURCE_CHANGES=$(git diff --name-only main...HEAD 2>/dev/null | grep -E '(resource_|datasource_).*\.go$' || true)
+# Fall back to unstaged if no commits
+if [ -z "$RESOURCE_CHANGES" ]; then
+  RESOURCE_CHANGES=$(git diff --name-only | grep -E '(resource_|datasource_).*\.go$' || true)
+fi
+```
+
+If resource/datasource files were changed:
+
+1. Read the schema to understand the new/changed attributes
+2. Write a concise HCL example showing usage of the new or modified attributes
+3. For new resources: show a complete minimal configuration
+4. For modified resources/data sources: show only the relevant new/changed attributes in context
+5. If a `templates/` override or `examples/` file already exists for this resource, use it as a base
+
+**Example format in the PR body:**
+
+````markdown
+### Usage Example
+
+```hcl
+data "proxmox_files" "base_image" {
+  node_name       = "pve"
+  datastore_id    = "local"
+  content_type    = "import"
+  file_name_regex = "noble-server-cloudimg.*\\.img$"
+}
+```
+````
+
+Place this section after "What does this PR do?" in the generated PR body.
+
+If no resource/datasource files were changed, skip this section entirely.
+
 ## Step 6: Fill Contributor's Note Checklist
 
 Check each item by inspecting actual state — do not assume:
@@ -287,6 +329,8 @@ Keep all HTML comments from the template. Keep the Community Note section verbat
 
 {PR_SUMMARY}
 
+{USAGE_EXAMPLE_SECTION}
+
 ### Contributor's Note
 
 - [{LINT}] I have run make lint and fixed any issues.
@@ -356,6 +400,7 @@ Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read and Edit tools:
 - [ ] PR template read from `.github/PULL_REQUEST_TEMPLATE.md`
 - [ ] PR title composed (conventional commits format, under 72 chars)
 - [ ] "What does this PR do?" section filled with clear summary
+- [ ] Usage examples included for new/modified resources or data sources
 - [ ] Contributor's Note checklist verified (not assumed)
 - [ ] Proof of Work section filled with test output
 - [ ] Issue link set (Closes/Relates)
