@@ -14,8 +14,9 @@ if [[ -n "$GO_STAGED" ]]; then
     fi
 fi
 
-# Check for staged Markdown files
-MD_STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.md' || true)
+# Check for staged Markdown files (excluding auto-generated docs)
+MD_STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.md' \
+    ':!docs/resources/**' ':!docs/data-sources/**' ':!CHANGELOG.md' || true)
 if [[ -n "$MD_STAGED" ]]; then
     echo "pre-commit: running markdownlint on staged .md files..."
     # shellcheck disable=SC2086

@@ -106,6 +106,77 @@ func TestAccDatasourceFilesNoFilter(t *testing.T) {
 	})
 }
 
+func TestAccDatasourceFilesNameRegexMatch(t *testing.T) {
+	te := InitEnvironment(t)
+
+	// Upload a snippet file so we have a known file to match
+	snippetFile := CreateTempFile(t, "files-ds-regex-*.yaml", "test: yaml\n")
+	uploadSnippetFile(t, snippetFile.Name())
+
+	fileName := filepath.Base(snippetFile.Name())
+
+	t.Cleanup(func() {
+		e := te.NodeStorageClient().DeleteDatastoreFile(
+			context.Background(), fmt.Sprintf("snippets/%s", fileName))
+		require.NoError(t, e)
+	})
+
+	datasourceName := "data.proxmox_files.test_regex"
+
+	te.AddTemplateVars(map[string]interface{}{
+		"TestFileName": fileName,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					data "proxmox_files" "test_regex" {
+						node_name       = "{{.NodeName}}"
+						datastore_id    = "local"
+						content_type    = "snippets"
+						file_name_regex = "files-ds-regex-.*\\.yaml$"
+					}
+				`),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "files.#", "1"),
+					resource.TestCheckTypeSetElemNestedAttrs(datasourceName, "files.*", map[string]string{
+						"file_name":    fileName,
+						"content_type": "snippets",
+						"id":           fmt.Sprintf("local:snippets/%s", fileName),
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDatasourceFilesNameRegexNoMatch(t *testing.T) {
+	te := InitEnvironment(t)
+
+	datasourceName := "data.proxmox_files.test_regex_nomatch"
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					data "proxmox_files" "test_regex_nomatch" {
+						node_name       = "{{.NodeName}}"
+						datastore_id    = "local"
+						content_type    = "snippets"
+						file_name_regex = "^this-file-definitely-does-not-exist-12345$"
+					}
+				`),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "files.#", "0"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccDatasourceFilesEmptyResult(t *testing.T) {
 	te := InitEnvironment(t)
 

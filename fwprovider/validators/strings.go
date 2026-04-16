@@ -29,6 +29,21 @@ func AbsoluteFilePathValidator() validator.String {
 	)
 }
 
+// IsValidRegularExpression validates that a string is a valid Go regular expression.
+func IsValidRegularExpression() validator.String {
+	return NewParseValidator(
+		func(s string) (string, error) {
+			_, err := regexp.Compile(s)
+			if err != nil {
+				return s, fmt.Errorf("%q is not a valid regular expression: %w", s, err)
+			}
+
+			return s, nil
+		},
+		"must be a valid regular expression",
+	)
+}
+
 // NonEmptyString returns a new validator to ensure a non-empty string.
 func NonEmptyString() validator.String {
 	return stringvalidator.All(
