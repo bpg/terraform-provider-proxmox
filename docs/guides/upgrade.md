@@ -39,6 +39,16 @@ This guide documents breaking changes across provider versions and the recommend
 
 ## v0.102.0
 
+### `proxmox_metrics_server.disable` now defaults to `false`
+
+The `disable` attribute on `proxmox_metrics_server` (and its alias `proxmox_virtual_environment_metrics_server`) now has a schema default of `false`. The Proxmox API omits `disable` from GET responses when the value is `false`, and the resource now reads state back from the API after Create and Update — so the default is required to keep state consistent.
+
+**Before:** When `disable` was not set in configuration, it was stored as null in state.
+
+**After:** When `disable` is not set in configuration, it is stored as `false` in state. This matches the Proxmox server default (metrics servers are enabled by default).
+
+**Action required:** None. On the first `terraform apply` after upgrading, Terraform may show a one-time diff of `disable: null -> false` for existing metrics server resources that did not set `disable`. The apply is a no-op against the Proxmox API.
+
 ### LXC `cpu.units` no longer defaults to 1024
 
 The `cpu.units` attribute on `proxmox_virtual_environment_container` no longer defaults to `1024`. Instead, the Proxmox server's own default is used (`100` on cgroup2, `1024` on cgroup1).

@@ -38,15 +38,15 @@ func TestAccResourceMetricsServer(t *testing.T) {
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_metrics_server.acc_influxdb_server", map[string]string{
-						"id":     "acc_example_influxdb_server",
-						"name":   "acc_example_influxdb_server",
-						"mtu":    "1000",
-						"port":   "18089",
-						"server": "192.168.3.2",
-						"type":   "influxdb",
+						"id":      "acc_example_influxdb_server",
+						"name":    "acc_example_influxdb_server",
+						"mtu":     "1000",
+						"port":    "18089",
+						"server":  "192.168.3.2",
+						"type":    "influxdb",
+						"disable": "false",
 					}),
 					test.NoResourceAttributesSet("proxmox_metrics_server.acc_influxdb_server", []string{
-						"disable",
 						"timeout",
 						"influx_api_path_prefix",
 						"influx_bucket",
@@ -81,9 +81,9 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"server":        "192.168.3.2",
 						"type":          "influxdb",
 						"influx_bucket": "xxxxx",
+						"disable":       "false",
 					}),
 					test.NoResourceAttributesSet("proxmox_metrics_server.acc_influxdb_server", []string{
-						"disable",
 						"timeout",
 						"influx_api_path_prefix",
 						"influx_db_proto",
@@ -115,9 +115,9 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"server":        "192.168.3.2",
 						"type":          "influxdb",
 						"influx_bucket": "xxxxx",
+						"disable":       "false",
 					}),
 					test.NoResourceAttributesSet("proxmox_metrics_server.acc_influxdb_server", []string{
-						"disable",
 						"timeout",
 						"mtu",
 						"influx_api_path_prefix",
@@ -132,6 +132,49 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"opentelemetry_path",
 					}),
 				),
+			},
+		}},
+		{"create disabled influxdb server with verify toggle & round-trip bools", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_bools" {
+					name           = "acc_example_influxdb_bools"
+					server         = "192.168.3.2"
+					port           = 18090
+					type           = "influxdb"
+					disable        = true
+					influx_verify  = false
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_metrics_server.acc_influxdb_bools", map[string]string{
+						"disable":       "true",
+						"influx_verify": "false",
+						"port":          "18090",
+						"type":          "influxdb",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_bools" {
+					name           = "acc_example_influxdb_bools"
+					server         = "192.168.3.2"
+					port           = 18090
+					type           = "influxdb"
+					disable        = false
+					influx_verify  = true
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_metrics_server.acc_influxdb_bools", map[string]string{
+						"disable":       "false",
+						"influx_verify": "true",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_metrics_server.acc_influxdb_bools",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		}},
 		{"create graphite udp metrics server & import it", []resource.TestStep{

@@ -75,7 +75,7 @@ func (c *Client) CreateServer(ctx context.Context, data *ServerRequestData) erro
 func (c *Client) DeleteServer(ctx context.Context, id string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(id), nil, nil)
 	if err != nil {
-		return fmt.Errorf("error updating metrics server: %w", err)
+		return fmt.Errorf("error deleting metrics server: %w", err)
 	}
 
 	return nil
