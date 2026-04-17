@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type metricsServerModel struct {
@@ -40,45 +41,20 @@ type metricsServerModel struct {
 	OTelCompression        types.String `tfsdk:"opentelemetry_compression"`
 }
 
-func boolToInt64Ptr(boolPtr *bool) *int64 {
-	if boolPtr != nil {
-		var result int64
-
-		if *boolPtr {
-			result = int64(1)
-		} else {
-			result = int64(0)
-		}
-
-		return &result
-	}
-
-	return nil
-}
-
-func int64ToBoolPtr(int64ptr *int64) *bool {
-	if int64ptr != nil {
-		var result bool
-
-		if *int64ptr == 0 {
-			result = false
-		} else {
-			result = true
-		}
-
-		return &result
-	}
-
-	return nil
-}
-
-// importFromAPI takes data from metrics server PVE API response and set fields based on it.
-// Note: API response does not contain name so it must be passed directly.
-func (m *metricsServerModel) importFromAPI(name string, data *metrics.ServerData) {
+// fromAPI populates the model from a metrics server PVE API response.
+// The API response does not contain the name, so it must be passed directly.
+func (m *metricsServerModel) fromAPI(name string, data *metrics.ServerData) {
 	m.ID = types.StringValue(name)
 	m.Name = types.StringValue(name)
 
-	m.Disable = types.BoolPointerValue(int64ToBoolPtr(data.Disable))
+	// `disable` has a schema Default of false; the API omits it when false, so
+	// normalize here. `verify-certificate` and `otel-verify-ssl` are type-specific
+	// and the caller preserves plan/state values; map API-provided values through
+	// and leave null otherwise so the caller's override path stays straightforward.
+	m.Disable = boolOrDefault(data.Disable, false)
+	m.InfluxVerify = types.BoolPointerValue(data.Verify.PointerBool())
+	m.OTelVerifySSL = types.BoolPointerValue(data.OTelVerifySSL.PointerBool())
+
 	m.MTU = types.Int64PointerValue(data.MTU)
 	m.Port = types.Int64Value(data.Port)
 	m.Server = types.StringValue(data.Server)
@@ -90,26 +66,49 @@ func (m *metricsServerModel) importFromAPI(name string, data *metrics.ServerData
 	m.InfluxMaxBodySize = types.Int64PointerValue(data.MaxBodySize)
 	m.InfluxOrganization = types.StringPointerValue(data.Organization)
 	m.InfluxToken = types.StringPointerValue(data.Token)
-	m.InfluxVerify = types.BoolPointerValue(int64ToBoolPtr(data.Verify))
 	m.GraphitePath = types.StringPointerValue(data.Path)
 	m.GraphiteProto = types.StringPointerValue(data.Proto)
 	m.OTelProto = types.StringPointerValue(data.OTelProto)
 	m.OTelPath = types.StringPointerValue(data.OTelPath)
 	m.OTelTimeout = types.Int64PointerValue(data.OTelTimeout)
 	m.OTelHeaders = types.StringPointerValue(data.OTelHeaders)
-	m.OTelVerifySSL = types.BoolPointerValue(int64ToBoolPtr(data.OTelVerifySSL))
 	m.OTelMaxBodySize = types.Int64PointerValue(data.OTelMaxBodySize)
 	m.OTelResourceAttributes = types.StringPointerValue(data.OTelResourceAttributes)
 	m.OTelCompression = types.StringPointerValue(data.OTelCompression)
 }
 
-// toAPIRequestBody creates metrics server request data for PUT and POST requests.
-func (m *metricsServerModel) toAPIRequestBody() *metrics.ServerRequestData {
+// boolOrDefault returns the value pointed to by b, falling back to def when nil.
+// Used for API fields that the server omits when they equal the default.
+func boolOrDefault(b *proxmoxtypes.CustomBool, def bool) types.Bool {
+	if v := b.PointerBool(); v != nil {
+		return types.BoolValue(*v)
+	}
+
+	return types.BoolValue(def)
+}
+
+// preserveTypeSpecificBools copies InfluxVerify and OTelVerifySSL from src onto dst
+// when dst has null values. PVE omits these fields from GET responses when they equal
+// the server default, so the caller's plan (Create/Update) or prior state (Read) is
+// the authoritative source. A universal schema Default would leak the value into
+// toAPI for non-matching server types, which PVE rejects.
+func preserveTypeSpecificBools(dst, src *metricsServerModel) {
+	if dst.InfluxVerify.IsNull() {
+		dst.InfluxVerify = src.InfluxVerify
+	}
+
+	if dst.OTelVerifySSL.IsNull() {
+		dst.OTelVerifySSL = src.OTelVerifySSL
+	}
+}
+
+// toAPI converts the Terraform model to a metrics server request body used for both POST and PUT.
+func (m *metricsServerModel) toAPI() *metrics.ServerRequestData {
 	data := &metrics.ServerRequestData{}
 
 	data.ID = m.Name.ValueString()
 
-	data.Disable = boolToInt64Ptr(m.Disable.ValueBoolPointer())
+	data.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
 	data.MTU = m.MTU.ValueInt64Pointer()
 	data.Port = m.Port.ValueInt64()
 	data.Server = m.Server.ValueString()
@@ -121,14 +120,14 @@ func (m *metricsServerModel) toAPIRequestBody() *metrics.ServerRequestData {
 	data.MaxBodySize = m.InfluxMaxBodySize.ValueInt64Pointer()
 	data.Organization = m.InfluxOrganization.ValueStringPointer()
 	data.Token = m.InfluxToken.ValueStringPointer()
-	data.Verify = boolToInt64Ptr(m.InfluxVerify.ValueBoolPointer())
+	data.Verify = proxmoxtypes.CustomBoolPtr(m.InfluxVerify.ValueBoolPointer())
 	data.Path = m.GraphitePath.ValueStringPointer()
 	data.Proto = m.GraphiteProto.ValueStringPointer()
 	data.OTelProto = m.OTelProto.ValueStringPointer()
 	data.OTelPath = m.OTelPath.ValueStringPointer()
 	data.OTelTimeout = m.OTelTimeout.ValueInt64Pointer()
 	data.OTelHeaders = m.OTelHeaders.ValueStringPointer()
-	data.OTelVerifySSL = boolToInt64Ptr(m.OTelVerifySSL.ValueBoolPointer())
+	data.OTelVerifySSL = proxmoxtypes.CustomBoolPtr(m.OTelVerifySSL.ValueBoolPointer())
 	data.OTelMaxBodySize = m.OTelMaxBodySize.ValueInt64Pointer()
 	data.OTelResourceAttributes = m.OTelResourceAttributes.ValueStringPointer()
 	data.OTelCompression = m.OTelCompression.ValueStringPointer()
@@ -153,13 +152,16 @@ type metricsServerDatasourceModel struct {
 	OTelCompression        types.String `tfsdk:"opentelemetry_compression"`
 }
 
-// importFromAPI takes data from metrics server PVE API response and set fields based on it.
-// Note: API response does not contain name so it must be passed directly.
-func (m *metricsServerDatasourceModel) importFromAPI(name string, data *metrics.ServerData) {
+// fromAPI populates the datasource model from a metrics server PVE API response.
+// The API response does not contain the name, so it must be passed directly.
+func (m *metricsServerDatasourceModel) fromAPI(name string, data *metrics.ServerData) {
 	m.ID = types.StringValue(name)
 	m.Name = types.StringValue(name)
 
-	m.Disable = types.BoolPointerValue(int64ToBoolPtr(data.Disable))
+	// `disable` is omitted when false; the rest pass through directly.
+	m.Disable = boolOrDefault(data.Disable, false)
+	m.OTelVerifySSL = types.BoolPointerValue(data.OTelVerifySSL.PointerBool())
+
 	m.Port = types.Int64Value(data.Port)
 	m.Server = types.StringValue(data.Server)
 	m.Type = types.StringPointerValue(data.Type)
@@ -167,7 +169,6 @@ func (m *metricsServerDatasourceModel) importFromAPI(name string, data *metrics.
 	m.OTelPath = types.StringPointerValue(data.OTelPath)
 	m.OTelTimeout = types.Int64PointerValue(data.OTelTimeout)
 	m.OTelHeaders = types.StringPointerValue(data.OTelHeaders)
-	m.OTelVerifySSL = types.BoolPointerValue(int64ToBoolPtr(data.OTelVerifySSL))
 	m.OTelMaxBodySize = types.Int64PointerValue(data.OTelMaxBodySize)
 	m.OTelResourceAttributes = types.StringPointerValue(data.OTelResourceAttributes)
 	m.OTelCompression = types.StringPointerValue(data.OTelCompression)

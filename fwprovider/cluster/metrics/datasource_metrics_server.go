@@ -8,6 +8,7 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -16,6 +17,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 )
 
@@ -149,18 +151,22 @@ func (r *metricsServerDatasource) Read(
 
 	data, err := r.client.GetServer(ctx, state.ID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Refresh Resource",
-			"An unexpected error occurred while attempting to refresh datasource state. "+
-				"Please retry the operation or report this issue to the provider developers.\n\n"+
-				"Error: "+err.Error(),
-		)
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			resp.Diagnostics.AddError(
+				"Metrics Server Not Found",
+				fmt.Sprintf("Metrics server with ID %q was not found", state.ID.ValueString()),
+			)
+
+			return
+		}
+
+		resp.Diagnostics.AddError("Unable to Read Metrics Server", err.Error())
 
 		return
 	}
 
 	readModel := &metricsServerDatasourceModel{}
-	readModel.importFromAPI(state.ID.ValueString(), data)
+	readModel.fromAPI(state.ID.ValueString(), data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -90,9 +91,10 @@ func (r *metricsServerResource) Schema(
 				},
 			},
 			"disable": schema.BoolAttribute{
-				Description: "Set this to `true` to disable this metric server.",
+				Description: "Set this to `true` to disable this metric server. Defaults to `false`.",
 				Optional:    true,
-				Default:     nil,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"mtu": schema.Int64Attribute{
 				Description: "MTU (maximum transmission unit) for metrics transmission over UDP. " +
@@ -162,9 +164,8 @@ func (r *metricsServerResource) Schema(
 			},
 			"influx_verify": schema.BoolAttribute{
 				Description: "Set to `false` to disable certificate verification for https " +
-					"endpoints.",
+					"endpoints. If not set, PVE default is `true`.",
 				Optional: true,
-				Default:  nil,
 			},
 			"graphite_path": schema.StringAttribute{
 				Description: "Root graphite path (ex: `proxmox.mycluster.mykey`).",
@@ -208,7 +209,6 @@ func (r *metricsServerResource) Schema(
 				Description: "OpenTelemetry verify SSL certificates. " +
 					"If not set, PVE default is `true`.",
 				Optional: true,
-				Default:  nil,
 			},
 			"opentelemetry_max_body_size": schema.Int64Attribute{
 				Description: "OpenTelemetry maximum request body size in bytes. " +
@@ -255,18 +255,16 @@ func (r *metricsServerResource) Read(
 			return
 		}
 
-		resp.Diagnostics.AddError(
-			"Unable to Refresh Resource",
-			"An unexpected error occurred while attempting to refresh resource state. "+
-				"Please retry the operation or report this issue to the provider developers.\n\n"+
-				"Error: "+err.Error(),
-		)
+		resp.Diagnostics.AddError("Unable to Read Metrics Server", err.Error())
 
 		return
 	}
 
 	readModel := &metricsServerModel{}
-	readModel.importFromAPI(state.ID.ValueString(), data)
+	readModel.fromAPI(state.ID.ValueString(), data)
+	// PVE omits verify-certificate / otel-verify-ssl from GET responses when they equal
+	// the server default; preserve the prior state so we don't churn them to null.
+	preserveTypeSpecificBools(readModel, &state)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
@@ -284,22 +282,25 @@ func (r *metricsServerResource) Create(
 		return
 	}
 
-	reqData := plan.toAPIRequestBody()
-
-	err := r.client.CreateServer(ctx, reqData)
+	err := r.client.CreateServer(ctx, plan.toAPI())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Create Resource",
-			"An unexpected error occurred while creating the resource create request.\n\n"+
-				"Error: "+err.Error(),
-		)
-
+		resp.Diagnostics.AddError("Unable to Create Metrics Server", err.Error())
 		return
 	}
 
-	plan.ID = plan.Name
+	data, err := r.client.GetServer(ctx, plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to Read Metrics Server After Creation", err.Error())
+		return
+	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	readModel := &metricsServerModel{}
+	readModel.fromAPI(plan.Name.ValueString(), data)
+	// PVE omits verify-certificate / otel-verify-ssl from GET responses when they equal
+	// the server default; preserve the plan so explicit values survive the round-trip.
+	preserveTypeSpecificBools(readModel, &plan)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
 func (r *metricsServerResource) Update(
@@ -341,21 +342,28 @@ func (r *metricsServerResource) Update(
 	attribute.CheckDelete(plan.OTelResourceAttributes, state.OTelResourceAttributes, &toDelete, "otel-resource-attributes")
 	attribute.CheckDelete(plan.OTelCompression, state.OTelCompression, &toDelete, "otel-compression")
 
-	reqData := plan.toAPIRequestBody()
+	reqData := plan.toAPI()
 	reqData.Delete = toDelete
 
 	err := r.client.UpdateServer(ctx, reqData)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Update Resource",
-			"An unexpected error occurred while creating the resource update request.\n\n"+
-				"Error: "+err.Error(),
-		)
-
+		resp.Diagnostics.AddError("Unable to Update Metrics Server", err.Error())
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	data, err := r.client.GetServer(ctx, plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to Read Metrics Server After Update", err.Error())
+		return
+	}
+
+	readModel := &metricsServerModel{}
+	readModel.fromAPI(plan.Name.ValueString(), data)
+	// PVE omits verify-certificate / otel-verify-ssl from GET responses when they equal
+	// the server default; preserve the plan so explicit values survive the round-trip.
+	preserveTypeSpecificBools(readModel, &plan)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
 func (r *metricsServerResource) Delete(
@@ -372,18 +380,8 @@ func (r *metricsServerResource) Delete(
 	}
 
 	err := r.client.DeleteServer(ctx, state.ID.ValueString())
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			return
-		}
-
-		resp.Diagnostics.AddError(
-			"Unable to Delete Resource",
-			"An unexpected error occurred while creating the resource delete request.\n\n"+
-				"Error: "+err.Error(),
-		)
-
-		return
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
+		resp.Diagnostics.AddError("Unable to Delete Metrics Server", err.Error())
 	}
 }
 
@@ -396,25 +394,20 @@ func (r *metricsServerResource) ImportState(
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError(
-				"Resource does not exist",
-				"Resource you try to import does not exist.\n\n"+
-					"Error: "+err.Error(),
+				"Metrics Server Not Found",
+				fmt.Sprintf("Metrics server with ID %q was not found", req.ID),
 			)
 
 			return
 		}
 
-		resp.Diagnostics.AddError(
-			"Unable to Import Resource",
-			"An unexpected error occurred while attempting to import resource state.\n\n"+
-				"Error: "+err.Error(),
-		)
+		resp.Diagnostics.AddError("Unable to Import Metrics Server", err.Error())
 
 		return
 	}
 
 	readModel := &metricsServerModel{}
-	readModel.importFromAPI(req.ID, data)
+	readModel.fromAPI(req.ID, data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

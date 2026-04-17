@@ -6,38 +6,42 @@
 
 package metrics
 
+import (
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+)
+
 // ServerData contains the data from a metrics server response.
 type ServerData struct {
-	Disable *int64  `json:"disable,omitempty" url:"disable,omitempty"`
-	ID      string  `json:"id,omitempty"      url:"id,omitempty"`
-	MTU     *int64  `json:"mtu"               url:"mtu,omitempty"`
-	Port    int64   `json:"port"              url:"port"`
-	Server  string  `json:"server"            url:"server"`
-	Timeout *int64  `json:"timeout,omitempty" url:"timeout,omitempty"`
-	Type    *string `json:"type,omitempty"    url:"type,omitempty"`
+	Disable *types.CustomBool `json:"disable,omitempty" url:"disable,omitempty,int"`
+	ID      string            `json:"id,omitempty"      url:"id,omitempty"`
+	MTU     *int64            `json:"mtu"               url:"mtu,omitempty"`
+	Port    int64             `json:"port"              url:"port"`
+	Server  string            `json:"server"            url:"server"`
+	Timeout *int64            `json:"timeout,omitempty" url:"timeout,omitempty"`
+	Type    *string           `json:"type,omitempty"    url:"type,omitempty"`
 
 	// influxdb only options
-	APIPathPrefix *string `json:"api-path-prefix,omitempty"    url:"api-path-prefix,omitempty"`
-	Bucket        *string `json:"bucket,omitempty"             url:"bucket,omitempty"`
-	InfluxDBProto *string `json:"influxdbproto,omitempty"      url:"influxdbproto,omitempty"`
-	MaxBodySize   *int64  `json:"max-body-size,omitempty"      url:"max-body-size,omitempty"`
-	Organization  *string `json:"organization,omitempty"       url:"organization,omitempty"`
-	Token         *string `json:"token,omitempty"              url:"token,omitempty"`
-	Verify        *int64  `json:"verify-certificate,omitempty" url:"verify-certificate,omitempty"`
+	APIPathPrefix *string           `json:"api-path-prefix,omitempty"    url:"api-path-prefix,omitempty"`
+	Bucket        *string           `json:"bucket,omitempty"             url:"bucket,omitempty"`
+	InfluxDBProto *string           `json:"influxdbproto,omitempty"      url:"influxdbproto,omitempty"`
+	MaxBodySize   *int64            `json:"max-body-size,omitempty"      url:"max-body-size,omitempty"`
+	Organization  *string           `json:"organization,omitempty"       url:"organization,omitempty"`
+	Token         *string           `json:"token,omitempty"              url:"token,omitempty"`
+	Verify        *types.CustomBool `json:"verify-certificate,omitempty" url:"verify-certificate,omitempty,int"`
 
 	// graphite only options
 	Path  *string `json:"path,omitempty"  url:"path,omitempty"`
 	Proto *string `json:"proto,omitempty" url:"proto,omitempty"`
 
 	// opentelemetry only options
-	OTelProto              *string `json:"otel-protocol,omitempty"            url:"otel-protocol,omitempty"`
-	OTelPath               *string `json:"otel-path,omitempty"                url:"otel-path,omitempty"`
-	OTelTimeout            *int64  `json:"otel-timeout,omitempty"             url:"otel-timeout,omitempty"`
-	OTelHeaders            *string `json:"otel-headers,omitempty"             url:"otel-headers,omitempty"`
-	OTelVerifySSL          *int64  `json:"otel-verify-ssl,omitempty"          url:"otel-verify-ssl,omitempty"`
-	OTelMaxBodySize        *int64  `json:"otel-max-body-size,omitempty"       url:"otel-max-body-size,omitempty"`
-	OTelResourceAttributes *string `json:"otel-resource-attributes,omitempty" url:"otel-resource-attributes,omitempty"`
-	OTelCompression        *string `json:"otel-compression,omitempty"         url:"otel-compression,omitempty"`
+	OTelProto              *string           `json:"otel-protocol,omitempty"            url:"otel-protocol,omitempty"`
+	OTelPath               *string           `json:"otel-path,omitempty"                url:"otel-path,omitempty"`
+	OTelTimeout            *int64            `json:"otel-timeout,omitempty"             url:"otel-timeout,omitempty"`
+	OTelHeaders            *string           `json:"otel-headers,omitempty"             url:"otel-headers,omitempty"`
+	OTelVerifySSL          *types.CustomBool `json:"otel-verify-ssl,omitempty"          url:"otel-verify-ssl,omitempty,int"`
+	OTelMaxBodySize        *int64            `json:"otel-max-body-size,omitempty"       url:"otel-max-body-size,omitempty"`
+	OTelResourceAttributes *string           `json:"otel-resource-attributes,omitempty" url:"otel-resource-attributes,omitempty"`
+	OTelCompression        *string           `json:"otel-compression,omitempty"         url:"otel-compression,omitempty"`
 }
 
 // ServerResponseBody contains the body from a metrics server response.

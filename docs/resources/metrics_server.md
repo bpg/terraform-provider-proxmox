@@ -50,7 +50,7 @@ resource "proxmox_metrics_server" "opentelemetry_server" {
 
 ### Optional
 
-- `disable` (Boolean) Set this to `true` to disable this metric server.
+- `disable` (Boolean) Set this to `true` to disable this metric server. Defaults to `false`.
 - `graphite_path` (String) Root graphite path (ex: `proxmox.mycluster.mykey`).
 - `graphite_proto` (String) Protocol to send graphite data. Choice is between `udp` | `tcp`. If not set, PVE default is `udp`.
 - `influx_api_path_prefix` (String) An API path prefix inserted between `<host>:<port>/` and `/api2/`. Can be useful if the InfluxDB service runs behind a reverse proxy.
@@ -59,7 +59,7 @@ resource "proxmox_metrics_server" "opentelemetry_server" {
 - `influx_max_body_size` (Number) InfluxDB max-body-size in bytes. Requests are batched up to this size. If not set, PVE default is `25000000`.
 - `influx_organization` (String) The InfluxDB organization. Only necessary when using the http v2 api. Has no meaning when using v2 compatibility api.
 - `influx_token` (String, Sensitive) The InfluxDB access token. Only necessary when using the http v2 api. If the v2 compatibility api is used, use `user:password` instead.
-- `influx_verify` (Boolean) Set to `false` to disable certificate verification for https endpoints.
+- `influx_verify` (Boolean) Set to `false` to disable certificate verification for https endpoints. If not set, PVE default is `true`.
 - `mtu` (Number) MTU (maximum transmission unit) for metrics transmission over UDP. If not set, PVE default is `1500` (allowed `512` - `65536`).
 - `opentelemetry_compression` (String) OpenTelemetry compression algorithm for requests. Choice is between `none` | `gzip`. If not set, PVE default is `gzip`.
 - `opentelemetry_headers` (String, Sensitive) OpenTelemetry custom HTTP headers as JSON, base64 encoded.
