@@ -331,34 +331,29 @@ func (m *clusterOptionsModel) fromAPI(opts *cluster.OptionsResponseData) error {
 	m.BandwidthLimitMove = types.Int64Null()
 	m.BandwidthLimitRestore = types.Int64Null()
 
-	//nolint:nestif
 	if opts.BandwidthLimit != nil {
 		for bandwidth := range strings.SplitSeq(*opts.BandwidthLimit, ",") {
+			// Guard against malformed segments (e.g. trailing comma, bare token): SplitN returns len 1 without an "=".
 			bandwidthData := strings.SplitN(bandwidth, "=", 2)
-			bandwidthName := bandwidthData[0]
+			if len(bandwidthData) != 2 {
+				continue
+			}
 
 			bandwidthLimit, err := strconv.ParseInt(bandwidthData[1], 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse bandwidth limit: %s", *opts.BandwidthLimit)
 			}
 
-			if bandwidthName == "clone" {
+			switch bandwidthData[0] {
+			case "clone":
 				m.BandwidthLimitClone = types.Int64Value(bandwidthLimit)
-			}
-
-			if bandwidthName == "default" {
+			case "default":
 				m.BandwidthLimitDefault = types.Int64Value(bandwidthLimit)
-			}
-
-			if bandwidthName == "migration" {
+			case "migration":
 				m.BandwidthLimitMigration = types.Int64Value(bandwidthLimit)
-			}
-
-			if bandwidthName == "move" {
+			case "move":
 				m.BandwidthLimitMove = types.Int64Value(bandwidthLimit)
-			}
-
-			if bandwidthName == "restore" {
+			case "restore":
 				m.BandwidthLimitRestore = types.Int64Value(bandwidthLimit)
 			}
 		}
