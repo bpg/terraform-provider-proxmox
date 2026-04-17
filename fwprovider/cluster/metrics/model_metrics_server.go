@@ -9,6 +9,7 @@ package metrics
 import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -108,29 +109,29 @@ func (m *metricsServerModel) toAPI() *metrics.ServerRequestData {
 
 	data.ID = m.Name.ValueString()
 
-	data.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
-	data.MTU = m.MTU.ValueInt64Pointer()
+	data.Disable = attribute.CustomBoolPtrFromValue(m.Disable)
+	data.MTU = attribute.Int64PtrFromValue(m.MTU)
 	data.Port = m.Port.ValueInt64()
 	data.Server = m.Server.ValueString()
-	data.Timeout = m.Timeout.ValueInt64Pointer()
-	data.Type = m.Type.ValueStringPointer()
-	data.APIPathPrefix = m.InfluxAPIPathPrefix.ValueStringPointer()
-	data.Bucket = m.InfluxBucket.ValueStringPointer()
-	data.InfluxDBProto = m.InfluxDBProto.ValueStringPointer()
-	data.MaxBodySize = m.InfluxMaxBodySize.ValueInt64Pointer()
-	data.Organization = m.InfluxOrganization.ValueStringPointer()
-	data.Token = m.InfluxToken.ValueStringPointer()
-	data.Verify = proxmoxtypes.CustomBoolPtr(m.InfluxVerify.ValueBoolPointer())
-	data.Path = m.GraphitePath.ValueStringPointer()
-	data.Proto = m.GraphiteProto.ValueStringPointer()
-	data.OTelProto = m.OTelProto.ValueStringPointer()
-	data.OTelPath = m.OTelPath.ValueStringPointer()
-	data.OTelTimeout = m.OTelTimeout.ValueInt64Pointer()
-	data.OTelHeaders = m.OTelHeaders.ValueStringPointer()
-	data.OTelVerifySSL = proxmoxtypes.CustomBoolPtr(m.OTelVerifySSL.ValueBoolPointer())
-	data.OTelMaxBodySize = m.OTelMaxBodySize.ValueInt64Pointer()
-	data.OTelResourceAttributes = m.OTelResourceAttributes.ValueStringPointer()
-	data.OTelCompression = m.OTelCompression.ValueStringPointer()
+	data.Timeout = attribute.Int64PtrFromValue(m.Timeout)
+	data.Type = attribute.StringPtrFromValue(m.Type)
+	data.APIPathPrefix = attribute.StringPtrFromValue(m.InfluxAPIPathPrefix)
+	data.Bucket = attribute.StringPtrFromValue(m.InfluxBucket)
+	data.InfluxDBProto = attribute.StringPtrFromValue(m.InfluxDBProto)
+	data.MaxBodySize = attribute.Int64PtrFromValue(m.InfluxMaxBodySize)
+	data.Organization = attribute.StringPtrFromValue(m.InfluxOrganization)
+	data.Token = attribute.StringPtrFromValue(m.InfluxToken)
+	data.Verify = attribute.CustomBoolPtrFromValue(m.InfluxVerify)
+	data.Path = attribute.StringPtrFromValue(m.GraphitePath)
+	data.Proto = attribute.StringPtrFromValue(m.GraphiteProto)
+	data.OTelProto = attribute.StringPtrFromValue(m.OTelProto)
+	data.OTelPath = attribute.StringPtrFromValue(m.OTelPath)
+	data.OTelTimeout = attribute.Int64PtrFromValue(m.OTelTimeout)
+	data.OTelHeaders = attribute.StringPtrFromValue(m.OTelHeaders)
+	data.OTelVerifySSL = attribute.CustomBoolPtrFromValue(m.OTelVerifySSL)
+	data.OTelMaxBodySize = attribute.Int64PtrFromValue(m.OTelMaxBodySize)
+	data.OTelResourceAttributes = attribute.StringPtrFromValue(m.OTelResourceAttributes)
+	data.OTelCompression = attribute.StringPtrFromValue(m.OTelCompression)
 
 	return data
 }
