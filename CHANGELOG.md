@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.103.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.102.0...v0.103.0) (2026-04-18)
+
+
+### Features
+
+* **cluster:** refactoring and improving `proxmox_metrics_server` ([#2805](https://github.com/bpg/terraform-provider-proxmox/issues/2805)) ([354abf4](https://github.com/bpg/terraform-provider-proxmox/commit/354abf450e7d37c0d866a94e9d714a70d1ba5e43))
+* **file:** add `file_name_regex` filter to `proxmox_files` data source ([#2802](https://github.com/bpg/terraform-provider-proxmox/issues/2802)) ([c84eca9](https://github.com/bpg/terraform-provider-proxmox/commit/c84eca9d13180c11019ca91262a081506c5f28d6))
+* **hw:** add `proxmox_hardware_pci` data source ([#2799](https://github.com/bpg/terraform-provider-proxmox/issues/2799)) ([76618a1](https://github.com/bpg/terraform-provider-proxmox/commit/76618a142c643ecc6820822120c583508ddc5c2f))
+
+
+### Miscellaneous
+
+* **cluster:** align cluster_options with ADR-003/005 ([#2804](https://github.com/bpg/terraform-provider-proxmox/issues/2804)) ([829ba6b](https://github.com/bpg/terraform-provider-proxmox/commit/829ba6bafcf86e740ca3fe09838775390d83efc9))
+* **deps:** update image golang (fcdb3e4 → 5f3787b) ([#2807](https://github.com/bpg/terraform-provider-proxmox/issues/2807)) ([d067ce0](https://github.com/bpg/terraform-provider-proxmox/commit/d067ce083ea1ed5ab849d06253fcc52c4cedd629))
+
 ## [0.102.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.101.1...v0.102.0) (2026-04-14)
 
 
