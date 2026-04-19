@@ -99,6 +99,8 @@ PR(s) affected, rationale.
 |---|---|---|---|
 | 2026-04-19 | Audit Section 4 (per-attribute classification) deferred to dedicated mitmproxy session — code-only sections (1, 5, 7) front-loaded | PR #1 | User chose option 2 (sequence audit by infra dependency) |
 | 2026-04-19 | Audit Sections 2 (capabilities), 3 (legacy tests), 6 (Q5 power_state notes) added — only Section 4 (mitmproxy) remains | PR #1 | Continued after first checkpoint commit |
+| 2026-04-19 | Section 4 complete — mitmproxy + qemu-server.git source cross-validated. Major finding: PVE returns absent for nearly all unset config fields; ~23 attributes drop Computed (Optional+Computed → Optional only) | PR #1 / #3 | Empirical mitmproxy data is much more aggressive than the design predicted |
+| 2026-04-19 | Per-attribute classification in gap matrix updated from `open` to confirmed targets | PR #3 | Section 4 results applied to gap matrix |
 
 ## Active blockers
 

@@ -178,51 +178,55 @@ file, finalized.
 
 ### `cpu` attributes (`fwprovider/nodes/vm/cpu/resource_schema.go`)
 
-| Attribute | Current schema | Target schema (post mitmproxy) | Status | Target PR |
+| Attribute | Current schema | Target schema | Status | Target PR |
 |---|---|---|---|---|
-| `cpu.affinity` | Optional+Computed | TBD | open | #3 |
-| `cpu.architecture` | Optional+Computed | TBD | open | #3 |
-| `cpu.cores` | Optional+Computed | TBD | open | #3 |
-| `cpu.flags` | Optional+Computed | TBD | open | #3 |
-| `cpu.hotplugged` | Optional+Computed | dropped (rehomed to `vcpus`) | — | #3 / #14 |
-| `cpu.limit` | Optional+Computed | TBD | open | #3 |
-| `cpu.numa` | Optional+Computed | dropped (rehomed to `numa.enabled`) | — | #3 / #13 |
-| `cpu.sockets` | Optional+Computed | TBD | open | #3 |
-| `cpu.type` | Optional+Computed | TBD | open | #3 |
-| `cpu.units` | Optional+Computed | TBD | open | #3 |
+| `cpu` (block) | Optional+Computed | Optional | todo | #3 |
+| `cpu.affinity` | Optional+Computed | Optional | todo | #3 |
+| `cpu.architecture` | Optional+Computed | Optional | todo | #3 |
+| `cpu.cores` | Optional+Computed | Optional | todo | #3 |
+| `cpu.flags` | Optional+Computed | Optional | todo | #3 |
+| `cpu.hotplugged` | Optional+Computed | dropped (rehomed `vcpus`) | todo | #3 / #14 |
+| `cpu.limit` | Optional+Computed | Optional | todo | #3 |
+| `cpu.numa` | Optional+Computed | dropped (rehomed `numa.enabled`) | todo | #3 / #13 |
+| `cpu.sockets` | Optional+Computed | Optional | todo | #3 |
+| `cpu.type` | Optional+Computed | Optional | todo | #3 |
+| `cpu.units` | Optional+Computed | Optional | todo | #3 |
 
 ### `vga` attributes (`fwprovider/nodes/vm/vga/resource_schema.go`)
 
-| Attribute | Current schema | Target schema (post mitmproxy) | Status | Target PR |
+| Attribute | Current schema | Target schema | Status | Target PR |
 |---|---|---|---|---|
-| `vga.clipboard` | Optional+Computed | TBD | open | #3 |
-| `vga.type` | Optional+Computed | TBD | open | #3 |
-| `vga.memory` | Optional+Computed | TBD | open | #3 |
+| `vga` (block) | Optional+Computed (`UseStateForUnknown`) | Optional (drop planmodifier) | todo | #3 |
+| `vga.clipboard` | Optional+Computed | Optional | todo | #3 |
+| `vga.type` | Optional+Computed | Optional | todo | #3 |
+| `vga.memory` | Optional+Computed | Optional | todo | #3 |
 
 ### `rng` attributes (`fwprovider/nodes/vm/rng/resource_schema.go`)
 
-| Attribute | Current schema | Target schema (post mitmproxy) | Status | Target PR |
+| Attribute | Current schema | Target schema | Status | Target PR |
 |---|---|---|---|---|
-| `rng.source` | Optional+Computed | TBD | open | #3 |
-| `rng.max_bytes` | Optional+Computed | TBD | open | #3 |
-| `rng.period` | Optional+Computed | TBD | open | #3 |
+| `rng` (block) | Optional+Computed (`UseStateForUnknown`) | Optional (drop planmodifier) | todo | #3 |
+| `rng.source` | Optional+Computed | Optional | todo | #3 |
+| `rng.max_bytes` | Optional+Computed | Optional | todo | #3 |
+| `rng.period` | Optional+Computed | Optional | todo | #3 |
 
 ### `memory` attributes (`fwprovider/nodes/vm/memory/resource_schema.go`)
 
-| Attribute | Current schema | Target schema (post mitmproxy) | Status | Target PR |
+| Attribute | Current schema | Target schema | Status | Target PR |
 |---|---|---|---|---|
-| `memory.size` | Optional+Computed+Default=512 | TBD (drop Default per F39; classify) | open | #3 |
-| `memory.balloon` | Optional+Computed+Default=0 | TBD (drop Default per F39; classify) | open | #3 |
-| `memory.shares` | Optional+Computed+Default=1000 | TBD (drop Default per F39; classify) | open | #3 |
-| `memory.hugepages` | Optional+Computed | TBD | open | #3 |
-| `memory.keep_hugepages` | Optional+Computed | TBD | open | #3 |
+| `memory` (block) | Optional+Computed | Optional | todo | #3 |
+| `memory.size` | Optional+Computed+`Default(512)` | Optional (drop Default) | todo | #3 |
+| `memory.balloon` | Optional+Computed+`Default(0)` | Optional (drop Default) | todo | #3 |
+| `memory.shares` | Optional+Computed+`Default(1000)` | Optional (drop Default) | todo | #3 |
+| `memory.hugepages` | Optional+Computed | Optional | todo | #3 |
+| `memory.keep_hugepages` | Optional+Computed | Optional | todo | #3 |
 
 ### `cdrom` map-level + per-slot (`fwprovider/nodes/vm/cdrom/resource_schema.go`)
 
-| Attribute | Current schema | Target schema (post mitmproxy) | Status | Target PR |
+| Attribute | Current schema | Target schema | Status | Target PR |
 |---|---|---|---|---|
-| `cdrom` (map-level) | Optional+Computed | TBD (verify PVE auto-populates default cdrom devices) | open | #3 |
-| `cdrom[slot].file_id` | Optional+Computed+Default="cdrom" | TBD (F47: verify if PVE auto-defaults) | open | #3 |
+| `cdrom` (map-level) | Optional+Computed | Optional (drop Computed; PVE doesn't auto-attach) | todo | #3 |
+| `cdrom[slot].file_id` | Optional+Computed+`Default("cdrom")` | Optional+Computed (kept — per-slot value always present when slot exists) | confirmed | — |
 
 ### Top-level (existing)
 

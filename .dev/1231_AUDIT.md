@@ -459,17 +459,140 @@ its sub-packages) reclassified per the new ADR-004 PVE-defaults rule.
 > | Returns null/absent when unset | `Optional` only |
 > | Provider-only attribute (no PVE counterpart) | `Optional + Default` |
 
-### Verified via mitmproxy trace
+### Methodology (Section 4)
 
-| Attribute | Current schema | PVE Read behavior | Target schema | Action | Target PR |
+Two data sources reconciled:
+
+1. **Empirical mitmproxy trace** (this audit, 2026-04-19) — ran `TestAccResourceVMShort` through `mitmdump --mode regular@8082 --flow-detail 4`. Captured 25 `GET /nodes/pve/qemu/{vmid}/config` responses across the test sub-cases. Logged at `/tmp/api_debug.log`.
+2. **PVE source** — `qemu-server.git src/PVE/QemuServer.pm` `$confdesc` hashref documents internal defaults per field.
+
+### Key empirical finding
+
+For a minimal VM with only `node_name` set, PVE returns ONLY:
+
+```json
+{
+    "boot": " ",
+    "smbios1": "uuid=<random-uuid>",
+    "vmgenid": "<random-guid>",
+    "meta": "creation-qemu=...,ctime=...",
+    "digest": "<config-digest>"
+}
+```
+
+**Every other field is absent.** Setting `name`, `description`, `tags` adds them to the response (when set, omitted when unset). PVE's internal defaults from `$confdesc` (cores=1, sockets=1, vga.type=std, etc.) are NOT written to config or surfaced via GET — they are applied only when QEMU is launched.
+
+**Implication:** Under the ADR-004 amendment PVE-defaults rule, almost every existing `Optional+Computed` attribute must drop `Computed` and become `Optional` only.
+
+### `cpu` attributes (`fwprovider/nodes/vm/cpu/resource_schema.go`)
+
+| Attribute | Current | PVE Read | qemu-server default | Target schema | Target PR |
 |---|---|---|---|---|---|
-| TBD | — | — | — | — | — |
+| `cpu` (block) | Optional+Computed | absent (no nested fields surfaced) | n/a | **Optional** | #3 |
+| `cpu.affinity` | Optional+Computed | absent | none | **Optional** | #3 |
+| `cpu.architecture` | Optional+Computed | absent | none (root@pam only) | **Optional** | #3 |
+| `cpu.cores` | Optional+Computed | absent | 1 | **Optional** | #3 |
+| `cpu.flags` | Optional+Computed | absent | none | **Optional** | #3 |
+| `cpu.limit` | Optional+Computed | absent | 0 | **Optional** | #3 |
+| `cpu.numa` (bool) | Optional+Computed | absent | 0 | dropped (rehomed `numa.enabled` per P3) | #3 / #13 |
+| `cpu.sockets` | Optional+Computed | absent | 1 | **Optional** | #3 |
+| `cpu.type` | Optional+Computed | absent (in `cpu` property string when set) | kvm64 (within `cpu` property string) | **Optional** | #3 |
+| `cpu.units` | Optional+Computed | absent | 1024 (cgroup v1) / 100 (cgroup v2) | **Optional** | #3 |
+| `cpu.hotplugged` (vcpus) | Optional+Computed | absent | 0 | dropped (rehomed `vcpus` per P3) | #3 / #14 |
 
-### Pending mitmproxy verification
+### `vga` attributes (`fwprovider/nodes/vm/vga/resource_schema.go`)
 
-| Attribute | Current schema | Hypothesized PVE Read behavior | Notes |
-|---|---|---|---|
-| TBD | — | — | — |
+| Attribute | Current | PVE Read | qemu-server default | Target schema | Target PR |
+|---|---|---|---|---|---|
+| `vga` (block) | Optional+Computed (with `UseStateForUnknown`) | absent | std (type only) | **Optional** (drop UseStateForUnknown planmodifier too) | #3 |
+| `vga.clipboard` | Optional+Computed | absent | none | **Optional** | #3 |
+| `vga.type` | Optional+Computed | absent | std | **Optional** | #3 |
+| `vga.memory` | Optional+Computed | absent | none | **Optional** | #3 |
+
+### `rng` attributes (`fwprovider/nodes/vm/rng/resource_schema.go`)
+
+| Attribute | Current | PVE Read | qemu-server default | Target schema | Target PR |
+|---|---|---|---|---|---|
+| `rng` (block) | Optional+Computed (with `UseStateForUnknown`) | absent | none (root@pam only) | **Optional** (drop UseStateForUnknown planmodifier too) | #3 |
+| `rng.source` | Optional+Computed | absent | none | **Optional** | #3 |
+| `rng.max_bytes` | Optional+Computed | absent | none | **Optional** | #3 |
+| `rng.period` | Optional+Computed | absent | none | **Optional** | #3 |
+
+### `memory` attributes (`fwprovider/nodes/vm/memory/resource_schema.go`)
+
+| Attribute | Current | PVE Read | qemu-server default | Target schema | Target PR |
+|---|---|---|---|---|---|
+| `memory` (block) | Optional+Computed | absent | n/a | **Optional** | #3 |
+| `memory.size` | Optional+Computed+`Default(512)` | absent | none (PVE applies 512 at launch only) | **Optional** (drop Default per F39) | #3 |
+| `memory.balloon` | Optional+Computed+`Default(0)` | absent | none | **Optional** (drop Default) | #3 |
+| `memory.shares` | Optional+Computed+`Default(1000)` | absent | 1000 (PVE source — but absent in GET) | **Optional** (drop Default) | #3 |
+| `memory.hugepages` | Optional+Computed | absent | none | **Optional** | #3 |
+| `memory.keep_hugepages` | Optional+Computed | absent | 0 | **Optional** | #3 |
+
+### `cdrom` attributes (`fwprovider/nodes/vm/cdrom/resource_schema.go`)
+
+| Attribute | Current | PVE Read | qemu-server default | Target schema | Target PR |
+|---|---|---|---|---|---|
+| `cdrom` (map-level) | Optional+Computed | absent (no IDE devices auto-attached) | n/a | **Optional** (drop Computed) | #3 |
+| `cdrom[slot].file_id` | Optional+Computed+`Default("cdrom")` | varies (when device set, returns FileVolume; when unset, slot is absent entirely) | n/a (per-slot value is the storage:path string) | Optional+Computed (kept — per-slot block always has a `file_id` value when the slot exists; the block-level Optional handles "no slot") | #3 |
+
+### Top-level scalars (already in `proxmox_vm`)
+
+| Attribute | Current | PVE Read | qemu-server default | Target schema | Notes |
+|---|---|---|---|---|---|
+| `description` | Optional | absent when unset | none | confirmed `Optional` | No change |
+| `name` | Optional (with DNS validator) | absent when unset | none | confirmed `Optional` | No change |
+| `tags` | stringset (Optional) | absent when unset | none | confirmed `Optional` | No change |
+| `template` | Optional (RequiresReplace) | absent when 0 (false), present when 1 | 0 | confirmed `Optional` | No change. Note: PVE returns `template=1` only when set; this is a "presence as truthiness" pattern. |
+| `id` (SDK `vmid`) | Computed+Optional+RequiresReplace | always present (it's the path key) | n/a | confirmed | No change |
+| `node_name` | Required | n/a | n/a | confirmed `Required` | No change |
+| `stop_on_destroy` | Optional+Computed+Default=false | n/a (provider-only) | n/a | confirmed `Optional+Default` | No change (provider-only attribute per ADR-004) |
+| `purge_on_destroy` | Optional+Computed+Default=true | n/a (provider-only) | n/a | confirmed `Optional+Default` | No change |
+| `delete_unreferenced_disks_on_destroy` | Optional+Computed+Default=true | n/a (provider-only) | n/a | confirmed `Optional+Default` | No change |
+
+### Future fields with auto-population behavior (Phase 2 PRs to verify when implemented)
+
+These will likely **keep** `Optional+Computed` (without provider Default) per the ADR-004 rule. Mitmproxy verification at PR-time:
+
+| Attribute | qemu-server default | PVE Read prediction | Target schema (predicted) | Target PR |
+|---|---|---|---|---|
+| `boot_order` | cdn (legacy), nested order=none | always present (`boot=" "` or `boot="order=..."`) | Optional+Computed | #8 |
+| `smbios.uuid` | autogenerated UUID | always present in `smbios1` | Optional+Computed | #12 |
+| `vmgenid` (if surfaced) | autogenerated | always present | Optional+Computed (or hidden) | maintainer decision |
+| `acpi` | 1 | likely absent unless changed (verify) | TBD — predict Optional only | #14 |
+| `tablet` | 1 | likely absent unless changed (verify) | TBD — predict Optional only | #14 |
+| `kvm` | 1 | likely absent unless changed (verify) | TBD — predict Optional only | (out of scope today) |
+| `bios` | seabios | likely absent unless changed (verify) | TBD — predict Optional only | #8 |
+| `scsihw` | lsi | likely absent unless changed (verify) | TBD — predict Optional only | #9 |
+| `hotplug` | network,disk,usb | likely returns the list always (verify) | TBD — predict Optional+Computed | #14 |
+| `protection` | 0 | likely absent unless changed | TBD — predict Optional only | #18 |
+| `onboot` | 0 | likely absent unless changed | predict Optional only | #6 |
+
+### Cross-validation with PVE source
+
+The empirical and source-code data are consistent: PVE Perl's `$confdesc` documents internal defaults that are applied at QEMU launch time, but the Perl Web API does not write those defaults back to the on-disk config. So `parse_vm_config()` returns only what's literally in the config file. The mitmproxy GET responses confirm this: only user-set fields and PVE-auto-generated fields (`smbios1`, `vmgenid`, `boot`, `meta`, `digest`) appear.
+
+### Summary by classification action
+
+| Action | Attribute count | PRs |
+|---|---|---|
+| Drop `Computed` (Optional+Computed → Optional) | 23 in existing sub-packages | #3 |
+| Drop provider `Default` (per F39) | 3 (memory.size, memory.balloon, memory.shares) | #3 |
+| Drop `UseStateForUnknown` planmodifier (consequence of dropping Computed) | 2 (vga, rng blocks) | #3 |
+| Drop attribute (rehome) | 2 (cpu.numa, cpu.hotplugged) | #3 / #13 / #14 |
+| Confirmed no change (already correct) | 9 top-level scalars | — |
+| Predicted but verify in Phase 2 | 11 future fields | #6, #8, #9, #12, #14, #18 |
+
+### Mitmproxy session details
+
+| Detail | Value |
+|---|---|
+| Session date | 2026-04-19 |
+| Test run | `TestAccResourceVMShort` (`fwprovider/nodes/vm/resource_test.go:24`) — 9 sub-cases, all PASS |
+| Proxy mode | `mitmdump --mode regular@8082 --flow-detail 4` (port 8082 because Docker holds 8080) |
+| Captures | 25 `GET .../qemu/{vmid}/config` responses |
+| Log location | `/tmp/api_debug.log` (3473 lines, 97 API calls total) |
+| Reproducibility | Re-run with the same test; PVE 10.1.2 cluster (per `meta: "creation-qemu=10.1.2"`) |
 
 ---
 
