@@ -129,7 +129,7 @@ file, finalized.
 | usb (map-keyed block) | #15 | todo | — |
 | hostpci (map-keyed block) | #16 | todo | — |
 | serial_device (map-keyed block) | #17 | todo | — |
-| audio_device (map-keyed block, one-key today) | #17 | todo | Map-keyed for forward-compat per ADR-008 |
+| audio_device (single-nested block) | #17 | todo | Single-nested per ADR-008 (joins `efi_disk`/`tpm_state`); forward-compat trade-off accepted |
 | virtiofs (map-keyed block) | #17 | todo | — |
 
 ### Cluster / placement
@@ -387,7 +387,7 @@ file, finalized.
 | `usb` | Computed MapNested | todo | #15 |
 | `hostpci` | Computed MapNested | todo | #16 |
 | `serial_device` | Computed MapNested | todo | #17 |
-| `audio_device` | Computed MapNested | todo | #17 |
+| `audio_device` | Computed SingleNested | todo | #17 |
 | `virtiofs` | Computed MapNested | todo | #17 |
 | `startup` | Computed SingleNested | todo | #18 |
 | `pool_id` | Computed string | todo | #18 |

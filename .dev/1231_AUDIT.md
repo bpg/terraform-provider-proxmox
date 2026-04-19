@@ -10,23 +10,23 @@
 
 ## Methodology
 
-| Source | What it produces |
-|---|---|
-| File:line scan of `fwprovider/nodes/vm/` | ADR compliance findings (Section 1) |
-| Walk of `proxmoxtf/resource/vm/vm.go` | Capabilities inventory (Section 2) |
-| Walk of `fwprovider/test/resource_vm_*.go` + `proxmoxtf/resource/vm/**/*_test.go` | Legacy test inventory (Section 3) |
-| Per-attribute mitmproxy trace + reasoning | Per-attribute classification (Section 4) |
-| Validator-by-validator review against ADR-004 amendment | Validator inventory (Section 5) |
-| Open questions resolution from design | Q5 power_state resolution (Section 6) |
-| Grep of `proxmox/nodes/vms` consumers | Shared-types catalog (Section 7) |
+| Source                                                                            | What it produces                         |
+|-----------------------------------------------------------------------------------|------------------------------------------|
+| File:line scan of `fwprovider/nodes/vm/`                                          | ADR compliance findings (Section 1)      |
+| Walk of `proxmoxtf/resource/vm/vm.go`                                             | Capabilities inventory (Section 2)       |
+| Walk of `fwprovider/test/resource_vm_*.go` + `proxmoxtf/resource/vm/**/*_test.go` | Legacy test inventory (Section 3)        |
+| Per-attribute mitmproxy trace + reasoning                                         | Per-attribute classification (Section 4) |
+| Validator-by-validator review against ADR-004 amendment                           | Validator inventory (Section 5)          |
+| Open questions resolution from design                                             | Q5 power_state resolution (Section 6)    |
+| Grep of `proxmox/nodes/vms` consumers                                             | Shared-types catalog (Section 7)         |
 
 Severity tags used in Section 1:
 
-| Tag | Meaning |
-|---|---|
-| `blocker` | Must fix before Phase 2 (or ship it as PR #3 alongside the contract port) |
-| `should-fix` | Fix during Phase 1 (PRs #3–#5) |
-| `nit` | Defer; capture in gap matrix as deferred-cleanup |
+| Tag          | Meaning                                                                   |
+|--------------|---------------------------------------------------------------------------|
+| `blocker`    | Must fix before Phase 2 (or ship it as PR #3 alongside the contract port) |
+| `should-fix` | Fix during Phase 1 (PRs #3–#5)                                            |
+| `nit`        | Defer; capture in gap matrix as deferred-cleanup                          |
 
 ---
 
@@ -34,15 +34,15 @@ Severity tags used in Section 1:
 
 ### Scope of scan
 
-| Path | Files | Lines (approx) |
-|---|---|---|
-| `fwprovider/nodes/vm/` (top-level) | `resource.go`, `resource_schema.go`, `resource_short.go`, `model.go`, `datasource.go`, `datasource_schema.go`, `datasource_short.go`, `concurrency_test.go`, `datasource_test.go`, `resource_test.go` | ~1500 |
-| `fwprovider/nodes/vm/cpu/` | `resource.go`, `resource_schema.go`, `model.go`, `datasource_schema.go`, `resource_test.go` | ~830 |
-| `fwprovider/nodes/vm/cdrom/` | `resource.go`, `resource_schema.go`, `model.go`, `datasource_schema.go`, `resource_test.go` | ~340 |
-| `fwprovider/nodes/vm/vga/` | `resource.go`, `resource_schema.go`, `model.go`, `datasource_schema.go`, `resource_test.go` | ~400 |
-| `fwprovider/nodes/vm/rng/` | `resource.go`, `resource_schema.go`, `model.go`, `datasource_schema.go`, `resource_test.go` | ~400 |
-| `fwprovider/nodes/vm/memory/` | `resource.go`, `resource_schema.go`, `model.go` | ~270 |
-| `fwprovider/nodes/vm/network/` | (empty placeholder) | 0 |
+| Path                               | Files                                                                                                                                                                                                 | Lines (approx) |
+|------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|
+| `fwprovider/nodes/vm/` (top-level) | `resource.go`, `resource_schema.go`, `resource_short.go`, `model.go`, `datasource.go`, `datasource_schema.go`, `datasource_short.go`, `concurrency_test.go`, `datasource_test.go`, `resource_test.go` | ~1500          |
+| `fwprovider/nodes/vm/cpu/`         | `resource.go`, `resource_schema.go`, `model.go`, `datasource_schema.go`, `resource_test.go`                                                                                                           | ~830           |
+| `fwprovider/nodes/vm/cdrom/`       | `resource.go`, `resource_schema.go`, `model.go`, `datasource_schema.go`, `resource_test.go`                                                                                                           | ~340           |
+| `fwprovider/nodes/vm/vga/`         | `resource.go`, `resource_schema.go`, `model.go`, `datasource_schema.go`, `resource_test.go`                                                                                                           | ~400           |
+| `fwprovider/nodes/vm/rng/`         | `resource.go`, `resource_schema.go`, `model.go`, `datasource_schema.go`, `resource_test.go`                                                                                                           | ~400           |
+| `fwprovider/nodes/vm/memory/`      | `resource.go`, `resource_schema.go`, `model.go`                                                                                                                                                       | ~270           |
+| `fwprovider/nodes/vm/network/`     | (empty placeholder)                                                                                                                                                                                   | 0              |
 
 **Datasource schemas verified clean** — per CLAUDE.md "Datasource Schema Attributes" rule (datasource attributes must be `Required` or `Computed`, never `Optional`). Grep across all `*/datasource_schema.go` files returned zero `Optional: true` flags. No findings.
 
@@ -52,102 +52,102 @@ Severity tags used in Section 1:
 
 #### Top-level package (`fwprovider/nodes/vm/`)
 
-| # | Area | Severity | ADR | File:line | Description | Target PR |
-|---|---|---|---|---|---|---|
-| F1 | error msg | should-fix | 005 | `resource.go:116` | `"Failed to generate VM ID"` — should be `"Unable to Generate VM ID"` | #5 |
-| F2 | error msg | should-fix | 005 | `resource.go:136` | `"VM does not exist after creation", ""` — empty detail; should be `"Unable to Create VM N"` with detail | #5 |
-| F3 | error msg | should-fix | 005 | `resource.go:168, 177, 363, 365, 378` | Generic context strings (`"VM create"`, `"VM template conversion"`, `"VM stop/shutdown"`, `"VM delete"`) for `AddDiags`/`AddDiagsAsWarnings`. Format inconsistent with ADR-005. | #5 |
-| F4 | error msg | should-fix | 005 | `resource.go:237` | `"VM does not exist after update", ""` — empty detail | #5 |
-| F5 | error msg | should-fix | 005 | `resource.go:295` | `"Failed to update VM"` — should be `"Unable to Update VM N"` | #5 |
-| F6 | error msg | should-fix | 005 | `resource.go:310, 353` | `"Failed to get VM status"` — should be `"Unable to Get VM %d Status"` (two callsites) | #5 |
-| F7 | error msg | should-fix | 005 | `resource.go:326` | `"Cannot convert template back to VM"` — should be `"Unable to Convert Template Back to VM"` | #5 |
-| F8 | error msg | should-fix | 005 | `resource.go:374` | `"Unable to Delete VM"` — correct prefix but missing VM ID per CLAUDE.md ADR-005 note | #5 |
-| F9 | error msg | should-fix | 005 | `resource.go:425` | `fmt.Sprintf("VM %d does not exist on node %s", ...)` — should be `"Unable to Import VM N"` with detail | #5 |
-| F10 | sub-block contract | should-fix | 008 | `resource.go:256–282` | Hand-rolled `del()` closure for top-level scalars (Description, Name, Tags). Should use `attribute.CheckDelete(plan, state, body, "FieldName")` per ADR-008. | #3 |
-| F11 | code clarity | nit | — | `resource.go:432–435` | Comment `"not clear why this is needed, but ImportStateVerify fails without it"` for setting StopOnDestroy/PurgeOnDestroy/DeleteUnreferencedDisksOnDestroy on import. Either replace with proper explanation or fix root cause. | #4 (during rename pass) |
-| F12 | resource type name | blocker | 007 | `resource_short.go:28–34, 49–57` | `resourceShort` wrapper struct + constructor + `MoveState` method exist. Per design D2, this collapses into single `NewResource()` returning `proxmox_vm` in PR #4. (Line 17 is just the `shortResourceTypeName` const — fine in itself; the issue is the wrapper structure.) | #4 |
-| F13 | datasource type name | blocker | 007 | `datasource_short.go:15, 29–46` | `datasourceShort` wrapper. Collapses in PR #4 alongside resourceShort. | #4 |
-| F14 | datasource type name | should-fix | 007 | `datasource.go:41` | `req.ProviderTypeName + "_vm2"` — long datasource name still in use. Parallels F12/F13. | #4 |
-| F15 | error msg | should-fix | 005 | `datasource.go:89–92` | `"VM Not Found"` summary + custom detail; should be `"Unable to Read VM N"` per ADR-005 | #5 |
-| F16 | error msg | should-fix | 005 | `model.go:74, 82` | `"Unable to Read VM"`, `"Unable to Read VM Status"` — correct prefix, missing VM ID | #5 |
-| F17 | error msg | should-fix | 005 | `model.go:87, 144` | `"VM ID is missing in status API response"` — wrong format; should be `"Unable to Read VM N"` with detail (two callsites) | #5 |
-| F18 | error msg | should-fix | 005 | `model.go:131` | `"Failed to get VM"` — should be `"Unable to Read VM N"` | #5 |
-| F19 | error msg | should-fix | 005 | `model.go:139` | `"Failed to get VM status"` — duplicate of F6 in resource read path | #5 |
+| #   | Area                 | Severity   | ADR | File:line                             | Description                                                                                                                                                                                                                                                                   | Target PR               |
+|-----|----------------------|------------|-----|---------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|
+| F1  | error msg            | should-fix | 005 | `resource.go:116`                     | `"Failed to generate VM ID"` — should be `"Unable to Generate VM ID"`                                                                                                                                                                                                         | #5                      |
+| F2  | error msg            | should-fix | 005 | `resource.go:136`                     | `"VM does not exist after creation", ""` — empty detail; should be `"Unable to Create VM N"` with detail                                                                                                                                                                      | #5                      |
+| F3  | error msg            | should-fix | 005 | `resource.go:168, 177, 363, 365, 378` | Generic context strings (`"VM create"`, `"VM template conversion"`, `"VM stop/shutdown"`, `"VM delete"`) for `AddDiags`/`AddDiagsAsWarnings`. Format inconsistent with ADR-005.                                                                                               | #5                      |
+| F4  | error msg            | should-fix | 005 | `resource.go:237`                     | `"VM does not exist after update", ""` — empty detail                                                                                                                                                                                                                         | #5                      |
+| F5  | error msg            | should-fix | 005 | `resource.go:295`                     | `"Failed to update VM"` — should be `"Unable to Update VM N"`                                                                                                                                                                                                                 | #5                      |
+| F6  | error msg            | should-fix | 005 | `resource.go:310, 353`                | `"Failed to get VM status"` — should be `"Unable to Get VM %d Status"` (two callsites)                                                                                                                                                                                        | #5                      |
+| F7  | error msg            | should-fix | 005 | `resource.go:326`                     | `"Cannot convert template back to VM"` — should be `"Unable to Convert Template Back to VM"`                                                                                                                                                                                  | #5                      |
+| F8  | error msg            | should-fix | 005 | `resource.go:374`                     | `"Unable to Delete VM"` — correct prefix but missing VM ID per CLAUDE.md ADR-005 note                                                                                                                                                                                         | #5                      |
+| F9  | error msg            | should-fix | 005 | `resource.go:425`                     | `fmt.Sprintf("VM %d does not exist on node %s", ...)` — should be `"Unable to Import VM N"` with detail                                                                                                                                                                       | #5                      |
+| F10 | sub-block contract   | should-fix | 008 | `resource.go:256–282`                 | Hand-rolled `del()` closure for top-level scalars (Description, Name, Tags). Should use `attribute.CheckDelete(plan, state, body, "FieldName")` per ADR-008.                                                                                                                  | #3                      |
+| F11 | code clarity         | nit        | —   | `resource.go:432–435`                 | Comment `"not clear why this is needed, but ImportStateVerify fails without it"` for setting StopOnDestroy/PurgeOnDestroy/DeleteUnreferencedDisksOnDestroy on import. Either replace with proper explanation or fix root cause.                                               | #4 (during rename pass) |
+| F12 | resource type name   | blocker    | 007 | `resource_short.go:28–34, 49–57`      | `resourceShort` wrapper struct + constructor + `MoveState` method exist. Per design D2, this collapses into single `NewResource()` returning `proxmox_vm` in PR #4. (Line 17 is just the `shortResourceTypeName` const — fine in itself; the issue is the wrapper structure.) | #4                      |
+| F13 | datasource type name | blocker    | 007 | `datasource_short.go:15, 29–46`       | `datasourceShort` wrapper. Collapses in PR #4 alongside resourceShort.                                                                                                                                                                                                        | #4                      |
+| F14 | datasource type name | should-fix | 007 | `datasource.go:41`                    | `req.ProviderTypeName + "_vm2"` — long datasource name still in use. Parallels F12/F13.                                                                                                                                                                                       | #4                      |
+| F15 | error msg            | should-fix | 005 | `datasource.go:89–92`                 | `"VM Not Found"` summary + custom detail; should be `"Unable to Read VM N"` per ADR-005                                                                                                                                                                                       | #5                      |
+| F16 | error msg            | should-fix | 005 | `model.go:74, 82`                     | `"Unable to Read VM"`, `"Unable to Read VM Status"` — correct prefix, missing VM ID                                                                                                                                                                                           | #5                      |
+| F17 | error msg            | should-fix | 005 | `model.go:87, 144`                    | `"VM ID is missing in status API response"` — wrong format; should be `"Unable to Read VM N"` with detail (two callsites)                                                                                                                                                     | #5                      |
+| F18 | error msg            | should-fix | 005 | `model.go:131`                        | `"Failed to get VM"` — should be `"Unable to Read VM N"`                                                                                                                                                                                                                      | #5                      |
+| F19 | error msg            | should-fix | 005 | `model.go:139`                        | `"Failed to get VM status"` — duplicate of F6 in resource read path                                                                                                                                                                                                           | #5                      |
 
 #### `cpu/` sub-package
 
-| # | Area | Severity | ADR | File:line | Description | Target PR |
-|---|---|---|---|---|---|---|
-| F20 | sentinel | should-fix | 004 | `cpu/resource.go:38–42` | (Confirms P2) Nil-substitution sentinel `Cores == nil → 1`. Drop per ADR-004 PVE-defaults rule. | #3 |
-| F21 | sentinel | should-fix | 004 | `cpu/resource.go:44–48` | **Additional sentinel** beyond P2: `Sockets == nil → 1`. Drop per ADR-004. | #3 |
-| F22 | sentinel | should-fix | 004 | `cpu/resource.go:50–60` | **Additional sentinel** beyond P2: `CPUEmulation == nil → Type "kvm64", Flags null`. Drop per ADR-004. | #3 |
-| F23 | sub-block contract | should-fix | 008 | `cpu/resource.go:159–225` | (Confirms P4) Hand-rolled `del()` + `ShouldBeRemoved` + `IsDefined` cascades for 8 fields. Replace with `attribute.CheckDelete`. | #3 |
-| F24 | bug | should-fix | 008 | `cpu/resource.go:190` | (Confirms P1) `IsDefined(plan.Sockets)` copy-paste bug in Limit branch — should be `IsDefined(plan.Limit)` | #3 |
-| F25 | error msg | nit | 005 | `cpu/resource.go:250` | `"Cannot have CPU flags without explicit definition of CPU type", ""` — empty detail, summary phrasing inconsistent with ADR-005 format | #5 |
-| F26 | sub-block contract | should-fix | 008 | `cpu/resource.go:227–255` | Special-case for `CPUEmulation` compound update (delType/delFlags switch). Doesn't fit standard CheckDelete shape — ADR-008 should call out compound types as a recognized pattern (or refactor) | #3 |
-| F27 | validator | should-fix | 004 | `cpu/resource_schema.go:124–204` | (Confirms P5) Long enum validator (~75 CPU types) for `cpu.type`. Drop per ADR-004 enum rule. | #3 |
-| F28 | classification | should-fix | 004 | `cpu/resource_schema.go:31–122` | All 10 CPU attributes are `Optional+Computed`. Per-attribute classification needed against PVE Read behavior (Section 4) | #3 |
-| F29 | rehome | should-fix | — | `cpu/resource_schema.go:83` | (Confirms P3) `cpu.hotplugged` exists. Drop in #3, rehome as top-level `vcpus` in #14. | #3 (drop) / #14 (rehome) |
-| F30 | rehome | should-fix | — | `cpu/resource_schema.go:101` | (Confirms P3) `cpu.numa` exists. Drop in #3, rehome as `numa.enabled` in #13. | #3 (drop) / #13 (rehome) |
+| #   | Area               | Severity   | ADR | File:line                        | Description                                                                                                                                                                                      | Target PR                |
+|-----|--------------------|------------|-----|----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------|
+| F20 | sentinel           | should-fix | 004 | `cpu/resource.go:38–42`          | (Confirms P2) Nil-substitution sentinel `Cores == nil → 1`. Drop per ADR-004 PVE-defaults rule.                                                                                                  | #3                       |
+| F21 | sentinel           | should-fix | 004 | `cpu/resource.go:44–48`          | **Additional sentinel** beyond P2: `Sockets == nil → 1`. Drop per ADR-004.                                                                                                                       | #3                       |
+| F22 | sentinel           | should-fix | 004 | `cpu/resource.go:50–60`          | **Additional sentinel** beyond P2: `CPUEmulation == nil → Type "kvm64", Flags null`. Drop per ADR-004.                                                                                           | #3                       |
+| F23 | sub-block contract | should-fix | 008 | `cpu/resource.go:159–225`        | (Confirms P4) Hand-rolled `del()` + `ShouldBeRemoved` + `IsDefined` cascades for 8 fields. Replace with `attribute.CheckDelete`.                                                                 | #3                       |
+| F24 | bug                | should-fix | 008 | `cpu/resource.go:190`            | (Confirms P1) `IsDefined(plan.Sockets)` copy-paste bug in Limit branch — should be `IsDefined(plan.Limit)`                                                                                       | #3                       |
+| F25 | error msg          | nit        | 005 | `cpu/resource.go:250`            | `"Cannot have CPU flags without explicit definition of CPU type", ""` — empty detail, summary phrasing inconsistent with ADR-005 format                                                          | #5                       |
+| F26 | sub-block contract | should-fix | 008 | `cpu/resource.go:227–255`        | Special-case for `CPUEmulation` compound update (delType/delFlags switch). Doesn't fit standard CheckDelete shape — ADR-008 should call out compound types as a recognized pattern (or refactor) | #3                       |
+| F27 | validator          | should-fix | 004 | `cpu/resource_schema.go:124–204` | (Confirms P5) Long enum validator (~75 CPU types) for `cpu.type`. Drop per ADR-004 enum rule.                                                                                                    | #3                       |
+| F28 | classification     | should-fix | 004 | `cpu/resource_schema.go:31–122`  | All 10 CPU attributes are `Optional+Computed`. Per-attribute classification needed against PVE Read behavior (Section 4)                                                                         | #3                       |
+| F29 | rehome             | should-fix | —   | `cpu/resource_schema.go:83`      | (Confirms P3) `cpu.hotplugged` exists. Drop in #3, rehome as top-level `vcpus` in #14.                                                                                                           | #3 (drop) / #14 (rehome) |
+| F30 | rehome             | should-fix | —   | `cpu/resource_schema.go:101`     | (Confirms P3) `cpu.numa` exists. Drop in #3, rehome as `numa.enabled` in #13.                                                                                                                    | #3 (drop) / #13 (rehome) |
 
 #### `vga/` sub-package
 
-| # | Area | Severity | ADR | File:line | Description | Target PR |
-|---|---|---|---|---|---|---|
-| F31 | sub-block contract | should-fix | 008 | `vga/resource.go:107–129` | Hand-rolled cascades for Clipboard/Type/Memory in FillUpdateBody. Replace with CheckDelete pattern. | #3 |
-| F32 | sub-block contract | should-fix | 008 | `vga/resource.go:101–105` | `vgaDevice` initialized from state (not zero) and mutated. Different mutation pattern from cpu — ADR-008 should normalize. | #3 |
-| F32a | sub-block anti-pattern | should-fix | 008 | `vga/resource.go:72, 131` | `if !reflect.DeepEqual(vgaDevice, &vms.CustomVGADevice{}) { ... }` zero-struct comparison. In FillUpdateBody (line 131) this is always true because `vgaDevice` is initialized from state — every Update sends the entire vga block to PVE. ADR-008 should explicitly reject this anti-pattern. | #3 |
-| F33 | validator | should-fix | 004 | `vga/resource_schema.go:55–72` | Long enum validator (14 VGA types, version-evolving). Drop per ADR-004 enum rule. | #3 |
-| F34 | classification | should-fix | 004 | `vga/resource_schema.go:33–82` | All 3 VGA attributes are `Optional+Computed`. Section 4 classification: all drop Computed → Optional only (no PVE auto-populate per Finding 3). | #3 |
+| #    | Area                   | Severity   | ADR | File:line                      | Description                                                                                                                                                                                                                                                                                     | Target PR |
+|------|------------------------|------------|-----|--------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| F31  | sub-block contract     | should-fix | 008 | `vga/resource.go:107–129`      | Hand-rolled cascades for Clipboard/Type/Memory in FillUpdateBody. Replace with CheckDelete pattern.                                                                                                                                                                                             | #3        |
+| F32  | sub-block contract     | should-fix | 008 | `vga/resource.go:101–105`      | `vgaDevice` initialized from state (not zero) and mutated. Different mutation pattern from cpu — ADR-008 should normalize.                                                                                                                                                                      | #3        |
+| F32a | sub-block anti-pattern | should-fix | 008 | `vga/resource.go:72, 131`      | `if !reflect.DeepEqual(vgaDevice, &vms.CustomVGADevice{}) { ... }` zero-struct comparison. In FillUpdateBody (line 131) this is always true because `vgaDevice` is initialized from state — every Update sends the entire vga block to PVE. ADR-008 should explicitly reject this anti-pattern. | #3        |
+| F33  | validator              | should-fix | 004 | `vga/resource_schema.go:55–72` | Long enum validator (14 VGA types, version-evolving). Drop per ADR-004 enum rule.                                                                                                                                                                                                               | #3        |
+| F34  | classification         | should-fix | 004 | `vga/resource_schema.go:33–82` | All 3 VGA attributes are `Optional+Computed`. Section 4 classification: all drop Computed → Optional only (no PVE auto-populate per Finding 3).                                                                                                                                                 | #3        |
 
 #### `rng/` sub-package
 
-| # | Area | Severity | ADR | File:line | Description | Target PR |
-|---|---|---|---|---|---|---|
-| F35 | sub-block contract | should-fix | 008 | `rng/resource.go:117–141` | Hand-rolled cascades for Source/MaxBytes/Period in FillUpdateBody. Replace with CheckDelete pattern. | #3 |
-| F36 | sub-block contract | should-fix | 008 | `rng/resource.go:115` | `rngDevice = createRNGDevice(state, true)` — same state-initialized mutation pattern as vga (F32) | #3 |
-| F36a | sub-block anti-pattern | should-fix | 008 | `rng/resource.go:86, 143` | Same `reflect.DeepEqual(&vms.CustomRNGDevice{})` anti-pattern as F32a in both `FillCreateBody` (line 86) and `FillUpdateBody` (line 143). ADR-008 should explicitly reject. | #3 |
-| F37 | int-zero trap | nit | 004 | `rng/resource.go:54, 59` | `MaxBytes.ValueInt64() != 0` and `Period.ValueInt64() != 0` use 0 as "not set" sentinel. Documented as `"Use 0 to disable limiting"` in schema, but the FillCreateBody never sends 0 to PVE — meaning user-set 0 is silently dropped. ADR-004 integer-0 trap. | #3 |
-| F38 | classification | should-fix | 004 | `rng/resource_schema.go:31–67` | All 3 RNG attributes `Optional+Computed`. Section 4 classification: all drop Computed → Optional only (no PVE auto-populate per Finding 3). | #3 |
+| #    | Area                   | Severity   | ADR | File:line                      | Description                                                                                                                                                                                                                                                   | Target PR |
+|------|------------------------|------------|-----|--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| F35  | sub-block contract     | should-fix | 008 | `rng/resource.go:117–141`      | Hand-rolled cascades for Source/MaxBytes/Period in FillUpdateBody. Replace with CheckDelete pattern.                                                                                                                                                          | #3        |
+| F36  | sub-block contract     | should-fix | 008 | `rng/resource.go:115`          | `rngDevice = createRNGDevice(state, true)` — same state-initialized mutation pattern as vga (F32)                                                                                                                                                             | #3        |
+| F36a | sub-block anti-pattern | should-fix | 008 | `rng/resource.go:86, 143`      | Same `reflect.DeepEqual(&vms.CustomRNGDevice{})` anti-pattern as F32a in both `FillCreateBody` (line 86) and `FillUpdateBody` (line 143). ADR-008 should explicitly reject.                                                                                   | #3        |
+| F37  | int-zero trap          | nit        | 004 | `rng/resource.go:54, 59`       | `MaxBytes.ValueInt64() != 0` and `Period.ValueInt64() != 0` use 0 as "not set" sentinel. Documented as `"Use 0 to disable limiting"` in schema, but the FillCreateBody never sends 0 to PVE — meaning user-set 0 is silently dropped. ADR-004 integer-0 trap. | #3        |
+| F38  | classification         | should-fix | 004 | `rng/resource_schema.go:31–67` | All 3 RNG attributes `Optional+Computed`. Section 4 classification: all drop Computed → Optional only (no PVE auto-populate per Finding 3).                                                                                                                   | #3        |
 
 #### `memory/` sub-package
 
-| # | Area | Severity | ADR | File:line | Description | Target PR |
-|---|---|---|---|---|---|---|
-| F39 | provider default | should-fix (PR-#3-blocker) | 004 | `memory/resource_schema.go:52, 66, 79` | `Default(...)` for `size=512`, `balloon=0`, `shares=1000` — these duplicate PVE defaults. Will violate ADR-004 amendment once PR #2 lands. **Currently functional**: `clonedvm` (the only consumer today) works fine; this is a forward-looking violation, not a production regression. Must be fixed in PR #3 alongside the contract port. | #3 |
-| F40 | NewValue sentinel | should-fix | 004 | `memory/resource.go:35–40` | Nil-substitution sentinel **in `NewValue`** (API → state): `DedicatedMemory == nil → types.Int64Value(512)`. Should be `types.Int64PointerValue(nil)` so PVE's absent → state null. Drop per ADR-004. | #3 |
-| F41 | NewValue sentinel | should-fix | 004 | `memory/resource.go:42–48` | Same pattern in `NewValue` for `FloatingMemory == nil → 0`. Drop per ADR-004. | #3 |
-| F42 | NewValue sentinel | should-fix | 004 | `memory/resource.go:50–56` | Same pattern in `NewValue` for `FloatingMemoryShares == nil → 1000`. Drop per ADR-004. | #3 |
-| F43 | sub-block contract | should-fix (PR-#6-blocker) | 008 | `memory/resource.go` (no `FillCreateBody`) | `memory/` package has **no** `FillCreateBody`. **Currently functional**: `clonedvm` calls only `FillUpdateBody` (clone semantics never call Create with config), so the absence isn't blocking. Becomes blocking when PR #6 wires memory into `proxmox_vm` (which uses Create). PR #3 must add `FillCreateBody`. PR #3 fix is two-part with F40-F42: rewrite `NewValue` to return null on nil, **and** add `FillCreateBody` that handles null/unknown plan values. | #3 |
-| F44 | sub-block contract | should-fix | 008 | `memory/resource.go:75–122` | `FillUpdateBody` signature is `(ctx, planValue, body, diags)` — no `stateValue` parameter. Two issues from the missing state: (1) fields are set if present in plan but **never deleted** (cannot remove `hugepages` or `keep_hugepages` once set); (2) fields are **re-sent on every Update** even when unchanged (no `plan.Equal(state)` short-circuit). Diverges from ADR-008 update-body shape. PR #3 must add `stateValue` parameter, `plan.Equal(state)` early-return guard, and `attribute.CheckDelete` per field. | #3 |
-| F45 | classification | should-fix | 004 | `memory/resource_schema.go:43–105` | After F39 `Default` removal, all 5 attributes need ADR-004 classification (Section 4). Note: Section 4's memory classifications are predicted from vga/rng pattern — verify with mitmproxy in PR #6. | #3 |
+| #   | Area               | Severity                   | ADR | File:line                                  | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Target PR |
+|-----|--------------------|----------------------------|-----|--------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| F39 | provider default   | should-fix (PR-#3-blocker) | 004 | `memory/resource_schema.go:52, 66, 79`     | `Default(...)` for `size=512`, `balloon=0`, `shares=1000` — these duplicate PVE defaults. Will violate ADR-004 amendment once PR #2 lands. **Currently functional**: `clonedvm` (the only consumer today) works fine; this is a forward-looking violation, not a production regression. Must be fixed in PR #3 alongside the contract port.                                                                                                                                                                               | #3        |
+| F40 | NewValue sentinel  | should-fix                 | 004 | `memory/resource.go:35–40`                 | Nil-substitution sentinel **in `NewValue`** (API → state): `DedicatedMemory == nil → types.Int64Value(512)`. Should be `types.Int64PointerValue(nil)` so PVE's absent → state null. Drop per ADR-004.                                                                                                                                                                                                                                                                                                                     | #3        |
+| F41 | NewValue sentinel  | should-fix                 | 004 | `memory/resource.go:42–48`                 | Same pattern in `NewValue` for `FloatingMemory == nil → 0`. Drop per ADR-004.                                                                                                                                                                                                                                                                                                                                                                                                                                             | #3        |
+| F42 | NewValue sentinel  | should-fix                 | 004 | `memory/resource.go:50–56`                 | Same pattern in `NewValue` for `FloatingMemoryShares == nil → 1000`. Drop per ADR-004.                                                                                                                                                                                                                                                                                                                                                                                                                                    | #3        |
+| F43 | sub-block contract | should-fix (PR-#6-blocker) | 008 | `memory/resource.go` (no `FillCreateBody`) | `memory/` package has **no** `FillCreateBody`. **Currently functional**: `clonedvm` calls only `FillUpdateBody` (clone semantics never call Create with config), so the absence isn't blocking. Becomes blocking when PR #6 wires memory into `proxmox_vm` (which uses Create). PR #3 must add `FillCreateBody`. PR #3 fix is two-part with F40-F42: rewrite `NewValue` to return null on nil, **and** add `FillCreateBody` that handles null/unknown plan values.                                                        | #3        |
+| F44 | sub-block contract | should-fix                 | 008 | `memory/resource.go:75–122`                | `FillUpdateBody` signature is `(ctx, planValue, body, diags)` — no `stateValue` parameter. Two issues from the missing state: (1) fields are set if present in plan but **never deleted** (cannot remove `hugepages` or `keep_hugepages` once set); (2) fields are **re-sent on every Update** even when unchanged (no `plan.Equal(state)` short-circuit). Diverges from ADR-008 update-body shape. PR #3 must add `stateValue` parameter, `plan.Equal(state)` early-return guard, and `attribute.CheckDelete` per field. | #3        |
+| F45 | classification     | should-fix                 | 004 | `memory/resource_schema.go:43–105`         | After F39 `Default` removal, all 5 attributes need ADR-004 classification (Section 4). Note: Section 4's memory classifications are predicted from vga/rng pattern — verify with mitmproxy in PR #6.                                                                                                                                                                                                                                                                                                                      | #3        |
 
 #### `cdrom/` sub-package (reference for map-keyed pattern)
 
-| # | Area | Severity | ADR | File:line | Description | Target PR |
-|---|---|---|---|---|---|---|
-| F46 | regex bound | nit | 008 | `cdrom/resource_schema.go:33` | Slot regex `^(ide[0-3]\|sata[0-5]\|scsi([0-9]\|1[0-3]))$` — `scsi` only goes to 13, but PVE bound is `MAX_SCSI_DISKS=31`. Restrict-then-relax behavior is OK (additive), but design's slot-regex table specifies `scsi([0-9]\|[12][0-9]\|30)`. Tighten or relax to match. | #3 |
-| F47 | provider default | nit | 004 | `cdrom/resource_schema.go:46` | `Default: stringdefault.StaticString("cdrom")` for `file_id`. Section 4 verified PVE always returns `file_id` when slot exists, so this Default is **not** duplicating a PVE auto-populated value. The Default lets users write `cdrom = { ide2 = {} }` to create an empty CD-ROM slot — PVE's storage path `cdrom` literally means "no media inserted". **Resolution: keep as provider UX convenience**; document the rationale in the schema MarkdownDescription so future maintainers don't mistake it for an ADR-004 violation. | #3 |
+| #   | Area             | Severity | ADR | File:line                     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Target PR |
+|-----|------------------|----------|-----|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| F46 | regex bound      | nit      | 008 | `cdrom/resource_schema.go:33` | Slot regex `^(ide[0-3]\|sata[0-5]\|scsi([0-9]\|1[0-3]))$` — `scsi` only goes to 13, but PVE bound is `MAX_SCSI_DISKS=31`. Restrict-then-relax behavior is OK (additive), but design's slot-regex table specifies `scsi([0-9]\|[12][0-9]\|30)`. Tighten or relax to match.                                                                                                                                                                                                                                                           | #3        |
+| F47 | provider default | nit      | 004 | `cdrom/resource_schema.go:46` | `Default: stringdefault.StaticString("cdrom")` for `file_id`. Section 4 verified PVE always returns `file_id` when slot exists, so this Default is **not** duplicating a PVE auto-populated value. The Default lets users write `cdrom = { ide2 = {} }` to create an empty CD-ROM slot — PVE's storage path `cdrom` literally means "no media inserted". **Resolution: keep as provider UX convenience**; document the rationale in the schema MarkdownDescription so future maintainers don't mistake it for an ADR-004 violation. | #3        |
 
 ### Summary by severity
 
-| Severity | Count |
-|---|---|
-| blocker | 2 (F12, F13 — actual production-blocking issues) |
-| should-fix (PR-#3-blocker) | 2 (F39, F43 — must fix during PR #3 / #6) |
-| should-fix | 35 |
-| nit | 6 |
-| Total new findings | 47 (added F32a, F36a after scrutiny pass) |
+| Severity                   | Count                                            |
+|----------------------------|--------------------------------------------------|
+| blocker                    | 2 (F12, F13 — actual production-blocking issues) |
+| should-fix (PR-#3-blocker) | 2 (F39, F43 — must fix during PR #3 / #6)        |
+| should-fix                 | 35                                               |
+| nit                        | 6                                                |
+| Total new findings         | 47 (added F32a, F36a after scrutiny pass)        |
 
 Plus 7 pre-resolved findings (P1–P7) from grilling. Combined: 54 findings.
 
 ### Summary by target PR
 
-| PR | New findings |
-|---|---|
-| #3 (port sub-packages) | 27 (added F32a, F36a) |
-| #4 (rename) | 4 (F11, F12, F13, F14) |
-| #5 (error sweep) | 16 |
+| PR                     | New findings           |
+|------------------------|------------------------|
+| #3 (port sub-packages) | 27 (added F32a, F36a)  |
+| #4 (rename)            | 4 (F11, F12, F13, F14) |
+| #5 (error sweep)       | 16                     |
 
 ---
 
@@ -156,65 +156,65 @@ Plus 7 pre-resolved findings (P1–P7) from grilling. Combined: 54 findings.
 Every attribute and block of the legacy SDK `proxmox_virtual_environment_vm`
 classified as one of:
 
-| Status | Meaning |
-|---|---|
-| `done` | Already implemented in `proxmox_vm` |
-| `planned` | Target Phase 2 PR identified |
-| `deliberately dropped` | Out of scope; document why |
-| `open question` | Needs maintainer decision before PR can land |
+| Status                 | Meaning                                      |
+|------------------------|----------------------------------------------|
+| `done`                 | Already implemented in `proxmox_vm`          |
+| `planned`              | Target Phase 2 PR identified                 |
+| `deliberately dropped` | Out of scope; document why                   |
+| `open question`        | Needs maintainer decision before PR can land |
 
 ### Top-level scalars
 
-| SDK key | SDK source | Status | Target PR | Notes |
-|---|---|---|---|---|
-| `description` | `vm.go:206` | done | — | Already in `proxmox_vm` |
-| `name` | `vm.go:268` | done | — | Already in `proxmox_vm` (with DNS validator) |
-| `node_name` | `vm.go:270` | done | — | Already in `proxmox_vm` (Required) |
-| `tags` | `vm.go:295` | done | — | Already in `proxmox_vm` (stringset) |
-| `template` | `vm.go:296` | done | — | Already in `proxmox_vm` (RequiresReplace planmodifier) |
-| `vm_id` | `vm.go:313` | done (as `id`) | — | Already in `proxmox_vm`; renamed |
-| `pool_id` | `vm.go:273` | planned | #18 | — |
-| `protection` | `vm.go:274` | planned | #18 | — |
-| `migrate` | `vm.go:267` | planned | #19 | — |
-| `acpi` | `vm.go:165` | planned | #14 | — |
-| `bios` | `vm.go:184` | planned | #8 | — |
-| `boot_order` | `vm.go:164` | planned | #8 | — |
-| `hook_script_file_id` | `vm.go:315` | planned | #18 | — |
-| `hotplug` | `vm.go:232` | planned | #14 | — |
-| `keyboard_layout` | `vm.go:258` | planned | #14 | — |
-| `kvm_arguments` | `vm.go:259` | planned | #14 | — |
-| `machine` | `vm.go:260` | planned | #8 | — |
-| `scsi_hardware` | `vm.go:314` | planned | #9 | — |
-| `tablet_device` | `vm.go:294` | planned | #14 | — |
-| `vm_id` (clone source) | n/a | dropped | — | Belongs to `proxmox_cloned_vm`, out of scope (D4) |
+| SDK key                | SDK source  | Status         | Target PR | Notes                                                  |
+|------------------------|-------------|----------------|-----------|--------------------------------------------------------|
+| `description`          | `vm.go:206` | done           | —         | Already in `proxmox_vm`                                |
+| `name`                 | `vm.go:268` | done           | —         | Already in `proxmox_vm` (with DNS validator)           |
+| `node_name`            | `vm.go:270` | done           | —         | Already in `proxmox_vm` (Required)                     |
+| `tags`                 | `vm.go:295` | done           | —         | Already in `proxmox_vm` (stringset)                    |
+| `template`             | `vm.go:296` | done           | —         | Already in `proxmox_vm` (RequiresReplace planmodifier) |
+| `vm_id`                | `vm.go:313` | done (as `id`) | —         | Already in `proxmox_vm`; renamed                       |
+| `pool_id`              | `vm.go:273` | planned        | #18       | —                                                      |
+| `protection`           | `vm.go:274` | planned        | #18       | —                                                      |
+| `migrate`              | `vm.go:267` | planned        | #19       | —                                                      |
+| `acpi`                 | `vm.go:165` | planned        | #14       | —                                                      |
+| `bios`                 | `vm.go:184` | planned        | #8        | —                                                      |
+| `boot_order`           | `vm.go:164` | planned        | #8        | —                                                      |
+| `hook_script_file_id`  | `vm.go:315` | planned        | #18       | —                                                      |
+| `hotplug`              | `vm.go:232` | planned        | #14       | —                                                      |
+| `keyboard_layout`      | `vm.go:258` | planned        | #14       | —                                                      |
+| `kvm_arguments`        | `vm.go:259` | planned        | #14       | —                                                      |
+| `machine`              | `vm.go:260` | planned        | #8        | —                                                      |
+| `scsi_hardware`        | `vm.go:314` | planned        | #9        | —                                                      |
+| `tablet_device`        | `vm.go:294` | planned        | #14       | —                                                      |
+| `vm_id` (clone source) | n/a         | dropped        | —         | Belongs to `proxmox_cloned_vm`, out of scope (D4)      |
 
 ### Top-level blocks
 
-| SDK key | SDK source | Status | Target PR | Notes |
-|---|---|---|---|---|
-| `cpu` | `vm.go:195` | done | — | In production. PR #3 ports to ADR-008. `numa`/`hotplugged` rehoming P3. |
-| `vga` | `vm.go:309` | done | — | In production; PR #3 ports to ADR-008. Drop long-enum `type` validator. |
-| `rng` | `vm.go:275` | done | — | In production; PR #3 ports to ADR-008. |
-| `cdrom` | `vm.go:185` | done | — | In production (map-keyed, reference impl). PR #3 tightens slot regex (F46). |
-| `memory` | `vm.go:261` | wired in #6 | #6 | Package exists with critical violations (F39, F43); PR #3 fixes contract; PR #6 wires into `proxmox_vm` |
-| `disk` | `disk/schema.go:30` (MkDisk) | planned | #7 | First new map-keyed application |
-| `network_device` | `network/schema.go:32` (MkNetworkDevice) | planned | #10 | Map-keyed |
-| `agent` | `vm.go:166` | planned | #13 | Includes `enabled`, `timeout`, `trim`, `type`, `wait_for_ip` |
-| `numa` (NUMA topology block) | `vm.go:208` | planned | #13 | Distinct from `cpu.numa` boolean; map-keyed `numa[N]` per `MAX_NUMA=8` |
-| `efi_disk` | `vm.go:215` | planned | #9 | Single-nested per ADR-008 architectural-single rule |
-| `tpm_state` | `vm.go:220` | planned | #9 | Single-nested per ADR-008 architectural-single rule |
-| `hostpci` | `vm.go:223` | planned | #16 | Map-keyed per `MAX_HOSTPCI_DEVICES=16` |
-| `usb` | `vm.go:305` | planned | #15 | Map-keyed per `MAX_USB_DEVICES=14` |
-| `serial_device` | `vm.go:279` | planned | #17 | Map-keyed per `MAX_SERIAL_PORTS=4` |
-| `audio_device` | `vm.go:180` | planned | #17 | Map-keyed (one-key today) per ADR-008 forward-compat rule |
-| `virtiofs` | `vm.go:319` | planned | #17 | Map-keyed |
-| `watchdog` | `vm.go:325` | planned | #13 | Single-nested (one watchdog per VM) |
-| `initialization` (cloud-init) | `vm.go:233` | planned | #11 | Single-nested with nested DNS, IP config, user account, file ID blocks |
-| `operating_system` | `vm.go:271` | planned | #12 | Single-nested with `type` field |
-| `smbios` | `vm.go:281` | planned | #12 | Single-nested with family/manufacturer/product/SKU/serial/uuid/version |
-| `amd_sev` | `vm.go:174` | planned | #18 | Single-nested with `type`, `allow_smt`, `kernel_hashes`, `no_debug`, `no_key_sharing` |
-| `startup` | `vm.go:290` | planned | #18 | Single-nested with `order`, `up_delay`, `down_delay` |
-| `clone` | `vm.go:189` | dropped | — | Out of scope — belongs to `proxmox_cloned_vm` (D4) |
+| SDK key                       | SDK source                               | Status      | Target PR | Notes                                                                                                   |
+|-------------------------------|------------------------------------------|-------------|-----------|---------------------------------------------------------------------------------------------------------|
+| `cpu`                         | `vm.go:195`                              | done        | —         | In production. PR #3 ports to ADR-008. `numa`/`hotplugged` rehoming P3.                                 |
+| `vga`                         | `vm.go:309`                              | done        | —         | In production; PR #3 ports to ADR-008. Drop long-enum `type` validator.                                 |
+| `rng`                         | `vm.go:275`                              | done        | —         | In production; PR #3 ports to ADR-008.                                                                  |
+| `cdrom`                       | `vm.go:185`                              | done        | —         | In production (map-keyed, reference impl). PR #3 tightens slot regex (F46).                             |
+| `memory`                      | `vm.go:261`                              | wired in #6 | #6        | Package exists with critical violations (F39, F43); PR #3 fixes contract; PR #6 wires into `proxmox_vm` |
+| `disk`                        | `disk/schema.go:30` (MkDisk)             | planned     | #7        | First new map-keyed application                                                                         |
+| `network_device`              | `network/schema.go:32` (MkNetworkDevice) | planned     | #10       | Map-keyed                                                                                               |
+| `agent`                       | `vm.go:166`                              | planned     | #13       | Includes `enabled`, `timeout`, `trim`, `type`, `wait_for_ip`                                            |
+| `numa` (NUMA topology block)  | `vm.go:208`                              | planned     | #13       | Distinct from `cpu.numa` boolean; map-keyed `numa[N]` per `MAX_NUMA=8`                                  |
+| `efi_disk`                    | `vm.go:215`                              | planned     | #9        | Single-nested per ADR-008 architectural-single rule                                                     |
+| `tpm_state`                   | `vm.go:220`                              | planned     | #9        | Single-nested per ADR-008 architectural-single rule                                                     |
+| `hostpci`                     | `vm.go:223`                              | planned     | #16       | Map-keyed per `MAX_HOSTPCI_DEVICES=16`                                                                  |
+| `usb`                         | `vm.go:305`                              | planned     | #15       | Map-keyed per `MAX_USB_DEVICES=14`                                                                      |
+| `serial_device`               | `vm.go:279`                              | planned     | #17       | Map-keyed per `MAX_SERIAL_PORTS=4`                                                                      |
+| `audio_device`                | `vm.go:180`                              | planned     | #17       | Single-nested per ADR-008 single-vs-map rule (joins `efi_disk`/`tpm_state`); forward-compat trade-off accepted (PVE growing `audio1+` would require breaking schema migration) |
+| `virtiofs`                    | `vm.go:319`                              | planned     | #17       | Map-keyed                                                                                               |
+| `watchdog`                    | `vm.go:325`                              | planned     | #13       | Single-nested (one watchdog per VM)                                                                     |
+| `initialization` (cloud-init) | `vm.go:233`                              | planned     | #11       | Single-nested with nested DNS, IP config, user account, file ID blocks                                  |
+| `operating_system`            | `vm.go:271`                              | planned     | #12       | Single-nested with `type` field                                                                         |
+| `smbios`                      | `vm.go:281`                              | planned     | #12       | Single-nested with family/manufacturer/product/SKU/serial/uuid/version                                  |
+| `amd_sev`                     | `vm.go:174`                              | planned     | #18       | Single-nested with `type`, `allow_smt`, `kernel_hashes`, `no_debug`, `no_key_sharing`                   |
+| `startup`                     | `vm.go:290`                              | planned     | #18       | Single-nested with `order`, `up_delay`, `down_delay`                                                    |
+| `clone`                       | `vm.go:189`                              | dropped     | —         | Out of scope — belongs to `proxmox_cloned_vm` (D4)                                                      |
 
 ### Disk-family sub-attributes (under map-keyed `disk[slot]` block, PR #7)
 
@@ -288,7 +288,7 @@ classified as one of:
 | `no_debug` | `vm.go:178` | planned | #18 | — |
 | `no_key_sharing` | `vm.go:179` | planned | #18 | — |
 
-### Audio device sub-attributes (under map-keyed `audio_device` block, PR #17)
+### Audio device sub-attributes (under single-nested `audio_device` block, PR #17)
 
 | SDK key | SDK source | Status | Target PR | Notes |
 |---|---|---|---|---|

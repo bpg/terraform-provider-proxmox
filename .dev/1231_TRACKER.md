@@ -73,7 +73,7 @@
 | 14 | `feat(vm2): add acpi + tablet + keyboard + kvm_args + vcpus + hotplug + parallel` | todo | — | — | — | — |
 | 15 | `feat(vm2): add usb map-keyed block` | todo | — | — | — | — |
 | 16 | `feat(vm2): add hostpci map-keyed block` | todo | — | — | — | — |
-| 17 | `feat(vm2): add serial_device + audio_device + virtiofs (all map-keyed)` | todo | — | — | — | — |
+| 17 | `feat(vm2): add serial_device (map-keyed) + audio_device (single-nested) + virtiofs (map-keyed)` | todo | — | — | — | — |
 
 ### Phase 2E — Cluster + parity
 
@@ -112,6 +112,7 @@ PR(s) affected, rationale.
 | 2026-04-19 | F44 expanded: also covers "always re-sends fields" issue (in addition to "never deletes"); both fixed by `stateValue` + `plan.Equal(state)` guard | PR #1 / PR #3 | Same root cause |
 | 2026-04-19 | F47 explicitly resolved: keep `Default("cdrom")` as provider UX convenience (Section 4 verified file_id always present in PVE response when slot exists; default isn't duplicating PVE auto-populate) | PR #1 / PR #3 | Was previously left as "verify" |
 | 2026-04-19 | Datasource schema files verified clean per CLAUDE.md "Datasource Schema Attributes" rule (no `Optional: true` in any datasource_schema.go); recorded in Section 1 Scope of scan | PR #1 | Audit coverage gap closed |
+| 2026-04-19 | `audio_device` design reverted from map-keyed (one-key regex) to single-nested — joins `efi_disk`/`tpm_state` in the SingleNestedAttribute category. ADR-008 single-vs-map rule revised to allow conventionally-single devices alongside architecturally-single ones. Forward-compat trade-off explicit: if PVE adds `audio1+` slots later, requires breaking schema migration | PR #1 / PR #17 / ADR-008 (PR #2) | User reversed prior grilling decision; HCL ergonomics outweigh speculative forward-compat — PVE has had `audio0` only for years |
 
 ## Active blockers
 
