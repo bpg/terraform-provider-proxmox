@@ -101,6 +101,13 @@ PR(s) affected, rationale.
 | 2026-04-19 | Audit Sections 2 (capabilities), 3 (legacy tests), 6 (Q5 power_state notes) added — only Section 4 (mitmproxy) remains | PR #1 | Continued after first checkpoint commit |
 | 2026-04-19 | Section 4 complete — mitmproxy + qemu-server.git source cross-validated. Major finding: PVE returns absent for nearly all unset config fields; ~23 attributes drop Computed (Optional+Computed → Optional only) | PR #1 / #3 | Empirical mitmproxy data is much more aggressive than the design predicted |
 | 2026-04-19 | Per-attribute classification in gap matrix updated from `open` to confirmed targets | PR #3 | Section 4 results applied to gap matrix |
+| 2026-04-19 | Scrutiny pass — independent reviewer + 2 additional mitmproxy passes (cpu, vga+rng+cdrom). Section 4 corrected: `cpu.cores`/`cpu.sockets` keep Optional+Computed (PVE auto-populates), other 21 still drop Computed | PR #1 / #3 | Original wholesale claim was over-generalized; carve-out documented |
+| 2026-04-19 | F39, F43 severity downgraded from `blocker` to `should-fix (PR-#3-blocker)` and `should-fix (PR-#6-blocker)` | PR #1 | Reviewer flagged that "blocker" without context implies production regression; clonedvm runs fine today |
+| 2026-04-19 | F40-F42 redescribed as `NewValue` sentinels (not `FillCreateBody` sentinels — there is no FillCreateBody for memory) | PR #1 / #3 | PR #3 fix is two-part: rewrite NewValue + add FillCreateBody |
+| 2026-04-19 | F32a, F36a added: `reflect.DeepEqual` zero-struct anti-pattern in vga + rng FillCreateBody/FillUpdateBody | PR #3 | ADR-008 should explicitly reject |
+| 2026-04-19 | Section 2 expanded with sub-attribute tables for watchdog, agent, amd_sev, audio_device, numa | PR #1 | Reviewer flagged inconsistency vs disk/network/cloud-init coverage |
+| 2026-04-19 | F12 line citation corrected (`:17` const line → `:28-34, 49-57` wrapper struct + MoveState) | PR #1 | Citation accuracy |
+| 2026-04-19 | `cpu.units` validator decision changed from `keep` to `open question` — `Between(1, 262144)` rejects `0` which PVE allows on cgroup v2 | PR #3 | Reviewer flagged |
 
 ## Active blockers
 

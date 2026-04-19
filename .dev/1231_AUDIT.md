@@ -63,7 +63,7 @@ Severity tags used in Section 1:
 | F9 | error msg | should-fix | 005 | `resource.go:425` | `fmt.Sprintf("VM %d does not exist on node %s", ...)` — should be `"Unable to Import VM N"` with detail | #5 |
 | F10 | sub-block contract | should-fix | 008 | `resource.go:256–282` | Hand-rolled `del()` closure for top-level scalars (Description, Name, Tags). Should use `attribute.CheckDelete(plan, state, body, "FieldName")` per ADR-008. | #3 |
 | F11 | code clarity | nit | — | `resource.go:432–435` | Comment `"not clear why this is needed, but ImportStateVerify fails without it"` for setting StopOnDestroy/PurgeOnDestroy/DeleteUnreferencedDisksOnDestroy on import. Either replace with proper explanation or fix root cause. | #4 (during rename pass) |
-| F12 | resource type name | blocker | 007 | `resource_short.go:17, 33–46, 49–57` | `resourceShort` wrapper + `MoveState` exists. Per design D2, this collapses into single `NewResource()` returning `proxmox_vm` in PR #4. | #4 |
+| F12 | resource type name | blocker | 007 | `resource_short.go:28–34, 49–57` | `resourceShort` wrapper struct + constructor + `MoveState` method exist. Per design D2, this collapses into single `NewResource()` returning `proxmox_vm` in PR #4. (Line 17 is just the `shortResourceTypeName` const — fine in itself; the issue is the wrapper structure.) | #4 |
 | F13 | datasource type name | blocker | 007 | `datasource_short.go:15, 29–46` | `datasourceShort` wrapper. Collapses in PR #4 alongside resourceShort. | #4 |
 | F14 | datasource type name | should-fix | 007 | `datasource.go:41` | `req.ProviderTypeName + "_vm2"` — long datasource name still in use. Parallels F12/F13. | #4 |
 | F15 | error msg | should-fix | 005 | `datasource.go:89–92` | `"VM Not Found"` summary + custom detail; should be `"Unable to Read VM N"` per ADR-005 | #5 |
@@ -92,31 +92,33 @@ Severity tags used in Section 1:
 
 | # | Area | Severity | ADR | File:line | Description | Target PR |
 |---|---|---|---|---|---|---|
-| F31 | sub-block contract | should-fix | 008 | `vga/resource.go:107–129` | Hand-rolled cascades for Clipboard/Type/Memory. Replace with CheckDelete pattern. | #3 |
+| F31 | sub-block contract | should-fix | 008 | `vga/resource.go:107–129` | Hand-rolled cascades for Clipboard/Type/Memory in FillUpdateBody. Replace with CheckDelete pattern. | #3 |
 | F32 | sub-block contract | should-fix | 008 | `vga/resource.go:101–105` | `vgaDevice` initialized from state (not zero) and mutated. Different mutation pattern from cpu — ADR-008 should normalize. | #3 |
+| F32a | sub-block anti-pattern | should-fix | 008 | `vga/resource.go:72, 131` | `if !reflect.DeepEqual(vgaDevice, &vms.CustomVGADevice{}) { ... }` zero-struct comparison. In FillUpdateBody (line 131) this is always true because `vgaDevice` is initialized from state — every Update sends the entire vga block to PVE. ADR-008 should explicitly reject this anti-pattern. | #3 |
 | F33 | validator | should-fix | 004 | `vga/resource_schema.go:55–72` | Long enum validator (14 VGA types, version-evolving). Drop per ADR-004 enum rule. | #3 |
-| F34 | classification | should-fix | 004 | `vga/resource_schema.go:33–82` | All 3 VGA attributes are `Optional+Computed`. Section 4 classification needed. | #3 |
+| F34 | classification | should-fix | 004 | `vga/resource_schema.go:33–82` | All 3 VGA attributes are `Optional+Computed`. Section 4 classification: all drop Computed → Optional only (no PVE auto-populate per Finding 3). | #3 |
 
 #### `rng/` sub-package
 
 | # | Area | Severity | ADR | File:line | Description | Target PR |
 |---|---|---|---|---|---|---|
-| F35 | sub-block contract | should-fix | 008 | `rng/resource.go:117–141` | Hand-rolled cascades for Source/MaxBytes/Period. Replace with CheckDelete pattern. | #3 |
+| F35 | sub-block contract | should-fix | 008 | `rng/resource.go:117–141` | Hand-rolled cascades for Source/MaxBytes/Period in FillUpdateBody. Replace with CheckDelete pattern. | #3 |
 | F36 | sub-block contract | should-fix | 008 | `rng/resource.go:115` | `rngDevice = createRNGDevice(state, true)` — same state-initialized mutation pattern as vga (F32) | #3 |
+| F36a | sub-block anti-pattern | should-fix | 008 | `rng/resource.go:86, 143` | Same `reflect.DeepEqual(&vms.CustomRNGDevice{})` anti-pattern as F32a in both `FillCreateBody` (line 86) and `FillUpdateBody` (line 143). ADR-008 should explicitly reject. | #3 |
 | F37 | int-zero trap | nit | 004 | `rng/resource.go:54, 59` | `MaxBytes.ValueInt64() != 0` and `Period.ValueInt64() != 0` use 0 as "not set" sentinel. Documented as `"Use 0 to disable limiting"` in schema, but the FillCreateBody never sends 0 to PVE — meaning user-set 0 is silently dropped. ADR-004 integer-0 trap. | #3 |
-| F38 | classification | should-fix | 004 | `rng/resource_schema.go:31–67` | All 3 RNG attributes `Optional+Computed`. Section 4 classification needed. | #3 |
+| F38 | classification | should-fix | 004 | `rng/resource_schema.go:31–67` | All 3 RNG attributes `Optional+Computed`. Section 4 classification: all drop Computed → Optional only (no PVE auto-populate per Finding 3). | #3 |
 
 #### `memory/` sub-package
 
 | # | Area | Severity | ADR | File:line | Description | Target PR |
 |---|---|---|---|---|---|---|
-| F39 | provider default | **blocker** | 004 | `memory/resource_schema.go:52, 66, 79` | `Default(...)` for `size=512`, `balloon=0`, `shares=1000` — these are PVE's own defaults. Direct violation of ADR-004 amendment PVE-defaults rule. | #3 |
-| F40 | sentinel | should-fix | 004 | `memory/resource.go:37–40` | Nil-substitution sentinel: `DedicatedMemory == nil → 512`. Drop per ADR-004. | #3 |
-| F41 | sentinel | should-fix | 004 | `memory/resource.go:43–48` | Sentinel: `FloatingMemory == nil → 0`. Drop per ADR-004. | #3 |
-| F42 | sentinel | should-fix | 004 | `memory/resource.go:51–56` | Sentinel: `FloatingMemoryShares == nil → 1000`. Drop per ADR-004. | #3 |
-| F43 | sub-block contract | **blocker** | 008 | `memory/resource.go` (no `FillCreateBody`) | `memory/` package has **no** `FillCreateBody`. ADR-008 contract (single-nested family) requires both Fill methods. Add or document why omitted. | #3 |
-| F44 | sub-block contract | should-fix | 008 | `memory/resource.go:75–122` | `FillUpdateBody` doesn't accept `stateValue` and never deletes fields — only sets if present. Cannot remove `hugepages` or `keep_hugepages` once set. Diverges from ADR-008. | #3 |
-| F45 | classification | should-fix | 004 | `memory/resource_schema.go:43–105` | After F39 `Default` removal, all 5 attributes need ADR-004 classification (Section 4). | #3 |
+| F39 | provider default | should-fix (PR-#3-blocker) | 004 | `memory/resource_schema.go:52, 66, 79` | `Default(...)` for `size=512`, `balloon=0`, `shares=1000` — these duplicate PVE defaults. Will violate ADR-004 amendment once PR #2 lands. **Currently functional**: `clonedvm` (the only consumer today) works fine; this is a forward-looking violation, not a production regression. Must be fixed in PR #3 alongside the contract port. | #3 |
+| F40 | NewValue sentinel | should-fix | 004 | `memory/resource.go:35–40` | Nil-substitution sentinel **in `NewValue`** (API → state): `DedicatedMemory == nil → types.Int64Value(512)`. Should be `types.Int64PointerValue(nil)` so PVE's absent → state null. Drop per ADR-004. | #3 |
+| F41 | NewValue sentinel | should-fix | 004 | `memory/resource.go:42–48` | Same pattern in `NewValue` for `FloatingMemory == nil → 0`. Drop per ADR-004. | #3 |
+| F42 | NewValue sentinel | should-fix | 004 | `memory/resource.go:50–56` | Same pattern in `NewValue` for `FloatingMemoryShares == nil → 1000`. Drop per ADR-004. | #3 |
+| F43 | sub-block contract | should-fix (PR-#6-blocker) | 008 | `memory/resource.go` (no `FillCreateBody`) | `memory/` package has **no** `FillCreateBody`. **Currently functional**: `clonedvm` calls only `FillUpdateBody` (clone semantics never call Create with config), so the absence isn't blocking. Becomes blocking when PR #6 wires memory into `proxmox_vm` (which uses Create). PR #3 must add `FillCreateBody`. PR #3 fix is two-part with F40-F42: rewrite `NewValue` to return null on nil, **and** add `FillCreateBody` that handles null/unknown plan values. | #3 |
+| F44 | sub-block contract | should-fix | 008 | `memory/resource.go:75–122` | `FillUpdateBody` signature is `(ctx, planValue, body, diags)` — no `stateValue` parameter. Fields are set if present in plan but never deleted. Cannot remove `hugepages` or `keep_hugepages` once set. Diverges from ADR-008 update-body shape. PR #3 must add stateValue + CheckDelete logic. | #3 |
+| F45 | classification | should-fix | 004 | `memory/resource_schema.go:43–105` | After F39 `Default` removal, all 5 attributes need ADR-004 classification (Section 4). Note: Section 4's memory classifications are predicted from vga/rng pattern — verify with mitmproxy in PR #6. | #3 |
 
 #### `cdrom/` sub-package (reference for map-keyed pattern)
 
@@ -129,18 +131,19 @@ Severity tags used in Section 1:
 
 | Severity | Count |
 |---|---|
-| blocker | 4 (F12, F13, F39, F43) |
+| blocker | 2 (F12, F13 — actual production-blocking issues) |
+| should-fix (PR-#3-blocker) | 2 (F39, F43 — must fix during PR #3 / #6) |
 | should-fix | 35 |
 | nit | 6 |
-| Total new findings | 45 |
+| Total new findings | 47 (added F32a, F36a after scrutiny pass) |
 
-Plus 7 pre-resolved findings (P1–P7) from grilling. Combined: 52 findings.
+Plus 7 pre-resolved findings (P1–P7) from grilling. Combined: 54 findings.
 
 ### Summary by target PR
 
 | PR | New findings |
 |---|---|
-| #3 (port sub-packages) | 25 |
+| #3 (port sub-packages) | 27 (added F32a, F36a) |
 | #4 (rename) | 4 (F11, F12, F13, F14) |
 | #5 (error sweep) | 16 |
 
@@ -252,6 +255,59 @@ classified as one of:
 | `ipv6_addresses` (read-only) | `network/schema.go:28` | planned | #10 | Computed; read from agent |
 | `mac_addresses` (read-only) | `network/schema.go:29` | planned | #10 | Computed |
 | `network_interface_names` (read-only) | `network/schema.go:44` | planned | #10 | Computed |
+
+### Watchdog sub-attributes (under single-nested `watchdog` block, PR #13)
+
+| SDK key | SDK source | Status | Target PR | Notes |
+|---|---|---|---|---|
+| `enabled` | `vm.go:327` | planned | #13 | Standard enable/disable |
+| `model` | `vm.go:328` | planned | #13 | Watchdog hardware model (e.g., `i6300esb`, `ib700`) |
+| `action` | `vm.go:329` | planned | #13 | Action on watchdog timeout (e.g., `reset`, `shutdown`, `poweroff`) |
+
+### Agent sub-attributes (under single-nested `agent` block, PR #13)
+
+| SDK key | SDK source | Status | Target PR | Notes |
+|---|---|---|---|---|
+| `enabled` | `vm.go:167` | planned | #13 | — |
+| `timeout` | `vm.go:168` | planned | #13 | Per OQ4: keep as PVE pass-through |
+| `trim` | `vm.go:169` | planned | #13 | — |
+| `type` | `vm.go:170` | planned | #13 | — |
+| `wait_for_ip` | `vm.go:171` | planned | #13 | Nested |
+| `wait_for_ip.ipv4` | `vm.go:172` | planned | #13 | Nested |
+| `wait_for_ip.ipv6` | `vm.go:173` | planned | #13 | Nested |
+
+### AMD SEV sub-attributes (under single-nested `amd_sev` block, PR #18)
+
+| SDK key | SDK source | Status | Target PR | Notes |
+|---|---|---|---|---|
+| `type` | `vm.go:175` | planned | #18 | — |
+| `allow_smt` | `vm.go:176` | planned | #18 | — |
+| `kernel_hashes` | `vm.go:177` | planned | #18 | — |
+| `no_debug` | `vm.go:178` | planned | #18 | — |
+| `no_key_sharing` | `vm.go:179` | planned | #18 | — |
+
+### Audio device sub-attributes (under map-keyed `audio_device` block, PR #17)
+
+| SDK key | SDK source | Status | Target PR | Notes |
+|---|---|---|---|---|
+| `device` | `vm.go:181` | planned | #17 | — |
+| `driver` | `vm.go:182` | planned | #17 | Long enum — drop validator per ADR-004 (Q4) |
+| `enabled` | `vm.go:183` | planned | #17 | — |
+
+### NUMA sub-attributes (under map-keyed `numa[N]` block, PR #13)
+
+| SDK key | SDK source | Status | Target PR | Notes |
+|---|---|---|---|---|
+| `device` | `vm.go:209` | planned | #13 | — |
+| `cpus` | `vm.go:210` | planned | #13 | — |
+| `hostnodes` | `vm.go:211` | planned | #13 | — |
+| `memory` | `vm.go:212` | planned | #13 | — |
+| `policy` | `vm.go:213` | planned | #13 | — |
+| `enabled` (rehomed `cpu.numa`) | (new) | planned | #13 | Per design D7/P3 |
+
+### EFI Disk + TPM State + HostPCI + USB + Serial + Virtiofs + SMBIOS + OS + Startup sub-attributes
+
+> Sub-attribute tables omitted for brevity — each Phase 2 PR's first commit must enumerate sub-attributes from the corresponding `mk*` constants (`mkEFIDisk*` lines 215-219, `mkTPMState*` lines 220-222, `mkHostPCI*` lines 223-231, `mkHostUSB*` lines 305-308, `mkSerialDevice*` lines 279-280, `mkVirtiofs*` lines 319-324, `mkSMBIOS*` lines 281-288, `mkOperatingSystem*` lines 271-272, `mkStartup*` lines 290-293).
 
 ### Cloud-init sub-attributes (under `initialization` block, PR #11)
 
@@ -461,14 +517,18 @@ its sub-packages) reclassified per the new ADR-004 PVE-defaults rule.
 
 ### Methodology (Section 4)
 
-Two data sources reconciled:
+Three data sources reconciled (a single test wasn't enough — see "Methodology limitations" below):
 
-1. **Empirical mitmproxy trace** (this audit, 2026-04-19) — ran `TestAccResourceVMShort` through `mitmdump --mode regular@8082 --flow-detail 4`. Captured 25 `GET /nodes/pve/qemu/{vmid}/config` responses across the test sub-cases. Logged at `/tmp/api_debug.log`.
+1. **Empirical mitmproxy traces** (this audit, 2026-04-19):
+   - **Pass 1**: `TestAccResourceVMShort` (`fwprovider/nodes/vm/resource_test.go`) — minimal VM with only top-level scalars. 25 GET responses, log `/tmp/api_debug.log`.
+   - **Pass 2**: `TestAccResourceVM2CPU` (`fwprovider/nodes/vm/cpu/resource_test.go`) — VMs with explicit `cpu.*` fields set across 8 sub-cases. 33 GET responses, log `/tmp/api_debug_cpu.log`. **This pass surfaced the cores/sockets auto-populate carve-out.**
+   - **Pass 3**: `TestAccResourceVM2VGA`, `TestAccResourceVM2RNG`, `TestAccResourceVM2CDROM` together — VMs with explicit vga, rng, cdrom blocks. 33 GET responses, log `/tmp/api_debug_blocks.log`.
 2. **PVE source** — `qemu-server.git src/PVE/QemuServer.pm` `$confdesc` hashref documents internal defaults per field.
+3. **Existing provider sentinels** — `cpu/resource.go:38-60` substitutes `1` for nil `Cores`/`Sockets` and `kvm64` for nil `CPUEmulation.Type`. The existence of these sentinels and their purpose ("PVE does not return actual value for cores VM, etc is using default") is itself evidence about PVE behavior — but only partial evidence (see cpu carve-out below).
 
-### Key empirical finding
+### Key empirical findings
 
-For a minimal VM with only `node_name` set, PVE returns ONLY:
+**Finding 1 — minimal VM (no sub-blocks set).** PVE returns ONLY:
 
 ```json
 {
@@ -480,25 +540,57 @@ For a minimal VM with only `node_name` set, PVE returns ONLY:
 }
 ```
 
-**Every other field is absent.** Setting `name`, `description`, `tags` adds them to the response (when set, omitted when unset). PVE's internal defaults from `$confdesc` (cores=1, sockets=1, vga.type=std, etc.) are NOT written to config or surfaced via GET — they are applied only when QEMU is launched.
+Every other field is absent.
 
-**Implication:** Under the ADR-004 amendment PVE-defaults rule, almost every existing `Optional+Computed` attribute must drop `Computed` and become `Optional` only.
+**Finding 2 — cpu carve-out.** When the user sets ANY `cpu.*` field, PVE auto-populates `cores=1` and `sockets=1` in the GET response, even if the user didn't set those. Direct evidence from VM 102 in `/tmp/api_debug_cpu.log`:
+
+```text
+config (user set cpu.type="x86-64-v4" only):
+{ "cpu": "x86-64-v4", "sockets": 1, "cores": 1, ... }
+```
+
+VM 103 with `cpu.limit=64` only also returned `cores: 1` (no sockets in this case — auto-populate behavior depends on which field triggered it). The existing provider sentinels (cpu/resource.go:38-60) handle BOTH the "block absent" case AND the "block has fields" case — they were defensive against this carve-out.
+
+**Finding 3 — vga/rng/cdrom: no auto-populate.** Direct evidence from `/tmp/api_debug_blocks.log`:
+
+| Block | Test config | PVE response |
+|---|---|---|
+| vga | `vga = { type = "std" }` | `"vga": "type=std"` (only what user set) |
+| vga | `vga = { type = "qxl", clipboard = "vnc" }` | `"vga": "clipboard=vnc,type=qxl"` |
+| rng | `rng = { source = "/dev/urandom" }` | `"rng0": "source=/dev/urandom"` (only what user set) |
+| rng | `rng = { source, period }` | `"rng0": "source=...,period=1000"` |
+| cdrom | `cdrom = { ide2 = { file_id = "cdrom" } }` | `"ide2": "cdrom,media=cdrom"` (PVE adds the implicit `media=cdrom` qualifier; `file_id` is always present when slot exists) |
+
+When the user sets nothing in vga/rng/cdrom, PVE returns nothing for those blocks.
+
+**Finding 4 — memory: not directly tested.** No `TestAccResourceVM2Memory` exists. memory is shared with `clonedvm` only. Pattern likely follows vga/rng (no auto-populate) since memory's qemu-server `$confdesc` shows `memory: default=none` and `balloon: default=none`. Verify in PR #6 when memory is wired into `proxmox_vm`.
+
+**Finding 5 — PVE Perl source.** Cross-reference with `qemu-server.git src/PVE/QemuServer.pm`:
+
+- `cores`: default=1 (matches Finding 2 auto-populate)
+- `sockets`: default=1 (matches Finding 2)
+- `cpu` (property string): default=`type=kvm64` — but **NOT auto-populated** in our traces (PVE returned the user-set value or nothing; never substituted kvm64). The provider's sentinel for `Type → "kvm64"` is therefore **not corroborated by PVE behavior**; it appears to be a provider invention.
+- `vga`/`rng`: defaults documented in source but NOT surfaced in GET (matches Finding 3).
+
+**Implication:** The wholesale "drop Computed from all sub-block attributes" rule needs a carve-out: `cpu.cores` and `cpu.sockets` keep `Optional+Computed` because PVE actively auto-populates them. Everything else (vga, rng, cdrom-block-level, memory predicted, all other cpu fields) drops Computed.
 
 ### `cpu` attributes (`fwprovider/nodes/vm/cpu/resource_schema.go`)
 
 | Attribute | Current | PVE Read | qemu-server default | Target schema | Target PR |
 |---|---|---|---|---|---|
-| `cpu` (block) | Optional+Computed | absent (no nested fields surfaced) | n/a | **Optional** | #3 |
-| `cpu.affinity` | Optional+Computed | absent | none | **Optional** | #3 |
+| `cpu` (block) | Optional+Computed | absent when block has no fields; populated when block has any field (cores/sockets auto-added) | n/a | **Optional** (drop Computed at block level — when user provides nothing, PVE returns nothing) | #3 |
+| `cpu.affinity` | Optional+Computed | absent (only present when set) | none | **Optional** | #3 |
 | `cpu.architecture` | Optional+Computed | absent | none (root@pam only) | **Optional** | #3 |
-| `cpu.cores` | Optional+Computed | absent | 1 | **Optional** | #3 |
+| `cpu.cores` | Optional+Computed | **AUTO-POPULATED to 1** when block has any field | 1 | **Optional+Computed (KEEP)** — preserve current sentinel behavior, but ensure `NewValue` reads PVE's actual returned value | #3 |
 | `cpu.flags` | Optional+Computed | absent | none | **Optional** | #3 |
 | `cpu.limit` | Optional+Computed | absent | 0 | **Optional** | #3 |
 | `cpu.numa` (bool) | Optional+Computed | absent | 0 | dropped (rehomed `numa.enabled` per P3) | #3 / #13 |
-| `cpu.sockets` | Optional+Computed | absent | 1 | **Optional** | #3 |
-| `cpu.type` | Optional+Computed | absent (in `cpu` property string when set) | kvm64 (within `cpu` property string) | **Optional** | #3 |
+| `cpu.sockets` | Optional+Computed | **AUTO-POPULATED to 1** when block has any field | 1 | **Optional+Computed (KEEP)** — same as cores | #3 |
+| `cpu.type` | Optional+Computed | absent when not set (provider sentinel was wrong — see Finding 5) | kvm64 (qemu-server default; not surfaced by PVE) | **Optional** — drop the `Type→"kvm64"` sentinel; provider was over-reaching | #3 |
 | `cpu.units` | Optional+Computed | absent | 1024 (cgroup v1) / 100 (cgroup v2) | **Optional** | #3 |
 | `cpu.hotplugged` (vcpus) | Optional+Computed | absent | 0 | dropped (rehomed `vcpus` per P3) | #3 / #14 |
+
+**cpu carve-out summary**: 2 attributes keep `Optional+Computed` (`cores`, `sockets`); 7 drop to `Optional`; 2 dropped via rehoming.
 
 ### `vga` attributes (`fwprovider/nodes/vm/vga/resource_schema.go`)
 
@@ -576,23 +668,36 @@ The empirical and source-code data are consistent: PVE Perl's `$confdesc` docume
 
 | Action | Attribute count | PRs |
 |---|---|---|
-| Drop `Computed` (Optional+Computed → Optional) | 23 in existing sub-packages | #3 |
+| Drop `Computed` (Optional+Computed → Optional) | 21 in existing sub-packages | #3 |
+| Keep `Optional+Computed` (PVE auto-populates) | 2 (cpu.cores, cpu.sockets) + cdrom[slot].file_id | #3 |
 | Drop provider `Default` (per F39) | 3 (memory.size, memory.balloon, memory.shares) | #3 |
 | Drop `UseStateForUnknown` planmodifier (consequence of dropping Computed) | 2 (vga, rng blocks) | #3 |
 | Drop attribute (rehome) | 2 (cpu.numa, cpu.hotplugged) | #3 / #13 / #14 |
 | Confirmed no change (already correct) | 9 top-level scalars | — |
 | Predicted but verify in Phase 2 | 11 future fields | #6, #8, #9, #12, #14, #18 |
 
+### Methodology limitations
+
+Three caveats on Section 4's confidence:
+
+1. **`memory/` not directly tested** — no `TestAccResourceVM2Memory` exists (memory is only consumed by `clonedvm` today). The Section 4 classification for memory attributes is *predicted* from the vga/rng pattern (no auto-populate) and the qemu-server source. PR #6 (when memory is wired into `proxmox_vm`) must re-verify with mitmproxy and adjust if PVE auto-populates anything.
+2. **"Set then unset" path not explicitly tested** — the mitmproxy traces cover "never set" and "set" but not the "set then unset" transition. PVE's config file model (key=value pairs in `/etc/pve/qemu-server/{vmid}.conf`) makes "absent" and "unset" equivalent at the storage layer, so the conclusion is sound, but a dedicated test in PR #3 should cover the round-trip.
+3. **Future-field predictions are predictions** — the table for fields not yet in the codebase (acpi, tablet, bios, etc.) is reasoning from `$confdesc` defaults, not direct observation. Each Phase 2 PR that adds these fields must re-verify with mitmproxy at PR-time.
+
 ### Mitmproxy session details
+
+| Pass | Date | Test(s) | Captures | Log |
+|---|---|---|---|---|
+| 1 | 2026-04-19 | `TestAccResourceVMShort` (9 sub-cases, all PASS) | 25 GET /config | `/tmp/api_debug.log` (3473 lines) |
+| 2 | 2026-04-19 | `TestAccResourceVM2CPU` (8 sub-cases, all PASS) | 33 GET /config | `/tmp/api_debug_cpu.log` (4062 lines) |
+| 3 | 2026-04-19 | `TestAccResourceVM2VGA` + `TestAccResourceVM2RNG` + `TestAccResourceVM2CDROM` (combined) | 33 GET /config | `/tmp/api_debug_blocks.log` (5979 lines) |
 
 | Detail | Value |
 |---|---|
-| Session date | 2026-04-19 |
-| Test run | `TestAccResourceVMShort` (`fwprovider/nodes/vm/resource_test.go:24`) — 9 sub-cases, all PASS |
-| Proxy mode | `mitmdump --mode regular@8082 --flow-detail 4` (port 8082 because Docker holds 8080) |
-| Captures | 25 `GET .../qemu/{vmid}/config` responses |
-| Log location | `/tmp/api_debug.log` (3473 lines, 97 API calls total) |
-| Reproducibility | Re-run with the same test; PVE 10.1.2 cluster (per `meta: "creation-qemu=10.1.2"`) |
+| Proxy mode | `mitmdump --mode regular@8082 --flow-detail 4` (port 8082 — Docker holds 8080) |
+| Cluster | PVE 10.1.2 at `pve.bpghome.net:8006` (per `meta: "creation-qemu=10.1.2"`) |
+| Auth | `terraform@pve!provider` API token |
+| Reproducibility | Re-run the same tests with `HTTP_PROXY=http://127.0.0.1:8082 HTTPS_PROXY=... PROXMOX_VE_INSECURE=true ./testacc <TestName>` |
 
 ---
 
@@ -625,7 +730,7 @@ rule:
 | `limit` | `float64validator.Between(0, 128)` (`cpu/resource_schema.go:98`) | range | keep | PVE-source bound | — |
 | `sockets` | `int64validator.Between(1, 16)` (`cpu/resource_schema.go:113`) | range | keep | PVE-source bound | — |
 | `type` | `stringvalidator.OneOf(...75 CPU types...)` (`cpu/resource_schema.go:125–204`) | **long enum** | **drop** | (Confirms F27/P5) Long, version-evolving — defer to PVE per ADR-004 enum rule | #3 |
-| `units` | `int64validator.Between(1, 262144)` (`cpu/resource_schema.go:214`) | range | keep | PVE-source bound | — |
+| `units` | `int64validator.Between(1, 262144)` (`cpu/resource_schema.go:214`) | range | open question | PVE source: cgroup v2 default is `100`, with `0` valid (disables limiting). Current `Between(1, 262144)` rejects `0`. Acceptable on cgroup v1 hosts; restrictive on cgroup v2. PR #3: relax to `AtLeast(0)` or document the cgroup v1 assumption. | #3 |
 
 ### `vga/`
 
@@ -663,9 +768,10 @@ rule:
 
 | Decision | Count | Rationale |
 |---|---|---|
-| keep | 19 | Short stable enums, cross-attribute, range bounds, format checks |
+| keep | 18 | Short stable enums, cross-attribute, range bounds, format checks |
 | drop | 2 | Long version-evolving enums (`cpu.type`, `vga.type`) |
 | tighten | 1 | `cdrom` slot regex (`scsi` upper bound) |
+| open question | 1 | `cpu.units` lower-bound (cgroup v1 vs v2) |
 | drop-with-attr | 1 | `cpu.hotplugged` validator dies with the attribute (rehome) |
 
 All target PR #3 (sub-package port).

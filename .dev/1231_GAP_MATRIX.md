@@ -183,13 +183,13 @@ file, finalized.
 | `cpu` (block) | Optional+Computed | Optional | todo | #3 |
 | `cpu.affinity` | Optional+Computed | Optional | todo | #3 |
 | `cpu.architecture` | Optional+Computed | Optional | todo | #3 |
-| `cpu.cores` | Optional+Computed | Optional | todo | #3 |
+| `cpu.cores` | Optional+Computed | **Optional+Computed (KEEP)** — PVE auto-populates to 1 when block has any field | todo | #3 |
 | `cpu.flags` | Optional+Computed | Optional | todo | #3 |
 | `cpu.hotplugged` | Optional+Computed | dropped (rehomed `vcpus`) | todo | #3 / #14 |
 | `cpu.limit` | Optional+Computed | Optional | todo | #3 |
 | `cpu.numa` | Optional+Computed | dropped (rehomed `numa.enabled`) | todo | #3 / #13 |
-| `cpu.sockets` | Optional+Computed | Optional | todo | #3 |
-| `cpu.type` | Optional+Computed | Optional | todo | #3 |
+| `cpu.sockets` | Optional+Computed | **Optional+Computed (KEEP)** — same as cores | todo | #3 |
+| `cpu.type` | Optional+Computed | Optional (drop the `Type→"kvm64"` provider sentinel — not corroborated by PVE) | todo | #3 |
 | `cpu.units` | Optional+Computed | Optional | todo | #3 |
 
 ### `vga` attributes (`fwprovider/nodes/vm/vga/resource_schema.go`)
@@ -212,14 +212,17 @@ file, finalized.
 
 ### `memory` attributes (`fwprovider/nodes/vm/memory/resource_schema.go`)
 
-| Attribute | Current schema | Target schema | Status | Target PR |
+> Predictions; not directly verified via mitmproxy (no `TestAccResourceVM2Memory`
+> exists). PR #6 (when memory is wired into `proxmox_vm`) must re-verify.
+
+| Attribute | Current schema | Target schema (predicted) | Status | Target PR |
 |---|---|---|---|---|
-| `memory` (block) | Optional+Computed | Optional | todo | #3 |
-| `memory.size` | Optional+Computed+`Default(512)` | Optional (drop Default) | todo | #3 |
-| `memory.balloon` | Optional+Computed+`Default(0)` | Optional (drop Default) | todo | #3 |
-| `memory.shares` | Optional+Computed+`Default(1000)` | Optional (drop Default) | todo | #3 |
-| `memory.hugepages` | Optional+Computed | Optional | todo | #3 |
-| `memory.keep_hugepages` | Optional+Computed | Optional | todo | #3 |
+| `memory` (block) | Optional+Computed | Optional | predicted | #3 |
+| `memory.size` | Optional+Computed+`Default(512)` | Optional (drop Default) | predicted | #3 |
+| `memory.balloon` | Optional+Computed+`Default(0)` | Optional (drop Default) | predicted | #3 |
+| `memory.shares` | Optional+Computed+`Default(1000)` | Optional (drop Default) | predicted | #3 |
+| `memory.hugepages` | Optional+Computed | Optional | predicted | #3 |
+| `memory.keep_hugepages` | Optional+Computed | Optional | predicted | #3 |
 
 ### `cdrom` map-level + per-slot (`fwprovider/nodes/vm/cdrom/resource_schema.go`)
 
