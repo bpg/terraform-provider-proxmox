@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.103.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.103.0...v0.103.1) (2026-04-19)
+
+
+### Miscellaneous
+
+* **vm2:** add design for VM Plugin Framework migration ([d824227](https://github.com/bpg/terraform-provider-proxmox/commit/d824227aed86a89b2f2415af69b6d344bd82a6aa))
+
 ## [0.103.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.102.0...v0.103.0) (2026-04-18)
 
 
