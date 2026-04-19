@@ -10,16 +10,16 @@
 
 | Phase | PRs | Merged | In-flight | Blocked |
 |---|---|---|---|---|
-| 1 — Audit & Redesign | 5 | 0 | 0 | 0 |
+| 1 — Audit & Redesign | 5 | 0 | 1 | 0 |
 | 2A — MVP setup + MVP | 2 | 0 | 0 | 0 |
 | 2B — Boot + UEFI | 2 | 0 | 0 | 0 |
 | 2C — Network/cloud-init/OS | 3 | 0 | 0 | 0 |
 | 2D — Advanced hardware | 5 | 0 | 0 | 0 |
 | 2E — Cluster + parity | 3 | 0 | 0 | 0 |
 | Floating client-refactor | 0–1 | 0 | 0 | 0 |
-| **Total** | **20 (+1)** | **0** | **0** | **0** |
+| **Total** | **20 (+1)** | **0** | **1** | **0** |
 
-**Currently active:** none
+**Currently active:** PR #1 (audit) on `chore/1231-audit-proxmox-vm`
 
 ## Status legend
 
@@ -37,7 +37,7 @@
 
 | # | Title | Status | Branch | PR | Session | Blocker |
 |---|---|---|---|---|---|---|
-| 1 | `chore(vm2): audit proxmox_vm against ADRs 001–007` | todo | — | — | — | — |
+| 1 | `chore(vm2): audit proxmox_vm against ADRs 001–007` | wip | `chore/1231-audit-proxmox-vm` | — | `1231_SESSION_STATE.md` | — |
 | 2 | `docs(adr): ADR-008 sub-block contract + ADR-004 amendment` | todo | — | — | — | — |
 | 3 | `refactor(vm2): port cpu/vga/rng/cdrom/memory to ADR-008` | todo | — | — | — | — |
 | 4 | `refactor(vm2)!: rename to proxmox_vm; delete MoveState` | todo | — | — | — | — |
@@ -97,7 +97,7 @@ PR(s) affected, rationale.
 
 | Date | Decision | Affects | Rationale |
 |---|---|---|---|
-| — | — | — | — |
+| 2026-04-19 | Audit Section 4 (per-attribute classification) deferred to dedicated mitmproxy session — code-only sections (1, 5, 7) front-loaded | PR #1 | User chose option 2 (sequence audit by infra dependency) |
 
 ## Active blockers
 
