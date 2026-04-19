@@ -158,47 +158,162 @@ classified as one of:
 | `deliberately dropped` | Out of scope; document why |
 | `open question` | Needs maintainer decision before PR can land |
 
-### Top-level attributes
+### Top-level scalars
 
-| Attribute | SDK source (file:line) | Status | Target PR | Notes |
+| SDK key | SDK source | Status | Target PR | Notes |
 |---|---|---|---|---|
-| TBD | — | — | — | — |
+| `description` | `vm.go:206` | done | — | Already in `proxmox_vm` |
+| `name` | `vm.go:268` | done | — | Already in `proxmox_vm` (with DNS validator) |
+| `node_name` | `vm.go:270` | done | — | Already in `proxmox_vm` (Required) |
+| `tags` | `vm.go:295` | done | — | Already in `proxmox_vm` (stringset) |
+| `template` | `vm.go:296` | done | — | Already in `proxmox_vm` (RequiresReplace planmodifier) |
+| `vm_id` | `vm.go:313` | done (as `id`) | — | Already in `proxmox_vm`; renamed |
+| `pool_id` | `vm.go:273` | planned | #18 | — |
+| `protection` | `vm.go:274` | planned | #18 | — |
+| `migrate` | `vm.go:267` | planned | #19 | — |
+| `acpi` | `vm.go:165` | planned | #14 | — |
+| `bios` | `vm.go:184` | planned | #8 | — |
+| `boot_order` | `vm.go:164` | planned | #8 | — |
+| `hook_script_file_id` | `vm.go:315` | planned | #18 | — |
+| `hotplug` | `vm.go:232` | planned | #14 | — |
+| `keyboard_layout` | `vm.go:258` | planned | #14 | — |
+| `kvm_arguments` | `vm.go:259` | planned | #14 | — |
+| `machine` | `vm.go:260` | planned | #8 | — |
+| `scsi_hardware` | `vm.go:314` | planned | #9 | — |
+| `tablet_device` | `vm.go:294` | planned | #14 | — |
+| `vm_id` (clone source) | n/a | dropped | — | Belongs to `proxmox_cloned_vm`, out of scope (D4) |
 
 ### Top-level blocks
 
-| Block | SDK source (file:line) | Status | Target PR | Notes |
+| SDK key | SDK source | Status | Target PR | Notes |
 |---|---|---|---|---|
-| TBD | — | — | — | — |
+| `cpu` | `vm.go:195` | done | — | In production. PR #3 ports to ADR-008. `numa`/`hotplugged` rehoming P3. |
+| `vga` | `vm.go:309` | done | — | In production; PR #3 ports to ADR-008. Drop long-enum `type` validator. |
+| `rng` | `vm.go:275` | done | — | In production; PR #3 ports to ADR-008. |
+| `cdrom` | `vm.go:185` | done | — | In production (map-keyed, reference impl). PR #3 tightens slot regex (F46). |
+| `memory` | `vm.go:261` | wired in #6 | #6 | Package exists with critical violations (F39, F43); PR #3 fixes contract; PR #6 wires into `proxmox_vm` |
+| `disk` | `disk/schema.go:30` (MkDisk) | planned | #7 | First new map-keyed application |
+| `network_device` | `network/schema.go:32` (MkNetworkDevice) | planned | #10 | Map-keyed |
+| `agent` | `vm.go:166` | planned | #13 | Includes `enabled`, `timeout`, `trim`, `type`, `wait_for_ip` |
+| `numa` (NUMA topology block) | `vm.go:208` | planned | #13 | Distinct from `cpu.numa` boolean; map-keyed `numa[N]` per `MAX_NUMA=8` |
+| `efi_disk` | `vm.go:215` | planned | #9 | Single-nested per ADR-008 architectural-single rule |
+| `tpm_state` | `vm.go:220` | planned | #9 | Single-nested per ADR-008 architectural-single rule |
+| `hostpci` | `vm.go:223` | planned | #16 | Map-keyed per `MAX_HOSTPCI_DEVICES=16` |
+| `usb` | `vm.go:305` | planned | #15 | Map-keyed per `MAX_USB_DEVICES=14` |
+| `serial_device` | `vm.go:279` | planned | #17 | Map-keyed per `MAX_SERIAL_PORTS=4` |
+| `audio_device` | `vm.go:180` | planned | #17 | Map-keyed (one-key today) per ADR-008 forward-compat rule |
+| `virtiofs` | `vm.go:319` | planned | #17 | Map-keyed |
+| `watchdog` | `vm.go:325` | planned | #13 | Single-nested (one watchdog per VM) |
+| `initialization` (cloud-init) | `vm.go:233` | planned | #11 | Single-nested with nested DNS, IP config, user account, file ID blocks |
+| `operating_system` | `vm.go:271` | planned | #12 | Single-nested with `type` field |
+| `smbios` | `vm.go:281` | planned | #12 | Single-nested with family/manufacturer/product/SKU/serial/uuid/version |
+| `amd_sev` | `vm.go:174` | planned | #18 | Single-nested with `type`, `allow_smt`, `kernel_hashes`, `no_debug`, `no_key_sharing` |
+| `startup` | `vm.go:290` | planned | #18 | Single-nested with `order`, `up_delay`, `down_delay` |
+| `clone` | `vm.go:189` | dropped | — | Out of scope — belongs to `proxmox_cloned_vm` (D4) |
 
-### Disk-family attributes
+### Disk-family sub-attributes (under map-keyed `disk[slot]` block, PR #7)
 
-| Attribute | SDK source (file:line) | Status | Target PR | Notes |
+| SDK key | SDK source | Status | Target PR | Notes |
 |---|---|---|---|---|
-| TBD | — | — | — | — |
+| `aio` | `disk/schema.go:31` | planned | #7 | — |
+| `backup` | `disk/schema.go:32` | planned | #7 | — |
+| `cache` | `disk/schema.go:33` | planned | #7 | — |
+| `datastore_id` | `disk/schema.go:34` | planned | #7 | — |
+| `discard` | `disk/schema.go:35` | planned | #7 | — |
+| `file_format` | `disk/schema.go:36` | planned | #7 | — |
+| `file_id` | `disk/schema.go:37` | planned | #7 | — |
+| `import_from` | `disk/schema.go:38` | planned | #7 | — |
+| `interface` (legacy slot field) | `disk/schema.go:39` | dropped | — | Replaced by map key per ADR-008 map-keyed pattern |
+| `iops_read` / `iops_read_burstable` / `iops_write` / `iops_write_burstable` | `disk/schema.go:40–43` | planned | #7 | — |
+| `iothread` | `disk/schema.go:44` | planned | #7 | — |
+| `path_in_datastore` | `disk/schema.go:45` | planned | #7 | — |
+| `replicate` | `disk/schema.go:46` | planned | #7 | — |
+| `serial` | `disk/schema.go:47` | planned | #7 | — |
+| `size` | `disk/schema.go:48` | planned | #7 | — |
+| `speed` (read/read_burstable/write/write_burstable nested) | `disk/schema.go:49–53` | planned | #7 | — |
+| `ssd` | `disk/schema.go:54` | planned | #7 | — |
 
-### Network-family attributes
+### Network-family sub-attributes (under map-keyed `network_device[slot]` block, PR #10)
 
-| Attribute | SDK source (file:line) | Status | Target PR | Notes |
+| SDK key | SDK source | Status | Target PR | Notes |
 |---|---|---|---|---|
-| TBD | — | — | — | — |
+| `bridge` | `network/schema.go:33` | planned | #10 | — |
+| `disconnected` | `network/schema.go:34` | planned | #10 | — |
+| `enabled` | `network/schema.go:35` | planned | #10 | — |
+| `firewall` | `network/schema.go:36` | planned | #10 | — |
+| `mac_address` | `network/schema.go:37` | planned | #10 | — |
+| `mtu` | `network/schema.go:38` | planned | #10 | — |
+| `model` | `network/schema.go:39` | planned | #10 | — |
+| `queues` | `network/schema.go:40` | planned | #10 | — |
+| `rate_limit` | `network/schema.go:41` | planned | #10 | — |
+| `trunks` | `network/schema.go:42` | planned | #10 | — |
+| `vlan_id` | `network/schema.go:43` | planned | #10 | — |
+| `ipv4_addresses` (read-only) | `network/schema.go:27` | planned | #10 | Computed; read from agent |
+| `ipv6_addresses` (read-only) | `network/schema.go:28` | planned | #10 | Computed; read from agent |
+| `mac_addresses` (read-only) | `network/schema.go:29` | planned | #10 | Computed |
+| `network_interface_names` (read-only) | `network/schema.go:44` | planned | #10 | Computed |
 
-### Cloud-init attributes
+### Cloud-init sub-attributes (under `initialization` block, PR #11)
 
-| Attribute | SDK source (file:line) | Status | Target PR | Notes |
+| SDK key | SDK source | Status | Target PR | Notes |
 |---|---|---|---|---|
-| TBD | — | — | — | — |
+| `datastore_id` | `vm.go:234` | planned | #11 | — |
+| `interface` | `vm.go:235` | planned | #11 | — |
+| `file_format` | `vm.go:236` | planned | #11 | — |
+| `dns.domain` / `dns.servers` | `vm.go:237–239` | planned | #11 | Nested |
+| `ip_config.ipv4.address` / `.ipv4.gateway` | `vm.go:241–243` | planned | #11 | Nested, map-keyed by interface |
+| `ip_config.ipv6.address` / `.ipv6.gateway` | `vm.go:244–246` | planned | #11 | Nested, map-keyed by interface |
+| `type` | `vm.go:247` | planned | #11 | Cloud-init type (`nocloud`, `configdrive2`, `opennebula`) |
+| `upgrade` | `vm.go:248` | planned | #11 | — |
+| `user_account.username` / `.password` / `.keys` | `vm.go:249–252` | planned | #11 | Nested |
+| `user_data_file_id` / `vendor_data_file_id` / `network_data_file_id` / `meta_data_file_id` | `vm.go:253–256` | planned | #11 | — |
 
-### Runtime / lifecycle attributes (`started`, `reboot`, `on_boot`, …)
+### Runtime / lifecycle attributes
 
-| Attribute | SDK source (file:line) | Status | Target PR | Notes |
+| SDK key | SDK source | Status | Target PR | Notes |
 |---|---|---|---|---|
-| TBD | — | — | — | — |
+| `started` | `vm.go:289` | dropped | — | Replaced by `power_state` (Q5/PR #6) |
+| `reboot` (after creation) | `vm.go:161` | dropped | — | Provider decides from pending changes (Q5/PR #6) |
+| `reboot_after_update` | `vm.go:162` | dropped | — | Same as above |
+| `on_boot` | `vm.go:163` | planned | #6 | PVE "Start at boot" — `Optional` only per ADR-004 amendment |
+| `stop_on_destroy` | `vm.go:316` | done | — | Already in `proxmox_vm` (provider-only `Optional+Default`) |
+| `purge_on_destroy` | `vm.go:317` | done | — | Already in `proxmox_vm` |
+| `delete_unreferenced_disks_on_destroy` | `vm.go:318` | done | — | Already in `proxmox_vm` |
+| `power_state` | (new) | planned | #6 | New attribute per Q5 |
+| `status` (Computed) | (new) | planned | #6 | Mirror of PVE runtime status |
+| `vcpus` (top-level, rehomed `cpu.hotplugged`) | (new) | planned | #14 | Per design D7/P3 |
+| `numa.enabled` (rehomed `cpu.numa`) | (new) | planned | #13 | Per design D7/P3 |
 
-### Misc / advanced
+### Timeouts (folded into `timeouts` block under ADR-006)
 
-| Attribute | SDK source (file:line) | Status | Target PR | Notes |
+| SDK key | SDK source | Status | Target PR | Notes |
 |---|---|---|---|---|
-| TBD | — | — | — | — |
+| `timeout_clone` | `vm.go:297` | dropped | — | Belongs to clonedvm |
+| `timeout_create` | `vm.go:298` | done | — | Folded into `timeouts.create` |
+| `timeout_migrate` | `vm.go:299` | planned | #19 | Folded into `timeouts.update` (per SDK comment that this is essentially a "timeout_update") |
+| `timeout_reboot` | `vm.go:300` | dropped | — | Reboot is provider-internal (Q5); reuse `timeouts.update` |
+| `timeout_shutdown_vm` | `vm.go:301` | planned | #6 | Internal to `power_state` transitions; not user-facing |
+| `timeout_start_vm` | `vm.go:302` | planned | #6 | Internal to `power_state` transitions; not user-facing |
+| `timeout_stop_vm` | `vm.go:303` | planned | #6 | Internal to `power_state` transitions; not user-facing |
+| `timeout_move_disk` | `vm.go:304` | planned | #19 | Folded into migrate timeout |
+
+### Open questions (pending maintainer decision)
+
+| # | Question | Notes |
+|---|---|---|
+| OQ1 | Should `timeout_*` granular controls survive (as `timeouts.{create,update,delete,read}`) or do we adopt PVE-like granularity (separate per phase)? | Recommend: stick with framework `timeouts` block (ADR-006); fold internal phase timeouts into the parent op. |
+| OQ2 | Read-only network attributes (`ipv4_addresses`, `ipv6_addresses`, `mac_addresses`, `network_interface_names`) — surface in resource as Computed, only in datasource, or both? | Recommend: only in datasource (Q3 deferral spirit — datasource exposes runtime state). Resource focuses on configuration. |
+| OQ3 | Cloud-init `ip_config` — keep as ordered list (SDK) or convert to map keyed by interface name? | Recommend: map-keyed by interface name (`net0`, `net1`, …) — natural correspondence with `network_device` slots. |
+| OQ4 | `agent.timeout` and `agent.wait_for_ip.{ipv4,ipv6}` — keep as PVE pass-through or fold into provider `timeouts.create` semantics? | Recommend: keep as PVE pass-through (they map to PVE config keys). |
+
+### Summary by status
+
+| Status | Count |
+|---|---|
+| done (already in `proxmox_vm`) | 14 |
+| planned (Phase 2) | ~70 attributes + ~20 nested fields |
+| dropped (out of scope or replaced) | 8 |
+| open (maintainer decision) | 4 |
 
 ---
 
@@ -208,11 +323,126 @@ Every test in `proxmoxtf/resource/vm/**/*_test.go` and
 `fwprovider/test/resource_vm_*.go` mapped to the user-visible behavior it
 exercises and the Phase 2 PR that will own its port.
 
-| Test name | Source (file:line) | Behavior under test | Tier | Target PR | Port status |
-|---|---|---|---|---|---|
-| TBD | — | — | — | — | — |
+### Acceptance tests on the SDK resource (in `fwprovider/test/`)
 
-Port status values: `done`, `planned`, `dropped` (with reason), `open question`.
+Despite the directory name, these tests exercise `proxmox_virtual_environment_vm` (SDK), driven through the framework's test harness. They are the primary source of behavioral coverage to port.
+
+#### `resource_vm_test.go` (2087 LOC, ~40 sub-cases)
+
+| Test function | Behavior cluster | Target PR(s) for port |
+|---|---|---|
+| `TestAccResourceVM` | Description, name, node_name, protection, cpu update, memory update, vga update, watchdog, rng, virtiofs, purge/delete-disks/stop-on-destroy defaults + updates, hotplug variants, timeout persistence | Spread across #6 (memory, lifecycle), #13 (watchdog), #14 (hotplug), #17 (virtiofs); plus #3 (cpu/vga/rng update tests survive contract port) |
+| `TestAccResourceVMImport` (`vm_test.go:715`) | Import round-trip with various attribute coverage | Carries forward into every PR — every block must include "import round-trip plan empty diff" per design Mandatory Test Scenarios |
+| `TestAccResourceVMInitialization` (`vm_test.go:790`) | Cloud-init: custom + native; SCSI interface; username updates; upgrade flag variants; running-VM update | #11 (initialization) |
+| `TestAccResourceVMNetwork` (`vm_test.go:1166`) | network_device interfaces, wait-for-IPv4, disconnected, removal (single + multi) | #10 (network_device) |
+| `TestAccResourceVMClone` (`vm_test.go:1500`) | Clone scenarios | dropped — clone is `proxmox_cloned_vm`'s domain (D4) |
+| `TestAccResourceVMVirtioSCSISingleWithAgent` (`vm_test.go:1804`) | SCSI single + agent enabled together | #7 (disk) + #13 (agent) |
+| `TestAccResourceVMUpdateWhileStopped` (`vm_test.go:1880`) | Update operations while VM is stopped | #6 (power_state) — interaction with stopped state |
+
+#### `resource_vm_disks_test.go` (2494 LOC)
+
+| Test function | Behavior | Target PR |
+|---|---|---|
+| `TestAccResourceVMDisks` | Core disk CRUD (create/update/delete/import) across multiple interfaces | #7 |
+| `TestAccResourceVMDiskCloneNFSResize` | NFS storage + clone resize | #7 (resource scope) / dropped clone parts |
+| `TestAccResourceVMDiskRemovalReuseIssue2218` | Disk slot rename/reuse — regression for #2218 | #7 (mandatory map-keyed scenario) |
+| `TestAccResourceVMDiskSpeedPerDisk` | Per-disk speed limits | #7 |
+| `TestAccResourceVMDiskSpeedUpdate` | Update speed settings | #7 |
+| `TestAccResourceVMDiskResizeWithOptionChange` | Resize + option change in one apply | #7 |
+| `TestAccResourceVMDiskRemoval` | Plain removal scenario | #7 (covered by mandatory "remove middle slot") |
+| `TestAccResourceVMDiskCDROMNotInDiskBlock` | CD-ROM excluded from disk block | #7 + #3 (cdrom keeps separate block) |
+| `TestAccResourceVMDiskResizeNonHotpluggable` | Resize when hotplug disabled | #7 |
+| `TestAccResourceVMDiskResizeDefaultHotplug` | Resize with default hotplug | #7 |
+| `TestAccResourceVMEFIDiskStorageMigration` | EFI disk storage migration | #9 (efi_disk) + #19 (migrate) |
+
+#### `resource_vm_hotplug_test.go` (1176 LOC)
+
+| Test function | Behavior | Target PR |
+|---|---|---|
+| `TestAccResourceVMHotplug` | Hotplug attribute variants and behavior under update | #14 |
+
+#### `resource_vm_pool_test.go` (562 LOC)
+
+| Test function | Behavior | Target PR |
+|---|---|---|
+| `TestAccResourceVMPoolDetection` | Pool auto-detection | #18 |
+| `TestAccResourceVMPoolDetectionLegacy` | Legacy pool detection | #18 |
+| `TestAccResourceVMPoolDetectionManual` | Manual pool assignment | #18 |
+| `TestAccResourceVMPoolMembership` | Pool membership lifecycle | #18 |
+| `TestAccResourceVMPoolMembershipLegacy` | Legacy pool membership | #18 |
+| `TestAccResourceVMPoolMembershipWithExplicitPoolID` | Explicit `pool_id` | #18 |
+
+#### `resource_vm_reboot_after_creation_test.go` + `resource_vm_reboot_after_update_test.go` (606 LOC combined)
+
+| Test function | Behavior | Target PR | Port status |
+|---|---|---|---|
+| `TestAccResourceVMRebootAfterCreationWithAgent` | Reboot policy after create | #6 (power_state) | **rewritten** — `reboot` user-facing attribute dropped (Q5); test becomes "after create, pending changes trigger reboot" |
+| `TestAccResourceVMRebootAfterUpdateTPMStatePolicy` | TPM update triggers reboot | #6 + #9 | rewritten same way |
+| `TestAccResourceVMRebootAfterUpdateCloudInitMovePolicy` | Cloud-init move triggers reboot | #6 + #11 | rewritten |
+| `TestAccResourceVMRebootAfterUpdateTemplatePolicy` | Template flag change | #6 | rewritten |
+| `TestAccResourceVMRebootAfterUpdateDiskMovePolicy` | Disk move triggers reboot | #6 + #7 | rewritten |
+| `TestAccResourceVMRebootAfterUpdateDiskResizePolicy` | Disk resize triggers reboot | #6 + #7 | rewritten |
+
+These six are explicitly **rewritten** (not ported byte-level) — the user-facing `reboot` attribute is gone; tests assert that pending changes drive provider-internal reboots.
+
+#### `resource_vm_template_test.go`
+
+| Test function | Behavior | Target PR |
+|---|---|---|
+| `TestAccResourceVMTemplateConversion` | Convert VM to template | done — already in `proxmox_vm` Create + Update paths |
+
+#### `resource_vm_tpm_state_test.go`
+
+| Test function | Behavior | Target PR |
+|---|---|---|
+| `TestAccResourceVMTpmState` | TPM state lifecycle | #9 (tpm_state) |
+
+#### `resource_vm_cdrom_test.go`
+
+| Test function | Behavior | Target PR |
+|---|---|---|
+| `TestAccResourceVMCDROM` | CD-ROM lifecycle | done — `cdrom/` package already has acceptance tests |
+
+#### Datasource tests
+
+| Test function | Behavior | Target PR |
+|---|---|---|
+| `TestAccDatasourceSDKVMNotFound` (`fwprovider/test/datasource_vm_test.go`) | SDK-side datasource not-found | (SDK-only — unaffected by #1231) |
+| FW datasource coverage | Equivalent functional coverage required per ADR-006 | every Phase 2 PR adds coverage — datasource gets the same map-keyed blocks (per Q1 + design Datasource Parity table) |
+
+### Unit tests on the SDK package (in `proxmoxtf/resource/vm/`)
+
+| Test function | Source | Behavior | Target PR | Port status |
+|---|---|---|---|---|
+| `TestVMInstantiation` | `vm_test.go:21` | Schema instantiation smoke test | — | dropped — Framework provider has its own schema-validation patterns |
+| `TestVMSchema` | `vm_test.go:31` | Schema field-by-field assertions | — | dropped — Framework schema is the source of truth |
+| `TestHotplugContains` | `vm_test.go:421` | `hotplug` flag parsing | #14 | port to FW unit test |
+| `Test_parseImportIDWIthNodeName` | `vm_test.go:457` | Import ID parser | #4 | port — already done equivalent at `fwprovider/nodes/vm/resource.go:397` |
+| `TestCPUType` | `validators_test.go:16` | Validates CPU type enum | — | **dropped** — long enum validator dropped per ADR-004 (Q4/F27) |
+| `TestMachineType` | `validators_test.go:47` | Validates machine type enum | — | **dropped** — long enum validator dropped per ADR-004 |
+| `TestVmHostname` | `validators_test.go:82` | DNS name validator | #4/#5 | port — `name` validator survives (kept per Section 5 inventory) |
+| `TestDiskOrderingDeterministic` | `disk/disk_test.go:27` | Map ordering for disk slots | — | **dropped** — map-keyed pattern eliminates ordering concern |
+| `TestDiskOrderingVariousInterfaces` | `disk/disk_test.go:112` | Cross-interface ordering | — | **dropped** — same |
+| `TestDiskDevicesEqual` | `disk/disk_test.go:195` | `CustomStorageDevice.Equals` | #7 | port if FW disk implementation needs equality helper; otherwise drop |
+| `TestDiskUpdateSkipsUnchangedDisks` | `disk/disk_test.go:268` | No-op update for unchanged | #7 | port — covered by mandatory map-keyed scenario "Apply, re-plan with same config — assert empty diff" |
+| `TestImportFromDiskNotReimportedOnSizeChange` | `disk/disk_test.go:369` | Import-from semantics on resize | #7 | port — specific behavior |
+| `TestDiskDeletionDetectionInGetDiskDeviceObjects` | `disk/disk_test.go:448` | Detection during read | #7 | port |
+| `TestDiskDeletionWithBootDiskProtection` | `disk/disk_test.go:638` | Boot disk protection during deletion | #7 | port |
+| `TestOriginalBugScenario` | `disk/disk_test.go:716` | Regression for original bug | #7 | port |
+| `TestDiskSpeedSettingsPerDisk` | `disk/disk_test.go:817` | Speed setting per disk | #7 | port |
+| `TestVMSchema` (disk subpkg) | `disk/schema_test.go:11` | Disk schema assertions | — | dropped — FW schema is source of truth |
+| `TestNetworkSchema` | `network/schema_test.go:11` | Network schema assertions | — | dropped — FW schema is source of truth |
+
+### Summary by port action
+
+| Class | Count | Port action |
+|---|---|---|
+| Acceptance tests to port (Phase 2) | ~30 | port; carry forward as `TestAccResource...` in `fwprovider/nodes/vm/` |
+| Acceptance tests to **rewrite** (reboot semantics) | 6 | rewritten per Q5 — provider-driven reboots, not user-facing |
+| Acceptance tests already done | 3 | `TestAccResourceVMTemplateConversion`, `TestAccResourceVMCDROM`, `TestAccResourceVMShort` |
+| Acceptance tests dropped (out of scope) | 1 | `TestAccResourceVMClone` (clonedvm domain) |
+| SDK unit tests to port | ~7 | hotplug parsing, hostname validator, disk-specific behavior |
+| SDK unit tests to **drop** | ~7 | Long-enum validators, schema-instantiation tests, ordering tests (map-keyed eliminates) |
 
 ---
 
@@ -306,7 +536,7 @@ rule:
 | (map keys) | `mapvalidator.KeysAre + stringvalidator.RegexMatches ^(ide[0-3]\|sata[0-5]\|scsi([0-9]\|1[0-3]))$` (`cdrom/resource_schema.go:31–37`) | slot regex | **tighten** | (Confirms F46) `scsi` only goes to 13; PVE bound is `MAX_SCSI_DISKS=31`. Update to design slot-regex table value `scsi([0-9]\|[12][0-9]\|30)`. | #3 |
 | `file_id` | `stringvalidator.Any(OneOf("cdrom", "none"), validators.FileID())` (`cdrom/resource_schema.go:48–49`) | short enum + format | keep | Sentinel values + file ID format check | — |
 
-### Summary
+### Summary by decision
 
 | Decision | Count | Rationale |
 |---|---|---|
@@ -331,11 +561,50 @@ All target PR #3 (sub-package port).
 | Implementation PR | PR #6 |
 | Audit deliverable | This section + an entry in Section 2 (capabilities) |
 
-Implementation notes (deferred to PR #6 design refinement):
+Implementation notes for PR #6:
 
-- TBD — exact API call sequence (status check → start/stop → poll)
-- TBD — interaction with `stop_on_destroy`
-- TBD — reboot-detection heuristic from pending changes diff
+### API call sequence (Create / Update reaching desired `power_state`)
+
+1. **After CRUD config write** (Create or Update path), call `GetVMStatus` (`vmAPI.GetVMStatus(ctx)`).
+2. Compare `current.Status` vs `plan.power_state.ValueString()`.
+3. **`plan="running"`, `current="stopped"`**: dispatch `StartVM(ctx, startTimeoutSec)` then `WaitForVMStatus(ctx, "running")`. Mirrors SDK `vmStart` (`proxmoxtf/resource/vm/vm.go:1980`).
+4. **`plan="stopped"`, `current="running"`**: prefer graceful shutdown if QEMU guest agent is enabled — `ShutdownVM(ctx, &vms.ShutdownRequestBody{ForceStop, Timeout})` then `WaitForVMStatus(ctx, "stopped")`. Fall back to forceful `StopVM(ctx)` + `WaitForVMStatus(ctx, "stopped")` if the agent is not available. Mirrors SDK `EnsureStopped` (`proxmoxtf/resource/vm/vm.go:2043`).
+5. **Equal**: no-op.
+
+Use the existing `proxmox/retry` operation types per ADR-005:
+
+- `retry.NewTaskOperation` for `StartVM` (returns UPID async task)
+- `retry.NewAPICallOperation` for `ShutdownVM` (synchronous)
+- `retry.NewPollOperation` for `WaitForVMStatus`
+
+### Reboot-detection heuristic
+
+After a successful `UpdateVM`, **the provider** decides whether a reboot is required:
+
+1. Re-fetch config via `GetVM(ctx)` (already required by ADR-005 read-back rule).
+2. Inspect `vmConfig.PendingChanges` (the `pending` field PVE returns when applied changes require a reboot to take effect).
+3. If `pending != nil && len(*pending) > 0 && plan.power_state == "running"` → reboot.
+4. Reboot = stop + start (reuse the EnsureStopped/EnsureRunning pattern). Skip if `power_state == "stopped"` (the change will apply on next start).
+
+**No user-facing `reboot` attribute.** Confirmed by Q5 resolution. Replaces SDK's `mkRebootAfterCreation` / `mkRebootAfterUpdate` controls.
+
+### Interaction with `stop_on_destroy`
+
+- `stop_on_destroy` continues to mean "during Delete: skip graceful shutdown, force-stop instead".
+- It is **independent** of `power_state`. A VM may have `power_state="stopped"` (already stopped) and `stop_on_destroy=true` (the latter has no effect on already-stopped VMs).
+- A VM with `power_state="running"` and `stop_on_destroy=false` is shut down gracefully on destroy, matching today's behavior.
+
+### Computed `status` attribute
+
+- Read-only mirror of PVE runtime `Status` field (`running`, `stopped`, `paused`, `prelaunch`, `migrating`, `unknown`).
+- Distinct from `power_state` (desired state, user-controlled).
+- `status` drift is informational only; provider does not auto-correct on Read (consistent with how today's drift detection works).
+
+### `on_boot` semantics
+
+- Maps directly to PVE `onboot` (start at PVE host boot).
+- No interaction with `power_state` (one is "should the VM be running now", the other is "should it autostart later").
+- `Optional` only (per ADR-004 amendment — PVE returns null when not set).
 
 ---
 

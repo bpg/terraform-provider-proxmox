@@ -98,6 +98,7 @@ PR(s) affected, rationale.
 | Date | Decision | Affects | Rationale |
 |---|---|---|---|
 | 2026-04-19 | Audit Section 4 (per-attribute classification) deferred to dedicated mitmproxy session — code-only sections (1, 5, 7) front-loaded | PR #1 | User chose option 2 (sequence audit by infra dependency) |
+| 2026-04-19 | Audit Sections 2 (capabilities), 3 (legacy tests), 6 (Q5 power_state notes) added — only Section 4 (mitmproxy) remains | PR #1 | Continued after first checkpoint commit |
 
 ## Active blockers
 
