@@ -108,6 +108,10 @@ PR(s) affected, rationale.
 | 2026-04-19 | Section 2 expanded with sub-attribute tables for watchdog, agent, amd_sev, audio_device, numa | PR #1 | Reviewer flagged inconsistency vs disk/network/cloud-init coverage |
 | 2026-04-19 | F12 line citation corrected (`:17` const line → `:28-34, 49-57` wrapper struct + MoveState) | PR #1 | Citation accuracy |
 | 2026-04-19 | `cpu.units` validator decision changed from `keep` to `open question` — `Between(1, 262144)` rejects `0` which PVE allows on cgroup v2 | PR #3 | Reviewer flagged |
+| 2026-04-19 | Second scrutiny pass: Section 4 expanded with "Implementation implications" subsection — `NewValue` functions must return `types.ObjectNull(...)` when underlying API device is nil; otherwise schema change creates permanent drift | PR #1 / PR #3 | First-pass scrutiny missed this implementation gap |
+| 2026-04-19 | F44 expanded: also covers "always re-sends fields" issue (in addition to "never deletes"); both fixed by `stateValue` + `plan.Equal(state)` guard | PR #1 / PR #3 | Same root cause |
+| 2026-04-19 | F47 explicitly resolved: keep `Default("cdrom")` as provider UX convenience (Section 4 verified file_id always present in PVE response when slot exists; default isn't duplicating PVE auto-populate) | PR #1 / PR #3 | Was previously left as "verify" |
+| 2026-04-19 | Datasource schema files verified clean per CLAUDE.md "Datasource Schema Attributes" rule (no `Optional: true` in any datasource_schema.go); recorded in Section 1 Scope of scan | PR #1 | Audit coverage gap closed |
 
 ## Active blockers
 

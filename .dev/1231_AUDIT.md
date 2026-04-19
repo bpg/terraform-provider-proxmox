@@ -44,6 +44,8 @@ Severity tags used in Section 1:
 | `fwprovider/nodes/vm/memory/` | `resource.go`, `resource_schema.go`, `model.go` | ~270 |
 | `fwprovider/nodes/vm/network/` | (empty placeholder) | 0 |
 
+**Datasource schemas verified clean** — per CLAUDE.md "Datasource Schema Attributes" rule (datasource attributes must be `Required` or `Computed`, never `Optional`). Grep across all `*/datasource_schema.go` files returned zero `Optional: true` flags. No findings.
+
 ### Findings
 
 > Each finding: `area`, `severity`, `ADR`, `file:line`, `description`, `target PR`. Pre-resolved findings from the design grilling (P1–P7) are listed at the bottom of this document; the table below holds *new* findings.
@@ -117,7 +119,7 @@ Severity tags used in Section 1:
 | F41 | NewValue sentinel | should-fix | 004 | `memory/resource.go:42–48` | Same pattern in `NewValue` for `FloatingMemory == nil → 0`. Drop per ADR-004. | #3 |
 | F42 | NewValue sentinel | should-fix | 004 | `memory/resource.go:50–56` | Same pattern in `NewValue` for `FloatingMemoryShares == nil → 1000`. Drop per ADR-004. | #3 |
 | F43 | sub-block contract | should-fix (PR-#6-blocker) | 008 | `memory/resource.go` (no `FillCreateBody`) | `memory/` package has **no** `FillCreateBody`. **Currently functional**: `clonedvm` calls only `FillUpdateBody` (clone semantics never call Create with config), so the absence isn't blocking. Becomes blocking when PR #6 wires memory into `proxmox_vm` (which uses Create). PR #3 must add `FillCreateBody`. PR #3 fix is two-part with F40-F42: rewrite `NewValue` to return null on nil, **and** add `FillCreateBody` that handles null/unknown plan values. | #3 |
-| F44 | sub-block contract | should-fix | 008 | `memory/resource.go:75–122` | `FillUpdateBody` signature is `(ctx, planValue, body, diags)` — no `stateValue` parameter. Fields are set if present in plan but never deleted. Cannot remove `hugepages` or `keep_hugepages` once set. Diverges from ADR-008 update-body shape. PR #3 must add stateValue + CheckDelete logic. | #3 |
+| F44 | sub-block contract | should-fix | 008 | `memory/resource.go:75–122` | `FillUpdateBody` signature is `(ctx, planValue, body, diags)` — no `stateValue` parameter. Two issues from the missing state: (1) fields are set if present in plan but **never deleted** (cannot remove `hugepages` or `keep_hugepages` once set); (2) fields are **re-sent on every Update** even when unchanged (no `plan.Equal(state)` short-circuit). Diverges from ADR-008 update-body shape. PR #3 must add `stateValue` parameter, `plan.Equal(state)` early-return guard, and `attribute.CheckDelete` per field. | #3 |
 | F45 | classification | should-fix | 004 | `memory/resource_schema.go:43–105` | After F39 `Default` removal, all 5 attributes need ADR-004 classification (Section 4). Note: Section 4's memory classifications are predicted from vga/rng pattern — verify with mitmproxy in PR #6. | #3 |
 
 #### `cdrom/` sub-package (reference for map-keyed pattern)
@@ -125,7 +127,7 @@ Severity tags used in Section 1:
 | # | Area | Severity | ADR | File:line | Description | Target PR |
 |---|---|---|---|---|---|---|
 | F46 | regex bound | nit | 008 | `cdrom/resource_schema.go:33` | Slot regex `^(ide[0-3]\|sata[0-5]\|scsi([0-9]\|1[0-3]))$` — `scsi` only goes to 13, but PVE bound is `MAX_SCSI_DISKS=31`. Restrict-then-relax behavior is OK (additive), but design's slot-regex table specifies `scsi([0-9]\|[12][0-9]\|30)`. Tighten or relax to match. | #3 |
-| F47 | provider default | nit | 004 | `cdrom/resource_schema.go:46` | `Default: stringdefault.StaticString("cdrom")` for `file_id`. Verify against PVE Read behavior — does PVE auto-default file_id to `"cdrom"` for an attached storage device, or is this a provider sentinel? | #3 |
+| F47 | provider default | nit | 004 | `cdrom/resource_schema.go:46` | `Default: stringdefault.StaticString("cdrom")` for `file_id`. Section 4 verified PVE always returns `file_id` when slot exists, so this Default is **not** duplicating a PVE auto-populated value. The Default lets users write `cdrom = { ide2 = {} }` to create an empty CD-ROM slot — PVE's storage path `cdrom` literally means "no media inserted". **Resolution: keep as provider UX convenience**; document the rationale in the schema MarkdownDescription so future maintainers don't mistake it for an ADR-004 violation. | #3 |
 
 ### Summary by severity
 
@@ -664,6 +666,33 @@ These will likely **keep** `Optional+Computed` (without provider Default) per th
 
 The empirical and source-code data are consistent: PVE Perl's `$confdesc` documents internal defaults that are applied at QEMU launch time, but the Perl Web API does not write those defaults back to the on-disk config. So `parse_vm_config()` returns only what's literally in the config file. The mitmproxy GET responses confirm this: only user-set fields and PVE-auto-generated fields (`smbios1`, `vmgenid`, `boot`, `meta`, `digest`) appear.
 
+### Implementation implications for PR #3 (`NewValue` null-Object pattern)
+
+Dropping `Optional+Computed → Optional` at a block level requires a coordinated change to that block's `NewValue` function. Today, every existing `NewValue` in the audited sub-packages **always returns a non-null Object** (with null inner fields when the underlying API device pointer is nil). After the schema change, that produces permanent plan/state drift:
+
+| Step | Today |
+|---|---|
+| User has no `vga` block in HCL | plan = `null` Object |
+| Read returns | `vga = Object{Clipboard:null, Type:null, Memory:null}` (non-null Object with null fields) |
+| Plan vs state comparison | `null` vs non-null → **permanent diff** |
+
+**Required PR #3 fix** — each `NewValue` must return `types.ObjectNull(attributeTypes())` when the underlying API device is absent:
+
+| Package | Current `NewValue` (file:line) | Required PR #3 change |
+|---|---|---|
+| `vga/` | `resource.go:25–37` (always returns Object) | Return `types.ObjectNull(attributeTypes())` when `config.VGADevice == nil` |
+| `rng/` | `resource.go:25–43` (always returns Object) | Return `types.ObjectNull(attributeTypes())` when `config.RNGDevice == nil` |
+| `memory/` | `resource.go:24–67` (always returns Object plus F40–F42 sentinels) | Drop F40–F42 sentinels AND return `types.ObjectNull(attributeTypes())` when all of `DedicatedMemory`, `FloatingMemory`, `FloatingMemoryShares`, `Hugepages`, `KeepHugepages` are nil |
+| `cpu/` | `resource.go:26–66` (always returns Object plus F20–F22 sentinels) | More complex — see cpu carve-out below |
+
+**cpu carve-out interaction.** Because `cpu.cores` and `cpu.sockets` keep `Optional+Computed` (per the carve-out in Finding 2), the cpu `NewValue` requires layered handling:
+
+1. **Block-level null guard.** If `config` has no cpu fields set at all (`CPUAffinity`, `CPUArchitecture`, `CPUCores`, `CPUSockets`, `CPULimit`, `CPUUnits`, `NUMAEnabled`, `VirtualCPUCount`, `CPUEmulation` all nil), return `types.ObjectNull(attributeTypes())`. Handles the "user never set cpu block" case without drift.
+2. **Drop sentinels (F20–F22).** Build the inner Object using `types.Int64PointerValue(config.CPUCores)`, `types.Int64PointerValue(config.CPUSockets)`, `types.StringPointerValue(config.CPUEmulation.Type)` — null when PVE returned nil. The schema's per-attribute `Optional+Computed` for cores/sockets handles both branches (PVE auto-populated → state inherits the PVE value; PVE returned nil → state stays null with no drift via Computed reconciliation).
+3. **`cpu.type`**: drop the `kvm64` sentinel (Finding 5 confirmed PVE never auto-populates type — the existing sentinel was provider invention).
+
+Without these `NewValue` changes, every existing `proxmox_vm` resource without a sub-block in HCL gets a permanent diff after PR #3's schema change. **PR #3 must land schema and `NewValue` changes together as one atomic refactor per block.**
+
 ### Summary by classification action
 
 | Action | Attribute count | PRs |
@@ -672,6 +701,7 @@ The empirical and source-code data are consistent: PVE Perl's `$confdesc` docume
 | Keep `Optional+Computed` (PVE auto-populates) | 2 (cpu.cores, cpu.sockets) + cdrom[slot].file_id | #3 |
 | Drop provider `Default` (per F39) | 3 (memory.size, memory.balloon, memory.shares) | #3 |
 | Drop `UseStateForUnknown` planmodifier (consequence of dropping Computed) | 2 (vga, rng blocks) | #3 |
+| Add `NewValue` null-Object guard (return `types.ObjectNull(...)` when API device nil) | 4 sub-packages (cpu, vga, rng, memory) | #3 |
 | Drop attribute (rehome) | 2 (cpu.numa, cpu.hotplugged) | #3 / #13 / #14 |
 | Confirmed no change (already correct) | 9 top-level scalars | — |
 | Predicted but verify in Phase 2 | 11 future fields | #6, #8, #9, #12, #14, #18 |
