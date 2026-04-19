@@ -304,7 +304,7 @@ file, finalized.
 | # | Question | Target PR | Status |
 |---|---|---|---|
 | OQ1 | Granular `timeout_*` controls (SDK) → adopt framework `timeouts` block only, or preserve per-phase granularity? Recommend: framework `timeouts` block, fold internal phase timeouts into parent op. | #6 / #19 | open |
-| OQ2 | Read-only network attributes (`ipv4_addresses`, `ipv6_addresses`, `mac_addresses`, `network_interface_names`) — resource Computed, datasource only, or both? Recommend: datasource only. | #10 | open |
+| OQ2 | ~~Read-only network attributes (`ipv4_addresses`, `ipv6_addresses`, `mac_addresses`, `network_interface_names`) — resource Computed, datasource only, or both?~~ | #10 | resolved (2026-04-19: per-slot under `network_device[slot]` as `ipv4_addresses` List, `ipv6_addresses` List, `interface_name` String, in BOTH resource and datasource; `mac_addresses` parallel list dropped — per-slot `mac_address` covers it) |
 | OQ3 | Cloud-init `ip_config` — keep ordered list or map-keyed by interface name? Recommend: map-keyed, matches `network_device`. | #11 | open |
 | OQ4 | Agent `timeout` / `wait_for_ip.{ipv4,ipv6}` — keep as PVE pass-through or fold into provider timeouts? Recommend: PVE pass-through. | #13 | open |
 
@@ -397,9 +397,7 @@ file, finalized.
 
 ### Datasource-specific (not in resource)
 
-| Attribute | Shape | Status | Notes |
-|---|---|---|---|
-| `ipv4_addresses` (per-network-slot) | Computed list of strings | todo | Per OQ2 resolution (resource vs datasource) |
-| `ipv6_addresses` (per-network-slot) | Computed list of strings | todo | Per OQ2 |
-| `mac_addresses` (per-network-slot) | Computed list of strings | todo | Per OQ2 |
-| `network_interface_names` (per-network-slot) | Computed list of strings | todo | Per OQ2 |
+> None. After OQ2 resolution, all read-only network agent fields live
+> per-slot under `network_device[slot]` and are surfaced in both
+> resource and datasource (so they're picked up by the `network_device`
+> Computed MapNested row above, not as datasource-specific attributes).

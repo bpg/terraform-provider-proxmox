@@ -190,73 +190,73 @@ classified as one of:
 
 ### Top-level blocks
 
-| SDK key                       | SDK source                               | Status      | Target PR | Notes                                                                                                   |
-|-------------------------------|------------------------------------------|-------------|-----------|---------------------------------------------------------------------------------------------------------|
-| `cpu`                         | `vm.go:195`                              | done        | —         | In production. PR #3 ports to ADR-008. `numa`/`hotplugged` rehoming P3.                                 |
-| `vga`                         | `vm.go:309`                              | done        | —         | In production; PR #3 ports to ADR-008. Drop long-enum `type` validator.                                 |
-| `rng`                         | `vm.go:275`                              | done        | —         | In production; PR #3 ports to ADR-008.                                                                  |
-| `cdrom`                       | `vm.go:185`                              | done        | —         | In production (map-keyed, reference impl). PR #3 tightens slot regex (F46).                             |
-| `memory`                      | `vm.go:261`                              | wired in #6 | #6        | Package exists with critical violations (F39, F43); PR #3 fixes contract; PR #6 wires into `proxmox_vm` |
-| `disk`                        | `disk/schema.go:30` (MkDisk)             | planned     | #7        | First new map-keyed application                                                                         |
-| `network_device`              | `network/schema.go:32` (MkNetworkDevice) | planned     | #10       | Map-keyed                                                                                               |
-| `agent`                       | `vm.go:166`                              | planned     | #13       | Includes `enabled`, `timeout`, `trim`, `type`, `wait_for_ip`                                            |
-| `numa` (NUMA topology block)  | `vm.go:208`                              | planned     | #13       | Distinct from `cpu.numa` boolean; map-keyed `numa[N]` per `MAX_NUMA=8`                                  |
-| `efi_disk`                    | `vm.go:215`                              | planned     | #9        | Single-nested per ADR-008 architectural-single rule                                                     |
-| `tpm_state`                   | `vm.go:220`                              | planned     | #9        | Single-nested per ADR-008 architectural-single rule                                                     |
-| `hostpci`                     | `vm.go:223`                              | planned     | #16       | Map-keyed per `MAX_HOSTPCI_DEVICES=16`                                                                  |
-| `usb`                         | `vm.go:305`                              | planned     | #15       | Map-keyed per `MAX_USB_DEVICES=14`                                                                      |
-| `serial_device`               | `vm.go:279`                              | planned     | #17       | Map-keyed per `MAX_SERIAL_PORTS=4`                                                                      |
+| SDK key                       | SDK source                               | Status      | Target PR | Notes                                                                                                                                                                          |
+|-------------------------------|------------------------------------------|-------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `cpu`                         | `vm.go:195`                              | done        | —         | In production. PR #3 ports to ADR-008. `numa`/`hotplugged` rehoming P3.                                                                                                        |
+| `vga`                         | `vm.go:309`                              | done        | —         | In production; PR #3 ports to ADR-008. Drop long-enum `type` validator.                                                                                                        |
+| `rng`                         | `vm.go:275`                              | done        | —         | In production; PR #3 ports to ADR-008.                                                                                                                                         |
+| `cdrom`                       | `vm.go:185`                              | done        | —         | In production (map-keyed, reference impl). PR #3 tightens slot regex (F46).                                                                                                    |
+| `memory`                      | `vm.go:261`                              | wired in #6 | #6        | Package exists with critical violations (F39, F43); PR #3 fixes contract; PR #6 wires into `proxmox_vm`                                                                        |
+| `disk`                        | `disk/schema.go:30` (MkDisk)             | planned     | #7        | First new map-keyed application                                                                                                                                                |
+| `network_device`              | `network/schema.go:32` (MkNetworkDevice) | planned     | #10       | Map-keyed                                                                                                                                                                      |
+| `agent`                       | `vm.go:166`                              | planned     | #13       | Includes `enabled`, `timeout`, `trim`, `type`, `wait_for_ip`                                                                                                                   |
+| `numa` (NUMA topology block)  | `vm.go:208`                              | planned     | #13       | Distinct from `cpu.numa` boolean; map-keyed `numa[N]` per `MAX_NUMA=8`                                                                                                         |
+| `efi_disk`                    | `vm.go:215`                              | planned     | #9        | Single-nested per ADR-008 architectural-single rule                                                                                                                            |
+| `tpm_state`                   | `vm.go:220`                              | planned     | #9        | Single-nested per ADR-008 architectural-single rule                                                                                                                            |
+| `hostpci`                     | `vm.go:223`                              | planned     | #16       | Map-keyed per `MAX_HOSTPCI_DEVICES=16`                                                                                                                                         |
+| `usb`                         | `vm.go:305`                              | planned     | #15       | Map-keyed per `MAX_USB_DEVICES=14`                                                                                                                                             |
+| `serial_device`               | `vm.go:279`                              | planned     | #17       | Map-keyed per `MAX_SERIAL_PORTS=4`                                                                                                                                             |
 | `audio_device`                | `vm.go:180`                              | planned     | #17       | Single-nested per ADR-008 single-vs-map rule (joins `efi_disk`/`tpm_state`); forward-compat trade-off accepted (PVE growing `audio1+` would require breaking schema migration) |
-| `virtiofs`                    | `vm.go:319`                              | planned     | #17       | Map-keyed                                                                                               |
-| `watchdog`                    | `vm.go:325`                              | planned     | #13       | Single-nested (one watchdog per VM)                                                                     |
-| `initialization` (cloud-init) | `vm.go:233`                              | planned     | #11       | Single-nested with nested DNS, IP config, user account, file ID blocks                                  |
-| `operating_system`            | `vm.go:271`                              | planned     | #12       | Single-nested with `type` field                                                                         |
-| `smbios`                      | `vm.go:281`                              | planned     | #12       | Single-nested with family/manufacturer/product/SKU/serial/uuid/version                                  |
-| `amd_sev`                     | `vm.go:174`                              | planned     | #18       | Single-nested with `type`, `allow_smt`, `kernel_hashes`, `no_debug`, `no_key_sharing`                   |
-| `startup`                     | `vm.go:290`                              | planned     | #18       | Single-nested with `order`, `up_delay`, `down_delay`                                                    |
-| `clone`                       | `vm.go:189`                              | dropped     | —         | Out of scope — belongs to `proxmox_cloned_vm` (D4)                                                      |
+| `virtiofs`                    | `vm.go:319`                              | planned     | #17       | Map-keyed                                                                                                                                                                      |
+| `watchdog`                    | `vm.go:325`                              | planned     | #13       | Single-nested (one watchdog per VM)                                                                                                                                            |
+| `initialization` (cloud-init) | `vm.go:233`                              | planned     | #11       | Single-nested with nested DNS, IP config, user account, file ID blocks                                                                                                         |
+| `operating_system`            | `vm.go:271`                              | planned     | #12       | Single-nested with `type` field                                                                                                                                                |
+| `smbios`                      | `vm.go:281`                              | planned     | #12       | Single-nested with family/manufacturer/product/SKU/serial/uuid/version                                                                                                         |
+| `amd_sev`                     | `vm.go:174`                              | planned     | #18       | Single-nested with `type`, `allow_smt`, `kernel_hashes`, `no_debug`, `no_key_sharing`                                                                                          |
+| `startup`                     | `vm.go:290`                              | planned     | #18       | Single-nested with `order`, `up_delay`, `down_delay`                                                                                                                           |
+| `clone`                       | `vm.go:189`                              | dropped     | —         | Out of scope — belongs to `proxmox_cloned_vm` (D4)                                                                                                                             |
 
 ### Disk-family sub-attributes (under map-keyed `disk[slot]` block, PR #7)
 
-| SDK key | SDK source | Status | Target PR | Notes |
-|---|---|---|---|---|
-| `aio` | `disk/schema.go:31` | planned | #7 | — |
-| `backup` | `disk/schema.go:32` | planned | #7 | — |
-| `cache` | `disk/schema.go:33` | planned | #7 | — |
-| `datastore_id` | `disk/schema.go:34` | planned | #7 | — |
-| `discard` | `disk/schema.go:35` | planned | #7 | — |
-| `file_format` | `disk/schema.go:36` | planned | #7 | — |
-| `file_id` | `disk/schema.go:37` | planned | #7 | — |
-| `import_from` | `disk/schema.go:38` | planned | #7 | — |
-| `interface` (legacy slot field) | `disk/schema.go:39` | dropped | — | Replaced by map key per ADR-008 map-keyed pattern |
-| `iops_read` / `iops_read_burstable` / `iops_write` / `iops_write_burstable` | `disk/schema.go:40–43` | planned | #7 | — |
-| `iothread` | `disk/schema.go:44` | planned | #7 | — |
-| `path_in_datastore` | `disk/schema.go:45` | planned | #7 | — |
-| `replicate` | `disk/schema.go:46` | planned | #7 | — |
-| `serial` | `disk/schema.go:47` | planned | #7 | — |
-| `size` | `disk/schema.go:48` | planned | #7 | — |
-| `speed` (read/read_burstable/write/write_burstable nested) | `disk/schema.go:49–53` | planned | #7 | — |
-| `ssd` | `disk/schema.go:54` | planned | #7 | — |
+| SDK key                                                                     | SDK source             | Status  | Target PR | Notes                                             |
+|-----------------------------------------------------------------------------|------------------------|---------|-----------|---------------------------------------------------|
+| `aio`                                                                       | `disk/schema.go:31`    | planned | #7        | —                                                 |
+| `backup`                                                                    | `disk/schema.go:32`    | planned | #7        | —                                                 |
+| `cache`                                                                     | `disk/schema.go:33`    | planned | #7        | —                                                 |
+| `datastore_id`                                                              | `disk/schema.go:34`    | planned | #7        | —                                                 |
+| `discard`                                                                   | `disk/schema.go:35`    | planned | #7        | —                                                 |
+| `file_format`                                                               | `disk/schema.go:36`    | planned | #7        | —                                                 |
+| `file_id`                                                                   | `disk/schema.go:37`    | planned | #7        | —                                                 |
+| `import_from`                                                               | `disk/schema.go:38`    | planned | #7        | —                                                 |
+| `interface` (legacy slot field)                                             | `disk/schema.go:39`    | dropped | —         | Replaced by map key per ADR-008 map-keyed pattern |
+| `iops_read` / `iops_read_burstable` / `iops_write` / `iops_write_burstable` | `disk/schema.go:40–43` | planned | #7        | —                                                 |
+| `iothread`                                                                  | `disk/schema.go:44`    | planned | #7        | —                                                 |
+| `path_in_datastore`                                                         | `disk/schema.go:45`    | planned | #7        | —                                                 |
+| `replicate`                                                                 | `disk/schema.go:46`    | planned | #7        | —                                                 |
+| `serial`                                                                    | `disk/schema.go:47`    | planned | #7        | —                                                 |
+| `size`                                                                      | `disk/schema.go:48`    | planned | #7        | —                                                 |
+| `speed` (read/read_burstable/write/write_burstable nested)                  | `disk/schema.go:49–53` | planned | #7        | —                                                 |
+| `ssd`                                                                       | `disk/schema.go:54`    | planned | #7        | —                                                 |
 
 ### Network-family sub-attributes (under map-keyed `network_device[slot]` block, PR #10)
 
-| SDK key | SDK source | Status | Target PR | Notes |
-|---|---|---|---|---|
-| `bridge` | `network/schema.go:33` | planned | #10 | — |
-| `disconnected` | `network/schema.go:34` | planned | #10 | — |
-| `enabled` | `network/schema.go:35` | planned | #10 | — |
-| `firewall` | `network/schema.go:36` | planned | #10 | — |
-| `mac_address` | `network/schema.go:37` | planned | #10 | — |
-| `mtu` | `network/schema.go:38` | planned | #10 | — |
-| `model` | `network/schema.go:39` | planned | #10 | — |
-| `queues` | `network/schema.go:40` | planned | #10 | — |
-| `rate_limit` | `network/schema.go:41` | planned | #10 | — |
-| `trunks` | `network/schema.go:42` | planned | #10 | — |
-| `vlan_id` | `network/schema.go:43` | planned | #10 | — |
-| `ipv4_addresses` (read-only) | `network/schema.go:27` | planned | #10 | Computed; read from agent |
-| `ipv6_addresses` (read-only) | `network/schema.go:28` | planned | #10 | Computed; read from agent |
-| `mac_addresses` (read-only) | `network/schema.go:29` | planned | #10 | Computed |
-| `network_interface_names` (read-only) | `network/schema.go:44` | planned | #10 | Computed |
+| SDK key                               | SDK source             | Status  | Target PR | Notes                     |
+|---------------------------------------|------------------------|---------|-----------|---------------------------|
+| `bridge`                              | `network/schema.go:33` | planned | #10       | —                         |
+| `disconnected`                        | `network/schema.go:34` | planned | #10       | —                         |
+| `enabled`                             | `network/schema.go:35` | planned | #10       | —                         |
+| `firewall`                            | `network/schema.go:36` | planned | #10       | —                         |
+| `mac_address`                         | `network/schema.go:37` | planned | #10       | —                         |
+| `mtu`                                 | `network/schema.go:38` | planned | #10       | —                         |
+| `model`                               | `network/schema.go:39` | planned | #10       | —                         |
+| `queues`                              | `network/schema.go:40` | planned | #10       | —                         |
+| `rate_limit`                          | `network/schema.go:41` | planned | #10       | —                         |
+| `trunks`                              | `network/schema.go:42` | planned | #10       | —                         |
+| `vlan_id`                             | `network/schema.go:43` | planned | #10       | —                         |
+| `ipv4_addresses` (SDK top-level read-only) | `network/schema.go:27` | planned | #10 | **Rehomed per-slot** as `network_device[slot].ipv4_addresses` (List of String); SDK parallel-list shape dropped. Surfaced in resource AND datasource per OQ2 resolution. |
+| `ipv6_addresses` (SDK top-level read-only) | `network/schema.go:28` | planned | #10 | **Rehomed per-slot** as `network_device[slot].ipv6_addresses` (List of String). |
+| `mac_addresses` (SDK top-level read-only) | `network/schema.go:29` | dropped | — | Per-slot `network_device[slot].mac_address` (singular, configured) already covers this; SDK parallel agent-reported list adds no value beyond edge cases (MAC spoofing in guest). |
+| `network_interface_names` (SDK top-level read-only) | `network/schema.go:44` | planned | #10 | **Rehomed per-slot** as `network_device[slot].interface_name` (String, singular per slot). Provider matches agent results to PVE slots by MAC. |
 
 ### Watchdog sub-attributes (under single-nested `watchdog` block, PR #13)
 
@@ -360,7 +360,7 @@ classified as one of:
 | # | Question | Notes |
 |---|---|---|
 | OQ1 | Should `timeout_*` granular controls survive (as `timeouts.{create,update,delete,read}`) or do we adopt PVE-like granularity (separate per phase)? | Recommend: stick with framework `timeouts` block (ADR-006); fold internal phase timeouts into the parent op. |
-| OQ2 | Read-only network attributes (`ipv4_addresses`, `ipv6_addresses`, `mac_addresses`, `network_interface_names`) — surface in resource as Computed, only in datasource, or both? | Recommend: only in datasource (Q3 deferral spirit — datasource exposes runtime state). Resource focuses on configuration. |
+| OQ2 | ~~Read-only network attributes (`ipv4_addresses`, `ipv6_addresses`, `mac_addresses`, `network_interface_names`) — surface in resource as Computed, only in datasource, or both?~~ | **Resolved 2026-04-19**: rehomed per-slot under `network_device[slot]` as `ipv4_addresses` (List), `ipv6_addresses` (List), `interface_name` (String). Surfaced in BOTH resource and datasource. SDK top-level `mac_addresses` parallel agent-reported list dropped (per-slot configured `mac_address` already exists). |
 | OQ3 | Cloud-init `ip_config` — keep as ordered list (SDK) or convert to map keyed by interface name? | Recommend: map-keyed by interface name (`net0`, `net1`, …) — natural correspondence with `network_device` slots. |
 | OQ4 | `agent.timeout` and `agent.wait_for_ip.{ipv4,ipv6}` — keep as PVE pass-through or fold into provider `timeouts.create` semantics? | Recommend: keep as PVE pass-through (they map to PVE config keys). |
 
