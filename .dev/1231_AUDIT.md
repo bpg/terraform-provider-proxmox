@@ -196,7 +196,7 @@ classified as one of:
 | `cpu`                         | `vm.go:195`                              | done        | —         | In production. PR #3 ports to ADR-008. `numa`/`hotplugged` rehoming P3.                                                                                                        |
 | `vga`                         | `vm.go:309`                              | done        | —         | In production; PR #3 ports to ADR-008. Drop long-enum `type` validator.                                                                                                        |
 | `rng`                         | `vm.go:275`                              | done        | —         | In production; PR #3 ports to ADR-008.                                                                                                                                         |
-| `cdrom`                       | `vm.go:185`                              | done        | —         | In production (map-keyed, reference impl). PR #3 tightens slot regex (F46).                                                                                                    |
+| `cdrom`                       | `vm.go:185`                              | done        | —         | In production (map-keyed, reference impl). PR #3 relaxes slot regex from 0–13 to 0–30 (F46).                                                                                   |
 | `memory`                      | `vm.go:261`                              | wired in #6 | #6        | Package exists with critical violations (F39, F43); PR #3 fixes contract; PR #6 wires into `proxmox_vm`                                                                        |
 | `disk`                        | `disk/schema.go:30` (MkDisk)             | planned     | #7        | First new map-keyed application                                                                                                                                                |
 | `network_device`              | `network/schema.go:32` (MkNetworkDevice) | planned     | #10       | Map-keyed                                                                                                                                                                      |
@@ -870,20 +870,19 @@ rule:
 
 ### `cdrom/`
 
-| Attribute  | Validator                                                                                                                             | Type                | Decision    | Reason                                                                                                                                         | Target PR |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| (map keys) | `mapvalidator.KeysAre + stringvalidator.RegexMatches ^(ide[0-3]\|sata[0-5]\|scsi([0-9]\|1[0-3]))$` (`cdrom/resource_schema.go:31–37`) | slot regex          | **tighten** | (Confirms F46) `scsi` only goes to 13; PVE bound is `MAX_SCSI_DISKS=31`. Update to design slot-regex table value `scsi([0-9]\|[12][0-9]\|30)`. | #3        |
-| `file_id`  | `stringvalidator.Any(OneOf("cdrom", "none"), validators.FileID())` (`cdrom/resource_schema.go:48–49`)                                 | short enum + format | keep        | Sentinel values + file ID format check                                                                                                         | —         |
+| Attribute  | Validator                                                                                                                             | Type                | Decision  | Reason                                                                                                                                                                                 | Target PR |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| (map keys) | `mapvalidator.KeysAre + stringvalidator.RegexMatches ^(ide[0-3]\|sata[0-5]\|scsi([0-9]\|1[0-3]))$` (`cdrom/resource_schema.go:31–37`) | slot regex          | **relax** | (Confirms F46) `scsi` only goes to 13; PVE bound is `MAX_SCSI_DISKS=31`. Update to design slot-regex table value `scsi([0-9]\|[12][0-9]\|30)` (widens accepted set from 0–13 to 0–30). | #3        |
+| `file_id`  | `stringvalidator.Any(OneOf("cdrom", "none"), validators.FileID())` (`cdrom/resource_schema.go:48–49`)                                 | short enum + format | keep      | Sentinel values + file ID format check                                                                                                                                                 | —         |
 
 ### Summary by decision
 
-| Decision       | Count | Rationale                                                                    |
-| -------------- | ----- | ---------------------------------------------------------------------------- |
-| keep           | 18    | Short stable enums, cross-attribute, range bounds, format checks             |
-| drop           | 2     | Long version-evolving enums (`cpu.type`, `vga.type`)                         |
-| tighten        | 1     | `cdrom` slot regex (`scsi` upper bound)                                      |
-| relax          | 1     | `cpu.units` from `Between(1, 262144)` to `AtLeast(0)` (cgroup v2 allows `0`) |
-| drop-with-attr | 1     | `cpu.hotplugged` validator dies with the attribute (rehome)                  |
+| Decision       | Count | Rationale                                                                                                             |
+| -------------- | ----- | --------------------------------------------------------------------------------------------------------------------- |
+| keep           | 18    | Short stable enums, cross-attribute, range bounds, format checks                                                      |
+| drop           | 2     | Long version-evolving enums (`cpu.type`, `vga.type`)                                                                  |
+| relax          | 2     | `cdrom` slot regex (`scsi` 0–13 → 0–30); `cpu.units` from `Between(1, 262144)` to `AtLeast(0)` (cgroup v2 allows `0`) |
+| drop-with-attr | 1     | `cpu.hotplugged` validator dies with the attribute (rehome)                                                           |
 
 All target PR #3 (sub-package port).
 
