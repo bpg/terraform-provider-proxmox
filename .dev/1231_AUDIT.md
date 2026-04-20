@@ -218,69 +218,89 @@ classified as one of:
 
 ### Disk-family sub-attributes (under map-keyed `disk[slot]` block, PR #7)
 
-| SDK key                                                                     | SDK source             | Status  | Target PR | Notes                                             |
-|-----------------------------------------------------------------------------|------------------------|---------|-----------|---------------------------------------------------|
-| `aio`                                                                       | `disk/schema.go:31`    | planned | #7        | —                                                 |
-| `backup`                                                                    | `disk/schema.go:32`    | planned | #7        | —                                                 |
-| `cache`                                                                     | `disk/schema.go:33`    | planned | #7        | —                                                 |
-| `datastore_id`                                                              | `disk/schema.go:34`    | planned | #7        | —                                                 |
-| `discard`                                                                   | `disk/schema.go:35`    | planned | #7        | —                                                 |
-| `file_format`                                                               | `disk/schema.go:36`    | planned | #7        | —                                                 |
-| `file_id`                                                                   | `disk/schema.go:37`    | planned | #7        | —                                                 |
-| `import_from`                                                               | `disk/schema.go:38`    | planned | #7        | —                                                 |
-| `interface` (legacy slot field)                                             | `disk/schema.go:39`    | dropped | —         | Replaced by map key per ADR-008 map-keyed pattern |
-| `iothread`                                                                  | `disk/schema.go:44`    | planned | #7        | —                                                 |
-| `path_in_datastore`                                                         | `disk/schema.go:45`    | planned | #7        | Read-only (Computed) — populated by PVE after disk creation with the actual storage path |
-| `replicate`                                                                 | `disk/schema.go:46`    | planned | #7        | —                                                 |
-| `serial`                                                                    | `disk/schema.go:47`    | planned | #7        | —                                                 |
-| `size`                                                                      | `disk/schema.go:48`    | planned | #7        | **String-with-units format** (`"20G"`, `"512M"`, `"1.5T"`) via new `customtypes.DiskSizeValue` attribute type — resolves [#1511](https://github.com/bpg/terraform-provider-proxmox/issues/1511) for the new resource. Wraps `types.String`; validates via existing `proxmox/types/disk_size.go::ParseDiskSize` (K/M/G/T + optional `b`/`B`/`iB` binary suffixes); accepts plain integer (interpret as GB for graceful migration from SDK's Int GB). |
-| `speed` (nested block with 8 sub-fields)                                    | `disk/schema.go:49–53` + `40–43` | planned | #7 | **Actually a nested block** combining rate limits. SDK constants at lines 40–43 (`iops_*`) are sibling-named but live INSIDE the `speed` block. 8 sub-fields: 4 IOPS (ops/s) + 4 bandwidth (MB/s). See sub-table below. |
-| `ssd`                                                                       | `disk/schema.go:54`    | planned | #7        | —                                                 |
+| SDK key                                  | SDK source                       | Status  | Target PR | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+|------------------------------------------|----------------------------------|---------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `aio`                                    | `disk/schema.go:31`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `backup`                                 | `disk/schema.go:32`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `cache`                                  | `disk/schema.go:33`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `datastore_id`                           | `disk/schema.go:34`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `discard`                                | `disk/schema.go:35`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `file_format`                            | `disk/schema.go:36`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `file_id`                                | `disk/schema.go:37`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `import_from`                            | `disk/schema.go:38`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `interface` (legacy slot field)          | `disk/schema.go:39`              | dropped | —         | Replaced by map key per ADR-008 map-keyed pattern                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `iothread`                               | `disk/schema.go:44`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `path_in_datastore`                      | `disk/schema.go:45`              | planned | #7        | Read-only (Computed) — populated by PVE after disk creation with the actual storage path                                                                                                                                                                                                                                                                                                                                                            |
+| `replicate`                              | `disk/schema.go:46`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `serial`                                 | `disk/schema.go:47`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `size`                                   | `disk/schema.go:48`              | planned | #7        | **String-with-units format** (`"20G"`, `"512M"`, `"1.5T"`) via new `customtypes.DiskSizeValue` attribute type — resolves [#1511](https://github.com/bpg/terraform-provider-proxmox/issues/1511) for the new resource. Wraps `types.String`; validates via existing `proxmox/types/disk_size.go::ParseDiskSize` (K/M/G/T + optional `b`/`B`/`iB` binary suffixes); accepts plain integer (interpret as GB for graceful migration from SDK's Int GB). |
+| `speed` (nested block with 8 sub-fields) | `disk/schema.go:49–53` + `40–43` | planned | #7        | **Actually a nested block** combining rate limits. SDK constants at lines 40–43 (`iops_*`) are sibling-named but live INSIDE the `speed` block. 8 sub-fields: 4 IOPS (ops/s) + 4 bandwidth (MB/s). See sub-table below.                                                                                                                                                                                                                             |
+| `ssd`                                    | `disk/schema.go:54`              | planned | #7        | —                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 #### `disk[slot].speed` sub-fields (rate limits)
 
 8 fields total — 4 IOPS (operations per second) + 4 bandwidth (MB/s). Both categories can be set independently; PVE applies `min(iops_limit, bandwidth_limit)` as the effective throttle (whichever limit hits first).
 
-| SDK key               | PVE param     | Unit     | Meaning                           |
-|-----------------------|---------------|----------|-----------------------------------|
-| `iops_read`           | `iops_rd`     | ops/s    | Read IOPS steady-state throttle   |
-| `iops_read_burstable` | `iops_rd_max` | ops/s    | Burst pool for reads              |
-| `iops_write`          | `iops_wr`     | ops/s    | Write IOPS steady-state throttle  |
-| `iops_write_burstable`| `iops_wr_max` | ops/s    | Burst pool for writes             |
-| `read`                | `mbps_rd`     | MB/s     | Read bandwidth steady-state       |
-| `read_burstable`      | `mbps_rd_max` | MB/s     | Burst pool for reads              |
-| `write`               | `mbps_wr`     | MB/s     | Write bandwidth steady-state      |
-| `write_burstable`     | `mbps_wr_max` | MB/s     | Burst pool for writes             |
+| SDK key                | PVE param     | Unit  | Meaning                          |
+|------------------------|---------------|-------|----------------------------------|
+| `iops_read`            | `iops_rd`     | ops/s | Read IOPS steady-state throttle  |
+| `iops_read_burstable`  | `iops_rd_max` | ops/s | Burst pool for reads             |
+| `iops_write`           | `iops_wr`     | ops/s | Write IOPS steady-state throttle |
+| `iops_write_burstable` | `iops_wr_max` | ops/s | Burst pool for writes            |
+| `read`                 | `mbps_rd`     | MB/s  | Read bandwidth steady-state      |
+| `read_burstable`       | `mbps_rd_max` | MB/s  | Burst pool for reads             |
+| `write`                | `mbps_wr`     | MB/s  | Write bandwidth steady-state     |
+| `write_burstable`      | `mbps_wr_max` | MB/s  | Burst pool for writes            |
 
 **SDK naming inconsistency**: the IOPS fields carry the `iops_` prefix but the bandwidth fields don't (no `mbps_` / `bandwidth_` prefix) — a reader can't tell units from field name alone. PR #7 resolves this via the `disk[slot].speed` shape decision (see tracker decisions log).
 
 ### Network-family sub-attributes (under map-keyed `network_device[slot]` block, PR #10)
 
-| SDK key                               | SDK source             | Status  | Target PR | Notes                     |
-|---------------------------------------|------------------------|---------|-----------|---------------------------|
-| `bridge`                              | `network/schema.go:33` | planned | #10       | —                         |
-| `disconnected`                        | `network/schema.go:34` | planned | #10       | —                         |
-| `enabled`                             | `network/schema.go:35` | planned | #10       | —                         |
-| `firewall`                            | `network/schema.go:36` | planned | #10       | —                         |
-| `mac_address`                         | `network/schema.go:37` | planned | #10       | —                         |
-| `mtu`                                 | `network/schema.go:38` | planned | #10       | —                         |
-| `model`                               | `network/schema.go:39` | planned | #10       | —                         |
-| `queues`                              | `network/schema.go:40` | planned | #10       | —                         |
-| `rate_limit`                          | `network/schema.go:41` | planned | #10       | —                         |
-| `trunks`                              | `network/schema.go:42` | planned | #10       | —                         |
-| `vlan_id`                             | `network/schema.go:43` | planned | #10       | —                         |
-| `ipv4_addresses` (SDK top-level read-only) | `network/schema.go:27` | planned | #10 | **Rehomed per-slot** as `network_device[slot].ipv4_addresses` (List of String); SDK parallel-list shape dropped. Surfaced in resource AND datasource per OQ2 resolution. |
-| `ipv6_addresses` (SDK top-level read-only) | `network/schema.go:28` | planned | #10 | **Rehomed per-slot** as `network_device[slot].ipv6_addresses` (List of String). |
-| `mac_addresses` (SDK top-level read-only) | `network/schema.go:29` | dropped | — | Per-slot `network_device[slot].mac_address` (singular, configured) already covers this; SDK parallel agent-reported list adds no value beyond edge cases (MAC spoofing in guest). |
-| `network_interface_names` (SDK top-level read-only) | `network/schema.go:44` | planned | #10 | **Rehomed per-slot** as `network_device[slot].interface_name` (String, singular per slot). Provider matches agent results to PVE slots by MAC. |
+| SDK key                                             | SDK source             | Status  | Target PR | Notes                                                                                                                                                                             |
+|-----------------------------------------------------|------------------------|---------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `bridge`                                            | `network/schema.go:33` | planned | #10       | —                                                                                                                                                                                 |
+| `disconnected`                                      | `network/schema.go:34` | planned | #10       | —                                                                                                                                                                                 |
+| `enabled`                                           | `network/schema.go:35` | planned | #10       | —                                                                                                                                                                                 |
+| `firewall`                                          | `network/schema.go:36` | planned | #10       | —                                                                                                                                                                                 |
+| `mac_address`                                       | `network/schema.go:37` | planned | #10       | —                                                                                                                                                                                 |
+| `mtu`                                               | `network/schema.go:38` | planned | #10       | —                                                                                                                                                                                 |
+| `model`                                             | `network/schema.go:39` | planned | #10       | —                                                                                                                                                                                 |
+| `queues`                                            | `network/schema.go:40` | planned | #10       | —                                                                                                                                                                                 |
+| `rate_limit`                                        | `network/schema.go:41` | planned | #10       | —                                                                                                                                                                                 |
+| `trunks`                                            | `network/schema.go:42` | planned | #10       | —                                                                                                                                                                                 |
+| `vlan_id`                                           | `network/schema.go:43` | planned | #10       | —                                                                                                                                                                                 |
+| `ipv4_addresses` (SDK top-level read-only)          | `network/schema.go:27` | planned | #10       | **Rehomed per-slot** as `network_device[slot].ipv4_addresses` (List of String); SDK parallel-list shape dropped. Surfaced in resource AND datasource per OQ2 resolution.          |
+| `ipv6_addresses` (SDK top-level read-only)          | `network/schema.go:28` | planned | #10       | **Rehomed per-slot** as `network_device[slot].ipv6_addresses` (List of String).                                                                                                   |
+| `mac_addresses` (SDK top-level read-only)           | `network/schema.go:29` | dropped | —         | Per-slot `network_device[slot].mac_address` (singular, configured) already covers this; SDK parallel agent-reported list adds no value beyond edge cases (MAC spoofing in guest). |
+| `network_interface_names` (SDK top-level read-only) | `network/schema.go:44` | planned | #10       | **Rehomed per-slot** as `network_device[slot].interface_name` (String, singular per slot). Provider matches agent results to PVE slots by MAC.                                    |
+
+#### Cross-resource consistency: VM vs LXC network IP reporting (future work)
+
+Audit of the SDK `proxmox_virtual_environment_container` resource (`proxmoxtf/resource/container/container.go`) surfaced shape inconsistency between VM and container network-address reporting. Container is out of scope for #1231; recording findings here for future LXC→Framework port.
+
+| Aspect | VM (SDK) | Container (SDK) | OK / Divergent | Justification |
+|---|---|---|---|---|
+| Read-only IP shape | 4 parallel top-level lists | 2 top-level maps (`ipv4`, `ipv6`) keyed by interface name | Divergent — avoidable | New VM resource moves to per-slot (OQ2); LXC should adopt the same per-slot shape when ported |
+| IPs per interface | Inner List of all addresses | Single String — only the first IP (`container.go:3289`) | **Data-loss bug in LXC** | New VM uses List to preserve all IPs; LXC should do the same on port |
+| MAC reporting | Top-level `mac_addresses` (redundant with per-slot `mac_address`) | Only per-slot `mac_address` | Divergent — LXC is correct | New VM drops top-level `mac_addresses` (OQ2 resolution) |
+| `lo` filtering | No filter — raw agent response | Explicitly filters `lo` (`container.go:3284`) | Divergent — naturally resolved for VM | New VM matches agent→PVE slots by MAC; `lo` has no MAC match and is filtered implicitly |
+| Slot-key name space | PVE slot (`net0`, `net1`, …) | Guest interface name (`eth0`, `eth1`, …) | **Architecturally forced** | VM needs agent MAC-matching to bridge PVE slot ↔ guest name; LXC shares a kernel and controls both ends |
+| `wait_for_ip` placement | Inside `agent.wait_for_ip` | Top-level `wait_for_ip` | **Architecturally forced** | VM waits require agent; LXC waits use direct netns inspection |
+
+**Recommendations for future LXC Framework port** (out of scope for #1231):
+
+1. Adopt the same per-slot shape as new VM: `network_interface[i].ipv4_addresses` (List), `.ipv6_addresses` (List). Eliminates LXC's single-IP data-loss bug.
+2. Keep `wait_for_ip` top-level for LXC (direct netns inspection doesn't need the `agent` block).
+3. Keep the slot-key = guest-interface-name model for LXC (no bridging needed).
+4. No need for MAC-matching logic in LXC — PVE directly knows interface name ↔ config mapping.
 
 ### Watchdog sub-attributes (under single-nested `watchdog` block, PR #13)
 
-| SDK key | SDK source | Status | Target PR | Notes |
-|---|---|---|---|---|
-| `enabled` | `vm.go:327` | planned | #13 | Standard enable/disable |
-| `model` | `vm.go:328` | planned | #13 | Watchdog hardware model (e.g., `i6300esb`, `ib700`) |
-| `action` | `vm.go:329` | planned | #13 | Action on watchdog timeout (e.g., `reset`, `shutdown`, `poweroff`) |
+| SDK key   | SDK source  | Status  | Target PR | Notes                                                              |
+|-----------|-------------|---------|-----------|--------------------------------------------------------------------|
+| `enabled` | `vm.go:327` | planned | #13       | Standard enable/disable                                            |
+| `model`   | `vm.go:328` | planned | #13       | Watchdog hardware model (e.g., `i6300esb`, `ib700`)                |
+| `action`  | `vm.go:329` | planned | #13       | Action on watchdog timeout (e.g., `reset`, `shutdown`, `poweroff`) |
 
 ### Agent sub-attributes (under single-nested `agent` block, PR #13)
 
