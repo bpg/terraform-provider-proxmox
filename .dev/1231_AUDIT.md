@@ -278,14 +278,14 @@ classified as one of:
 
 Audit of the SDK `proxmox_virtual_environment_container` resource (`proxmoxtf/resource/container/container.go`) surfaced shape inconsistency between VM and container network-address reporting. Container is out of scope for #1231; recording findings here for future LXC→Framework port.
 
-| Aspect | VM (SDK) | Container (SDK) | OK / Divergent | Justification |
-|---|---|---|---|---|
-| Read-only IP shape | 4 parallel top-level lists | 2 top-level maps (`ipv4`, `ipv6`) keyed by interface name | Divergent — avoidable | New VM resource moves to per-slot (OQ2); LXC should adopt the same per-slot shape when ported |
-| IPs per interface | Inner List of all addresses | Single String — only the first IP (`container.go:3289`) | **Data-loss bug in LXC** | New VM uses List to preserve all IPs; LXC should do the same on port |
-| MAC reporting | Top-level `mac_addresses` (redundant with per-slot `mac_address`) | Only per-slot `mac_address` | Divergent — LXC is correct | New VM drops top-level `mac_addresses` (OQ2 resolution) |
-| `lo` filtering | No filter — raw agent response | Explicitly filters `lo` (`container.go:3284`) | Divergent — naturally resolved for VM | New VM matches agent→PVE slots by MAC; `lo` has no MAC match and is filtered implicitly |
-| Slot-key name space | PVE slot (`net0`, `net1`, …) | Guest interface name (`eth0`, `eth1`, …) | **Architecturally forced** | VM needs agent MAC-matching to bridge PVE slot ↔ guest name; LXC shares a kernel and controls both ends |
-| `wait_for_ip` placement | Inside `agent.wait_for_ip` | Top-level `wait_for_ip` | **Architecturally forced** | VM waits require agent; LXC waits use direct netns inspection |
+| Aspect                  | VM (SDK)                                                          | Container (SDK)                                           | OK / Divergent                        | Justification                                                                                           |
+|-------------------------|-------------------------------------------------------------------|-----------------------------------------------------------|---------------------------------------|---------------------------------------------------------------------------------------------------------|
+| Read-only IP shape      | 4 parallel top-level lists                                        | 2 top-level maps (`ipv4`, `ipv6`) keyed by interface name | Divergent — avoidable                 | New VM resource moves to per-slot (OQ2); LXC should adopt the same per-slot shape when ported           |
+| IPs per interface       | Inner List of all addresses                                       | Single String — only the first IP (`container.go:3289`)   | **Data-loss bug in LXC**              | New VM uses List to preserve all IPs; LXC should do the same on port                                    |
+| MAC reporting           | Top-level `mac_addresses` (redundant with per-slot `mac_address`) | Only per-slot `mac_address`                               | Divergent — LXC is correct            | New VM drops top-level `mac_addresses` (OQ2 resolution)                                                 |
+| `lo` filtering          | No filter — raw agent response                                    | Explicitly filters `lo` (`container.go:3284`)             | Divergent — naturally resolved for VM | New VM matches agent→PVE slots by MAC; `lo` has no MAC match and is filtered implicitly                 |
+| Slot-key name space     | PVE slot (`net0`, `net1`, …)                                      | Guest interface name (`eth0`, `eth1`, …)                  | **Architecturally forced**            | VM needs agent MAC-matching to bridge PVE slot ↔ guest name; LXC shares a kernel and controls both ends |
+| `wait_for_ip` placement | Inside `agent.wait_for_ip`                                        | Top-level `wait_for_ip`                                   | **Architecturally forced**            | VM waits require agent; LXC waits use direct netns inspection                                           |
 
 **Recommendations for future LXC Framework port** (out of scope for #1231):
 
@@ -293,6 +293,44 @@ Audit of the SDK `proxmox_virtual_environment_container` resource (`proxmoxtf/re
 2. Keep `wait_for_ip` top-level for LXC (direct netns inspection doesn't need the `agent` block).
 3. Keep the slot-key = guest-interface-name model for LXC (no bridging needed).
 4. No need for MAC-matching logic in LXC — PVE directly knows interface name ↔ config mapping.
+
+#### Schema-wide `enabled` field rule
+
+Audit of `enabled` / `*Enabled` fields across `proxmox/nodes/vms/` and `proxmox/nodes/containers/` found two distinct patterns:
+
+1. **Real PVE param** — Go type has `url:"enabled,int"` / `url:"numa,omitempty,int"` / similar tag; field maps to an actual PVE config key. **Keep** in the new resource.
+2. **Provider invention** — Go type has `url:"-"` (or no struct field at all — pure schema-level). Used internally to decide whether to include the block in the URL-encoded request. No PVE counterpart. Redundant with block/slot presence in the new resource (Framework Optional blocks are natively absent/present). **Drop** in the new resource.
+
+**VM inventory**:
+
+| Schema key | Go field / file:line | `url:` tag | Verdict | Reason |
+|---|---|---|---|---|
+| `agent.enabled` | `CustomAgent.Enabled` (`custom_agent.go:20`) | `enabled,int` | **keep** | Real: `enabled=1` sub-param inside `agent=` property string |
+| `numa.enabled` (rehomed `cpu.numa`) | `GetResponseData.NUMAEnabled` (`vms_types.go:100,248`) | `numa,omitempty,int` | **keep** | Real: top-level `numa=1` (VM-level NUMA-emulation toggle; distinct from map-keyed `numa[N]` topology) |
+| `audio_device.enabled` | `CustomAudioDevice.Enabled` (`custom_audio_device.go:20`) | `-` | **drop** | Provider invention |
+| `watchdog.enabled` | Not in `CustomWatchdogDevice` struct (`custom_watchdog_device.go`) | n/a | **drop** | Pure schema-level invention |
+| `virtiofs[slot].enabled` | `CustomVirtualIODevice.Enabled` (`custom_virtualio_device.go:21`) | `-` | **drop** | Provider invention |
+| `network_device[slot].enabled` | `CustomNetworkDevice.Enabled` (`custom_network_device.go:22`) | `-` | **drop** | Provider invention (per-slot `disconnected` → real PVE `link_down=1` is the proper soft-disable) |
+| `cdrom[slot].enabled` | Not in `CustomStorageDevice` struct | n/a | **drop** | Pure schema-level invention |
+
+**Also surfaced** (real PVE boolean fields relevant to Phase 2):
+
+| PVE param | Go field | Status | Notes |
+|---|---|---|---|
+| `tablet=1` | `GetResponseData.TabletDeviceEnabled` (`vms_types.go:116,274`) | Planned #14 (as top-level bool `tablet_device`) | Real; current SDK schema is correct |
+| `virtiofs[N].backup=1` | `CustomVirtualIODevice.BackupEnabled` (`custom_virtualio_device.go:20`) | Planned #17 | Real sub-param; keep (distinct from the provider-invention `enabled` on same struct) |
+| `kvm=1` | `GetResponseData.KVMEnabled` (`vms_types.go:91,240`) | Not in SDK schema today | Real but out of scope #1231 unless design adds `kvm` top-level |
+| `tdf=1` | `GetResponseData.TimeDriftFixEnabled` (`vms_types.go:119,277`) | Not in SDK schema today | Real but out of scope #1231 |
+
+**LXC inventory** (out of scope for #1231; record for future LXC port):
+
+| Schema key | Go field | `url:` tag | Verdict |
+|---|---|---|---|
+| `console.enabled` | `ContainerSettings.ConsoleEnabled` (`containers_types.go:53`) | `console,omitempty,int` | **keep** — real: top-level `console=1` |
+| `mount_point.enabled` | `CustomMountPoint.Enabled` (`containers_types.go:112`) | `-` | **drop on LXC port** — invention |
+| `network_interface.enabled` | `CustomNetworkInterface.Enabled` (`containers_types.go:128`) | `-` | **drop on LXC port** — invention |
+
+**Rule for new `proxmox_vm`**: drop `enabled` wherever it's a provider invention; block/slot presence in the HCL config already conveys "configured". Keep `enabled` only where PVE has the native boolean. Eliminates 5 redundant schema attributes (`audio_device.enabled`, `watchdog.enabled`, `virtiofs[slot].enabled`, `network_device[slot].enabled`, `cdrom[slot].enabled`).
 
 ### Watchdog sub-attributes (under single-nested `watchdog` block, PR #13)
 
@@ -304,44 +342,44 @@ Audit of the SDK `proxmox_virtual_environment_container` resource (`proxmoxtf/re
 
 ### Agent sub-attributes (under single-nested `agent` block, PR #13)
 
-| SDK key | SDK source | Status | Target PR | Notes |
-|---|---|---|---|---|
-| `enabled` | `vm.go:167` | planned | #13 | — |
-| `timeout` | `vm.go:168` | planned | #13 | Per OQ4: keep as PVE pass-through |
-| `trim` | `vm.go:169` | planned | #13 | — |
-| `type` | `vm.go:170` | planned | #13 | — |
-| `wait_for_ip` | `vm.go:171` | planned | #13 | Nested |
-| `wait_for_ip.ipv4` | `vm.go:172` | planned | #13 | Nested |
-| `wait_for_ip.ipv6` | `vm.go:173` | planned | #13 | Nested |
+| SDK key            | SDK source  | Status  | Target PR | Notes                             |
+|--------------------|-------------|---------|-----------|-----------------------------------|
+| `enabled`          | `vm.go:167` | planned | #13       | —                                 |
+| `timeout`          | `vm.go:168` | planned | #13       | Per OQ4: keep as PVE pass-through |
+| `trim`             | `vm.go:169` | planned | #13       | —                                 |
+| `type`             | `vm.go:170` | planned | #13       | —                                 |
+| `wait_for_ip`      | `vm.go:171` | planned | #13       | Nested                            |
+| `wait_for_ip.ipv4` | `vm.go:172` | planned | #13       | Nested                            |
+| `wait_for_ip.ipv6` | `vm.go:173` | planned | #13       | Nested                            |
 
 ### AMD SEV sub-attributes (under single-nested `amd_sev` block, PR #18)
 
-| SDK key | SDK source | Status | Target PR | Notes |
-|---|---|---|---|---|
-| `type` | `vm.go:175` | planned | #18 | — |
-| `allow_smt` | `vm.go:176` | planned | #18 | — |
-| `kernel_hashes` | `vm.go:177` | planned | #18 | — |
-| `no_debug` | `vm.go:178` | planned | #18 | — |
-| `no_key_sharing` | `vm.go:179` | planned | #18 | — |
+| SDK key          | SDK source  | Status  | Target PR | Notes |
+|------------------|-------------|---------|-----------|-------|
+| `type`           | `vm.go:175` | planned | #18       | —     |
+| `allow_smt`      | `vm.go:176` | planned | #18       | —     |
+| `kernel_hashes`  | `vm.go:177` | planned | #18       | —     |
+| `no_debug`       | `vm.go:178` | planned | #18       | —     |
+| `no_key_sharing` | `vm.go:179` | planned | #18       | —     |
 
 ### Audio device sub-attributes (under single-nested `audio_device` block, PR #17)
 
-| SDK key | SDK source | Status | Target PR | Notes |
-|---|---|---|---|---|
-| `device` | `vm.go:181` | planned | #17 | — |
-| `driver` | `vm.go:182` | planned | #17 | Long enum — drop validator per ADR-004 (Q4) |
-| `enabled` | `vm.go:183` | planned | #17 | — |
+| SDK key   | SDK source  | Status  | Target PR | Notes                                       |
+|-----------|-------------|---------|-----------|---------------------------------------------|
+| `device`  | `vm.go:181` | planned | #17       | —                                           |
+| `driver`  | `vm.go:182` | planned | #17       | Long enum — drop validator per ADR-004 (Q4) |
+| `enabled` | `vm.go:183` | planned | #17       | —                                           |
 
 ### NUMA sub-attributes (under map-keyed `numa[N]` block, PR #13)
 
-| SDK key | SDK source | Status | Target PR | Notes |
-|---|---|---|---|---|
-| `device` | `vm.go:209` | planned | #13 | — |
-| `cpus` | `vm.go:210` | planned | #13 | — |
-| `hostnodes` | `vm.go:211` | planned | #13 | — |
-| `memory` | `vm.go:212` | planned | #13 | — |
-| `policy` | `vm.go:213` | planned | #13 | — |
-| `enabled` (rehomed `cpu.numa`) | (new) | planned | #13 | Per design D7/P3 |
+| SDK key                        | SDK source  | Status  | Target PR | Notes            |
+|--------------------------------|-------------|---------|-----------|------------------|
+| `device`                       | `vm.go:209` | planned | #13       | —                |
+| `cpus`                         | `vm.go:210` | planned | #13       | —                |
+| `hostnodes`                    | `vm.go:211` | planned | #13       | —                |
+| `memory`                       | `vm.go:212` | planned | #13       | —                |
+| `policy`                       | `vm.go:213` | planned | #13       | —                |
+| `enabled` (rehomed `cpu.numa`) | (new)       | planned | #13       | Per design D7/P3 |
 
 ### EFI Disk + TPM State + HostPCI + USB + Serial + Virtiofs + SMBIOS + OS + Startup sub-attributes
 
