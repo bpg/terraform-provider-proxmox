@@ -119,18 +119,23 @@ MD_FILES_TO_LINT=()
 while IFS= read -r file; do MD_FILES_TO_LINT+=("$file"); done < <(git diff --name-only main...HEAD | grep -E '\.md$')
 
 if [ ${#MD_FILES_TO_LINT[@]} -gt 0 ]; then
+  # Prettier first (formats tables and whitespace), then markdownlint (validates remaining rules).
+  npx --yes prettier --write "${MD_FILES_TO_LINT[@]}"
+  PRETTIER_EXIT=$?
   npx --yes markdownlint-cli2 --fix "${MD_FILES_TO_LINT[@]}"
   MD_LINT_EXIT=$?
 else
   echo "No markdown files changed"
+  PRETTIER_EXIT=0
   MD_LINT_EXIT=0
 fi
 ```
 
 **Result:**
 
-- Exit 0: "MARKDOWN LINT PASSED"
-- Issues found: "MARKDOWN LINT FAILED — Review and fix remaining issues"
+- Both exit 0: "MARKDOWN LINT PASSED"
+- Prettier failed: "PRETTIER FAILED — Review formatter output"
+- Markdownlint issues found: "MARKDOWN LINT FAILED — Review and fix remaining issues"
 
 ### ADR-007: Resource Type Name Convention
 
@@ -366,9 +371,11 @@ For each changed file, answer these questions. Write your answers out explicitly
 
 1. **Correctness:** Does this change actually fix the reported problem / implement the requested feature? Trace through the code path mentally. Could a caller still hit the original bug through a different path?
 2. **Completeness:** Are there other locations in the codebase with the same pattern that also need fixing? Search proactively:
+
    ```bash
    # Search for the OLD pattern that was replaced — if it still exists elsewhere, flag it
    ```
+
 3. **Edge cases:** What inputs, error conditions, or timing scenarios could break this? Consider: nil/empty values, concurrent access, error wrapping chains, API behavior differences across PVE versions.
 4. **Consistency:** Does the fix follow the same pattern used by other resources in the codebase? Find at least one reference example and compare.
 5. **Regression risk:** Could this change break existing behavior? Consider callers of the modified functions — do they all handle the new behavior correctly?
@@ -380,6 +387,7 @@ For each changed file, answer these questions. Write your answers out explicitly
 **If you find issues:** Stop, report each issue with file path and line number, and provide a concrete fix recommendation. Do NOT continue to the summary step. The issues must be fixed and this step re-run.
 
 **If the change involves non-obvious design decisions** (e.g., choosing between approaches, new patterns, behavioral trade-offs): Invoke the `/grill-me` skill to interrogate the user about those decisions before proceeding. Examples of when to grill:
+
 - The fix changes observable behavior (not just error messages)
 - The approach differs from what the issue suggested
 - There are multiple valid ways to solve it and the trade-offs aren't obvious
@@ -441,16 +449,16 @@ Write a `.dev/${ISSUE_NUM}_REPORT.md` file containing the proof of work evidence
 
 ## Checklist Results
 
-| Step | Status |
-|------|--------|
-| Build | PASSED/FAILED |
-| Lint | PASSED/FAILED |
-| ADR-007 Naming | PASSED/SKIPPED |
-| Unit Tests | PASSED/FAILED |
+| Step             | Status                |
+| ---------------- | --------------------- |
+| Build            | PASSED/FAILED         |
+| Lint             | PASSED/FAILED         |
+| ADR-007 Naming   | PASSED/SKIPPED        |
+| Unit Tests       | PASSED/FAILED         |
 | Acceptance Tests | PASSED/FAILED/SKIPPED |
-| API Verification | PASSED/SKIPPED |
-| Documentation | PASSED/SKIPPED |
-| Upgrade Guide | PASSED/SKIPPED |
+| API Verification | PASSED/SKIPPED        |
+| Documentation    | PASSED/SKIPPED        |
+| Upgrade Guide    | PASSED/SKIPPED        |
 
 ## Acceptance Test Output
 
@@ -549,7 +557,7 @@ Detect issue number and update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read a
 - [ ] `/grill-me` invoked if non-obvious design decisions detected
 - [ ] Summary presented to user
 - [ ] Session state updated with results
-</success_criteria>
+      </success_criteria>
 
 <tips>
 - If you're unsure which acceptance tests to run, look for tests matching the resource/datasource name

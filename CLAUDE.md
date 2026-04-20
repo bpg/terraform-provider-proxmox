@@ -8,26 +8,26 @@ Instructions for Claude Code working on this Terraform Provider for Proxmox VE.
 
 **Never violate these — they cause bugs, test failures, or provider misbehavior.**
 
-| Never Do | Reason |
-| -------- | ------ |
-| Start work without a GitHub issue | All work must be tracked |
-| Make assumptions without verification | Always verify with code/tests/mitmproxy |
-| Skip acceptance tests | Tests reproduce and verify fixes |
-| Commit without running linter | Always `make lint` first |
-| Commit without explicit user request | User controls git operations |
-| Add changes beyond what's requested | Only implement what's asked |
-| Post comments to GitHub issues/PRs | Provide text for user to post themselves |
-| Add Co-Authored-By lines to commits | Use only `-s` flag for DCO sign-off |
+| Never Do                              | Reason                                   |
+| ------------------------------------- | ---------------------------------------- |
+| Start work without a GitHub issue     | All work must be tracked                 |
+| Make assumptions without verification | Always verify with code/tests/mitmproxy  |
+| Skip acceptance tests                 | Tests reproduce and verify fixes         |
+| Commit without running linter         | Always `make lint` first                 |
+| Commit without explicit user request  | User controls git operations             |
+| Add changes beyond what's requested   | Only implement what's asked              |
+| Post comments to GitHub issues/PRs    | Provide text for user to post themselves |
+| Add Co-Authored-By lines to commits   | Use only `-s` flag for DCO sign-off      |
 
-| Always Do | Reason |
-| --------- | ------ |
-| Verify GitHub issue exists first | No issue = flag deficiency, offer to help |
+| Always Do                                    | Reason                                              |
+| -------------------------------------------- | --------------------------------------------------- |
+| Verify GitHub issue exists first             | No issue = flag deficiency, offer to help           |
 | Talk to maintainer before code investigation | Leverage domain knowledge, avoid wasted exploration |
-| Ask questions when uncertain | Never assume; clarify before proceeding |
-| Create acceptance test BEFORE fixing | Proves issue exists, proves fix works |
-| Verify API calls with mitmproxy | Tests passing ≠ correct API calls |
-| Maintain session state for multi-step work | Enables context recovery across sessions |
-| Run full checklist before completion | See Production Readiness Checklist |
+| Ask questions when uncertain                 | Never assume; clarify before proceeding             |
+| Create acceptance test BEFORE fixing         | Proves issue exists, proves fix works               |
+| Verify API calls with mitmproxy              | Tests passing ≠ correct API calls                   |
+| Maintain session state for multi-step work   | Enables context recovery across sessions            |
+| Run full checklist before completion         | See Production Readiness Checklist                  |
 
 ---
 
@@ -56,15 +56,15 @@ Then offer to help create one:
 
 ### Naming Conventions
 
-| Artifact | Format | Example |
-| -------- | ------ | ------- |
-| Branch | `{type}/{issue}-{desc}` | `fix/1234-clone-timeout` |
-| Plans | `.dev/{issue}_PLAN.md` | `.dev/1234_PLAN.md` |
-| PR body | `.dev/{issue}_PR_BODY.md` | `.dev/1234_PR_BODY.md` |
-| Session state | `.dev/{issue}_SESSION_STATE.md` | `.dev/1234_SESSION_STATE.md` |
-| Test names | Descriptive, NO issue numbers | `TestAccResourceVMClone` |
-| VM names | Descriptive, NO issue numbers | `test-vm-clone` |
-| Commits | Conventional, NO issue numbers | `fix(vm): handle clone timeout` |
+| Artifact      | Format                          | Example                         |
+| ------------- | ------------------------------- | ------------------------------- |
+| Branch        | `{type}/{issue}-{desc}`         | `fix/1234-clone-timeout`        |
+| Plans         | `.dev/{issue}_PLAN.md`          | `.dev/1234_PLAN.md`             |
+| PR body       | `.dev/{issue}_PR_BODY.md`       | `.dev/1234_PR_BODY.md`          |
+| Session state | `.dev/{issue}_SESSION_STATE.md` | `.dev/1234_SESSION_STATE.md`    |
+| Test names    | Descriptive, NO issue numbers   | `TestAccResourceVMClone`        |
+| VM names      | Descriptive, NO issue numbers   | `test-vm-clone`                 |
+| Commits       | Conventional, NO issue numbers  | `fix(vm): handle clone timeout` |
 
 ---
 
@@ -78,17 +78,22 @@ make lint               # Run Go linter (auto-fixes formatting and most issues)
 make test               # Run unit tests
 make docs               # Regenerate Framework resource/datasource docs (not SDK)
 ./testacc TestName      # Run specific acceptance test
-npx --yes markdownlint-cli2 --fix "path/to/*.md"  # Lint markdown files
+npx --yes prettier --write "path/to/*.md"         # Format markdown (tables, whitespace)
+npx --yes markdownlint-cli2 --fix "path/to/*.md"  # Lint markdown (rules prettier doesn't cover)
 ```
 
 ### Linting Rules
 
 **Never manually format or lint code. Always use the appropriate linter tool.**
 
-| File type | Linter command                                 | When to run                  |
-| --------- | ---------------------------------------------- | ---------------------------- |
-| Go `.go`  | `make lint`                                    | After editing any `.go` file |
-| Markdown  | `npx --yes markdownlint-cli2 --fix "file.md"`  | After editing any `.md` file |
+| File type | Linter command                                                                        | When to run                  |
+| --------- | ------------------------------------------------------------------------------------- | ---------------------------- |
+| Go `.go`  | `make lint`                                                                           | After editing any `.go` file |
+| Markdown  | `npx --yes prettier --write "file.md" && npx --yes markdownlint-cli2 --fix "file.md"` | After editing any `.md` file |
+
+Run prettier first (formats tables and whitespace), then markdownlint (validates rules prettier
+doesn't cover). Config lives in `.prettierrc` / `.prettierignore` and `.markdownlint.json` /
+`.markdownlintignore`.
 
 ### Acceptance Test Script (`./testacc`)
 
@@ -272,12 +277,12 @@ if attribute.IsDefined(m.MTU) {
 
 Available helpers (all return nil for null/unknown, pointer to value otherwise):
 
-| Helper | Input type | Output type |
-| ------ | ---------- | ----------- |
-| `attribute.StringPtrFromValue` | `types.String` | `*string` |
-| `attribute.Int64PtrFromValue` | `types.Int64` | `*int64` |
-| `attribute.Float64PtrFromValue` | `types.Float64` | `*float64` |
-| `attribute.CustomBoolPtrFromValue` | `types.Bool` | `*proxmoxtypes.CustomBool` |
+| Helper                             | Input type      | Output type                |
+| ---------------------------------- | --------------- | -------------------------- |
+| `attribute.StringPtrFromValue`     | `types.String`  | `*string`                  |
+| `attribute.Int64PtrFromValue`      | `types.Int64`   | `*int64`                   |
+| `attribute.Float64PtrFromValue`    | `types.Float64` | `*float64`                 |
+| `attribute.CustomBoolPtrFromValue` | `types.Bool`    | `*proxmoxtypes.CustomBool` |
 
 Use `attribute.IsDefined()` only when you need to branch on whether a field has a value (e.g., conditional logic), not for simple pointer extraction.
 
@@ -287,9 +292,9 @@ Use `attribute.IsDefined()` only when you need to branch on whether a field has 
 
 In a **datasource**, attributes that are purely output (populated by the provider during Read) must be `Computed: true` only — never `Optional`. This applies to all attributes except lookup keys (which are `Required`).
 
-| Attribute role | Schema flags | Example |
-| -------------- | ------------ | ------- |
-| Lookup key | `Required: true` | `id`, `node_name` |
+| Attribute role   | Schema flags     | Example                               |
+| ---------------- | ---------------- | ------------------------------------- |
+| Lookup key       | `Required: true` | `id`, `node_name`                     |
 | Read-only output | `Computed: true` | `name`, `status`, `tags`, `cpu` block |
 
 **Why not `Optional` on outputs?** `Optional` on a datasource output lets users write values in config that are silently ignored — misleading UX and confusing docs (attributes appear under "Optional" instead of "Read-Only").
@@ -360,10 +365,10 @@ When fixing validation issues, update BOTH providers where applicable.
 
 Docs under `docs/` are a **mix** of auto-generated and manually maintained files.
 
-| Provider | Docs generation | Edit where |
-| -------- | --------------- | ---------- |
+| Provider                  | Docs generation                                                             | Edit where                                                                                                                                                                               |
+| ------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Framework (`fwprovider/`) | Auto-generated by `make docs` from schema + optional `templates/` overrides | Edit `templates/resources/<name>.md.tmpl` (or `templates/data-sources/<name>.md.tmpl`). If no custom template exists, docs come from the schema `MarkdownDescription` fields in Go code. |
-| SDK (`proxmoxtf/`) | **Manually maintained** | Edit `docs/` files directly |
+| SDK (`proxmoxtf/`)        | **Manually maintained**                                                     | Edit `docs/` files directly                                                                                                                                                              |
 
 **Key rules:**
 
@@ -374,10 +379,10 @@ Docs under `docs/` are a **mix** of auto-generated and manually maintained files
 
 **Guides** use two patterns:
 
-| Pattern | Source of truth | Examples |
-| ------- | --------------- | ------- |
-| **A (template-driven)** | `templates/guides/<name>.md.tmpl` with `{{ codefile }}` directives; examples in `examples/guides/<name>/` | `clone-vm`, `vm-lifecycle` |
-| **B (direct markdown)** | `docs/guides/<name>.md` edited directly; inline HCL blocks | `multi-node`, `upgrade`, `migration-vm-clone`, `cloned-vm` |
+| Pattern                 | Source of truth                                                                                           | Examples                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **A (template-driven)** | `templates/guides/<name>.md.tmpl` with `{{ codefile }}` directives; examples in `examples/guides/<name>/` | `clone-vm`, `vm-lifecycle`                                 |
+| **B (direct markdown)** | `docs/guides/<name>.md` edited directly; inline HCL blocks                                                | `multi-node`, `upgrade`, `migration-vm-clone`, `cloned-vm` |
 
 For Pattern A guides, edit the template — `docs/guides/<name>.md` is auto-generated by `make docs` and will be overwritten.
 
@@ -391,14 +396,14 @@ For multi-step work, maintain session state in `.dev/{issue}_SESSION_STATE.md` u
 
 ## Communication Style
 
-| Do | Don't |
-| -- | ----- |
-| Be concise and direct | Apologize |
-| Use technical terminology | Summarize changes made |
-| Explain reasoning | Make up information |
-| Admit uncertainty | Show implementation unless asked |
-| Use friendly, conversational tone in ticket notes | Use formal/corporate language |
-| Lead with key finding, skip preamble | Write verbose preambles |
+| Do                                                | Don't                            |
+| ------------------------------------------------- | -------------------------------- |
+| Be concise and direct                             | Apologize                        |
+| Use technical terminology                         | Summarize changes made           |
+| Explain reasoning                                 | Make up information              |
+| Admit uncertainty                                 | Show implementation unless asked |
+| Use friendly, conversational tone in ticket notes | Use formal/corporate language    |
+| Lead with key finding, skip preamble              | Write verbose preambles          |
 
 **Code comments:** Minimal — explain "why", not "what". One concise comment per block, skip when code is self-explanatory.
 
@@ -409,14 +414,14 @@ For multi-step work, maintain session state in `.dev/{issue}_SESSION_STATE.md` u
 
 ## Skills
 
-| Skill | Purpose |
-| ----- | ------- |
-| `/bpg:start-issue` | Start work on a GitHub issue (branch + session state) |
-| `/bpg:resume` | Resume work from a previous session |
-| `/bpg:ready` | Run production readiness checklist |
-| `/bpg:debug-api` | Debug API calls with mitmproxy |
-| `/bpg:prepare-pr` | Prepare PR body from template with proof of work |
-| `/bpg:done` | Wrap up session — extract learnings, finalize state, archive files |
+| Skill              | Purpose                                                            |
+| ------------------ | ------------------------------------------------------------------ |
+| `/bpg:start-issue` | Start work on a GitHub issue (branch + session state)              |
+| `/bpg:resume`      | Resume work from a previous session                                |
+| `/bpg:ready`       | Run production readiness checklist                                 |
+| `/bpg:debug-api`   | Debug API calls with mitmproxy                                     |
+| `/bpg:prepare-pr`  | Prepare PR body from template with proof of work                   |
+| `/bpg:done`        | Wrap up session — extract learnings, finalize state, archive files |
 
 See [.dev/README.md](.dev/README.md#working-with-llm-agents) for detailed workflow documentation and how skills connect together.
 

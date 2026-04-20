@@ -18,6 +18,16 @@ fi
 MD_STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.md' \
     ':!docs/resources/**' ':!docs/data-sources/**' ':!CHANGELOG.md' || true)
 if [[ -n "$MD_STAGED" ]]; then
+    echo "pre-commit: running prettier on staged .md files..."
+    # shellcheck disable=SC2086
+    if ! npx --yes prettier --write $MD_STAGED; then
+        echo "pre-commit: prettier failed."
+        exit 1
+    fi
+    # Re-stage any files prettier reformatted so the commit includes the fixes.
+    # shellcheck disable=SC2086
+    git add $MD_STAGED
+
     echo "pre-commit: running markdownlint on staged .md files..."
     # shellcheck disable=SC2086
     if ! npx --yes markdownlint-cli2 $MD_STAGED; then

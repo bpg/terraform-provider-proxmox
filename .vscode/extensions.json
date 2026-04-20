@@ -2,6 +2,7 @@
     "recommendations": [
         "britesnow.vscode-toggle-quotes",
         "davidanson.vscode-markdownlint",
+        "esbenp.prettier-vscode",
         "EditorConfig.editorconfig",
         "golang.go",
         "hashicorp.terraform",
