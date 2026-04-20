@@ -260,7 +260,7 @@ classified as one of:
 |-----------------------------------------------------|------------------------|---------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `bridge`                                            | `network/schema.go:33` | planned | #10       | —                                                                                                                                                                                 |
 | `disconnected`                                      | `network/schema.go:34` | planned | #10       | —                                                                                                                                                                                 |
-| `enabled`                                           | `network/schema.go:35` | planned | #10       | —                                                                                                                                                                                 |
+| `enabled`                                           | `network/schema.go:35` | dropped | —         | Provider invention (`CustomNetworkDevice.Enabled` has `url:"-"`); redundant with slot presence. Per-slot `disconnected` → `link_down=1` covers soft-disable. See "Schema-wide `enabled` field rule" subsection. |
 | `firewall`                                          | `network/schema.go:36` | planned | #10       | —                                                                                                                                                                                 |
 | `mac_address`                                       | `network/schema.go:37` | planned | #10       | —                                                                                                                                                                                 |
 | `mtu`                                               | `network/schema.go:38` | planned | #10       | —                                                                                                                                                                                 |
@@ -336,7 +336,7 @@ Audit of `enabled` / `*Enabled` fields across `proxmox/nodes/vms/` and `proxmox/
 
 | SDK key   | SDK source  | Status  | Target PR | Notes                                                              |
 |-----------|-------------|---------|-----------|--------------------------------------------------------------------|
-| `enabled` | `vm.go:327` | planned | #13       | Standard enable/disable                                            |
+| `enabled` | `vm.go:327` | dropped | —         | Provider invention (not in `CustomWatchdogDevice` struct at all); redundant with block presence. See "Schema-wide `enabled` field rule" subsection. |
 | `model`   | `vm.go:328` | planned | #13       | Watchdog hardware model (e.g., `i6300esb`, `ib700`)                |
 | `action`  | `vm.go:329` | planned | #13       | Action on watchdog timeout (e.g., `reset`, `shutdown`, `poweroff`) |
 
@@ -344,7 +344,7 @@ Audit of `enabled` / `*Enabled` fields across `proxmox/nodes/vms/` and `proxmox/
 
 | SDK key            | SDK source  | Status  | Target PR | Notes                             |
 |--------------------|-------------|---------|-----------|-----------------------------------|
-| `enabled`          | `vm.go:167` | planned | #13       | —                                 |
+| `enabled`          | `vm.go:167` | planned | #13       | **Keep** — real PVE param (`CustomAgent.Enabled` has `url:"enabled,int"`, maps to `enabled=1` sub-param inside `agent=` property string) |
 | `timeout`          | `vm.go:168` | planned | #13       | Per OQ4: keep as PVE pass-through |
 | `trim`             | `vm.go:169` | planned | #13       | —                                 |
 | `type`             | `vm.go:170` | planned | #13       | —                                 |
@@ -368,7 +368,7 @@ Audit of `enabled` / `*Enabled` fields across `proxmox/nodes/vms/` and `proxmox/
 |-----------|-------------|---------|-----------|---------------------------------------------|
 | `device`  | `vm.go:181` | planned | #17       | —                                           |
 | `driver`  | `vm.go:182` | planned | #17       | Long enum — drop validator per ADR-004 (Q4) |
-| `enabled` | `vm.go:183` | planned | #17       | —                                           |
+| `enabled` | `vm.go:183` | dropped | —         | Provider invention (`CustomAudioDevice.Enabled` has `url:"-"`); redundant with block presence. See "Schema-wide `enabled` field rule" subsection. |
 
 ### NUMA sub-attributes (under map-keyed `numa[N]` block, PR #13)
 
@@ -379,7 +379,7 @@ Audit of `enabled` / `*Enabled` fields across `proxmox/nodes/vms/` and `proxmox/
 | `hostnodes`                    | `vm.go:211` | planned | #13       | —                |
 | `memory`                       | `vm.go:212` | planned | #13       | —                |
 | `policy`                       | `vm.go:213` | planned | #13       | —                |
-| `enabled` (rehomed `cpu.numa`) | (new)       | planned | #13       | Per design D7/P3 |
+| `enabled` (rehomed `cpu.numa`) | (new)       | planned | #13       | **Keep** — real PVE param: top-level `numa=1` (`GetResponseData.NUMAEnabled` has `url:"numa,omitempty,int"`). Per design D7/P3. Semantics note: this is a TOP-LEVEL boolean (VM NUMA-emulation toggle), not a per-node-slot flag — may need naming like `numa_enabled` or restructuring the numa block to avoid collision with map-keyed `numa[N]` topology. |
 
 ### EFI Disk + TPM State + HostPCI + USB + Serial + Virtiofs + SMBIOS + OS + Startup sub-attributes
 
