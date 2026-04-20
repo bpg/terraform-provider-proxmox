@@ -83,7 +83,7 @@ Total: 20 PRs (+ 1 floating).
 | D2 | Fully breaking changes allowed, no upgrade paths. MoveState deleted in PR #4. SDK→Framework migration guide ships once with PR #20's parity report — that's the moment users have an incentive to migrate. | Provide MoveState/UpgradeState helpers |
 | D3 | Small-PR approach: many focused PRs, each independently reviewable | Single large branch / mega-PR |
 | D4 | Scope = resource + datasource + long-name cleanup. `proxmox_cloned_vm` is out of scope **for new features** but five shared sub-packages (`cpu`, `vga`, `rng`, `cdrom`, `memory`) are jointly owned; their tests gate any port. | Touch `cloned_vm` features now / treat sub-packages as vm-only |
-| D5 | New device families use map-keyed pattern (already in production via `cdrom` + `clonedvm`). Per-family slot regex tightened to PVE source bounds (see Map-Keyed Device Pattern §). `SingleNestedAttribute` only for **architecturally** single devices (`efidisk0`, `tpmstate0` — VM hardware model precludes multiples). Conventionally-single-today devices (`audio0`) use map-keyed with a one-key regex so future PVE expansion is additive, not a breaking schema-shape change. | User-chosen key + explicit `slot` attribute / SingleNested for everything currently single |
+| D5 | New device families use map-keyed pattern (already in production via `cdrom` + `clonedvm`). Per-family slot regex tightened to PVE source bounds (see Map-Keyed Device Pattern §). `SingleNestedAttribute` for devices PVE currently exposes as one slot only — both **architecturally** single (`efidisk0`, `tpmstate0`) and **conventionally** single (`audio0`). Trade-off: if PVE adds `audio1+` slots later, migration to map-keyed is a breaking schema change. Accepted: PVE has had `audio0` only for years, and the additional level of HCL indentation isn't justified by speculative forward-compat. | User-chosen key + explicit `slot` attribute / map-keyed with one-key regex |
 | D6 | PR #1 audit confirms there is no clone scaffolding in `proxmox_vm` (verified). The real "remove clone scaffolding" cleanup is the per-attribute audit of `Optional+Computed` flags vs the new ADR-004 rule (PR #3 applies the cleanup). | Search-and-destroy for non-existent clone code |
 | D7 | Feature order: `memory` + `power_state` setup → `disk` (MVP) → UEFI → `network_device` → cloud-init → OS → advanced hardware → cluster concerns → parity report | network_device first / scalars first |
 | D8 | Use `vm2` as commit scope for migration-epic implementation PRs; `docs(adr)` for new/amended ADRs. `vm2` documented in `commit-scopes` memory as transient (retires on #1231 close). | `vm` (collides with SDK changelog entries) |
@@ -181,18 +181,21 @@ Rules codified in the ADR:
 - File layout per package per ADR-003: `resource_schema.go`,
   `datasource_schema.go`, `model.go`, plus colocated test files.
 - **Single-vs-map rule:**
-  - Use `SingleNestedAttribute` only when PVE's underlying hardware
-    model **architecturally** precludes multiple instances (e.g.,
-    `efidisk0` — one EFI variable store per VM is firmware-defined;
-    `tpmstate0` — TPM spec is single-instance per system).
+  - Use `SingleNestedAttribute` for devices PVE currently exposes as one
+    slot only — both **architecturally** single (`efidisk0` — one EFI
+    variable store per VM is firmware-defined; `tpmstate0` — TPM spec is
+    single-instance per system) and **conventionally** single (`audio0`
+    — PVE Perl source `$id //= 0`, one slot today). For conventionally-
+    single devices, the trade-off is explicit: if PVE later adds
+    additional slots (e.g., `audio1+`), migrating the schema to map-keyed
+    is a breaking change. Accepted to keep HCL ergonomic.
   - Use `MapNestedAttribute` (map-keyed by PVE slot name) for everything
-    else, **including devices PVE currently limits to one slot** (e.g.,
-    `audio0`). Tighten the slot regex to PVE's current bounds; relax in
-    a future additive PR if PVE expands. This keeps schema-shape changes
-    out of the breaking-change menu when PVE grows a feature (e.g., a
-    pending feature request to support multiple cdroms is already
-    additive because cdrom is map-keyed; audio_device should follow the
-    same pattern).
+    else (`disk`, `network_device`, `cdrom`, `usb`, `hostpci`, `numa`,
+    `serial_device`, `parallel`, `virtiofs`). Tighten the slot regex to
+    PVE's current bounds; relax in a future additive PR if PVE expands.
+    Cdrom is the existing reference: a pending PVE feature request to
+    support multiple cdroms is already additive because cdrom is map-
+    keyed.
 - Sub-block names normally correspond to a single PVE concept. Exception:
   `cpu` historically includes `cpu.numa` (PVE: `numa=1`) and
   `cpu.hotplugged` (PVE: `vcpus=N`); these are SDK-inherited and being
@@ -324,7 +327,7 @@ UEFI/SeaBIOS VM with bootable disk.
 | 14 | `feat(vm2): add acpi + tablet_device + keyboard_layout + kvm_arguments + vcpus + hotplug + parallel` |
 | 15 | `feat(vm2): add usb map-keyed block` |
 | 16 | `feat(vm2): add hostpci map-keyed block` |
-| 17 | `feat(vm2): add serial_device + audio_device + virtiofs (all map-keyed)` |
+| 17 | `feat(vm2): add serial_device (map-keyed) + audio_device (single-nested) + virtiofs (map-keyed)` |
 
 `vcpus` in PR #14 is the rehomed `cpu.hotplugged`. `numa.enabled` in
 PR #13 is the rehomed `cpu.numa`.
@@ -456,23 +459,26 @@ Bounds verified from `qemu-server.git` Perl source:
 | `serial_device` | `MAX_SERIAL_PORTS=4` | `^serial[0-3]$` |
 | `parallel` | `MAX_PARALLEL_PORTS=3` | `^parallel[0-2]$` |
 | `virtiofs` | `max_virtiofs()` (verify in audit) | `^virtiofs[0-N]$` |
-| `audio_device` | `audio0` only today (Perl source `$id //= 0`) | `^audio0$` (relax if PVE adds slots) |
 
 ### Single-instance devices (SingleNestedAttribute, not map-keyed)
 
-Per ADR-008 single-vs-map rule — only **architecturally** single devices
-(VM hardware model precludes multiples):
+Per ADR-008 single-vs-map rule — devices PVE currently exposes as one
+slot only:
 
-- `efi_disk` → PVE `efidisk0` (one EFI variable store per VM,
-  firmware-defined)
-- `tpm_state` → PVE `tpmstate0` (TPM spec is single-instance per system)
-
-`audio_device` is *conventionally* single today but uses the map-keyed
-pattern with a one-key regex (see table above) so future PVE expansion
-to `audio1+` is additive, not a breaking schema-shape change. Same
-forward-looking choice we already get for free with `cdrom` (a pending
-PVE feature request adds support for multiple cdroms; cdrom is already
-map-keyed, so accommodating it requires no schema change).
+- **Architecturally single** (VM hardware model precludes multiples):
+  - `efi_disk` → PVE `efidisk0` (one EFI variable store per VM,
+    firmware-defined)
+  - `tpm_state` → PVE `tpmstate0` (TPM spec is single-instance per
+    system)
+- **Conventionally single** (PVE currently limits to one slot but isn't
+  architecturally constrained):
+  - `audio_device` → PVE `audio0` only today (Perl source `$id //= 0`).
+    Forward-compat trade-off accepted: if PVE adds `audio1+` slots later,
+    the schema will need a breaking change to map-keyed. Justification:
+    PVE has had `audio0` only for years; HCL ergonomics outweigh
+    speculative forward-compat. Cdrom remains the reference for the
+    opposite choice — a pending PVE feature request to support multiple
+    cdroms is additive because cdrom is map-keyed.
 
 ## Testing Strategy
 
