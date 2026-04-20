@@ -165,28 +165,28 @@ classified as one of:
 
 ### Top-level scalars
 
-| SDK key                | SDK source  | Status         | Target PR | Notes                                                  |
-|------------------------|-------------|----------------|-----------|--------------------------------------------------------|
-| `description`          | `vm.go:206` | done           | —         | Already in `proxmox_vm`                                |
-| `name`                 | `vm.go:268` | done           | —         | Already in `proxmox_vm` (with DNS validator)           |
-| `node_name`            | `vm.go:270` | done           | —         | Already in `proxmox_vm` (Required)                     |
-| `tags`                 | `vm.go:295` | done           | —         | Already in `proxmox_vm` (stringset)                    |
-| `template`             | `vm.go:296` | done           | —         | Already in `proxmox_vm` (RequiresReplace planmodifier) |
-| `vm_id`                | `vm.go:313` | done (as `id`) | —         | Already in `proxmox_vm`; renamed                       |
-| `pool_id`              | `vm.go:273` | planned        | #18       | —                                                      |
-| `protection`           | `vm.go:274` | planned        | #18       | —                                                      |
-| `migrate`              | `vm.go:267` | planned        | #19       | —                                                      |
-| `acpi`                 | `vm.go:165` | planned        | #14       | —                                                      |
-| `bios`                 | `vm.go:184` | planned        | #8        | —                                                      |
-| `boot_order`           | `vm.go:164` | planned        | #8        | —                                                      |
-| `hook_script_file_id`  | `vm.go:315` | planned        | #18       | —                                                      |
-| `hotplug`              | `vm.go:232` | planned        | #14       | —                                                      |
-| `keyboard_layout`      | `vm.go:258` | planned        | #14       | —                                                      |
-| `kvm_arguments`        | `vm.go:259` | planned        | #14       | —                                                      |
-| `machine`              | `vm.go:260` | planned        | #8        | —                                                      |
-| `scsi_hardware`        | `vm.go:314` | planned        | #9        | —                                                      |
-| `tablet_device`        | `vm.go:294` | planned        | #14       | —                                                      |
-| `vm_id` (clone source) | n/a         | dropped        | —         | Belongs to `proxmox_cloned_vm`, out of scope (D4)      |
+| SDK key                | SDK source  | Status         | Target PR | Notes                                                                                                                                                                       |
+|------------------------|-------------|----------------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `description`          | `vm.go:206` | done           | —         | Already in `proxmox_vm`                                                                                                                                                     |
+| `name`                 | `vm.go:268` | done           | —         | Already in `proxmox_vm` (with DNS validator)                                                                                                                                |
+| `node_name`            | `vm.go:270` | done           | —         | Already in `proxmox_vm` (Required)                                                                                                                                          |
+| `tags`                 | `vm.go:295` | done           | —         | Already in `proxmox_vm` (stringset)                                                                                                                                         |
+| `template`             | `vm.go:296` | done           | —         | Already in `proxmox_vm` (RequiresReplace planmodifier)                                                                                                                      |
+| `vm_id`                | `vm.go:313` | done (as `id`) | —         | Already in `proxmox_vm`; renamed                                                                                                                                            |
+| `pool_id`              | `vm.go:273` | planned        | #18       | —                                                                                                                                                                           |
+| `protection`           | `vm.go:274` | planned        | #18       | —                                                                                                                                                                           |
+| `migrate`              | `vm.go:267` | planned        | #19       | —                                                                                                                                                                           |
+| `acpi`                 | `vm.go:165` | planned        | #14       | —                                                                                                                                                                           |
+| `bios`                 | `vm.go:184` | planned        | #8        | —                                                                                                                                                                           |
+| `boot_order`           | `vm.go:164` | planned        | #8        | —                                                                                                                                                                           |
+| `hook_script_file_id`  | `vm.go:315` | planned        | #18       | —                                                                                                                                                                           |
+| `hotplug`              | `vm.go:232` | planned        | #14       | Shape: **set of strings** (`stringset`), not comma-separated string (per CLAUDE.md comma-separated-API→list rule). Valid values: `network`, `disk`, `usb`, `memory`, `cpu`. |
+| `keyboard_layout`      | `vm.go:258` | planned        | #14       | —                                                                                                                                                                           |
+| `kvm_arguments`        | `vm.go:259` | planned        | #14       | Shape: **single string** (free-form CLI args passed to QEMU as-is). Not tokenized into list — PVE's `args` param is whitespace/quote-sensitive.                             |
+| `machine`              | `vm.go:260` | planned        | #8        | —                                                                                                                                                                           |
+| `scsi_hardware`        | `vm.go:314` | planned        | #9        | —                                                                                                                                                                           |
+| `tablet_device`        | `vm.go:294` | planned        | #14       | —                                                                                                                                                                           |
+| `vm_id` (clone source) | n/a         | dropped        | —         | Belongs to `proxmox_cloned_vm`, out of scope (D4)                                                                                                                           |
 
 ### Top-level blocks
 
@@ -229,14 +229,30 @@ classified as one of:
 | `file_id`                                                                   | `disk/schema.go:37`    | planned | #7        | —                                                 |
 | `import_from`                                                               | `disk/schema.go:38`    | planned | #7        | —                                                 |
 | `interface` (legacy slot field)                                             | `disk/schema.go:39`    | dropped | —         | Replaced by map key per ADR-008 map-keyed pattern |
-| `iops_read` / `iops_read_burstable` / `iops_write` / `iops_write_burstable` | `disk/schema.go:40–43` | planned | #7        | —                                                 |
 | `iothread`                                                                  | `disk/schema.go:44`    | planned | #7        | —                                                 |
-| `path_in_datastore`                                                         | `disk/schema.go:45`    | planned | #7        | —                                                 |
+| `path_in_datastore`                                                         | `disk/schema.go:45`    | planned | #7        | Read-only (Computed) — populated by PVE after disk creation with the actual storage path |
 | `replicate`                                                                 | `disk/schema.go:46`    | planned | #7        | —                                                 |
 | `serial`                                                                    | `disk/schema.go:47`    | planned | #7        | —                                                 |
-| `size`                                                                      | `disk/schema.go:48`    | planned | #7        | —                                                 |
-| `speed` (read/read_burstable/write/write_burstable nested)                  | `disk/schema.go:49–53` | planned | #7        | —                                                 |
+| `size`                                                                      | `disk/schema.go:48`    | planned | #7        | **String-with-units format** (`"20G"`, `"512M"`, `"1.5T"`) via new `customtypes.DiskSizeValue` attribute type — resolves [#1511](https://github.com/bpg/terraform-provider-proxmox/issues/1511) for the new resource. Wraps `types.String`; validates via existing `proxmox/types/disk_size.go::ParseDiskSize` (K/M/G/T + optional `b`/`B`/`iB` binary suffixes); accepts plain integer (interpret as GB for graceful migration from SDK's Int GB). |
+| `speed` (nested block with 8 sub-fields)                                    | `disk/schema.go:49–53` + `40–43` | planned | #7 | **Actually a nested block** combining rate limits. SDK constants at lines 40–43 (`iops_*`) are sibling-named but live INSIDE the `speed` block. 8 sub-fields: 4 IOPS (ops/s) + 4 bandwidth (MB/s). See sub-table below. |
 | `ssd`                                                                       | `disk/schema.go:54`    | planned | #7        | —                                                 |
+
+#### `disk[slot].speed` sub-fields (rate limits)
+
+8 fields total — 4 IOPS (operations per second) + 4 bandwidth (MB/s). Both categories can be set independently; PVE applies `min(iops_limit, bandwidth_limit)` as the effective throttle (whichever limit hits first).
+
+| SDK key               | PVE param     | Unit     | Meaning                           |
+|-----------------------|---------------|----------|-----------------------------------|
+| `iops_read`           | `iops_rd`     | ops/s    | Read IOPS steady-state throttle   |
+| `iops_read_burstable` | `iops_rd_max` | ops/s    | Burst pool for reads              |
+| `iops_write`          | `iops_wr`     | ops/s    | Write IOPS steady-state throttle  |
+| `iops_write_burstable`| `iops_wr_max` | ops/s    | Burst pool for writes             |
+| `read`                | `mbps_rd`     | MB/s     | Read bandwidth steady-state       |
+| `read_burstable`      | `mbps_rd_max` | MB/s     | Burst pool for reads              |
+| `write`               | `mbps_wr`     | MB/s     | Write bandwidth steady-state      |
+| `write_burstable`     | `mbps_wr_max` | MB/s     | Burst pool for writes             |
+
+**SDK naming inconsistency**: the IOPS fields carry the `iops_` prefix but the bandwidth fields don't (no `mbps_` / `bandwidth_` prefix) — a reader can't tell units from field name alone. PR #7 resolves this via the `disk[slot].speed` shape decision (see tracker decisions log).
 
 ### Network-family sub-attributes (under map-keyed `network_device[slot]` block, PR #10)
 
@@ -348,21 +364,21 @@ classified as one of:
 |---|---|---|---|---|
 | `timeout_clone` | `vm.go:297` | dropped | — | Belongs to clonedvm |
 | `timeout_create` | `vm.go:298` | done | — | Folded into `timeouts.create` |
-| `timeout_migrate` | `vm.go:299` | planned | #19 | Folded into `timeouts.update` (per SDK comment that this is essentially a "timeout_update") |
+| `timeout_migrate` | `vm.go:299` | planned | #19 | **Stays user-facing** per OQ1 resolution (not folded into `timeouts.update`) — migration can legitimately run 15+ min. Exact placement finalized at PR #19. |
 | `timeout_reboot` | `vm.go:300` | dropped | — | Reboot is provider-internal (Q5); reuse `timeouts.update` |
 | `timeout_shutdown_vm` | `vm.go:301` | planned | #6 | Internal to `power_state` transitions; not user-facing |
 | `timeout_start_vm` | `vm.go:302` | planned | #6 | Internal to `power_state` transitions; not user-facing |
 | `timeout_stop_vm` | `vm.go:303` | planned | #6 | Internal to `power_state` transitions; not user-facing |
-| `timeout_move_disk` | `vm.go:304` | planned | #19 | Folded into migrate timeout |
+| `timeout_move_disk` | `vm.go:304` | planned | #19 | **Stays user-facing** per OQ1 resolution — datastore moves on large disks are long-running. Exact placement finalized at PR #19 (candidates: `timeouts.move_disk` custom dimension, `disk[slot].move_timeout`, or `migrate.move_disk_timeout`). |
 
 ### Open questions (pending maintainer decision)
 
 | # | Question | Notes |
 |---|---|---|
-| OQ1 | Should `timeout_*` granular controls survive (as `timeouts.{create,update,delete,read}`) or do we adopt PVE-like granularity (separate per phase)? | Recommend: stick with framework `timeouts` block (ADR-006); fold internal phase timeouts into the parent op. |
+| OQ1 | ~~Should `timeout_*` granular controls survive (as `timeouts.{create,update,delete,read}`) or do we adopt PVE-like granularity (separate per phase)?~~ | **Resolved 2026-04-20**: hybrid. Framework `timeouts` block (`create`/`read`/`update`/`delete`) covers short internal transitions (start/stop/shutdown/reboot fold in). `timeout_migrate` and `timeout_move_disk` **stay user-facing** — both operations can legitimately run an order of magnitude longer than the umbrella update and shouldn't share a budget. Exact placement (`timeouts.migrate`/`timeouts.move_disk` custom dimensions vs inside the `migrate`/`disk` blocks) finalized at PR #19 design time. |
 | OQ2 | ~~Read-only network attributes (`ipv4_addresses`, `ipv6_addresses`, `mac_addresses`, `network_interface_names`) — surface in resource as Computed, only in datasource, or both?~~ | **Resolved 2026-04-19**: rehomed per-slot under `network_device[slot]` as `ipv4_addresses` (List), `ipv6_addresses` (List), `interface_name` (String). Surfaced in BOTH resource and datasource. SDK top-level `mac_addresses` parallel agent-reported list dropped (per-slot configured `mac_address` already exists). |
-| OQ3 | Cloud-init `ip_config` — keep as ordered list (SDK) or convert to map keyed by interface name? | Recommend: map-keyed by interface name (`net0`, `net1`, …) — natural correspondence with `network_device` slots. |
-| OQ4 | `agent.timeout` and `agent.wait_for_ip.{ipv4,ipv6}` — keep as PVE pass-through or fold into provider `timeouts.create` semantics? | Recommend: keep as PVE pass-through (they map to PVE config keys). |
+| OQ3 | ~~Cloud-init `ip_config` — keep as ordered list (SDK) or convert to map keyed by interface name?~~ | **Resolved 2026-04-20**: map-keyed by interface name (`net0`, `net1`, …). Matches `network_device[slot]` map-keyed shape. Eliminates SDK's silent-shift fragility when users reorder network devices. |
+| OQ4 | ~~`agent.timeout` and `agent.wait_for_ip.{ipv4,ipv6}` — keep as PVE pass-through or fold into provider `timeouts.create` semantics?~~ | **Resolved 2026-04-20**: keep as pass-through inside the `agent` block. Agent waits are about guest readiness (behaviorally distinct from PVE API latency covered by `timeouts.create`/`timeouts.update`); folding would force the provider to split a single timeout budget across unrelated waits. |
 
 ### Summary by status
 
@@ -658,7 +674,7 @@ These will likely **keep** `Optional+Computed` (without provider Default) per th
 | `kvm` | 1 | likely absent unless changed (verify) | TBD — predict Optional only | (out of scope today) |
 | `bios` | seabios | likely absent unless changed (verify) | TBD — predict Optional only | #8 |
 | `scsihw` | lsi | likely absent unless changed (verify) | TBD — predict Optional only | #9 |
-| `hotplug` | network,disk,usb | likely returns the list always (verify) | TBD — predict Optional+Computed | #14 |
+| `hotplug` | network,disk,usb | likely returns the list always (verify) | TBD — predict Optional+Computed; shape `stringset` (order-agnostic, deduped) | #14 |
 | `protection` | 0 | likely absent unless changed | TBD — predict Optional only | #18 |
 | `onboot` | 0 | likely absent unless changed | predict Optional only | #6 |
 
@@ -760,7 +776,7 @@ rule:
 | `limit` | `float64validator.Between(0, 128)` (`cpu/resource_schema.go:98`) | range | keep | PVE-source bound | — |
 | `sockets` | `int64validator.Between(1, 16)` (`cpu/resource_schema.go:113`) | range | keep | PVE-source bound | — |
 | `type` | `stringvalidator.OneOf(...75 CPU types...)` (`cpu/resource_schema.go:125–204`) | **long enum** | **drop** | (Confirms F27/P5) Long, version-evolving — defer to PVE per ADR-004 enum rule | #3 |
-| `units` | `int64validator.Between(1, 262144)` (`cpu/resource_schema.go:214`) | range | open question | PVE source: cgroup v2 default is `100`, with `0` valid (disables limiting). Current `Between(1, 262144)` rejects `0`. Acceptable on cgroup v1 hosts; restrictive on cgroup v2. PR #3: relax to `AtLeast(0)` or document the cgroup v1 assumption. | #3 |
+| `units` | `int64validator.Between(1, 262144)` (`cpu/resource_schema.go:214`) | range | **relax** | **Resolved 2026-04-20**: relax to `int64validator.AtLeast(0)`. Current bound rejects `0` which is valid on cgroup v2 (disables CPU share weighting). Upper bound `262144` isn't a documented PVE hard limit — a paranoid ceiling; PVE rejects anything out-of-range. Relaxing trades minor loss of early validation for cgroup-v2 correctness. | #3 |
 
 ### `vga/`
 
@@ -801,7 +817,7 @@ rule:
 | keep | 18 | Short stable enums, cross-attribute, range bounds, format checks |
 | drop | 2 | Long version-evolving enums (`cpu.type`, `vga.type`) |
 | tighten | 1 | `cdrom` slot regex (`scsi` upper bound) |
-| open question | 1 | `cpu.units` lower-bound (cgroup v1 vs v2) |
+| relax | 1 | `cpu.units` from `Between(1, 262144)` to `AtLeast(0)` (cgroup v2 allows `0`) |
 | drop-with-attr | 1 | `cpu.hotplugged` validator dies with the attribute (rehome) |
 
 All target PR #3 (sub-package port).
@@ -813,7 +829,7 @@ All target PR #3 (sub-package port).
 | Aspect | Resolution |
 |---|---|
 | Drop `started` (boolean) | Yes — replaced by `power_state` |
-| Add `power_state` (string) | Values: `"running"`, `"stopped"`. Default `"running"`. |
+| Add `power_state` (string) | Values: `"running"`, `"stopped"`. Default `"running"`. `"paused"` considered and **explicitly excluded** (2026-04-20): paused is a transient debug/maintenance state, not a steady-state config; state-machine edge cases (e.g., pause-a-stopped-VM = PVE error) add UX friction without meaningful value. Users needing paused semantics use PVE UI/CLI or the agent. |
 | Add Computed `status` | For runtime drift visibility |
 | Drop user-facing `reboot` | Provider decides reboot-vs-restart from pending changes |
 | Keep `on_boot` (boolean) | Yes — corresponds to PVE "Start at boot" |

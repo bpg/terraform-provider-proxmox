@@ -158,8 +158,8 @@ file, finalized.
 |---|---|---|---|
 | `timeouts.create` | — | done | Already in `proxmox_vm` |
 | `timeouts.read`/`update`/`delete` | — | done | Already in `proxmox_vm` |
-| `timeout_migrate` (SDK) | #19 | todo | Folded into `timeouts.update` |
-| `timeout_move_disk` (SDK) | #19 | todo | Folded into migrate timeout |
+| `timeout_migrate` (SDK) | #19 | todo | Stays user-facing per OQ1 (placement TBD at PR #19) |
+| `timeout_move_disk` (SDK) | #19 | todo | Stays user-facing per OQ1 (placement TBD at PR #19) |
 | `timeout_clone` (SDK) | — | dropped | Belongs to clonedvm |
 | `timeout_reboot` (SDK) | — | dropped | Provider-internal reboot uses `timeouts.update` |
 | `timeout_shutdown_vm` / `timeout_start_vm` / `timeout_stop_vm` (SDK) | #6 | todo | Provider-internal (not user-facing) |
@@ -303,10 +303,10 @@ file, finalized.
 
 | # | Question | Target PR | Status |
 |---|---|---|---|
-| OQ1 | Granular `timeout_*` controls (SDK) → adopt framework `timeouts` block only, or preserve per-phase granularity? Recommend: framework `timeouts` block, fold internal phase timeouts into parent op. | #6 / #19 | open |
+| OQ1 | ~~Granular `timeout_*` controls (SDK) → adopt framework `timeouts` block only, or preserve per-phase granularity?~~ | #6 / #19 | resolved (2026-04-20: hybrid — framework `timeouts` block absorbs short transitions; `timeout_migrate` + `timeout_move_disk` stay user-facing) |
 | OQ2 | ~~Read-only network attributes (`ipv4_addresses`, `ipv6_addresses`, `mac_addresses`, `network_interface_names`) — resource Computed, datasource only, or both?~~ | #10 | resolved (2026-04-19: per-slot under `network_device[slot]` as `ipv4_addresses` List, `ipv6_addresses` List, `interface_name` String, in BOTH resource and datasource; `mac_addresses` parallel list dropped — per-slot `mac_address` covers it) |
-| OQ3 | Cloud-init `ip_config` — keep ordered list or map-keyed by interface name? Recommend: map-keyed, matches `network_device`. | #11 | open |
-| OQ4 | Agent `timeout` / `wait_for_ip.{ipv4,ipv6}` — keep as PVE pass-through or fold into provider timeouts? Recommend: PVE pass-through. | #13 | open |
+| OQ3 | ~~Cloud-init `ip_config` — keep ordered list or map-keyed by interface name?~~ | #11 | resolved (2026-04-20: map-keyed by interface name; matches `network_device[slot]`) |
+| OQ4 | ~~Agent `timeout` / `wait_for_ip.{ipv4,ipv6}` — keep as PVE pass-through or fold into provider timeouts?~~ | #13 | resolved (2026-04-20: keep as pass-through; agent-guest waits are distinct from PVE API latency) |
 
 ## PR ownership map
 
@@ -382,7 +382,7 @@ file, finalized.
 | `keyboard_layout` | Computed string | todo | #14 |
 | `kvm_arguments` | Computed string | todo | #14 |
 | `vcpus` | Computed int | todo | #14 |
-| `hotplug` | Computed list | todo | #14 |
+| `hotplug` | Computed set (stringset) | todo | #14 |
 | `parallel` | Computed MapNested | todo | #14 |
 | `usb` | Computed MapNested | todo | #15 |
 | `hostpci` | Computed MapNested | todo | #16 |
