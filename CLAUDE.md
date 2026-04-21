@@ -376,6 +376,7 @@ Docs under `docs/` are a **mix** of auto-generated and manually maintained files
 - Manual edits to `docs/` files for Framework resources **will be lost** on `make docs` — always edit the template or schema description instead
 - Manual edits to `docs/` files for SDK resources are safe — they are the source of truth
 - Custom templates in `templates/` override default `tfplugindocs` generation for specific Framework resources
+- **No PR-number references in static docs.** ADRs, guides, and templates must not pin to specific PRs (e.g. "PR #3", "phase-2 PRs") — those rot fast. Reference the tracking issue (e.g. `#1231`) instead. PR-level references belong in `.dev/` trackers, which are dynamic by design.
 
 **Guides** use two patterns:
 
