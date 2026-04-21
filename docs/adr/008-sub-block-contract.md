@@ -14,6 +14,8 @@ VM-shaped resources (`proxmox_vm`, `proxmox_cloned_vm`) compose dozens of indepe
 
 The existing five sub-packages (`cpu`, `vga`, `rng`, `cdrom`, `memory` under `fwprovider/nodes/vm/`) already converged on a function-based, Value-centric pattern: each sub-package exports an opaque `Value` type alias, a `NewValue` constructor that maps a PVE GET response into the Value, and `FillCreateBody` / `FillUpdateBody` functions that mutate the API request body from a Value. The top-level resource holds these Values in its model struct and calls the sub-package functions during CRUD.
 
+> **Note.** This ADR codifies the target contract. The existing five sub-packages pre-date it and deviate in places documented by the #1231 audit — notably `memory` exports only `NewValue` + `FillUpdateBody` (no `FillCreateBody`) and lacks `datasource_schema.go` / `resource_test.go`; `cpu`/`vga`/`rng`/`cdrom` schemas carry `Optional+Computed` on fields that should drop `Computed` per [ADR-004 §Provider Defaults vs PVE Defaults](004-schema-design-conventions.md#provider-defaults-vs-pve-defaults); `cdrom`'s conversion helper is still named `exportToCustomStorageDevice()` (pre-ADR-004 naming) and is scheduled for rename to `toAPI()`; `cpu` still hosts the `numa` / `hotplugged` misnomers covered in [Block Name Maps to a Single PVE Concept](#block-name-maps-to-a-single-pve-concept). PR #3 of the [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231) epic brings these five into conformance; the rehomes (`numa.enabled`, `vcpus`) land in later phase-2 PRs.
+
 Two factors make this contract worth codifying now rather than after the next 15 sub-packages land:
 
 1. **Joint ownership.** Five of the existing sub-packages are also consumed by `proxmox_cloned_vm`. Any contract change must keep both consumers green. Codification raises the cost of accidental drift.
@@ -103,7 +105,7 @@ The CheckDelete string is the **PVE API parameter name** (lowercase, matching th
 
 The body-taking form coexists with the universal `(plan, state, *[]string, "api-name")` signature documented in [ADR-004 §Field Deletion on Update](004-schema-design-conventions.md#field-deletion-on-update) — non-VM Framework resources (SDN, metrics, Replication, etc.) use the universal form when their body type does not expose its delete slice. VM sub-packages prefer the body-taking form, eliminating the local `[]string` plumbing.
 
-Hand-rolled `ShouldBeRemoved` + `IsDefined` cascades that branch on `plan.Field.Equal(state.Field)` are not used in either form — `attribute.StringPtrFromValue` already returns nil for null/unknown, so the explicit `IsDefined` guard is redundant in `FillCreateBody` _and_ `FillUpdateBody`. The reflection-based `body.ToDelete(GoFieldName)` helper on `vms.UpdateRequestBody` is a separate convenience for callers that prefer to delete by Go field name; the canonical pattern uses `attribute.CheckDelete` with the API name and does not call `ToDelete` directly.
+Hand-rolled `ShouldBeRemoved` + `IsDefined` cascades that branch on `plan.Field.Equal(state.Field)` are not used in either form — `attribute.StringPtrFromValue` already returns nil for null/unknown, so the explicit `IsDefined` guard is redundant in `FillCreateBody` _and_ `FillUpdateBody`. A reflection-based `body.ToDelete(GoFieldName)` helper on `vms.UpdateRequestBody` exists for legacy callers, but new sub-package code must not use it — the canonical pattern is `attribute.CheckDelete` with the API name. See [Common Mistakes](#common-mistakes).
 
 ### Map-keyed Update Diff
 
@@ -117,7 +119,7 @@ for slot, dev := range toUpdate { body.AddDevice(slot, dev.toAPI()) }
 for slot := range toDelete      { body.Delete = append(body.Delete, slot) }
 ```
 
-Slot-level deletion appends the slot key (e.g. `"net1"`, `"ide2"`) directly to `body.Delete`. This is the same `body.Delete []string` (`url:"delete,omitempty,comma"`) that scalar field deletion populates via `attribute.CheckDelete` — slot keys and scalar API names share one comma-separated `delete=…` parameter on the wire. The per-device add helper (`AddCustomStorageDevice`, `AddNetworkDevice`, etc.) is sub-package-specific; cdrom uses `body.AddCustomStorageDevice(iface, dev.exportToCustomStorageDevice())` as the canonical example.
+Slot-level deletion appends the slot key (e.g. `"net1"`, `"ide2"`) directly to `body.Delete`. This is the same `body.Delete []string` (`url:"delete,omitempty,comma"`) that scalar field deletion populates via `attribute.CheckDelete` — slot keys and scalar API names share one comma-separated `delete=…` parameter on the wire. The per-device add helper (`AddCustomStorageDevice`, `AddNetworkDevice`, etc.) is sub-package-specific; cdrom is the reference, calling `body.AddCustomStorageDevice(iface, dev.toAPI())` — the `toAPI()` / `fromAPI()` names mandated by [ADR-004 §Model-API Conversion](004-schema-design-conventions.md#model-api-conversion).
 
 ### File Layout
 
@@ -147,7 +149,7 @@ The map's `Validators` must include a `mapvalidator.KeysAre(stringvalidator.Rege
 
 Sub-block names normally correspond to one PVE concept (`cpu` → CPU emulation, `vga` → VGA device, `rng` → RNG device). Avoid the "virtual sub-block" pattern — a block that contains attributes mapping to unrelated PVE concepts.
 
-The `cpu` block is the historical exception: `cpu.numa` (PVE: `numa=1` — a top-level VM toggle) and `cpu.hotplugged` (PVE: `vcpus=N` — a top-level vCPU count) were SDK-inherited misnomers, since corrected by relocating them to dedicated homes (`numa.enabled` under the `numa` map-keyed block; `vcpus` as a top-level scalar). Future sub-packages should not repeat the pattern.
+The `cpu` block is the historical exception: `cpu.numa` (PVE: `numa=1` — a top-level VM toggle) and `cpu.hotplugged` (PVE: `vcpus=N` — a top-level vCPU count) are SDK-inherited misnomers scheduled for relocation — `numa.enabled` under a dedicated top-level `numa` block, `vcpus` as a top-level scalar — per the [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231) migration epic. Future sub-packages should not repeat the pattern.
 
 ## Consequences
 
