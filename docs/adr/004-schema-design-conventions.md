@@ -52,7 +52,7 @@ The provider does not duplicate PVE's documented defaults via schema `Default(..
 | Returns null/absent when unset               | `Optional` only                    | `cpu.affinity`, `cpu.limit`, `cpu.type`, `vga.type`, `rng.source`, `description` |
 | Provider-only attribute (no PVE counterpart) | `Optional + Default`               | `purge_on_destroy`, `stop_on_destroy`, `delete_unreferenced_disks_on_destroy`    |
 
-> **Note.** The `cpu`/`vga`/`rng` examples above describe the target classification. The current `fwprovider/nodes/vm/{cpu,vga,rng}` schemas carry `Optional+Computed` inherited from the SDK and the initial Framework scaffold; PR #3 of the [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231) epic drops `Computed` from everything outside the cores/sockets carve-out.
+> **Note.** The `cpu`/`vga`/`rng` examples above describe the target classification. The current `fwprovider/nodes/vm/{cpu,vga,rng}` schemas carry `Optional+Computed` inherited from the SDK and the initial Framework scaffold; conformance — dropping `Computed` from everything outside the cores/sockets carve-out — is tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231).
 
 PVE Read behavior must be verified empirically per attribute. The prescribed method:
 
