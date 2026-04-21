@@ -10,16 +10,16 @@
 
 | Phase                      | PRs         | Merged | In-flight | Blocked |
 | -------------------------- | ----------- | ------ | --------- | ------- |
-| 1 — Audit & Redesign       | 5           | 1      | 0         | 0       |
+| 1 — Audit & Redesign       | 5           | 1      | 1         | 0       |
 | 2A — MVP setup + MVP       | 2           | 0      | 0         | 0       |
 | 2B — Boot + UEFI           | 2           | 0      | 0         | 0       |
 | 2C — Network/cloud-init/OS | 3           | 0      | 0         | 0       |
 | 2D — Advanced hardware     | 5           | 0      | 0         | 0       |
 | 2E — Cluster + parity      | 3           | 0      | 0         | 0       |
 | Floating client-refactor   | 0–1         | 0      | 0         | 0       |
-| **Total**                  | **20 (+1)** | **1**  | **0**     | **0**   |
+| **Total**                  | **20 (+1)** | **1**  | **1**     | **0**   |
 
-**Currently active:** none — PR #1 merged as [#2810](https://github.com/bpg/terraform-provider-proxmox/pull/2810); PR #2 (ADR-008 + ADR-004 amendment) is next
+**Currently active:** PR #2 (ADR-008 sub-block contract + ADR-004 amendment) — branch `docs/1231-adr-008-and-004-amendment`, drafted, awaiting commit + PR open.
 
 ## Status legend
 
@@ -35,13 +35,13 @@
 
 ### Phase 1 — Audit & Redesign
 
-| #   | Title                                                       | Status | Branch    | PR                                                                   | Session  | Blocker |
-| --- | ----------------------------------------------------------- | ------ | --------- | -------------------------------------------------------------------- | -------- | ------- |
-| 1   | `chore(vm2): audit proxmox_vm against ADRs 001–007`         | merged | (deleted) | [#2810](https://github.com/bpg/terraform-provider-proxmox/pull/2810) | archived | —       |
-| 2   | `docs(adr): ADR-008 sub-block contract + ADR-004 amendment` | todo   | —         | —                                                                    | —        | —       |
-| 3   | `refactor(vm2): port cpu/vga/rng/cdrom/memory to ADR-008`   | todo   | —         | —                                                                    | —        | —       |
-| 4   | `refactor(vm2)!: rename to proxmox_vm; delete MoveState`    | todo   | —         | —                                                                    | —        | —       |
-| 5   | `refactor(vm2): ADR-005 error format sweep`                 | todo   | —         | —                                                                    | —        | —       |
+| #   | Title                                                       | Status | Branch                                | PR                                                                   | Session                   | Blocker |
+| --- | ----------------------------------------------------------- | ------ | ------------------------------------- | -------------------------------------------------------------------- | ------------------------- | ------- |
+| 1   | `chore(vm2): audit proxmox_vm against ADRs 001–007`         | merged | (deleted)                             | [#2810](https://github.com/bpg/terraform-provider-proxmox/pull/2810) | archived                  | —       |
+| 2   | `docs(adr): ADR-008 sub-block contract + ADR-004 amendment` | wip    | `docs/1231-adr-008-and-004-amendment` | —                                                                    | `1231_2_SESSION_STATE.md` | —       |
+| 3   | `refactor(vm2): port cpu/vga/rng/cdrom/memory to ADR-008`   | todo   | —                                     | —                                                                    | —                         | —       |
+| 4   | `refactor(vm2)!: rename to proxmox_vm; delete MoveState`    | todo   | —                                     | —                                                                    | —                         | —       |
+| 5   | `refactor(vm2): ADR-005 error format sweep`                 | todo   | —                                     | —                                                                    | —                         | —       |
 
 ### Phase 2A — MVP setup + MVP
 

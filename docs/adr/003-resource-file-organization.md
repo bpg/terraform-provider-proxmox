@@ -46,7 +46,7 @@ The directory hierarchy mirrors the Proxmox API path structure. This makes it st
 Each resource package contains a minimum of three files:
 
 | File     | Purpose                                        | Naming                                          |
-|----------|------------------------------------------------|-------------------------------------------------|
+| -------- | ---------------------------------------------- | ----------------------------------------------- |
 | Resource | CRUD operations, schema, constructor           | `resource.go` or `resource_{name}.go`           |
 | Model    | Terraform model struct, `toAPI()`, `fromAPI()` | `model.go` or `model_{name}.go`                 |
 | Tests    | Acceptance tests                               | `resource_test.go` or `resource_{name}_test.go` |
@@ -56,7 +56,7 @@ Use the short form (`resource.go`, `model.go`) when the package contains a singl
 Optional additional files:
 
 | File                                      | When to Add                                                              |
-|-------------------------------------------|--------------------------------------------------------------------------|
+| ----------------------------------------- | ------------------------------------------------------------------------ |
 | `datasource.go` or `datasource_{name}.go` | Read-only data source (see [ADR-005: Datasource Error Handling][ds-err]) |
 | `resource_schema.go`                      | Schema definition is large enough to warrant separation                  |
 | `datasource_schema.go`                    | Data source schema is large enough to warrant separation                 |
@@ -68,7 +68,7 @@ Optional additional files:
 Some Proxmox resources represent pre-existing cluster or node configuration that always exists (e.g., cluster options, node firewall options). These "singleton" resources have modified lifecycle semantics:
 
 | Operation | Singleton Behavior                                                    |
-|-----------|-----------------------------------------------------------------------|
+| --------- | --------------------------------------------------------------------- |
 | Create    | Applies settings via PUT (the resource already exists)                |
 | Read      | Fetches current settings (not-found handling is N/A)                  |
 | Update    | Applies changed settings via PUT                                      |
@@ -88,7 +88,7 @@ Singleton resources use the same error message format as regular resources. Sinc
 ### Naming Conventions
 
 | Element                   | Convention                                                                 | Example                                                 |
-|---------------------------|----------------------------------------------------------------------------|---------------------------------------------------------|
+| ------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Package names             | Lowercase, singular noun matching API domain                               | `zone`, `vnet`, `subnet`, multi-word: `hardwaremapping` |
 | Terraform attribute names | `snake_case`                                                               | `isolate_ports`, `vlan_aware`                           |
 | Go struct fields          | PascalCase with `tfsdk` tag                                                | `IsolatePorts types.Bool \`tfsdk:"isolate_ports"\``     |
@@ -140,4 +140,5 @@ Each resource package in `fwprovider/` typically has a corresponding client pack
 - [ADR-004: Schema Design Conventions](004-schema-design-conventions.md) — schema and model patterns
 - [ADR-006: Testing Requirements](006-testing-requirements.md) — test file placement and structure
 - [ADR-007: Resource Type Name Migration](007-resource-type-name-migration.md) — resource type naming and `moved` block support
+- [ADR-008: Sub-block Contract](008-sub-block-contract.md) — sub-package file layout for VM-style composite resources (uses the same 3-file pattern with `resource_schema.go` separated out and `datasource_schema.go` added)
 - [Reference Examples](reference-examples.md) — annotated walkthrough of the 3-file pattern
