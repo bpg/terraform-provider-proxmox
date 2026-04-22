@@ -8,10 +8,14 @@ package containers
 
 import (
 	"encoding/json"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 func TestCustomLXCConfig_UnmarshalJSON(t *testing.T) {
@@ -156,4 +160,46 @@ func TestGetResponseData_UnmarshalJSON_WithIDMaps(t *testing.T) {
 	assert.Equal(t, 100000, data.LXCConfig.IDMaps[1].HostID)
 	assert.Equal(t, 65536, data.LXCConfig.IDMaps[1].Size)
 	require.Len(t, data.LXCConfig.Raw, 2)
+}
+
+func TestCustomNetworkInterface_HostManaged(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input string
+		want  *bool // nil = absent, else expected value
+	}{
+		{"host-managed=1", `"name=eth0,bridge=vmbr0,host-managed=1"`, ptr.Ptr(true)},
+		{"host-managed=0", `"name=eth0,bridge=vmbr0,host-managed=0"`, ptr.Ptr(false)},
+		{"flag absent", `"name=eth0,bridge=vmbr0"`, nil},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var ni CustomNetworkInterface
+			require.NoError(t, json.Unmarshal([]byte(tc.input), &ni))
+
+			if tc.want == nil {
+				assert.Nil(t, ni.HostManaged)
+				return
+			}
+
+			require.NotNil(t, ni.HostManaged)
+			assert.Equal(t, *tc.want, bool(*ni.HostManaged))
+
+			v := url.Values{}
+			require.NoError(t, ni.EncodeValues("net0", &v))
+			encoded := v.Get("net0")
+
+			expected := "host-managed=0"
+			if *tc.want {
+				expected = "host-managed=1"
+			}
+			assert.True(t, strings.Contains(encoded, expected),
+				"expected EncodeValues output %q to contain %q", encoded, expected)
+		})
+	}
 }

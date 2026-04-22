@@ -82,6 +82,7 @@ const (
 	dvNetworkInterfaceBridge            = "vmbr0"
 	dvNetworkInterfaceEnabled           = true
 	dvNetworkInterfaceFirewall          = false
+	dvNetworkInterfaceHostManaged       = false
 	dvNetworkInterfaceRateLimit         = 0
 	dvNetworkInterfaceVLANID            = 0
 	dvNetworkInterfaceMTU               = 0
@@ -181,6 +182,7 @@ const (
 	mkNetworkInterfaceBridge            = "bridge"
 	mkNetworkInterfaceEnabled           = "enabled"
 	mkNetworkInterfaceFirewall          = "firewall"
+	mkNetworkInterfaceHostManaged       = "host_managed"
 	mkNetworkInterfaceMACAddress        = "mac_address"
 	mkNetworkInterfaceName              = "name"
 	mkNetworkInterfaceRateLimit         = "rate_limit"
@@ -925,6 +927,12 @@ func Container() *schema.Resource {
 							Optional:    true,
 							Default:     dvNetworkInterfaceFirewall,
 						},
+						mkNetworkInterfaceHostManaged: {
+							Type:        schema.TypeBool,
+							Description: "Whether the host runs DHCP on this interface's behalf.",
+							Optional:    true,
+							Default:     dvNetworkInterfaceHostManaged,
+						},
 						mkNetworkInterfaceMACAddress: {
 							Type:        schema.TypeString,
 							Description: "The MAC address",
@@ -1580,6 +1588,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		firewall := types.CustomBool(
 			networkInterfaceMap[mkNetworkInterfaceFirewall].(bool),
 		)
+		hostManaged := networkInterfaceMap[mkNetworkInterfaceHostManaged].(bool)
 		macAddress := networkInterfaceMap[mkNetworkInterfaceMACAddress].(string)
 		name := networkInterfaceMap[mkNetworkInterfaceName].(string)
 		rateLimit := networkInterfaceMap[mkNetworkInterfaceRateLimit].(float64)
@@ -1592,6 +1601,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 
 		networkInterfaceObject.Enabled = enabled
 		networkInterfaceObject.Firewall = &firewall
+
+		if hostManaged {
+			networkInterfaceObject.HostManaged = types.CustomBool(hostManaged).Pointer()
+		}
 
 		if len(initializationIPConfigIPv4Address) > ni {
 			if initializationIPConfigIPv4Address[ni] != "" {
@@ -2028,6 +2041,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		vlanID := networkInterfaceMap[mkNetworkInterfaceVLANID].(int)
 		mtu := networkInterfaceMap[mkNetworkInterfaceMTU].(int)
 		firewall := networkInterfaceMap[mkNetworkInterfaceFirewall].(bool)
+		hostManaged := networkInterfaceMap[mkNetworkInterfaceHostManaged].(bool)
 
 		if bridge != "" {
 			networkInterfaceObject.Bridge = &bridge
@@ -2056,6 +2070,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 		if firewall {
 			networkInterfaceObject.Firewall = types.CustomBool(firewall).Pointer()
+		}
+
+		if hostManaged {
+			networkInterfaceObject.HostManaged = types.CustomBool(hostManaged).Pointer()
 		}
 
 		if macAddress != "" {
@@ -2309,6 +2327,8 @@ func containerGetExistingNetworkInterface(
 		} else {
 			networkInterface[mkNetworkInterfaceFirewall] = false
 		}
+
+		networkInterface[mkNetworkInterfaceHostManaged] = nv.HostManaged != nil && *nv.HostManaged
 
 		if nv.MACAddress != nil {
 			networkInterface[mkNetworkInterfaceMACAddress] = *nv.MACAddress
@@ -3023,6 +3043,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		} else {
 			networkInterface[mkNetworkInterfaceFirewall] = false
 		}
+
+		networkInterface[mkNetworkInterfaceHostManaged] = nv.HostManaged != nil && *nv.HostManaged
 
 		if nv.MACAddress != nil {
 			networkInterface[mkNetworkInterfaceMACAddress] = *nv.MACAddress
@@ -3753,6 +3775,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			firewall := types.CustomBool(
 				networkInterfaceMap[mkNetworkInterfaceFirewall].(bool),
 			)
+			hostManaged := networkInterfaceMap[mkNetworkInterfaceHostManaged].(bool)
 			macAddress := networkInterfaceMap[mkNetworkInterfaceMACAddress].(string)
 			name := networkInterfaceMap[mkNetworkInterfaceName].(string)
 			rateLimit := networkInterfaceMap[mkNetworkInterfaceRateLimit].(float64)
@@ -3765,6 +3788,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 			networkInterfaceObject.Enabled = enabled
 			networkInterfaceObject.Firewall = &firewall
+
+			if hostManaged {
+				networkInterfaceObject.HostManaged = types.CustomBool(hostManaged).Pointer()
+			}
 
 			if len(initializationIPConfigIPv4Address) > ni {
 				if initializationIPConfigIPv4Address[ni] != "" {

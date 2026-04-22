@@ -235,6 +235,9 @@ output "ubuntu_container_public_key" {
         to `true`).
     - `firewall` - (Optional) Whether this interface's firewall rules should be
         used (defaults to `false`).
+    - `host_managed` - (Optional) Whether the host runs DHCP on this interface's
+        behalf (defaults to `false`). Required for application containers that
+        do not include a DHCP client.
     - `mac_address` - (Optional) The MAC address.
     - `mtu` - (Optional) Maximum transfer unit of the interface. Cannot be
         larger than the bridge's MTU.
