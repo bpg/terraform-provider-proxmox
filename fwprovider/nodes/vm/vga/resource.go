@@ -8,7 +8,6 @@ package vga
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,13 +21,19 @@ import (
 type Value = types.Object
 
 // NewValue returns a new Value with the given VGA settings from the PVE API.
+//
+// Returns NullValue() when PVE has no vga device on the VM — audit Section 4 confirmed PVE
+// returns the vga key absent unless the user set it. Returning a non-null Object with null
+// subfields would produce a permanent plan-vs-state diff now that the schema is Optional only.
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
-	vga := Model{}
+	if config.VGADevice == nil {
+		return NullValue()
+	}
 
-	if config.VGADevice != nil {
-		vga.Clipboard = types.StringPointerValue(config.VGADevice.Clipboard)
-		vga.Type = types.StringPointerValue(config.VGADevice.Type)
-		vga.Memory = types.Int64PointerValue(config.VGADevice.Memory)
+	vga := Model{
+		Clipboard: types.StringPointerValue(config.VGADevice.Clipboard),
+		Type:      types.StringPointerValue(config.VGADevice.Type),
+		Memory:    types.Int64PointerValue(config.VGADevice.Memory),
 	}
 
 	obj, d := types.ObjectValueFrom(ctx, attributeTypes(), vga)
@@ -37,15 +42,13 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diag
 	return obj
 }
 
-// FillCreateBody fills the CreateRequestBody with the VGA settings from the Value.
-//
-// In the 'create' context, v is the plan.
+// FillCreateBody fills the CreateRequestBody with the VGA settings from the plan Value.
 func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
-	var plan Model
-
 	if planValue.IsNull() || planValue.IsUnknown() {
 		return
 	}
+
+	var plan Model
 
 	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
 	diags.Append(d...)
@@ -54,81 +57,44 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 		return
 	}
 
-	vgaDevice := &vms.CustomVGADevice{}
-
-	// for computed fields, we need to check if they are unknown
-	if !plan.Clipboard.IsUnknown() {
-		vgaDevice.Clipboard = plan.Clipboard.ValueStringPointer()
-	}
-
-	if !plan.Type.IsUnknown() {
-		vgaDevice.Type = plan.Type.ValueStringPointer()
-	}
-
-	if !plan.Memory.IsUnknown() {
-		vgaDevice.Memory = plan.Memory.ValueInt64Pointer()
-	}
-
-	if !reflect.DeepEqual(vgaDevice, &vms.CustomVGADevice{}) {
-		body.VGADevice = vgaDevice
+	body.VGADevice = &vms.CustomVGADevice{
+		Clipboard: attribute.StringPtrFromValue(plan.Clipboard),
+		Type:      attribute.StringPtrFromValue(plan.Type),
+		Memory:    attribute.Int64PtrFromValue(plan.Memory),
 	}
 }
 
-// FillUpdateBody fills the UpdateRequestBody with the VGA settings from the Value.
+// FillUpdateBody fills the UpdateRequestBody with the VGA settings from the plan Value.
 //
-// In the 'update' context, v is the plan and stateValue is the current state.
+// The `vga` PVE API parameter is a compound property string — all subfields round-trip through a
+// single key. Deletion semantics therefore follow the block, not the subfield: when the user
+// removes the vga block from HCL, the provider emits `delete=vga`; when the block is present,
+// the provider sends the whole CustomVGADevice and PVE replaces the key atomically. Subfields
+// omitted from the plan are implicitly cleared on the wire (omitempty in EncodeValues).
 func FillUpdateBody(
 	ctx context.Context,
 	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
 	diags *diag.Diagnostics,
 ) {
-	var plan, state Model
+	attribute.CheckDeleteBody(planValue, stateValue, updateBody, "vga")
 
 	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {
 		return
 	}
 
+	var plan Model
+
 	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
-	d = stateValue.As(ctx, &state, basetypes.ObjectAsOptions{})
 	diags.Append(d...)
 
 	if diags.HasError() {
 		return
 	}
 
-	vgaDevice := &vms.CustomVGADevice{
-		Clipboard: state.Clipboard.ValueStringPointer(),
-		Type:      state.Type.ValueStringPointer(),
-		Memory:    state.Memory.ValueInt64Pointer(),
-	}
-
-	if !plan.Clipboard.Equal(state.Clipboard) {
-		if attribute.ShouldBeRemoved(plan.Clipboard, state.Clipboard) {
-			vgaDevice.Clipboard = nil
-		} else if attribute.IsDefined(plan.Clipboard) {
-			vgaDevice.Clipboard = plan.Clipboard.ValueStringPointer()
-		}
-	}
-
-	if !plan.Type.Equal(state.Type) {
-		if attribute.ShouldBeRemoved(plan.Type, state.Type) {
-			vgaDevice.Type = nil
-		} else if attribute.IsDefined(plan.Type) {
-			vgaDevice.Type = plan.Type.ValueStringPointer()
-		}
-	}
-
-	if !plan.Memory.Equal(state.Memory) {
-		if attribute.ShouldBeRemoved(plan.Memory, state.Memory) {
-			vgaDevice.Memory = nil
-		} else if attribute.IsDefined(plan.Memory) {
-			vgaDevice.Memory = plan.Memory.ValueInt64Pointer()
-		}
-	}
-
-	if !reflect.DeepEqual(vgaDevice, &vms.CustomVGADevice{}) {
-		updateBody.VGADevice = vgaDevice
+	updateBody.VGADevice = &vms.CustomVGADevice{
+		Clipboard: attribute.StringPtrFromValue(plan.Clipboard),
+		Type:      attribute.StringPtrFromValue(plan.Type),
+		Memory:    attribute.Int64PtrFromValue(plan.Memory),
 	}
 }

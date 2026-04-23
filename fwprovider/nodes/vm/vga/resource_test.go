@@ -99,6 +99,18 @@ func TestAccResourceVM2VGA(t *testing.T) {
 					}),
 				),
 			},
+			{ // remove the vga block entirely; state must drop to null (mitmproxy: delete=vga on the wire)
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu"
+				}`),
+				Check: test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
+					"vga.type",
+					"vga.clipboard",
+					"vga.memory",
+				}),
+			},
 			{
 				RefreshState: true,
 			},
