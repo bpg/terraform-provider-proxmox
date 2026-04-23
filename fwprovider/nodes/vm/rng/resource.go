@@ -8,7 +8,6 @@ package rng
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,19 +21,32 @@ import (
 type Value = types.Object
 
 // NewValue returns a new Value with the given RNG settings from the PVE API.
+//
+// Returns NullValue() when PVE has no rng device configured — audit Section 4 confirmed the
+// `rng0` key is absent from the GET response unless the user set it. Returning a non-null
+// Object with null inner fields would produce a permanent plan-vs-state diff now that the
+// schema is Optional only.
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
+	if config.RNGDevice == nil {
+		return NullValue()
+	}
+
 	rng := Model{}
 
-	if config.RNGDevice != nil {
+	// CustomRNGDevice.Source is string (not *string); treat "" as null so plans without
+	// an explicit source don't drift after Read.
+	if config.RNGDevice.Source != "" {
 		rng.Source = types.StringValue(config.RNGDevice.Source)
+	} else {
+		rng.Source = types.StringNull()
+	}
 
-		if config.RNGDevice.MaxBytes != nil {
-			rng.MaxBytes = types.Int64Value(int64(*config.RNGDevice.MaxBytes))
-		}
+	if config.RNGDevice.MaxBytes != nil {
+		rng.MaxBytes = types.Int64Value(int64(*config.RNGDevice.MaxBytes))
+	}
 
-		if config.RNGDevice.Period != nil {
-			rng.Period = types.Int64Value(int64(*config.RNGDevice.Period))
-		}
+	if config.RNGDevice.Period != nil {
+		rng.Period = types.Int64Value(int64(*config.RNGDevice.Period))
 	}
 
 	obj, d := types.ObjectValueFrom(ctx, attributeTypes(), rng)
@@ -43,36 +55,13 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diag
 	return obj
 }
 
-// createRNGDevice creates a new CustomRNGDevice from the given Model.
-func createRNGDevice(model Model, setSource bool) *vms.CustomRNGDevice {
-	rngDevice := &vms.CustomRNGDevice{}
-
-	if setSource && !model.Source.IsUnknown() {
-		rngDevice.Source = model.Source.ValueString()
-	}
-
-	if !model.MaxBytes.IsUnknown() && model.MaxBytes.ValueInt64() != 0 {
-		maxBytes := int(model.MaxBytes.ValueInt64())
-		rngDevice.MaxBytes = &maxBytes
-	}
-
-	if !model.Period.IsUnknown() && model.Period.ValueInt64() != 0 {
-		period := int(model.Period.ValueInt64())
-		rngDevice.Period = &period
-	}
-
-	return rngDevice
-}
-
-// FillCreateBody fills the CreateRequestBody with the RNG settings from the Value.
-//
-// In the 'create' context, v is the plan.
+// FillCreateBody fills the CreateRequestBody with the RNG settings from the plan Value.
 func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
-	var plan Model
-
 	if planValue.IsNull() || planValue.IsUnknown() {
 		return
 	}
+
+	var plan Model
 
 	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
 	diags.Append(d...)
@@ -81,66 +70,35 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 		return
 	}
 
-	rngDevice := createRNGDevice(plan, true)
-
-	if !reflect.DeepEqual(rngDevice, &vms.CustomRNGDevice{}) {
-		body.RNGDevice = rngDevice
-	}
+	body.RNGDevice = plan.toAPI()
 }
 
-// FillUpdateBody fills the UpdateRequestBody with the RNG settings from the Value.
+// FillUpdateBody fills the UpdateRequestBody with the RNG settings from the plan Value.
 //
-// In the 'update' context, v is the plan and stateValue is the current state.
+// The `rng0` PVE API parameter is a compound property string — all subfields round-trip through
+// a single key, same pattern as `vga`. Deletion is block-level (emit `delete=rng0`); updates
+// send the whole CustomRNGDevice and PVE replaces the key atomically. Subfields omitted from
+// the plan are implicitly cleared on the wire via EncodeValues' zero-check.
 func FillUpdateBody(
 	ctx context.Context,
 	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
 	diags *diag.Diagnostics,
 ) {
-	var plan, state Model
+	attribute.CheckDeleteBody(planValue, stateValue, updateBody, "rng0")
 
 	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {
 		return
 	}
 
+	var plan Model
+
 	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
-	d = stateValue.As(ctx, &state, basetypes.ObjectAsOptions{})
 	diags.Append(d...)
 
 	if diags.HasError() {
 		return
 	}
 
-	rngDevice := createRNGDevice(state, true)
-
-	if !plan.Source.Equal(state.Source) {
-		if attribute.ShouldBeRemoved(plan.Source, state.Source) {
-			rngDevice.Source = ""
-		} else if attribute.IsDefined(plan.Source) {
-			rngDevice.Source = plan.Source.ValueString()
-		}
-	}
-
-	if !plan.MaxBytes.Equal(state.MaxBytes) {
-		if attribute.ShouldBeRemoved(plan.MaxBytes, state.MaxBytes) {
-			rngDevice.MaxBytes = nil
-		} else if attribute.IsDefined(plan.MaxBytes) {
-			maxBytes := int(plan.MaxBytes.ValueInt64())
-			rngDevice.MaxBytes = &maxBytes
-		}
-	}
-
-	if !plan.Period.Equal(state.Period) {
-		if attribute.ShouldBeRemoved(plan.Period, state.Period) {
-			rngDevice.Period = nil
-		} else if attribute.IsDefined(plan.Period) {
-			period := int(plan.Period.ValueInt64())
-			rngDevice.Period = &period
-		}
-	}
-
-	if !reflect.DeepEqual(rngDevice, &vms.CustomRNGDevice{}) {
-		updateBody.RNGDevice = rngDevice
-	}
+	updateBody.RNGDevice = plan.toAPI()
 }

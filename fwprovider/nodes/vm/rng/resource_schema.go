@@ -10,8 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
@@ -28,11 +26,10 @@ func ResourceSchema() schema.Attribute {
 			"Can only be set by `root@pam.` " +
 			"See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) " +
 			"for more information.",
+		// Optional only (not Computed) per ADR-004 §Provider Defaults vs PVE Defaults: audit Section 4
+		// confirms PVE does not auto-populate any rng subfield on Read, so block-level Read is null
+		// when the user has no `rng` block in HCL.
 		Optional: true,
-		Computed: true,
-		PlanModifiers: []planmodifier.Object{
-			objectplanmodifier.UseStateForUnknown(),
-		},
 		Attributes: map[string]schema.Attribute{
 			"source": schema.StringAttribute{
 				Description: "The entropy source for the RNG device.",
@@ -40,27 +37,22 @@ func ResourceSchema() schema.Attribute {
 					"In most cases, `/dev/urandom` should be preferred over `/dev/random` " +
 					"to avoid entropy-starvation issues on the host.",
 				Optional: true,
-				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"max_bytes": schema.Int64Attribute{
-				Description: "Maximum bytes of entropy allowed to get injected into the guest every period.",
-				MarkdownDescription: "Maximum bytes of entropy allowed to get injected into the guest every period. " +
-					"Use 0 to disable limiting (potentially dangerous).",
-				Optional: true,
-				Computed: true,
+				Description:         "Maximum bytes of entropy allowed to get injected into the guest every period.",
+				MarkdownDescription: "Maximum bytes of entropy allowed to get injected into the guest every period.",
+				Optional:            true,
 				Validators: []validator.Int64{
 					int64validator.AtLeast(0),
 				},
 			},
 			"period": schema.Int64Attribute{
-				Description: "Period in milliseconds to limit entropy injection to the guest.",
-				MarkdownDescription: "Period in milliseconds to limit entropy injection to the guest. " +
-					"Use 0 to disable limiting (potentially dangerous).",
-				Optional: true,
-				Computed: true,
+				Description:         "Period in milliseconds to limit entropy injection to the guest.",
+				MarkdownDescription: "Period in milliseconds to limit entropy injection to the guest.",
+				Optional:            true,
 				Validators: []validator.Int64{
 					int64validator.AtLeast(0),
 				},

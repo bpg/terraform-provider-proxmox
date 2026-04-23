@@ -104,6 +104,53 @@ func TestAccResourceVM2RNG(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		// F37 fix: user-set `max_bytes = 0` must reach PVE on the wire. The previous
+		// `ValueInt64() != 0` guard silently dropped it despite the docs claiming 0 disables
+		// limiting; the new attribute.Int64PtrFromValue-based path sends 0 through.
+		{"create VM with RNG max_bytes=0", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_vm" "test_vm" {
+				node_name = "{{.NodeName}}"
+				name = "test-rng"
+				rng = {
+					source    = "/dev/urandom"
+					max_bytes = 0
+				}
+			}`, test.WithRootUser()),
+			Check: test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
+				"rng.source":    "/dev/urandom",
+				"rng.max_bytes": "0",
+			}),
+		}}},
+		// Verifies block-level deletion: removing the whole `rng` block after it was set must
+		// emit `delete=rng0` on the PUT wire (compound property — same pattern as vga).
+		{"add RNG then remove the block entirely", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-rng"
+					rng = {
+						source = "/dev/urandom"
+					}
+				}`, test.WithRootUser()),
+				Check: test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
+					"rng.source": "/dev/urandom",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-rng"
+				}`, test.WithRootUser()),
+				Check: test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
+					"rng.source",
+					"rng.max_bytes",
+					"rng.period",
+				}),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
