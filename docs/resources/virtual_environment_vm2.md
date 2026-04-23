@@ -51,7 +51,7 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 
 Optional:
 
-- `file_id` (String) The file ID of the CD-ROM, or `cdrom|none`. Defaults to `none` to leave the CD-ROM empty. Use `cdrom` to connect to the physical drive.
+- `file_id` (String) The file ID of the CD-ROM, or `cdrom|none`. Defaults to `cdrom` (i.e. empty CD-ROM drive — `cdrom` is PVE's literal "no media inserted" storage path). Use `none` to leave the CD-ROM unplugged, or a storage path like `local:iso/debian.iso` to insert an image.
 
 
 <a id="nestedatt--cpu"></a>

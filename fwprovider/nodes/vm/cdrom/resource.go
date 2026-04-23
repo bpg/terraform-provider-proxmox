@@ -20,17 +20,26 @@ import (
 type Value = types.Map
 
 // NewValue returns a new Value with the given CD-ROM settings from the PVE API.
+//
+// Returns NullValue() when the VM has no CD-ROM devices attached — PVE does not auto-attach
+// CD-ROMs, so "no devices" at the API is the user's "no cdrom block" in HCL. Returning a
+// non-null empty Map would produce a permanent plan-vs-state diff now that the map-level
+// schema is Optional only (per ADR-004 §Provider Defaults vs PVE Defaults).
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
 	// find storage devices with media=cdrom
 	cdroms := config.StorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
 		return device.Media != nil && *device.Media == "cdrom"
 	})
 
+	if len(cdroms) == 0 {
+		return NullValue()
+	}
+
 	elements := make(map[string]Model, len(cdroms))
 
 	for iface, cdrom := range cdroms {
 		m := Model{}
-		m.importFromCustomStorageDevice(*cdrom)
+		m.fromAPI(*cdrom)
 		elements[iface] = m
 	}
 
@@ -58,7 +67,7 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 	}
 
 	for iface, cdrom := range plan {
-		body.AddCustomStorageDevice(iface, cdrom.exportToCustomStorageDevice())
+		body.AddCustomStorageDevice(iface, cdrom.toAPI())
 	}
 }
 
@@ -89,12 +98,12 @@ func FillUpdateBody(
 	toCreate, toUpdate, toDelete := utils.MapDiff(plan, state)
 
 	for iface, dev := range toCreate {
-		updateBody.AddCustomStorageDevice(iface, dev.exportToCustomStorageDevice())
+		updateBody.AddCustomStorageDevice(iface, dev.toAPI())
 	}
 
 	for iface, dev := range toUpdate {
 		// for CD-ROMs, the update fully override the existing device, we don't do per-attribute check
-		updateBody.AddCustomStorageDevice(iface, dev.exportToCustomStorageDevice())
+		updateBody.AddCustomStorageDevice(iface, dev.toAPI())
 	}
 
 	for iface := range toDelete {
