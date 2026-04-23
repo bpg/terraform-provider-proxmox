@@ -73,23 +73,33 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 
 // FillUpdateBody fills the UpdateRequestBody with the CD-ROM settings from the Value.
 //
-// In the 'update' context, v is the plan and stateValue is the current state.
+// In the 'update' context, planValue is the plan and stateValue is the current state. Either
+// side may be null (e.g. plan is null when the user removes the whole `cdrom` block; state is
+// null on a refresh of a VM that never had a CD-ROM). Null is treated as an empty map so
+// MapDiff can still produce slot-level creates/deletes — a null plan with non-null state must
+// emit `delete=<slot>` for every existing slot, otherwise PVE keeps the devices and Terraform
+// sees permanent drift.
 func FillUpdateBody(
 	ctx context.Context,
 	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
 	diags *diag.Diagnostics,
 ) {
-	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {
+	if planValue.IsUnknown() || planValue.Equal(stateValue) {
 		return
 	}
 
 	var plan, state map[string]Model
 
-	d := planValue.ElementsAs(ctx, &plan, false)
-	diags.Append(d...)
-	d = stateValue.ElementsAs(ctx, &state, false)
-	diags.Append(d...)
+	if !planValue.IsNull() {
+		d := planValue.ElementsAs(ctx, &plan, false)
+		diags.Append(d...)
+	}
+
+	if !stateValue.IsNull() {
+		d := stateValue.ElementsAs(ctx, &state, false)
+		diags.Append(d...)
+	}
 
 	if diags.HasError() {
 		return

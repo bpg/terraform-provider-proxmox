@@ -116,6 +116,33 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 			// in framework TestStep semantics (subsequent steps re-plan); leaving the negative-attr
 			// assertion as the tripwire.
 		}}},
+		// Verifies set-then-remove-block: after apply with a cdrom block, removing the block entirely
+		// from HCL must emit slot-level deletes on the wire (mitmproxy: `delete: ide3`) so PVE drops
+		// the slots. Absent that, state after Read still has the slots → permanent drift.
+		{"add CDROM then remove the block entirely", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cdrom"
+					cdrom = {
+						"ide3" = {}
+					}
+				}`),
+				Check: test.ResourceAttributes(resourceName, map[string]string{
+					"cdrom.%":            "1",
+					"cdrom.ide3.file_id": "cdrom",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cdrom"
+				}`),
+				Check: test.NoResourceAttributesSet(resourceName, []string{"cdrom.%"}),
+			},
+		}},
 		// Verifies the relaxed slot regex (MAX_SCSI_DISKS=31) accepts the previously rejected scsi30.
 		{"create VM with scsi30 CDROM slot", []resource.TestStep{{
 			Config: te.RenderConfig(`
