@@ -78,6 +78,12 @@ func FillUpdateBody(
 	updateBody *vms.UpdateRequestBody,
 	diags *diag.Diagnostics,
 ) {
+	// Skip when plan is unknown (unpackOrEmpty would collapse it to all-null and mis-fire the
+	// per-field deletions below) or identical to state.
+	if planValue.IsUnknown() || planValue.Equal(stateValue) {
+		return
+	}
+
 	plan := unpackOrEmpty(ctx, planValue, diags)
 	state := unpackOrEmpty(ctx, stateValue, diags)
 
@@ -91,7 +97,7 @@ func FillUpdateBody(
 	attribute.CheckDeleteBody(plan.Hugepages, state.Hugepages, updateBody, "hugepages")
 	attribute.CheckDeleteBody(plan.KeepHugepages, state.KeepHugepages, updateBody, "keephugepages")
 
-	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {
+	if planValue.IsNull() {
 		return
 	}
 

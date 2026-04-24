@@ -76,7 +76,7 @@ func attributeTypes() map[string]attr.Type { /* ... */ }
 
 2. **Return `NullValue()` (i.e. `types.ObjectNull(attributeTypes())` / `types.MapNull(...)`) when the underlying API device pointer is nil.** Returning a non-null Object with null inner fields creates a permanent plan-vs-state diff for users who don't define the block in HCL. The block-level null guard reflects "user has no `vga` block in HCL → state has null `vga`".
 
-   **Carve-out:** when PVE auto-populates fields whenever the block is set (e.g. `cores=1`, `sockets=1` get auto-added to _any_ `cpu.*` field), the sub-package keeps `Optional+Computed` on those specific fields AND continues returning a non-null Object — see [ADR-004 §Provider Defaults vs PVE Defaults](004-schema-design-conventions.md#provider-defaults-vs-pve-defaults). Document the carve-out per field with a short code comment citing the empirical evidence.
+   **Carve-out (hypothetical):** if PVE ever auto-populates specific inner fields on Read whenever the block is set, those fields would keep `Optional+Computed` and the Object would stay non-null. Verify per field with mitmproxy before assuming it applies — the `cpu.cores`/`cpu.sockets` candidates for this carve-out were empirically disproved (see `.dev/1231_AUDIT.md` §4) and the `cpu` sub-package went Optional-only on all attributes. Document any real carve-out per field with a short code comment citing the trace evidence.
 
 ### `FillCreateBody` and `FillUpdateBody`
 

@@ -22,10 +22,11 @@ type Value = types.Object
 
 // NewValue returns a new Value with the given CPU settings from the PVE API.
 //
-// Returns NullValue() when none of the cpu-related keys are present on the config (block wholly
-// absent). Otherwise builds the Object via Model.fromAPI — cores/sockets are handled by the
-// Optional+Computed carve-out on those two attributes, so PVE's auto-populated `1` reconciles
-// into state without drift.
+// Returns NullValue() when none of the cpu-related API keys are present (block wholly absent).
+// Otherwise builds the Object via Model.fromAPI. Empirical testing showed PVE does not
+// auto-populate cores/sockets on Read when other cpu.* fields are set (contrary to the
+// originally-proposed Optional+Computed carve-out), so all 10 inner attributes stay Optional-only
+// and a null inner value simply reflects "user didn't set it".
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
 	if config.CPUAffinity == nil &&
 		config.CPUArchitecture == nil &&
@@ -80,6 +81,12 @@ func FillUpdateBody(
 	updateBody *vms.UpdateRequestBody,
 	diags *diag.Diagnostics,
 ) {
+	// Skip when plan is unknown (inner-field unknowns would be mis-read as deletions by the
+	// null-based diff below) or identical to state.
+	if planValue.IsUnknown() || planValue.Equal(stateValue) {
+		return
+	}
+
 	plan := unpackOrEmpty(ctx, planValue, diags)
 	state := unpackOrEmpty(ctx, stateValue, diags)
 
@@ -97,9 +104,11 @@ func FillUpdateBody(
 	attribute.CheckDeleteBody(plan.Units, state.Units, updateBody, "cpuunits")
 	attribute.CheckDeleteBody(plan.Vcpus, state.Vcpus, updateBody, "vcpus")
 
-	// Compound CPUEmulation: delete when the user removes `type` (flags alone isn't valid). PVE
-	// rejects `cpu=...` without a cputype, so the block is all-or-nothing on the wire.
-	if attribute.IsDefined(state.Type) && !attribute.IsDefined(plan.Type) {
+	// Compound CPUEmulation: delete when the user explicitly removes `type` (flags alone isn't
+	// valid). PVE rejects `cpu=...` without a cputype, so the block is all-or-nothing on the
+	// wire. Gate on IsNull rather than !IsDefined so a plan.Type that's unknown from a dynamic
+	// reference doesn't get mis-read as a deletion.
+	if !state.Type.IsNull() && plan.Type.IsNull() {
 		if attribute.IsDefined(plan.Flags) {
 			diags.AddError("Cannot have CPU flags without explicit definition of CPU type", "")
 
@@ -109,7 +118,7 @@ func FillUpdateBody(
 		updateBody.AppendDelete("cpu")
 	}
 
-	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {
+	if planValue.IsNull() {
 		return
 	}
 
