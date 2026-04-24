@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
@@ -251,34 +252,20 @@ func (r *Resource) update(ctx context.Context, plan, state Model, diags *diag.Di
 
 	updateBody := &vms.UpdateRequestBody{}
 
-	var errs []error
+	attribute.CheckDeleteBody(plan.Description, state.Description, updateBody, "description")
+	attribute.CheckDeleteBody(plan.Name, state.Name, updateBody, "name")
+	attribute.CheckDeleteBody(plan.Tags, state.Tags, updateBody, "tags")
 
-	del := func(field string) {
-		errs = append(errs, updateBody.ToDelete(field))
+	if attribute.IsDefined(plan.Description) && !plan.Description.Equal(state.Description) {
+		updateBody.Description = plan.Description.ValueStringPointer()
 	}
 
-	if !plan.Description.Equal(state.Description) {
-		if plan.Description.IsNull() {
-			del("Description")
-		} else {
-			updateBody.Description = plan.Description.ValueStringPointer()
-		}
+	if attribute.IsDefined(plan.Name) && !plan.Name.Equal(state.Name) {
+		updateBody.Name = plan.Name.ValueStringPointer()
 	}
 
-	if !plan.Name.Equal(state.Name) {
-		if plan.Name.IsNull() {
-			del("Name")
-		} else {
-			updateBody.Name = plan.Name.ValueStringPointer()
-		}
-	}
-
-	if !plan.Tags.Equal(state.Tags) && !plan.Tags.IsUnknown() {
-		if plan.Tags.IsNull() || len(plan.Tags.Elements()) == 0 {
-			del("Tags")
-		} else {
-			updateBody.Tags = plan.Tags.ValueStringPointer(ctx, diags)
-		}
+	if attribute.IsDefined(plan.Tags) && !plan.Tags.Equal(state.Tags) && len(plan.Tags.Elements()) > 0 {
+		updateBody.Tags = plan.Tags.ValueStringPointer(ctx, diags)
 	}
 
 	// fill out update body fields with values from other resource blocks

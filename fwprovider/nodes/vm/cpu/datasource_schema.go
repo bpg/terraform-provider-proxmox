@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package cpu
 
 import (
@@ -32,16 +38,12 @@ func DataSourceSchema() schema.Attribute {
 				Computed:    true,
 				ElementType: types.StringType,
 			},
-			"hotplugged": schema.Int64Attribute{
-				Description: "The number of hotplugged vCPUs.",
-				Computed:    true,
-			},
 			"limit": schema.Float64Attribute{
 				Description: "Limit of CPU usage.",
 				Computed:    true,
 			},
 			"numa": schema.BoolAttribute{
-				Description: "Enable NUMA.",
+				Description: "Whether NUMA emulation is enabled.",
 				Computed:    true,
 			},
 			"sockets": schema.Int64Attribute{
@@ -54,6 +56,10 @@ func DataSourceSchema() schema.Attribute {
 			},
 			"units": schema.Int64Attribute{
 				Description: "CPU weight for a VM",
+				Computed:    true,
+			},
+			"vcpus": schema.Int64Attribute{
+				Description: "Number of active vCPUs.",
 				Computed:    true,
 			},
 		},

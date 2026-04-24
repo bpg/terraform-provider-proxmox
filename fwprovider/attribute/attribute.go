@@ -85,9 +85,19 @@ func Float64PtrFromValue(v types.Float64) *float64 {
 	return v.ValueFloat64Pointer()
 }
 
-// CheckDelete adds an API field name to the delete list if the plan field is null but the state field is not null.
-// This is used to handle attribute deletion in API calls.
-func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName string) {
+// DeleteAppender is implemented by API request body types that accumulate PVE API parameter
+// names scheduled for deletion. CheckDeleteBody uses it to record removals without leaking the
+// underlying `Delete []string` slice into caller code.
+//
+// Implementations (e.g. *proxmox/nodes/vms.UpdateRequestBody) append the apiName to their
+// wire-level `delete=...` parameter. The name is the PVE API parameter, not the Go field name.
+type DeleteAppender interface {
+	AppendDelete(apiName string)
+}
+
+// planRemovesField reports whether the transition from state to plan represents a user deletion:
+// state had a value, plan is empty (null, or an empty collection for stringset/List/Map).
+func planRemovesField(planField, stateField attr.Value) bool {
 	planIsEmpty := planField.IsNull()
 	stateIsEmpty := stateField.IsNull()
 
@@ -106,7 +116,25 @@ func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName s
 		planIsEmpty = planIsEmpty || len(planMap.Elements()) == 0
 	}
 
-	if planIsEmpty && !stateIsEmpty {
+	return planIsEmpty && !stateIsEmpty
+}
+
+// CheckDelete adds an API field name to the delete list if the plan field is null but the state field is not null.
+// This is used to handle attribute deletion in API calls.
+func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName string) {
+	if planRemovesField(planField, stateField) {
 		*toDelete = append(*toDelete, apiName)
+	}
+}
+
+// CheckDeleteBody is the body-taking counterpart to CheckDelete documented in ADR-008
+// §FillCreateBody and FillUpdateBody. It records the PVE API name on the body's own delete list
+// via AppendDelete, keeping sub-package call-sites free of local `[]string` plumbing.
+//
+// Use from VM sub-packages (cpu, vga, rng, memory, ...) whose body type exposes AppendDelete.
+// Non-VM Framework resources with plain `[]string` delete plumbing keep using CheckDelete.
+func CheckDeleteBody[B DeleteAppender](planField, stateField attr.Value, body B, apiName string) {
+	if planRemovesField(planField, stateField) {
+		body.AppendDelete(apiName)
 	}
 }

@@ -48,11 +48,11 @@ The provider does not duplicate PVE's documented defaults via schema `Default(..
 
 | PVE Read behavior                            | Schema target                      | Examples                                                                         |
 | -------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------- |
-| Auto-populates a value on GET                | `Optional + Computed` (no Default) | `cpu.cores` and `cpu.sockets` when any `cpu.*` is set; `boot` (always present)   |
+| Auto-populates a value on GET                | `Optional + Computed` (no Default) | `boot` (always present on PVE GET response)                                      |
 | Returns null/absent when unset               | `Optional` only                    | `cpu.affinity`, `cpu.limit`, `cpu.type`, `vga.type`, `rng.source`, `description` |
 | Provider-only attribute (no PVE counterpart) | `Optional + Default`               | `purge_on_destroy`, `stop_on_destroy`, `delete_unreferenced_disks_on_destroy`    |
 
-> **Note.** The `cpu`/`vga`/`rng` examples above describe the target classification. The current `fwprovider/nodes/vm/{cpu,vga,rng}` schemas carry `Optional+Computed` inherited from the SDK and the initial Framework scaffold; conformance — dropping `Computed` from everything outside the cores/sockets carve-out — is tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231).
+> **Note.** The `cpu`/`vga`/`rng` examples above describe the target classification. The current `fwprovider/nodes/vm/{cpu,vga,rng}` schemas carry `Optional+Computed` inherited from the SDK and the initial Framework scaffold; conformance — dropping `Computed` from all `cpu`/`vga`/`rng`/`memory` attributes — is tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231). The originally-proposed `Optional+Computed` carve-out on `cpu.cores`/`cpu.sockets` was abandoned after empirical testing (see `.dev/1231_AUDIT.md` §4) showed PVE does not auto-populate those keys on Read.
 
 PVE Read behavior must be verified empirically per attribute. The prescribed method:
 
@@ -63,7 +63,7 @@ PVE Read behavior must be verified empirically per attribute. The prescribed met
 
 See `/bpg:debug-api` for the mitmproxy workflow.
 
-**Per-field carve-outs are common.** Within a single block, some fields auto-populate and others do not. Concrete example: when a user sets _any_ `cpu.*` field, PVE auto-populates `cores=1` and `sockets=1` in the GET response — but `cpu.type`, `cpu.units`, `cpu.limit`, `cpu.affinity` stay absent unless explicitly set. The `cpu` block keeps `Optional+Computed` on `cores` and `sockets` only; everything else drops `Computed`.
+**Per-field carve-outs are possible but rare.** A sub-block can have a mix of auto-populated and null-absent fields, in which case only the auto-populated fields keep `Optional+Computed`. Verify per field via mitmproxy rather than trusting `$confdesc` or prior sentinels: the `cpu` block was originally expected to carve out `cores` and `sockets` as `Optional+Computed` because PVE was thought to auto-populate them, but empirical traces (see `.dev/1231_AUDIT.md` §4) showed it does not, and the carve-out was abandoned before landing.
 
 **`NewValue` must coordinate.** When changing a sub-block's schema from `Optional+Computed` to `Optional` only, the sub-package's `NewValue` (FromAPI) function MUST return `NullValue()` (i.e. `types.ObjectNull(attributeTypes())`) when the underlying API device pointer is nil. Returning a non-null Object with null inner fields creates a permanent plan-vs-state diff for users without the block in HCL. See [ADR-008 §`NewValue` (FromAPI Direction)](008-sub-block-contract.md#newvalue-fromapi-direction).
 
@@ -206,6 +206,8 @@ func (m *model) toAPI() *vnets.VNet {
 The helpers `StringPtrFromValue`, `Int64PtrFromValue`, `Float64PtrFromValue`, and `CustomBoolPtrFromValue` (all in `fwprovider/attribute/`) return nil for null **and** unknown values, making them safe for Optional+Computed fields. Prefer these over raw `Value*Pointer()` methods, which return `&""` / `&0` / `&false` for unknown values — a common source of bugs.
 
 > **Note:** Custom attribute types (`customtypes.IPCIDRValue`, etc.) cannot use these helpers. For those, continue using `.ValueStringPointer()` directly.
+
+> **Write-through variant — when the API has no nested struct:** Some PVE endpoints scatter a logical group's fields across the top-level request body rather than nesting them under a dedicated struct (e.g. `memory`, `balloon`, `shares`, `hugepages`, `keephugepages` all live directly on the VM config endpoint). When there is no single struct to return, `toAPI` may take the request body and populate the relevant fields in place: `func (m *Model) toAPI(body *SomeRequestBody)`. Keep the verb (`toAPI`); the write-through shape is a side effect of the API's flatness, not a new pattern. See `fwprovider/nodes/vm/memory/model.go` for the reference.
 
 **`fromAPI()`** — API response to Terraform model. Use `types.*PointerValue()` so `nil` maps to null:
 

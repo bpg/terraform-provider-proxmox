@@ -13,53 +13,34 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Value represents the type for memory settings.
 type Value = types.Object
 
 // NewValue returns a new Value with the given memory settings from the PVE API.
+//
+// Returns NullValue() when the API has no memory-related keys set. Unlike rng/vga, memory maps
+// to five independent top-level PVE keys rather than a compound property, so we inspect each
+// pointer to decide whether the block is wholly absent.
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
-	mem := Model{}
-
-	// Map Proxmox API fields to Terraform schema:
-	// API 'memory' (DedicatedMemory) → our 'size'
-	// API 'balloon' (FloatingMemory) → our 'balloon'
-	// API 'shares' (FloatingMemoryShares) → our 'shares'
-	// API 'hugepages' → our 'hugepages'
-	// API 'keephugepages' → our 'keep_hugepages'
-
-	// Size (Proxmox API: 'memory')
-	if config.DedicatedMemory != nil {
-		mem.Size = types.Int64Value(int64(*config.DedicatedMemory))
-	} else {
-		// Default to 512 MiB if not specified
-		mem.Size = types.Int64Value(512)
+	if config.DedicatedMemory == nil &&
+		config.FloatingMemory == nil &&
+		config.FloatingMemoryShares == nil &&
+		config.Hugepages == nil &&
+		config.KeepHugepages == nil {
+		return NullValue()
 	}
 
-	// Balloon (Proxmox API: 'balloon')
-	if config.FloatingMemory != nil {
-		mem.Balloon = types.Int64Value(int64(*config.FloatingMemory))
-	} else {
-		// Default to 0 (balloon disabled) if not specified
-		mem.Balloon = types.Int64Value(0)
+	mem := Model{
+		Size:          types.Int64PointerValue(config.DedicatedMemory.PointerInt64()),
+		Balloon:       types.Int64PointerValue(config.FloatingMemory.PointerInt64()),
+		Shares:        types.Int64PointerValue(asInt64Ptr(config.FloatingMemoryShares)),
+		Hugepages:     types.StringPointerValue(config.Hugepages),
+		KeepHugepages: types.BoolPointerValue(config.KeepHugepages.PointerBool()),
 	}
-
-	// Shares (CPU scheduler priority)
-	if config.FloatingMemoryShares != nil {
-		mem.Shares = types.Int64Value(int64(*config.FloatingMemoryShares))
-	} else {
-		// Default to 1000 if not specified
-		mem.Shares = types.Int64Value(1000)
-	}
-
-	// Hugepages
-	mem.Hugepages = types.StringPointerValue(config.Hugepages)
-
-	// Keep hugepages
-	mem.KeepHugepages = types.BoolPointerValue(config.KeepHugepages.PointerBool())
 
 	obj, d := types.ObjectValueFrom(ctx, attributeTypes(), mem)
 	diags.Append(d...)
@@ -67,17 +48,13 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diag
 	return obj
 }
 
-// FillUpdateBody fills the UpdateRequestBody with the memory settings from the Value.
-//
-// This function maps Terraform schema fields to Proxmox API fields for API calls.
-//
-// In the 'update' context, planValue is the plan (desired state).
-func FillUpdateBody(ctx context.Context, planValue Value, body *vms.UpdateRequestBody, diags *diag.Diagnostics) {
-	var plan Model
-
+// FillCreateBody fills the CreateRequestBody with the memory settings from the plan Value.
+func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
 	if planValue.IsNull() || planValue.IsUnknown() {
 		return
 	}
+
+	var plan Model
 
 	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
 	diags.Append(d...)
@@ -86,37 +63,75 @@ func FillUpdateBody(ctx context.Context, planValue Value, body *vms.UpdateReques
 		return
 	}
 
-	// Map Terraform schema fields to Proxmox API fields:
-	// our 'size' → API 'memory' (DedicatedMemory)
-	// our 'balloon' → API 'balloon' (FloatingMemory)
-	// our 'shares' → API 'shares' (FloatingMemoryShares)
+	plan.toAPI(body)
+}
 
-	// Size → Proxmox 'memory' parameter
-	if !plan.Size.IsUnknown() && !plan.Size.IsNull() {
-		size := int(plan.Size.ValueInt64())
-		body.DedicatedMemory = &size
+// FillUpdateBody fills the UpdateRequestBody with the memory settings diff from state → plan.
+//
+// Memory exposes five independent PVE API keys (`memory`, `balloon`, `shares`, `hugepages`,
+// `keephugepages`), so deletion and population are per-field: when a previously-set field is
+// removed from the plan we emit `delete=<key>`, and when it is still set we (re)send its value.
+// Fields absent from both state and plan stay off the wire entirely.
+func FillUpdateBody(
+	ctx context.Context,
+	planValue, stateValue Value,
+	updateBody *vms.UpdateRequestBody,
+	diags *diag.Diagnostics,
+) {
+	// Skip when plan is unknown (unpackOrEmpty would collapse it to all-null and mis-fire the
+	// per-field deletions below) or identical to state.
+	if planValue.IsUnknown() || planValue.Equal(stateValue) {
+		return
 	}
 
-	// Balloon → Proxmox 'balloon' parameter
-	if !plan.Balloon.IsUnknown() && !plan.Balloon.IsNull() {
-		balloon := int(plan.Balloon.ValueInt64())
-		body.FloatingMemory = &balloon
+	plan := unpackOrEmpty(ctx, planValue, diags)
+	state := unpackOrEmpty(ctx, stateValue, diags)
+
+	if diags.HasError() {
+		return
 	}
 
-	// Shares → Proxmox 'shares' parameter
-	if !plan.Shares.IsUnknown() && !plan.Shares.IsNull() {
-		shares := int(plan.Shares.ValueInt64())
-		body.FloatingMemoryShares = &shares
+	attribute.CheckDeleteBody(plan.Size, state.Size, updateBody, "memory")
+	attribute.CheckDeleteBody(plan.Balloon, state.Balloon, updateBody, "balloon")
+	attribute.CheckDeleteBody(plan.Shares, state.Shares, updateBody, "shares")
+	attribute.CheckDeleteBody(plan.Hugepages, state.Hugepages, updateBody, "hugepages")
+	attribute.CheckDeleteBody(plan.KeepHugepages, state.KeepHugepages, updateBody, "keephugepages")
+
+	if planValue.IsNull() {
+		return
 	}
 
-	// Hugepages
-	if !plan.Hugepages.IsUnknown() && !plan.Hugepages.IsNull() {
-		body.Hugepages = plan.Hugepages.ValueStringPointer()
+	plan.toAPI(updateBody)
+}
+
+// unpackOrEmpty returns a Model decoded from the Object, or a Model with all-null fields when
+// the Object itself is null or unknown. Works around the lack of a natural "empty" Model for
+// the CheckDeleteBody per-field diff when the whole block is absent on one side.
+func unpackOrEmpty(ctx context.Context, value Value, diags *diag.Diagnostics) Model {
+	if value.IsNull() || value.IsUnknown() {
+		return Model{
+			Size:          types.Int64Null(),
+			Balloon:       types.Int64Null(),
+			Shares:        types.Int64Null(),
+			Hugepages:     types.StringNull(),
+			KeepHugepages: types.BoolNull(),
+		}
 	}
 
-	// Keep hugepages
-	if !plan.KeepHugepages.IsUnknown() && !plan.KeepHugepages.IsNull() {
-		keepHugepages := proxmoxtypes.CustomBool(plan.KeepHugepages.ValueBool())
-		body.KeepHugepages = &keepHugepages
+	var m Model
+
+	diags.Append(value.As(ctx, &m, basetypes.ObjectAsOptions{})...)
+
+	return m
+}
+
+// asInt64Ptr converts a *int from the PVE API response into a *int64 for framework conversion.
+func asInt64Ptr(v *int) *int64 {
+	if v == nil {
+		return nil
 	}
+
+	n := int64(*v)
+
+	return &n
 }

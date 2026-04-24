@@ -14,7 +14,7 @@ VM-shaped resources (`proxmox_vm`, `proxmox_cloned_vm`) compose dozens of indepe
 
 The existing five sub-packages (`cpu`, `vga`, `rng`, `cdrom`, `memory` under `fwprovider/nodes/vm/`) already converged on a function-based, Value-centric pattern: each sub-package exports an opaque `Value` type alias, a `NewValue` constructor that maps a PVE GET response into the Value, and `FillCreateBody` / `FillUpdateBody` functions that mutate the API request body from a Value. The top-level resource holds these Values in its model struct and calls the sub-package functions during CRUD.
 
-> **Note.** This ADR codifies the target contract. The existing five sub-packages pre-date it and deviate in places: `memory` exports only `NewValue` + `FillUpdateBody` (no `FillCreateBody`) and lacks `datasource_schema.go` / `resource_test.go`; `cpu`/`vga`/`rng`/`cdrom` schemas carry `Optional+Computed` on fields that should drop `Computed` per [ADR-004 §Provider Defaults vs PVE Defaults](004-schema-design-conventions.md#provider-defaults-vs-pve-defaults); `cdrom`'s conversion helper is still named `exportToCustomStorageDevice()` (pre-ADR-004 naming) pending rename to `toAPI()`; the body-taking `attribute.CheckDelete(plan, state, body, "api-name")` form shown in the [`FillUpdateBody`](#fillcreatebody-and-fillupdatebody) example is not yet in `fwprovider/attribute/` — callers currently use the universal `(plan, state, *[]string, "api-name")` form; `cpu` still hosts the `numa` / `hotplugged` misnomers covered in [Block Name Maps to a Single PVE Concept](#block-name-maps-to-a-single-pve-concept). Conformance with this contract — including the `numa.enabled` / `vcpus` rehomes — is tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231).
+> **Note.** This ADR codifies the target contract. The existing five sub-packages pre-date it and deviate in places: `memory` exports only `NewValue` + `FillUpdateBody` (no `FillCreateBody`) and lacks `datasource_schema.go` / `resource_test.go`; `cpu`/`vga`/`rng` schemas carry `Optional+Computed` on fields that should drop `Computed` per [ADR-004 §Provider Defaults vs PVE Defaults](004-schema-design-conventions.md#provider-defaults-vs-pve-defaults); the body-taking helper described in the [`FillUpdateBody`](#fillcreatebody-and-fillupdatebody) example ships as `attribute.CheckDeleteBody` (Go does not allow overloading, so the slice-taking universal form keeps the shorter `attribute.CheckDelete` name) but the existing sub-package call-sites still hand-roll deletion with `ShouldBeRemoved` / `IsDefined` cascades; `cpu` still hosts the `numa` / `hotplugged` misnomers covered in [Block Name Maps to a Single PVE Concept](#block-name-maps-to-a-single-pve-concept). Conformance with this contract — including the `numa.enabled` / `vcpus` rehomes — is tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231).
 
 Two factors make this contract worth codifying now rather than after the next 15 sub-packages land:
 
@@ -76,7 +76,7 @@ func attributeTypes() map[string]attr.Type { /* ... */ }
 
 2. **Return `NullValue()` (i.e. `types.ObjectNull(attributeTypes())` / `types.MapNull(...)`) when the underlying API device pointer is nil.** Returning a non-null Object with null inner fields creates a permanent plan-vs-state diff for users who don't define the block in HCL. The block-level null guard reflects "user has no `vga` block in HCL → state has null `vga`".
 
-   **Carve-out:** when PVE auto-populates fields whenever the block is set (e.g. `cores=1`, `sockets=1` get auto-added to _any_ `cpu.*` field), the sub-package keeps `Optional+Computed` on those specific fields AND continues returning a non-null Object — see [ADR-004 §Provider Defaults vs PVE Defaults](004-schema-design-conventions.md#provider-defaults-vs-pve-defaults). Document the carve-out per field with a short code comment citing the empirical evidence.
+   **Carve-out (hypothetical):** if PVE ever auto-populates specific inner fields on Read whenever the block is set, those fields would keep `Optional+Computed` and the Object would stay non-null. Verify per field with mitmproxy before assuming it applies — the `cpu.cores`/`cpu.sockets` candidates for this carve-out were empirically disproved (see `.dev/1231_AUDIT.md` §4) and the `cpu` sub-package went Optional-only on all attributes. Document any real carve-out per field with a short code comment citing the trace evidence.
 
 ### `FillCreateBody` and `FillUpdateBody`
 
@@ -91,21 +91,21 @@ body.NUMAEnabled = attribute.CustomBoolPtrFromValue(plan.Numa)
 
 Avoid hand-rolled `IsUnknown()` cascades — every field would need its own check, and `ValueXxxPointer()` returns `&""` / `&0` / `&false` for unknown values, which sends bogus zeros to the API.
 
-`FillUpdateBody` reads the plan and prior state, then writes the update request body. Use the `attribute` helpers to populate fields (nil-safe for null/unknown), and `attribute.CheckDelete` to record removals directly on the body — the helper appends to `body.Delete` internally:
+`FillUpdateBody` reads the plan and prior state, then writes the update request body. Use the `attribute` helpers to populate fields (nil-safe for null/unknown), and `attribute.CheckDeleteBody` to record removals directly on the body — the helper appends to `body.Delete` internally via `body.AppendDelete`:
 
 ```go
-attribute.CheckDelete(plan.Affinity, state.Affinity, body, "affinity")
-attribute.CheckDelete(plan.Limit,    state.Limit,    body, "cpulimit")
+attribute.CheckDeleteBody(plan.Affinity, state.Affinity, body, "affinity")
+attribute.CheckDeleteBody(plan.Limit,    state.Limit,    body, "cpulimit")
 
 body.CPUAffinity = attribute.StringPtrFromValue(plan.Affinity)
 body.CPULimit    = attribute.Float64PtrFromValue(plan.Limit)
 ```
 
-The CheckDelete string is the **PVE API parameter name** (lowercase, matching the `url:` struct tag on the request body), not the Go field name. The same string ends up in PVE's wire request as `delete=affinity,cpulimit,…`. The body-taking form requires the body to expose its `Delete []string` (or an equivalent appender method) so the helper can record the removal in place.
+The CheckDelete string is the **PVE API parameter name** (lowercase, matching the `url:` struct tag on the request body), not the Go field name. The same string ends up in PVE's wire request as `delete=affinity,cpulimit,…`. The body-taking form requires the body to implement `attribute.DeleteAppender` — a single-method interface satisfied by `*vms.UpdateRequestBody.AppendDelete(apiName)` — so the helper can record the removal in place.
 
-The body-taking form coexists with the universal `(plan, state, *[]string, "api-name")` signature documented in [ADR-004 §Field Deletion on Update](004-schema-design-conventions.md#field-deletion-on-update) — non-VM Framework resources (SDN, metrics, Replication, etc.) use the universal form when their body type does not expose its delete slice. VM sub-packages prefer the body-taking form, eliminating the local `[]string` plumbing.
+The body-taking form coexists with the universal `(plan, state, *[]string, "api-name")` signature documented in [ADR-004 §Field Deletion on Update](004-schema-design-conventions.md#field-deletion-on-update) — non-VM Framework resources (SDN, metrics, Replication, etc.) use the universal form when their body type does not implement `DeleteAppender`. VM sub-packages prefer `CheckDeleteBody`, eliminating the local `[]string` plumbing.
 
-Hand-rolled `ShouldBeRemoved` + `IsDefined` cascades that branch on `plan.Field.Equal(state.Field)` are not used in either form — `attribute.StringPtrFromValue` already returns nil for null/unknown, so the explicit `IsDefined` guard is redundant in `FillCreateBody` _and_ `FillUpdateBody`. A reflection-based `body.ToDelete(GoFieldName)` helper on `vms.UpdateRequestBody` exists for legacy callers, but new sub-package code must not use it — the canonical pattern is `attribute.CheckDelete` with the API name. See [Common Mistakes](#common-mistakes).
+Hand-rolled `ShouldBeRemoved` + `IsDefined` cascades that branch on `plan.Field.Equal(state.Field)` are not used in either form — `attribute.StringPtrFromValue` already returns nil for null/unknown, so the explicit `IsDefined` guard is redundant in `FillCreateBody` _and_ `FillUpdateBody`. A reflection-based `body.ToDelete(GoFieldName)` helper on `vms.UpdateRequestBody` exists for legacy callers, but new sub-package code must not use it — the canonical pattern is `attribute.CheckDeleteBody` with the API name. See [Common Mistakes](#common-mistakes).
 
 ### Map-keyed Update Diff
 
@@ -119,7 +119,7 @@ for slot, dev := range toUpdate { body.AddDevice(slot, dev.toAPI()) }
 for slot := range toDelete      { body.Delete = append(body.Delete, slot) }
 ```
 
-Slot-level deletion appends the slot key (e.g. `"net1"`, `"ide2"`) directly to `body.Delete`. This is the same `body.Delete []string` (`url:"delete,omitempty,comma"`) that scalar field deletion populates via `attribute.CheckDelete` — slot keys and scalar API names share one comma-separated `delete=…` parameter on the wire. The per-device add helper (`AddCustomStorageDevice`, `AddNetworkDevice`, etc.) is sub-package-specific; cdrom is the reference, calling `body.AddCustomStorageDevice(iface, dev.toAPI())` — the `toAPI()` / `fromAPI()` names mandated by [ADR-004 §Model-API Conversion](004-schema-design-conventions.md#model-api-conversion).
+Slot-level deletion appends the slot key (e.g. `"net1"`, `"ide2"`) directly to `body.Delete`. This is the same `body.Delete []string` (`url:"delete,omitempty,comma"`) that scalar field deletion populates via `attribute.CheckDeleteBody` — slot keys and scalar API names share one comma-separated `delete=…` parameter on the wire. The per-device add helper (`AddCustomStorageDevice`, `AddNetworkDevice`, etc.) is sub-package-specific; cdrom is the reference, calling `body.AddCustomStorageDevice(iface, dev.toAPI())` — the `toAPI()` / `fromAPI()` names mandated by [ADR-004 §Model-API Conversion](004-schema-design-conventions.md#model-api-conversion).
 
 ### File Layout
 
@@ -170,9 +170,9 @@ The `cpu` block is the historical exception: `cpu.numa` (PVE: `numa=1` — a top
 
 - Returning a non-null Object with null inner fields from `NewValue` when the API device is nil — produces a permanent plan-vs-state diff after the parent resource's schema is `Optional`-only. See [ADR-004 §Provider Defaults vs PVE Defaults](004-schema-design-conventions.md#provider-defaults-vs-pve-defaults).
 - Substituting provider-invented defaults (`Type → "kvm64"`, `Cores → 1` when block is absent) in `NewValue`. The cores/sockets carve-out is _only_ for the case where the block has any field set; absent blocks must still null-out.
-- Calling `body.ToDelete(GoFieldName)` directly in `FillUpdateBody`. The canonical pattern is `attribute.CheckDelete` with an API name; the body's reflection helper stays out of caller code.
-- Passing a Go struct field name (e.g. `"CPUAffinity"`) where the PVE API name (`"affinity"`) is expected — applies to both `attribute.CheckDelete`'s fourth argument and any direct `body.Delete = append(...)` on slot keys. PVE rejects the literal Go-style name. Use the `url:` tag's first part.
-- Hand-rolling `if !plan.Field.Equal(state.Field) { if ShouldBeRemoved(...) { … } else if IsDefined(...) { … } }` cascades. Use `attribute.CheckDelete` (deletion tracking) and `attribute.*PtrFromValue` (population) — the helpers handle null/unknown so the cascade is unnecessary.
+- Calling `body.ToDelete(GoFieldName)` directly in `FillUpdateBody`. The canonical pattern is `attribute.CheckDeleteBody` with an API name; the body's reflection helper stays out of caller code.
+- Passing a Go struct field name (e.g. `"CPUAffinity"`) where the PVE API name (`"affinity"`) is expected — applies to both `attribute.CheckDeleteBody`'s fourth argument and any direct `body.Delete = append(...)` on slot keys. PVE rejects the literal Go-style name. Use the `url:` tag's first part.
+- Hand-rolling `if !plan.Field.Equal(state.Field) { if ShouldBeRemoved(...) { … } else if IsDefined(...) { … } }` cascades. Use `attribute.CheckDeleteBody` (deletion tracking) and `attribute.*PtrFromValue` (population) — the helpers handle null/unknown so the cascade is unnecessary.
 - Importing a sub-package's `Model` from the parent resource or another sub-package. Even though `Model` is Go-visible (capital `M`), it is sub-package-internal by contract — the parent resource composes via `Value` / `NewValue` / `Fill…Body` only.
 - Exposing the block as `proxmox_vm.attribute_name` when the block contains attributes from unrelated PVE concepts — split into separate blocks instead. The cpu→numa→vcpus relocation is the cautionary tale.
 - Map-keyed slot regex too loose (`^[a-z]+[0-9]+$`) or too tight (only the slots used in tests). Bound it from the PVE Perl source's `MAX_*` constants.
@@ -185,6 +185,6 @@ The `cpu` block is the historical exception: `cpu.numa` (PVE: `numa=1` — a top
 - [ADR-006: Testing Requirements](006-testing-requirements.md) — acceptance test scenarios per sub-block
 - `fwprovider/nodes/vm/cpu/` — single-nested reference implementation
 - `fwprovider/nodes/vm/cdrom/` — map-keyed reference implementation
-- `fwprovider/attribute/attribute.go` — `StringPtrFromValue`, `Int64PtrFromValue`, `Float64PtrFromValue`, `CustomBoolPtrFromValue`, `CheckDelete`, `IsDefined`
+- `fwprovider/attribute/attribute.go` — `StringPtrFromValue`, `Int64PtrFromValue`, `Float64PtrFromValue`, `CustomBoolPtrFromValue`, `CheckDelete`, `CheckDeleteBody`, `DeleteAppender`, `IsDefined`
 - `utils/maps.go` — `MapDiff` for map-keyed update diff
 - [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231) — VM resource Plugin Framework migration epic

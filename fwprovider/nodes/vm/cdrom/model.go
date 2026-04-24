@@ -29,13 +29,13 @@ func NullValue() Value {
 	return types.MapNull(types.ObjectType{}.WithAttributeTypes(attributeTypes()))
 }
 
-func (m *Model) exportToCustomStorageDevice() vms.CustomStorageDevice {
+func (m *Model) toAPI() vms.CustomStorageDevice {
 	return vms.CustomStorageDevice{
 		FileVolume: m.FileID.ValueString(),
 		Media:      new("cdrom"),
 	}
 }
 
-func (m *Model) importFromCustomStorageDevice(d vms.CustomStorageDevice) {
+func (m *Model) fromAPI(d vms.CustomStorageDevice) {
 	m.FileID = types.StringValue(d.FileVolume)
 }

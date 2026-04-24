@@ -77,36 +77,36 @@ Total: 20 PRs (+ 1 floating).
 
 ## Decisions Log
 
-| # | Decision | Alternative rejected |
-|---|---|---|
-| D1 | Phase 1 = 5 PRs (audit; ADR docs; sub-block port; rename; error sweep). Audit produces 2 files: frozen `1231_AUDIT.md` and living `1231_GAP_MATRIX.md`. | 6+ PRs with 4-file audit split |
-| D2 | Fully breaking changes allowed, no upgrade paths. MoveState deleted in PR #4. SDK→Framework migration guide ships once with PR #20's parity report — that's the moment users have an incentive to migrate. | Provide MoveState/UpgradeState helpers |
-| D3 | Small-PR approach: many focused PRs, each independently reviewable | Single large branch / mega-PR |
-| D4 | Scope = resource + datasource + long-name cleanup. `proxmox_cloned_vm` is out of scope **for new features** but five shared sub-packages (`cpu`, `vga`, `rng`, `cdrom`, `memory`) are jointly owned; their tests gate any port. | Touch `cloned_vm` features now / treat sub-packages as vm-only |
-| D5 | New device families use map-keyed pattern (already in production via `cdrom` + `clonedvm`). Per-family slot regex tightened to PVE source bounds (see Map-Keyed Device Pattern §). `SingleNestedAttribute` for devices PVE currently exposes as one slot only — both **architecturally** single (`efidisk0`, `tpmstate0`) and **conventionally** single (`audio0`). Trade-off: if PVE adds `audio1+` slots later, migration to map-keyed is a breaking schema change. Accepted: PVE has had `audio0` only for years, and the additional level of HCL indentation isn't justified by speculative forward-compat. | User-chosen key + explicit `slot` attribute / map-keyed with one-key regex |
-| D6 | PR #1 audit confirms there is no clone scaffolding in `proxmox_vm` (verified). The real "remove clone scaffolding" cleanup is the per-attribute audit of `Optional+Computed` flags vs the new ADR-004 rule (PR #3 applies the cleanup). | Search-and-destroy for non-existent clone code |
-| D7 | Feature order: `memory` + `power_state` setup → `disk` (MVP) → UEFI → `network_device` → cloud-init → OS → advanced hardware → cluster concerns → parity report | network_device first / scalars first |
-| D8 | Use `vm2` as commit scope for migration-epic implementation PRs; `docs(adr)` for new/amended ADRs. `vm2` documented in `commit-scopes` memory as transient (retires on #1231 close). | `vm` (collides with SDK changelog entries) |
-| D9 | Audit produces 2 files: `1231_AUDIT.md` (ADR findings + capabilities inventory + legacy test inventory; frozen after PR #1) and `1231_GAP_MATRIX.md` (cross-reference, living through Phase 2; becomes PR #20's parity report) | 4 separate files / single monolithic file |
+| #   | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Alternative rejected                                                       |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| D1  | Phase 1 = 5 PRs (audit; ADR docs; sub-block port; rename; error sweep). Audit produces 2 files: frozen `1231_AUDIT.md` and living `1231_GAP_MATRIX.md`.                                                                                                                                                                                                                                                                                                                                                                                                                                                         | 6+ PRs with 4-file audit split                                             |
+| D2  | Fully breaking changes allowed, no upgrade paths. MoveState deleted in PR #4. SDK→Framework migration guide ships once with PR #20's parity report — that's the moment users have an incentive to migrate.                                                                                                                                                                                                                                                                                                                                                                                                      | Provide MoveState/UpgradeState helpers                                     |
+| D3  | Small-PR approach: many focused PRs, each independently reviewable                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Single large branch / mega-PR                                              |
+| D4  | Scope = resource + datasource + long-name cleanup. `proxmox_cloned_vm` is out of scope **for new features** but five shared sub-packages (`cpu`, `vga`, `rng`, `cdrom`, `memory`) are jointly owned; their tests gate any port.                                                                                                                                                                                                                                                                                                                                                                                 | Touch `cloned_vm` features now / treat sub-packages as vm-only             |
+| D5  | New device families use map-keyed pattern (already in production via `cdrom` + `clonedvm`). Per-family slot regex tightened to PVE source bounds (see Map-Keyed Device Pattern §). `SingleNestedAttribute` for devices PVE currently exposes as one slot only — both **architecturally** single (`efidisk0`, `tpmstate0`) and **conventionally** single (`audio0`). Trade-off: if PVE adds `audio1+` slots later, migration to map-keyed is a breaking schema change. Accepted: PVE has had `audio0` only for years, and the additional level of HCL indentation isn't justified by speculative forward-compat. | User-chosen key + explicit `slot` attribute / map-keyed with one-key regex |
+| D6  | PR #1 audit confirms there is no clone scaffolding in `proxmox_vm` (verified). The real "remove clone scaffolding" cleanup is the per-attribute audit of `Optional+Computed` flags vs the new ADR-004 rule (PR #3 applies the cleanup).                                                                                                                                                                                                                                                                                                                                                                         | Search-and-destroy for non-existent clone code                             |
+| D7  | Feature order: `memory` + `power_state` setup → `disk` (MVP) → UEFI → `network_device` → cloud-init → OS → advanced hardware → cluster concerns → parity report                                                                                                                                                                                                                                                                                                                                                                                                                                                 | network_device first / scalars first                                       |
+| D8  | Use `vm2` as commit scope for migration-epic implementation PRs; `docs(adr)` for new/amended ADRs. `vm2` documented in `commit-scopes` memory as transient (retires on #1231 close).                                                                                                                                                                                                                                                                                                                                                                                                                            | `vm` (collides with SDK changelog entries)                                 |
+| D9  | Audit produces 2 files: `1231_AUDIT.md` (ADR findings + capabilities inventory + legacy test inventory; frozen after PR #1) and `1231_GAP_MATRIX.md` (cross-reference, living through Phase 2; becomes PR #20's parity report)                                                                                                                                                                                                                                                                                                                                                                                  | 4 separate files / single monolithic file                                  |
 
 ## Phase 1 — Audit & Redesign (5 PRs)
 
 ### PR breakdown
 
-| # | Title | Type |
-|---|---|---|
-| 1 | `chore(vm2): audit proxmox_vm against ADRs 001–007` | Doc only |
-| 2 | `docs(adr): ADR-008 sub-block contract + ADR-004 amendment for PVE-default rule` | Doc only |
-| 3 | `refactor(vm2): port cpu/vga/rng/cdrom/memory to ADR-008; CheckDelete refactor; sentinel removal; bug fix; drop cpu.numa/cpu.hotplugged` | Code |
-| 4 | `refactor(vm2)!: rename proxmox_virtual_environment_vm2 to proxmox_vm; delete MoveState` | Breaking |
-| 5 | `refactor(vm2): ADR-005 error format sweep` | Code |
+| #   | Title                                                                                                                                    | Type     |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 1   | `chore(vm2): audit proxmox_vm against ADRs 001–007`                                                                                      | Doc only |
+| 2   | `docs(adr): ADR-008 sub-block contract + ADR-004 amendment for PVE-default rule`                                                         | Doc only |
+| 3   | `refactor(vm2): port cpu/vga/rng/cdrom/memory to ADR-008; CheckDelete refactor; sentinel removal; bug fix; drop cpu.numa/cpu.hotplugged` | Code     |
+| 4   | `refactor(vm2)!: rename proxmox_virtual_environment_vm2 to proxmox_vm; delete MoveState`                                                 | Breaking |
+| 5   | `refactor(vm2): ADR-005 error format sweep`                                                                                              | Code     |
 
 ### PR #1: Audit (2 artifacts)
 
-| Artifact | File | Lifecycle | Source |
-|---|---|---|---|
-| Audit | `.dev/1231_AUDIT.md` | Frozen after PR #1 | File:line scan of `fwprovider/nodes/vm/`; walk of `proxmoxtf/resource/vm/vm.go`; walk of `fwprovider/test/resource_vm_*.go` + `proxmoxtf/resource/vm/**/*_test.go` |
-| Gap matrix | `.dev/1231_GAP_MATRIX.md` | Living through Phase 2; finalized as parity report | Cross-reference of audit + test inventory + capabilities inventory |
+| Artifact   | File                      | Lifecycle                                          | Source                                                                                                                                                             |
+| ---------- | ------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Audit      | `.dev/1231_AUDIT.md`      | Frozen after PR #1                                 | File:line scan of `fwprovider/nodes/vm/`; walk of `proxmoxtf/resource/vm/vm.go`; walk of `fwprovider/test/resource_vm_*.go` + `proxmoxtf/resource/vm/**/*_test.go` |
+| Gap matrix | `.dev/1231_GAP_MATRIX.md` | Living through Phase 2; finalized as parity report | Cross-reference of audit + test inventory + capabilities inventory                                                                                                 |
 
 The audit (single doc, three sections) covers:
 
@@ -114,7 +114,7 @@ The audit (single doc, three sections) covers:
    before Phase 2), `should-fix` (fix during Phase 1), `nit` (defer).
 2. **Capabilities inventory** — every SDK attribute classified as `done`
    (already in vm2), `planned` (target Phase 2 PR), `deliberately
-   dropped`, or `open question`.
+dropped`, or `open question`.
 3. **Legacy test inventory** — every legacy test mapped to a behavior and
    target PR.
 
@@ -143,7 +143,7 @@ shape decision the contract relies on.
 
 **ADR-008 — Sub-block Contract**
 
-Codifies the *existing* Value-centric pattern from `cpu/`, `vga/`, `rng/`,
+Codifies the _existing_ Value-centric pattern from `cpu/`, `vga/`, `rng/`,
 `cdrom/`, `memory/`. Two signature families:
 
 ```go
@@ -196,11 +196,18 @@ Rules codified in the ADR:
     Cdrom is the existing reference: a pending PVE feature request to
     support multiple cdroms is already additive because cdrom is map-
     keyed.
-- Sub-block names normally correspond to a single PVE concept. Exception:
-  `cpu` historically includes `cpu.numa` (PVE: `numa=1`) and
-  `cpu.hotplugged` (PVE: `vcpus=N`); these are SDK-inherited and being
-  relocated in PR #3 (drop) + PR #13 (`numa.enabled`) + PR #14 (`vcpus`).
-  No "virtual sub-block" pattern in ADR-008.
+- Sub-block names correspond to a single user-facing concept, not to a
+  single PVE API wire key. The `memory` block groups five independent
+  top-level PVE keys (`memory`, `balloon`, `shares`, `hugepages`,
+  `keephugepages`) under one concept; the `cpu` block does the same,
+  mirroring the PVE web UI "Processors" dialog — `cores`, `sockets`,
+  `vcpus`, `type`+`flags`, `cpulimit`, `cpuunits`, `affinity`, `arch`,
+  and `numa` all live there. Earlier drafts of this design called for
+  rehoming `cpu.hotplugged` to top-level `vcpus` and `cpu.numa` to a
+  separate `numa.enabled` block; that plan was rescinded in PR #3 once
+  the PVE UI grouping was taken as decisive. In PR #3 the only change
+  is a rename: `cpu.hotplugged` → `cpu.vcpus` (matching the PVE API
+  name). `cpu.numa` stays put. No "virtual sub-block" pattern in ADR-008.
 
 **ADR-004 amendment — PVE-defaults rule + enum/cross-attribute rules**
 
@@ -209,11 +216,11 @@ Three new sections:
 1. **Provider Defaults vs PVE Defaults.** Provider does not duplicate
    PVE's defaults via schema `Default(...)`. Classification table:
 
-   | PVE Read behavior | Schema | Examples |
-   |---|---|---|
-   | Auto-populates default value | `Optional + Computed` (no Default) | `cpu.cores`, `cpu.sockets`, `cpu.type`, `cpu.numa`, `cpu.units`, `cpu.limit` |
-   | Returns null/absent when unset | `Optional` only | `cpu.affinity`, `cpu.flags`, `description` |
-   | Provider-only attribute (no PVE counterpart) | `Optional + Default` | `purge_on_destroy`, `stop_on_destroy`, `delete_unreferenced_disks_on_destroy` |
+   | PVE Read behavior                            | Schema                             | Examples                                                                      |
+   | -------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
+   | Auto-populates default value                 | `Optional + Computed` (no Default) | `cpu.cores`, `cpu.sockets`, `cpu.type`, `cpu.numa`, `cpu.units`, `cpu.limit`  |
+   | Returns null/absent when unset               | `Optional` only                    | `cpu.affinity`, `cpu.flags`, `description`                                    |
+   | Provider-only attribute (no PVE counterpart) | `Optional + Default`               | `purge_on_destroy`, `stop_on_destroy`, `delete_unreferenced_disks_on_destroy` |
 
    PVE Read behavior must be verified empirically (mitmproxy + audit
    table) per attribute.
@@ -244,8 +251,11 @@ Mechanical application of the contract across **five** sub-packages
 - Applies the per-attribute classification table from PR #1 audit:
   downgrade `Optional+Computed` to `Optional` only where PVE returns
   null; drop long-enum validators (`cpu.type`, `vga.type`, etc.).
-- **Drops `cpu.numa` and `cpu.hotplugged`** (rehomed in PR #13 and PR
-  #14). Acknowledge the temporary regression in PR body and gap matrix.
+- **Renames `cpu.hotplugged` → `cpu.vcpus`** in place (matches PVE API
+  name and Processors UI). `cpu.numa` stays put. No rehome elsewhere —
+  the cpu block mirrors the PVE "Processors" dialog grouping. Earlier
+  draft called for rehoming these to top-level `vcpus` / `numa.enabled`;
+  reversed in PR #3, see §Cross-cutting above and PR #13/#14 scope.
 - Adds unit tests on Model methods per §Testing below.
 - **Definition-of-done includes `clonedvm` acceptance tests passing.**
 
@@ -294,43 +304,45 @@ discussion if/when concrete merge-conflict pain surfaces.
 
 ### Phase 2A — MVP setup + MVP (2 PRs)
 
-| # | Title |
-|---|---|
-| 6 | `feat(vm2): add memory + power_state + on_boot scalars` |
-| 7 | `feat(vm2): add disk map-keyed block` |
+| #   | Title                                                   |
+| --- | ------------------------------------------------------- |
+| 6   | `feat(vm2): add memory + power_state + on_boot scalars` |
+| 7   | `feat(vm2): add disk map-keyed block`                   |
 
 **Milestone after PR #7: MVP** — VM with a bootable disk, end-to-end.
 
 ### Phase 2B — Boot config + UEFI (2 PRs)
 
-| # | Title |
-|---|---|
-| 8 | `feat(vm2): add bios + machine + boot_order scalars` |
-| 9 | `feat(vm2): add efi_disk + tpm_state + scsi_hardware` |
+| #   | Title                                                 |
+| --- | ----------------------------------------------------- |
+| 8   | `feat(vm2): add bios + machine + boot_order scalars`  |
+| 9   | `feat(vm2): add efi_disk + tpm_state + scsi_hardware` |
 
 **Milestone after PR #9: First credible SDK replacement** — full
 UEFI/SeaBIOS VM with bootable disk.
 
 ### Phase 2C — Network, cloud-init, OS (3 PRs)
 
-| # | Title |
-|---|---|
-| 10 | `feat(vm2): add network_device map-keyed block` |
-| 11 | `feat(vm2): add initialization (cloud-init)` |
-| 12 | `feat(vm2): add operating_system + smbios` |
+| #   | Title                                           |
+| --- | ----------------------------------------------- |
+| 10  | `feat(vm2): add network_device map-keyed block` |
+| 11  | `feat(vm2): add initialization (cloud-init)`    |
+| 12  | `feat(vm2): add operating_system + smbios`      |
 
 ### Phase 2D — Advanced hardware (5 PRs)
 
-| # | Title |
-|---|---|
-| 13 | `feat(vm2): add agent + numa (with numa.enabled) + watchdog` |
-| 14 | `feat(vm2): add acpi + tablet_device + keyboard_layout + kvm_arguments + vcpus + hotplug + parallel` |
-| 15 | `feat(vm2): add usb map-keyed block` |
-| 16 | `feat(vm2): add hostpci map-keyed block` |
-| 17 | `feat(vm2): add serial_device (map-keyed) + audio_device (single-nested) + virtiofs (map-keyed)` |
+| #   | Title                                                                                            |
+| --- | ------------------------------------------------------------------------------------------------ |
+| 13  | `feat(vm2): add agent + watchdog`                                                                |
+| 14  | `feat(vm2): add acpi + tablet_device + keyboard_layout + kvm_arguments + hotplug + parallel`     |
+| 15  | `feat(vm2): add usb map-keyed block`                                                             |
+| 16  | `feat(vm2): add hostpci map-keyed block`                                                         |
+| 17  | `feat(vm2): add serial_device (map-keyed) + audio_device (single-nested) + virtiofs (map-keyed)` |
 
-`vcpus` in PR #14 is the rehomed `cpu.hotplugged`. `numa.enabled` in
-PR #13 is the rehomed `cpu.numa`.
+`cpu.vcpus` and `cpu.numa` stay inside the `cpu` sub-block (rename done
+in PR #3, no rehome) — they were originally planned for #13/#14 as
+top-level `vcpus` / `numa.enabled` but the PVE Processors UI grouping
+settled the location.
 
 PRs #15–#17 are independent applications of established patterns. Each
 still touches top-level `resource.go` to wire the new block, so merge
@@ -340,11 +352,11 @@ resolvable on non-overlapping lines.
 
 ### Phase 2E — Cluster + parity (3 PRs)
 
-| # | Title |
-|---|---|
-| 18 | `feat(vm2): add startup + pool_id + protection + hook_script_file_id + amd_sev` |
-| 19 | `feat(vm2): add migrate` |
-| 20 | `docs(vm2): feature parity report + SDK migration guide` |
+| #   | Title                                                                           |
+| --- | ------------------------------------------------------------------------------- |
+| 18  | `feat(vm2): add startup + pool_id + protection + hook_script_file_id + amd_sev` |
+| 19  | `feat(vm2): add migrate`                                                        |
+| 20  | `docs(vm2): feature parity report + SDK migration guide`                        |
 
 **Milestone after PR #20: Feature parity reached.** Graduation-from-
 experimental decision point (tracked outside this issue). PR #20 also
@@ -367,26 +379,26 @@ over-splitting upfront is wasteful.
 
 ### PR dependency graph
 
-| PR | Depends on |
-|---|---|
-| 1 | — |
-| 2 | 1 (audit decisions feed ADR-008 + ADR-004 amendment) |
-| 3 | 2 |
-| 4 | 3 (rename after sub-blocks are on the contract) |
-| 5 | 3 (error sweep can land before or after rename) |
-| 6 | 5 (memory wired in via new contract; needs Phase 1 done) |
-| 7 | 6 (disk MVP needs memory + power_state) |
-| 8 | 7 |
-| 9 | 8 (UEFI builds on bios/machine) |
-| 10 | 7 (network needs map-keyed pattern; cdrom + disk both established it) |
-| 11 | 7 + 10 (cloud-init needs disks; ipconfig needs network) |
-| 12 | 11 |
-| 13 | 7 (independent feature block) |
-| 14 | 7 (independent; `vcpus` rehome is independent of numa rehome) |
-| 15–17 | 7 (independent map-keyed blocks) |
-| 18 | 9 (pool/protection touch fully-configured VMs) |
-| 19 | 13–17 (migrate semantics depend on full device set) |
-| 20 | 19 |
+| PR    | Depends on                                                            |
+| ----- | --------------------------------------------------------------------- |
+| 1     | —                                                                     |
+| 2     | 1 (audit decisions feed ADR-008 + ADR-004 amendment)                  |
+| 3     | 2                                                                     |
+| 4     | 3 (rename after sub-blocks are on the contract)                       |
+| 5     | 3 (error sweep can land before or after rename)                       |
+| 6     | 5 (memory wired in via new contract; needs Phase 1 done)              |
+| 7     | 6 (disk MVP needs memory + power_state)                               |
+| 8     | 7                                                                     |
+| 9     | 8 (UEFI builds on bios/machine)                                       |
+| 10    | 7 (network needs map-keyed pattern; cdrom + disk both established it) |
+| 11    | 7 + 10 (cloud-init needs disks; ipconfig needs network)               |
+| 12    | 11                                                                    |
+| 13    | 7 (independent feature block)                                         |
+| 14    | 7 (independent)                                                       |
+| 15–17 | 7 (independent map-keyed blocks)                                      |
+| 18    | 9 (pool/protection touch fully-configured VMs)                        |
+| 19    | 13–17 (migrate semantics depend on full device set)                   |
+| 20    | 19                                                                    |
 
 Anything else may land in any order that CI and review capacity permit.
 
@@ -396,7 +408,7 @@ Anything else may land in any order that CI and review capacity permit.
 
 Already in production via `cdrom` (`fwprovider/nodes/vm/cdrom/`) and
 `clonedvm` (two `MapNestedAttribute` blocks). ADR-008 codifies the
-pattern from existing code; PR #7 (`disk`) is the first *new* application
+pattern from existing code; PR #7 (`disk`) is the first _new_ application
 in `proxmox_vm`.
 
 ### Schema shape (cdrom as reference)
@@ -449,16 +461,16 @@ Removing `net1` does not renumber the rest.
 
 Bounds verified from `qemu-server.git` Perl source:
 
-| Device | PVE constant | Regex |
-|---|---|---|
-| `network_device` | `MAX_NETS=32` | `^net([0-9]\|[12][0-9]\|3[01])$` |
+| Device            | PVE constant                                                                      | Regex                                                                        |
+| ----------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `network_device`  | `MAX_NETS=32`                                                                     | `^net([0-9]\|[12][0-9]\|3[01])$`                                             |
 | `disk` (combined) | `MAX_IDE_DISKS=4`, `MAX_SATA_DISKS=6`, `MAX_SCSI_DISKS=31`, `MAX_VIRTIO_DISKS=16` | `^(ide[0-3]\|sata[0-5]\|scsi([0-9]\|[12][0-9]\|30)\|virtio([0-9]\|1[0-5]))$` |
-| `usb` | `MAX_USB_DEVICES=14` | `^usb([0-9]\|1[0-3])$` |
-| `hostpci` | `MAX_HOSTPCI_DEVICES=16` | `^hostpci([0-9]\|1[0-5])$` |
-| `numa` | `MAX_NUMA=8` | `^numa[0-7]$` |
-| `serial_device` | `MAX_SERIAL_PORTS=4` | `^serial[0-3]$` |
-| `parallel` | `MAX_PARALLEL_PORTS=3` | `^parallel[0-2]$` |
-| `virtiofs` | `max_virtiofs()` (verify in audit) | `^virtiofs[0-N]$` |
+| `usb`             | `MAX_USB_DEVICES=14`                                                              | `^usb([0-9]\|1[0-3])$`                                                       |
+| `hostpci`         | `MAX_HOSTPCI_DEVICES=16`                                                          | `^hostpci([0-9]\|1[0-5])$`                                                   |
+| `numa`            | `MAX_NUMA=8`                                                                      | `^numa[0-7]$`                                                                |
+| `serial_device`   | `MAX_SERIAL_PORTS=4`                                                              | `^serial[0-3]$`                                                              |
+| `parallel`        | `MAX_PARALLEL_PORTS=3`                                                            | `^parallel[0-2]$`                                                            |
+| `virtiofs`        | `max_virtiofs()` (verify in audit)                                                | `^virtiofs[0-N]$`                                                            |
 
 ### Single-instance devices (SingleNestedAttribute, not map-keyed)
 
@@ -484,14 +496,14 @@ slot only:
 
 ### Required per PR
 
-| Layer | Requirement | Location |
-|---|---|---|
-| Unit tests | Sub-package functions with non-trivial logic (`NewValue` sentinels, `FillUpdateBody` diff, `utils.MapDiff` integration for map-keyed) | `fwprovider/nodes/vm/<sub>/model_test.go` |
-| Acceptance tests | Full CRUD + import round-trip per sub-block | `fwprovider/nodes/vm/<sub>/resource_test.go` |
-| Datasource coverage | Datasource has equivalent functional coverage (per ADR-006) for every attribute/block added to the resource | `fwprovider/nodes/vm/datasource_test.go` |
-| Functional coverage | Per ADR-006 — every distinct user-visible behavior has a scenario | Same |
-| API verification | `/bpg:debug-api` (mitmproxy) at least once per sub-block PR, referenced in PR body | Manual |
-| Docs regeneration | `make docs` run after any schema change; regenerated `docs/resources/proxmox_vm.md` committed in the same PR | `docs/`, `templates/` |
+| Layer               | Requirement                                                                                                                           | Location                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Unit tests          | Sub-package functions with non-trivial logic (`NewValue` sentinels, `FillUpdateBody` diff, `utils.MapDiff` integration for map-keyed) | `fwprovider/nodes/vm/<sub>/model_test.go`    |
+| Acceptance tests    | Full CRUD + import round-trip per sub-block                                                                                           | `fwprovider/nodes/vm/<sub>/resource_test.go` |
+| Datasource coverage | Datasource has equivalent functional coverage (per ADR-006) for every attribute/block added to the resource                           | `fwprovider/nodes/vm/datasource_test.go`     |
+| Functional coverage | Per ADR-006 — every distinct user-visible behavior has a scenario                                                                     | Same                                         |
+| API verification    | `/bpg:debug-api` (mitmproxy) at least once per sub-block PR, referenced in PR body                                                    | Manual                                       |
+| Docs regeneration   | `make docs` run after any schema change; regenerated `docs/resources/proxmox_vm.md` committed in the same PR                          | `docs/`, `templates/`                        |
 
 ### Tier classification
 
@@ -503,18 +515,18 @@ slot only:
 
 Every map-keyed device sub-block **must** include:
 
-| Scenario | What it proves |
-|---|---|
-| Create with 2+ slots | Multi-device support |
-| Update adds a new slot | Insert without renumbering |
-| **Update removes a middle slot** | **Reorder immunity — the payoff of maps** |
-| Update renames a slot | Delete-then-add (slot name is identity) |
-| Update modifies a slot's field | In-place attribute update |
-| Import round-trip; **plan after import shows empty diff** | State matches config after import; Read populates correctly |
-| **Apply, re-plan with same config — assert empty diff** | Plan stability; ADR-004 classification correct |
-| **Plan with out-of-range slot key fails with validator error** | Tight slot regex actually fires |
-| **Mixed-interface map** (disk only) | Multi-prefix regex handled correctly |
-| **Rename across interface families** (disk only: `scsi0` → `virtio0`) | Semantic delete+create, not in-place |
+| Scenario                                                              | What it proves                                              |
+| --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Create with 2+ slots                                                  | Multi-device support                                        |
+| Update adds a new slot                                                | Insert without renumbering                                  |
+| **Update removes a middle slot**                                      | **Reorder immunity — the payoff of maps**                   |
+| Update renames a slot                                                 | Delete-then-add (slot name is identity)                     |
+| Update modifies a slot's field                                        | In-place attribute update                                   |
+| Import round-trip; **plan after import shows empty diff**             | State matches config after import; Read populates correctly |
+| **Apply, re-plan with same config — assert empty diff**               | Plan stability; ADR-004 classification correct              |
+| **Plan with out-of-range slot key fails with validator error**        | Tight slot regex actually fires                             |
+| **Mixed-interface map** (disk only)                                   | Multi-prefix regex handled correctly                        |
+| **Rename across interface families** (disk only: `scsi0` → `virtio0`) | Semantic delete+create, not in-place                        |
 
 ### Unit tests on sub-block functions
 
@@ -579,29 +591,29 @@ existing `FWK_AUDIT_*.md` pattern already in the archive.
 
 ## Risks and Mitigations
 
-| # | Risk | Mitigation |
-|---|---|---|
-| R1 | ADR-008 contract ossifies wrong — every subsequent PR compounds the mistake | PR #3 ports 5 existing sub-blocks at once (one of them — `memory/` — shared with `clonedvm`). If the contract doesn't fit all five, revise it before Phase 2. |
-| R2 | Map-keyed device semantics have Framework edge cases | Already known: `cdrom` and `clonedvm` (2 instances) have map-keyed in production. ADR-008 codifies from this existing code. PR #7 (`disk`) is the first new application, not a pattern-establishing PR. |
-| R3 | Shared API client changes cascade — structs shared with SDK resource | **Allowed-changes table:** add freely; internal cleanup freely; rename public fields with same-PR SDK callsite updates; remove public fields forbidden until post-Phase-2. **Enforcement:** PR #1 audit catalogs all `proxmox/nodes/vms` types consumed by SDK. **Floating client-refactor PR slot** in Phase 2 bundles genuine breaking cleanups. |
-| R4 | Long-running Phase 2 branches conflict on `resource.go` | Conflicts are trivially resolvable: each sub-block adds an import + a Schema entry + a `FillCreateBody`/`FillUpdateBody` call, on non-overlapping lines. Realistic parallelism is 2 concurrent branches. |
-| R5 | Acceptance-test cost grows with PR count | Unit tests on sub-package functions carry most logic. Acceptance focuses on PVE-boundary behavior. CI gates on full suite at merge only. |
-| R6 | Audit PR #1 reveals more rot than expected | Report is doc-only; severity-tagged findings let us defer nits. Breaking-changes-allowed means aggressive fixes OK. |
-| R7 | `memory/` package status | Resolved: `memory/` is shared with `clonedvm`, **not orphaned**. Wired into `proxmox_vm` in Phase 2 PR #6 (memory + power_state + on_boot) using the new ADR-008 contract from PR #3. |
-| R8 | Joint sub-package ownership constraint with `proxmox_cloned_vm` | Five sub-packages (cpu/vga/rng/cdrom/memory) are jointly owned with `clonedvm`. ADR-008 changes touching any sub-package must keep `clonedvm` acceptance tests green. PR #3's definition-of-done lists `clonedvm` tests passing. |
+| #   | Risk                                                                        | Mitigation                                                                                                                                                                                                                                                                                                                                         |
+| --- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | ADR-008 contract ossifies wrong — every subsequent PR compounds the mistake | PR #3 ports 5 existing sub-blocks at once (one of them — `memory/` — shared with `clonedvm`). If the contract doesn't fit all five, revise it before Phase 2.                                                                                                                                                                                      |
+| R2  | Map-keyed device semantics have Framework edge cases                        | Already known: `cdrom` and `clonedvm` (2 instances) have map-keyed in production. ADR-008 codifies from this existing code. PR #7 (`disk`) is the first new application, not a pattern-establishing PR.                                                                                                                                            |
+| R3  | Shared API client changes cascade — structs shared with SDK resource        | **Allowed-changes table:** add freely; internal cleanup freely; rename public fields with same-PR SDK callsite updates; remove public fields forbidden until post-Phase-2. **Enforcement:** PR #1 audit catalogs all `proxmox/nodes/vms` types consumed by SDK. **Floating client-refactor PR slot** in Phase 2 bundles genuine breaking cleanups. |
+| R4  | Long-running Phase 2 branches conflict on `resource.go`                     | Conflicts are trivially resolvable: each sub-block adds an import + a Schema entry + a `FillCreateBody`/`FillUpdateBody` call, on non-overlapping lines. Realistic parallelism is 2 concurrent branches.                                                                                                                                           |
+| R5  | Acceptance-test cost grows with PR count                                    | Unit tests on sub-package functions carry most logic. Acceptance focuses on PVE-boundary behavior. CI gates on full suite at merge only.                                                                                                                                                                                                           |
+| R6  | Audit PR #1 reveals more rot than expected                                  | Report is doc-only; severity-tagged findings let us defer nits. Breaking-changes-allowed means aggressive fixes OK.                                                                                                                                                                                                                                |
+| R7  | `memory/` package status                                                    | Resolved: `memory/` is shared with `clonedvm`, **not orphaned**. Wired into `proxmox_vm` in Phase 2 PR #6 (memory + power_state + on_boot) using the new ADR-008 contract from PR #3.                                                                                                                                                              |
+| R8  | Joint sub-package ownership constraint with `proxmox_cloned_vm`             | Five sub-packages (cpu/vga/rng/cdrom/memory) are jointly owned with `clonedvm`. ADR-008 changes touching any sub-package must keep `clonedvm` acceptance tests green. PR #3's definition-of-done lists `clonedvm` tests passing.                                                                                                                   |
 
 ## Open Questions
 
 Resolved in PR #1's audit before Phase 2 starts. Each needs a maintainer
 decision, not more research.
 
-| # | Question | Resolution |
-|---|---|---|
-| Q1 | Does the `proxmox_vm` datasource expose devices as map-keyed attributes too? | Yes — symmetric schemas, with carve-out: provider-only behavior attributes (`purge_on_destroy`, `stop_on_destroy`, `delete_unreferenced_disks_on_destroy`, `template`, `power_state`) are omitted from the datasource. Lookup keys (`id`, `node_name`) are Required. |
-| Q2 | Does ADR-008 formally document the "virtual sub-block" pattern? | **No.** Pattern dropped. cpu's smell (containing `cpu.numa` and `cpu.hotplugged`) is one-off SDK debt, being relocated to `numa.enabled` (PR #13) and `vcpus` (PR #14). ADR-008 instead states: sub-block names normally correspond to a single PVE concept. |
-| Q3 | Expose PVE runtime status fields (vcpu count, uptime) via a separate read-only block? | No — out of scope; separate datasource if demand arises |
-| Q4 | Validator strictness | **Strict where duplication of PVE's validation is cheap and stable** (e.g., short stable enums, slot regexes per PVE-source bounds). **Drop long version-evolving enums** (cpu.type, vga.type, machine, bios, scsi_hardware, audio_device.driver) — defer to PVE. **Cross-attribute constraints** are doc-only by default; promoted to validators only when frequently hit or PVE error is unhelpful. Codified in ADR-004 amendment. |
-| Q5 | Keep current `started`-field semantics or redesign? | **Redesign.** Replace `started` with **`power_state`** (`"running"` / `"stopped"`, default `"running"`). Add Computed `status` for runtime drift. Drop `reboot` as user-facing — provider decides from pending changes. `on_boot` stays (PVE "Start at boot"). Resolved in PR #1 audit; implemented in PR #6. |
+| #   | Question                                                                              | Resolution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q1  | Does the `proxmox_vm` datasource expose devices as map-keyed attributes too?          | Yes — symmetric schemas, with carve-out: provider-only behavior attributes (`purge_on_destroy`, `stop_on_destroy`, `delete_unreferenced_disks_on_destroy`, `template`, `power_state`) are omitted from the datasource. Lookup keys (`id`, `node_name`) are Required.                                                                                                                                                                                                                                                                                                                                                   |
+| Q2  | Does ADR-008 formally document the "virtual sub-block" pattern?                       | **No.** Pattern dropped. The original framing — treating `cpu.numa` and `cpu.hotplugged` as SDK debt that needed relocating to top-level `numa.enabled` / `vcpus` — was rescinded in PR #3 once the PVE web UI Processors dialog was taken as the source of truth for sub-block scope. `cpu` groups every knob PVE's "Processors" dialog exposes (cores/sockets/vcpus/type/flags/limit/units/affinity/arch/numa), same way `memory` groups multiple independent PVE API keys under one user-facing concept. ADR-008 states: sub-block names correspond to a single user-facing concept, not a single PVE API wire key. |
+| Q3  | Expose PVE runtime status fields (vcpu count, uptime) via a separate read-only block? | No — out of scope; separate datasource if demand arises                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Q4  | Validator strictness                                                                  | **Strict where duplication of PVE's validation is cheap and stable** (e.g., short stable enums, slot regexes per PVE-source bounds). **Drop long version-evolving enums** (cpu.type, vga.type, machine, bios, scsi_hardware, audio_device.driver) — defer to PVE. **Cross-attribute constraints** are doc-only by default; promoted to validators only when frequently hit or PVE error is unhelpful. Codified in ADR-004 amendment.                                                                                                                                                                                   |
+| Q5  | Keep current `started`-field semantics or redesign?                                   | **Redesign.** Replace `started` with **`power_state`** (`"running"` / `"stopped"`, default `"running"`). Add Computed `status` for runtime drift. Drop `reboot` as user-facing — provider decides from pending changes. `on_boot` stays (PVE "Start at boot"). Resolved in PR #1 audit; implemented in PR #6.                                                                                                                                                                                                                                                                                                          |
 
 ## Success Criteria
 

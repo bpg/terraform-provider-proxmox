@@ -10,13 +10,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-// ResourceSchema defines the schema for the CPU resource.
+// ResourceSchema defines the schema for the VGA resource.
 func ResourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		CustomType: basetypes.ObjectType{
@@ -30,11 +28,10 @@ func ResourceSchema() schema.Attribute {
 			"Linux guests can add displays themself. You can also run without any graphic card, using a serial device " +
 			"as terminal. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#" +
 			"qm_virtual_machines_settings) section 10.2.8 for more information and available configuration parameters.",
+		// Optional only (not Computed) per ADR-004 §Provider Defaults vs PVE Defaults: audit Section 4
+		// confirms PVE does not auto-populate vga subfields on Read, so block-level Read is null when
+		// the user has no `vga` block in HCL.
 		Optional: true,
-		Computed: true,
-		PlanModifiers: []planmodifier.Object{
-			objectplanmodifier.UseStateForUnknown(),
-		},
 		Attributes: map[string]schema.Attribute{
 			"clipboard": schema.StringAttribute{
 				Description: "Enable a specific clipboard.",
@@ -42,7 +39,6 @@ func ResourceSchema() schema.Attribute {
 					"one will be added. Currently only `vnc` is available. Migration with VNC clipboard is not " +
 					"supported by Proxmox.",
 				Optional: true,
-				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("vnc"),
 				},
@@ -51,31 +47,13 @@ func ResourceSchema() schema.Attribute {
 				Description:         "The VGA type.",
 				MarkdownDescription: "The VGA type (defaults to `std`).",
 				Optional:            true,
-				Computed:            true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(
-						"cirrus",
-						"none",
-						"qxl",
-						"qxl2",
-						"qxl3",
-						"qxl4",
-						"serial0",
-						"serial1",
-						"serial2",
-						"serial3",
-						"std",
-						"virtio",
-						"virtio-gl",
-						"vmware",
-					),
-				},
+				// Long, version-evolving PVE enum — per ADR-004 §Enum Validators the provider defers to
+				// PVE apply-time validation rather than shipping a release each time PVE adds a type.
 			},
 			"memory": schema.Int64Attribute{
 				Description:         "The VGA memory in megabytes (4-512 MB)",
 				MarkdownDescription: "The VGA memory in megabytes (4-512 MB). Has no effect with serial display. ",
 				Optional:            true,
-				Computed:            true,
 				Validators: []validator.Int64{
 					int64validator.Between(4, 512),
 				},

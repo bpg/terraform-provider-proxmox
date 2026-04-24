@@ -62,12 +62,12 @@ Read-Only:
 - `architecture` (String) The CPU architecture.
 - `cores` (Number) The number of CPU cores per socket.
 - `flags` (Set of String) Set of additional CPU flags.
-- `hotplugged` (Number) The number of hotplugged vCPUs.
 - `limit` (Number) Limit of CPU usage.
-- `numa` (Boolean) Enable NUMA.
+- `numa` (Boolean) Whether NUMA emulation is enabled.
 - `sockets` (Number) The number of CPU sockets.
 - `type` (String) Emulated CPU type.
 - `units` (Number) CPU weight for a VM
+- `vcpus` (Number) Number of active vCPUs.
 
 
 <a id="nestedatt--rng"></a>

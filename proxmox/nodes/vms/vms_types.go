@@ -498,6 +498,10 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 }
 
 // ToDelete adds a field to the delete list. The field name should be the **actual** field name in the struct.
+//
+// Prefer AppendDelete (taking the PVE API name directly) for new code — typically via
+// fwprovider/attribute.CheckDeleteBody per ADR-008. ToDelete relies on reflection over Go
+// field names and is retained for legacy callers only.
 func (b *UpdateRequestBody) ToDelete(fieldName string) error {
 	if b == nil {
 		return errors.New("update request body is nil")
@@ -512,6 +516,15 @@ func (b *UpdateRequestBody) ToDelete(fieldName string) error {
 	}
 
 	return nil
+}
+
+// AppendDelete records a PVE API parameter name for deletion on this update request.
+//
+// The name is the PVE API parameter (e.g. "affinity", "cpulimit") — matching the first segment
+// of the `url:` struct tag on the corresponding field — not the Go field name. Prefer this over
+// ToDelete for new code; it avoids reflection and keeps call-sites free of Go-field-name leaks.
+func (b *UpdateRequestBody) AppendDelete(apiName string) {
+	b.Delete = append(b.Delete, apiName)
 }
 
 // IsEmpty checks if the update request body is empty.

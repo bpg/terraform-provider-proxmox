@@ -312,7 +312,7 @@ Optional:
 
 Optional:
 
-- `file_id` (String) The file ID of the CD-ROM, or `cdrom|none`. Defaults to `none` to leave the CD-ROM empty. Use `cdrom` to connect to the physical drive.
+- `file_id` (String) The file ID of the CD-ROM, or `cdrom|none`. Defaults to `cdrom` (i.e. empty CD-ROM drive — `cdrom` is PVE's literal "no media inserted" storage path). Use `none` to leave the CD-ROM unplugged, or a storage path like `local:iso/debian.iso` to insert an image.
 
 
 <a id="nestedatt--cpu"></a>
@@ -322,14 +322,14 @@ Optional:
 
 - `affinity` (String) The CPU cores that are used to run the VM’s vCPU. The value is a list of CPU IDs, separated by commas. The CPU IDs are zero-based.  For example, `0,1,2,3` (which also can be shortened to `0-3`) means that the VM’s vCPUs are run on the first four CPU cores. Setting `affinity` is only allowed for `root@pam` authenticated user.
 - `architecture` (String) The CPU architecture `<aarch64 | x86_64>` (defaults to the host). Setting `architecture` is only allowed for `root@pam` authenticated user.
-- `cores` (Number) The number of CPU cores per socket (defaults to `1`).
+- `cores` (Number) The number of CPU cores per socket (PVE defaults to `1` when unset).
 - `flags` (Set of String) Set of additional CPU flags. Use `+FLAG` to enable, `-FLAG` to disable a flag. Custom CPU models can specify any flag supported by QEMU/KVM, VM-specific flags must be from the following set for security reasons: `pcid`, `spec-ctrl`, `ibpb`, `ssbd`, `virt-ssbd`, `amd-ssbd`, `amd-no-ssb`, `pdpe1gb`, `md-clear`, `hv-tlbflush`, `hv-evmcs`, `aes`.
-- `hotplugged` (Number) The number of hotplugged vCPUs (defaults to `0`).
-- `limit` (Number) Limit of CPU usage (defaults to `0` which means no limit).
-- `numa` (Boolean) Enable NUMA (defaults to `false`).
-- `sockets` (Number) The number of CPU sockets (defaults to `1`).
-- `type` (String) Emulated CPU type, it's recommended to use `x86-64-v2-AES` or higher (defaults to `kvm64`). See https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings for more information.
-- `units` (Number) CPU weight for a VM. Argument is used in the kernel fair scheduler. The larger the number is, the more CPU time this VM gets. Number is relative to weights of all the other running VMs.
+- `limit` (Number) Limit of CPU usage. `0` means no limit (PVE default).
+- `numa` (Boolean) Enable NUMA topology emulation. Matches the PVE Processors → **Enable NUMA** checkbox.
+- `sockets` (Number) The number of CPU sockets (PVE defaults to `1` when unset).
+- `type` (String) Emulated CPU type, it's recommended to use `x86-64-v2-AES` or higher. See [the PVE admin guide](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for the full list of supported types.
+- `units` (Number) CPU weight for a VM. Argument is used in the kernel fair scheduler. The larger the number is, the more CPU time this VM gets. Number is relative to weights of all the other running VMs. On cgroup v2 `0` is a valid value meaning disable CPU share weighting.
+- `vcpus` (Number) Number of vCPUs started with the VM, bounded by `cores * sockets`. Matches the PVE Processors → **VCPUs** field. Leave unset to start with `cores * sockets` vCPUs. Requires PVE hotplug feature enabled to change at runtime.
 
 
 <a id="nestedatt--delete"></a>
@@ -367,7 +367,7 @@ Optional:
 
 Optional:
 
-- `balloon` (Number) Minimum guaranteed memory in MiB via balloon device. This is the floor amount of RAM that is always guaranteed to the VM. Setting to `0` disables the balloon driver entirely (defaults to `0`). 
+- `balloon` (Number) Minimum guaranteed memory in MiB via balloon device. This is the floor amount of RAM that is always guaranteed to the VM. Setting to `0` disables the balloon driver entirely. 
 
 **How it works:** The host can reclaim memory between `balloon` and `size` when under memory pressure. The VM is guaranteed to always have at least `balloon` MiB available.
 - `hugepages` (String) Enable hugepages for VM memory allocation. Hugepages can improve performance for memory-intensive workloads by reducing TLB misses. 
@@ -376,9 +376,9 @@ Optional:
 - `2` - Use 2 MiB hugepages
 - `1024` - Use 1 GiB hugepages
 - `any` - Use any available hugepage size
-- `keep_hugepages` (Boolean) Don't release hugepages when the VM shuts down. By default, hugepages are released back to the host when the VM stops. Setting this to `true` keeps them allocated for faster VM startup (defaults to `false`).
-- `shares` (Number) CPU scheduler priority for memory ballooning. This is used by the kernel fair scheduler. Higher values mean this VM gets more CPU time during memory ballooning operations. The value is relative to other running VMs (defaults to `1000`).
-- `size` (Number) Total memory available to the VM in MiB. This is the total RAM the VM can use. When ballooning is enabled (balloon > 0), memory between `balloon` and `size` can be reclaimed by the host. When ballooning is disabled (balloon = 0), this is the fixed amount of RAM allocated to the VM (defaults to `512` MiB).
+- `keep_hugepages` (Boolean) Don't release hugepages when the VM shuts down. By default, hugepages are released back to the host when the VM stops. Setting this to `true` keeps them allocated for faster VM startup.
+- `shares` (Number) CPU scheduler priority for memory ballooning. This is used by the kernel fair scheduler. Higher values mean this VM gets more CPU time during memory ballooning operations. The value is relative to other running VMs.
+- `size` (Number) Total memory available to the VM in MiB. This is the total RAM the VM can use. When ballooning is enabled (balloon > 0), memory between `balloon` and `size` can be reclaimed by the host. When ballooning is disabled (balloon = 0), this is the fixed amount of RAM allocated to the VM. Defaults to PVE's implicit `512` MiB when unset.
 
 
 <a id="nestedatt--network"></a>
@@ -403,8 +403,8 @@ Optional:
 
 Optional:
 
-- `max_bytes` (Number) Maximum bytes of entropy allowed to get injected into the guest every period. Use 0 to disable limiting (potentially dangerous).
-- `period` (Number) Period in milliseconds to limit entropy injection to the guest. Use 0 to disable limiting (potentially dangerous).
+- `max_bytes` (Number) Maximum bytes of entropy allowed to get injected into the guest every period.
+- `period` (Number) Period in milliseconds to limit entropy injection to the guest.
 - `source` (String) The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
 
 
