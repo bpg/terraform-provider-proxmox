@@ -516,7 +516,7 @@ func applyManaged(ctx context.Context, vmAPI *vms.Client, plan Model, currentCon
 
 	cdrom.FillCreateBody(ctx, plan.CDROM, updateBody, diags)
 	cpu.FillCreateBody(ctx, plan.CPU, updateBody, diags)
-	memory.FillUpdateBody(ctx, plan.Memory, updateBody, diags)
+	memory.FillCreateBody(ctx, plan.Memory, updateBody, diags)
 	rng.FillCreateBody(ctx, plan.RNG, updateBody, diags)
 	vga.FillCreateBody(ctx, plan.VGA, updateBody, diags)
 

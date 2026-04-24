@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
@@ -39,17 +38,15 @@ func ResourceSchema() schema.Attribute {
 			"The `size` sets the total available RAM, while `balloon` sets the guaranteed floor. " +
 			"The host can reclaim memory between these values when needed.",
 		Optional: true,
-		Computed: true,
 		Attributes: map[string]schema.Attribute{
 			"size": schema.Int64Attribute{
 				Description: "Total memory available to the VM in MiB. " +
 					"This is the total RAM the VM can use. When ballooning is enabled, memory between `balloon` and `size` can be reclaimed by the host.",
 				MarkdownDescription: "Total memory available to the VM in MiB. This is the total RAM the VM can use. " +
 					"When ballooning is enabled (balloon > 0), memory between `balloon` and `size` can be reclaimed by the host. " +
-					"When ballooning is disabled (balloon = 0), this is the fixed amount of RAM allocated to the VM (defaults to `512` MiB).",
+					"When ballooning is disabled (balloon = 0), this is the fixed amount of RAM allocated to the VM. " +
+					"Defaults to PVE's implicit `512` MiB when unset.",
 				Optional: true,
-				Computed: true,
-				Default:  int64default.StaticInt64(512),
 				Validators: []validator.Int64{
 					int64validator.Between(64, 268435456), // 64 MiB to 256 TiB
 				},
@@ -58,12 +55,10 @@ func ResourceSchema() schema.Attribute {
 				Description: "Minimum guaranteed memory in MiB via balloon device. " +
 					"The guaranteed amount of RAM. Set to 0 to disable balloon device.",
 				MarkdownDescription: "Minimum guaranteed memory in MiB via balloon device. This is the floor amount of RAM that is always " +
-					"guaranteed to the VM. Setting to `0` disables the balloon driver entirely (defaults to `0`). " +
+					"guaranteed to the VM. Setting to `0` disables the balloon driver entirely. " +
 					"\n\n**How it works:** The host can reclaim memory between `balloon` and `size` when under " +
 					"memory pressure. The VM is guaranteed to always have at least `balloon` MiB available.",
 				Optional: true,
-				Computed: true,
-				Default:  int64default.StaticInt64(0),
 				Validators: []validator.Int64{
 					int64validator.Between(0, 268435456), // 0 to 256 TiB
 				},
@@ -73,10 +68,8 @@ func ResourceSchema() schema.Attribute {
 					"Higher values give the VM more CPU time during memory pressure.",
 				MarkdownDescription: "CPU scheduler priority for memory ballooning. This is used by the " +
 					"kernel fair scheduler. Higher values mean this VM gets more CPU time during memory ballooning " +
-					"operations. The value is relative to other running VMs (defaults to `1000`).",
+					"operations. The value is relative to other running VMs.",
 				Optional: true,
-				Computed: true,
-				Default:  int64default.StaticInt64(1000),
 				Validators: []validator.Int64{
 					int64validator.Between(0, 50000),
 				},
@@ -90,7 +83,6 @@ func ResourceSchema() schema.Attribute {
 					"\n- `1024` - Use 1 GiB hugepages" +
 					"\n- `any` - Use any available hugepage size",
 				Optional: true,
-				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("2", "1024", "any"),
 				},
@@ -99,9 +91,8 @@ func ResourceSchema() schema.Attribute {
 				Description: "Keep hugepages allocated when VM is stopped.",
 				MarkdownDescription: "Don't release hugepages when the VM shuts down. By default, hugepages are " +
 					"released back to the host when the VM stops. Setting this to `true` keeps them allocated " +
-					"for faster VM startup (defaults to `false`).",
+					"for faster VM startup.",
 				Optional: true,
-				Computed: true,
 			},
 		},
 	}

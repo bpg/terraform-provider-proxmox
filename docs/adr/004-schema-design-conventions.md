@@ -207,6 +207,8 @@ The helpers `StringPtrFromValue`, `Int64PtrFromValue`, `Float64PtrFromValue`, an
 
 > **Note:** Custom attribute types (`customtypes.IPCIDRValue`, etc.) cannot use these helpers. For those, continue using `.ValueStringPointer()` directly.
 
+> **Write-through variant — when the API has no nested struct:** Some PVE endpoints scatter a logical group's fields across the top-level request body rather than nesting them under a dedicated struct (e.g. `memory`, `balloon`, `shares`, `hugepages`, `keephugepages` all live directly on the VM config endpoint). When there is no single struct to return, `toAPI` may take the request body and populate the relevant fields in place: `func (m *Model) toAPI(body *SomeRequestBody)`. Keep the verb (`toAPI`); the write-through shape is a side effect of the API's flatness, not a new pattern. See `fwprovider/nodes/vm/memory/model.go` for the reference.
+
 **`fromAPI()`** — API response to Terraform model. Use `types.*PointerValue()` so `nil` maps to null:
 
 ```go
