@@ -28,20 +28,22 @@ func TestAccResourceVM2CPU(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create VM with no cpu params", []resource.TestStep{{
+		// After dropping Optional+Computed at the block level, a VM with no cpu block has a null
+		// cpu attribute in state — no phantom cpu.cores=1 / cpu.sockets=1 / cpu.type=kvm64.
+		{"create VM with no cpu params — block stays null", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_vm" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-cpu"
 			}`),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
-					// default values that are set by PVE if not specified
-					"cpu.cores":   "1",
-					"cpu.sockets": "1",
-					"cpu.type":    "kvm64",
-				}),
-			),
+			Check: test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
+				"cpu.cores",
+				"cpu.numa",
+				"cpu.sockets",
+				"cpu.type",
+				"cpu.units",
+				"cpu.vcpus",
+			}),
 		}}},
 		{"create VM with some cpu params", []resource.TestStep{{
 			Config: te.RenderConfig(`
@@ -65,7 +67,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}),
 			),
 		}}},
-		{"create VM with all cpu params and then update them", []resource.TestStep{
+		{"create VM with cpu params and then update them", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_vm" "test_vm" {
@@ -75,24 +77,24 @@ func TestAccResourceVM2CPU(t *testing.T) {
 						# affinity = "0-1"          only root can set affinity
 						# architecture = "x86_64"   only root can set architecture
 						cores = 2
-						hotplugged = 2
 						limit = 63.5
 						numa = false
 						sockets = 2
 						type = "host"
 						units = 1024
+						vcpus = 2
 						flags = ["+aes"]
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
-						"cpu.cores":      "2",
-						"cpu.hotplugged": "2",
-						"cpu.limit":      "63.5",
-						"cpu.numa":       "false",
-						"cpu.sockets":    "2",
-						"cpu.type":       "host",
-						"cpu.units":      "1024",
+						"cpu.cores":   "2",
+						"cpu.limit":   "63.5",
+						"cpu.numa":    "false",
+						"cpu.sockets": "2",
+						"cpu.type":    "host",
+						"cpu.units":   "1024",
+						"cpu.vcpus":   "2",
 					}),
 				),
 			},
@@ -103,27 +105,25 @@ func TestAccResourceVM2CPU(t *testing.T) {
 					name = "test-cpu"
 					cpu = {
 						cores = 4
-						hotplugged = 2
-						limit = null     # setting to null is the same as removal
-						# numa = false
-						# sockets = 2    remove sockets, so it should fall back to 1 (PVE default)
-						# type = "host"  remove type, so it should fall back to kvm64 (PVE default)
+						# limit, numa, sockets, type, flags, vcpus all omitted — Optional-only means
+						# each one emits delete=<key> on the wire so PVE drops the prior value.
 						units = 2048
-						# flags = ["+aes"]
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
-						"cpu.cores":      "4",
-						"cpu.hotplugged": "2",
-						"cpu.sockets":    "1",     // default value, but it is a special case.
-						"cpu.type":       "kvm64", // default value, but it is a special case.
-						"cpu.units":      "2048",
+						"cpu.cores": "4",
+						"cpu.units": "2048",
 					}),
 					test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
-						"cpu.limit", // other defaults are not set in the state
+						// Legacy `sockets=1` / `type=kvm64` sentinels are gone by design
+						// (audit F20-F22). PVE only returns keys the user wrote.
+						"cpu.limit",
 						"cpu.numa",
+						"cpu.sockets",
+						"cpu.type",
 						"cpu.flags",
+						"cpu.vcpus",
 					}),
 				),
 			},
@@ -173,6 +173,77 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		// F24 regression — legacy FillUpdateBody line 190 had `IsDefined(plan.Sockets)` where
+		// it should have checked `plan.Limit`, so a plan that kept `limit` while leaving
+		// `sockets` null silently dropped the limit from the wire. The new per-field
+		// CheckDeleteBody + toAPI pipeline has no such cascade, so this scenario just has to
+		// round-trip a limit change without drift to prove the bug can't regress.
+		{"update cpu.limit without setting sockets (F24)", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-limit-no-sockets"
+					cpu = {
+						cores = 1
+						limit = 2.5
+					}
+				}`),
+				Check: test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
+					"cpu.limit": "2.5",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-limit-no-sockets"
+					cpu = {
+						cores = 1
+						limit = 5
+					}
+				}`),
+				Check: test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
+					"cpu.limit": "5",
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
+		// Verify block-level deletion: setting cpu then removing the whole block must emit
+		// per-field `delete=affinity|cores|cpulimit|sockets|cpuunits|cpu` on the PUT body. The
+		// resulting state has no cpu attributes set (block is null).
+		{"add cpu block then remove it", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-remove"
+					cpu = {
+						cores = 2
+						limit = 3
+					}
+				}`),
+				Check: test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
+					"cpu.cores": "2",
+					"cpu.limit": "3",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-remove"
+				}`),
+				Check: test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
+					"cpu.cores",
+					"cpu.limit",
+					"cpu.sockets",
+					"cpu.type",
+				}),
+			},
+		}},
 		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2353
 		{"create VM without cpu.units and verify no drift", []resource.TestStep{
 			{
@@ -211,7 +282,9 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
-		// regression test: CPU without type should not set CPUEmulation
+		// regression test: CPU without type should not set CPUEmulation — and since PVE only
+		// surfaces the config lines that were explicitly written (audit Section 4), a cpu
+		// block with only `cores` reads back with everything else null: no sockets, no type.
 		{"create VM with CPU cores only (no type) and verify no CPUEmulation error", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -224,9 +297,11 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
-						"cpu.cores":   "2",
-						"cpu.sockets": "1",
-						"cpu.type":    "kvm64",
+						"cpu.cores": "2",
+					}),
+					test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
+						"cpu.sockets",
+						"cpu.type",
 					}),
 				),
 			},

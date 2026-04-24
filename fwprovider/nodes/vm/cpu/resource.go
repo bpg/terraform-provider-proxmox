@@ -8,7 +8,6 @@ package cpu
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -16,64 +15,47 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Value represents the type for CPU settings.
 type Value = types.Object
 
 // NewValue returns a new Value with the given CPU settings from the PVE API.
+//
+// Returns NullValue() when none of the cpu-related keys are present on the config (block wholly
+// absent). Otherwise builds the Object via Model.fromAPI — cores/sockets are handled by the
+// Optional+Computed carve-out on those two attributes, so PVE's auto-populated `1` reconciles
+// into state without drift.
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
-	cpu := Model{}
-
-	cpu.Affinity = types.StringPointerValue(config.CPUAffinity)
-	cpu.Architecture = types.StringPointerValue(config.CPUArchitecture)
-	cpu.Hotplugged = types.Int64PointerValue(config.VirtualCPUCount)
-	cpu.Limit = types.Float64PointerValue(config.CPULimit.PointerFloat64())
-	cpu.Numa = types.BoolPointerValue(config.NUMAEnabled.PointerBool())
-	cpu.Units = types.Int64PointerValue(config.CPUUnits)
-
-	// special cases: PVE does not return actual value for cores VM, etc is using default (i.e. a value is not specified)
-
-	if config.CPUCores != nil {
-		cpu.Cores = types.Int64PointerValue(config.CPUCores)
-	} else {
-		cpu.Cores = types.Int64Value(1)
+	if config.CPUAffinity == nil &&
+		config.CPUArchitecture == nil &&
+		config.CPUCores == nil &&
+		config.CPUSockets == nil &&
+		config.CPULimit == nil &&
+		config.CPUUnits == nil &&
+		config.CPUEmulation == nil &&
+		config.NUMAEnabled == nil &&
+		config.VirtualCPUCount == nil {
+		return NullValue()
 	}
 
-	if config.CPUSockets != nil {
-		cpu.Sockets = types.Int64PointerValue(config.CPUSockets)
-	} else {
-		cpu.Sockets = types.Int64Value(1)
-	}
+	var m Model
 
-	if config.CPUEmulation != nil {
-		cpu.Type = types.StringValue(config.CPUEmulation.Type)
+	m.fromAPI(ctx, config, diags)
 
-		flags, d := types.SetValueFrom(ctx, basetypes.StringType{}, config.CPUEmulation.Flags)
-		diags.Append(d...)
-
-		cpu.Flags = flags
-	} else {
-		cpu.Type = types.StringValue("kvm64")
-		cpu.Flags = types.SetNull(basetypes.StringType{})
-	}
-
-	obj, d := types.ObjectValueFrom(ctx, attributeTypes(), cpu)
+	obj, d := types.ObjectValueFrom(ctx, attributeTypes(), m)
 	diags.Append(d...)
 
 	return obj
 }
 
-// FillCreateBody fills the CreateRequestBody with the CPU settings from the Value.
-//
-// In the 'create' context, v is the plan.
+// FillCreateBody fills the CreateRequestBody with the CPU settings from the plan Value.
 func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
-	var plan Model
-
 	if planValue.IsNull() || planValue.IsUnknown() {
 		return
 	}
+
+	var plan Model
 
 	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
 	diags.Append(d...)
@@ -82,175 +64,80 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 		return
 	}
 
-	// for computed fields, we need to check if they are unknown
-	if !plan.Affinity.IsUnknown() {
-		body.CPUAffinity = plan.Affinity.ValueStringPointer()
-	}
-
-	if !plan.Architecture.IsUnknown() {
-		body.CPUArchitecture = plan.Architecture.ValueStringPointer()
-	}
-
-	if !plan.Cores.IsUnknown() {
-		body.CPUCores = plan.Cores.ValueInt64Pointer()
-	}
-
-	if !plan.Limit.IsUnknown() {
-		body.CPULimit = plan.Limit.ValueFloat64Pointer()
-	}
-
-	if !plan.Sockets.IsUnknown() {
-		body.CPUSockets = plan.Sockets.ValueInt64Pointer()
-	}
-
-	if !plan.Units.IsUnknown() {
-		body.CPUUnits = plan.Units.ValueInt64Pointer()
-	}
-
-	if !plan.Numa.IsUnknown() {
-		body.NUMAEnabled = proxmoxtypes.CustomBoolPtr(plan.Numa.ValueBoolPointer())
-	}
-
-	if !plan.Hotplugged.IsUnknown() {
-		body.VirtualCPUCount = plan.Hotplugged.ValueInt64Pointer()
-	}
-
-	// Only set CPUEmulation if Type is explicitly provided
-	// Proxmox API requires CPU type to be specified if CPUEmulation is set
-	hasType := !plan.Type.IsUnknown() && !plan.Type.IsNull()
-
-	if hasType {
-		body.CPUEmulation = &vms.CustomCPUEmulation{}
-		body.CPUEmulation.Type = plan.Type.ValueString()
-
-		if !plan.Flags.IsUnknown() && !plan.Flags.IsNull() {
-			d = plan.Flags.ElementsAs(ctx, &body.CPUEmulation.Flags, false)
-			diags.Append(d...)
-		}
-	}
+	plan.toAPI(ctx, body, diags)
 }
 
-// FillUpdateBody fills the UpdateRequestBody with the CPU settings from the Value.
+// FillUpdateBody fills the UpdateRequestBody with the CPU settings diff from state → plan.
 //
-// In the 'update' context, v is the plan and stateValue is the current state.
+// Each scalar CPU field is an independent top-level PVE API key (`affinity`, `arch`, `cores`,
+// `cpulimit`, `sockets`, `cpuunits`), so deletion and population are per-field: when a
+// previously-set field is removed from the plan we emit `delete=<apiName>`, and when it is still
+// set we (re)send its value. The compound `cpu` key (CPUEmulation) is atomic — partial deletion
+// of just `flags` without `type` is rejected on the PVE side.
 func FillUpdateBody(
 	ctx context.Context,
 	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
 	diags *diag.Diagnostics,
 ) {
-	var plan, state Model
-
-	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {
-		return
-	}
-
-	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
-	d = stateValue.As(ctx, &state, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
+	plan := unpackOrEmpty(ctx, planValue, diags)
+	state := unpackOrEmpty(ctx, stateValue, diags)
 
 	if diags.HasError() {
 		return
 	}
 
-	var errs []error
+	// Per-field scalar deletions.
+	attribute.CheckDeleteBody(plan.Affinity, state.Affinity, updateBody, "affinity")
+	attribute.CheckDeleteBody(plan.Architecture, state.Architecture, updateBody, "arch")
+	attribute.CheckDeleteBody(plan.Cores, state.Cores, updateBody, "cores")
+	attribute.CheckDeleteBody(plan.Limit, state.Limit, updateBody, "cpulimit")
+	attribute.CheckDeleteBody(plan.Numa, state.Numa, updateBody, "numa")
+	attribute.CheckDeleteBody(plan.Sockets, state.Sockets, updateBody, "sockets")
+	attribute.CheckDeleteBody(plan.Units, state.Units, updateBody, "cpuunits")
+	attribute.CheckDeleteBody(plan.Vcpus, state.Vcpus, updateBody, "vcpus")
 
-	del := func(field string) {
-		errs = append(errs, updateBody.ToDelete(field))
+	// Compound CPUEmulation: delete when the user removes `type` (flags alone isn't valid). PVE
+	// rejects `cpu=...` without a cputype, so the block is all-or-nothing on the wire.
+	if attribute.IsDefined(state.Type) && !attribute.IsDefined(plan.Type) {
+		if attribute.IsDefined(plan.Flags) {
+			diags.AddError("Cannot have CPU flags without explicit definition of CPU type", "")
+
+			return
+		}
+
+		updateBody.AppendDelete("cpu")
 	}
 
-	if !plan.Affinity.Equal(state.Affinity) {
-		if attribute.ShouldBeRemoved(plan.Affinity, state.Affinity) {
-			del("CPUAffinity")
-		} else if attribute.IsDefined(plan.Affinity) {
-			updateBody.CPUAffinity = plan.Affinity.ValueStringPointer()
+	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {
+		return
+	}
+
+	plan.toAPI(ctx, updateBody, diags)
+}
+
+// unpackOrEmpty returns a Model decoded from the Object, or a Model with all-null fields when the
+// Object itself is null or unknown. Gives CheckDeleteBody a stable per-field view regardless of
+// whether the whole block is absent on one side.
+func unpackOrEmpty(ctx context.Context, value Value, diags *diag.Diagnostics) Model {
+	if value.IsNull() || value.IsUnknown() {
+		return Model{
+			Affinity:     types.StringNull(),
+			Architecture: types.StringNull(),
+			Cores:        types.Int64Null(),
+			Flags:        types.SetNull(basetypes.StringType{}),
+			Limit:        types.Float64Null(),
+			Numa:         types.BoolNull(),
+			Sockets:      types.Int64Null(),
+			Type:         types.StringNull(),
+			Units:        types.Int64Null(),
+			Vcpus:        types.Int64Null(),
 		}
 	}
 
-	if !plan.Architecture.Equal(state.Architecture) {
-		if attribute.ShouldBeRemoved(plan.Architecture, state.Architecture) {
-			del("CPUArchitecture")
-		} else if attribute.IsDefined(plan.Architecture) {
-			updateBody.CPUArchitecture = plan.Architecture.ValueStringPointer()
-		}
-	}
+	var m Model
 
-	if !plan.Cores.Equal(state.Cores) {
-		if attribute.ShouldBeRemoved(plan.Cores, state.Cores) {
-			del("CPUCores")
-		} else if attribute.IsDefined(plan.Cores) {
-			updateBody.CPUCores = plan.Cores.ValueInt64Pointer()
-		}
-	}
+	diags.Append(value.As(ctx, &m, basetypes.ObjectAsOptions{})...)
 
-	if !plan.Limit.Equal(state.Limit) {
-		if attribute.ShouldBeRemoved(plan.Limit, state.Limit) {
-			del("CPULimit")
-		} else if attribute.IsDefined(plan.Sockets) {
-			updateBody.CPULimit = plan.Limit.ValueFloat64Pointer()
-		}
-	}
-
-	if !plan.Sockets.Equal(state.Sockets) {
-		if attribute.ShouldBeRemoved(plan.Sockets, state.Sockets) {
-			del("CPUSockets")
-		} else if attribute.IsDefined(plan.Sockets) {
-			updateBody.CPUSockets = plan.Sockets.ValueInt64Pointer()
-		}
-	}
-
-	if !plan.Units.Equal(state.Units) {
-		if attribute.ShouldBeRemoved(plan.Units, state.Units) {
-			del("CPUUnits")
-		} else if attribute.IsDefined(plan.Units) {
-			updateBody.CPUUnits = plan.Units.ValueInt64Pointer()
-		}
-	}
-
-	if !plan.Numa.Equal(state.Numa) {
-		if attribute.ShouldBeRemoved(plan.Numa, state.Numa) {
-			del("NUMAEnabled")
-		} else if attribute.IsDefined(plan.Numa) {
-			updateBody.NUMAEnabled = proxmoxtypes.CustomBoolPtr(plan.Numa.ValueBoolPointer())
-		}
-	}
-
-	if !plan.Hotplugged.Equal(state.Hotplugged) {
-		if attribute.ShouldBeRemoved(plan.Hotplugged, state.Hotplugged) {
-			del("VirtualCPUCount")
-		} else if attribute.IsDefined(plan.Hotplugged) {
-			updateBody.VirtualCPUCount = plan.Hotplugged.ValueInt64Pointer()
-		}
-	}
-
-	var delType, delFlags bool
-
-	cpuEmulation := &vms.CustomCPUEmulation{}
-
-	if !plan.Type.Equal(state.Type) {
-		if attribute.ShouldBeRemoved(plan.Type, state.Type) {
-			delType = true
-		} else if attribute.IsDefined(plan.Type) {
-			cpuEmulation.Type = plan.Type.ValueString()
-		}
-	}
-
-	if !plan.Flags.Equal(state.Flags) {
-		if attribute.ShouldBeRemoved(plan.Flags, state.Flags) {
-			delFlags = true
-		} else if attribute.IsDefined(plan.Flags) {
-			d = plan.Flags.ElementsAs(ctx, &cpuEmulation.Flags, false)
-			diags.Append(d...)
-		}
-	}
-
-	switch {
-	case delType && !delFlags:
-		diags.AddError("Cannot have CPU flags without explicit definition of CPU type", "")
-	case delType:
-		del("CPUEmulation")
-	case !reflect.DeepEqual(cpuEmulation, &vms.CustomCPUEmulation{}):
-		updateBody.CPUEmulation = cpuEmulation
-	}
+	return m
 }
