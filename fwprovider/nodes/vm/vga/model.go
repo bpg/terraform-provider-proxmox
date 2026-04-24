@@ -9,6 +9,9 @@ package vga
 import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 )
 
 // Model represents the VGA model.
@@ -29,4 +32,15 @@ func attributeTypes() map[string]attr.Type {
 // NullValue returns a properly typed null Value.
 func NullValue() Value {
 	return types.ObjectNull(attributeTypes())
+}
+
+// toAPI builds the PVE wire struct from the plan-side Model. The `vga` PVE parameter is a
+// compound property, so subfields round-trip through a single key and omitempty in EncodeValues
+// clears anything the plan leaves null.
+func (m *Model) toAPI() *vms.CustomVGADevice {
+	return &vms.CustomVGADevice{
+		Clipboard: attribute.StringPtrFromValue(m.Clipboard),
+		Type:      attribute.StringPtrFromValue(m.Type),
+		Memory:    attribute.Int64PtrFromValue(m.Memory),
+	}
 }

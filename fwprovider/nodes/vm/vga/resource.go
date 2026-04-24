@@ -57,11 +57,7 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 		return
 	}
 
-	body.VGADevice = &vms.CustomVGADevice{
-		Clipboard: attribute.StringPtrFromValue(plan.Clipboard),
-		Type:      attribute.StringPtrFromValue(plan.Type),
-		Memory:    attribute.Int64PtrFromValue(plan.Memory),
-	}
+	body.VGADevice = plan.toAPI()
 }
 
 // FillUpdateBody fills the UpdateRequestBody with the VGA settings from the plan Value.
@@ -92,9 +88,5 @@ func FillUpdateBody(
 		return
 	}
 
-	updateBody.VGADevice = &vms.CustomVGADevice{
-		Clipboard: attribute.StringPtrFromValue(plan.Clipboard),
-		Type:      attribute.StringPtrFromValue(plan.Type),
-		Memory:    attribute.Int64PtrFromValue(plan.Memory),
-	}
+	updateBody.VGADevice = plan.toAPI()
 }
