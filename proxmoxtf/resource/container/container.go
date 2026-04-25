@@ -2344,7 +2344,11 @@ func containerGetExistingNetworkInterface(
 			networkInterface[mkNetworkInterfaceFirewall] = false
 		}
 
-		networkInterface[mkNetworkInterfaceHostManaged] = nv.HostManaged != nil && *nv.HostManaged
+		if nv.HostManaged != nil && *nv.HostManaged {
+			networkInterface[mkNetworkInterfaceHostManaged] = true
+		} else {
+			networkInterface[mkNetworkInterfaceHostManaged] = false
+		}
 
 		if nv.MACAddress != nil {
 			networkInterface[mkNetworkInterfaceMACAddress] = *nv.MACAddress
@@ -3060,7 +3064,11 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			networkInterface[mkNetworkInterfaceFirewall] = false
 		}
 
-		networkInterface[mkNetworkInterfaceHostManaged] = nv.HostManaged != nil && *nv.HostManaged
+		if nv.HostManaged != nil && *nv.HostManaged {
+			networkInterface[mkNetworkInterfaceHostManaged] = true
+		} else {
+			networkInterface[mkNetworkInterfaceHostManaged] = false
+		}
 
 		if nv.MACAddress != nil {
 			networkInterface[mkNetworkInterfaceMACAddress] = *nv.MACAddress
