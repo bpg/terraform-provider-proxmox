@@ -2039,7 +2039,7 @@ type vmPowerTracker struct {
 	rebootAfterUpdateWarningEmitted bool
 }
 
-// Ensure the VM is stopped. If it's running, shut it down.
+// EnsureStopped ensures the VM is stopped, shutting it down if it's running.
 func (t *vmPowerTracker) EnsureStopped(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
 	vmStatus, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
@@ -2072,7 +2072,7 @@ func (t *vmPowerTracker) EnsureStopped(ctx context.Context, vmAPI *vms.Client, d
 	return diags
 }
 
-// Ensure the VM is running. If it's stopped, start it.
+// EnsureRunning ensures the VM is running, starting it if it's stopped.
 func (t *vmPowerTracker) EnsureRunning(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
 	vmStatus, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
@@ -2695,7 +2695,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 	// Only set hotplug if explicitly configured, otherwise let PVE use its default
 	if hotplugValue, ok := d.GetOk(mkHotplug); ok {
-		updateBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplugValue.(string), ","))
+		updateBody.Hotplug = strings.Split(hotplugValue.(string), ",")
 	}
 
 	if keyboardLayout != dvKeyboardLayout {
@@ -3368,7 +3368,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 
 	// Only set hotplug if explicitly configured, otherwise let PVE use its default
 	if hotplugValue, ok := d.GetOk(mkHotplug); ok {
-		createBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplugValue.(string), ","))
+		createBody.Hotplug = strings.Split(hotplugValue.(string), ",")
 	}
 
 	if cpuLimit > 0 {
@@ -5959,7 +5959,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	if d.HasChange(mkHotplug) {
 		hotplug := d.Get(mkHotplug).(string)
 		if hotplug != "" {
-			updateBody.Hotplug = types.CustomCommaSeparatedList(strings.Split(hotplug, ","))
+			updateBody.Hotplug = strings.Split(hotplug, ",")
 		} else {
 			del = append(del, mkHotplug)
 		}

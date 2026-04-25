@@ -10,6 +10,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -101,7 +102,7 @@ func NewTestFileServer(t *testing.T) *TestFileServer {
 	}
 
 	go func() {
-		if err := s.server.Serve(listener); err != http.ErrServerClosed {
+		if err := s.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			t.Logf("HTTP server error: %v", err)
 		}
 	}()
@@ -254,7 +255,7 @@ func (s *TestFileServer) GetFileSHA256(path string) string {
 // Close shuts down the test server.
 func (s *TestFileServer) Close() {
 	if s.server != nil {
-		s.server.Close()
+		_ = s.server.Close()
 	}
 }
 
@@ -288,7 +289,7 @@ func detectLocalIPForPVE(t *testing.T) string {
 		return ""
 	}
 
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	localIP := conn.LocalAddr().(*net.UDPAddr).IP.String()
 	t.Logf("Auto-detected test file server IP: %s (route to %s)", localIP, pveHost)

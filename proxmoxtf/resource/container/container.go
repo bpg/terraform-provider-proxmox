@@ -3555,7 +3555,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 		currentMountOptions := containerConfig.RootFS.MountOptions
 
-		currentMountOptionsSorted := []string{}
+		var currentMountOptionsSorted []string
 		if currentMountOptions != nil {
 			currentMountOptionsSorted = append(currentMountOptionsSorted, *currentMountOptions...)
 		}

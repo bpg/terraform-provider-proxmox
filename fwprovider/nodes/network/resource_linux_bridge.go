@@ -513,7 +513,7 @@ func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteReq
 	}
 }
 
-//nolint:dupl
+//nolint:dupl // ImportState mirrors linux_vlan and linux_bond but is bound to a distinct resource type
 func (r *linuxBridgeResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,

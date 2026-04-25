@@ -163,7 +163,7 @@ func (r *OpenFabricResource) Schema(_ context.Context, _ resource.SchemaRequest,
 	}
 }
 
-func (r *OpenFabricResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+func (r *OpenFabricResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
 	return []resource.ConfigValidator{
 		resourcevalidator.AtLeastOneOf(
 			path.MatchRoot("ip_prefix"),
