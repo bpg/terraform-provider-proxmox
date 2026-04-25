@@ -2442,6 +2442,154 @@ func TestAccResourceContainerHostManaged(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerDiskOptionsAtCreate verifies that `acl`, `quota`, and `replicate`
+// from the `disk` block are sent on the initial create, not silently dropped and only repaired
+// by a subsequent update. Regression test for issue #2742.
+//
+// Uses a privileged container because `quota=1` is rejected by PVE on unprivileged containers.
+//
+//nolint:paralleltest
+func TestAccResourceContainerDiskOptionsAtCreate(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					disk {
+						datastore_id = "local-lvm"
+						size         = 8
+						acl          = true
+						quota        = true
+						replicate    = true
+					}
+					initialization {
+						hostname = "test-disk-options"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"disk.0.acl":       "true",
+						"disk.0.quota":     "true",
+						"disk.0.replicate": "true",
+						"disk.0.size":      "8",
+					}),
+					func(*terraform.State) error {
+						ctInfo, err := te.NodeClient().Container(accTestContainerID).GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.RootFS, "rootfs should not be nil")
+
+						require.NotNil(te.t, ctInfo.RootFS.ACL, "rootfs.acl should be set on the API after create")
+						require.True(te.t, bool(*ctInfo.RootFS.ACL), "rootfs.acl should be true on the API after create")
+
+						require.NotNil(te.t, ctInfo.RootFS.Quota, "rootfs.quota should be set on the API after create")
+						require.True(te.t, bool(*ctInfo.RootFS.Quota), "rootfs.quota should be true on the API after create")
+
+						require.NotNil(te.t, ctInfo.RootFS.Replicate, "rootfs.replicate should be set on the API after create")
+						require.True(te.t, bool(*ctInfo.RootFS.Replicate), "rootfs.replicate should be true on the API after create")
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+// TestAccResourceContainerDiskACLOnlyAtCreate verifies that `acl=true` is sent on create
+// even when `size` is the schema default and no mount points or mount options are set.
+// Catches the gating-condition bug in container.go where rootFS was only constructed when
+// `size != default || len(mountPoints) > 0 || len(diskMountOptions) > 0`. Regression test
+// for issue #2742.
+//
+//nolint:paralleltest
+func TestAccResourceContainerDiskACLOnlyAtCreate(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						acl          = true
+					}
+					initialization {
+						hostname = "test-disk-acl-only"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"disk.0.acl":  "true",
+						"disk.0.size": "4",
+					}),
+					func(*terraform.State) error {
+						ctInfo, err := te.NodeClient().Container(accTestContainerID).GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.RootFS, "rootfs should not be nil")
+
+						require.NotNil(te.t, ctInfo.RootFS.ACL, "rootfs.acl should be set on the API after create")
+						require.True(te.t, bool(*ctInfo.RootFS.ACL), "rootfs.acl should be true on the API after create")
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
 	t.Helper()
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
