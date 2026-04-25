@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.104.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.103.0...v0.104.0) (2026-04-25)
+
+
+### Features
+
+* **lxc:** add `host_managed` option for container networking ([#2812](https://github.com/bpg/terraform-provider-proxmox/issues/2812)) ([03dcffb](https://github.com/bpg/terraform-provider-proxmox/commit/03dcffbfc15eac84f8f8edfeb605f6bf483ad051))
+
+
+### Bug Fixes
+
+* **lxc:** apply disk acl/quota/replicate on container create ([#2824](https://github.com/bpg/terraform-provider-proxmox/issues/2824)) ([0d64b73](https://github.com/bpg/terraform-provider-proxmox/commit/0d64b73018a1698fa630e3958a24849dc20e4cce))
+* **vm:** stop re-emitting `format=` on existing `import_from` disks ([#2822](https://github.com/bpg/terraform-provider-proxmox/issues/2822)) ([edfdac6](https://github.com/bpg/terraform-provider-proxmox/commit/edfdac61e99ad2e4474a3fdf9bd06062fb840a28))
+* **vm:** treat missing disk volume as not-found during read ([#2821](https://github.com/bpg/terraform-provider-proxmox/issues/2821)) ([07cd772](https://github.com/bpg/terraform-provider-proxmox/commit/07cd77256451af736a07af3439e4480a2267caaf))
+
+
+### Miscellaneous
+
+* **ci:** Update googleapis/release-please-action action (v4.4.1 → v5) ([#2820](https://github.com/bpg/terraform-provider-proxmox/issues/2820)) ([c607cbc](https://github.com/bpg/terraform-provider-proxmox/commit/c607cbcb01923bc7a7119b5e4b20ce91992fefbe))
+* **ci:** update goreleaser/goreleaser-action action (v7.0.0 → v7.1.0) ([#2823](https://github.com/bpg/terraform-provider-proxmox/issues/2823)) ([4d86ada](https://github.com/bpg/terraform-provider-proxmox/commit/4d86ada87f875905af03b3cdf814d8af0a9c9b79))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#2819](https://github.com/bpg/terraform-provider-proxmox/issues/2819)) ([65e1e16](https://github.com/bpg/terraform-provider-proxmox/commit/65e1e164eb214d10249dadaf0bb8101ca7ad481d))
+* **deps:** update image golang (5f3787b → 1e598ea) ([#2818](https://github.com/bpg/terraform-provider-proxmox/issues/2818)) ([4e2d74e](https://github.com/bpg/terraform-provider-proxmox/commit/4e2d74e42154bf4b941f8a432f972e466d0cedd0))
+* **vm2:** add design for VM Plugin Framework migration ([d824227](https://github.com/bpg/terraform-provider-proxmox/commit/d824227aed86a89b2f2415af69b6d344bd82a6aa))
+* **vm2:** audit VM resource implementation ([#2810](https://github.com/bpg/terraform-provider-proxmox/issues/2810)) ([618e0cb](https://github.com/bpg/terraform-provider-proxmox/commit/618e0cb357297c7c77b0778d2483cb3a0969b812))
+* **vm2:** mark PR [#1](https://github.com/bpg/terraform-provider-proxmox/issues/1) merged in tracker ([8624144](https://github.com/bpg/terraform-provider-proxmox/commit/862414482b0d94ca5c56211d834b26dbda85990b))
+
 ## [0.103.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.102.0...v0.103.0) (2026-04-18)
 
 
