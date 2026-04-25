@@ -1,4 +1,30 @@
 {
+  "$schema": "https://context7.com/schema/context7.json",
   "url": "https://context7.com/bpg/terraform-provider-proxmox",
-  "public_key": "pk_tymNsCV65HsqZ9CWs6XGi"
+  "public_key": "pk_tymNsCV65HsqZ9CWs6XGi",
+  "projectTitle": "Terraform Provider for Proxmox VE",
+  "description": "Terraform/OpenTofu provider for managing Proxmox Virtual Environment — VMs, LXC containers, networking, storage, SDN, firewall, and more.",
+  "folders": ["docs"],
+  "excludeFolders": [
+    ".dev",
+    "build",
+    "cache",
+    "dist",
+    "example",
+    "examples",
+    "fwprovider",
+    "proxmox",
+    "proxmoxtf",
+    "templates",
+    "tmp",
+    "utils"
+  ],
+  "excludeFiles": ["AGENTS.md", "CLAUDE.md", "CONTRIBUTORS.md", "GEMINI.md"],
+  "rules": [
+    "Provider source is `bpg/proxmox` in `required_providers` — not the unmaintained `danitso/proxmox` fork it descends from.",
+    "Newer resources use the short `proxmox_<name>` prefix; legacy resources use `proxmox_virtual_environment_<name>`. Both ship in the same provider binary.",
+    "Prefer API token auth (`api_token`) over username/password. Some resources (file uploads, certain VM/LXC operations) additionally require an `ssh` block on the provider.",
+    "For VMs with `started = true`, attach a bootable disk (e.g. cloud image) first, and set `stop_on_destroy = true` so Terraform can destroy running VMs.",
+    "Target Proxmox VE 9.x. PVE 8.x mostly works but is not actively tested; PVE 7.x is unsupported."
+  ]
 }
