@@ -73,6 +73,11 @@ func TestClientDoRequest(t *testing.T) {
 				Message: "create sdn zone object failed: 400 Parameter verification failed. (ipam: ipam-simple not existing)",
 			},
 		},
+		{
+			name:    "not exists - 500 status with rbd ENOENT",
+			status:  "500 rbd error: rbd: error opening image vm-97854-disk-0: (2) No such file or directory",
+			wantErr: ErrResourceDoesNotExist,
+		},
 	}
 
 	for _, tt := range tests {

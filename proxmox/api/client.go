@@ -368,7 +368,8 @@ func validateResponseCode(res *http.Response) error {
 				(strings.Contains(res.Status, "does not exist") ||
 					strings.Contains(msg, "does not exist") ||
 					strings.Contains(msg, "no such resource") ||
-					strings.Contains(msg, "no such ha"))) {
+					strings.Contains(msg, "no such ha") ||
+					strings.Contains(msg, "No such file or directory"))) {
 			return errors.Join(ErrResourceDoesNotExist, httpError)
 		}
 
