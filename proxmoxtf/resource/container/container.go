@@ -2019,13 +2019,35 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		}
 	}
 
+	diskACL := types.CustomBool(diskBlock[mkDiskACL].(bool))
+	diskQuota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
+	diskReplicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
 	diskSize := diskBlock[mkDiskSize].(int)
-	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0 || len(diskMountOptions) > 0) {
+
+	if diskDatastoreID != "" && (diskSize != dvDiskSize ||
+		len(mountPoints) > 0 ||
+		len(diskMountOptions) > 0 ||
+		bool(diskACL) ||
+		bool(diskQuota) ||
+		bool(diskReplicate)) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
 			Volume:       fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
 			MountOptions: &diskMountOptions,
+		}
+
+		// Only emit non-default values, matching the mount-point block convention above.
+		if diskACL {
+			rootFS.ACL = &diskACL
+		}
+
+		if diskQuota {
+			rootFS.Quota = &diskQuota
+		}
+
+		if diskReplicate {
+			rootFS.Replicate = &diskReplicate
 		}
 	}
 
