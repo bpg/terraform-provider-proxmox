@@ -395,6 +395,14 @@ func (d CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 
 // Equals compares two CustomStorageDevice instances to determine if they are equal.
 // It compares all fields that could trigger an update.
+//
+// ImportFrom is intentionally excluded: PVE does not echo back the import-from
+// qualifier in its config response, so a freshly-read disk always has
+// ImportFrom=nil while the plan disk still carries the user's value. Comparing
+// it would mark every unchanged imported disk as "changed" on subsequent
+// applies and route it through the update path, silently re-emitting other
+// fields PVE had normalised away (e.g. format=qcow2 derived from the file
+// extension). See https://github.com/bpg/terraform-provider-proxmox/issues/2813.
 func (d *CustomStorageDevice) Equals(other *CustomStorageDevice) bool {
 	if d == nil || other == nil {
 		return false
@@ -408,7 +416,6 @@ func (d *CustomStorageDevice) Equals(other *CustomStorageDevice) bool {
 		ptr.Eq(d.Cache, other.Cache) &&
 		ptr.Eq(d.DatastoreID, other.DatastoreID) &&
 		ptr.Eq(d.Discard, other.Discard) &&
-		ptr.Eq(d.ImportFrom, other.ImportFrom) &&
 		ptr.Eq(d.IOThread, other.IOThread) &&
 		ptr.Eq(d.IopsRead, other.IopsRead) &&
 		ptr.Eq(d.IopsWrite, other.IopsWrite) &&
