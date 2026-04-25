@@ -930,7 +930,7 @@ func Container() *schema.Resource {
 						},
 						mkNetworkInterfaceHostManaged: {
 							Type:        schema.TypeBool,
-							Description: "Whether the host runs DHCP on this interface's behalf. Requires Proxmox VE 9.0+.",
+							Description: "Whether the host runs DHCP on this interface's behalf. Requires Proxmox VE 9.1+.",
 							Optional:    true,
 							Default:     dvNetworkInterfaceHostManaged,
 						},
@@ -2311,7 +2311,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 	return append(diags, containerRead(ctx, d, m)...)
 }
 
-// supportContainerHostManaged probes the cluster version to gate the host-managed flag (PVE 9.0+).
+// supportContainerHostManaged probes the cluster version to gate the host-managed flag (PVE 9.1+).
 // On older releases callers must elide host-managed=0 because the API rejects the unknown sub-key.
 func supportContainerHostManaged(ctx context.Context, client proxmox.Client) bool {
 	ver := version.MinimumProxmoxVersion
