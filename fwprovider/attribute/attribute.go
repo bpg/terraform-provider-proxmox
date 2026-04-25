@@ -37,11 +37,6 @@ func ResourceID(desc ...string) schema.StringAttribute {
 	return a
 }
 
-// ShouldBeRemoved evaluates if an attribute should be removed during update.
-func ShouldBeRemoved(plan attr.Value, state attr.Value) bool {
-	return !IsDefined(plan) && IsDefined(state)
-}
-
 // IsDefined returns true if attribute is known and not null.
 func IsDefined(v attr.Value) bool {
 	return !v.IsNull() && !v.IsUnknown()

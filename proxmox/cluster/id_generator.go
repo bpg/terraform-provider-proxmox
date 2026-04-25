@@ -116,7 +116,8 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 		func() (*int, error) {
 			if g.config.RandomIDs {
 				//nolint:gosec
-				newID = new(rand.Intn(g.config.RandomIDEnd-g.config.RandomIDStat) + g.config.RandomIDStat)
+				randomID := rand.Intn(g.config.RandomIDEnd-g.config.RandomIDStat) + g.config.RandomIDStat
+				newID = &randomID
 			} else if newID == nil {
 				newID, err = nextSequentialID(g.config.seqFName)
 				if err != nil {
@@ -160,5 +161,7 @@ func nextSequentialID(seqFName string) (*int, error) {
 		return nil, fmt.Errorf("unable to parse the ID generator file: %w", err)
 	}
 
-	return new(id + 1), nil
+	nextID := id + 1
+
+	return &nextID, nil
 }

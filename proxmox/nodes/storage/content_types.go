@@ -6,8 +6,6 @@
 
 package storage
 
-import "slices"
-
 // Content type constants for Proxmox VE datastores.
 const (
 	ContentTypeBackup   = "backup"   // VM backups
@@ -30,11 +28,6 @@ func ValidContentTypes() []string {
 		ContentTypeSnippets,
 		ContentTypeVZTmpl,
 	}
-}
-
-// IsValidContentType checks if the given content type is valid.
-func IsValidContentType(contentType string) bool {
-	return slices.Contains(ValidContentTypes(), contentType)
 }
 
 // DatastoreFileListRequestBody contains the request parameters for listing datastore files.

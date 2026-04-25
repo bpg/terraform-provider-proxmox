@@ -191,13 +191,14 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 }
 
 // TestDiskDevicesEqual tests the disk Equals method to ensure proper comparison.
-// noinspection:GoDfaNilDereference // verifying nil receiver handling
 func TestDiskDevicesEqual(t *testing.T) {
 	t.Parallel()
 
-	// Test nil cases
+	// Test nil cases — verifying nil receiver handling.
 	var nilDisk *vms.CustomStorageDevice
+	//noinspection GoDfaNilDereference
 	require.False(t, nilDisk.Equals(nil))
+	//noinspection GoDfaNilDereference
 	require.False(t, nilDisk.Equals(&vms.CustomStorageDevice{}))
 	require.False(t, (&vms.CustomStorageDevice{}).Equals(nil))
 

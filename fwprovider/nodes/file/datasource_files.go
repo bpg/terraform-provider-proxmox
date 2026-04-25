@@ -61,7 +61,7 @@ func NewListDataSource() datasource.DataSource {
 // Metadata defines the name of the data source.
 func (d *listDatasource) Metadata(
 	_ context.Context,
-	req datasource.MetadataRequest,
+	_ datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
 ) {
 	resp.TypeName = "proxmox_files"

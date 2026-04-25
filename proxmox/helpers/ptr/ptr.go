@@ -11,13 +11,6 @@ import (
 	"strconv"
 )
 
-// Ptr creates a ptr from a value to use it inline.
-//
-// Deprecated: Use the built-in new(value) instead (Go 1.26+).
-func Ptr[T any](val T) *T {
-	return new(val)
-}
-
 // ParseIntPtr parses a string to int and returns a pointer, with contextual error.
 func ParseIntPtr(s, fieldName string) (*int, error) {
 	iv, err := strconv.Atoi(s)

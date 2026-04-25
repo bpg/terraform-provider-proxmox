@@ -210,9 +210,9 @@ func (r *realmSyncResource) Update(
 }
 
 func (r *realmSyncResource) Delete(
-	ctx context.Context,
-	req resource.DeleteRequest,
-	resp *resource.DeleteResponse,
+	_ context.Context,
+	_ resource.DeleteRequest,
+	_ *resource.DeleteResponse,
 ) {
 	// Sync is a one-shot operation; there is nothing to delete remotely.
 	// Terraform will simply drop this resource from state.

@@ -75,7 +75,7 @@ func (m *genericModel) handleDeletedIPCIDRValue(value *string) customtypes.IPCID
 	return customtypes.NewIPCIDRValue(*value)
 }
 
-func checkDeletedFields(state, plan *genericModel) []string {
+func checkDeletedFields(_, _ *genericModel) []string {
 	var toDelete []string
 
 	return toDelete
