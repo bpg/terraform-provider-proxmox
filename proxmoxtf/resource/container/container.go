@@ -930,7 +930,7 @@ func Container() *schema.Resource {
 						},
 						mkNetworkInterfaceHostManaged: {
 							Type:        schema.TypeBool,
-							Description: "Whether the host runs DHCP on this interface's behalf.",
+							Description: "Whether the host runs DHCP on this interface's behalf. Requires Proxmox VE 9.0+.",
 							Optional:    true,
 							Default:     dvNetworkInterfaceHostManaged,
 						},

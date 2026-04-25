@@ -236,8 +236,8 @@ output "ubuntu_container_public_key" {
     - `firewall` - (Optional) Whether this interface's firewall rules should be
         used (defaults to `false`).
     - `host_managed` - (Optional) Whether the host runs DHCP on this interface's
-        behalf (defaults to `false`). Required for application containers that
-        do not include a DHCP client.
+        behalf (defaults to `false`). Requires Proxmox VE 9.0+. Required for
+        application containers that do not include a DHCP client.
     - `mac_address` - (Optional) The MAC address.
     - `mtu` - (Optional) Maximum transfer unit of the interface. Cannot be
         larger than the bridge's MTU.
