@@ -32,13 +32,12 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          PR_NUMBER=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.number // empty')
-          if [ -z "$PR_NUMBER" ]; then
+          PR_JSON='${{ steps.release.outputs.pr }}'
+          BRANCH=$(echo "$PR_JSON" | jq -r '.headBranchName // empty')
+          if [ -z "$BRANCH" ]; then
             echo "No release PR JSON in outputs; skipping"
             exit 0
           fi
-
-          BRANCH=$(gh pr view "$PR_NUMBER" --json headRefName -q .headRefName)
           REPO="${{ github.repository }}"
 
           git clone --branch "$BRANCH" --depth 2 \
