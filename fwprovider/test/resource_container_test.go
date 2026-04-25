@@ -2328,6 +2328,120 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerHostManaged covers create-with-true and the true→false toggle on update.
+// The toggle step is the regression check: it only converges if the provider sends `host-managed=0`.
+// Requires Proxmox VE 9.0+.
+func TestAccResourceContainerHostManaged(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-host-managed"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name         = "eth0"
+						bridge       = "vmbr0"
+						host_managed = true
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"network_interface.0.host_managed": "true",
+					}),
+					func(*terraform.State) error {
+						ctInfo, err := te.NodeClient().Container(accTestContainerID).GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						net0, ok := ctInfo.NetworkInterfaces["net0"]
+						require.True(te.t, ok, `"net0" interface not found`)
+						require.NotNil(te.t, net0.HostManaged, "host-managed should be present on the API after create")
+						require.True(te.t, bool(*net0.HostManaged), "host-managed should be 1 on the API after create")
+
+						return nil
+					},
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-host-managed"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name         = "eth0"
+						bridge       = "vmbr0"
+						host_managed = false
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"network_interface.0.host_managed": "false",
+					}),
+					func(*terraform.State) error {
+						ctInfo, err := te.NodeClient().Container(accTestContainerID).GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						net0, ok := ctInfo.NetworkInterfaces["net0"]
+						require.True(te.t, ok, `"net0" interface not found`)
+						// PVE <9 omits the key entirely; only assert when present.
+						if net0.HostManaged != nil {
+							require.False(te.t, bool(*net0.HostManaged), "host-managed should be 0 on the API after toggle to false")
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
 	t.Helper()
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{

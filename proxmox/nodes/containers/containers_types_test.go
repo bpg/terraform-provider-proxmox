@@ -9,13 +9,10 @@ package containers
 import (
 	"encoding/json"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 func TestCustomLXCConfig_UnmarshalJSON(t *testing.T) {
@@ -170,8 +167,8 @@ func TestCustomNetworkInterface_HostManaged(t *testing.T) {
 		input string
 		want  *bool // nil = absent, else expected value
 	}{
-		{"host-managed=1", `"name=eth0,bridge=vmbr0,host-managed=1"`, ptr.Ptr(true)},
-		{"host-managed=0", `"name=eth0,bridge=vmbr0,host-managed=0"`, ptr.Ptr(false)},
+		{"host-managed=1", `"name=eth0,bridge=vmbr0,host-managed=1"`, new(true)},
+		{"host-managed=0", `"name=eth0,bridge=vmbr0,host-managed=0"`, new(false)},
 		{"flag absent", `"name=eth0,bridge=vmbr0"`, nil},
 	}
 
@@ -198,7 +195,8 @@ func TestCustomNetworkInterface_HostManaged(t *testing.T) {
 			if *tc.want {
 				expected = "host-managed=1"
 			}
-			assert.True(t, strings.Contains(encoded, expected),
+
+			assert.Contains(t, encoded, expected,
 				"expected EncodeValues output %q to contain %q", encoded, expected)
 		})
 	}

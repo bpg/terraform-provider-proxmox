@@ -30,6 +30,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	sdkresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
@@ -1579,6 +1580,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		len(networkInterface),
 	)
 
+	hostManagedSupported := supportContainerHostManaged(ctx, client)
+
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]any)
 		networkInterfaceObject := containers.CustomNetworkInterface{}
@@ -1602,7 +1605,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		networkInterfaceObject.Enabled = enabled
 		networkInterfaceObject.Firewall = &firewall
 
-		if hostManaged {
+		if hostManagedSupported || hostManaged {
 			networkInterfaceObject.HostManaged = types.CustomBool(hostManaged).Pointer()
 		}
 
@@ -2029,6 +2032,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 	networkInterface := d.Get(mkNetworkInterface).([]any)
 	networkInterfaces := make(containers.CustomNetworkInterfaces, len(networkInterface))
 
+	hostManagedSupported := supportContainerHostManaged(ctx, client)
+
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]any)
 		networkInterfaceObject := containers.CustomNetworkInterface{}
@@ -2072,7 +2077,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 			networkInterfaceObject.Firewall = types.CustomBool(firewall).Pointer()
 		}
 
-		if hostManaged {
+		if hostManagedSupported || hostManaged {
 			networkInterfaceObject.HostManaged = types.CustomBool(hostManaged).Pointer()
 		}
 
@@ -2282,6 +2287,17 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 	}
 
 	return append(diags, containerRead(ctx, d, m)...)
+}
+
+// supportContainerHostManaged probes the cluster version to gate the host-managed flag (PVE 9.0+).
+// On older releases callers must elide host-managed=0 because the API rejects the unknown sub-key.
+func supportContainerHostManaged(ctx context.Context, client proxmox.Client) bool {
+	ver := version.MinimumProxmoxVersion
+	if versionResp, err := client.Version().Version(ctx); err == nil {
+		ver = versionResp.Version
+	}
+
+	return ver.SupportContainerHostManaged()
 }
 
 func containerGetEnvironmentVariables(d *schema.ResourceData) *containers.CustomEnvironmentVariables {
@@ -3766,6 +3782,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			len(networkInterface),
 		)
 
+		hostManagedSupported := supportContainerHostManaged(ctx, client)
+
 		for ni, nv := range networkInterface {
 			networkInterfaceMap := nv.(map[string]any)
 			networkInterfaceObject := containers.CustomNetworkInterface{}
@@ -3789,7 +3807,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			networkInterfaceObject.Enabled = enabled
 			networkInterfaceObject.Firewall = &firewall
 
-			if hostManaged {
+			if hostManagedSupported || hostManaged {
 				networkInterfaceObject.HostManaged = types.CustomBool(hostManaged).Pointer()
 			}
 
