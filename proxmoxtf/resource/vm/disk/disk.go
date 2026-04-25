@@ -636,6 +636,13 @@ func Update(
 				}
 				// update existing disk
 				tmp = currentDisks[iface]
+				// Never re-emit format= for an existing volume. UnmarshalJSON
+				// derives Format from the file extension when PVE omits the
+				// qualifier (which it does for normalised volumes), so leaving
+				// it set would persist `format=qcow2` onto the stored config
+				// and produce out-of-plan changes whenever this disk is routed
+				// through the update path for any reason — see issue #2813.
+				tmp.Format = nil
 			default:
 				// something went wrong
 				diags = append(diags, diag.FromErr(fmt.Errorf("missing device %s", iface))...)

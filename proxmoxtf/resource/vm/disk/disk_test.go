@@ -252,7 +252,11 @@ func TestDiskDevicesEqual(t *testing.T) {
 	}
 	require.False(t, disk1.Equals(disk2SizeChanged))
 
-	// Test different ImportFrom values
+	// ImportFrom is excluded from Equals because PVE does not echo it back in
+	// its config response. Two disks that differ only in ImportFrom (including
+	// the common case where one side reflects the API and has nil) must be
+	// treated as equal, otherwise unchanged imported disks get re-emitted on
+	// every subsequent apply. See issue #2813.
 	importFrom2Changed := "local:import/test2.qcow2"
 	disk2ImportFromChanged := &vms.CustomStorageDevice{
 		AIO:         &aio2,
@@ -261,7 +265,15 @@ func TestDiskDevicesEqual(t *testing.T) {
 		ImportFrom:  &importFrom2Changed,
 		DatastoreID: &datastore2,
 	}
-	require.False(t, disk1.Equals(disk2ImportFromChanged))
+	require.True(t, disk1.Equals(disk2ImportFromChanged))
+
+	disk2ImportFromNil := &vms.CustomStorageDevice{
+		AIO:         &aio2,
+		Cache:       &cache2,
+		Size:        size2,
+		DatastoreID: &datastore2,
+	}
+	require.True(t, disk1.Equals(disk2ImportFromNil))
 }
 
 // TestDiskUpdateSkipsUnchangedDisks tests that the Update function only updates changed disks.

@@ -15,6 +15,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -1496,6 +1497,186 @@ func TestAccResourceVMDiskCloneNFSResize(t *testing.T) {
 			},
 		},
 	})
+}
+
+// TestAccResourceVMDiskAddDoesNotMutateImportedDisks is a regression test for
+// https://github.com/bpg/terraform-provider-proxmox/issues/2813. When a new
+// disk is added to a VM that already has an `import_from` disk on file-based
+// storage, the existing disk's stored config must not be silently rewritten.
+//
+// The bug: CustomStorageDevice.Equals() compared ImportFrom, but PVE never
+// echoes import-from back in its config response. After the initial create the
+// freshly-read disk has ImportFrom=nil while the plan disk still has it set,
+// so Equals returned false and Update routed the unchanged imported disk
+// through the update path, re-emitting `format=qcow2` derived from the .qcow2
+// file extension. PVE then persisted the qualifier on the existing volume,
+// even though the Terraform plan only mentioned the new disk.
+//
+// Requires NFS (or any file-based) storage so the imported volume has a
+// `.qcow2` extension, which is what makes the bug observable in the raw config.
+func TestAccResourceVMDiskAddDoesNotMutateImportedDisks(t *testing.T) {
+	nfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NFS_DATASTORE_ID")
+	if nfsDatastoreID == "" {
+		t.Skip("NFS storage is not available")
+	}
+
+	t.Parallel()
+
+	te := InitEnvironment(t)
+	te.AddTemplateVars(map[string]any{"NFSDatastoreID": nfsDatastoreID})
+
+	var beforeScsi0 string
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create VM with one import_from disk on NFS.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "test_image_2813" {
+					content_type        = "import"
+					datastore_id        = "local"
+					node_name           = "{{.NodeName}}"
+					url                 = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+					file_name           = "{{.TestName}}-2813-image.img.raw"
+					overwrite_unmanaged = true
+				}
+				resource "proxmox_virtual_environment_vm" "test_2813" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-add-2813"
+
+					disk {
+						datastore_id = "{{.NFSDatastoreID}}"
+						import_from  = proxmox_virtual_environment_download_file.test_image_2813.id
+						interface    = "scsi0"
+						file_format  = "qcow2"
+						size         = 6
+					}
+				}`),
+				Check: func(s *terraform.State) error {
+					vmID, err := vmIDFromState(s, "proxmox_virtual_environment_vm.test_2813")
+					if err != nil {
+						return err
+					}
+
+					raw, err := fetchRawStorageDevices(t.Context(), te, vmID)
+					if err != nil {
+						return fmt.Errorf("fetching raw config (before): %w", err)
+					}
+
+					beforeScsi0 = raw["scsi0"]
+					if beforeScsi0 == "" {
+						return fmt.Errorf("scsi0 missing from raw config: %v", raw)
+					}
+
+					return nil
+				},
+			},
+			{
+				// Step 2: Add scsi1. The plan must show scsi1 added; the
+				// stored config of scsi0 must remain byte-identical.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "test_image_2813" {
+					content_type        = "import"
+					datastore_id        = "local"
+					node_name           = "{{.NodeName}}"
+					url                 = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+					file_name           = "{{.TestName}}-2813-image.img.raw"
+					overwrite_unmanaged = true
+				}
+				resource "proxmox_virtual_environment_vm" "test_2813" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-add-2813"
+
+					disk {
+						datastore_id = "{{.NFSDatastoreID}}"
+						import_from  = proxmox_virtual_environment_download_file.test_image_2813.id
+						interface    = "scsi0"
+						file_format  = "qcow2"
+						size         = 6
+					}
+
+					disk {
+						datastore_id = "{{.NFSDatastoreID}}"
+						interface    = "scsi1"
+						file_format  = "qcow2"
+						size         = 1
+					}
+				}`),
+				Check: func(s *terraform.State) error {
+					vmID, err := vmIDFromState(s, "proxmox_virtual_environment_vm.test_2813")
+					if err != nil {
+						return err
+					}
+
+					raw, err := fetchRawStorageDevices(t.Context(), te, vmID)
+					if err != nil {
+						return fmt.Errorf("fetching raw config (after): %w", err)
+					}
+
+					if afterScsi0 := raw["scsi0"]; afterScsi0 != beforeScsi0 {
+						return fmt.Errorf(
+							"scsi0 stored config was mutated by adding sibling scsi1\n  before: %q\n  after:  %q",
+							beforeScsi0, afterScsi0,
+						)
+					}
+
+					return nil
+				},
+			},
+		},
+	})
+}
+
+func vmIDFromState(s *terraform.State, name string) (int, error) {
+	rs, ok := s.RootModule().Resources[name]
+	if !ok {
+		return 0, fmt.Errorf("resource %s not found in state", name)
+	}
+
+	vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+	if err != nil {
+		return 0, fmt.Errorf("parsing vm_id: %w", err)
+	}
+
+	return vmID, nil
+}
+
+// fetchRawStorageDevices issues a low-level GET against
+// /nodes/{node}/qemu/{vmid}/config and returns the raw scsi*/virtio*/sata*/ide*
+// strings as PVE persists them, bypassing the provider's CustomStorageDevices
+// parsing. This is the only way to detect the issue #2813 symptom — the
+// parsed struct's Format field is `"qcow2"` regardless of whether the
+// qualifier was explicit (`format=qcow2`) or merely derived from the
+// `.qcow2` file extension.
+func fetchRawStorageDevices(ctx context.Context, te *Environment, vmID int) (map[string]string, error) {
+	vm := te.NodeClient().VM(vmID)
+
+	var resBody struct {
+		Data map[string]any `json:"data,omitempty"`
+	}
+
+	if err := vm.DoRequest(ctx, http.MethodGet, vm.ExpandPath("config"), nil, &resBody); err != nil {
+		return nil, err
+	}
+
+	raw := map[string]string{}
+
+	for k, v := range resBody.Data {
+		s, ok := v.(string)
+		if !ok {
+			continue
+		}
+
+		if strings.HasPrefix(k, "scsi") || strings.HasPrefix(k, "virtio") ||
+			strings.HasPrefix(k, "sata") || strings.HasPrefix(k, "ide") {
+			raw[k] = s
+		}
+	}
+
+	return raw, nil
 }
 
 func TestAccResourceVMDiskRemovalReuseIssue2218(t *testing.T) {
