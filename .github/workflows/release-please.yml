@@ -27,6 +27,49 @@ jobs:
         with:
           token: "${{ steps.app-token.outputs.token }}"
 
+      - name: Sync context7.json on release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          PR_NUMBER=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.number // empty')
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No release PR JSON in outputs; skipping"
+            exit 0
+          fi
+
+          BRANCH=$(gh pr view "$PR_NUMBER" --json headRefName -q .headRefName)
+          REPO="${{ github.repository }}"
+
+          git clone --branch "$BRANCH" --depth 2 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" pr-checkout
+          cd pr-checkout
+
+          NEW_VERSION=$(awk -F= '/^VERSION=/ { gsub(/[^0-9.]/, "", $2); print $2; exit }' Makefile)
+          if [ -z "$NEW_VERSION" ]; then
+            echo "Could not parse VERSION from Makefile; skipping"
+            exit 0
+          fi
+
+          jq --arg t "v$NEW_VERSION" --arg ver "$NEW_VERSION" \
+            '.previousVersions[0].tag = $t | .previousVersions[0].title = $ver' \
+            context7.json > context7.json.tmp
+          mv context7.json.tmp context7.json
+
+          if git diff --quiet context7.json; then
+            echo "context7.json already at v$NEW_VERSION"
+            exit 0
+          fi
+
+          APP_SLUG=$(gh api /app --jq .slug)
+          APP_ID=$(gh api /app --jq .id)
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${APP_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+
+          git add context7.json
+          git commit -s -m "chore: bump context7.json to v$NEW_VERSION"
+          git push origin "$BRANCH"
+
       - name: Checkout
         if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

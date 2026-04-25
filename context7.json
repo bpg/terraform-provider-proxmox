@@ -20,6 +20,12 @@
     "utils"
   ],
   "excludeFiles": ["AGENTS.md", "CLAUDE.md", "CONTRIBUTORS.md", "GEMINI.md"],
+  "previousVersions": [
+    {
+      "tag": "v0.104.0",
+      "title": "0.104.0"
+    }
+  ],
   "rules": [
     "Provider source is `bpg/proxmox` in `required_providers` — not the unmaintained `danitso/proxmox` fork it descends from.",
     "Newer resources use the short `proxmox_<name>` prefix; legacy resources use `proxmox_virtual_environment_<name>`. Both ship in the same provider binary.",
