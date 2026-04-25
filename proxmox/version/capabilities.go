@@ -24,3 +24,9 @@ func (v *ProxmoxVersion) SupportImportContentType() bool {
 func (v *ProxmoxVersion) SupportModernAptSources() bool {
 	return v.GreaterThanOrEqual(version.Must(version.NewVersion("9.0.0")))
 }
+
+// SupportContainerHostManaged checks if the Proxmox version supports the `host-managed` flag on LXC network interfaces.
+// PVE 9.0+ accepts the flag; older releases reject the unknown sub-key.
+func (v *ProxmoxVersion) SupportContainerHostManaged() bool {
+	return v.GreaterThanOrEqual(version.Must(version.NewVersion("9.0.0")))
+}

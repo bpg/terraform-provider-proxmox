@@ -30,6 +30,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	sdkresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
@@ -82,6 +83,7 @@ const (
 	dvNetworkInterfaceBridge            = "vmbr0"
 	dvNetworkInterfaceEnabled           = true
 	dvNetworkInterfaceFirewall          = false
+	dvNetworkInterfaceHostManaged       = false
 	dvNetworkInterfaceRateLimit         = 0
 	dvNetworkInterfaceVLANID            = 0
 	dvNetworkInterfaceMTU               = 0
@@ -181,6 +183,7 @@ const (
 	mkNetworkInterfaceBridge            = "bridge"
 	mkNetworkInterfaceEnabled           = "enabled"
 	mkNetworkInterfaceFirewall          = "firewall"
+	mkNetworkInterfaceHostManaged       = "host_managed"
 	mkNetworkInterfaceMACAddress        = "mac_address"
 	mkNetworkInterfaceName              = "name"
 	mkNetworkInterfaceRateLimit         = "rate_limit"
@@ -925,6 +928,12 @@ func Container() *schema.Resource {
 							Optional:    true,
 							Default:     dvNetworkInterfaceFirewall,
 						},
+						mkNetworkInterfaceHostManaged: {
+							Type:        schema.TypeBool,
+							Description: "Whether the host runs DHCP on this interface's behalf. Requires Proxmox VE 9.0+.",
+							Optional:    true,
+							Default:     dvNetworkInterfaceHostManaged,
+						},
 						mkNetworkInterfaceMACAddress: {
 							Type:        schema.TypeString,
 							Description: "The MAC address",
@@ -1571,6 +1580,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		len(networkInterface),
 	)
 
+	hostManagedSupported := supportContainerHostManaged(ctx, client)
+
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]any)
 		networkInterfaceObject := containers.CustomNetworkInterface{}
@@ -1580,6 +1591,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		firewall := types.CustomBool(
 			networkInterfaceMap[mkNetworkInterfaceFirewall].(bool),
 		)
+		hostManaged := networkInterfaceMap[mkNetworkInterfaceHostManaged].(bool)
 		macAddress := networkInterfaceMap[mkNetworkInterfaceMACAddress].(string)
 		name := networkInterfaceMap[mkNetworkInterfaceName].(string)
 		rateLimit := networkInterfaceMap[mkNetworkInterfaceRateLimit].(float64)
@@ -1592,6 +1604,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 
 		networkInterfaceObject.Enabled = enabled
 		networkInterfaceObject.Firewall = &firewall
+
+		if hostManagedSupported || hostManaged {
+			networkInterfaceObject.HostManaged = types.CustomBool(hostManaged).Pointer()
+		}
 
 		if len(initializationIPConfigIPv4Address) > ni {
 			if initializationIPConfigIPv4Address[ni] != "" {
@@ -2016,6 +2032,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 	networkInterface := d.Get(mkNetworkInterface).([]any)
 	networkInterfaces := make(containers.CustomNetworkInterfaces, len(networkInterface))
 
+	hostManagedSupported := supportContainerHostManaged(ctx, client)
+
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]any)
 		networkInterfaceObject := containers.CustomNetworkInterface{}
@@ -2028,6 +2046,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		vlanID := networkInterfaceMap[mkNetworkInterfaceVLANID].(int)
 		mtu := networkInterfaceMap[mkNetworkInterfaceMTU].(int)
 		firewall := networkInterfaceMap[mkNetworkInterfaceFirewall].(bool)
+		hostManaged := networkInterfaceMap[mkNetworkInterfaceHostManaged].(bool)
 
 		if bridge != "" {
 			networkInterfaceObject.Bridge = &bridge
@@ -2056,6 +2075,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 		if firewall {
 			networkInterfaceObject.Firewall = types.CustomBool(firewall).Pointer()
+		}
+
+		if hostManagedSupported || hostManaged {
+			networkInterfaceObject.HostManaged = types.CustomBool(hostManaged).Pointer()
 		}
 
 		if macAddress != "" {
@@ -2266,6 +2289,17 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 	return append(diags, containerRead(ctx, d, m)...)
 }
 
+// supportContainerHostManaged probes the cluster version to gate the host-managed flag (PVE 9.0+).
+// On older releases callers must elide host-managed=0 because the API rejects the unknown sub-key.
+func supportContainerHostManaged(ctx context.Context, client proxmox.Client) bool {
+	ver := version.MinimumProxmoxVersion
+	if versionResp, err := client.Version().Version(ctx); err == nil {
+		ver = versionResp.Version
+	}
+
+	return ver.SupportContainerHostManaged()
+}
+
 func containerGetEnvironmentVariables(d *schema.ResourceData) *containers.CustomEnvironmentVariables {
 	envVarsRaw := d.Get(mkEnvironmentVariables).(map[string]any)
 	if len(envVarsRaw) == 0 {
@@ -2308,6 +2342,12 @@ func containerGetExistingNetworkInterface(
 			networkInterface[mkNetworkInterfaceFirewall] = true
 		} else {
 			networkInterface[mkNetworkInterfaceFirewall] = false
+		}
+
+		if nv.HostManaged != nil && *nv.HostManaged {
+			networkInterface[mkNetworkInterfaceHostManaged] = true
+		} else {
+			networkInterface[mkNetworkInterfaceHostManaged] = false
 		}
 
 		if nv.MACAddress != nil {
@@ -3022,6 +3062,12 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			networkInterface[mkNetworkInterfaceFirewall] = true
 		} else {
 			networkInterface[mkNetworkInterfaceFirewall] = false
+		}
+
+		if nv.HostManaged != nil && *nv.HostManaged {
+			networkInterface[mkNetworkInterfaceHostManaged] = true
+		} else {
+			networkInterface[mkNetworkInterfaceHostManaged] = false
 		}
 
 		if nv.MACAddress != nil {
@@ -3744,6 +3790,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			len(networkInterface),
 		)
 
+		hostManagedSupported := supportContainerHostManaged(ctx, client)
+
 		for ni, nv := range networkInterface {
 			networkInterfaceMap := nv.(map[string]any)
 			networkInterfaceObject := containers.CustomNetworkInterface{}
@@ -3753,6 +3801,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			firewall := types.CustomBool(
 				networkInterfaceMap[mkNetworkInterfaceFirewall].(bool),
 			)
+			hostManaged := networkInterfaceMap[mkNetworkInterfaceHostManaged].(bool)
 			macAddress := networkInterfaceMap[mkNetworkInterfaceMACAddress].(string)
 			name := networkInterfaceMap[mkNetworkInterfaceName].(string)
 			rateLimit := networkInterfaceMap[mkNetworkInterfaceRateLimit].(float64)
@@ -3765,6 +3814,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 			networkInterfaceObject.Enabled = enabled
 			networkInterfaceObject.Firewall = &firewall
+
+			if hostManagedSupported || hostManaged {
+				networkInterfaceObject.HostManaged = types.CustomBool(hostManaged).Pointer()
+			}
 
 			if len(initializationIPConfigIPv4Address) > ni {
 				if initializationIPConfigIPv4Address[ni] != "" {

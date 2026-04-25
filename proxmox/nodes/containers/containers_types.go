@@ -124,20 +124,21 @@ type CustomMountPoints map[string]*CustomMountPoint
 
 // CustomNetworkInterface contains the values for the "net[n]" properties.
 type CustomNetworkInterface struct {
-	Bridge      *string           `json:"bridge,omitempty"   url:"bridge,omitempty"`
-	Enabled     bool              `json:"-"                  url:"-"`
-	Firewall    *types.CustomBool `json:"firewall,omitempty" url:"firewall,omitempty,int"`
-	IPv4Address *string           `json:"ip,omitempty"       url:"ip,omitempty"`
-	IPv4Gateway *string           `json:"gw,omitempty"       url:"gw,omitempty"`
-	IPv6Address *string           `json:"ip6,omitempty"      url:"ip6,omitempty"`
-	IPv6Gateway *string           `json:"gw6,omitempty"      url:"gw6,omitempty"`
-	MACAddress  *string           `json:"hwaddr,omitempty"   url:"hwaddr,omitempty"`
-	MTU         *int              `json:"mtu,omitempty"      url:"mtu,omitempty"`
-	Name        string            `json:"name"               url:"name"`
-	RateLimit   *float64          `json:"rate,omitempty"     url:"rate,omitempty"`
-	Tag         *int              `json:"tag,omitempty"      url:"tag,omitempty"`
-	Trunks      *[]int            `json:"trunks,omitempty"   url:"trunks,omitempty"`
-	Type        *string           `json:"type,omitempty"     url:"type,omitempty"`
+	Bridge      *string           `json:"bridge,omitempty"       url:"bridge,omitempty"`
+	Enabled     bool              `json:"-"                      url:"-"`
+	Firewall    *types.CustomBool `json:"firewall,omitempty"     url:"firewall,omitempty,int"`
+	HostManaged *types.CustomBool `json:"host-managed,omitempty" url:"host-managed,omitempty,int"`
+	IPv4Address *string           `json:"ip,omitempty"           url:"ip,omitempty"`
+	IPv4Gateway *string           `json:"gw,omitempty"           url:"gw,omitempty"`
+	IPv6Address *string           `json:"ip6,omitempty"          url:"ip6,omitempty"`
+	IPv6Gateway *string           `json:"gw6,omitempty"          url:"gw6,omitempty"`
+	MACAddress  *string           `json:"hwaddr,omitempty"       url:"hwaddr,omitempty"`
+	MTU         *int              `json:"mtu,omitempty"          url:"mtu,omitempty"`
+	Name        string            `json:"name"                   url:"name"`
+	RateLimit   *float64          `json:"rate,omitempty"         url:"rate,omitempty"`
+	Tag         *int              `json:"tag,omitempty"          url:"tag,omitempty"`
+	Trunks      *[]int            `json:"trunks,omitempty"       url:"trunks,omitempty"`
+	Type        *string           `json:"type,omitempty"         url:"type,omitempty"`
 }
 
 // CustomPassthroughDevices is a map of CustomPassthroughDevice per passthrough device ID (i.e. `dev0`).
@@ -575,6 +576,14 @@ func (r *CustomNetworkInterface) EncodeValues(
 		}
 	}
 
+	if r.HostManaged != nil {
+		if *r.HostManaged {
+			values = append(values, "host-managed=1")
+		} else {
+			values = append(values, "host-managed=0")
+		}
+	}
+
 	if r.IPv4Address != nil {
 		values = append(values, fmt.Sprintf("ip=%s", *r.IPv4Address))
 	}
@@ -919,6 +928,8 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 				r.Bridge = &v[1]
 			case "firewall":
 				r.Firewall = types.CustomBool(v[1] == "1").Pointer()
+			case "host-managed":
+				r.HostManaged = types.CustomBool(v[1] == "1").Pointer()
 			case "gw":
 				r.IPv4Gateway = &v[1]
 			case "gw6":
