@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
@@ -414,12 +415,21 @@ func Read(
 				// disk format may not be returned by config API if it is default for the storage, and that may be different
 				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
 				volume, e := client.Node(nodeName).Storage(datastoreID).GetDatastoreFile(ctx, dd.FileVolume)
-				if e != nil {
+
+				switch {
+				case errors.Is(e, api.ErrResourceDoesNotExist):
+					// Underlying volume is gone (e.g. interrupted destroy left an orphan disk reference).
+					// Skip the format lookup so plan/destroy can proceed instead of fataling.
+					tflog.Warn(ctx, "disk volume not found in storage, skipping format lookup", map[string]any{
+						"datastore": datastoreID,
+						"volume":    dd.FileVolume,
+					})
+				case e != nil:
 					diags = append(diags, diag.FromErr(e)...)
 					continue
+				default:
+					disk[mkDiskFileFormat] = volume.FileFormat
 				}
-
-				disk[mkDiskFileFormat] = volume.FileFormat
 			}
 		} else {
 			disk[mkDiskFileFormat] = dd.Format

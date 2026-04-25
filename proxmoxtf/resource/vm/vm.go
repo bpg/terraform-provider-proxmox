@@ -4737,9 +4737,18 @@ func vmReadCustom(
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
 			volume, err := client.Node(nodeName).Storage(fileIDParts[0]).GetDatastoreFile(ctx, vmConfig.EFIDisk.FileVolume)
-			if err != nil {
+
+			switch {
+			case errors.Is(err, api.ErrResourceDoesNotExist):
+				// Underlying volume is gone (e.g. interrupted destroy left an orphan disk reference).
+				// Skip the format lookup so plan/destroy can proceed instead of fataling.
+				tflog.Warn(ctx, "EFI disk volume not found in storage, skipping format lookup", map[string]any{
+					"datastore": fileIDParts[0],
+					"volume":    vmConfig.EFIDisk.FileVolume,
+				})
+			case err != nil:
 				diags = append(diags, diag.FromErr(err)...)
-			} else {
+			default:
 				efiDisk[mkEFIDiskFileFormat] = volume.FileFormat
 			}
 		}
