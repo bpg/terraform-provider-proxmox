@@ -133,3 +133,48 @@ func CheckDeleteBody[B DeleteAppender](planField, stateField attr.Value, body B,
 		body.AppendDelete(apiName)
 	}
 }
+
+// StringValueFromPtr returns a types.String from a *string, returning an empty string for nil.
+func StringValueFromPtr(p *string) types.String {
+	if p == nil {
+		return types.StringValue("")
+	}
+
+	return types.StringValue(*p)
+}
+
+// Int64ValueFromPtr returns a types.Int64 from a *int64, returning 0 for nil.
+func Int64ValueFromPtr(p *int64) types.Int64 {
+	if p == nil {
+		return types.Int64Value(0)
+	}
+
+	return types.Int64Value(*p)
+}
+
+// Float64ValueFromPtr returns a types.Float64 from a *float64, returning 0 for nil.
+func Float64ValueFromPtr(p *float64) types.Float64 {
+	if p == nil {
+		return types.Float64Value(0)
+	}
+
+	return types.Float64Value(*p)
+}
+
+// BoolValueFromPtr returns a types.Bool from a *bool, returning false for nil.
+func BoolValueFromPtr(p *bool) types.Bool {
+	if p == nil {
+		return types.BoolValue(false)
+	}
+
+	return types.BoolValue(*p)
+}
+
+// BoolValueFromCustomBoolPtr returns a types.Bool from a *proxmoxtypes.CustomBool, returning false for nil.
+func BoolValueFromCustomBoolPtr(p *proxmoxtypes.CustomBool) types.Bool {
+	if p == nil {
+		return types.BoolValue(false)
+	}
+
+	return p.ToValue()
+}

@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/replications"
@@ -135,12 +136,12 @@ func (d *replicationsDataSource) Read(ctx context.Context, req datasource.ReadRe
 			ID:        types.StringValue(repl.ID),
 			Target:    types.StringValue(repl.Target),
 			Type:      types.StringValue(repl.Type),
-			Comment:   types.StringPointerValue(repl.Comment),
-			Disable:   types.BoolPointerValue(repl.Disable.PointerBool()),
-			Rate:      types.Float64PointerValue(repl.Rate),
-			RemoveJob: types.StringPointerValue(repl.RemoveJob),
-			Schedule:  types.StringPointerValue(repl.Schedule),
-			Source:    types.StringPointerValue(repl.Source),
+			Comment:   attribute.StringValueFromPtr(repl.Comment),
+			Disable:   attribute.BoolValueFromCustomBoolPtr(repl.Disable),
+			Rate:      attribute.Float64ValueFromPtr(repl.Rate),
+			RemoveJob: attribute.StringValueFromPtr(repl.RemoveJob),
+			Schedule:  attribute.StringValueFromPtr(repl.Schedule),
+			Source:    attribute.StringValueFromPtr(repl.Source),
 			Guest:     types.Int64Value(repl.Guest),
 			JobNum:    types.Int64Value(repl.JobNum),
 		}

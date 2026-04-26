@@ -9,6 +9,7 @@ package hardware
 import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/hardware"
 )
 
@@ -55,47 +56,19 @@ func pciDeviceFromAPI(d *hardware.PCIDeviceData) pciDevice {
 		Vendor:     types.StringValue(d.Vendor),
 	}
 
-	if d.DeviceName != nil {
-		m.DeviceName = types.StringValue(*d.DeviceName)
-	} else {
-		m.DeviceName = types.StringValue("")
-	}
+	m.DeviceName = attribute.StringValueFromPtr(d.DeviceName)
 
-	if d.VendorName != nil {
-		m.VendorName = types.StringValue(*d.VendorName)
-	} else {
-		m.VendorName = types.StringValue("")
-	}
+	m.VendorName = attribute.StringValueFromPtr(d.VendorName)
 
-	if d.SubsystemDevice != nil {
-		m.SubsystemDevice = types.StringValue(*d.SubsystemDevice)
-	} else {
-		m.SubsystemDevice = types.StringValue("")
-	}
+	m.SubsystemDevice = attribute.StringValueFromPtr(d.SubsystemDevice)
 
-	if d.SubsystemDeviceName != nil {
-		m.SubsystemDeviceName = types.StringValue(*d.SubsystemDeviceName)
-	} else {
-		m.SubsystemDeviceName = types.StringValue("")
-	}
+	m.SubsystemDeviceName = attribute.StringValueFromPtr(d.SubsystemDeviceName)
 
-	if d.SubsystemVendor != nil {
-		m.SubsystemVendor = types.StringValue(*d.SubsystemVendor)
-	} else {
-		m.SubsystemVendor = types.StringValue("")
-	}
+	m.SubsystemVendor = attribute.StringValueFromPtr(d.SubsystemVendor)
 
-	if d.SubsystemVendorName != nil {
-		m.SubsystemVendorName = types.StringValue(*d.SubsystemVendorName)
-	} else {
-		m.SubsystemVendorName = types.StringValue("")
-	}
+	m.SubsystemVendorName = attribute.StringValueFromPtr(d.SubsystemVendorName)
 
-	if d.MediatedDevices != nil {
-		m.MediatedDevices = types.BoolPointerValue(d.MediatedDevices.PointerBool())
-	} else {
-		m.MediatedDevices = types.BoolValue(false)
-	}
+	m.MediatedDevices = attribute.BoolValueFromCustomBoolPtr(d.MediatedDevices)
 
 	return m
 }

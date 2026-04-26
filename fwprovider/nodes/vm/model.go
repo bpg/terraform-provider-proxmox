@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
@@ -92,20 +93,11 @@ func readForDatasource(ctx context.Context, client proxmox.Client, model *Dataso
 	model.Status = types.StringValue(status.Status)
 	model.Tags = stringset.NewValueString(config.Tags, diags)
 
-	model.Description = types.StringValue("")
-	if config.Description != nil {
-		model.Description = types.StringValue(*config.Description)
-	}
+	model.Description = attribute.StringValueFromPtr(config.Description)
 
-	model.Name = types.StringValue("")
-	if config.Name != nil {
-		model.Name = types.StringValue(*config.Name)
-	}
+	model.Name = attribute.StringValueFromPtr(config.Name)
 
-	model.Template = types.BoolValue(false)
-	if config.Template != nil {
-		model.Template = config.Template.ToValue()
-	}
+	model.Template = attribute.BoolValueFromCustomBoolPtr(config.Template)
 
 	model.CPU = cpu.NewValue(ctx, config, diags)
 	model.RNG = rng.NewValue(ctx, config, diags)

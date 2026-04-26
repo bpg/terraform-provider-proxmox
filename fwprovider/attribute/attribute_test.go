@@ -17,6 +17,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // fakeBody is a minimal DeleteAppender used by CheckDeleteBody tests.
@@ -133,4 +134,134 @@ func TestCheckDeleteBody_AppendsInOrder(t *testing.T) {
 	attribute.CheckDeleteBody(types.StringNull(), types.StringValue("b"), body, "third")
 
 	assert.Equal(t, []string{"first", "third"}, body.deletes)
+}
+
+func TestStringValueFromPtr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		val  *string
+		want string
+	}{
+		{"nil", nil, ""},
+		{"zero", new(string), ""},
+		{"non-empty", new("hello"), "hello"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := attribute.StringValueFromPtr(tt.val)
+			if got.ValueString() != tt.want {
+				t.Errorf("StringValueFromPtr() = %q, want %q", got.ValueString(), tt.want)
+			}
+		})
+	}
+}
+
+func TestInt64ValueFromPtr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		val  *int64
+		want int64
+	}{
+		{"nil", nil, 0},
+		{"zero", new(int64), 0},
+		{"positive", new(int64(42)), 42},
+		{"negative", new(int64(-1)), -1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := attribute.Int64ValueFromPtr(tt.val)
+			if got.ValueInt64() != tt.want {
+				t.Errorf("Int64ValueFromPtr() = %d, want %d", got.ValueInt64(), tt.want)
+			}
+		})
+	}
+}
+
+func TestFloat64ValueFromPtr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		val  *float64
+		want float64
+	}{
+		{"nil", nil, 0},
+		{"zero", new(float64), 0},
+		{"positive", new(3.14), 3.14},
+		{"negative", new(-2.5), -2.5},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := attribute.Float64ValueFromPtr(tt.val)
+			if got.ValueFloat64() != tt.want {
+				t.Errorf("Float64ValueFromPtr() = %f, want %f", got.ValueFloat64(), tt.want)
+			}
+		})
+	}
+}
+
+func TestBoolValueFromPtr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		val  *bool
+		want bool
+	}{
+		{"nil", nil, false},
+		{"false", new(bool), false},
+		{"true", new(true), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := attribute.BoolValueFromPtr(tt.val)
+			if got.ValueBool() != tt.want {
+				t.Errorf("BoolValueFromPtr() = %t, want %t", got.ValueBool(), tt.want)
+			}
+		})
+	}
+}
+
+func TestBoolValueFromCustomBoolPtr(t *testing.T) {
+	t.Parallel()
+
+	trueVal := proxmoxtypes.CustomBool(true)
+	falseVal := proxmoxtypes.CustomBool(false)
+
+	tests := []struct {
+		name string
+		val  *proxmoxtypes.CustomBool
+		want bool
+	}{
+		{"nil", nil, false},
+		{"false", &falseVal, false},
+		{"true", &trueVal, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := attribute.BoolValueFromCustomBoolPtr(tt.val)
+			if got.ValueBool() != tt.want {
+				t.Errorf("BoolValueFromCustomBoolPtr() = %t, want %t", got.ValueBool(), tt.want)
+			}
+		})
+	}
 }
