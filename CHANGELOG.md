@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.104.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.104.0...v0.104.1) (2026-04-27)
+
+
+### Bug Fixes
+
+* **ci:** derive bot identity from app-slug output, not /app endpoint ([b801d67](https://github.com/bpg/terraform-provider-proxmox/commit/b801d67a21100832aeadb3911b13b70c709767d5))
+* **ci:** read release PR branch from action output, not gh pr view ([52565bb](https://github.com/bpg/terraform-provider-proxmox/commit/52565bbba6f3b082fa05f9bbc6bd589961e16b58))
+* **lxc:** gate `host_managed` on PVE 9.1+, not 9.0+ ([#2828](https://github.com/bpg/terraform-provider-proxmox/issues/2828)) ([d348aed](https://github.com/bpg/terraform-provider-proxmox/commit/d348aed3f980ce5d56eb22d1112e51fac9d16361))
+
+
+### Miscellaneous
+
+* **ci:** update goreleaser/goreleaser-action action (v7.1.0 → v7.2.1) ([#2831](https://github.com/bpg/terraform-provider-proxmox/issues/2831)) ([2506f61](https://github.com/bpg/terraform-provider-proxmox/commit/2506f6132e7fc21e0d092be2d75e562d270e5471))
+* **code:** address Qodana code-quality findings ([#2827](https://github.com/bpg/terraform-provider-proxmox/issues/2827)) ([b0e08d7](https://github.com/bpg/terraform-provider-proxmox/commit/b0e08d72137bb2d391735c1928325602f40b7bb4))
+* **core:** add nil-safe helpers for nil to value conversion ([#2829](https://github.com/bpg/terraform-provider-proxmox/issues/2829)) ([03493e9](https://github.com/bpg/terraform-provider-proxmox/commit/03493e988bd0cd51b5ae698faea0286d34c1a2a8))
+* **deps:** update image golang (1e598ea → b54cbf5) ([#2830](https://github.com/bpg/terraform-provider-proxmox/issues/2830)) ([16c2280](https://github.com/bpg/terraform-provider-proxmox/commit/16c228053938f6dd1741690b63a5f9da83bdf21d))
+* **docs:** configure context7.json indexing with version sync ([ac70974](https://github.com/bpg/terraform-provider-proxmox/commit/ac7097469ee598315f7fe2d8ac8b7dcfeb96efa4))
+
 ## [0.104.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.103.0...v0.104.0) (2026-04-25)
 
 
