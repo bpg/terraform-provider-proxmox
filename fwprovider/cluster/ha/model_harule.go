@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	harules "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/rules"
 )
 
@@ -59,11 +60,7 @@ func (m *RuleModel) ImportFromAPI(rule harules.HARuleGetResponseData) diag.Diagn
 			m.Nodes = types.MapNull(types.Int64Type)
 		}
 
-		if rule.Strict != nil {
-			m.Strict = rule.Strict.ToValue()
-		} else {
-			m.Strict = types.BoolValue(false)
-		}
+		m.Strict = attribute.BoolValueFromCustomBoolPtr(rule.Strict)
 
 		m.Affinity = types.StringNull()
 

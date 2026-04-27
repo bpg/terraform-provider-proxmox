@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
@@ -121,11 +122,11 @@ func (d *vnetsDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	for i, vnet := range vnetsList {
 		vnetData := vnetDataModel{
 			ID:           types.StringValue(vnet.ID),
-			Zone:         types.StringPointerValue(vnet.Zone),
-			Alias:        types.StringPointerValue(vnet.Alias),
-			IsolatePorts: types.BoolPointerValue(vnet.IsolatePorts.PointerBool()),
-			Tag:          types.Int64PointerValue(vnet.Tag),
-			VlanAware:    types.BoolPointerValue(vnet.VlanAware.PointerBool()),
+			Zone:         attribute.StringValueFromPtr(vnet.Zone),
+			Alias:        attribute.StringValueFromPtr(vnet.Alias),
+			IsolatePorts: attribute.BoolValueFromCustomBoolPtr(vnet.IsolatePorts),
+			Tag:          attribute.Int64ValueFromPtr(vnet.Tag),
+			VlanAware:    attribute.BoolValueFromCustomBoolPtr(vnet.VlanAware),
 		}
 
 		objValue, objDiag := types.ObjectValueFrom(ctx, map[string]attr.Type{

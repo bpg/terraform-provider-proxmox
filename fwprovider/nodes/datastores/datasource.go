@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -104,15 +105,15 @@ func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			datastore.ContentTypes = stringset.NewValueList(*ds.ContentTypes, &resp.Diagnostics)
 		}
 
-		datastore.Active = types.BoolPointerValue(ds.Active.PointerBool())
-		datastore.Enabled = types.BoolPointerValue(ds.Enabled.PointerBool())
+		datastore.Active = attribute.BoolValueFromCustomBoolPtr(ds.Active)
+		datastore.Enabled = attribute.BoolValueFromCustomBoolPtr(ds.Enabled)
 		datastore.ID = types.StringValue(ds.ID)
 		datastore.NodeName = types.StringValue(model.NodeName.ValueString())
-		datastore.Shared = types.BoolPointerValue(ds.Shared.PointerBool())
-		datastore.SpaceAvailable = types.Int64PointerValue(ds.SpaceAvailable.PointerInt64())
-		datastore.SpaceTotal = types.Int64PointerValue(ds.SpaceTotal.PointerInt64())
-		datastore.SpaceUsed = types.Int64PointerValue(ds.SpaceUsed.PointerInt64())
-		datastore.SpaceUsedFraction = types.Float64PointerValue(ds.SpaceUsedPercentage.PointerFloat64())
+		datastore.Shared = attribute.BoolValueFromCustomBoolPtr(ds.Shared)
+		datastore.SpaceAvailable = attribute.Int64ValueFromPtr(ds.SpaceAvailable.PointerInt64())
+		datastore.SpaceTotal = attribute.Int64ValueFromPtr(ds.SpaceTotal.PointerInt64())
+		datastore.SpaceUsed = attribute.Int64ValueFromPtr(ds.SpaceUsed.PointerInt64())
+		datastore.SpaceUsedFraction = attribute.Float64ValueFromPtr(ds.SpaceUsedPercentage.PointerFloat64())
 		datastore.Type = types.StringValue(ds.Type)
 
 		model.Datastores = append(model.Datastores, datastore)

@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
@@ -187,28 +188,28 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 
 		zoneData := zoneDataModel{
 			ID:                      types.StringValue(zone.ID),
-			Type:                    types.StringPointerValue(zone.Type),
-			IPAM:                    types.StringPointerValue(zone.IPAM),
-			DNS:                     types.StringPointerValue(zone.DNS),
-			ReverseDNS:              types.StringPointerValue(zone.ReverseDNS),
-			DNSZone:                 types.StringPointerValue(zone.DNSZone),
+			Type:                    attribute.StringValueFromPtr(zone.Type),
+			IPAM:                    attribute.StringValueFromPtr(zone.IPAM),
+			DNS:                     attribute.StringValueFromPtr(zone.DNS),
+			ReverseDNS:              attribute.StringValueFromPtr(zone.ReverseDNS),
+			DNSZone:                 attribute.StringValueFromPtr(zone.DNSZone),
 			Nodes:                   stringset.NewValueString(zone.Nodes, diags, stringset.WithSeparator(",")),
-			MTU:                     types.Int64PointerValue(zone.MTU),
+			MTU:                     attribute.Int64ValueFromPtr(zone.MTU),
 			Pending:                 types.BoolValue(zone.Pending != nil),
-			State:                   types.StringPointerValue(zone.State),
-			Bridge:                  types.StringPointerValue(zone.Bridge),
-			ServiceVLAN:             types.Int64PointerValue(zone.ServiceVLAN),
-			ServiceVLANProtocol:     types.StringPointerValue(zone.ServiceVLANProtocol),
+			State:                   attribute.StringValueFromPtr(zone.State),
+			Bridge:                  attribute.StringValueFromPtr(zone.Bridge),
+			ServiceVLAN:             attribute.Int64ValueFromPtr(zone.ServiceVLAN),
+			ServiceVLANProtocol:     attribute.StringValueFromPtr(zone.ServiceVLANProtocol),
 			Peers:                   stringset.NewValueString(zone.Peers, diags, stringset.WithSeparator(",")),
-			AdvertiseSubnets:        types.BoolPointerValue(zone.AdvertiseSubnets.PointerBool()),
-			Controller:              types.StringPointerValue(zone.Controller),
-			DisableARPNDSuppression: types.BoolPointerValue(zone.DisableARPNDSuppression.PointerBool()),
+			AdvertiseSubnets:        attribute.BoolValueFromCustomBoolPtr(zone.AdvertiseSubnets),
+			Controller:              attribute.StringValueFromPtr(zone.Controller),
+			DisableARPNDSuppression: attribute.BoolValueFromCustomBoolPtr(zone.DisableARPNDSuppression),
 			ExitNodes:               stringset.NewValueString(zone.ExitNodes, diags, stringset.WithSeparator(",")),
-			ExitNodesLocalRouting:   types.BoolPointerValue(zone.ExitNodesLocalRouting.PointerBool()),
-			PrimaryExitNode:         types.StringPointerValue(zone.ExitNodesPrimary),
-			RouteTargetImport:       types.StringPointerValue(zone.RouteTargetImport),
-			VRFVXLANID:              types.Int64PointerValue(zone.VRFVXLANID),
-			DHCP:                    types.StringPointerValue(zone.DHCP),
+			ExitNodesLocalRouting:   attribute.BoolValueFromCustomBoolPtr(zone.ExitNodesLocalRouting),
+			PrimaryExitNode:         attribute.StringValueFromPtr(zone.ExitNodesPrimary),
+			RouteTargetImport:       attribute.StringValueFromPtr(zone.RouteTargetImport),
+			VRFVXLANID:              attribute.Int64ValueFromPtr(zone.VRFVXLANID),
+			DHCP:                    attribute.StringValueFromPtr(zone.DHCP),
 		}
 
 		objValue, objDiag := types.ObjectValueFrom(ctx, map[string]attr.Type{
