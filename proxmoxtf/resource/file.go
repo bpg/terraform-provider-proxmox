@@ -600,7 +600,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 			request.ContentType = "dump"
 		}
 
-		err = capi.SSH().NodeStreamUpload(ctx, nodeName, *datastore.Path, request)
+		err = capi.SSH().NodeUpload(ctx, nodeName, *datastore.Path, request)
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 			return diags

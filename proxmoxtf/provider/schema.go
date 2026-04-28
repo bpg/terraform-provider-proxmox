@@ -38,6 +38,7 @@ const (
 	mkProviderSSHSocks5Username    = "socks5_username"
 	mkProviderSSHSocks5Password    = "socks5_password"
 	mkProviderSSHNodeAddressSource = "node_address_source"
+	mkProviderSSHUploadMethod      = "upload_method"
 
 	mkProviderSSHNode        = "node"
 	mkProviderSSHNodeName    = "name"

@@ -99,6 +99,7 @@ type proxmoxProviderModel struct {
 		Socks5Server    types.String `tfsdk:"socks5_server"`
 		Socks5Username  types.String `tfsdk:"socks5_username"`
 		Socks5Password  types.String `tfsdk:"socks5_password"`
+		UploadMethod 	types.String `tfsdk:"upload_method"`
 
 		NodeAddressSource types.String `tfsdk:"node_address_source"`
 
@@ -432,6 +433,7 @@ func (p *proxmoxProvider) Configure(
 	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
 	sshSocks5Username := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME")
 	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
+	sshUploadMethod := utils.GetAnyStringEnv("PROXMOX_VE_SSH_UPLOAD_METHOD")
 	nodeOverrides := map[string]ssh.ProxmoxNode{}
 
 	//nolint: nestif
@@ -470,6 +472,10 @@ func (p *proxmoxProvider) Configure(
 
 		if !cfg.SSH[0].Socks5Password.IsNull() {
 			sshSocks5Password = cfg.SSH[0].Socks5Password.ValueString()
+		}
+
+		if !cfg.SSH[0].UploadMethod.IsNull() {
+			sshUploadMethod = cfg.SSH[0].UploadMethod.ValueString()
 		}
 
 		for _, n := range cfg.SSH[0].Nodes {
@@ -515,7 +521,7 @@ func (p *proxmoxProvider) Configure(
 
 	sshClient, err := ssh.NewClient(
 		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshAgentForwarding, sshPrivateKey,
-		sshSocks5Server, sshSocks5Username, sshSocks5Password,
+		sshSocks5Server, sshSocks5Username, sshSocks5Password, sshUploadMethod,
 		nodeResolver,
 	)
 	if err != nil {

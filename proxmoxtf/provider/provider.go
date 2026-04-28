@@ -180,6 +180,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		sshConf[mkProviderSSHSocks5Password] = sshSocks5Password
 	}
 
+	sshConf[mkProviderSSHUploadMethod] = "stream"
+
 	nodeOverrides := map[string]ssh.ProxmoxNode{}
 
 	if ns, ok := sshConf[mkProviderSSHNode]; ok {
@@ -223,6 +225,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		sshConf[mkProviderSSHSocks5Server].(string),
 		sshConf[mkProviderSSHSocks5Username].(string),
 		sshConf[mkProviderSSHSocks5Password].(string),
+		sshConf[mkProviderSSHUploadMethod].(string),
 		nodeResolver,
 	)
 	if err != nil {
