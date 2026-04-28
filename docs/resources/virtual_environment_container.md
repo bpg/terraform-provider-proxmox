@@ -7,9 +7,20 @@ subcategory: Virtual Environment
 
 # Resource: proxmox_virtual_environment_container
 
-Manages a container.
+Manages an LXC container on a Proxmox VE node.
+
+A container's root filesystem (the `disk` block) and any additional volumes
+(`mount_point` blocks) can be placed on any Proxmox VE storage backend —
+directory, LVM, LVM-thin, ZFS, Ceph RBD, NFS, CIFS, or any other storage
+configured on the cluster. Bind mounts of arbitrary host directories are
+also supported. See the [Storage](#storage) section below for details.
 
 ## Example Usage
+
+### Basic container
+
+A minimal Ubuntu container with a 4&nbsp;GB rootfs on `local-lvm`,
+DHCP networking, and an SSH key:
 
 ```hcl
 resource "proxmox_virtual_environment_container" "ubuntu_container" {
@@ -49,40 +60,13 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
     datastore_id = "local-lvm"
     size         = 4
   }
-  
+
   operating_system {
     template_file_id = proxmox_virtual_environment_download_file.ubuntu_2504_lxc_img.id
     # Or you can use a volume ID, as obtained from a "pvesm list <storage>"
     # template_file_id = "local:vztmpl/jammy-server-cloudimg-amd64.tar.gz"
-    type             = "ubuntu"
+    type = "ubuntu"
   }
-
-  mount_point {
-    # bind mount, *requires* root@pam authentication
-    volume = "/mnt/bindmounts/shared"
-    path   = "/mnt/shared"
-  }
-
-  mount_point {
-    # volume mount, a new volume will be created by PVE
-    volume = "local-lvm"
-    size   = "10G"
-    path   = "/mnt/volume"
-  }
-
-  mount_point {
-    # volume mount, an existing volume will be mounted
-    volume = "local-lvm:subvol-108-disk-101"
-    size   = "10G"
-    path   = "/mnt/data"
-  }
-
-  # To reference a mount point volume from another resource, use path_in_datastore:
-  # mount_point {
-  #   volume = other_container.mount_point[0].path_in_datastore
-  #   size   = "10G"
-  #   path   = "/mnt/shared"
-  # }
 
   startup {
     order      = "3"
@@ -124,6 +108,72 @@ output "ubuntu_container_public_key" {
 }
 ```
 
+### Custom storage configuration
+
+This example places the rootfs on a custom storage pool, attaches an
+additional volume, mounts an existing volume by ID, and bind-mounts a host
+directory. Any Proxmox storage backend (directory, LVM-thin, ZFS, Ceph RBD,
+NFS, CIFS) can be referenced by its storage ID:
+
+```hcl
+resource "proxmox_virtual_environment_container" "custom_storage" {
+  node_name = "first-node"
+  vm_id     = 1235
+
+  # Rootfs on a non-default storage pool, sized 32 GB.
+  disk {
+    datastore_id = "tank-zfs" # works with any storage backend (LVM-thin, ZFS, directory, Ceph, etc.)
+    size         = 32
+  }
+
+  # Allocate a new 10 GB volume on local-lvm and mount it inside the container.
+  mount_point {
+    volume = "local-lvm"
+    size   = "10G"
+    path   = "/mnt/volume"
+  }
+
+  # Mount an existing PVE volume by its storage ID.
+  mount_point {
+    volume = "local-lvm:subvol-108-disk-101"
+    size   = "10G"
+    path   = "/mnt/data"
+  }
+
+  # Bind-mount a host directory into the container (requires root@pam auth).
+  mount_point {
+    volume = "/mnt/bindmounts/shared"
+    path   = "/mnt/shared"
+  }
+
+  # ... initialization, network_interface, operating_system, etc.
+}
+```
+
+## Storage
+
+Containers attach storage through two block types:
+
+- **`disk`** — the root filesystem (rootfs). Exactly one rootfs per
+  container; the `datastore_id` argument selects the Proxmox storage pool
+  it lives on.
+- **`mount_point`** — zero or more additional volumes or bind mounts,
+  each mounted at a separate `path` inside the container.
+
+Both block types are backend-agnostic: `datastore_id` (on `disk`) and
+`volume` (on `mount_point`) accept any Proxmox storage ID, regardless of
+backend type. Run `pvesm status` on the host or use the
+[`proxmox_virtual_environment_datastores`](../data-sources/virtual_environment_datastores.md)
+data source to list configured storages.
+
+The `mount_point.volume` attribute accepts three forms:
+
+| Form                       | Meaning                                                  | Example                            |
+| -------------------------- | -------------------------------------------------------- | ---------------------------------- |
+| Storage ID                 | Allocate a new volume on that storage (requires `size`)  | `local-lvm`, `tank-zfs`            |
+| Storage ID + volume name   | Mount an existing volume by its full PVE volume ID       | `local-lvm:subvol-108-disk-101`    |
+| Absolute host path         | Bind-mount a host directory (requires `root@pam` auth)   | `/mnt/bindmounts/shared`           |
+
 ## Argument Reference
 
 - `clone` - (Optional) The cloning configuration.
@@ -153,9 +203,12 @@ output "ubuntu_container_public_key" {
     - `limit` - (Optional) Limit of CPU usage. Value `0` indicates no limit (defaults to `0`).
     - `units` - (Optional) The CPU units (defaults to `1024`).
 - `description` - (Optional) The description.
-- `disk` - (Optional) The disk configuration.
-    - `datastore_id` - (Optional) The identifier for the datastore to create the
-        disk in (defaults to `local`).
+- `disk` - (Optional) The root filesystem (rootfs) storage configuration.
+    Selects the Proxmox storage pool the container's root volume is created
+    on. Backend-agnostic — works with directory, LVM, LVM-thin, ZFS, Ceph
+    RBD, NFS, and any other configured Proxmox storage.
+    - `datastore_id` - (Optional) The Proxmox storage ID where the rootfs
+        volume is created (defaults to `local`).
     - `size` - (Optional) The size of the root filesystem in gigabytes (defaults
         to `4`). When set to 0 a directory or zfs/btrfs subvolume will be created.
         Requires `datastore_id` to be set.
@@ -193,7 +246,9 @@ output "ubuntu_container_public_key" {
     - `dedicated` - (Optional) The dedicated memory in megabytes (defaults
         to `512`).
     - `swap` - (Optional) The swap size in megabytes (defaults to `0`).
-- `mount_point`
+- `mount_point` - (Optional) An additional volume mount or host bind mount
+    (multiple blocks supported). Use this for data volumes, shared
+    directories, or attaching pre-existing PVE volumes.
     - `acl` (Optional) Explicitly enable or disable ACL support.
     - `backup` (Optional) Whether to include the mount point in backups (only
         used for volume mount points, defaults to `false`).
@@ -208,8 +263,11 @@ output "ubuntu_container_public_key" {
         nodes.
     - `size` (Optional) Volume size (only for volume mount points).
         Can be specified with a unit suffix (e.g. `10G`).
-    - `volume` (Required) Volume, device or directory to mount into the
-        container.
+    - `volume` (Required) Volume reference. Accepts a Proxmox storage ID
+        (e.g. `local-lvm`) to allocate a new volume, a full PVE volume ID
+        (e.g. `local-lvm:subvol-108-disk-101`) to mount an existing volume,
+        or an absolute host path (e.g. `/mnt/bindmounts/shared`) to
+        bind-mount a host directory.
     - `path_in_datastore` (Computed) The in-datastore path to the mount point volume.
         Use this attribute for cross-resource references instead of `volume`.
 - `idmap` - (Optional) UID/GID mapping for unprivileged containers (multiple

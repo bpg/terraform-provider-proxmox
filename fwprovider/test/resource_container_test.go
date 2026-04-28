@@ -1208,6 +1208,83 @@ func TestAccResourceContainerMountPoint(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerMountPointBindMount verifies that mount_point.volume accepts an
+// absolute host path to bind-mount a host directory into the container. Bind mounts take a
+// different code path than volume mounts: the API stores the host path verbatim in the
+// "volume" token and requires root@pam authentication.
+func TestAccResourceContainerMountPointBindMount(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{ .TestContainerID }}
+					started   = false
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					mount_point {
+						# bind mount: absolute host path is mounted into the container
+						volume = "/var/log"
+						path   = "/mnt/host_logs"
+					}
+					initialization {
+						hostname = "test-bind-mount"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
+						"mount_point.#":        "1",
+						"mount_point.0.volume": "/var/log",
+						"mount_point.0.path":   "/mnt/host_logs",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						mp0, ok := ctInfo.MountPoints["mp0"]
+						require.True(te.t, ok, `"mp0" mount point not found`)
+						require.NotNil(te.t, mp0, `"mp0" mount point is <nil>`)
+						// for bind mounts the API stores the host path in Volume (no "storage:" prefix)
+						require.Equal(te.t, "/var/log", mp0.Volume, "bind-mount volume should be the host path")
+						require.Equal(te.t, "/mnt/host_logs", mp0.MountPoint)
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerIpv4Ipv6(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
