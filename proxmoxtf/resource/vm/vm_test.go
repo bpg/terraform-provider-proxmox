@@ -27,6 +27,135 @@ func TestVMInstantiation(t *testing.T) {
 	}
 }
 
+func TestVMChangedOrRemovedSlotsFromValues(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		oldValue       []any
+		newValue       []any
+		slotKey        string
+		fallbackPrefix string
+		expected       []string
+	}{
+		{
+			name: "hostpci removal",
+			oldValue: []any{
+				map[string]any{mkHostPCIDevice: "hostpci0", mkHostPCIDeviceID: "0000:81:00.0"},
+			},
+			newValue:       []any{},
+			slotKey:        mkHostPCIDevice,
+			fallbackPrefix: "hostpci",
+			expected:       []string{"hostpci0"},
+		},
+		{
+			name: "hostpci same slot replacement",
+			oldValue: []any{
+				map[string]any{mkHostPCIDevice: "hostpci0", mkHostPCIDeviceID: "0000:81:00.0"},
+			},
+			newValue: []any{
+				map[string]any{mkHostPCIDevice: "hostpci0", mkHostPCIDeviceID: "0000:82:00.0"},
+			},
+			slotKey:        mkHostPCIDevice,
+			fallbackPrefix: "hostpci",
+			expected:       []string{"hostpci0"},
+		},
+		{
+			name: "hostpci addition only",
+			oldValue: []any{
+				map[string]any{mkHostPCIDevice: "hostpci0", mkHostPCIDeviceID: "0000:81:00.0"},
+			},
+			newValue: []any{
+				map[string]any{mkHostPCIDevice: "hostpci0", mkHostPCIDeviceID: "0000:81:00.0"},
+				map[string]any{mkHostPCIDevice: "hostpci1", mkHostPCIDeviceID: "0000:82:00.0"},
+			},
+			slotKey:        mkHostPCIDevice,
+			fallbackPrefix: "hostpci",
+			expected:       []string{},
+		},
+		{
+			name: "usb positional replacement",
+			oldValue: []any{
+				map[string]any{mkHostUSBDevice: "1234:0001"},
+				map[string]any{mkHostUSBDevice: "1234:0002"},
+			},
+			newValue: []any{
+				map[string]any{mkHostUSBDevice: "1234:0001"},
+				map[string]any{mkHostUSBDevice: "1234:0003"},
+			},
+			slotKey:        "",
+			fallbackPrefix: "usb",
+			expected:       []string{"usb1"},
+		},
+		{
+			name: "numa removal keeps configured slot",
+			oldValue: []any{
+				map[string]any{mkNUMADevice: "numa2", mkNUMACPUIDs: "0;1", mkNUMAMemory: 1024},
+			},
+			newValue:       []any{},
+			slotKey:        mkNUMADevice,
+			fallbackPrefix: "numa",
+			expected:       []string{"numa2"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual := vmChangedOrRemovedSlotsFromValues(tt.oldValue, tt.newValue, tt.slotKey, tt.fallbackPrefix)
+
+			require.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestVMAppendMissingDeviceDeletesKeepsConfiguredNonSequentialSlots(t *testing.T) {
+	t.Parallel()
+
+	configuredDevices := map[string]struct{}{
+		"hostpci5": {},
+	}
+	preMigrationDeletePlan := vmPreMigrationDeletePlan{
+		set: map[string]struct{}{
+			"hostpci3": {},
+		},
+	}
+
+	actual := vmAppendMissingDeviceDeletes(nil, "hostpci", 8, configuredDevices, preMigrationDeletePlan)
+
+	require.Equal(t, []string{"hostpci0", "hostpci1", "hostpci2", "hostpci4", "hostpci6", "hostpci7"}, actual)
+}
+
+func TestVMGetNumaDeviceObjectsKeepsConfiguredNonSequentialSlot(t *testing.T) {
+	t.Parallel()
+
+	resourceData := schema.TestResourceDataRaw(t, VM().Schema, map[string]any{
+		mkNUMA: []any{
+			map[string]any{
+				mkNUMADevice:        "numa5",
+				mkNUMACPUIDs:        "0;1",
+				mkNUMAHostNodeNames: "0",
+				mkNUMAMemory:        1024,
+				mkNUMAPolicy:        "preferred",
+			},
+		},
+	})
+
+	actual := vmGetNumaDeviceObjects(resourceData)
+
+	require.Len(t, actual, 1)
+	require.Contains(t, actual, 5)
+	require.NotContains(t, actual, 0)
+	require.Equal(t, []string{"0", "1"}, actual[5].CPUIDs)
+	require.NotNil(t, actual[5].Memory)
+	require.Equal(t, 1024, *actual[5].Memory)
+	require.NotNil(t, actual[5].HostNodeNames)
+	require.Equal(t, []string{"0"}, *actual[5].HostNodeNames)
+	require.NotNil(t, actual[5].Policy)
+	require.Equal(t, "preferred", *actual[5].Policy)
+}
+
 // TestVMSchema tests the VM schema.
 func TestVMSchema(t *testing.T) {
 	t.Parallel()

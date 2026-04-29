@@ -2061,6 +2061,67 @@ func TestAccResourceVMUpdateWhileStopped(t *testing.T) {
 	})
 }
 
+func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
+	te := InitEnvironment(t)
+
+	hostPCIID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_VM_MIGRATE_HOSTPCI_ID")
+	if te.Node2Name == "" || hostPCIID == "" {
+		t.Skip("PROXMOX_VE_ACC_NODE_2_NAME and PROXMOX_VE_ACC_VM_MIGRATE_HOSTPCI_ID must be set")
+	}
+
+	te.AddTemplateVars(map[string]any{
+		"HostPCIID": hostPCIID,
+	})
+
+	resourceName := "proxmox_virtual_environment_vm.test_migrate_hostpci"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_migrate_hostpci" {
+					node_name       = "{{.NodeName}}"
+					started         = true
+					stop_on_destroy = true
+					migrate         = true
+					name            = "test-migrate-hostpci"
+
+					hostpci {
+						device = "hostpci0"
+						id     = "{{.HostPCIID}}"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "node_name", te.NodeName),
+					resource.TestCheckResourceAttr(resourceName, "hostpci.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "hostpci.0.device", "hostpci0"),
+					resource.TestCheckResourceAttr(resourceName, "hostpci.0.id", hostPCIID),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_migrate_hostpci" {
+					node_name       = "{{.Node2Name}}"
+					started         = true
+					stop_on_destroy = true
+					migrate         = true
+					name            = "test-migrate-hostpci"
+				}`, WithRootUser()),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "node_name", te.Node2Name),
+					resource.TestCheckResourceAttr(resourceName, "hostpci.#", "0"),
+				),
+			},
+		},
+	})
+}
+
 func stopVM(te *Environment, vmID string) error {
 	id, err := strconv.Atoi(vmID)
 	if err != nil {

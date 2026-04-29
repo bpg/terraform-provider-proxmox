@@ -5867,6 +5867,225 @@ func vmUpdatePool(
 	return nil
 }
 
+type vmPreMigrationDeletePlan struct {
+	list []string
+	set  map[string]struct{}
+}
+
+func vmUpdateNodeLocalDevicesBeforeMigration(
+	ctx context.Context,
+	client proxmox.Client,
+	vmAPI *vms.Client,
+	d *schema.ResourceData,
+	vmID int,
+	power *vmPowerTracker,
+) (vmPreMigrationDeletePlan, diag.Diagnostics) {
+	deletePlan := vmPreMigrationNodeLocalDeviceDeletes(d)
+	if len(deletePlan.list) == 0 {
+		return deletePlan, nil
+	}
+
+	migrationState, err := vmGetMigrationState(ctx, client, vmAPI, vmID)
+	if err != nil {
+		return deletePlan, diag.FromErr(err)
+	}
+
+	if migrationState.isRunning && migrationState.isHAManaged {
+		return deletePlan, diag.Errorf(
+			"cannot remove or replace node-local devices before migrating running HA-managed VM %d. "+
+				"Split this into separate applies, or stop/disable HA management for the VM before applying this change",
+			vmID,
+		)
+	}
+
+	// Node-local devices must be removed from the effective VM configuration before migration. For a
+	// running VM, that means taking it offline first; otherwise Proxmox keeps the old device attached
+	// as a pending change and migration can still fail on the source-only hardware dependency.
+	template := d.Get(mkTemplate).(bool)
+
+	powerOffForMigration := vmPowerOffForPendingChanges(ctx, vmAPI, d, template, true, power)
+	if powerOffForMigration.blockedByPolicy {
+		return deletePlan, rebootAfterUpdateDisabledError("remove or replace node-local devices before migration")
+	}
+
+	if powerOffForMigration.diags.HasError() {
+		return deletePlan, powerOffForMigration.diags
+	}
+
+	updateBody := &vms.UpdateRequestBody{
+		Delete: deletePlan.list,
+	}
+
+	if err := vmAPI.UpdateVM(ctx, updateBody); err != nil {
+		return deletePlan, diag.FromErr(err)
+	}
+
+	return deletePlan, nil
+}
+
+type vmMigrationState struct {
+	isRunning    bool
+	isHAManaged  bool
+	haResourceID types.HAResourceID
+}
+
+func vmGetMigrationState(ctx context.Context, client proxmox.Client, vmAPI *vms.Client, vmID int) (vmMigrationState, error) {
+	vmStatus, err := vmAPI.GetVMStatus(ctx)
+	if err != nil {
+		return vmMigrationState{}, fmt.Errorf("failed to get VM %d status: %w", vmID, err)
+	}
+
+	haResourceID := types.HAResourceID{
+		Type: types.HAResourceTypeVM,
+		Name: strconv.Itoa(vmID),
+	}
+
+	isHAManaged, err := client.Cluster().HA().Resources().Exists(ctx, haResourceID)
+	if err != nil {
+		return vmMigrationState{}, fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err)
+	}
+
+	return vmMigrationState{
+		isRunning:    vmStatus.Status == "running",
+		isHAManaged:  isHAManaged,
+		haResourceID: haResourceID,
+	}, nil
+}
+
+func vmPreMigrationNodeLocalDeviceDeletes(d *schema.ResourceData) vmPreMigrationDeletePlan {
+	deletePlan := vmPreMigrationDeletePlan{
+		set: map[string]struct{}{},
+	}
+
+	if d.HasChange(mkHostPCI) {
+		appendPreMigrationDeletes(&deletePlan, vmChangedOrRemovedSlots(d, mkHostPCI, mkHostPCIDevice, "hostpci"))
+	}
+
+	if d.HasChange(mkHostUSB) {
+		appendPreMigrationDeletes(&deletePlan, vmChangedOrRemovedSlots(d, mkHostUSB, "", "usb"))
+	}
+
+	if d.HasChange(mkNUMA) {
+		appendPreMigrationDeletes(&deletePlan, vmChangedOrRemovedSlots(d, mkNUMA, mkNUMADevice, "numa"))
+	}
+
+	return deletePlan
+}
+
+func appendPreMigrationDeletes(deletePlan *vmPreMigrationDeletePlan, devices []string) {
+	for _, device := range devices {
+		if _, exists := deletePlan.set[device]; exists {
+			continue
+		}
+
+		deletePlan.list = append(deletePlan.list, device)
+		deletePlan.set[device] = struct{}{}
+	}
+}
+
+func vmChangedOrRemovedSlots(d *schema.ResourceData, attr, slotKey, fallbackPrefix string) []string {
+	oldValue, newValue := d.GetChange(attr)
+
+	return vmChangedOrRemovedSlotsFromValues(oldValue, newValue, slotKey, fallbackPrefix)
+}
+
+func vmChangedOrRemovedSlotsFromValues(oldValue, newValue any, slotKey, fallbackPrefix string) []string {
+	oldDevices, oldSlots := vmDeviceBlocksBySlot(oldValue, slotKey, fallbackPrefix)
+	newDevices, _ := vmDeviceBlocksBySlot(newValue, slotKey, fallbackPrefix)
+
+	devices := make([]string, 0, len(oldDevices))
+	for _, device := range oldSlots {
+		oldBlock := oldDevices[device]
+
+		newBlock, ok := newDevices[device]
+		if !ok || !cmp.Equal(oldBlock, newBlock) {
+			devices = append(devices, device)
+		}
+	}
+
+	return devices
+}
+
+func vmDeviceBlocksBySlot(value any, slotKey, fallbackPrefix string) (map[string]map[string]any, []string) {
+	list, ok := value.([]any)
+	if !ok {
+		return nil, nil
+	}
+
+	devices := make(map[string]map[string]any, len(list))
+	slots := make([]string, 0, len(list))
+
+	for i, entry := range list {
+		block, ok := entry.(map[string]any)
+		if !ok || block == nil {
+			continue
+		}
+
+		device := fmt.Sprintf("%s%d", fallbackPrefix, i)
+
+		if slotKey != "" {
+			if configuredDevice, ok := block[slotKey].(string); ok && configuredDevice != "" {
+				device = configuredDevice
+			}
+		}
+
+		devices[device] = block
+		slots = append(slots, device)
+	}
+
+	return devices, slots
+}
+
+func vmDeviceSlotSet(slots []string) map[string]struct{} {
+	slotSet := make(map[string]struct{}, len(slots))
+	for _, slot := range slots {
+		slotSet[slot] = struct{}{}
+	}
+
+	return slotSet
+}
+
+func vmPCIDeviceSlotSet(devices vms.CustomPCIDevices) map[string]struct{} {
+	slotSet := make(map[string]struct{}, len(devices))
+	for slot := range devices {
+		slotSet[slot] = struct{}{}
+	}
+
+	return slotSet
+}
+
+func vmSequentialDeviceSlotSet(prefix string, count int) map[string]struct{} {
+	slotSet := make(map[string]struct{}, count)
+	for i := range count {
+		slotSet[fmt.Sprintf("%s%d", prefix, i)] = struct{}{}
+	}
+
+	return slotSet
+}
+
+func vmAppendMissingDeviceDeletes(
+	del []string,
+	prefix string,
+	maxDevices int,
+	configuredDevices map[string]struct{},
+	preMigrationDeletePlan vmPreMigrationDeletePlan,
+) []string {
+	for i := range maxDevices {
+		device := fmt.Sprintf("%s%d", prefix, i)
+		if _, exists := configuredDevices[device]; exists {
+			continue
+		}
+
+		if _, alreadyDeleted := preMigrationDeletePlan.set[device]; alreadyDeleted {
+			continue
+		}
+
+		del = append(del, device)
+	}
+
+	return del
+}
+
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	// reset the default timeout for the update operation
 	ctx = context.WithoutCancel(ctx)
@@ -5880,6 +6099,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	nodeName := d.Get(mkNodeName).(string)
 	rebootRequired := false
+	nodeNameChanged := d.HasChange(mkNodeName)
+	oldNodeName := nodeName
 
 	vmID, e := strconv.Atoi(d.Id())
 	if e != nil {
@@ -5893,22 +6114,34 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(e)
 	}
 
-	// If the node name has changed we need to migrate the VM to the new node before we do anything else.
-	if d.HasChange(mkNodeName) {
+	if nodeNameChanged {
+		oldNodeNameValue, _ := d.GetChange(mkNodeName)
+		oldNodeName = oldNodeNameValue.(string)
+	}
+
+	vmAPI := client.Node(oldNodeName).VM(vmID)
+
+	preMigrationDeletePlan := vmPreMigrationDeletePlan{set: map[string]struct{}{}}
+
+	if nodeNameChanged {
+		var preMigrationDiags diag.Diagnostics
+
+		preMigrationDeletePlan, preMigrationDiags = vmUpdateNodeLocalDevicesBeforeMigration(ctx, client, vmAPI, d, vmID, power)
+		if preMigrationDiags.HasError() {
+			return preMigrationDiags
+		}
+
 		migrateTimeoutSec := d.Get(mkTimeoutMigrate).(int)
 
 		migrateCtx, cancel := context.WithTimeout(ctx, time.Duration(migrateTimeoutSec)*time.Second)
 		defer cancel()
 
-		oldNodeNameValue, _ := d.GetChange(mkNodeName)
-		oldNodeName := oldNodeNameValue.(string)
-
 		if migrateDiags := migrateVM(migrateCtx, client, vmID, oldNodeName, nodeName); migrateDiags.HasError() {
 			return migrateDiags
 		}
-	}
 
-	vmAPI := client.Node(nodeName).VM(vmID)
+		vmAPI = client.Node(nodeName).VM(vmID)
+	}
 
 	updateBody := &vms.UpdateRequestBody{}
 
@@ -6419,33 +6652,55 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	// Prepare the new hostpci devices configuration.
 	if d.HasChange(mkHostPCI) {
-		updateBody.PCIDevices = vmGetHostPCIDeviceObjects(d)
-
-		for i := len(updateBody.PCIDevices); i < maxResourceVirtualEnvironmentVMHostPCIDevices; i++ {
-			del = append(del, fmt.Sprintf("hostpci%d", i))
+		pciDevices := vmGetHostPCIDeviceObjects(d)
+		if len(pciDevices) > 0 {
+			updateBody.PCIDevices = pciDevices
 		}
+
+		del = vmAppendMissingDeviceDeletes(
+			del,
+			"hostpci",
+			maxResourceVirtualEnvironmentVMHostPCIDevices,
+			vmPCIDeviceSlotSet(pciDevices),
+			preMigrationDeletePlan,
+		)
 
 		rebootRequired = true
 	}
 
 	// Prepare the new numa devices configuration.
 	if d.HasChange(mkNUMA) {
-		updateBody.NUMADevices = vmGetNumaDeviceObjects(d)
-
-		for i := len(updateBody.NUMADevices); i < maxResourceVirtualEnvironmentVMNUMADevices; i++ {
-			del = append(del, fmt.Sprintf("numa%d", i))
+		numaDevices := vmGetNumaDeviceObjects(d)
+		if len(numaDevices) > 0 {
+			updateBody.NUMADevices = numaDevices
 		}
+
+		_, configuredNUMADevices := vmDeviceBlocksBySlot(d.Get(mkNUMA), mkNUMADevice, "numa")
+		del = vmAppendMissingDeviceDeletes(
+			del,
+			"numa",
+			maxResourceVirtualEnvironmentVMNUMADevices,
+			vmDeviceSlotSet(configuredNUMADevices),
+			preMigrationDeletePlan,
+		)
 
 		rebootRequired = true
 	}
 
 	// Prepare the new usb devices configuration.
 	if d.HasChange(mkHostUSB) {
-		updateBody.USBDevices = vmGetHostUSBDeviceObjects(d)
-
-		for i := len(updateBody.USBDevices); i < maxResourceVirtualEnvironmentVMHostUSBDevices; i++ {
-			del = append(del, fmt.Sprintf("usb%d", i))
+		usbDevices := vmGetHostUSBDeviceObjects(d)
+		if len(usbDevices) > 0 {
+			updateBody.USBDevices = usbDevices
 		}
+
+		del = vmAppendMissingDeviceDeletes(
+			del,
+			"usb",
+			maxResourceVirtualEnvironmentVMHostUSBDevices,
+			vmSequentialDeviceSlotSet("usb", len(usbDevices)),
+			preMigrationDeletePlan,
+		)
 
 		rebootRequired = true
 	}
@@ -6671,9 +6926,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	// Merge non-disk deletions with any disk deletions already queued.
 	updateBody.Delete = append(updateBody.Delete, del...)
 
-	e = vmAPI.UpdateVM(ctx, updateBody)
-	if e != nil {
-		return diag.FromErr(e)
+	// Pre-migration cleanup can handle the only changed fields.
+	if !updateBody.IsEmpty() {
+		e = vmAPI.UpdateVM(ctx, updateBody)
+		if e != nil {
+			return diag.FromErr(e)
+		}
 	}
 
 	// Handle template conversion if the template flag changed to true
@@ -7371,34 +7629,20 @@ func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (strin
 func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode, targetNode string) diag.Diagnostics {
 	vmAPI := client.Node(sourceNode).VM(vmID)
 
-	// check if VM is running
-	vmStatus, err := vmAPI.GetVMStatus(ctx)
+	migrationState, err := vmGetMigrationState(ctx, client, vmAPI, vmID)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get VM %d status: %w", vmID, err))
-	}
-
-	isRunning := vmStatus.Status == "running"
-
-	// check if VM is HA-managed
-	haResourceID := types.HAResourceID{
-		Type: types.HAResourceTypeVM,
-		Name: strconv.Itoa(vmID),
-	}
-
-	isHAManaged, err := client.Cluster().HA().Resources().Exists(ctx, haResourceID)
-	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err))
+		return diag.FromErr(err)
 	}
 
 	// for running HA-managed VMs, use HA migration
-	if isRunning && isHAManaged {
-		return diag.FromErr(migrateHAVM(ctx, client, vmID, haResourceID, targetNode))
+	if migrationState.isRunning && migrationState.isHAManaged {
+		return diag.FromErr(migrateHAVM(ctx, client, vmID, migrationState.haResourceID, targetNode))
 	}
 
 	// for stopped HA-managed VMs, temporarily remove from HA to allow standard migration
 	// (Proxmox intercepts standard migrate for HA VMs and only sets a preference)
-	if !isRunning && isHAManaged {
-		return migrateStoppedHAVM(ctx, client, vmID, haResourceID, sourceNode, targetNode)
+	if !migrationState.isRunning && migrationState.isHAManaged {
+		return migrateStoppedHAVM(ctx, client, vmID, migrationState.haResourceID, sourceNode, targetNode)
 	}
 
 	// for non-HA VMs (running or stopped), use standard migration
