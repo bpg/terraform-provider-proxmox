@@ -11,12 +11,12 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -25,8 +25,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/account"
-	
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"//RequiresReplace
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
 
 var (
@@ -108,7 +108,7 @@ func (r *acmeAccountResource) Schema(
 			"eab_hmac_key": schema.StringAttribute{
 				Description: "The HMAC key for External Account Binding.",
 				Optional:    true,
-				Sensitive: true,
+				Sensitive:   true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -116,7 +116,7 @@ func (r *acmeAccountResource) Schema(
 			"eab_kid": schema.StringAttribute{
 				Description: "The Key Identifier for External Account Binding.",
 				Optional:    true,
-				Sensitive: true,
+				Sensitive:   true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
