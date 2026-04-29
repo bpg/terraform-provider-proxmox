@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
+	
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -25,6 +25,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/account"
+	
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"//RequiresReplace
 )
 
 var (
@@ -107,11 +109,17 @@ func (r *acmeAccountResource) Schema(
 				Description: "The HMAC key for External Account Binding.",
 				Optional:    true,
 				Sensitive: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"eab_kid": schema.StringAttribute{
 				Description: "The Key Identifier for External Account Binding.",
 				Optional:    true,
 				Sensitive: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"location": schema.StringAttribute{
 				Description: "The location of the ACME account.",
