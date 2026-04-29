@@ -99,7 +99,7 @@ type proxmoxProviderModel struct {
 		Socks5Server    types.String `tfsdk:"socks5_server"`
 		Socks5Username  types.String `tfsdk:"socks5_username"`
 		Socks5Password  types.String `tfsdk:"socks5_password"`
-		UploadMethod 	types.String `tfsdk:"upload_method"`
+		UploadMethod    types.String `tfsdk:"upload_method"`
 
 		NodeAddressSource types.String `tfsdk:"node_address_source"`
 
@@ -246,6 +246,16 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 							Description: "The username for the SOCKS5 proxy server. " +
 								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_USERNAME` environment variable.",
 							Optional: true,
+						},
+						"upload_method": schema.StringAttribute{
+							Description: "The SSH file upload method. " +
+								"Set to `stream` to use stream-based SSH uploads, or `sftp` to use SFTP. " +
+								"Defaults to the value of the `PROXMOX_VE_SSH_UPLOAD_METHOD` environment variable, " +
+								"or `stream` if not set.",
+							Optional: true,
+							Validators: []validator.String{
+								stringvalidator.OneOf("sftp", "stream"),
+							},
 						},
 						"node_address_source": schema.StringAttribute{
 							Description: "The method used to resolve node IP addresses for SSH connections. " +

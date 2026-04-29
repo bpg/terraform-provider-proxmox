@@ -293,7 +293,7 @@ func uploadIsoFile(t *testing.T, fileName string) {
 	sshPort := utils.GetAnyIntEnv("PROXMOX_VE_ACC_NODE_SSH_PORT")
 	sshClient, err := ssh.NewClient(
 		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshAgentForwarding, sshPrivateKey,
-		"", "", "",
+		"", "", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{
 				Address: u.Hostname(),
@@ -311,7 +311,7 @@ func uploadIsoFile(t *testing.T, fileName string) {
 	}(f)
 
 	fname := filepath.Base(fileName)
-	err = sshClient.NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/template",
+	err = sshClient.NodeUpload(context.Background(), "pve", "/var/lib/vz/template",
 		&api.FileUploadRequest{
 			ContentType: "iso",
 			FileName:    fname,

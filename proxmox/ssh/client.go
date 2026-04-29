@@ -359,7 +359,7 @@ func (c *client) NodeUpload(
 	case "stream":
 		return c.nodeStreamUpload(ctx, sshClient, remoteFilePath, fileSize, nodeName, d)
 	default:
-		return fmt.Errorf("Unsupported upload method: \"%s\"", c.uploadMethod)
+		return fmt.Errorf("unsupported upload method: \"%s\"", c.uploadMethod)
 	}
 }
 
@@ -385,6 +385,7 @@ func (c *client) nodeSFTPUpload(
 	}()
 
 	parentDir := filepath.Dir(remoteFilePath)
+
 	err = sftpClient.MkdirAll(parentDir)
 	if err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", parentDir, err)
@@ -427,7 +428,7 @@ func (c *client) nodeSFTPUpload(
 
 		remoteStat, statErr := remoteFile.Stat()
 		if statErr != nil {
-			return fmt.Errorf("failed to read remote file %s: %w", remoteFilePath, err)
+			return fmt.Errorf("failed to read remote file %s: %w", remoteFilePath, statErr)
 		}
 
 		fileMode := os.FileMode(uint32(parsedFileMode))

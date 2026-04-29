@@ -44,6 +44,8 @@ func TestAccResourceFile(t *testing.T) {
 	snippetFile1 := strings.ReplaceAll(CreateTempFile(t, "snippet-file-1-*.yaml", "test snippet 1 - file").Name(), `\`, `/`)
 	snippetFile2 := strings.ReplaceAll(CreateTempFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file").Name(), `\`, `/`)
 	fileISO := strings.ReplaceAll(CreateTempFile(t, "file-*.iso", "pretend this is an ISO").Name(), `\`, `/`)
+	sftpSnippetRaw := SafeResourceName("sftp-raw") + ".txt"
+	sftpSnippetFile := strings.ReplaceAll(CreateTempFile(t, "sftp-file-*.yaml", "sftp upload").Name(), `\`, `/`)
 
 	fileServer := NewTestFileServer(t)
 	if fileServer == nil {
@@ -54,11 +56,13 @@ func TestAccResourceFile(t *testing.T) {
 	snippetURL := fileServer.AddFile("/229Q.yaml", "229Q.yaml", snippetContent)
 
 	te.AddTemplateVars(map[string]interface{}{
-		"SnippetRaw":   snippetRaw,
-		"SnippetURL":   snippetURL,
-		"SnippetFile1": snippetFile1,
-		"SnippetFile2": snippetFile2,
-		"FileISO":      fileISO,
+		"SnippetRaw":      snippetRaw,
+		"SnippetURL":      snippetURL,
+		"SnippetFile1":    snippetFile1,
+		"SnippetFile2":    snippetFile2,
+		"FileISO":         fileISO,
+		"SFTPSnippetRaw":  sftpSnippetRaw,
+		"SFTPSnippetFile": sftpSnippetFile,
 	})
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -72,6 +76,7 @@ func TestAccResourceFile(t *testing.T) {
 				_ = os.Remove(snippetFile1)
 				_ = os.Remove(snippetFile2)
 				_ = os.Remove(fileISO)
+				_ = os.Remove(sftpSnippetFile)
 			})
 		},
 		Steps: []resource.TestStep{
@@ -246,6 +251,44 @@ func TestAccResourceFile(t *testing.T) {
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile1)),
 				}),
 			},
+			// SFTP upload method: raw snippet
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test" {
+				content_type = "snippets"
+				datastore_id = "local"
+				node_name    = "{{.NodeName}}"
+				source_raw {
+					data = <<EOF
+				sftp raw content
+					EOF
+					file_name = "{{.SFTPSnippetRaw}}"
+				}
+				}`, WithAPIToken(), WithUploadMethod("sftp")),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+					"content_type":           "snippets",
+					"file_name":              sftpSnippetRaw,
+					"source_raw.0.file_name": sftpSnippetRaw,
+					"source_raw.0.data":      "sftp raw content\n",
+					"id":                     fmt.Sprintf("local:snippets/%s", sftpSnippetRaw),
+				}),
+			},
+			// SFTP upload method: file upload
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test" {
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					source_file {
+					  path = "{{.SFTPSnippetFile}}"
+					}
+				}`, WithAPIToken(), WithUploadMethod("sftp")),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+					"content_type": "snippets",
+					"file_name":    filepath.Base(sftpSnippetFile),
+					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(sftpSnippetFile)),
+				}),
+			},
 		},
 	})
 }
@@ -266,7 +309,7 @@ func uploadSnippetFile(t *testing.T, fileName string) {
 	sshPort := utils.GetAnyIntEnv("PROXMOX_VE_ACC_NODE_SSH_PORT")
 	sshClient, err := ssh.NewClient(
 		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshAgentForwarding, sshPrivateKey,
-		"", "", "",
+		"", "", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{
 				Address: u.Hostname(),
@@ -284,7 +327,7 @@ func uploadSnippetFile(t *testing.T, fileName string) {
 	}(f)
 
 	fname := filepath.Base(fileName)
-	err = sshClient.NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/",
+	err = sshClient.NodeUpload(context.Background(), "pve", "/var/lib/vz/",
 		&api.FileUploadRequest{
 			ContentType: "snippets",
 			FileName:    fname,
