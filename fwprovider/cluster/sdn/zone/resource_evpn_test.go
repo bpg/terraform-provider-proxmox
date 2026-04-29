@@ -1,4 +1,4 @@
-//go:build all
+//go:build acceptance || all
 
 //testacc:tier=heavy
 //testacc:resource=sdn

@@ -106,10 +106,12 @@ func (r *acmeAccountResource) Schema(
 			"eab_hmac_key": schema.StringAttribute{
 				Description: "The HMAC key for External Account Binding.",
 				Optional:    true,
+				Sensitive: true,
 			},
 			"eab_kid": schema.StringAttribute{
 				Description: "The Key Identifier for External Account Binding.",
 				Optional:    true,
+				Sensitive: true,
 			},
 			"location": schema.StringAttribute{
 				Description: "The location of the ACME account.",
