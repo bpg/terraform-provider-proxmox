@@ -11,7 +11,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -168,6 +170,15 @@ func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Optional:    true,
 			},
 		}),
+	}
+}
+
+func (r *EVPNResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		resourcevalidator.AtLeastOneOf(
+			path.MatchRoot("fabric"),
+			path.MatchRoot("peers"),
+		),
 	}
 }
 
