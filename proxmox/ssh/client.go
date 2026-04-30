@@ -384,7 +384,7 @@ func (c *client) nodeSFTPUpload(
 		}
 	}()
 
-	parentDir := filepath.Dir(remoteFilePath)
+	parentDir := path.Dir(remoteFilePath)
 
 	err = sftpClient.MkdirAll(parentDir)
 	if err != nil {
