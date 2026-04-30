@@ -18,6 +18,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/replications"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/applier"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/controllers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabric_nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/fabrics"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/vnets"
@@ -91,6 +92,11 @@ func (c *Client) SDNFabricNodes(fabricID, protocol string) *fabric_nodes.Client 
 // SDNApplier returns a client for applying the SDN's configuration.
 func (c *Client) SDNApplier() *applier.Client {
 	return &applier.Client{Client: c}
+}
+
+// SDNControllers returns a client for managing the cluster's SDN controllers.
+func (c *Client) SDNControllers() *controllers.Client {
+	return &controllers.Client{Client: c}
 }
 
 // Replication returns a client for managing the cluster's Storage Replication.
