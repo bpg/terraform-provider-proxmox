@@ -63,6 +63,7 @@ type NetworkInterfaceCreateUpdateRequestBody struct {
 	BondMode           *string           `json:"bond_mode,omitempty"             url:"bond_mode,omitempty"`
 	BondXmitHashPolicy *string           `json:"bond_xmit_hash_policy,omitempty" url:"bond_xmit_hash_policy,omitempty"`
 	BridgePorts        *string           `json:"bridge_ports,omitempty"          url:"bridge_ports,omitempty"`
+	BridgeVIDs         *string           `json:"bridge_vids,omitempty"           url:"bridge_vids,omitempty"`
 	BridgeVLANAware    *types.CustomBool `json:"bridge_vlan_aware,omitempty"     url:"bridge_vlan_aware,omitempty,int"`
 	CIDR               *string           `json:"cidr,omitempty"                  url:"cidr,omitempty"`
 	CIDR6              *string           `json:"cidr6,omitempty"                 url:"cidr6,omitempty"`

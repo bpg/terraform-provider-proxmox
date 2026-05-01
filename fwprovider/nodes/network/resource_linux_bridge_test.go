@@ -13,6 +13,7 @@ package network_test
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -130,6 +131,184 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					"comment", // "" comments translates to null in the PVE, but nulls are not imported as empty strings.
 					"timeout_reload",
 				},
+			},
+		},
+	})
+}
+
+func TestAccResourceLinuxBridgeVIDs(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))
+	ipV4cidr := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			// Create with a hyphenated VID range.
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = true
+					vids       = "2-4094"
+				}
+				`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"vids":       "2-4094",
+						"vlan_aware": "true",
+					}),
+				),
+			},
+			// Update to a space-separated VID list.
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = true
+					vids       = "10 20 30"
+				}
+				`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"vids": "10 20 30",
+					}),
+				),
+			},
+			// Remove vids from config — UseStateForUnknown means the prior value
+			// persists in state. Users explicitly reset by setting vids = "2-4094".
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = true
+				}
+				`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"vids": "10 20 30",
+					}),
+				),
+			},
+			// Reset vids to the implicit PVE default by setting it explicitly.
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = true
+					vids       = "2-4094"
+				}
+				`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"vids": "2-4094",
+					}),
+				),
+			},
+			// ImportState testing — round-trip with vids set.
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = true
+					vids       = "100-200"
+				}
+				`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"vids": "100-200",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_network_linux_bridge.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"timeout_reload",
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceLinuxBridgeVIDsValidation(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))
+	ipV4cidr := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			// `vids` requires `vlan_aware = true` (resource-level ValidateConfig).
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address   = "%s"
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					vids      = "1 2 3"
+				}
+				`, ipV4cidr, iface)),
+				ExpectError: regexp.MustCompile(`(?s)requires.*vlan_aware`),
+				PlanOnly:    true,
+			},
+			// `vids = ""` rejected by per-attribute LengthAtLeast(1) validator.
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = true
+					vids       = ""
+				}
+				`, ipV4cidr, iface)),
+				ExpectError: regexp.MustCompile(`(?s)at least 1`),
+				PlanOnly:    true,
+			},
+			// vids set + vlan_aware explicitly false → ValidateConfig errors.
+			// Covers the migration scenario: a user toggling vlan_aware off
+			// without first removing vids.
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = false
+					vids       = "1 2 3"
+				}
+				`, ipV4cidr, iface)),
+				ExpectError: regexp.MustCompile(`(?s)requires.*vlan_aware`),
+				PlanOnly:    true,
+			},
+			// Comma-separated list rejected by per-attribute RegexMatches validator.
+			// Catches the most common malformed input (users reaching for CSV).
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = true
+					vids       = "1,2,3"
+				}
+				`, ipV4cidr, iface)),
+				ExpectError: regexp.MustCompile(`(?s)space-separated list of VLAN IDs`),
+				PlanOnly:    true,
 			},
 		},
 	})

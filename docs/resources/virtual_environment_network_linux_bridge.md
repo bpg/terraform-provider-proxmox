@@ -34,6 +34,11 @@ resource "proxmox_virtual_environment_network_linux_bridge" "vmbr99" {
     # For VLAN interfaces with custom names, use the interface name without the VLAN tag, e.g. "vlan_lab"
     "ens18.99"
   ]
+
+  # VLAN-aware bridge: permit any tagged VLAN through. Segmentation typically
+  # lives upstream (switch / firewall), not on the hypervisor bridge.
+  vlan_aware = true
+  vids       = "2-4094"
 }
 
 resource "proxmox_virtual_environment_network_linux_vlan" "vlan99" {
@@ -66,6 +71,7 @@ resource "proxmox_virtual_environment_network_linux_vlan" "vlan99" {
 - `mtu` (Number) The interface MTU.
 - `ports` (List of String) The interface bridge ports.
 - `timeout_reload` (Number) Timeout for network reload operations in seconds (defaults to `100`).
+- `vids` (String) VLAN IDs allowed on the bridge (Linux Bridge `bridge-vids`). Space-separated list of VLAN IDs and/or hyphenated ranges (e.g. `"2-4094"`, `"1 20 130"`, or `"1 10-20 30"`). Requires `vlan_aware = true`. PVE/ifupdown2 fills in `2-4094` as the implicit default for VLAN-aware bridges when this attribute is omitted; the provider surfaces that default in state.
 - `vlan_aware` (Boolean) Whether the interface bridge is VLAN aware (defaults to `false`).
 
 ### Read-Only

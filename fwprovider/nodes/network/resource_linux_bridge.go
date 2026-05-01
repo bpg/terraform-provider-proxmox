@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -37,9 +38,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &linuxBridgeResource{}
-	_ resource.ResourceWithConfigure   = &linuxBridgeResource{}
-	_ resource.ResourceWithImportState = &linuxBridgeResource{}
+	_ resource.Resource                   = &linuxBridgeResource{}
+	_ resource.ResourceWithConfigure      = &linuxBridgeResource{}
+	_ resource.ResourceWithImportState    = &linuxBridgeResource{}
+	_ resource.ResourceWithValidateConfig = &linuxBridgeResource{}
 )
 
 type linuxBridgeResourceModel struct {
@@ -58,6 +60,7 @@ type linuxBridgeResourceModel struct {
 	// Linux bridge attributes
 	Ports     []types.String `tfsdk:"ports"`
 	VLANAware types.Bool     `tfsdk:"vlan_aware"`
+	VIDs      types.String   `tfsdk:"vids"`
 }
 
 func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nodes.NetworkInterfaceCreateUpdateRequestBody {
@@ -95,6 +98,8 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 	if m.VLANAware.ValueBool() {
 		body.BridgeVLANAware = proxmoxtypes.CustomBool(true).Pointer()
 	}
+
+	body.BridgeVIDs = attribute.StringPtrFromValue(m.VIDs)
 
 	return body
 }
@@ -144,6 +149,12 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 		if diags.HasError() {
 			return fmt.Errorf("failed to build bridge ports list: %s", *iface.BridgePorts)
 		}
+	}
+
+	if iface.BridgeVIDs != nil {
+		m.VIDs = types.StringValue(*iface.BridgeVIDs)
+	} else {
+		m.VIDs = types.StringNull()
 	}
 
 	return nil
@@ -251,6 +262,27 @@ func (r *linuxBridgeResource) Schema(
 				Optional:    true,
 				Computed:    true,
 			},
+			"vids": schema.StringAttribute{
+				Description: "VLAN IDs allowed on the bridge (Linux Bridge `bridge-vids`).",
+				MarkdownDescription: "VLAN IDs allowed on the bridge (Linux Bridge `bridge-vids`). " +
+					"Space-separated list of VLAN IDs and/or hyphenated ranges " +
+					"(e.g. `\"2-4094\"`, `\"1 20 130\"`, or `\"1 10-20 30\"`). " +
+					"Requires `vlan_aware = true`. PVE/ifupdown2 fills in `2-4094` as the " +
+					"implicit default for VLAN-aware bridges when this attribute is omitted; " +
+					"the provider surfaces that default in state.",
+				Optional: true,
+				Computed: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^\d+(-\d+)?( \d+(-\d+)?)*$`),
+						`must be a space-separated list of VLAN IDs or ranges (e.g. "1 20 130" or "2-4094")`,
+					),
+				},
+				PlanModifiers: []planmodifier.String{
+					vidsPlanModifier{},
+				},
+			},
 		},
 	}
 }
@@ -275,6 +307,34 @@ func (r *linuxBridgeResource) Configure(
 	}
 
 	r.client = cfg.Client
+}
+
+// ValidateConfig validates the resource configuration.
+func (r *linuxBridgeResource) ValidateConfig(
+	ctx context.Context,
+	req resource.ValidateConfigRequest,
+	resp *resource.ValidateConfigResponse,
+) {
+	var data linuxBridgeResourceModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// `vids` (bridge-vids) only applies to VLAN-aware bridges. Setting it
+	// without `vlan_aware = true` has no effect on PVE — surface the
+	// dependency at plan time so the misconfiguration is loud, not silent.
+	if !data.VIDs.IsNull() && !data.VIDs.IsUnknown() && !data.VLANAware.ValueBool() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("vids"),
+			"Invalid attribute combination",
+			"The `vids` attribute requires `vlan_aware = true`. A bridge that is "+
+				"not VLAN-aware does not perform VLAN filtering, so `vids` has no "+
+				"effect. Either set `vlan_aware = true`, or remove `vids`.",
+		)
+	}
 }
 
 //nolint:dupl
