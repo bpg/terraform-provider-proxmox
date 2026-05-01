@@ -140,20 +140,20 @@ func (o *apiTokenConfigOption) apply(rc *renderConfig) error {
 	return nil
 }
 
-// WithUploadMethod returns a configuration option that sets the SSH upload method in the provider configuration.
-func WithUploadMethod(method string) RenderConfigOption {
-	return &uploadMethodConfigOption{method: method}
+// WithUploadMode returns a configuration option that sets the SSH upload mode in the provider configuration.
+func WithUploadMode(method string) RenderConfigOption {
+	return &uploadModeConfigOption{method: method}
 }
 
-type uploadMethodConfigOption struct {
+type uploadModeConfigOption struct {
 	method string
 }
 
-func (o *uploadMethodConfigOption) apply(rc *renderConfig) error {
+func (o *uploadModeConfigOption) apply(rc *renderConfig) error {
 	rc.providerConfig = strings.Replace(
 		rc.providerConfig,
 		"\n\tssh {",
-		fmt.Sprintf("\n\tssh {\n\t\tupload_method = %q", o.method),
+		fmt.Sprintf("\n\tssh {\n\t\tupload_mode = %q", o.method),
 		1,
 	)
 

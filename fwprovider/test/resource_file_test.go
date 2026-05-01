@@ -251,7 +251,7 @@ func TestAccResourceFile(t *testing.T) {
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile1)),
 				}),
 			},
-			// SFTP upload method: raw snippet
+			// SFTP upload mode: raw snippet
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
@@ -264,7 +264,7 @@ func TestAccResourceFile(t *testing.T) {
 					EOF
 					file_name = "{{.SFTPSnippetRaw}}"
 				}
-				}`, WithAPIToken(), WithUploadMethod("sftp")),
+				}`, WithAPIToken(), WithUploadMode("sftp")),
 				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
 					"content_type":           "snippets",
 					"file_name":              sftpSnippetRaw,
@@ -273,7 +273,7 @@ func TestAccResourceFile(t *testing.T) {
 					"id":                     fmt.Sprintf("local:snippets/%s", sftpSnippetRaw),
 				}),
 			},
-			// SFTP upload method: file upload
+			// SFTP upload mode: file upload
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
@@ -282,7 +282,7 @@ func TestAccResourceFile(t *testing.T) {
 					source_file {
 					  path = "{{.SFTPSnippetFile}}"
 					}
-				}`, WithAPIToken(), WithUploadMethod("sftp")),
+				}`, WithAPIToken(), WithUploadMode("sftp")),
 				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
 					"content_type": "snippets",
 					"file_name":    filepath.Base(sftpSnippetFile),

@@ -80,7 +80,7 @@ type client struct {
 	socks5Server    string
 	socks5Username  string
 	socks5Password  string
-	uploadMethod    string
+	uploadMode    string
 	nodeResolver    NodeResolver
 	sudoCache       map[string]bool
 	sudoCacheMu     sync.RWMutex
@@ -92,7 +92,7 @@ func NewClient(
 	agent bool, agentSocket string, agentForwarding bool,
 	privateKey string,
 	socks5Server string, socks5Username string, socks5Password string,
-	uploadMethod string,
+	uploadMode string,
 	nodeResolver NodeResolver,
 ) (Client, error) {
 	if agent &&
@@ -110,8 +110,8 @@ func NewClient(
 		return nil, errors.New("socks5 server is required when socks5 username or password is set")
 	}
 
-	if uploadMethod == "" {
-		uploadMethod = "stream"
+	if uploadMode == "" {
+		uploadMode = "stream"
 	}
 
 	if nodeResolver == nil {
@@ -128,7 +128,7 @@ func NewClient(
 		socks5Server:    socks5Server,
 		socks5Username:  socks5Username,
 		socks5Password:  socks5Password,
-		uploadMethod:    uploadMethod,
+		uploadMode:    uploadMode,
 		nodeResolver:    nodeResolver,
 		sudoCache:       make(map[string]bool),
 		sudoCacheMu:     sync.RWMutex{},
@@ -350,16 +350,16 @@ func (c *client) NodeUpload(
 		"remote_dir":    remoteFileDir,
 		"file_name":     d.FileName,
 		"content_type":  d.ContentType,
-		"upload_method": c.uploadMethod,
+		"upload_mode": c.uploadMode,
 	})
 
-	switch c.uploadMethod {
+	switch c.uploadMode {
 	case "sftp":
 		return c.nodeSFTPUpload(ctx, sshClient, remoteFilePath, fileSize, d)
 	case "stream":
 		return c.nodeStreamUpload(ctx, sshClient, remoteFilePath, fileSize, nodeName, d)
 	default:
-		return fmt.Errorf("unsupported upload method: \"%s\"", c.uploadMethod)
+		return fmt.Errorf("unsupported upload mode: \"%s\"", c.uploadMode)
 	}
 }
 

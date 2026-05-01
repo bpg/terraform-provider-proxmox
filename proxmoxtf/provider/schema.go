@@ -38,7 +38,7 @@ const (
 	mkProviderSSHSocks5Username    = "socks5_username"
 	mkProviderSSHSocks5Password    = "socks5_password"
 	mkProviderSSHNodeAddressSource = "node_address_source"
-	mkProviderSSHUploadMethod      = "upload_method"
+	mkProviderSSHUploadMode      = "upload_mode"
 
 	mkProviderSSHNode        = "node"
 	mkProviderSSHNodeName    = "name"
@@ -228,15 +228,15 @@ func createSchema() map[string]*schema.Schema {
 						),
 						ValidateFunc: validation.StringIsNotEmpty,
 					},
-					mkProviderSSHUploadMethod: {
+					mkProviderSSHUploadMode: {
 						Type:     schema.TypeString,
 						Optional: true,
-						Description: "The SSH file upload method. " +
+						Description: "The SSH file upload mode. " +
 							"Set to `stream` to use stream-based SSH uploads, or `sftp` to use SFTP. " +
-							"Defaults to the value of the `PROXMOX_VE_SSH_UPLOAD_METHOD` environment variable, " +
+							"Defaults to the value of the `PROXMOX_VE_SSH_UPLOAD_MODE` environment variable, " +
 							"or `stream` if not set.",
 						DefaultFunc: schema.MultiEnvDefaultFunc(
-							[]string{"PROXMOX_VE_SSH_UPLOAD_METHOD"},
+							[]string{"PROXMOX_VE_SSH_UPLOAD_MODE"},
 							nil,
 						),
 						ValidateFunc: validation.StringInSlice([]string{"sftp", "stream"}, false),
