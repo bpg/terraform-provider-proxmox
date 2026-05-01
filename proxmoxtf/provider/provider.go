@@ -228,7 +228,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		sshConf[mkProviderSSHSocks5Server].(string),
 		sshConf[mkProviderSSHSocks5Username].(string),
 		sshConf[mkProviderSSHSocks5Password].(string),
-		sshConf[mkProviderSSHUploadMode].(string),
 		nodeResolver,
 	)
 	if err != nil {

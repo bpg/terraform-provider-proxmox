@@ -28,6 +28,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -69,6 +70,7 @@ const (
 	mkResourceVirtualEnvironmentFileSourceRawFileName    = "file_name"
 	mkResourceVirtualEnvironmentFileSourceRawResize      = "resize"
 	mkResourceVirtualEnvironmentFileTimeoutUpload        = "timeout_upload"
+	mkResourceVirtualEnvironmentFileUploadMode           = "upload_mode"
 )
 
 // File returns a resource that manages files on a node.
@@ -224,6 +226,13 @@ func File() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentFileTimeoutUpload,
 			},
+			mkResourceVirtualEnvironmentFileUploadMode: {
+				Type:         schema.TypeString,
+				Description:  "The SSH upload mode. Set to `stream` to use stream-based SSH uploads, or `sftp` to use SFTP.",
+				Optional:     true,
+				Default:      "stream",
+				ValidateFunc: validation.StringInSlice([]string{"sftp", "stream"}, false),
+			},
 			mkResourceVirtualEnvironmentFileOverwrite: {
 				Type:        schema.TypeBool,
 				Description: "Whether to overwrite the file if it already exists",
@@ -321,6 +330,7 @@ func fileParseImportID(id string) (string, fileVolumeID, error) {
 }
 
 func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+	uploadMode := d.Get(mkResourceVirtualEnvironmentFileUploadMode).(string)
 	uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
 	fileMode := d.Get(mkResourceVirtualEnvironmentFileFileMode).(string)
 
@@ -600,7 +610,12 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 			request.ContentType = "dump"
 		}
 
-		err = capi.SSH().NodeUpload(ctx, nodeName, *datastore.Path, request)
+		if uploadMode == "sftp" {
+			err = capi.SSH().NodeUpload(ctx, nodeName, *datastore.Path, request)
+		} else {
+			err = capi.SSH().NodeStreamUpload(ctx, nodeName, *datastore.Path, request)
+		}
+
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 			return diags

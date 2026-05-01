@@ -38,7 +38,7 @@ const (
 	mkProviderSSHSocks5Username    = "socks5_username"
 	mkProviderSSHSocks5Password    = "socks5_password"
 	mkProviderSSHNodeAddressSource = "node_address_source"
-	mkProviderSSHUploadMode      = "upload_mode"
+	mkProviderSSHUploadMode        = "upload_mode"
 
 	mkProviderSSHNode        = "node"
 	mkProviderSSHNodeName    = "name"
@@ -237,7 +237,7 @@ func createSchema() map[string]*schema.Schema {
 							"or `stream` if not set.",
 						DefaultFunc: schema.MultiEnvDefaultFunc(
 							[]string{"PROXMOX_VE_SSH_UPLOAD_MODE"},
-							nil,
+							"stream",
 						),
 						ValidateFunc: validation.StringInSlice([]string{"sftp", "stream"}, false),
 					},

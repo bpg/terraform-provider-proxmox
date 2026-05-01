@@ -65,8 +65,12 @@ type Client interface {
 	// ExecuteNodeCommands executes a command on a node.
 	ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) ([]byte, error)
 
-	// NodeUpload uploads a file to a node.
+	// NodeUpload uploads a file to a node by SFTP.
 	NodeUpload(ctx context.Context, nodeName string,
+		remoteFileDir string, fileUploadRequest *api.FileUploadRequest) error
+
+	// NodeStreamUpload uploads a file to a node by streaming its content over SSH.
+	NodeStreamUpload(ctx context.Context, nodeName string,
 		remoteFileDir string, fileUploadRequest *api.FileUploadRequest) error
 }
 
@@ -80,7 +84,6 @@ type client struct {
 	socks5Server    string
 	socks5Username  string
 	socks5Password  string
-	uploadMode    string
 	nodeResolver    NodeResolver
 	sudoCache       map[string]bool
 	sudoCacheMu     sync.RWMutex
@@ -92,7 +95,6 @@ func NewClient(
 	agent bool, agentSocket string, agentForwarding bool,
 	privateKey string,
 	socks5Server string, socks5Username string, socks5Password string,
-	uploadMode string,
 	nodeResolver NodeResolver,
 ) (Client, error) {
 	if agent &&
@@ -110,10 +112,6 @@ func NewClient(
 		return nil, errors.New("socks5 server is required when socks5 username or password is set")
 	}
 
-	if uploadMode == "" {
-		uploadMode = "stream"
-	}
-
 	if nodeResolver == nil {
 		return nil, errors.New("node resolver is required")
 	}
@@ -128,7 +126,6 @@ func NewClient(
 		socks5Server:    socks5Server,
 		socks5Username:  socks5Username,
 		socks5Password:  socks5Password,
-		uploadMode:    uploadMode,
 		nodeResolver:    nodeResolver,
 		sudoCache:       make(map[string]bool),
 		sudoCacheMu:     sync.RWMutex{},
@@ -318,6 +315,13 @@ func (c *client) NodeUpload(
 		return fmt.Errorf("failed to find node endpoint: %w", err)
 	}
 
+	tflog.Debug(ctx, "uploading file to the node datastore using SFTP", map[string]any{
+		"node_address": ip,
+		"remote_dir":   remoteFileDir,
+		"file_name":    d.FileName,
+		"content_type": d.ContentType,
+	})
+
 	fileInfo, err := d.File.Stat()
 	if err != nil {
 		return fmt.Errorf("failed to get file info: %w", err)
@@ -330,14 +334,14 @@ func (c *client) NodeUpload(
 		return fmt.Errorf("failed to open SSH client: %w", err)
 	}
 
-	defer func() {
+	defer func(sshClient *ssh.Client) {
 		e := sshClient.Close()
 		if e != nil {
 			tflog.Warn(ctx, "failed to close SSH client", map[string]any{
 				"error": e,
 			})
 		}
-	}()
+	}(sshClient)
 
 	if d.ContentType != "" {
 		remoteFileDir = filepath.Join(remoteFileDir, d.ContentType)
@@ -345,31 +349,6 @@ func (c *client) NodeUpload(
 
 	remoteFilePath := strings.ReplaceAll(filepath.Join(remoteFileDir, d.FileName), `\`, "/")
 
-	tflog.Debug(ctx, "uploading file to the node datastore", map[string]any{
-		"node_address":  ip,
-		"remote_dir":    remoteFileDir,
-		"file_name":     d.FileName,
-		"content_type":  d.ContentType,
-		"upload_mode": c.uploadMode,
-	})
-
-	switch c.uploadMode {
-	case "sftp":
-		return c.nodeSFTPUpload(ctx, sshClient, remoteFilePath, fileSize, d)
-	case "stream":
-		return c.nodeStreamUpload(ctx, sshClient, remoteFilePath, fileSize, nodeName, d)
-	default:
-		return fmt.Errorf("unsupported upload mode: \"%s\"", c.uploadMode)
-	}
-}
-
-func (c *client) nodeSFTPUpload(
-	ctx context.Context,
-	sshClient *ssh.Client,
-	remoteFilePath string,
-	fileSize int64,
-	d *api.FileUploadRequest,
-) error {
 	sftpClient, err := sftp.NewClient(sshClient)
 	if err != nil {
 		return fmt.Errorf("failed to create SFTP client: %w", err)
@@ -396,14 +375,14 @@ func (c *client) nodeSFTPUpload(
 		return fmt.Errorf("failed to create file %s: %w", remoteFilePath, err)
 	}
 
-	defer func() {
-		e := remoteFile.Close()
+	defer func(sftpClient *sftp.Client) {
+		e := sftpClient.Close()
 		if e != nil {
-			tflog.Warn(ctx, "failed to close remote file", map[string]any{
+			tflog.Warn(ctx, "failed to close SFTP client", map[string]any{
 				"error": e,
 			})
 		}
-	}()
+	}(sftpClient)
 
 	bytesUploaded, err := remoteFile.ReadFrom(d.File)
 	if err != nil {
@@ -414,11 +393,6 @@ func (c *client) nodeSFTPUpload(
 		return fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
 			remoteFilePath, bytesUploaded, fileSize)
 	}
-
-	tflog.Debug(ctx, "uploaded file to datastore", map[string]any{
-		"remote_file_path": remoteFilePath,
-		"size":             bytesUploaded,
-	})
 
 	if d.Mode != "" {
 		parsedFileMode, parseErr := strconv.ParseUint(d.Mode, 8, 12)
@@ -444,18 +418,60 @@ func (c *client) nodeSFTPUpload(
 		})
 	}
 
+	tflog.Debug(ctx, "uploaded file to datastore", map[string]any{
+		"remote_file_path": remoteFilePath,
+		"size":             bytesUploaded,
+	})
+
 	return nil
 }
 
-func (c *client) nodeStreamUpload(
+func (c *client) NodeStreamUpload(
 	ctx context.Context,
-	sshClient *ssh.Client,
-	remoteFilePath string,
-	fileSize int64,
 	nodeName string,
+	remoteFileDir string,
 	d *api.FileUploadRequest,
 ) error {
-	err := c.uploadFile(ctx, sshClient, d, remoteFilePath, nodeName)
+	ip, err := c.nodeResolver.Resolve(ctx, nodeName)
+	if err != nil {
+		return fmt.Errorf("failed to find node endpoint: %w", err)
+	}
+
+	tflog.Debug(ctx, "uploading file to the node datastore via SSH input stream ", map[string]any{
+		"node_address": ip,
+		"remote_dir":   remoteFileDir,
+		"file_name":    d.FileName,
+		"content_type": d.ContentType,
+	})
+
+	fileInfo, err := d.File.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	fileSize := fileInfo.Size()
+
+	sshClient, err := c.openNodeShell(ctx, ip)
+	if err != nil {
+		return fmt.Errorf("failed to open SSH client: %w", err)
+	}
+
+	defer func(sshClient *ssh.Client) {
+		e := sshClient.Close()
+		if e != nil {
+			tflog.Warn(ctx, "failed to close SSH client", map[string]any{
+				"error": e,
+			})
+		}
+	}(sshClient)
+
+	if d.ContentType != "" {
+		remoteFileDir = filepath.Join(remoteFileDir, d.ContentType)
+	}
+
+	remoteFilePath := strings.ReplaceAll(filepath.Join(remoteFileDir, d.FileName), `\`, "/")
+
+	err = c.uploadFile(ctx, sshClient, d, remoteFilePath, nodeName)
 	if err != nil {
 		return err
 	}
