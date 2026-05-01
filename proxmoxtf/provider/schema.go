@@ -235,6 +235,10 @@ func createSchema() map[string]*schema.Schema {
 							"Set to `stream` to use stream-based SSH uploads, or `sftp` to use SFTP. " +
 							"Defaults to the value of the `PROXMOX_VE_SSH_UPLOAD_METHOD` environment variable, " +
 							"or `stream` if not set.",
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{"PROXMOX_VE_SSH_UPLOAD_METHOD"},
+							nil,
+						),
 						ValidateFunc: validation.StringInSlice([]string{"sftp", "stream"}, false),
 					},
 					mkProviderSSHNodeAddressSource: {
