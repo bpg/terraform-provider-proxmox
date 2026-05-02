@@ -9,7 +9,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -78,13 +77,9 @@ func (m *evpnModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *control
 	var peers []string
 	diags.Append(m.Peers.ElementsAs(ctx, &peers, false)...)
 
-	if len(m.Peers.Elements()) > 0 {
-		for i, peer := range m.Peers.Elements() {
-			peers[i] = strings.TrimSpace(peer.String())
-			peers[i] = strings.Trim(peers[i], `"`)
-		}
-
-		data.Peers = new((proxmoxtypes.CustomCommaSeparatedList)(peers))
+	if len(peers) > 0 {
+		p := proxmoxtypes.CustomCommaSeparatedList(peers)
+		data.Peers = &p
 	} else {
 		data.Peers = nil
 	}
