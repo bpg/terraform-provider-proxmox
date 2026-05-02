@@ -311,7 +311,7 @@ func uploadIsoFile(t *testing.T, fileName string) {
 	}(f)
 
 	fname := filepath.Base(fileName)
-	err = sshClient.NodeUpload(context.Background(), "pve", "/var/lib/vz/template",
+	err = sshClient.NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/template",
 		&api.FileUploadRequest{
 			ContentType: "iso",
 			FileName:    fname,

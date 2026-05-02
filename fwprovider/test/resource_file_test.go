@@ -46,6 +46,7 @@ func TestAccResourceFile(t *testing.T) {
 	fileISO := strings.ReplaceAll(CreateTempFile(t, "file-*.iso", "pretend this is an ISO").Name(), `\`, `/`)
 	sftpSnippetRaw := SafeResourceName("sftp-raw") + ".txt"
 	sftpSnippetFile := strings.ReplaceAll(CreateTempFile(t, "sftp-file-*.yaml", "sftp upload").Name(), `\`, `/`)
+	sftpOverwriteFile := strings.ReplaceAll(CreateTempFile(t, "sftp-overwrite-*.yaml", "sftp overwrite test").Name(), `\`, `/`)
 
 	fileServer := NewTestFileServer(t)
 	if fileServer == nil {
@@ -56,27 +57,31 @@ func TestAccResourceFile(t *testing.T) {
 	snippetURL := fileServer.AddFile("/229Q.yaml", "229Q.yaml", snippetContent)
 
 	te.AddTemplateVars(map[string]interface{}{
-		"SnippetRaw":      snippetRaw,
-		"SnippetURL":      snippetURL,
-		"SnippetFile1":    snippetFile1,
-		"SnippetFile2":    snippetFile2,
-		"FileISO":         fileISO,
-		"SFTPSnippetRaw":  sftpSnippetRaw,
-		"SFTPSnippetFile": sftpSnippetFile,
+		"SnippetRaw":        snippetRaw,
+		"SnippetURL":        snippetURL,
+		"SnippetFile1":      snippetFile1,
+		"SnippetFile2":      snippetFile2,
+		"FileISO":           fileISO,
+		"SFTPSnippetRaw":    sftpSnippetRaw,
+		"SFTPSnippetFile":   sftpSnippetFile,
+		"SftpOverwriteFile": sftpOverwriteFile,
 	})
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		PreCheck: func() {
 			uploadSnippetFile(t, snippetFile2)
+			uploadSnippetFile(t, sftpOverwriteFile)
 			t.Cleanup(func() {
 				deleteSnippet(te, filepath.Base(snippetFile1))
 				deleteSnippet(te, filepath.Base(snippetFile2))
+				deleteSnippet(te, filepath.Base(sftpOverwriteFile))
 
 				_ = os.Remove(snippetFile1)
 				_ = os.Remove(snippetFile2)
 				_ = os.Remove(fileISO)
 				_ = os.Remove(sftpSnippetFile)
+				_ = os.Remove(sftpOverwriteFile)
 			})
 		},
 		Steps: []resource.TestStep{
@@ -251,7 +256,7 @@ func TestAccResourceFile(t *testing.T) {
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile1)),
 				}),
 			},
-			// SFTP upload mode: raw snippet
+			// raw snippet
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
@@ -264,8 +269,47 @@ func TestAccResourceFile(t *testing.T) {
 					EOF
 					file_name = "{{.SFTPSnippetRaw}}"
 				}
-				}`, WithAPIToken(), WithUploadMode("sftp")),
+				}`, WithAPIToken()),
 				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+					"content_type":           "snippets",
+					"file_name":              sftpSnippetRaw,
+					"source_raw.0.file_name": sftpSnippetRaw,
+					"source_raw.0.data":      "sftp raw content\n",
+					"id":                     fmt.Sprintf("local:snippets/%s", sftpSnippetRaw),
+				}),
+			},
+			// file upload
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test" {
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					source_file {
+					  path = "{{.SFTPSnippetFile}}"
+					}
+				}`, WithAPIToken()),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+					"content_type": "snippets",
+					"file_name":    filepath.Base(sftpSnippetFile),
+					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(sftpSnippetFile)),
+				}),
+			},
+			// SFTP upload mode: raw snippet
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test_sftp_raw" {
+				content_type = "snippets"
+				datastore_id = "local"
+				node_name    = "{{.NodeName}}"
+				upload_mode  = "sftp"
+				source_raw {
+					data = <<EOF
+				sftp raw content
+					EOF
+					file_name = "{{.SFTPSnippetRaw}}"
+				}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test_sftp_raw", map[string]string{
 					"content_type":           "snippets",
 					"file_name":              sftpSnippetRaw,
 					"source_raw.0.file_name": sftpSnippetRaw,
@@ -276,17 +320,49 @@ func TestAccResourceFile(t *testing.T) {
 			// SFTP upload mode: file upload
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_file" "test" {
+				resource "proxmox_virtual_environment_file" "test_sftp_file" {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
+					upload_mode  = "sftp"
 					source_file {
 					  path = "{{.SFTPSnippetFile}}"
 					}
-				}`, WithAPIToken(), WithUploadMode("sftp")),
-				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test_sftp_file", map[string]string{
 					"content_type": "snippets",
 					"file_name":    filepath.Base(sftpSnippetFile),
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(sftpSnippetFile)),
+				}),
+			},
+			// SFTP upload mode: do not allow to overwrite the file
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test_sftp_overwrite" {
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					overwrite    = false
+					upload_mode  = "sftp"
+					source_file {
+					  path = "{{.SftpOverwriteFile}}"
+					}
+				}`),
+				ExpectError: regexp.MustCompile("already exists"),
+			},
+			// SFTP upload mode: allow to overwrite the file by default
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test_sftp_overwrite" {
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					upload_mode  = "sftp"
+					source_file {
+					  path = "{{.SftpOverwriteFile}}"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test_sftp_overwrite", map[string]string{
+					"content_type": "snippets",
+					"file_name":    filepath.Base(sftpOverwriteFile),
+					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(sftpOverwriteFile)),
 				}),
 			},
 		},
