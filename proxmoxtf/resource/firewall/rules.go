@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -287,8 +288,8 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 
 	rules := d.Get(MkRule).([]any)
 
-	for i := len(rules) - 1; i >= 0; i-- {
-		rule := rules[i].(map[string]any)
+	for _, r := range slices.Backward(rules) {
+		rule := r.(map[string]any)
 
 		ruleBody, err := mapToRuleCreateRequestBody(rule)
 		if err != nil {
