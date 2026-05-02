@@ -4,7 +4,9 @@
   "public_key": "pk_tymNsCV65HsqZ9CWs6XGi",
   "projectTitle": "Terraform Provider for Proxmox VE",
   "description": "Terraform/OpenTofu provider for managing Proxmox Virtual Environment — VMs, LXC containers, networking, storage, SDN, firewall, and more.",
-  "folders": ["docs"],
+  "folders": [
+    "docs"
+  ],
   "excludeFolders": [
     ".dev",
     "build",
@@ -19,11 +21,16 @@
     "tmp",
     "utils"
   ],
-  "excludeFiles": ["AGENTS.md", "CLAUDE.md", "CONTRIBUTORS.md", "GEMINI.md"],
+  "excludeFiles": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTORS.md",
+    "GEMINI.md"
+  ],
   "previousVersions": [
     {
-      "tag": "v0.104.0",
-      "title": "0.104.0"
+      "tag": "v0.105.0",
+      "title": "0.105.0"
     }
   ],
   "rules": [
