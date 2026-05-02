@@ -22,6 +22,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
@@ -32,25 +33,22 @@ import (
 type genericModel struct {
 	ID     types.String `tfsdk:"id"`
 	Digest types.String `tfsdk:"digest"`
-	Type   types.String `tfsdk:"-"`
 }
 
-func (m *genericModel) fromAPI(name string, data *controllers.ControllerData, _ *diag.Diagnostics) {
+func (m *genericModel) fromAPI(name string, data *controllers.ControllerData, diags *diag.Diagnostics) {
+	m.fromAPIForDatasource(name, data, diags)
+}
+
+func (m *genericModel) fromAPIForDatasource(name string, data *controllers.ControllerData, _ *diag.Diagnostics) {
 	m.ID = types.StringValue(name)
-	m.Type = attribute.StringValueFromPtr(data.Type)
 
 	m.Digest = m.handleDeletedStringValue(data.Digest)
-}
-
-func (m *genericModel) fromAPIForDatasource(name string, data *controllers.ControllerData, diags *diag.Diagnostics) {
-	m.fromAPI(name, data, diags)
 }
 
 func (m *genericModel) toAPI(_ context.Context, _ *diag.Diagnostics) *controllers.Controller {
 	data := &controllers.Controller{}
 
 	data.ID = m.ID.ValueString()
-	data.Type = attribute.StringPtrFromValue(m.Type)
 
 	return data
 }
@@ -60,7 +58,23 @@ func (m *genericModel) handleDeletedStringValue(value *string) types.String {
 		return types.StringNull()
 	}
 
+	if *value == "deleted" {
+		return types.StringNull()
+	}
+
 	return attribute.StringValueFromPtr(value)
+}
+
+func (m *genericModel) handleDeletedStringSetValue(value []string, diags *diag.Diagnostics) stringset.Value {
+	if value == nil {
+		return stringset.NullValue()
+	}
+
+	if len(value) == 1 && value[0] == "deleted" {
+		return stringset.NullValue()
+	}
+
+	return stringset.NewValueList(value, diags)
 }
 
 func checkDeletedFields(_, _ *genericModel) []string {
@@ -268,6 +282,7 @@ func (r *genericControllerResource) ImportState(ctx context.Context, req resourc
 			fmt.Sprintf("Expected controller type %q but found %q for id %q",
 				r.config.controllerType, *controller.Type, req.ID),
 		)
+
 		return
 	}
 

@@ -17,7 +17,7 @@ const (
 
 type Controller struct {
 	ID    string  `json:"controller"      url:"controller"`
-	Type  *string `json:"type"            url:"type"`
+	Type  *string `json:"type,omitempty"  url:"type,omitempty"`
 	State *string `json:"state,omitempty" url:"state,omitempty"`
 
 	// EVPN.

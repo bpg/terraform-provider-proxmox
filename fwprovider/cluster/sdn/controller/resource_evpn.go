@@ -41,13 +41,18 @@ func (m *evpnModel) fromAPI(name string, data *controllers.ControllerData, diags
 	m.fromAPIForDatasource(name, data, diags)
 
 	if data.Pending != nil {
-		m.ASNumber = attribute.Int64ValueFromPtr(data.Pending.ASNumber)
+		if data.Pending.ASNumber != nil {
+			m.ASNumber = attribute.Int64ValueFromPtr(data.Pending.ASNumber)
+		}
 
-		m.FabricID = attribute.StringValueFromPtr(data.Pending.Fabric)
+		if data.Pending.Fabric != nil {
+			m.FabricID = m.handleDeletedStringValue(data.Pending.Fabric)
+		}
+
 		if data.Pending.Peers != nil {
 			peers := make([]string, len(*data.Pending.Peers))
 			copy(peers, *data.Pending.Peers)
-			m.Peers = stringset.NewValueList(peers, diags)
+			m.Peers = m.handleDeletedStringSetValue(peers, diags)
 		} else {
 			m.Peers = stringset.NullValue()
 		}
@@ -57,13 +62,18 @@ func (m *evpnModel) fromAPI(name string, data *controllers.ControllerData, diags
 func (m *evpnModel) fromAPIForDatasource(name string, data *controllers.ControllerData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPIForDatasource(name, data, diags)
 
-	m.ASNumber = attribute.Int64ValueFromPtr(data.ASNumber)
-	m.FabricID = attribute.StringValueFromPtr(data.Fabric)
+	if data.ASNumber != nil {
+		m.ASNumber = attribute.Int64ValueFromPtr(data.ASNumber)
+	}
+
+	if data.Fabric != nil {
+		m.FabricID = m.handleDeletedStringValue(data.Fabric)
+	}
 
 	if data.Peers != nil {
 		peers := make([]string, len(*data.Peers))
 		copy(peers, *data.Peers)
-		m.Peers = stringset.NewValueList(peers, diags)
+		m.Peers = m.handleDeletedStringSetValue(peers, diags)
 	} else {
 		m.Peers = stringset.NullValue()
 	}
