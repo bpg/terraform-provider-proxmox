@@ -39,7 +39,7 @@ func NewEVPNControllerDataSource() datasource.DataSource {
 func (d *EVPNControllerDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "The EVPN controller plugin configures the Free Range Routing (frr) router.",
-		MarkdownDescription: "The EVPN, zone requires an external controller to manage the control plane." +
+		MarkdownDescription: "The EVPN zone requires an external controller to manage the control plane." +
 			" The EVPN controller plugin configures the Free Range Routing (frr) router.",
 		Attributes: genericDataSourceAttributesWith(map[string]schema.Attribute{
 			"asn": schema.Int64Attribute{

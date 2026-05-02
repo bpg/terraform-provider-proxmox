@@ -163,7 +163,7 @@ func (r *EVPNResource) Update(ctx context.Context, req resource.UpdateRequest, r
 func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "The EVPN controller plugin configures the Free Range Routing (frr) router.",
-		MarkdownDescription: "The EVPN, zone requires an external controller to manage the control plane." +
+		MarkdownDescription: "The EVPN zone requires an external controller to manage the control plane." +
 			" The EVPN controller plugin configures the Free Range Routing (frr) router.",
 		Attributes: genericAttributesWith(map[string]schema.Attribute{
 			"asn": schema.Int64Attribute{
