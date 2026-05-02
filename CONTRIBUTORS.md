@@ -259,6 +259,7 @@
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/vishn9893"><img src="https://avatars.githubusercontent.com/u/48808713?v=4?s=100" width="100px;" alt="Vishnudhat Natarajan "/><br /><sub><b>Vishnudhat Natarajan </b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=vishn9893" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Idalen"><img src="https://avatars.githubusercontent.com/u/48536015?v=4?s=100" width="100px;" alt="Daniel Martins Vieira"/><br /><sub><b>Daniel Martins Vieira</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Idalen" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
