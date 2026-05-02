@@ -1846,6 +1846,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "MatheusMoraesSoares",
+      "name": "Matheus",
+      "avatar_url": "https://avatars.githubusercontent.com/u/98968318?v=4",
+      "profile": "https://www.linkedin.com/in/matheus-moraes-soares-692b4322a/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
