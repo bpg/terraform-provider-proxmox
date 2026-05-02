@@ -159,7 +159,11 @@ func (r *genericControllerResource) Create(ctx context.Context, req resource.Cre
 	newController.Type = new(r.config.controllerType)
 
 	if err := r.client.CreateController(ctx, newController); err != nil {
-		resp.Diagnostics.AddError("Unable to Create SDN Controller", err.Error())
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to Create SDN Controller %q", plan.getID()),
+			err.Error(),
+		)
+
 		return
 	}
 
@@ -181,7 +185,10 @@ func (r *genericControllerResource) Read(ctx context.Context, req resource.ReadR
 			return
 		}
 
-		resp.Diagnostics.AddError("Unable to Read SDN Controller", err.Error())
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to Read SDN Controller %q", state.getID()),
+			err.Error(),
+		)
 
 		return
 	}
@@ -212,7 +219,10 @@ func (r *genericControllerResource) Update(ctx context.Context, req resource.Upd
 	}
 
 	if err := r.client.UpdateController(ctx, update); err != nil {
-		resp.Diagnostics.AddError("Unable to Update SDN Controller", err.Error())
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to Update SDN Controller %q", state.getID()),
+			err.Error(),
+		)
 
 		return
 	}
@@ -230,7 +240,12 @@ func (r *genericControllerResource) Delete(ctx context.Context, req resource.Del
 
 	if err := r.client.DeleteController(ctx, state.getID()); err != nil &&
 		!errors.Is(err, api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError("Unable to Delete SDN Controller", err.Error())
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to Delete SDN Controller %q", state.getID()),
+			err.Error(),
+		)
+
+		return
 	}
 }
 

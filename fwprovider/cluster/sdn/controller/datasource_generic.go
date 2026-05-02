@@ -109,7 +109,7 @@ func (d *genericControllerDataSource) Read(ctx context.Context, req datasource.R
 		}
 
 		resp.Diagnostics.AddError(
-			"Unable to Read SDN Controller",
+			fmt.Sprintf("Unable to Read SDN Controller %q", id),
 			err.Error(),
 		)
 
