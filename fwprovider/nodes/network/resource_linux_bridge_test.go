@@ -180,8 +180,8 @@ func TestAccResourceLinuxBridgeVIDs(t *testing.T) {
 					}),
 				),
 			},
-			// Remove vids from config — UseStateForUnknown means the prior value
-			// persists in state. Users explicitly reset by setting vids = "2-4094".
+			// Remove vids from config — vidsPlanModifier preserves the prior state value when vlan_aware stays
+			// true. Users explicitly reset by setting vids = "2-4094".
 			{
 				Config: te.RenderConfig(fmt.Sprintf(`
 				resource "proxmox_network_linux_bridge" "test" {
@@ -243,6 +243,61 @@ func TestAccResourceLinuxBridgeVIDs(t *testing.T) {
 	})
 }
 
+// TestAccResourceLinuxBridgeVIDsToggleVLANAware exercises the plan modifier
+// branch that nulls vids when vlan_aware flips from true to false, and the
+// CheckDelete plumbing that removes bridge_vids from PVE on that transition.
+func TestAccResourceLinuxBridgeVIDsToggleVLANAware(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))
+	ipV4cidr := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			// Create with vlan_aware = true and an explicit vids list.
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = true
+					vids       = "100 200"
+				}
+				`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"vlan_aware": "true",
+						"vids":       "100 200",
+					}),
+				),
+			},
+			// Flip vlan_aware to false and drop vids from config — the plan modifier
+			// must null vids (rather than pin the prior "100 200" via state) and the
+			// Update path must send bridge_vids in the delete list.
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address    = "%s"
+					name       = "%s"
+					node_name  = "{{.NodeName}}"
+					vlan_aware = false
+				}
+				`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"vlan_aware": "false",
+					}),
+					test.NoResourceAttributesSet("proxmox_network_linux_bridge.test", []string{
+						"vids",
+					}),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceLinuxBridgeVIDsValidation(t *testing.T) {
 	te := test.InitEnvironment(t)
 
@@ -252,19 +307,6 @@ func TestAccResourceLinuxBridgeVIDsValidation(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
-			// `vids` requires `vlan_aware = true` (resource-level ValidateConfig).
-			{
-				Config: te.RenderConfig(fmt.Sprintf(`
-				resource "proxmox_network_linux_bridge" "test" {
-					address   = "%s"
-					name      = "%s"
-					node_name = "{{.NodeName}}"
-					vids      = "1 2 3"
-				}
-				`, ipV4cidr, iface)),
-				ExpectError: regexp.MustCompile(`(?s)requires.*vlan_aware`),
-				PlanOnly:    true,
-			},
 			// `vids = ""` rejected by per-attribute LengthAtLeast(1) validator.
 			{
 				Config: te.RenderConfig(fmt.Sprintf(`
