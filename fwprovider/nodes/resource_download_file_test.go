@@ -293,7 +293,7 @@ func uploadIsoFile(t *testing.T, fileName string) {
 	sshPort := utils.GetAnyIntEnv("PROXMOX_VE_ACC_NODE_SSH_PORT")
 	sshClient, err := ssh.NewClient(
 		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshAgentForwarding, sshPrivateKey,
-		"", "", "", "",
+		"", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{
 				Address: u.Hostname(),

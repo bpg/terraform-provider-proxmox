@@ -406,7 +406,7 @@ func (c *client) NodeUpload(
 		fileMode := os.FileMode(uint32(parsedFileMode))
 
 		if err = sftpClient.Chmod(remoteFilePath, fileMode); err != nil {
-			return fmt.Errorf("failed to change file fileMode of remote file from %#o (%s) to %#o (%s): %w",
+			return fmt.Errorf("failed to change file mode of remote file from %#o (%s) to %#o (%s): %w",
 				remoteStat.Mode().Perm(), remoteStat.Mode(), fileMode.Perm(), fileMode, err)
 		}
 

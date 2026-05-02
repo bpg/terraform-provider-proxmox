@@ -227,11 +227,14 @@ func File() *schema.Resource {
 				Default:     dvResourceVirtualEnvironmentFileTimeoutUpload,
 			},
 			mkResourceVirtualEnvironmentFileUploadMode: {
-				Type:         schema.TypeString,
-				Description:  "The SSH upload mode. Set to `stream` to use stream-based SSH uploads, or `sftp` to use SFTP.",
-				Optional:     true,
-				Default:      "stream",
-				ValidateFunc: validation.StringInSlice([]string{"sftp", "stream"}, false),
+				Type: schema.TypeString,
+				Description: "The SSH upload mode for non-API content types (snippets, backups, etc.). " +
+					"`stream` pipes through an SSH shell session and uses sudo where required; `sftp` uploads " +
+					"via the SFTP subsystem and requires direct write permission to the target directory. " +
+					"Has no effect for `iso`, `vztmpl`, and `import` (those use the HTTP API).",
+				Optional:         true,
+				Default:          "stream",
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"sftp", "stream"}, false)),
 			},
 			mkResourceVirtualEnvironmentFileOverwrite: {
 				Type:        schema.TypeBool,
