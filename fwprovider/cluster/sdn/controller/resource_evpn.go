@@ -38,6 +38,24 @@ type evpnModel struct {
 
 func (m *evpnModel) fromAPI(name string, data *controllers.ControllerData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPI(name, data, diags)
+	m.fromAPIForDatasource(name, data, diags)
+
+	if data.Pending != nil {
+		m.ASNumber = types.Int64PointerValue(data.Pending.ASNumber)
+
+		m.FabricID = types.StringPointerValue(data.Pending.Fabric)
+		if data.Pending.Peers != nil {
+			peers := make([]string, len(*data.Pending.Peers))
+			copy(peers, *data.Pending.Peers)
+			m.Peers = stringset.NewValueList(peers, diags)
+		} else {
+			m.Peers = stringset.NullValue()
+		}
+	}
+}
+
+func (m *evpnModel) fromAPIForDatasource(name string, data *controllers.ControllerData, diags *diag.Diagnostics) {
+	m.genericModel.fromAPIForDatasource(name, data, diags)
 
 	m.ASNumber = types.Int64PointerValue(data.ASNumber)
 	m.FabricID = types.StringPointerValue(data.Fabric)

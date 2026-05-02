@@ -41,6 +41,10 @@ func (m *genericModel) fromAPI(name string, data *controllers.ControllerData, _ 
 	m.Digest = m.handleDeletedStringValue(data.Digest)
 }
 
+func (m *genericModel) fromAPIForDatasource(name string, data *controllers.ControllerData, diags *diag.Diagnostics) {
+	m.fromAPI(name, data, diags)
+}
+
 func (m *genericModel) toAPI(_ context.Context, _ *diag.Diagnostics) *controllers.Controller {
 	data := &controllers.Controller{}
 
@@ -95,6 +99,7 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 
 type controllerModel interface {
 	fromAPI(name string, data *controllers.ControllerData, diags *diag.Diagnostics)
+	fromAPIForDatasource(name string, data *controllers.ControllerData, diags *diag.Diagnostics)
 	toAPI(ctx context.Context, diags *diag.Diagnostics) *controllers.Controller
 	getID() string
 	getGenericModel() *genericModel
@@ -168,7 +173,7 @@ func (r *genericControllerResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
-	controller, err := r.client.GetController(ctx, state.getID())
+	controller, err := r.client.GetControllerWithParams(ctx, state.getID(), &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.State.RemoveResource(ctx)
@@ -250,7 +255,7 @@ func (r *genericControllerResource) Schema(_ context.Context, _ resource.SchemaR
 }
 
 func (r *genericControllerResource) readAndSetState(ctx context.Context, controllerID string, state *tfsdk.State, diags *diag.Diagnostics) {
-	controller, err := r.client.GetController(ctx, controllerID)
+	controller, err := r.client.GetControllerWithParams(ctx, controllerID, &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
 		diags.AddError("Unable to Read SDN Controller", err.Error())
 		return

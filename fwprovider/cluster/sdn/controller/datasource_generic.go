@@ -133,6 +133,6 @@ func (d *genericControllerDataSource) Read(ctx context.Context, req datasource.R
 
 	readModel := d.config.modelFunc()
 
-	readModel.fromAPI(id, controller, &resp.Diagnostics)
+	readModel.fromAPIForDatasource(id, controller, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
