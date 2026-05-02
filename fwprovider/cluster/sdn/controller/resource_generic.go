@@ -262,6 +262,15 @@ func (r *genericControllerResource) ImportState(ctx context.Context, req resourc
 		return
 	}
 
+	if controller.Type != nil && *controller.Type != r.config.controllerType {
+		resp.Diagnostics.AddError(
+			"SDN Controller Type Mismatch",
+			fmt.Sprintf("Expected controller type %q but found %q for id %q",
+				r.config.controllerType, *controller.Type, req.ID),
+		)
+		return
+	}
+
 	r.setModelFromController(ctx, controller, &resp.State, &resp.Diagnostics)
 }
 
