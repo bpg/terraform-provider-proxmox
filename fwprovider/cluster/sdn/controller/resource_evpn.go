@@ -150,8 +150,8 @@ func (r *EVPNResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	err := r.client.UpdateController(ctx, update)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error Updating EVPN SDN Controller",
-			fmt.Sprintf("Could not update EVPN SDN Controller %q: %v", plan.ID.ValueString(), err),
+			fmt.Sprintf("Unable to Update SDN Controller %q", plan.ID.ValueString()),
+			err.Error(),
 		)
 
 		return
