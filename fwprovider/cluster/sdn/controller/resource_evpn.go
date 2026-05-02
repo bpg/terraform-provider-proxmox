@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/controllers"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -40,9 +41,9 @@ func (m *evpnModel) fromAPI(name string, data *controllers.ControllerData, diags
 	m.fromAPIForDatasource(name, data, diags)
 
 	if data.Pending != nil {
-		m.ASNumber = types.Int64PointerValue(data.Pending.ASNumber)
+		m.ASNumber = attribute.Int64ValueFromPtr(data.Pending.ASNumber)
 
-		m.FabricID = types.StringPointerValue(data.Pending.Fabric)
+		m.FabricID = attribute.StringValueFromPtr(data.Pending.Fabric)
 		if data.Pending.Peers != nil {
 			peers := make([]string, len(*data.Pending.Peers))
 			copy(peers, *data.Pending.Peers)
@@ -56,8 +57,8 @@ func (m *evpnModel) fromAPI(name string, data *controllers.ControllerData, diags
 func (m *evpnModel) fromAPIForDatasource(name string, data *controllers.ControllerData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPIForDatasource(name, data, diags)
 
-	m.ASNumber = types.Int64PointerValue(data.ASNumber)
-	m.FabricID = types.StringPointerValue(data.Fabric)
+	m.ASNumber = attribute.Int64ValueFromPtr(data.ASNumber)
+	m.FabricID = attribute.StringValueFromPtr(data.Fabric)
 
 	if data.Peers != nil {
 		peers := make([]string, len(*data.Peers))
@@ -71,8 +72,8 @@ func (m *evpnModel) fromAPIForDatasource(name string, data *controllers.Controll
 func (m *evpnModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *controllers.Controller {
 	data := m.genericModel.toAPI(ctx, diags)
 
-	data.ASNumber = m.ASNumber.ValueInt64Pointer()
-	data.Fabric = m.FabricID.ValueStringPointer()
+	data.ASNumber = attribute.Int64PtrFromValue(m.ASNumber)
+	data.Fabric = attribute.StringPtrFromValue(m.FabricID)
 
 	var peers []string
 	diags.Append(m.Peers.ElementsAs(ctx, &peers, false)...)

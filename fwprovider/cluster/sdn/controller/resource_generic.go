@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -36,7 +37,7 @@ type genericModel struct {
 
 func (m *genericModel) fromAPI(name string, data *controllers.ControllerData, _ *diag.Diagnostics) {
 	m.ID = types.StringValue(name)
-	m.Type = types.StringPointerValue(data.Type)
+	m.Type = attribute.StringValueFromPtr(data.Type)
 
 	m.Digest = m.handleDeletedStringValue(data.Digest)
 }
@@ -49,7 +50,7 @@ func (m *genericModel) toAPI(_ context.Context, _ *diag.Diagnostics) *controller
 	data := &controllers.Controller{}
 
 	data.ID = m.ID.ValueString()
-	data.Type = m.Type.ValueStringPointer()
+	data.Type = attribute.StringPtrFromValue(m.Type)
 
 	return data
 }
@@ -59,7 +60,7 @@ func (m *genericModel) handleDeletedStringValue(value *string) types.String {
 		return types.StringNull()
 	}
 
-	return types.StringValue(*value)
+	return attribute.StringValueFromPtr(value)
 }
 
 func checkDeletedFields(_, _ *genericModel) []string {
