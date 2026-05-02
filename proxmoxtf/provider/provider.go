@@ -129,7 +129,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
 	sshSocks5Username := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME")
 	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
-	sshUploadMode := utils.GetAnyStringEnv("PROXMOX_VE_SSH_UPLOAD_MODE")
 
 	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
 		switch {
@@ -179,10 +178,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 
 	if v, ok := sshConf[mkProviderSSHSocks5Password]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHSocks5Password] = sshSocks5Password
-	}
-
-	if v, ok := sshConf[mkProviderSSHUploadMode]; !ok || v.(string) == "" {
-		sshConf[mkProviderSSHUploadMode] = sshUploadMode
 	}
 
 	nodeOverrides := map[string]ssh.ProxmoxNode{}

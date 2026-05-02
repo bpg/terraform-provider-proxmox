@@ -165,6 +165,8 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     - `resize` - (Optional) The number of bytes to resize the file to.
 - `timeout_upload` - (Optional) Timeout for uploading ISO/VSTMPL files in
     seconds (defaults to 1800).
+- `upload_mode` - (Optional) The SSH upload mode. Set to `stream` to use
+    stream-based SSH uploads, or `sftp` to use SFTP (defaults to `stream`).
 
 ## Attribute Reference
 

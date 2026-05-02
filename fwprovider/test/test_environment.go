@@ -140,26 +140,6 @@ func (o *apiTokenConfigOption) apply(rc *renderConfig) error {
 	return nil
 }
 
-// WithUploadMode returns a configuration option that sets the SSH upload mode in the provider configuration.
-func WithUploadMode(method string) RenderConfigOption {
-	return &uploadModeConfigOption{method: method}
-}
-
-type uploadModeConfigOption struct {
-	method string
-}
-
-func (o *uploadModeConfigOption) apply(rc *renderConfig) error {
-	rc.providerConfig = strings.Replace(
-		rc.providerConfig,
-		"\n\tssh {",
-		fmt.Sprintf("\n\tssh {\n\t\tupload_mode = %q", o.method),
-		1,
-	)
-
-	return nil
-}
-
 // InitEnvironment initializes a new test environment for acceptance tests.
 func InitEnvironment(t *testing.T) *Environment {
 	t.Helper()
