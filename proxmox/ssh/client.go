@@ -363,11 +363,9 @@ func (c *client) NodeUpload(
 		}
 	}()
 
-	parentDir := path.Dir(remoteFilePath)
-
-	err = sftpClient.MkdirAll(parentDir)
+	err = sftpClient.MkdirAll(remoteFileDir)
 	if err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", parentDir, err)
+		return fmt.Errorf("failed to create directory %s: %w", remoteFileDir, err)
 	}
 
 	remoteFile, err := sftpClient.Create(remoteFilePath)
