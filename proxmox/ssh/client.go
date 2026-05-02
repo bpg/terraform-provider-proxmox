@@ -354,14 +354,14 @@ func (c *client) NodeUpload(
 		return fmt.Errorf("failed to create SFTP client: %w", err)
 	}
 
-	defer func() {
+	defer func(sftpClient *sftp.Client) {
 		e := sftpClient.Close()
 		if e != nil {
 			tflog.Warn(ctx, "failed to close SFTP client", map[string]any{
 				"error": e,
 			})
 		}
-	}()
+	}(sftpClient)
 
 	err = sftpClient.MkdirAll(remoteFileDir)
 	if err != nil {
@@ -373,14 +373,14 @@ func (c *client) NodeUpload(
 		return fmt.Errorf("failed to create file %s: %w", remoteFilePath, err)
 	}
 
-	defer func() {
+	defer func(remoteFile *sftp.File) {
 		e := remoteFile.Close()
 		if e != nil {
 			tflog.Warn(ctx, "failed to close remote file", map[string]any{
 				"error": e,
 			})
 		}
-	}()
+	}(remoteFile)
 
 	bytesUploaded, err := remoteFile.ReadFrom(d.File)
 	if err != nil {
