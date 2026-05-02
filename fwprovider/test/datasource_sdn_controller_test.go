@@ -26,7 +26,7 @@ func TestAccDatasourceSDNControllerEVPN(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create and update controller and read with datasource", []resource.TestStep{{
+		{"Read peers-only controller via datasource", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
 				  id  = "ctrlE"
@@ -54,9 +54,45 @@ func TestAccDatasourceSDNControllerEVPN(t *testing.T) {
 					"peers.#": "1",
 					"peers.0": "10.0.0.1",
 					"asn":     "65000",
+					"fabric":  "",
 				}),
-				NoResourceAttributesSet("data.proxmox_sdn_controller_evpn.controller_evpn", []string{
-					"fabric",
+			),
+		}}},
+		{"Read fabric-only controller via datasource", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_fabric_openfabric" "main" {
+				  id = "main"
+				  ip_prefix = "10.0.0.0/16"
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id  = "ctrlE"
+				  fabric = proxmox_sdn_fabric_openfabric.main.id
+				  asn = 65000
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+
+				data "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id = proxmox_sdn_controller_evpn.controller_evpn.id
+				}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("data.proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
+					"id":      "ctrlE",
+					"asn":     "65000",
+					"fabric":  "main",
+					"peers.#": "0",
 				}),
 			),
 		}}},

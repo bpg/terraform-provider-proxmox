@@ -35,14 +35,14 @@ type genericModel struct {
 	Digest types.String `tfsdk:"digest"`
 }
 
-func (m *genericModel) fromAPI(name string, data *controllers.ControllerData, diags *diag.Diagnostics) {
-	m.fromAPIForDatasource(name, data, diags)
+func (m *genericModel) fromAPI(name string, data *controllers.ControllerData, _ *diag.Diagnostics) {
+	m.ID = types.StringValue(name)
+	m.Digest = m.handleDeletedStringValue(data.Digest)
 }
 
 func (m *genericModel) fromAPIForDatasource(name string, data *controllers.ControllerData, _ *diag.Diagnostics) {
 	m.ID = types.StringValue(name)
-
-	m.Digest = m.handleDeletedStringValue(data.Digest)
+	m.Digest = attribute.StringValueFromPtr(data.Digest)
 }
 
 func (m *genericModel) toAPI(_ context.Context, _ *diag.Diagnostics) *controllers.Controller {
@@ -297,7 +297,7 @@ func (r *genericControllerResource) Schema(_ context.Context, _ resource.SchemaR
 func (r *genericControllerResource) readAndSetState(ctx context.Context, controllerID string, state *tfsdk.State, diags *diag.Diagnostics) {
 	controller, err := r.client.GetControllerWithParams(ctx, controllerID, &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
-		diags.AddError("Unable to Read SDN Controller", err.Error())
+		diags.AddError(fmt.Sprintf("Unable to Read SDN Controller %q", controllerID), err.Error())
 		return
 	}
 
