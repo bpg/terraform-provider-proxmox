@@ -98,10 +98,11 @@ type CustomEnvironmentVariables map[string]string
 
 // CustomFeatures contains the values for the "features" property.
 type CustomFeatures struct {
-	FUSE       *types.CustomBool `json:"fuse,omitempty"    url:"fuse,omitempty,int"`
-	KeyControl *types.CustomBool `json:"keyctl,omitempty"  url:"keyctl,omitempty,int"`
-	MountTypes *[]string         `json:"mount,omitempty"   url:"mount,omitempty"`
-	Nesting    *types.CustomBool `json:"nesting,omitempty" url:"nesting,omitempty,int"`
+	FUSE           *types.CustomBool `json:"fuse,omitempty"    url:"fuse,omitempty,int"`
+	KeyControl     *types.CustomBool `json:"keyctl,omitempty"  url:"keyctl,omitempty,int"`
+	MountTypes     *[]string         `json:"mount,omitempty"   url:"mount,omitempty"`
+	Nesting        *types.CustomBool `json:"nesting,omitempty" url:"nesting,omitempty,int"`
+	MakeDeviceNode *types.CustomBool `json:"mknod,omitempty"   url:"mknod,omitempty,int"`
 }
 
 // CustomMountPoint contains the values for the "mp[n]" properties.
@@ -349,6 +350,14 @@ func (r *CustomFeatures) EncodeValues(key string, v *url.Values) error {
 			values = append(values, "nesting=1")
 		} else {
 			values = append(values, "nesting=0")
+		}
+	}
+
+	if r.MakeDeviceNode != nil {
+		if *r.MakeDeviceNode {
+			values = append(values, "mknod=1")
+		} else {
+			values = append(values, "mknod=0")
 		}
 	}
 
@@ -805,6 +814,8 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 				}
 			case "nesting":
 				r.Nesting = types.CustomBool(v[1] == "1").Pointer()
+			case "mknod":
+				r.MakeDeviceNode = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}

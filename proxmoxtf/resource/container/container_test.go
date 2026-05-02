@@ -135,12 +135,14 @@ func TestContainerSchema(t *testing.T) {
 		mkFeaturesNesting,
 		mkFeaturesKeyControl,
 		mkFeaturesFUSE,
+		mkFeaturesMakeDeviceNode,
 	})
 
 	test.AssertValueTypes(t, featuresSchema, map[string]schema.ValueType{
-		mkFeaturesNesting:    schema.TypeBool,
-		mkFeaturesKeyControl: schema.TypeBool,
-		mkFeaturesFUSE:       schema.TypeBool,
+		mkFeaturesNesting:        schema.TypeBool,
+		mkFeaturesKeyControl:     schema.TypeBool,
+		mkFeaturesFUSE:           schema.TypeBool,
+		mkFeaturesMakeDeviceNode: schema.TypeBool,
 	})
 
 	initializationSchema := test.AssertNestedSchemaExistence(

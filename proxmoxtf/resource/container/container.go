@@ -69,6 +69,7 @@ const (
 	dvFeaturesNesting                   = false
 	dvFeaturesKeyControl                = false
 	dvFeaturesFUSE                      = false
+	dvFeaturesMakeDeviceNode            = false
 	dvHookScript                        = ""
 	dvMemoryDedicated                   = 512
 	dvMemorySwap                        = 0
@@ -134,6 +135,7 @@ const (
 	mkFeaturesNesting                   = "nesting"
 	mkFeaturesKeyControl                = "keyctl"
 	mkFeaturesFUSE                      = "fuse"
+	mkFeaturesMakeDeviceNode            = "mknod"
 	mkFeaturesMountTypes                = "mount"
 	mkHookScriptFileID                  = "hook_script_file_id"
 	mkInitialization                    = "initialization"
@@ -463,10 +465,11 @@ func Container() *schema.Resource {
 				DefaultFunc: func() (any, error) {
 					return []any{
 						map[string]any{
-							mkFeaturesNesting:    dvFeaturesNesting,
-							mkFeaturesKeyControl: dvFeaturesKeyControl,
-							mkFeaturesFUSE:       dvFeaturesFUSE,
-							mkFeaturesMountTypes: []any{},
+							mkFeaturesNesting:        dvFeaturesNesting,
+							mkFeaturesKeyControl:     dvFeaturesKeyControl,
+							mkFeaturesFUSE:           dvFeaturesFUSE,
+							mkFeaturesMountTypes:     []any{},
+							mkFeaturesMakeDeviceNode: dvFeaturesMakeDeviceNode,
 						},
 					}, nil
 				},
@@ -498,6 +501,12 @@ func Container() *schema.Resource {
 								Type:             schema.TypeString,
 								ValidateDiagFunc: MountTypeValidator(),
 							},
+						},
+						mkFeaturesMakeDeviceNode: {
+							Type:        schema.TypeBool,
+							Description: "Whether the container supports `mknod()` system call",
+							Optional:    true,
+							Default:     dvFeaturesMakeDeviceNode,
 						},
 					},
 				},
@@ -2523,6 +2532,7 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 	keyctl := types.CustomBool(featuresBlock[mkFeaturesKeyControl].(bool))
 	fuse := types.CustomBool(featuresBlock[mkFeaturesFUSE].(bool))
 	mountTypes := featuresBlock[mkFeaturesMountTypes].([]any)
+	mknod := types.CustomBool(featuresBlock[mkFeaturesMakeDeviceNode].(bool))
 
 	var mountTypesConverted []string
 	if mountTypes != nil {
@@ -2548,6 +2558,10 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 
 	if fuse {
 		features.FUSE = &fuse
+	}
+
+	if mknod {
+		features.MakeDeviceNode = &mknod
 	}
 
 	return &features, nil

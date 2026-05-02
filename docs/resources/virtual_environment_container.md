@@ -353,6 +353,7 @@ The `mount_point.volume` attribute accepts three forms:
     - `fuse` - (Optional) Whether the container supports FUSE mounts (defaults to `false`)
     - `keyctl` - (Optional) Whether the container supports `keyctl()` system call (defaults to `false`)
     - `mount` - (Optional) List of allowed mount types (`cifs` or `nfs`)
+    - `mknod` - (Optional) Whether the container supports `mknod()` system call (defaults to `false`)
 - `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute).
 
 ## Attribute Reference
