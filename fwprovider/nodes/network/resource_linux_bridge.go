@@ -326,7 +326,10 @@ func (r *linuxBridgeResource) ValidateConfig(
 	// `vids` (bridge-vids) only applies to VLAN-aware bridges. Setting it
 	// without `vlan_aware = true` has no effect on PVE — surface the
 	// dependency at plan time so the misconfiguration is loud, not silent.
-	if attribute.IsDefined(data.VIDs) && attribute.IsDefined(data.VLANAware) && !data.VLANAware.ValueBool() {
+	// Skip only when `vlan_aware` is unknown (e.g. a cross-resource reference);
+	// null means the user omitted it from config and PVE defaults to false, which
+	// is still a misconfiguration when `vids` is set.
+	if attribute.IsDefined(data.VIDs) && !data.VLANAware.IsUnknown() && !data.VLANAware.ValueBool() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("vids"),
 			"Invalid attribute combination",

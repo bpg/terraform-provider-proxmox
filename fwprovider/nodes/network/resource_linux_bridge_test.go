@@ -321,6 +321,21 @@ func TestAccResourceLinuxBridgeVIDsValidation(t *testing.T) {
 				ExpectError: regexp.MustCompile(`(?s)at least 1`),
 				PlanOnly:    true,
 			},
+			// vids set + vlan_aware omitted → ValidateConfig still errors. PVE
+			// defaults vlan_aware to false, so the misconfiguration is real;
+			// only an unresolved (unknown) vlan_aware should be skipped.
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address   = "%s"
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					vids      = "1 2 3"
+				}
+				`, ipV4cidr, iface)),
+				ExpectError: regexp.MustCompile(`(?s)requires.*vlan_aware`),
+				PlanOnly:    true,
+			},
 			// vids set + vlan_aware explicitly false → ValidateConfig errors.
 			// Covers the migration scenario: a user toggling vlan_aware off
 			// without first removing vids.
