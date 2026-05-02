@@ -403,7 +403,7 @@ func uploadSnippetFile(t *testing.T, fileName string) {
 	}(f)
 
 	fname := filepath.Base(fileName)
-	err = sshClient.NodeUpload(context.Background(), "pve", "/var/lib/vz/",
+	err = sshClient.NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/",
 		&api.FileUploadRequest{
 			ContentType: "snippets",
 			FileName:    fname,
