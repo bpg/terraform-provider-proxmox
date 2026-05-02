@@ -4,12 +4,12 @@ title: proxmox_sdn_controller_evpn
 parent: Data Sources
 subcategory: Virtual Environment
 description: |-
-  The EVPN, zone requires an external controller to manage the control plane. The EVPN controller plugin configures the Free Range Routing (frr) router.
+  The EVPN zone requires an external controller to manage the control plane. The EVPN controller plugin configures the Free Range Routing (frr) router.
 ---
 
 # Data Source: proxmox_sdn_controller_evpn
 
-The EVPN, zone requires an external controller to manage the control plane. The EVPN controller plugin configures the Free Range Routing (frr) router.
+The EVPN zone requires an external controller to manage the control plane. The EVPN controller plugin configures the Free Range Routing (frr) router.
 
 
 
