@@ -26,7 +26,7 @@ func TestAccResourceSDNControllerEVPN(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create and update controller", []resource.TestStep{{
+		{"Update single peer", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
 				  id  = "ctrlE"
@@ -61,7 +61,17 @@ func TestAccResourceSDNControllerEVPN(t *testing.T) {
 				  id  = "ctrlE"
 				  peers = ["10.0.0.2"]
 				  asn = 65000
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
 				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
@@ -78,6 +88,279 @@ func TestAccResourceSDNControllerEVPN(t *testing.T) {
 			ImportStateId:     "ctrlE",
 			ImportState:       true,
 			ImportStateVerify: true,
+		}}},
+		{"Update multiple peers", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id  = "ctrlE"
+				  peers = ["10.0.0.1", "10.0.0.2", "10.0.0.3"]
+				  asn = 65000
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
+					"id":      "ctrlE",
+					"peers.#": "3",
+					"peers.0": "10.0.0.1",
+					"peers.1": "10.0.0.2",
+					"peers.2": "10.0.0.3",
+					"asn":     "65000",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_evpn.controller_evpn", []string{
+					"fabric",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id  = "ctrlE"
+				  peers = ["10.0.0.1", "10.0.0.4"]
+				  asn = 65000
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}	
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
+					"id":      "ctrlE",
+					"peers.#": "2",
+					"peers.0": "10.0.0.1",
+					"peers.1": "10.0.0.4",
+					"asn":     "65000",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_evpn.controller_evpn", []string{
+					"fabric",
+				}),
+			),
+		}}},
+		{"Update fabric", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_fabric_openfabric" "main" {
+				  id = "main"
+				  ip_prefix = "10.0.0.0/16"
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id  = "ctrlE"
+				  fabric = proxmox_sdn_fabric_openfabric.main.id
+				  asn = 65000
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
+					"id":     "ctrlE",
+					"fabric": "main",
+					"asn":    "65000",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_evpn.controller_evpn", []string{
+					"peers",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_fabric_openfabric" "main" {
+				  id = "main"
+				  ip_prefix = "10.0.0.0/16"
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_fabric_openfabric" "main2" {
+				  id = "main2"
+				  ip_prefix = "10.1.0.0/16"
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id  = "ctrlE"
+				  asn = 65000
+				  fabric = proxmox_sdn_fabric_openfabric.main2.id
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
+					"id":     "ctrlE",
+					"asn":    "65000",
+					"fabric": "main2",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_evpn.controller_evpn", []string{
+					"peers",
+				}),
+			),
+		}}},
+		{"Change peers to fabric", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id  = "ctrlE"
+				  asn = 65000
+				  peers = ["10.0.0.1"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
+					"id":      "ctrlE",
+					"peers.#": "1",
+					"peers.0": "10.0.0.1",
+					"asn":     "65000",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_evpn.controller_evpn", []string{
+					"fabric",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_fabric_openfabric" "main" {
+				  id = "main"
+				  ip_prefix = "10.0.0.0/16"
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id  = "ctrlE"
+				  fabric = proxmox_sdn_fabric_openfabric.main.id
+				  asn = 65000
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
+					"id":     "ctrlE",
+					"fabric": "main",
+					"asn":    "65000",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_evpn.controller_evpn", []string{
+					"peers",
+				}),
+			),
+		}}},
+		{"Change fabric to peers", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_fabric_openfabric" "main" {
+				  id = "main"
+				  ip_prefix = "10.0.0.0/16"
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id  = "ctrlE"
+				  fabric = proxmox_sdn_fabric_openfabric.main.id
+				  asn = 65000
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
+					"id":     "ctrlE",
+					"fabric": "main",
+					"asn":    "65000",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_evpn.controller_evpn", []string{
+					"peers",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_fabric_openfabric" "main" {
+				  id = "main"
+				  ip_prefix = "10.0.0.0/16"
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+				resource "proxmox_sdn_controller_evpn" "controller_evpn" {
+				  id  = "ctrlE"
+				  asn = 65000
+				  peers = ["10.0.0.1"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_evpn.controller_evpn
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_evpn.controller_evpn", map[string]string{
+					"id":      "ctrlE",
+					"peers.#": "1",
+					"peers.0": "10.0.0.1",
+					"asn":     "65000",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_evpn.controller_evpn", []string{
+					"fabric",
+				}),
+			),
 		}}},
 	}
 
