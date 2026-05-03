@@ -677,7 +677,7 @@ func TestAccResourceContainerCloneFullFlag(t *testing.T) {
 					hostname = "test-linked-clone"
 				}
 			}`, WithRootUser()),
-				ExpectError: regexp.MustCompile(`Linked clone feature .* is not available`),
+				ExpectError: regexp.MustCompile(`(?s)Linked\s+clone feature .* is not available`),
 			},
 		},
 	})
@@ -2746,6 +2746,96 @@ func TestAccResourceContainerFeaturesRefresh(t *testing.T) {
 				Config:             containerConfig,
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceContainerFeaturesToggleOff verifies that toggling a `features.*` bool
+// from `true` to `false` reaches PVE when features is the only changed attribute.
+// Without the fix for #2856, the URL body for such an update is empty and PVE returns
+// `HTTP 500 - no options specified`.
+func TestAccResourceContainerFeaturesToggleOff(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	containerConfig := func(nesting bool) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name    = "{{.NodeName}}"
+				vm_id        = {{.TestContainerID}}
+				unprivileged = true
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				features {
+					nesting = %t
+				}
+				initialization {
+					hostname = "test-features-toggle"
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}`, nesting), WithRootUser())
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig(true),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"features.0.nesting": "true",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.Features, "features should not be nil")
+						require.NotNil(te.t, ctInfo.Features.Nesting, "features.nesting should not be nil")
+						require.True(te.t, bool(*ctInfo.Features.Nesting), "features.nesting should be true in Proxmox")
+
+						return nil
+					},
+				),
+			},
+			{
+				Config: containerConfig(false),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"features.0.nesting": "false",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						if ctInfo.Features != nil && ctInfo.Features.Nesting != nil {
+							require.False(te.t, bool(*ctInfo.Features.Nesting), "features.nesting should be false in Proxmox")
+						}
+
+						return nil
+					},
+				),
 			},
 		},
 	})

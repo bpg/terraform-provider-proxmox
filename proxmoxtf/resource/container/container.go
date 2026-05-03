@@ -2517,6 +2517,20 @@ func containerGetStartupBehavior(d *schema.ResourceData) *containers.CustomStart
 }
 
 func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*containers.CustomFeatures, error) {
+	return containerGetFeaturesInternal(resource, d, false)
+}
+
+// Always populates all bool flags so a true→false toggle reaches PVE instead of
+// being dropped by EncodeValues' nil-pointer skip.
+func containerGetFeaturesForUpdate(resource *schema.Resource, d *schema.ResourceData) (*containers.CustomFeatures, error) {
+	return containerGetFeaturesInternal(resource, d, true)
+}
+
+func containerGetFeaturesInternal(
+	resource *schema.Resource,
+	d *schema.ResourceData,
+	emitFalseBools bool,
+) (*containers.CustomFeatures, error) {
 	featuresBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
@@ -2548,19 +2562,19 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 		MountTypes: &mountTypesConverted,
 	}
 
-	if nesting {
+	if bool(nesting) || emitFalseBools {
 		features.Nesting = &nesting
 	}
 
-	if keyctl {
+	if bool(keyctl) || emitFalseBools {
 		features.KeyControl = &keyctl
 	}
 
-	if fuse {
+	if bool(fuse) || emitFalseBools {
 		features.FUSE = &fuse
 	}
 
-	if mknod {
+	if bool(mknod) || emitFalseBools {
 		features.MakeDeviceNode = &mknod
 	}
 
@@ -3678,7 +3692,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	if d.HasChange(mkFeatures) {
-		features, err := containerGetFeatures(container, d)
+		features, err := containerGetFeaturesForUpdate(container, d)
 		if err != nil {
 			return diag.FromErr(err)
 		}
