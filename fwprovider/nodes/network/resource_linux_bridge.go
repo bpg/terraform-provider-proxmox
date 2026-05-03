@@ -84,7 +84,7 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody(
 
 	var sanitizedPorts []string
 
-	if !m.Ports.IsNull() && !m.Ports.IsUnknown() {
+	if attribute.IsDefined(m.Ports) {
 		var portsList []string
 
 		d := m.Ports.ElementsAs(ctx, &portsList, false)
