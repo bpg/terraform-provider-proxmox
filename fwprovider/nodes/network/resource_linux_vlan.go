@@ -242,7 +242,6 @@ func (r *linuxVLANResource) Configure(
 	r.client = cfg.Client
 }
 
-//nolint:dupl
 func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan linuxVLANResourceModel
 

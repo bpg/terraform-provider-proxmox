@@ -298,6 +298,35 @@ func TestAccResourceLinuxBridgeVIDsToggleVLANAware(t *testing.T) {
 	})
 }
 
+// Regression test for #2851: `ports` referencing an unknown value must not
+// break `tofu validate` / `terraform plan`.
+func TestAccResourceLinuxBridgeUnknownPorts(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "terraform_data" "ports_source" {
+					input = ["enp1s0"]
+				}
+
+				resource "proxmox_network_linux_bridge" "test" {
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					ports     = terraform_data.ports_source.output
+				}
+				`, iface)),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
 func TestAccResourceLinuxBridgeVIDsValidation(t *testing.T) {
 	te := test.InitEnvironment(t)
 

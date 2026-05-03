@@ -58,12 +58,15 @@ type linuxBridgeResourceModel struct {
 	Comment   types.String            `tfsdk:"comment"`
 	Timeout   types.Int64             `tfsdk:"timeout_reload"`
 	// Linux bridge attributes
-	Ports     []types.String `tfsdk:"ports"`
-	VLANAware types.Bool     `tfsdk:"vlan_aware"`
-	VIDs      types.String   `tfsdk:"vids"`
+	Ports     types.List   `tfsdk:"ports"`
+	VLANAware types.Bool   `tfsdk:"vlan_aware"`
+	VIDs      types.String `tfsdk:"vids"`
 }
 
-func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nodes.NetworkInterfaceCreateUpdateRequestBody {
+func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody(
+	ctx context.Context,
+	diags *diag.Diagnostics,
+) *nodes.NetworkInterfaceCreateUpdateRequestBody {
 	body := &nodes.NetworkInterfaceCreateUpdateRequestBody{
 		Iface:     m.Name.ValueString(),
 		Type:      "bridge",
@@ -81,10 +84,21 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 
 	var sanitizedPorts []string
 
-	for _, port := range m.Ports {
-		port := strings.TrimSpace(port.ValueString())
-		if len(port) > 0 {
-			sanitizedPorts = append(sanitizedPorts, port)
+	if !m.Ports.IsNull() && !m.Ports.IsUnknown() {
+		var portsList []string
+
+		d := m.Ports.ElementsAs(ctx, &portsList, false)
+		diags.Append(d...)
+
+		if d.HasError() {
+			return body
+		}
+
+		for _, port := range portsList {
+			port = strings.TrimSpace(port)
+			if len(port) > 0 {
+				sanitizedPorts = append(sanitizedPorts, port)
+			}
 		}
 	}
 
@@ -145,10 +159,10 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 			return fmt.Errorf("failed to parse bridge ports: %s", *iface.BridgePorts)
 		}
 
-		diags = ports.ElementsAs(ctx, &m.Ports, false)
-		if diags.HasError() {
-			return fmt.Errorf("failed to build bridge ports list: %s", *iface.BridgePorts)
-		}
+		m.Ports = ports
+	} else if m.Ports.ElementType(ctx) == nil {
+		// state.Set rejects a zero-value List (no element type) on fresh ImportState.
+		m.Ports = types.ListNull(types.StringType)
 	}
 
 	if iface.BridgeVIDs != nil {
@@ -340,7 +354,6 @@ func (r *linuxBridgeResource) ValidateConfig(
 	}
 }
 
-//nolint:dupl
 func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan linuxBridgeResourceModel
 
@@ -351,7 +364,10 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	body := plan.exportToNetworkInterfaceCreateUpdateBody()
+	body := plan.exportToNetworkInterfaceCreateUpdateBody(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	err := r.client.Node(plan.NodeName.ValueString()).CreateNetworkInterface(ctx, body)
 	if err != nil {
@@ -468,7 +484,10 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	body := plan.exportToNetworkInterfaceCreateUpdateBody()
+	body := plan.exportToNetworkInterfaceCreateUpdateBody(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	var toDelete []string
 
