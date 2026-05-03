@@ -2827,6 +2827,56 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	// Compare the features configuration to the one stored in the state.
+	features := map[string]any{}
+
+	if containerConfig.Features != nil {
+		if containerConfig.Features.Nesting != nil {
+			features[mkFeaturesNesting] = bool(*containerConfig.Features.Nesting)
+		} else {
+			features[mkFeaturesNesting] = dvFeaturesNesting
+		}
+
+		if containerConfig.Features.KeyControl != nil {
+			features[mkFeaturesKeyControl] = bool(*containerConfig.Features.KeyControl)
+		} else {
+			features[mkFeaturesKeyControl] = dvFeaturesKeyControl
+		}
+
+		if containerConfig.Features.FUSE != nil {
+			features[mkFeaturesFUSE] = bool(*containerConfig.Features.FUSE)
+		} else {
+			features[mkFeaturesFUSE] = dvFeaturesFUSE
+		}
+
+		if containerConfig.Features.MountTypes != nil {
+			features[mkFeaturesMountTypes] = *containerConfig.Features.MountTypes
+		} else {
+			features[mkFeaturesMountTypes] = []string{}
+		}
+	} else {
+		features[mkFeaturesNesting] = dvFeaturesNesting
+		features[mkFeaturesKeyControl] = dvFeaturesKeyControl
+		features[mkFeaturesFUSE] = dvFeaturesFUSE
+		features[mkFeaturesMountTypes] = []string{}
+	}
+
+	currentFeatures := d.Get(mkFeatures).([]any)
+
+	if len(clone) > 0 {
+		if len(currentFeatures) > 0 {
+			err := d.Set(mkFeatures, []any{features})
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else if len(currentFeatures) > 0 ||
+		features[mkFeaturesNesting] != dvFeaturesNesting ||
+		features[mkFeaturesKeyControl] != dvFeaturesKeyControl ||
+		features[mkFeaturesFUSE] != dvFeaturesFUSE ||
+		len(features[mkFeaturesMountTypes].([]string)) > 0 {
+		err := d.Set(mkFeatures, []any{features})
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	// Compare the initialization and network interface configuration to the one stored in the state.
 	initialization := map[string]any{}
 
@@ -3285,6 +3335,27 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 		diags = append(diags, diag.FromErr(e)...)
 	}
+
+	currentStartOnBoot := types.CustomBool(d.Get(mkStartOnBoot).(bool))
+
+	if len(clone) == 0 || currentStartOnBoot {
+		if containerConfig.StartOnBoot != nil {
+			e = d.Set(mkStartOnBoot, bool(*containerConfig.StartOnBoot))
+		} else {
+			// PVE returns nil for onboot when it is unset (false in practice).
+			e = d.Set(mkStartOnBoot, false)
+		}
+
+		diags = append(diags, diag.FromErr(e)...)
+	}
+
+	if containerConfig.HookScript != nil {
+		e = d.Set(mkHookScriptFileID, *containerConfig.HookScript)
+	} else {
+		e = d.Set(mkHookScriptFileID, "")
+	}
+
+	diags = append(diags, diag.FromErr(e)...)
 
 	currentTags := d.Get(mkTags).([]any)
 
