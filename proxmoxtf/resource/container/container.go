@@ -3338,7 +3338,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 	currentStartOnBoot := types.CustomBool(d.Get(mkStartOnBoot).(bool))
 
-	if len(clone) == 0 || currentStartOnBoot {
+	if len(clone) == 0 || !currentStartOnBoot {
 		if containerConfig.StartOnBoot != nil {
 			e = d.Set(mkStartOnBoot, bool(*containerConfig.StartOnBoot))
 		} else {
@@ -3349,13 +3349,17 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		diags = append(diags, diag.FromErr(e)...)
 	}
 
-	if containerConfig.HookScript != nil {
-		e = d.Set(mkHookScriptFileID, *containerConfig.HookScript)
-	} else {
-		e = d.Set(mkHookScriptFileID, "")
-	}
+	currentHookScript := d.Get(mkHookScriptFileID).(string)
 
-	diags = append(diags, diag.FromErr(e)...)
+	if len(clone) == 0 || currentHookScript != dvHookScript {
+		if containerConfig.HookScript != nil {
+			e = d.Set(mkHookScriptFileID, *containerConfig.HookScript)
+		} else {
+			e = d.Set(mkHookScriptFileID, "")
+		}
+
+		diags = append(diags, diag.FromErr(e)...)
+	}
 
 	currentTags := d.Get(mkTags).([]any)
 
