@@ -2868,11 +2868,18 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		} else {
 			features[mkFeaturesMountTypes] = []string{}
 		}
+
+		if containerConfig.Features.MakeDeviceNode != nil {
+			features[mkFeaturesMakeDeviceNode] = bool(*containerConfig.Features.MakeDeviceNode)
+		} else {
+			features[mkFeaturesMakeDeviceNode] = dvFeaturesMakeDeviceNode
+		}
 	} else {
 		features[mkFeaturesNesting] = dvFeaturesNesting
 		features[mkFeaturesKeyControl] = dvFeaturesKeyControl
 		features[mkFeaturesFUSE] = dvFeaturesFUSE
 		features[mkFeaturesMountTypes] = []string{}
+		features[mkFeaturesMakeDeviceNode] = dvFeaturesMakeDeviceNode
 	}
 
 	currentFeatures := d.Get(mkFeatures).([]any)
@@ -2886,7 +2893,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		features[mkFeaturesNesting] != dvFeaturesNesting ||
 		features[mkFeaturesKeyControl] != dvFeaturesKeyControl ||
 		features[mkFeaturesFUSE] != dvFeaturesFUSE ||
-		len(features[mkFeaturesMountTypes].([]string)) > 0 {
+		len(features[mkFeaturesMountTypes].([]string)) > 0 ||
+		features[mkFeaturesMakeDeviceNode] != dvFeaturesMakeDeviceNode {
 		err := d.Set(mkFeatures, []any{features})
 		diags = append(diags, diag.FromErr(err)...)
 	}
