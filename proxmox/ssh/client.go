@@ -65,7 +65,7 @@ type Client interface {
 	// ExecuteNodeCommands executes a command on a node.
 	ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) ([]byte, error)
 
-	// NodeUpload uploads a file to a node.
+	// NodeUpload uploads a file to a node by SFTP.
 	NodeUpload(ctx context.Context, nodeName string,
 		remoteFileDir string, fileUploadRequest *api.FileUploadRequest) error
 
@@ -390,6 +390,30 @@ func (c *client) NodeUpload(
 	if bytesUploaded != fileSize {
 		return fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
 			remoteFilePath, bytesUploaded, fileSize)
+	}
+
+	if d.Mode != "" {
+		parsedFileMode, parseErr := strconv.ParseUint(d.Mode, 8, 12)
+		if parseErr != nil {
+			return fmt.Errorf("failed to parse file mode %q: %w", d.Mode, parseErr)
+		}
+
+		remoteStat, statErr := remoteFile.Stat()
+		if statErr != nil {
+			return fmt.Errorf("failed to read remote file %s: %w", remoteFilePath, statErr)
+		}
+
+		fileMode := os.FileMode(uint32(parsedFileMode))
+
+		if err = sftpClient.Chmod(remoteFilePath, fileMode); err != nil {
+			return fmt.Errorf("failed to change file mode of remote file from %#o (%s) to %#o (%s): %w",
+				remoteStat.Mode().Perm(), remoteStat.Mode(), fileMode.Perm(), fileMode, err)
+		}
+
+		tflog.Debug(ctx, "changed mode of uploaded file", map[string]any{
+			"before": fmt.Sprintf("%#o (%s)", remoteStat.Mode().Perm(), remoteStat.Mode()),
+			"after":  fmt.Sprintf("%#o (%s)", fileMode.Perm(), fileMode),
+		})
 	}
 
 	tflog.Debug(ctx, "uploaded file to datastore", map[string]any{

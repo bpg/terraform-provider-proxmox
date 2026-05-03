@@ -44,6 +44,8 @@ func TestAccResourceFile(t *testing.T) {
 	snippetFile1 := strings.ReplaceAll(CreateTempFile(t, "snippet-file-1-*.yaml", "test snippet 1 - file").Name(), `\`, `/`)
 	snippetFile2 := strings.ReplaceAll(CreateTempFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file").Name(), `\`, `/`)
 	fileISO := strings.ReplaceAll(CreateTempFile(t, "file-*.iso", "pretend this is an ISO").Name(), `\`, `/`)
+	sftpOverwriteFile := strings.ReplaceAll(CreateTempFile(t, "sftp-overwrite-*.yaml", "sftp overwrite test").Name(), `\`, `/`)
+	sftpFile := strings.ReplaceAll(CreateTempFile(t, "sftp-file-*.yaml", "sftp upload").Name(), `\`, `/`)
 
 	fileServer := NewTestFileServer(t)
 	if fileServer == nil {
@@ -54,24 +56,30 @@ func TestAccResourceFile(t *testing.T) {
 	snippetURL := fileServer.AddFile("/229Q.yaml", "229Q.yaml", snippetContent)
 
 	te.AddTemplateVars(map[string]interface{}{
-		"SnippetRaw":   snippetRaw,
-		"SnippetURL":   snippetURL,
-		"SnippetFile1": snippetFile1,
-		"SnippetFile2": snippetFile2,
-		"FileISO":      fileISO,
+		"SnippetRaw":        snippetRaw,
+		"SnippetURL":        snippetURL,
+		"SnippetFile1":      snippetFile1,
+		"SnippetFile2":      snippetFile2,
+		"FileISO":           fileISO,
+		"SftpOverwriteFile": sftpOverwriteFile,
+		"SftpFile":          sftpFile,
 	})
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		PreCheck: func() {
 			uploadSnippetFile(t, snippetFile2)
+			uploadSnippetFile(t, sftpOverwriteFile)
 			t.Cleanup(func() {
 				deleteSnippet(te, filepath.Base(snippetFile1))
 				deleteSnippet(te, filepath.Base(snippetFile2))
+				deleteSnippet(te, filepath.Base(sftpOverwriteFile))
 
 				_ = os.Remove(snippetFile1)
 				_ = os.Remove(snippetFile2)
 				_ = os.Remove(fileISO)
+				_ = os.Remove(sftpOverwriteFile)
+				_ = os.Remove(sftpFile)
 			})
 		},
 		Steps: []resource.TestStep{
@@ -244,6 +252,54 @@ func TestAccResourceFile(t *testing.T) {
 					"content_type": "snippets",
 					"file_name":    filepath.Base(snippetFile1),
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile1)),
+				}),
+			},
+			// SFTP upload mode: file upload
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test_sftp_file" {
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					upload_mode  = "sftp"
+					source_file {
+					  path = "{{.SftpFile}}"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test_sftp_file", map[string]string{
+					"content_type": "snippets",
+					"file_name":    filepath.Base(sftpFile),
+					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(sftpFile)),
+				}),
+			},
+			// SFTP upload mode: do not allow to overwrite the file
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test_sftp_overwrite" {
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					overwrite    = false
+					upload_mode  = "sftp"
+					source_file {
+					  path = "{{.SftpOverwriteFile}}"
+					}
+				}`),
+				ExpectError: regexp.MustCompile("already exists"),
+			},
+			// SFTP upload mode: allow to overwrite the file by default
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test_sftp_overwrite" {
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					upload_mode  = "sftp"
+					source_file {
+					  path = "{{.SftpOverwriteFile}}"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test_sftp_overwrite", map[string]string{
+					"content_type": "snippets",
+					"file_name":    filepath.Base(sftpOverwriteFile),
+					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(sftpOverwriteFile)),
 				}),
 			},
 		},

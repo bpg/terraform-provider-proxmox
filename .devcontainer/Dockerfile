@@ -1,6 +1,6 @@
 FROM golang:1.26.2@sha256:b54cbf583d390341599d7bcbc062425c081105cc5ef6d170ced98ef9d047c716
 
-ARG GOLANGCI_LINT_VERSION=2.11.4 # renovate: depName=golangci/golangci-lint datasource=github-releases
+ARG GOLANGCI_LINT_VERSION=2.12.1 # renovate: depName=golangci/golangci-lint datasource=github-releases
 
 RUN apt update && apt upgrade -y && \
     apt-get install --no-install-recommends -y ca-certificates curl gnupg lsb-release jq zsh neovim gh && \

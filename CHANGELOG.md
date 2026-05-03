@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.105.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.104.0...v0.105.0) (2026-05-02)
+
+
+### Features
+
+* **core:** add SFTP file upload method ([#2836](https://github.com/bpg/terraform-provider-proxmox/issues/2836)) ([39ca5d3](https://github.com/bpg/terraform-provider-proxmox/commit/39ca5d39951f2d3f6c6ff6bfe1f19d08dfbf1c3d))
+* **network:** add `vids` attribute to `proxmox_network_linux_bridge` ([#2841](https://github.com/bpg/terraform-provider-proxmox/issues/2841)) ([f391b1c](https://github.com/bpg/terraform-provider-proxmox/commit/f391b1c214cc86c6d35a037184d401844476650d))
+* **sdn:** add support for EVPN controller ([#2839](https://github.com/bpg/terraform-provider-proxmox/issues/2839)) ([ed23beb](https://github.com/bpg/terraform-provider-proxmox/commit/ed23beb315b0afca5ac52bf1eca40a594ec8c0df))
+
+
+### Bug Fixes
+
+* **acme:** mark `eab_hmac_key` and `eab_kid` as Sensitive ([#2838](https://github.com/bpg/terraform-provider-proxmox/issues/2838)) ([30051b2](https://github.com/bpg/terraform-provider-proxmox/commit/30051b2909f0c618df25936a5ec52c77435c41e1))
+* **ci:** derive bot identity from app-slug output, not /app endpoint ([b801d67](https://github.com/bpg/terraform-provider-proxmox/commit/b801d67a21100832aeadb3911b13b70c709767d5))
+* **ci:** read release PR branch from action output, not gh pr view ([52565bb](https://github.com/bpg/terraform-provider-proxmox/commit/52565bbba6f3b082fa05f9bbc6bd589961e16b58))
+* **lxc:** gate `host_managed` on PVE 9.1+, not 9.0+ ([#2828](https://github.com/bpg/terraform-provider-proxmox/issues/2828)) ([d348aed](https://github.com/bpg/terraform-provider-proxmox/commit/d348aed3f980ce5d56eb22d1112e51fac9d16361))
+* **network:** catch omitted `vlan_aware` in `vids` validator ([#2849](https://github.com/bpg/terraform-provider-proxmox/issues/2849)) ([9e47424](https://github.com/bpg/terraform-provider-proxmox/commit/9e47424a53832906b18a8f5c93d65496261b5efe))
+
+
+### Miscellaneous
+
+* **ci:** update goreleaser/goreleaser-action action (v7.1.0 → v7.2.1) ([#2831](https://github.com/bpg/terraform-provider-proxmox/issues/2831)) ([2506f61](https://github.com/bpg/terraform-provider-proxmox/commit/2506f6132e7fc21e0d092be2d75e562d270e5471))
+* **ci:** Update JetBrains/qodana-action action (v2025.3.2 → v2026.1.0) ([#2834](https://github.com/bpg/terraform-provider-proxmox/issues/2834)) ([d485cc9](https://github.com/bpg/terraform-provider-proxmox/commit/d485cc9a9eef90e6563e17ab253bd9ac5f152ee7))
+* **code:** address Qodana code-quality findings ([#2827](https://github.com/bpg/terraform-provider-proxmox/issues/2827)) ([b0e08d7](https://github.com/bpg/terraform-provider-proxmox/commit/b0e08d72137bb2d391735c1928325602f40b7bb4))
+* **core:** add nil-safe helpers for nil to value conversion ([#2829](https://github.com/bpg/terraform-provider-proxmox/issues/2829)) ([03493e9](https://github.com/bpg/terraform-provider-proxmox/commit/03493e988bd0cd51b5ae698faea0286d34c1a2a8))
+* **deps:** update golangci/golangci-lint (v2.11.4 → v2.12.1) ([#2844](https://github.com/bpg/terraform-provider-proxmox/issues/2844)) ([c3a14a3](https://github.com/bpg/terraform-provider-proxmox/commit/c3a14a3e69047695df0d221a54797c90d388bc48))
+* **deps:** update image golang (1e598ea → b54cbf5) ([#2830](https://github.com/bpg/terraform-provider-proxmox/issues/2830)) ([16c2280](https://github.com/bpg/terraform-provider-proxmox/commit/16c228053938f6dd1741690b63a5f9da83bdf21d))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.40.0 → v2.40.1) ([#2843](https://github.com/bpg/terraform-provider-proxmox/issues/2843)) ([114ce5a](https://github.com/bpg/terraform-provider-proxmox/commit/114ce5a112be53f2ec4754b661b995fe9ee69178))
+* **docs:** configure context7.json indexing with version sync ([ac70974](https://github.com/bpg/terraform-provider-proxmox/commit/ac7097469ee598315f7fe2d8ac8b7dcfeb96efa4))
+* **lxc:** restructure container docs for LLM retrieval ([#2833](https://github.com/bpg/terraform-provider-proxmox/issues/2833)) ([7d264d8](https://github.com/bpg/terraform-provider-proxmox/commit/7d264d814ce4eec5952c6b79017d3a9b1c507d38))
+
 ## [0.104.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.103.0...v0.104.0) (2026-04-25)
 
 

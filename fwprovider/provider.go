@@ -33,6 +33,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/replication"
 	sdnapplier "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/applier"
+	sdncontroller "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/controller"
 	sdnfabric "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/fabric"
 	sdnfabricnode "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/fabric_node"
 	sdnsubnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/subnet"
@@ -633,6 +634,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnfabricnode.NewOpenFabricShortResource,
 		sdnfabricnode.NewOSPFResource,
 		sdnfabricnode.NewOSPFShortResource,
+		sdncontroller.NewEVPNResource, // proxmox_sdn_controller_evpn
 		storage.NewCIFSStorageResource,
 		storage.NewCIFSStorageShortResource,
 		storage.NewDirectoryStorageResource,
@@ -721,6 +723,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		sdnfabricnode.NewOpenFabricShortDataSource,
 		sdnfabricnode.NewOSPFDataSource,
 		sdnfabricnode.NewOSPFShortDataSource,
+		sdncontroller.NewEVPNControllerDataSource, // proxmox_sdn_controller_evpn
 		vm.NewDataSource,
 		vm.NewShortDataSource,
 		replication.NewDataSource,

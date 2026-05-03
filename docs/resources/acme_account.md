@@ -35,8 +35,8 @@ resource "proxmox_acme_account" "example" {
 ### Optional
 
 - `directory` (String) The URL of the ACME CA directory endpoint.
-- `eab_hmac_key` (String) The HMAC key for External Account Binding.
-- `eab_kid` (String) The Key Identifier for External Account Binding.
+- `eab_hmac_key` (String, Sensitive) The HMAC key for External Account Binding.
+- `eab_kid` (String, Sensitive) The Key Identifier for External Account Binding.
 - `name` (String) The ACME account config file name.
 - `tos` (String) The URL of CA TermsOfService - setting this indicates agreement.
 

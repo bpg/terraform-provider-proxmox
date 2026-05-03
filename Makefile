@@ -1,9 +1,9 @@
 NAME=terraform-provider-proxmox
 TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
-VERSION=0.104.0# x-release-please-version
+VERSION=0.105.0# x-release-please-version
 
-GOLANGCI_LINT_VERSION=2.11.4# renovate: depName=golangci/golangci-lint datasource=github-releases
+GOLANGCI_LINT_VERSION=2.12.1# renovate: depName=golangci/golangci-lint datasource=github-releases
 
 # check if opentofu is installed and use it if it is,
 # otherwise use terraform
@@ -120,7 +120,7 @@ lint: ensure-golangci-lint
 	@CURRENT_VERSION=$$(golangci-lint version --short 2>/dev/null | sed 's/^v//' || echo "not installed"); \
  	if [ "$$CURRENT_VERSION" != "$(GOLANGCI_LINT_VERSION)" ]; then \
  		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION) (current: $$CURRENT_VERSION)"; \
- 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v$(GOLANGCI_LINT_VERSION); \
+ 		curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $$(go env GOPATH)/bin v$(GOLANGCI_LINT_VERSION); \
  	fi
 
 .PHONY: release-build

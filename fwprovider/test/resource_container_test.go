@@ -24,7 +24,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -2662,6 +2664,161 @@ func TestAccResourceContainerDiskACLOnlyAtCreate(t *testing.T) {
 						return nil
 					},
 				),
+			},
+		},
+	})
+}
+
+// TestAccResourceContainerFeaturesRefresh verifies that `containerRead` refreshes the
+// `features` block from the API. Without the fix for issue #2850, an out-of-band change
+// (e.g. `pct set <vmid> -features nesting=1`) is invisible to `terraform refresh` because
+// `containerRead` never calls `d.Set(mkFeatures, ...)`, so state stays at the last apply
+// value and `terraform plan` reports no drift.
+func TestAccResourceContainerFeaturesRefresh(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	containerConfig := te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			unprivileged = true
+			disk {
+				datastore_id = "local-lvm"
+				size         = 4
+			}
+			features {
+				nesting = false
+			}
+			initialization {
+				hostname = "test-features-refresh"
+				ip_config {
+					ipv4 {
+						address = "dhcp"
+					}
+				}
+			}
+			network_interface {
+				name = "vmbr0"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`, WithRootUser())
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create the container with features.nesting = false (the default).
+				Config: containerConfig,
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"features.0.nesting": "false",
+					}),
+				),
+			},
+			{
+				// Step 2: Mutate features.nesting=true out-of-band, then expect refresh
+				// to detect drift. Without the fix, containerRead silently keeps the
+				// stale state value and PlanOnly reports an empty plan.
+				PreConfig: func() {
+					nesting := proxmoxtypes.CustomBool(true)
+					err := te.NodeClient().Container(accTestContainerID).UpdateContainer(
+						t.Context(),
+						&containers.UpdateRequestBody{
+							Features: &containers.CustomFeatures{
+								Nesting: &nesting,
+							},
+						},
+					)
+					require.NoError(t, err, "failed to mutate features out-of-band")
+				},
+				Config:             containerConfig,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceContainerStartOnBootRefresh verifies that `containerRead` refreshes the
+// `start_on_boot` attribute from the API. Like #2850's `features` block, `start_on_boot`
+// was only ever sent to PVE on Create/Update — never read back into state — so out-of-band
+// changes via `pct set <vmid> -onboot ...` were invisible to `terraform refresh`.
+func TestAccResourceContainerStartOnBootRefresh(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	containerConfig := te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name     = "{{.NodeName}}"
+			vm_id         = {{.TestContainerID}}
+			unprivileged  = true
+			start_on_boot = false
+			disk {
+				datastore_id = "local-lvm"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-onboot-refresh"
+				ip_config {
+					ipv4 {
+						address = "dhcp"
+					}
+				}
+			}
+			network_interface {
+				name = "vmbr0"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`, WithRootUser())
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig,
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"start_on_boot": "false",
+					}),
+				),
+			},
+			{
+				PreConfig: func() {
+					onboot := proxmoxtypes.CustomBool(true)
+					err := te.NodeClient().Container(accTestContainerID).UpdateContainer(
+						t.Context(),
+						&containers.UpdateRequestBody{
+							StartOnBoot: &onboot,
+						},
+					)
+					require.NoError(t, err, "failed to mutate start_on_boot out-of-band")
+				},
+				Config:             containerConfig,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})

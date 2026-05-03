@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -37,9 +38,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &linuxBridgeResource{}
-	_ resource.ResourceWithConfigure   = &linuxBridgeResource{}
-	_ resource.ResourceWithImportState = &linuxBridgeResource{}
+	_ resource.Resource                   = &linuxBridgeResource{}
+	_ resource.ResourceWithConfigure      = &linuxBridgeResource{}
+	_ resource.ResourceWithImportState    = &linuxBridgeResource{}
+	_ resource.ResourceWithValidateConfig = &linuxBridgeResource{}
 )
 
 type linuxBridgeResourceModel struct {
@@ -56,11 +58,15 @@ type linuxBridgeResourceModel struct {
 	Comment   types.String            `tfsdk:"comment"`
 	Timeout   types.Int64             `tfsdk:"timeout_reload"`
 	// Linux bridge attributes
-	Ports     []types.String `tfsdk:"ports"`
-	VLANAware types.Bool     `tfsdk:"vlan_aware"`
+	Ports     types.List   `tfsdk:"ports"`
+	VLANAware types.Bool   `tfsdk:"vlan_aware"`
+	VIDs      types.String `tfsdk:"vids"`
 }
 
-func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nodes.NetworkInterfaceCreateUpdateRequestBody {
+func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody(
+	ctx context.Context,
+	diags *diag.Diagnostics,
+) *nodes.NetworkInterfaceCreateUpdateRequestBody {
 	body := &nodes.NetworkInterfaceCreateUpdateRequestBody{
 		Iface:     m.Name.ValueString(),
 		Type:      "bridge",
@@ -78,10 +84,21 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 
 	var sanitizedPorts []string
 
-	for _, port := range m.Ports {
-		port := strings.TrimSpace(port.ValueString())
-		if len(port) > 0 {
-			sanitizedPorts = append(sanitizedPorts, port)
+	if attribute.IsDefined(m.Ports) {
+		var portsList []string
+
+		d := m.Ports.ElementsAs(ctx, &portsList, false)
+		diags.Append(d...)
+
+		if d.HasError() {
+			return body
+		}
+
+		for _, port := range portsList {
+			port = strings.TrimSpace(port)
+			if len(port) > 0 {
+				sanitizedPorts = append(sanitizedPorts, port)
+			}
 		}
 	}
 
@@ -95,6 +112,8 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 	if m.VLANAware.ValueBool() {
 		body.BridgeVLANAware = proxmoxtypes.CustomBool(true).Pointer()
 	}
+
+	body.BridgeVIDs = attribute.StringPtrFromValue(m.VIDs)
 
 	return body
 }
@@ -140,10 +159,16 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 			return fmt.Errorf("failed to parse bridge ports: %s", *iface.BridgePorts)
 		}
 
-		diags = ports.ElementsAs(ctx, &m.Ports, false)
-		if diags.HasError() {
-			return fmt.Errorf("failed to build bridge ports list: %s", *iface.BridgePorts)
-		}
+		m.Ports = ports
+	} else if m.Ports.ElementType(ctx) == nil {
+		// state.Set rejects a zero-value List (no element type) on fresh ImportState.
+		m.Ports = types.ListNull(types.StringType)
+	}
+
+	if iface.BridgeVIDs != nil {
+		m.VIDs = types.StringValue(*iface.BridgeVIDs)
+	} else {
+		m.VIDs = types.StringNull()
 	}
 
 	return nil
@@ -251,6 +276,27 @@ func (r *linuxBridgeResource) Schema(
 				Optional:    true,
 				Computed:    true,
 			},
+			"vids": schema.StringAttribute{
+				Description: "VLAN IDs allowed on the bridge (Linux Bridge `bridge-vids`).",
+				MarkdownDescription: "VLAN IDs allowed on the bridge (Linux Bridge `bridge-vids`). " +
+					"Space-separated list of VLAN IDs and/or hyphenated ranges " +
+					"(e.g. `\"2-4094\"`, `\"1 20 130\"`, or `\"1 10-20 30\"`). " +
+					"Requires `vlan_aware = true`. PVE/ifupdown2 fills in `2-4094` as the " +
+					"implicit default for VLAN-aware bridges when this attribute is omitted; " +
+					"the provider surfaces that default in state.",
+				Optional: true,
+				Computed: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^\d+(-\d+)?( \d+(-\d+)?)*$`),
+						`must be a space-separated list of VLAN IDs or ranges (e.g. "1 20 130" or "2-4094")`,
+					),
+				},
+				PlanModifiers: []planmodifier.String{
+					vidsPlanModifier{},
+				},
+			},
 		},
 	}
 }
@@ -277,7 +323,37 @@ func (r *linuxBridgeResource) Configure(
 	r.client = cfg.Client
 }
 
-//nolint:dupl
+// ValidateConfig validates the resource configuration.
+func (r *linuxBridgeResource) ValidateConfig(
+	ctx context.Context,
+	req resource.ValidateConfigRequest,
+	resp *resource.ValidateConfigResponse,
+) {
+	var data linuxBridgeResourceModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// `vids` (bridge-vids) only applies to VLAN-aware bridges. Setting it
+	// without `vlan_aware = true` has no effect on PVE — surface the
+	// dependency at plan time so the misconfiguration is loud, not silent.
+	// Skip only when `vlan_aware` is unknown (e.g. a cross-resource reference);
+	// null means the user omitted it from config and PVE defaults to false, which
+	// is still a misconfiguration when `vids` is set.
+	if attribute.IsDefined(data.VIDs) && !data.VLANAware.IsUnknown() && !data.VLANAware.ValueBool() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("vids"),
+			"Invalid attribute combination",
+			"The `vids` attribute requires `vlan_aware = true`. A bridge that is "+
+				"not VLAN-aware does not perform VLAN filtering, so `vids` has no "+
+				"effect. Either set `vlan_aware = true`, or remove `vids`.",
+		)
+	}
+}
+
 func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan linuxBridgeResourceModel
 
@@ -288,7 +364,10 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	body := plan.exportToNetworkInterfaceCreateUpdateBody()
+	body := plan.exportToNetworkInterfaceCreateUpdateBody(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	err := r.client.Node(plan.NodeName.ValueString()).CreateNetworkInterface(ctx, body)
 	if err != nil {
@@ -405,7 +484,10 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	body := plan.exportToNetworkInterfaceCreateUpdateBody()
+	body := plan.exportToNetworkInterfaceCreateUpdateBody(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	var toDelete []string
 
@@ -415,6 +497,7 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 	attribute.CheckDelete(plan.Gateway, state.Gateway, &toDelete, "gateway")
 	attribute.CheckDelete(plan.Gateway6, state.Gateway6, &toDelete, "gateway6")
 	attribute.CheckDelete(plan.Comment, state.Comment, &toDelete, "comments")
+	attribute.CheckDelete(plan.VIDs, state.VIDs, &toDelete, "bridge_vids")
 
 	// VLANAware is computed with a default, will never be null
 	if !plan.VLANAware.Equal(state.VLANAware) && !plan.VLANAware.ValueBool() {

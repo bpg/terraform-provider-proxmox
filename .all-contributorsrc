@@ -1837,6 +1837,33 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Idalen",
+      "name": "Daniel Martins Vieira",
+      "avatar_url": "https://avatars.githubusercontent.com/u/48536015?v=4",
+      "profile": "https://github.com/Idalen",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "MatheusMoraesSoares",
+      "name": "Matheus",
+      "avatar_url": "https://avatars.githubusercontent.com/u/98968318?v=4",
+      "profile": "https://www.linkedin.com/in/matheus-moraes-soares-692b4322a/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "granda",
+      "name": "Matthew",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3467219?v=4",
+      "profile": "https://github.com/granda",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -16,6 +16,11 @@ resource "proxmox_network_linux_bridge" "vmbr99" {
     # For VLAN interfaces with custom names, use the interface name without the VLAN tag, e.g. "vlan_lab"
     "ens18.99"
   ]
+
+  # VLAN-aware bridge: permit any tagged VLAN through. Segmentation typically
+  # lives upstream (switch / firewall), not on the hypervisor bridge.
+  vlan_aware = true
+  vids       = "2-4094"
 }
 
 resource "proxmox_network_linux_vlan" "vlan99" {
