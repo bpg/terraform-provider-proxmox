@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.106.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.105.0...v0.106.0) (2026-05-06)
+
+
+### Features
+
+* **lxc:** add support for `mknod()` feature ([#2845](https://github.com/bpg/terraform-provider-proxmox/issues/2845)) ([07f91b4](https://github.com/bpg/terraform-provider-proxmox/commit/07f91b4228f6989869c80b2e54f718e5db35e82d))
+
+
+### Bug Fixes
+
+* **lxc:** allow disabling feature flags on update ([#2857](https://github.com/bpg/terraform-provider-proxmox/issues/2857)) ([2f3ae58](https://github.com/bpg/terraform-provider-proxmox/commit/2f3ae58a7d8c7414aa1589acb5cb2c37bff0a63e))
+* **lxc:** refresh `features`, `start_on_boot`, `hookscript` in read ([#2852](https://github.com/bpg/terraform-provider-proxmox/issues/2852)) ([e316aba](https://github.com/bpg/terraform-provider-proxmox/commit/e316aba0d6040466ae028cef7262efb96be5f539))
+* **network:** allow unknown `ports` on linux bridge validate ([#2855](https://github.com/bpg/terraform-provider-proxmox/issues/2855)) ([dacac9c](https://github.com/bpg/terraform-provider-proxmox/commit/dacac9cf581480523c31e5869c91d56cba00bceb))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/add-to-project action (v1.0.2 → v2) ([#2860](https://github.com/bpg/terraform-provider-proxmox/issues/2860)) ([5939390](https://github.com/bpg/terraform-provider-proxmox/commit/59393904ad7c17d94dd3c6b59d6768fd91585943))
+
 ## [0.105.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.104.0...v0.105.0) (2026-05-02)
 
 

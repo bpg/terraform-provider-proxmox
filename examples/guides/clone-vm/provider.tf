@@ -2,7 +2,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
-      version = "0.105.0" # x-release-please-version
+      version = "0.106.0" # x-release-please-version
     }
   }
 }
