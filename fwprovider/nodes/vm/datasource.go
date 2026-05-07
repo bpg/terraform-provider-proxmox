@@ -88,7 +88,7 @@ func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	if !exists {
 		resp.Diagnostics.AddError(
 			"VM Not Found",
-			fmt.Sprintf("VM with ID %d was not found on node '%s'.", model.ID.ValueInt64(), model.NodeName.ValueString()),
+			fmt.Sprintf("VM with ID %d was not found on node '%s'", model.ID.ValueInt64(), model.NodeName.ValueString()),
 		)
 
 		return

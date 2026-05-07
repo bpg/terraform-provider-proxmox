@@ -114,7 +114,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	if plan.ID.ValueInt64() == 0 {
 		id, err := r.idGenerator.NextID(ctx)
 		if err != nil {
-			resp.Diagnostics.AddError("Failed to generate VM ID", err.Error())
+			resp.Diagnostics.AddError("Unable to Generate VM ID", err.Error())
 			return
 		}
 
@@ -134,7 +134,10 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	// read back the VM from the PVE API to populate computed fields
 	exists := read(ctx, r.client, &plan, &resp.Diagnostics)
 	if !exists {
-		resp.Diagnostics.AddError("VM does not exist after creation", "")
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to Read VM %d After Creation", plan.ID.ValueInt64()),
+			"VM does not exist after creation",
+		)
 	}
 
 	if resp.Diagnostics.HasError() {
@@ -166,7 +169,7 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	// .VM(0) is used to create a new VM, the VM ID is not used in the API URL
 	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(0)
 
-	if vmAPI.CreateVM(ctx, createBody).AddDiags(diags, "VM create") {
+	if vmAPI.CreateVM(ctx, createBody).AddDiags(diags, fmt.Sprintf("Unable to Create VM %d", plan.ID.ValueInt64())) {
 		return
 	}
 
@@ -175,7 +178,7 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", plan.ID.ValueInt64()))
 
 		vmAPI = r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
-		vmAPI.ConvertToTemplate(ctx).AddDiags(diags, "VM template conversion")
+		vmAPI.ConvertToTemplate(ctx).AddDiags(diags, fmt.Sprintf("Unable to Convert VM %d to Template", plan.ID.ValueInt64()))
 	}
 }
 
@@ -235,7 +238,10 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	// read back the VM from the PVE API to populate computed fields
 	exists := read(ctx, r.client, &plan, &resp.Diagnostics)
 	if !exists {
-		resp.Diagnostics.AddError("VM does not exist after update", "")
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to Read VM %d After Update", plan.ID.ValueInt64()),
+			"VM does not exist after update",
+		)
 	}
 
 	if resp.Diagnostics.HasError() {
@@ -279,7 +285,7 @@ func (r *Resource) update(ctx context.Context, plan, state Model, diags *diag.Di
 
 		err := vmAPI.UpdateVM(ctx, updateBody)
 		if err != nil {
-			diags.AddError("Failed to update VM", err.Error())
+			diags.AddError(fmt.Sprintf("Unable to Update VM %d", plan.ID.ValueInt64()), err.Error())
 			return
 		}
 	}
@@ -294,23 +300,23 @@ func (r *Resource) update(ctx context.Context, plan, state Model, diags *diag.Di
 
 			status, err := vmAPI.GetVMStatus(ctx)
 			if err != nil {
-				diags.AddError("Failed to get VM status", err.Error())
+				diags.AddError(fmt.Sprintf("Unable to Read VM %d Status", plan.ID.ValueInt64()), err.Error())
 				return
 			}
 
 			if status != nil && status.Status != "stopped" {
 				tflog.Info(ctx, fmt.Sprintf("Stopping VM %d before converting to template", plan.ID.ValueInt64()))
 
-				if vmStop(ctx, vmAPI).AddDiags(diags, "VM stop before template conversion") {
+				if vmStop(ctx, vmAPI).AddDiags(diags, fmt.Sprintf("Unable to Stop VM %d Before Template Conversion", plan.ID.ValueInt64())) {
 					return
 				}
 			}
 
-			if vmAPI.ConvertToTemplate(ctx).AddDiags(diags, "VM template conversion") {
+			if vmAPI.ConvertToTemplate(ctx).AddDiags(diags, fmt.Sprintf("Unable to Convert VM %d to Template", plan.ID.ValueInt64())) {
 				return
 			}
 		} else if oldTemplate && !newTemplate {
-			diags.AddError("Cannot convert template back to VM", "Templates cannot be converted back to regular VMs")
+			diags.AddError("Unable to Convert Template Back to VM", "Templates cannot be converted back to regular VMs")
 			return
 		}
 	}
@@ -337,7 +343,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	// Stop or shut down the virtual machine before deleting it.
 	status, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to get VM status", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Read VM %d Status", state.ID.ValueInt64()), err.Error())
 	}
 
 	if resp.Diagnostics.HasError() || status == nil {
@@ -347,9 +353,9 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	if status.Status != "stopped" {
 		// Stop/shutdown failures during delete are non-fatal — reported as warnings.
 		if state.StopOnDestroy.ValueBool() {
-			vmStop(ctx, vmAPI).AddDiagsAsWarnings(&resp.Diagnostics, "VM stop/shutdown")
+			vmStop(ctx, vmAPI).AddDiagsAsWarnings(&resp.Diagnostics, fmt.Sprintf("Unable to Stop VM %d", state.ID.ValueInt64()))
 		} else {
-			vmShutdown(ctx, vmAPI).AddDiagsAsWarnings(&resp.Diagnostics, "VM stop/shutdown")
+			vmShutdown(ctx, vmAPI).AddDiagsAsWarnings(&resp.Diagnostics, fmt.Sprintf("Unable to Shutdown VM %d", state.ID.ValueInt64()))
 		}
 	}
 
@@ -358,11 +364,11 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 
 	result := vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
 	if result.Err() != nil && !errors.Is(result.Err(), api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError("Unable to Delete VM", result.Err().Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Delete VM %d", state.ID.ValueInt64()), result.Err().Error())
 	}
 
 	for _, w := range result.Warnings() {
-		resp.Diagnostics.AddWarning("VM delete", w)
+		resp.Diagnostics.AddWarning(fmt.Sprintf("Unable to Delete VM %d", state.ID.ValueInt64()), w)
 	}
 
 	if resp.Diagnostics.HasError() {
@@ -386,7 +392,7 @@ func (r *Resource) ImportState(
 	id, err := strconv.Atoi(vmid)
 	if !found || err != nil || id == 0 {
 		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
+			"Unable to Import VM",
 			fmt.Sprintf("Expected import identifier with format: `node_name/id`. Got: %q", req.ID),
 		)
 
@@ -409,7 +415,10 @@ func (r *Resource) ImportState(
 
 	exists := read(ctx, r.client, &state, &resp.Diagnostics)
 	if !exists {
-		resp.Diagnostics.AddError(fmt.Sprintf("VM %d does not exist on node %s", id, nodeName), "")
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to Import VM %d", id),
+			fmt.Sprintf("VM does not exist on node %q", nodeName),
+		)
 	}
 
 	if resp.Diagnostics.HasError() {

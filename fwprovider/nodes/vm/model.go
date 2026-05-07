@@ -9,6 +9,7 @@ package vm
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -72,7 +73,7 @@ func readForDatasource(ctx context.Context, client proxmox.Client, model *Dataso
 	config, err := vmAPI.GetVM(ctx)
 	if err != nil {
 		if !errors.Is(err, api.ErrResourceDoesNotExist) {
-			diags.AddError("Unable to Read VM", err.Error())
+			diags.AddError(fmt.Sprintf("Unable to Read VM %d", model.ID.ValueInt64()), err.Error())
 		}
 
 		return false
@@ -80,12 +81,16 @@ func readForDatasource(ctx context.Context, client proxmox.Client, model *Dataso
 
 	status, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
-		diags.AddError("Unable to Read VM Status", err.Error())
+		diags.AddError(fmt.Sprintf("Unable to Read VM %d Status", model.ID.ValueInt64()), err.Error())
 		return false
 	}
 
 	if status.VMID == nil {
-		diags.AddError("VM ID is missing in status API response", "")
+		diags.AddError(
+			fmt.Sprintf("Unable to Read VM %d Status", model.ID.ValueInt64()),
+			"VM ID is missing in the status API response",
+		)
+
 		return false
 	}
 
@@ -120,7 +125,7 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 				"vm_id": vmAPI.VMID,
 			})
 		} else {
-			diags.AddError("Failed to get VM", err.Error())
+			diags.AddError(fmt.Sprintf("Unable to Read VM %d", model.ID.ValueInt64()), err.Error())
 		}
 
 		return false
@@ -128,12 +133,16 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 
 	status, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
-		diags.AddError("Failed to get VM status", err.Error())
+		diags.AddError(fmt.Sprintf("Unable to Read VM %d Status", model.ID.ValueInt64()), err.Error())
 		return false
 	}
 
 	if status.VMID == nil {
-		diags.AddError("VM ID is missing in status API response", "")
+		diags.AddError(
+			fmt.Sprintf("Unable to Read VM %d Status", model.ID.ValueInt64()),
+			"VM ID is missing in the status API response",
+		)
+
 		return false
 	}
 
