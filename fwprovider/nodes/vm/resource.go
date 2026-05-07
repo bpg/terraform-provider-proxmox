@@ -316,7 +316,7 @@ func (r *Resource) update(ctx context.Context, plan, state Model, diags *diag.Di
 				return
 			}
 		} else if oldTemplate && !newTemplate {
-			diags.AddError("Unable to Convert Template Back to VM", "Templates cannot be converted back to regular VMs")
+			diags.AddError(fmt.Sprintf("Unable to Convert Template Back to VM %d", plan.ID.ValueInt64()), "Templates cannot be converted back to regular VMs")
 			return
 		}
 	}
