@@ -37,6 +37,7 @@ resource "proxmox_virtual_environment_haresource" "example" {
 ### Optional
 
 - `comment` (String) The comment associated with this resource.
+- `failback` (Boolean) Automatic failback to the preferred node when it becomes available again (Proxmox VE 9+). Leave unset to use the cluster default.
 - `group` (String) The identifier of the High Availability group this resource is a member of.
 - `max_relocate` (Number) The maximal number of relocation attempts.
 - `max_restart` (Number) The maximal number of restart attempts.

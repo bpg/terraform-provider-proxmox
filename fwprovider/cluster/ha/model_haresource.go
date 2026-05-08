@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -27,6 +28,8 @@ type ResourceModel struct {
 	State types.String `tfsdk:"state"`
 	// The comment associated with this resource.
 	Comment types.String `tfsdk:"comment"`
+	// Whether the resource should automatically fail back to its preferred node when it becomes available again
+	Failback types.Bool `tfsdk:"failback"`
 	// The identifier of the High Availability group this resource is a member of.
 	Group types.String `tfsdk:"group"`
 	// The maximal number of relocation attempts.
@@ -41,7 +44,14 @@ func (d *ResourceModel) ImportFromAPI(data *haresources.HAResourceGetResponseDat
 	d.ResourceID = data.ID.ToValue()
 	d.Type = data.Type.ToValue()
 	d.State = data.State.ToValue()
+
 	d.Comment = types.StringPointerValue(data.Comment)
+	if data.Failback != nil {
+		d.Failback = types.BoolValue(bool(*data.Failback))
+	} else {
+		d.Failback = types.BoolNull()
+	}
+
 	d.Group = types.StringPointerValue(data.Group)
 	d.MaxRelocate = types.Int64PointerValue(data.MaxRelocate)
 	d.MaxRestart = types.Int64PointerValue(data.MaxRestart)
@@ -68,6 +78,7 @@ func (d *ResourceModel) toRequestBase() haresources.HAResourceDataBase {
 	return haresources.HAResourceDataBase{
 		State:       state,
 		Comment:     d.Comment.ValueStringPointer(),
+		Failback:    attribute.CustomBoolPtrFromValue(d.Failback),
 		Group:       d.Group.ValueStringPointer(),
 		MaxRelocate: d.MaxRelocate.ValueInt64Pointer(),
 		MaxRestart:  d.MaxRestart.ValueInt64Pointer(),
@@ -89,6 +100,10 @@ func (d *ResourceModel) ToUpdateRequest(state *ResourceModel) *haresources.HARes
 
 	if d.Comment.IsNull() && !state.Comment.IsNull() {
 		del = append(del, "comment")
+	}
+
+	if d.Failback.IsNull() && !state.Failback.IsNull() {
+		del = append(del, "failback")
 	}
 
 	if d.Group.IsNull() && !state.Group.IsNull() {
