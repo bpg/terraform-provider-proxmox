@@ -108,6 +108,11 @@ func (r *haResourceResource) Schema(
 					stringvalidator.RegexMatches(regexp.MustCompile(`\S$|^$`), "must not end with whitespace"),
 				},
 			},
+			"failback": schema.BoolAttribute{
+				MarkdownDescription: "Automatic failback to the preferred node when it becomes available again (Proxmox VE 9+). " +
+					"Leave unset to use the cluster default.",
+				Optional: true,
+			},
 			"group": schema.StringAttribute{
 				Description: "The identifier of the High Availability group this resource is a member of.",
 				Optional:    true,
