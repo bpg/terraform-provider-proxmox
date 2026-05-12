@@ -17,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -113,10 +112,6 @@ func (r *haResourceResource) Schema(
 				MarkdownDescription: "Automatic failback to the preferred node when it becomes available again (Proxmox VE 9+). " +
 					"Leave unset to use the cluster default.",
 				Optional: true,
-				Computed: true,
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"group": schema.StringAttribute{
 				Description: "The identifier of the High Availability group this resource is a member of.",
