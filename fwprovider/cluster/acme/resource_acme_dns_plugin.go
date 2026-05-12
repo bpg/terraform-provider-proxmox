@@ -82,7 +82,7 @@ func (r *acmePluginResource) Schema(
 				Optional:    true,
 			},
 			"plugin": schema.StringAttribute{
-				Description: "ACME Plugin ID name.",
+				Description: "ACME plugin ID name.",
 				Required:    true,
 			},
 			"validation_delay": schema.Int64Attribute{
@@ -258,7 +258,7 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 	err := r.client.Update(ctx, plan.Plugin.ValueString(), updateRequest)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to update ACME account '%s'", plan.Plugin.ValueString()),
+			fmt.Sprintf("Unable to update ACME plugin '%s'", plan.Plugin.ValueString()),
 			err.Error(),
 		)
 
