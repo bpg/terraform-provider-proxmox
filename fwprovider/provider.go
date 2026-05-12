@@ -43,6 +43,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/clonedvm"
+	nodeconfig "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/file"
 	nodefirewall "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/firewall"
@@ -604,6 +605,8 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		nodes.NewShortDownloadFileResource,
 		nodes.NewOCIImageResource,
 		nodes.NewShortOCIImageResource,
+		nodeconfig.NewNodeConfigResource,
+		nodeconfig.NewShortNodeConfigResource,
 		nodefirewall.NewNodeFirewallOptionsResource,
 		nodefirewall.NewShortNodeFirewallOptionsResource,
 		options.NewClusterOptionsResource,
@@ -675,6 +678,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		backup.NewDataSource,
 		datastores.NewDataSource,
 		datastores.NewShortDataSource,
+		nodeconfig.NewNodeConfigDataSource,
 		nodeHardware.NewPCIDataSource,
 		ha.NewHAGroupDataSource,
 		ha.NewHAGroupShortDataSource, // proxmox_hagroup
