@@ -161,7 +161,7 @@ func (r *aclResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 
 	acls, err := r.client.Access().GetACL(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable read ACL", apiCallFailed+err.Error())
+		resp.Diagnostics.AddError("Unable to read ACL", apiCallFailed+err.Error())
 		return
 	}
 
