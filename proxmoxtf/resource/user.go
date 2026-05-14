@@ -54,6 +54,10 @@ func User() *schema.Resource {
 				Type:        schema.TypeSet,
 				Description: "The access control list",
 				Optional:    true,
+				Deprecated: "Manage ACLs via the dedicated `proxmox_acl` resource instead. " +
+					"The inline `acl` block is no longer auto-populated from the cluster on refresh " +
+					"or import; existing users with `acl` blocks continue to work, but new code " +
+					"should use `proxmox_acl`.",
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{}, nil
 				},
@@ -262,38 +266,44 @@ func userRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(err)
 	}
 
-	acl, err := client.Access().GetACL(ctx)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	var diags diag.Diagnostics
 
 	err = d.Set(mkResourceVirtualEnvironmentUserUserID, userID)
 	diags = append(diags, diag.FromErr(err)...)
 
-	var aclParsed []interface{}
-
-	for _, v := range acl {
-		if v.Type == "user" && v.UserOrGroupID == userID {
-			aclEntry := map[string]interface{}{}
-
-			aclEntry[mkResourceVirtualEnvironmentUserACLPath] = v.Path
-
-			if v.Propagate != nil {
-				aclEntry[mkResourceVirtualEnvironmentUserACLPropagate] = bool(*v.Propagate)
-			} else {
-				aclEntry[mkResourceVirtualEnvironmentUserACLPropagate] = false
-			}
-
-			aclEntry[mkResourceVirtualEnvironmentUserACLRoleID] = v.RoleID
-
-			aclParsed = append(aclParsed, aclEntry)
+	// Only populate the inline `acl` attribute when state already tracks
+	// entries for this resource. Otherwise, ACLs managed externally (via the
+	// dedicated `proxmox_acl` resource) leak into state and trigger a
+	// destructive refresh-loop on every plan. See #2866.
+	if d.Get(mkResourceVirtualEnvironmentUserACL).(*schema.Set).Len() > 0 {
+		acl, err := client.Access().GetACL(ctx)
+		if err != nil {
+			return diag.FromErr(err)
 		}
-	}
 
-	err = d.Set(mkResourceVirtualEnvironmentUserACL, aclParsed)
-	diags = append(diags, diag.FromErr(err)...)
+		var aclParsed []any
+
+		for _, v := range acl {
+			if v.Type == "user" && v.UserOrGroupID == userID {
+				aclEntry := map[string]any{}
+
+				aclEntry[mkResourceVirtualEnvironmentUserACLPath] = v.Path
+
+				if v.Propagate != nil {
+					aclEntry[mkResourceVirtualEnvironmentUserACLPropagate] = bool(*v.Propagate)
+				} else {
+					aclEntry[mkResourceVirtualEnvironmentUserACLPropagate] = false
+				}
+
+				aclEntry[mkResourceVirtualEnvironmentUserACLRoleID] = v.RoleID
+
+				aclParsed = append(aclParsed, aclEntry)
+			}
+		}
+
+		err = d.Set(mkResourceVirtualEnvironmentUserACL, aclParsed)
+		diags = append(diags, diag.FromErr(err)...)
+	}
 
 	if user.Comment != nil {
 		err = d.Set(mkResourceVirtualEnvironmentUserComment, user.Comment)

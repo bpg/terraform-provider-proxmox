@@ -3,7 +3,7 @@ name: Project Automation
 on:
   issues:
     types: [opened, labeled, closed, reopened]
-  pull_request:
+  pull_request_target:
     types: [opened, closed]
   workflow_dispatch:
 
@@ -264,7 +264,7 @@ jobs:
   pr-link-to-in-progress:
     name: Move linked issue to In Progress when PR opened
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    if: github.event_name == 'pull_request_target' && github.event.action == 'opened'
     steps:
       - name: Add in-progress label to linked issues
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
@@ -297,7 +297,7 @@ jobs:
   pr-merged-to-review:
     name: Move linked issue to Review when PR merged
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request_target' && github.event.action == 'closed' && github.event.pull_request.merged == true
     steps:
       - name: Update linked issues
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9

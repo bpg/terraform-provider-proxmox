@@ -68,6 +68,10 @@ func (d *haResourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequ
 				Description: "The comment associated with this resource.",
 				Computed:    true,
 			},
+			"failback": schema.BoolAttribute{
+				Description: "Automatic failback to the preferred node when it becomes available again (PVE 9+).",
+				Computed:    true,
+			},
 			"group": schema.StringAttribute{
 				Description: "The identifier of the High Availability group this resource is a member of.",
 				Computed:    true,

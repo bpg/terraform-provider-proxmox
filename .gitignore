@@ -53,6 +53,7 @@ terraform-provider-proxmox*
 .vscode/settings.json
 .cursor/
 .claude/worktrees/
+.claude/*.lock
 .serena/
 coverage.out
 

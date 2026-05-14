@@ -9,6 +9,11 @@ subcategory: Virtual Environment
 
 Manages a user group.
 
+~> **Deprecation:** the inline `acl` block is deprecated. Manage group ACLs via the dedicated
+[`proxmox_acl`](acl.md) resource instead. The `acl` block is no longer auto-populated from a
+cluster-wide fetch on refresh or import; existing configurations using `acl` blocks continue
+to work, but new code should use `proxmox_acl`.
+
 ## Example Usage
 
 ```hcl
@@ -20,7 +25,8 @@ resource "proxmox_virtual_environment_group" "operations_team" {
 
 ## Argument Reference
 
-- `acl` - (Optional) The access control list (multiple blocks supported).
+- `acl` - (Optional, **Deprecated**) The access control list (multiple blocks supported). Use
+  [`proxmox_acl`](acl.md) instead.
     - `path` - The path.
     - `propagate` - Whether to propagate to child paths.
     - `role_id` - The role identifier.

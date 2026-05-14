@@ -40,6 +40,7 @@ output "proxmox_virtual_environment_haresources_full" {
 ### Read-Only
 
 - `comment` (String) The comment associated with this resource.
+- `failback` (Boolean) Automatic failback to the preferred node when it becomes available again (PVE 9+).
 - `group` (String) The identifier of the High Availability group this resource is a member of.
 - `id` (String) The unique identifier of this resource.
 - `max_relocate` (Number) The maximal number of relocation attempts.

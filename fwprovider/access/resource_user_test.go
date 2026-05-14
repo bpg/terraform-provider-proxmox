@@ -18,6 +18,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -192,4 +193,61 @@ func TestAccResourceUserToken(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestAccResourceUserACLNotManagedHere verifies that when a user has no inline
+// acl{} blocks and ACLs for that user are managed by separate proxmox_acl
+// resources, refresh does not produce a spurious diff and apply does not
+// destructively revoke the live ACL. Reproducer for #2866.
+func TestAccResourceUserACLNotManagedHere(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	userID := fmt.Sprintf("%s@pve", gofakeit.LetterN(10))
+	te.AddTemplateVars(map[string]any{
+		"UserID": userID,
+	})
+
+	config := te.RenderConfig(`
+		resource "proxmox_virtual_environment_user" "u" {
+			user_id = "{{.UserID}}"
+			comment = "ACLs managed via proxmox_acl"
+		}
+		resource "proxmox_acl" "a" {
+			user_id   = proxmox_virtual_environment_user.u.user_id
+			path      = "/"
+			role_id   = "PVEAuditor"
+			propagate = true
+		}
+	`)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_user.u", map[string]string{
+						"user_id": userID,
+						"acl.#":   "0",
+					}),
+					test.ResourceAttributes("proxmox_acl.a", map[string]string{
+						"user_id": userID,
+						"path":    "/",
+						"role_id": "PVEAuditor",
+					}),
+				),
+			},
+			{
+				// Refresh + plan with the same config — must produce no diff.
+				// Without the fix, userRead unconditionally repopulates `acl`
+				// from a cluster-wide ACL fetch, producing a spurious diff.
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
 }

@@ -9,19 +9,25 @@ subcategory: Virtual Environment
 
 Manages a user.
 
+~> **Deprecation:** the inline `acl` block is deprecated. Manage user ACLs via the dedicated
+[`proxmox_acl`](acl.md) resource instead. The `acl` block is no longer auto-populated from a
+cluster-wide fetch on refresh or import; existing configurations using `acl` blocks continue
+to work, but new code should use `proxmox_acl`.
+
 ## Example Usage
 
 ```hcl
 resource "proxmox_virtual_environment_user" "operations_automation" {
-  acl {
-    path      = "/vms/1234"
-    propagate = true
-    role_id   = proxmox_virtual_environment_role.operations_monitoring.role_id
-  }
-
   comment  = "Managed by Terraform"
   password = "a-strong-password"
   user_id  = "operations-automation@pve"
+}
+
+resource "proxmox_acl" "operations_automation_vms" {
+  user_id   = proxmox_virtual_environment_user.operations_automation.user_id
+  path      = "/vms/1234"
+  role_id   = proxmox_virtual_environment_role.operations_monitoring.role_id
+  propagate = true
 }
 
 resource "proxmox_virtual_environment_role" "operations_monitoring" {
@@ -35,7 +41,8 @@ resource "proxmox_virtual_environment_role" "operations_monitoring" {
 
 ## Argument Reference
 
-- `acl` - (Optional) The access control list (multiple blocks supported).
+- `acl` - (Optional, **Deprecated**) The access control list (multiple blocks supported). Use
+  [`proxmox_acl`](acl.md) instead.
     - `path` - The path.
     - `propagate` - Whether to propagate to child paths.
     - `role_id` - The role identifier.

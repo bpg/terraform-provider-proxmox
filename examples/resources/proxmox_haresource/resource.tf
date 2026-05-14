@@ -6,4 +6,5 @@ resource "proxmox_haresource" "example" {
   state       = "started"
   group       = "example"
   comment     = "Managed by Terraform"
+  failback    = true
 }

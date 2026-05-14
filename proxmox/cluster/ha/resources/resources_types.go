@@ -29,6 +29,8 @@ type HAResourceGetResponseBody struct {
 type HAResourceDataBase struct {
 	// Resource comment, if defined
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
+	// Automatic failback to the preferred node when it becomes available again
+	Failback *types.CustomBool `json:"failback,omitempty" url:"failback,omitempty,int"`
 	// HA group identifier, if the resource is part of one.
 	Group *string `json:"group,omitempty" url:"group,omitempty"`
 	// Maximal number of service relocation attempts.
