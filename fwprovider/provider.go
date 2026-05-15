@@ -42,6 +42,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
+	cephpool "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/ceph/pool"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/clonedvm"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/file"
@@ -577,6 +578,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		apt.NewStandardRepositoryResource,
 		apt.NewShortStandardRepositoryResource,
 		backup.NewResource,
+		cephpool.NewCephPoolResource,
 		clonedvm.NewResource,
 		clonedvm.NewShortResource,
 		ha.NewHAGroupResource,

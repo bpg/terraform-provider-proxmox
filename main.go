@@ -125,6 +125,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/apt_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_apt_standard_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/apt_standard_repository.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/ceph_pool.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/cluster_options.md ./docs/resources/
