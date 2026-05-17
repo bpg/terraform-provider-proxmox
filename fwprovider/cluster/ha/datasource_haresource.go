@@ -129,7 +129,7 @@ func (d *haResourceDatasource) Read(ctx context.Context, req datasource.ReadRequ
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",
-			fmt.Sprintf("Couldn't parse configuration into a valid HA resource identifier: %ss", err.Error()),
+			fmt.Sprintf("Couldn't parse configuration into a valid HA resource identifier: %s", err.Error()),
 		)
 
 		return
