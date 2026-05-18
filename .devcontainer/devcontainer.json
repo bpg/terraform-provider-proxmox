@@ -1,78 +1,301 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/universal
 {
-	"name": "Default Linux Universal",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"name": "Universal Dev Environment",
+	"description": "Development container with Terraform, Go, Node.js, and Docker support",
+	
+	// Dockerfile for fine-grained environment control and reproducibility
 	"dockerFile": "Dockerfile",
-    
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	"features": {
-		"ghcr.io/devcontainers/features/terraform:1": {}
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": "..",
+		"args": {
+			"VARIANT": "bullseye"
+		}
 	},
 
+	// Features to add to the dev container. More info: https://containers.dev/features
+	"features": {
+		// Terraform support for infrastructure as code
+		"ghcr.io/devcontainers/features/terraform:1": {
+			"version": "latest"
+		},
+		// GitHub CLI for seamless Git operations and GitHub integration
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		// Node.js LTS for frontend development and build tools
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "lts"
+		},
+		// Docker CLI to manage container operations from within the container
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {}
+	},
+
+	// Volume mounts with security best practices
+	// Bind mounts connect host paths to container paths for persistent data
 	"mounts": [
-        // Zsh commands history persistence
-        {
-            "source": "${localEnv:HOME}/.zsh_history",
-            "target": "/root/.zsh_history",
-            "type": "bind"
-        },
-        // Git configuration file
-        {
-            "source": "${localEnv:HOME}/.gitconfig",
-            "target": "/root/.gitconfig",
-            "type": "bind"
-        },
-        // SSH directory for Linux, OSX and WSL
-        // On Linux and OSX, a symlink /mnt/ssh <-> ~/.ssh is
-        // created in the container. On Windows, files are copied
-        // from /mnt/ssh to ~/.ssh to fix permissions.
-        {
-            "source": "${localEnv:HOME}/.ssh",
-            "target": "/mnt/ssh",
-            "type": "bind"
-        },
-        // Docker socket to access the host Docker server
-        {
-            "source": "/var/run/docker.sock",
-            "target": "/var/run/docker.sock",
-            "type": "bind"
-        }
-    ],
+		{
+			// Persist shell command history across container sessions
+			// Enables continued workflow when reconnecting to the container
+			"source": "${localEnv:HOME}/.zsh_history",
+			"target": "/root/.zsh_history",
+			"type": "bind",
+			"readonly": false
+		},
+		{
+			// Git configuration - mounted as read-only to prevent accidental modifications
+			// Preserves git user identity and settings from host
+			"source": "${localEnv:HOME}/.gitconfig",
+			"target": "/root/.gitconfig",
+			"type": "bind",
+			"readonly": true
+		},
+		{
+			// SSH keys for authentication - read-only for enhanced security
+			// Allows git operations over SSH without copying keys into container
+			"source": "${localEnv:HOME}/.ssh",
+			"target": "/mnt/ssh",
+			"type": "bind",
+			"readonly": true
+		},
+		{
+			// Docker socket to access host Docker daemon
+			// Enables running Docker commands and building images from within container
+			"source": "/var/run/docker.sock",
+			"target": "/var/run/docker.sock",
+			"type": "bind"
+		},
+		{
+			// Optional: NPM/Yarn cache for faster package installations
+			// Uncomment if doing frequent Node.js development
+			// "source": "${localEnv:HOME}/.npm",
+			// "target": "/root/.npm",
+			// "type": "bind",
+			// "readonly": false
+		}
+	],
 
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+	// Port forwarding configuration for local development
+	// Maps container ports to localhost for application testing
+	"forwardPorts": [8080, 3000, 5432, 9200],
+	"portsAttributes": {
+		"8080": {
+			"label": "Application Server",
+			"onAutoForward": "notify",
+			"requireLocalPort": false
+		},
+		"3000": {
+			"label": "Development Server",
+			"onAutoForward": "notify",
+			"requireLocalPort": false
+		},
+		"5432": {
+			"label": "PostgreSQL Database",
+			"onAutoForward": "ignore",
+			"requireLocalPort": true
+		},
+		"9200": {
+			"label": "Elasticsearch",
+			"onAutoForward": "ignore"
+		}
+	},
 
-	// Configure tool-specific properties.
-    "customizations": {
-        // Configure properties specific to VS Code.
-        "vscode": {
-            // Set *default* container specific settings.json values on container create.
-            "settings": {
-                "go.toolsManagement.checkForUpdates": "local",
-                "go.useLanguageServer": true
-            },
-            // Add the IDs of extensions you want installed when the container is created.
-            "extensions": [
-                "britesnow.vscode-toggle-quotes",
-                "davidanson.vscode-markdownlint",
-                "esbenp.prettier-vscode",
-                "EditorConfig.editorconfig",
-                "golang.go",
-                "hashicorp.terraform",
-                "joshbolduc.commitlint",
-                "ms-azuretools.vscode-docker",
-                "ms-vscode.makefile-tools",
-                "psioniq.psi-header"
-            ]
-        }
-    },
-	
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	"remoteUser": "root",
-
-    "postAttachCommand": ["bash", "./.devcontainer/post-attach.sh"],
+	// Environment variables available in the container runtime
+	// Configure language-specific settings and development preferences
+	"remoteEnv": {
+		// Go module support - required for modern Go development
+		"GO111MODULE": "on",
+		"GOFLAGS": "-mod=mod",
+		"GOPROXY": "https://proxy.golang.org,direct",
 		
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "make build"
+		// Node.js package manager preference
+		"NPM_CONFIG_LOGLEVEL": "warn",
+		
+		// Container timezone - set to your local timezone
+		"TZ": "UTC",
+		
+		// Terminal configuration
+		"TERM": "xterm-256color"
+	},
+
+	// VS Code workspace customizations
+	// Configure editor behavior and install helpful extensions
+	"customizations": {
+		"vscode": {
+			// VS Code settings applied to the container workspace
+			// These settings override default VS Code configuration
+			"settings": {
+				// General editor behavior
+				"editor.formatOnSave": true,
+				"editor.formatOnPaste": true,
+				"editor.defaultFormatter": "esbenp.prettier-vscode",
+				"editor.rulers": [80, 120],
+				"editor.wordWrap": "on",
+				"editor.minimap.enabled": true,
+				
+				// File and search settings
+				"files.autoSave": "afterDelay",
+				"files.autoSaveDelay": 1000,
+				"search.exclude": {
+					"**/node_modules": true,
+					"**/.git": true,
+					"**/dist": true,
+					"**/build": true,
+					"**/.terraform": true,
+					"**/.venv": true
+				},
+				
+				// Go language configuration
+				// Configure Go tools, formatters, and linters
+				"[go]": {
+					"editor.defaultFormatter": "golang.go",
+					"editor.formatOnSave": true,
+					"editor.codeActionsOnSave": {
+						"source.organizeImports": true
+					},
+					"editor.insertSpaces": false
+				},
+				"go.lintOnSave": "package",
+				"go.lintTool": "golangci-lint",
+				"go.lintArgs": ["--fast"],
+				"go.useLanguageServer": true,
+				"go.toolsManagement.checkForUpdates": "local",
+				"go.coverOnSave": false,
+				"go.coverageDecorator": {
+					"type": "gutter",
+					"coveredHighlightColor": "rgba(64,128,128,0.5)",
+					"uncoveredHighlightColor": "rgba(128,64,64,0.25)"
+				},
+				
+				// Terraform configuration
+				// Configure Terraform formatting and validation
+				"[terraform]": {
+					"editor.defaultFormatter": "hashicorp.terraform",
+					"editor.formatOnSave": true,
+					"editor.insertSpaces": true,
+					"editor.tabSize": 2
+				},
+				"terraform.lintPath": "terraform",
+				"terraform.lintMode": "init",
+				
+				// JSON formatting
+				"[json]": {
+					"editor.defaultFormatter": "esbenp.prettier-vscode",
+					"editor.formatOnSave": true
+				},
+				
+				// YAML formatting
+				"[yaml]": {
+					"editor.insertSpaces": true,
+					"editor.tabSize": 2
+				},
+				
+				// Markdown configuration
+				"[markdown]": {
+					"editor.wordWrap": "on",
+					"editor.quickSuggestions": false
+				},
+				"markdownlint.config": {
+					"default": true,
+					"MD003": false,
+					"MD013": { "line_length": 120 }
+				},
+				
+				// File watcher exclusions for improved performance
+				// Prevents unnecessary file system events from slowing down editor
+				"files.watcherExclude": {
+					"**/node_modules/**": true,
+					"**/.git/**": true,
+					"**/dist/**": true,
+					"**/build/**": true,
+					"**/.terraform/**": true,
+					"**/.venv/**": true,
+					"**/vendor/**": true,
+					"**/.cache/**": true
+				},
+				
+				// Git configuration
+				"git.ignoreLimitWarning": true,
+				"git.autofetch": true,
+				
+				// Docker integration
+				"docker.showShellCommand": true
+			},
+			
+			// VS Code extensions to install in the container
+			// Install helpful tools for development workflow
+			"extensions": [
+				// Go development ecosystem
+				"golang.go",
+				"golang.go-nightly",
+				
+				// Infrastructure and DevOps tools
+				"hashicorp.terraform",
+				"hashicorp.hcl",
+				
+				// Code formatting and linting
+				"esbenp.prettier-vscode",
+				"davidanson.vscode-markdownlint",
+				"EditorConfig.editorconfig",
+				
+				// Container and Docker support
+				"ms-azuretools.vscode-docker",
+				
+				// Build automation tools
+				"ms-vscode.makefile-tools",
+				
+				// Version control enhancements
+				"eamodio.gitlens",
+				"joshbolduc.commitlint",
+				"donjayamanne.githistory",
+				
+				// Code generation and utilities
+				"britesnow.vscode-toggle-quotes",
+				"psioniq.psi-header",
+				"streetsidesoftware.code-spell-checker",
+				
+				// Remote development
+				"ms-vscode-remote.remote-containers",
+				"ms-vscode-remote.remote-ssh",
+				
+				// REST API testing
+				"humao.rest-client",
+				
+				// JSON utilities
+				"eriklynd.json-tools",
+			]
+		}
+	},
+
+	// Container runtime user context
+	// Root user provides full access but consider security implications
+	"remoteUser": "root",
+	"containerUser": "root",
+
+	// Lifecycle management commands
+	// Commands execute in order specified below
+	
+	// Runs once after the container is created but before VS Code connects
+	// Use for one-time setup operations like installing global tools
+	"postCreateCommand": "bash ./.devcontainer/post-create.sh",
+	
+	// Runs each time the container is attached or reconnected
+	// Use for repetitive checks like verifying tool versions
+	"postAttachCommand": "bash ./.devcontainer/post-attach.sh",
+
+	// Optional: Execute commands when opening a terminal in the container
+	// "onCreateCommand": "bash ./.devcontainer/on-create.sh",
+
+	// Container behavior and security configuration
+	"overrideCommand": false,
+	"shutdownAction": "none",
+	
+	// Privileged mode disabled for security - enable only if necessary
+	"privilegedMode": false,
+	
+	// Linux kernel capabilities for debugging and tracing
+	"capAdd": ["SYS_PTRACE"],
+	"securityOpt": ["seccomp=unconfined"],
+	// Optional: Resource limits to prevent container from consuming all host resources
+	// "runArgs": [
+	// 	"--memory=4g",
+	// 	"--cpus=2"
+	// ]
 }
