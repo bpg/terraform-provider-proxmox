@@ -16,16 +16,39 @@
 	"features": {
 		// Terraform support for infrastructure as code
 		"ghcr.io/devcontainers/features/terraform:1": {
-			"version": "latest"
+			"installSentinel": true,
+			"installTFsec": true,
+			"installTerraformDocs": true,
+			"version": "latest",
+			"tflint": "0.46.1",
+			"terragrunt": "latest"
 		},
 		// GitHub CLI for seamless Git operations and GitHub integration
-		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {
+			"installDirectlyFromGitHubRelease": true,
+			"version": "latest"
+		},
 		// Node.js LTS for frontend development and build tools
 		"ghcr.io/devcontainers/features/node:1": {
 			"version": "lts"
 		},
 		// Docker CLI to manage container operations from within the container
-		"ghcr.io/devcontainers/features/docker-in-docker:2": {}
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"azureDnsAutoDetection": true,
+			"installDockerBuildx": true,
+			"disableIp6tables": true,
+			"version": "20.10",
+			"dockerDashComposeVersion": "v1"
+		},
+		"ghcr.io/devcontainers/features/node:2": {
+			"nodeGypDependencies": true,
+			"installYarnUsingApt": true,
+			"version": "22",
+			"npmVersion": "lts",
+			"pnpmVersion": "latest",
+			"nvmVersion": "latest"
+		},
+		"ghcr.io/devcontainer-config/features/dot-config:4": {}
 	},
 
 	// Volume mounts with security best practices
