@@ -31,6 +31,7 @@ func TestAccResourceCephPool(t *testing.T) {
 	basicName := test.SafeResourceName("ceph-pool-basic")
 	fullName := test.SafeResourceName("ceph-pool-full")
 	updateName := test.SafeResourceName("ceph-pool-update")
+	cephfsName := test.SafeResourceName("ceph-pool-cephfs")
 	invalidName := test.SafeResourceName("ceph-pool-invalid")
 
 	tests := []struct {
@@ -133,6 +134,25 @@ func TestAccResourceCephPool(t *testing.T) {
 						"min_size":          "1",
 						"pg_autoscale_mode": "on",
 						"target_size_ratio": "0.05",
+					}),
+				),
+			},
+		}},
+		{"create with cephfs application", []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+					resource "proxmox_ceph_pool" "cephfs" {
+						node_name   = "{{.NodeName}}"
+						name        = %q
+						application = "cephfs"
+						pg_num      = 8
+						size        = 2
+						min_size    = 1
+					}`, cephfsName)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_ceph_pool.cephfs", map[string]string{
+						"name":        cephfsName,
+						"application": "cephfs",
 					}),
 				),
 			},
