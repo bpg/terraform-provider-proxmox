@@ -1,4 +1,4 @@
-//go:build all
+//go:build acceptance || all
 
 //testacc:tier=heavy
 //testacc:resource=sdn
@@ -21,6 +21,7 @@ import (
 
 func TestAccResourceSDNZoneEVPN(t *testing.T) {
 	// Cannot run in parallel due to SDN applier functionality affecting global state
+	t.Skip("Requires EVPN controller")
 
 	te := test.InitEnvironment(t)
 
