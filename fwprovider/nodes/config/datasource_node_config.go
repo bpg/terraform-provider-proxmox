@@ -120,7 +120,7 @@ func (d *nodeConfigDataSource) Read(
 	state.ID = types.StringValue(nodeName)
 
 	if data.Description != nil && *data.Description != "" {
-		trimmed := strings.TrimRight(*data.Description, "\n")
+		trimmed := strings.TrimSuffix(*data.Description, "\n")
 		state.Description = types.StringValue(trimmed)
 	} else {
 		state.Description = types.StringValue("")

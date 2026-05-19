@@ -151,7 +151,6 @@ import (
 //go:generate cp ./build/docs-gen/resources/network_linux_bridge.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_vlan.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/network_linux_vlan.md ./docs/resources/
-//go:generate cp ./build/docs-gen/resources/virtual_environment_node_config.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/node_config.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_node_firewall.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/node_firewall.md ./docs/resources/

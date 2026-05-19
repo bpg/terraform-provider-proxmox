@@ -606,7 +606,6 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		nodes.NewOCIImageResource,
 		nodes.NewShortOCIImageResource,
 		nodeconfig.NewNodeConfigResource,
-		nodeconfig.NewShortNodeConfigResource,
 		nodefirewall.NewNodeFirewallOptionsResource,
 		nodefirewall.NewShortNodeFirewallOptionsResource,
 		options.NewClusterOptionsResource,

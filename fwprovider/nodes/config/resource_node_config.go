@@ -9,6 +9,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -21,7 +22,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 )
@@ -42,10 +42,10 @@ type nodeConfigResource struct {
 
 func (r *nodeConfigResource) Metadata(
 	_ context.Context,
-	req resource.MetadataRequest,
+	_ resource.MetadataRequest,
 	resp *resource.MetadataResponse,
 ) {
-	resp.TypeName = req.ProviderTypeName + "_node_config"
+	resp.TypeName = "proxmox_node_config"
 }
 
 func (r *nodeConfigResource) Schema(
@@ -54,8 +54,7 @@ func (r *nodeConfigResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		DeprecationMessage: migration.DeprecationMessage("proxmox_node_config"),
-		Description:        "Manages Proxmox VE node configuration.",
+		Description: "Manages Proxmox VE node configuration.",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"node_name": schema.StringAttribute{
@@ -70,8 +69,16 @@ func (r *nodeConfigResource) Schema(
 			},
 			"description": schema.StringAttribute{
 				Description: "Description of the node. Shown in the web-interface node notes panel. " +
-					"This is saved as a comment inside the configuration file.",
+					"This is saved as a comment inside the configuration file. " +
+					"Trailing newlines are not supported by PVE; use trimspace() with heredoc values.",
 				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`[^\n]$`),
+						"must not end with a newline; use trimspace() with heredoc values",
+					),
+				},
 			},
 		},
 	}
