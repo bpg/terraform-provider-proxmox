@@ -35,7 +35,7 @@ echo "Node.js version: $(node --version)"
 echo "Docker version: $(docker --version)"
 
 # Create required directories
-mkdir -p /workspace/logs
+mkdir -p ./logs
 
 echo "✅ Development container initialized successfully!"
 echo ""
