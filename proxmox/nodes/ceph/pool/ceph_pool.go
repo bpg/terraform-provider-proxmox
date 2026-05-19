@@ -21,10 +21,18 @@ import (
 )
 
 // List returns all Ceph pools on the node along with their full settings.
+// Wrapped in a retry on transient 5xx (e.g. mon "partial read" under load) so
+// list/read consumers don't surface those as hard failures.
 func (c *Client) List(ctx context.Context) ([]*ListResponseData, error) {
 	resBody := &ListResponseBody{}
 
-	if err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), nil, resBody); err != nil {
+	op := retry.NewAPICallOperation("Ceph pool list",
+		retry.WithRetryIf(retry.IsTransientAPIError),
+	)
+
+	if err := op.Do(ctx, func() error {
+		return c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), nil, resBody)
+	}); err != nil {
 		return nil, fmt.Errorf("error listing Ceph pools: %w", err)
 	}
 
