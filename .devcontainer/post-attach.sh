@@ -23,7 +23,7 @@ unset GIT_COMMITTER_EMAIL
 cat > ~/.terraformrc <<EOF
 provider_installation {
   dev_overrides {
-    "bpg/proxmox" = "\${GOPATH}/bin/"
+    "bpg/proxmox" = "${GOPATH}/bin/"
   }
   direct {}
 }
