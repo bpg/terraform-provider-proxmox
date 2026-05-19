@@ -247,7 +247,6 @@
 			"extensions": [
 				// Go development ecosystem
 				"golang.go",
-				"golang.go-nightly",
 				
 				// Infrastructure and DevOps tools
 				"hashicorp.terraform",
