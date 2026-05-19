@@ -80,8 +80,15 @@ func (m *cephPoolModel) toDeleteParams() *poolapi.DeleteRequestParams {
 // (add_storages, force_destroy, remove_storages, remove_ecprofile) and target_size are
 // not round-tripped and are left untouched.
 func (m *cephPoolModel) fromAPI(data *poolapi.ListResponseData) {
+	app := applicationFromMetadata(data.ApplicationMetadata)
+	if app == "" {
+		// PVE always returns the application in metadata once the pool is fully provisioned;
+		// the empty-map fallback guards against transient list responses during create.
+		app = "rbd"
+	}
+
 	m.Name = types.StringValue(data.PoolName)
-	m.Application = types.StringValue(applicationFromMetadata(data.ApplicationMetadata))
+	m.Application = types.StringValue(app)
 	m.CrushRule = types.StringValue(data.CrushRuleName)
 	m.MinSize = types.Int64Value(data.MinSize)
 	m.PGAutoscaleMode = types.StringValue(data.PGAutoscaleMode)

@@ -36,8 +36,8 @@ resource "proxmox_ceph_pool" "example" {
 
 ### Optional
 
-- `add_storages` (Boolean) Configure VM and CT storage entries using the new pool. Applied at create time only.
-- `application` (String) The application using the pool. One of `rbd`, `cephfs`, `rgw`.
+- `add_storages` (Boolean) Configure VM and CT storage entries using the new pool. Applied at create time only; changing this value forces replacement.
+- `application` (String) The application using the pool. One of `rbd`, `cephfs`, `rgw`. Defaults to `rbd` server-side.
 - `crush_rule` (String) The CRUSH rule name used for object placement.
 - `erasure_coding` (String) Create an erasure coded pool. Specified as `k+m[,profile=name]` (e.g. `4+2`). Cannot be changed after creation.
 - `force_destroy` (Boolean) If true, destroy the pool even when in use. Passed as `force=1` on delete.

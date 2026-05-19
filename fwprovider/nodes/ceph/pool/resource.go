@@ -19,9 +19,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -76,18 +77,23 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"application": schema.StringAttribute{
-				Description: "The application using the pool. One of `rbd`, `cephfs`, `rgw`.",
+				Description: "The application using the pool. One of `rbd`, `cephfs`, `rgw`. Defaults to `rbd` server-side.",
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("rbd"),
 				Validators: []validator.String{
 					stringvalidator.OneOf("rbd", "cephfs", "rgw"),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"crush_rule": schema.StringAttribute{
 				Description: "The CRUSH rule name used for object placement.",
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"erasure_coding": schema.StringAttribute{
 				Description: "Create an erasure coded pool. Specified as `k+m[,profile=name]` (e.g. `4+2`). Cannot be changed after creation.",
@@ -103,6 +109,9 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Validators: []validator.Int64{
 					int64validator.Between(1, 7),
 				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"pg_autoscale_mode": schema.StringAttribute{
 				Description: "PG autoscaler mode. One of `on`, `off`, `warn`.",
@@ -111,6 +120,9 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Validators: []validator.String{
 					stringvalidator.OneOf("on", "off", "warn"),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"pg_num": schema.Int64Attribute{
 				Description: "Number of placement groups.",
@@ -118,6 +130,9 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Validators: []validator.Int64{
 					int64validator.Between(1, 32768),
+				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
 				},
 			},
 			"pg_num_min": schema.Int64Attribute{
@@ -135,6 +150,9 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Validators: []validator.Int64{
 					int64validator.Between(1, 7),
 				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"target_size": schema.StringAttribute{
 				Description: "Estimated target size for the PG autoscaler (e.g. `100G`). Write-only: " +
@@ -142,18 +160,18 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional: true,
 			},
 			"target_size_ratio": schema.Float64Attribute{
-				Description:   "Estimated target ratio for the PG autoscaler.",
-				Optional:      true,
-				Computed:      true,
+				Description: "Estimated target ratio for the PG autoscaler.",
+				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.Float64{
-					// API omits the field entirely when unset; preserve user intent across plan cycles.
+					float64planmodifier.UseStateForUnknown(),
 				},
 			},
 			"add_storages": schema.BoolAttribute{
-				Description:   "Configure VM and CT storage entries using the new pool. Applied at create time only.",
-				Optional:      true,
+				Description: "Configure VM and CT storage entries using the new pool. Applied at create time only; changing this value forces replacement.",
+				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
-					// Create-only side effect.
+					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"force_destroy": schema.BoolAttribute{
