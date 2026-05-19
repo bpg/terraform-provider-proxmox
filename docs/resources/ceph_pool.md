@@ -9,6 +9,8 @@ description: |-
 
 # Resource: proxmox_ceph_pool
 
+~> **Experimental.** Schema and behavior may change in future releases. Pin the provider version if stability matters.
+
 Manages a Ceph pool on a Proxmox VE cluster.
 
 ## Example Usage

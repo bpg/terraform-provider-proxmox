@@ -37,6 +37,7 @@ var (
 	_ resource.Resource                = &cephPoolResource{}
 	_ resource.ResourceWithConfigure   = &cephPoolResource{}
 	_ resource.ResourceWithImportState = &cephPoolResource{}
+	_ resource.ResourceWithModifyPlan  = &cephPoolResource{}
 )
 
 // NewCephPoolResource creates a new resource for managing Ceph pools.
@@ -59,8 +60,7 @@ func (r *cephPoolResource) Metadata(_ context.Context, _ resource.MetadataReques
 // Schema defines the schema for the resource.
 func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:         "Manages a Ceph pool on a Proxmox VE cluster.",
-		MarkdownDescription: "Manages a Ceph pool on a Proxmox VE cluster.",
+		Description: "Manages a Ceph pool on a Proxmox VE cluster.",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID("The unique identifier of the Ceph pool, in the form `<node_name>/<name>`."),
 			"name": schema.StringAttribute{
@@ -191,6 +191,25 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 		},
 	}
+}
+
+// ModifyPlan emits a plan-time warning that this resource is experimental.
+// The warning fires on create or update plans (the user is about to change the
+// resource), but not on destroy or no-op refreshes to avoid noise.
+func (r *cephPoolResource) ModifyPlan(_ context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	if req.Plan.Raw.Equal(req.State.Raw) {
+		return
+	}
+
+	resp.Diagnostics.AddWarning(
+		"Experimental resource",
+		"The proxmox_ceph_pool resource is experimental. Schema and behavior may change in future "+
+			"releases. Pin the provider version if stability matters.",
+	)
 }
 
 // Configure captures the provider-configured API client.
