@@ -55,15 +55,17 @@ type ListResponseBody struct {
 // ListResponseData describes a single pool entry returned by the list endpoint.
 // The list endpoint returns the full settable settings, so it doubles as the read-back source.
 type ListResponseData struct {
-	PoolName        string   `json:"pool_name"`
-	Type            string   `json:"type,omitempty"`
-	Size            int64    `json:"size"`
-	MinSize         int64    `json:"min_size"`
-	PGNum           int64    `json:"pg_num"`
-	PGNumMin        *int64   `json:"pg_num_min,omitempty"`
-	PGNumFinal      *int64   `json:"pg_num_final,omitempty"`
-	PGAutoscaleMode string   `json:"pg_autoscale_mode,omitempty"`
-	CrushRule       int64    `json:"crush_rule"`
+	PoolName        string `json:"pool_name"`
+	Type            string `json:"type,omitempty"`
+	Size            int64  `json:"size"`
+	MinSize         int64  `json:"min_size"`
+	PGNum           int64  `json:"pg_num"`
+	PGNumMin        *int64 `json:"pg_num_min,omitempty"`
+	PGNumFinal      *int64 `json:"pg_num_final,omitempty"`
+	PGAutoscaleMode string `json:"pg_autoscale_mode,omitempty"`
+	// PVE returns crush_rule as a JSON string ("1") in current Squid releases despite the API
+	// spec declaring it as integer; we don't need the numeric id (the human-readable name is
+	// in crush_rule_name) so the field is intentionally omitted to avoid the type drift.
 	CrushRuleName   string   `json:"crush_rule_name"`
 	TargetSize      *int64   `json:"target_size,omitempty"`
 	TargetSizeRatio *float64 `json:"target_size_ratio,omitempty"`

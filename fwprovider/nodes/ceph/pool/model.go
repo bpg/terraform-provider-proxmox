@@ -15,6 +15,7 @@ import (
 
 // cephPoolModel maps the schema data for proxmox_ceph_pool.
 type cephPoolModel struct {
+	ID              types.String  `tfsdk:"id"`
 	Name            types.String  `tfsdk:"name"`
 	NodeName        types.String  `tfsdk:"node_name"`
 	Application     types.String  `tfsdk:"application"`
@@ -87,15 +88,17 @@ func (m *cephPoolModel) fromAPI(data *poolapi.ListResponseData) {
 		app = "rbd"
 	}
 
+	m.ID = types.StringValue(m.NodeName.ValueString() + "/" + data.PoolName)
 	m.Name = types.StringValue(data.PoolName)
 	m.Application = types.StringValue(app)
 	m.CrushRule = types.StringValue(data.CrushRuleName)
 	m.MinSize = types.Int64Value(data.MinSize)
 	m.PGAutoscaleMode = types.StringValue(data.PGAutoscaleMode)
 	m.PGNum = types.Int64Value(data.PGNum)
-	m.PGNumMin = attribute.Int64ValueFromPtr(data.PGNumMin)
 	m.Size = types.Int64Value(data.Size)
-	m.TargetSizeRatio = attribute.Float64ValueFromPtr(data.TargetSizeRatio)
+	// pg_num_min, target_size, and target_size_ratio are write-only on the PVE side: the list
+	// endpoint omits them so we deliberately do not touch the model values here. The user's
+	// configured value remains in state.
 }
 
 // applicationFromMetadata extracts the first key from application_metadata. A pool has at

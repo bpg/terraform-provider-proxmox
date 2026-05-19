@@ -20,13 +20,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -62,6 +62,7 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		Description:         "Manages a Ceph pool on a Proxmox VE cluster.",
 		MarkdownDescription: "Manages a Ceph pool on a Proxmox VE cluster.",
 		Attributes: map[string]schema.Attribute{
+			"id": attribute.ResourceID("The unique identifier of the Ceph pool, in the form `<node_name>/<name>`."),
 			"name": schema.StringAttribute{
 				Description: "The pool name. Must be unique within the Ceph cluster.",
 				Required:    true,
@@ -136,12 +137,10 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"pg_num_min": schema.Int64Attribute{
-				Description: "Minimum number of placement groups (used by the autoscaler).",
-				Optional:    true,
-				Computed:    true,
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
+				Description: "Minimum number of placement groups (used by the autoscaler). " +
+					"Write-only: the PVE list endpoint omits this field, so configured values " +
+					"are not round-tripped from the server.",
+				Optional: true,
 			},
 			"size": schema.Int64Attribute{
 				Description: "Number of replicas per object.",
@@ -160,12 +159,10 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional: true,
 			},
 			"target_size_ratio": schema.Float64Attribute{
-				Description: "Estimated target ratio for the PG autoscaler.",
-				Optional:    true,
-				Computed:    true,
-				PlanModifiers: []planmodifier.Float64{
-					float64planmodifier.UseStateForUnknown(),
-				},
+				Description: "Estimated target ratio for the PG autoscaler. " +
+					"Write-only: the PVE list endpoint omits this field, so configured values " +
+					"are not round-tripped from the server.",
+				Optional: true,
 			},
 			"add_storages": schema.BoolAttribute{
 				Description: "Configure VM and CT storage entries using the new pool. Applied at create time only; changing this value forces replacement.",
