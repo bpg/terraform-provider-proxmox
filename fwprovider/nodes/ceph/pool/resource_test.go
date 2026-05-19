@@ -26,6 +26,7 @@ func TestAccResourceCephPool(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
+	te.RequireCeph()
 
 	basicName := test.SafeResourceName("ceph-pool-basic")
 	fullName := test.SafeResourceName("ceph-pool-full")
