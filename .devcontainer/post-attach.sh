@@ -34,7 +34,7 @@ if command -v tofu &> /dev/null; then
 	cat > ~/.tofurc <<EOF
 provider_installation {
   dev_overrides {
-    "bpg/proxmox" = "\${GOPATH}/bin/"
+    "bpg/proxmox" = "${GOPATH}/bin/"
   }
   direct {}
 }
