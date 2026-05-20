@@ -82,6 +82,7 @@ func TestAccResourceCephPool(t *testing.T) {
 						size                = 2
 						min_size            = 1
 						pg_num              = 32
+						pg_num_min          = 4
 						pg_autoscale_mode   = "on"
 						target_size_ratio   = 0.1
 					}`, fullName)),
@@ -92,10 +93,28 @@ func TestAccResourceCephPool(t *testing.T) {
 						"size":              "2",
 						"min_size":          "1",
 						"pg_num":            "32",
+						"pg_num_min":        "4",
 						"pg_autoscale_mode": "on",
 						"target_size_ratio": "0.1",
 					}),
 				),
+			},
+			{
+				// Import round-trip verifies pg_num_min is read back from /status.
+				// Under the prior list-based read, fromAPI left pg_num_min unset and
+				// ImportStateVerify would mismatch — this step is the behavioral proof.
+				ResourceName:      "proxmox_ceph_pool.full",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: importIDFunc("proxmox_ceph_pool.full"),
+				ImportStateVerifyIgnore: []string{
+					"add_storages",
+					"force_destroy",
+					"remove_storages",
+					"remove_ecprofile",
+					// Write-only — see schema MarkdownDescription.
+					"target_size_ratio",
+				},
 			},
 		}},
 		{"update path", []resource.TestStep{

@@ -79,48 +79,56 @@ func (m *cephPoolModel) toDeleteParams() *poolapi.DeleteRequestParams {
 	}
 }
 
-// fromAPI populates the model from a pool list-response entry. Local-only attributes
-// (add_storages, force_destroy, remove_storages, remove_ecprofile) and target_size are
-// not round-tripped and are left untouched.
-func (m *cephPoolModel) fromAPI(data *poolapi.ListResponseData) {
-	m.ID = types.StringValue(m.NodeName.ValueString() + "/" + data.PoolName)
-	m.Name = types.StringValue(data.PoolName)
+// fromAPI populates the model from a pool /status response. Local-only attributes
+// (add_storages, force_destroy, remove_storages, remove_ecprofile) and target_size /
+// target_size_ratio are not round-tripped and are left untouched (target_size has a
+// representation mismatch — PVE accepts a unit-suffixed string but returns bytes
+// integer; target_size_ratio is omitted for consistency with target_size).
+func (m *cephPoolModel) fromAPI(data *poolapi.StatusResponseData) {
+	m.ID = types.StringValue(m.NodeName.ValueString() + "/" + data.Name)
+	m.Name = types.StringValue(data.Name)
 
-	// application handling: PVE always returns the application in metadata for a fully
-	// provisioned pool. If the API response is transiently empty, prefer the existing state
-	// value over an unconditional fallback so a user-set value (e.g. "cephfs") is never
-	// clobbered to the server default. Fall back to "rbd" only when the state has no value
-	// yet (first read after a create where the user didn't specify the attribute).
-	if app := applicationFromMetadata(data.ApplicationMetadata); app != "" {
+	// application handling: PVE returns application_list (when verbose=1 is set on
+	// /status) for a fully provisioned pool. If the API response is transiently empty,
+	// prefer the existing state value over an unconditional fallback so a user-set
+	// value (e.g. "cephfs") is never clobbered to the server default. Fall back to
+	// "rbd" only when the state has no value yet (first read after a create where the
+	// user didn't specify the attribute).
+	if app := applicationFromList(data.ApplicationList); app != "" {
 		m.Application = types.StringValue(app)
 	} else if !attribute.IsDefined(m.Application) {
 		m.Application = types.StringValue("rbd")
 	}
 
-	m.CrushRule = types.StringValue(data.CrushRuleName)
+	m.CrushRule = types.StringValue(data.CrushRule)
 	m.MinSize = types.Int64Value(data.MinSize)
 	m.PGAutoscaleMode = types.StringValue(data.PGAutoscaleMode)
 	m.PGNum = types.Int64Value(data.PGNum)
 	m.Size = types.Int64Value(data.Size)
-	// pg_num_min, target_size, and target_size_ratio are write-only on the PVE side: the list
-	// endpoint omits them so we deliberately do not touch the model values here. The user's
-	// configured value remains in state.
+
+	// pg_num_min is Computed and may be unset on the server (null in /status). Set an
+	// explicit null in state so the value is known after Read; UseStateForUnknown
+	// handles the planning side.
+	if data.PGNumMin != nil {
+		m.PGNumMin = types.Int64Value(*data.PGNumMin)
+	} else {
+		m.PGNumMin = types.Int64Null()
+	}
+	// target_size and target_size_ratio intentionally omitted — kept write-only for
+	// consistency (see godoc above).
 }
 
-// applicationFromMetadata returns the application name from application_metadata.
-// PVE guarantees at most one key per pool. If a future API version surfaces multiple
-// entries, the lowest-sorted key wins so callers see deterministic output.
-func applicationFromMetadata(meta map[string]any) string {
-	if len(meta) == 0 {
+// applicationFromList returns the application name from application_list (returned
+// by /status?verbose=1). PVE guarantees at most one entry per pool. If a future API
+// version surfaces multiple entries, the lowest-sorted name wins so callers see
+// deterministic output.
+func applicationFromList(apps []string) string {
+	if len(apps) == 0 {
 		return ""
 	}
 
-	keys := make([]string, 0, len(meta))
-	for k := range meta {
-		keys = append(keys, k)
-	}
+	sorted := append([]string(nil), apps...)
+	sort.Strings(sorted)
 
-	sort.Strings(keys)
-
-	return keys[0]
+	return sorted[0]
 }

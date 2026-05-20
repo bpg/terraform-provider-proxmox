@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/google/go-querystring/query"
 
@@ -20,20 +21,33 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 )
 
-// List returns all Ceph pools on the node along with their full settings.
-// Wrapped in a retry on transient 5xx (e.g. mon "partial read" under load) so
-// list/read consumers don't surface those as hard failures.
-func (c *Client) List(ctx context.Context) ([]*ListResponseData, error) {
-	resBody := &ListResponseBody{}
+// Get returns the full settings of a single Ceph pool via /status?verbose=1, or
+// api.ErrResourceDoesNotExist if absent. /status returns all settable settings
+// (including pg_num_min) plus application_list (verbose=1 only) and crush_rule
+// as a name string — fields the list endpoint omits or returns in less usable forms.
+//
+// PVE surfaces a missing pool as HTTP 500 with body
+// `"error with 'osd pool get': mon_cmd failed - unrecognized pool 'X'"`
+// (the underlying Ceph mon error), which the shared client does not map to
+// api.ErrResourceDoesNotExist on its own — so we translate it here.
+func (c *Client) Get(ctx context.Context, name string) (*StatusResponseData, error) {
+	resBody := &StatusResponseBody{}
+	path := c.ExpandPath(url.PathEscape(name)) + "/status?verbose=1"
 
-	op := retry.NewAPICallOperation("Ceph pool list",
-		retry.WithRetryIf(retry.IsTransientAPIError),
+	op := retry.NewAPICallOperation("Ceph pool status",
+		retry.WithRetryIf(func(err error) bool {
+			return retry.IsTransientAPIError(err) && !isUnrecognizedPoolErr(err)
+		}),
 	)
 
 	if err := op.Do(ctx, func() error {
-		return c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), nil, resBody)
+		return c.DoRequest(ctx, http.MethodGet, path, nil, resBody)
 	}); err != nil {
-		return nil, fmt.Errorf("error listing Ceph pools: %w", err)
+		if isUnrecognizedPoolErr(err) {
+			return nil, errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
+		return nil, fmt.Errorf("error getting Ceph pool %q: %w", name, err)
 	}
 
 	if resBody.Data == nil {
@@ -43,21 +57,10 @@ func (c *Client) List(ctx context.Context) ([]*ListResponseData, error) {
 	return resBody.Data, nil
 }
 
-// Get returns a single Ceph pool by name, or api.ErrResourceDoesNotExist if absent.
-// The Proxmox GET-by-name endpoint only returns a sub-index, so we filter the list response.
-func (c *Client) Get(ctx context.Context, name string) (*ListResponseData, error) {
-	pools, err := c.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, p := range pools {
-		if p.PoolName == name {
-			return p, nil
-		}
-	}
-
-	return nil, api.ErrResourceDoesNotExist
+// isUnrecognizedPoolErr matches the Ceph mon "unrecognized pool" message that
+// PVE surfaces (via HTTP 500) when a pool does not exist.
+func isUnrecognizedPoolErr(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "unrecognized pool")
 }
 
 // Create creates a new Ceph pool and waits for the dispatch task to complete.

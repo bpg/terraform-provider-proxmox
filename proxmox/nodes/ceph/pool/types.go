@@ -47,32 +47,24 @@ type DeleteRequestParams struct {
 	RemoveStorages  *types.CustomBool `url:"remove_storages,omitempty,int"`
 }
 
-// ListResponseBody wraps the list-pools response.
-type ListResponseBody struct {
-	Data []*ListResponseData `json:"data,omitempty"`
+// StatusResponseBody wraps the per-pool /status response.
+type StatusResponseBody struct {
+	Data *StatusResponseData `json:"data,omitempty"`
 }
 
-// ListResponseData describes a single pool entry returned by the list endpoint.
-// The list endpoint returns the full settable settings, so it doubles as the read-back source.
-type ListResponseData struct {
-	PoolName        string `json:"pool_name"`
-	Type            string `json:"type,omitempty"`
-	Size            int64  `json:"size"`
-	MinSize         int64  `json:"min_size"`
-	PGNum           int64  `json:"pg_num"`
-	PGNumMin        *int64 `json:"pg_num_min,omitempty"`
-	PGNumFinal      *int64 `json:"pg_num_final,omitempty"`
-	PGAutoscaleMode string `json:"pg_autoscale_mode,omitempty"`
-	// PVE returns crush_rule as a JSON string ("1") in current Squid releases despite the API
-	// spec declaring it as integer; we don't need the numeric id (the human-readable name is
-	// in crush_rule_name) so the field is intentionally omitted to avoid the type drift.
-	CrushRuleName   string   `json:"crush_rule_name"`
-	TargetSize      *int64   `json:"target_size,omitempty"`
-	TargetSizeRatio *float64 `json:"target_size_ratio,omitempty"`
-	// Application is derived from the application_metadata map keys. The list
-	// endpoint returns `application_metadata: { "rbd": {} }`-shaped objects;
-	// we capture the raw map and resolve the application name in fromAPI.
-	ApplicationMetadata map[string]any `json:"application_metadata,omitempty"`
+// StatusResponseData describes the per-pool /status?verbose=1 response. The endpoint
+// returns the full settable settings plus a few runtime flags we ignore. crush_rule
+// arrives as the rule name (no separate _name field), and application is reported
+// via application_list when verbose=1 is set.
+type StatusResponseData struct {
+	Name            string   `json:"name"`
+	ApplicationList []string `json:"application_list,omitempty"`
+	CrushRule       string   `json:"crush_rule,omitempty"`
+	Size            int64    `json:"size"`
+	MinSize         int64    `json:"min_size"`
+	PGNum           int64    `json:"pg_num"`
+	PGNumMin        *int64   `json:"pg_num_min,omitempty"`
+	PGAutoscaleMode string   `json:"pg_autoscale_mode,omitempty"`
 }
 
 // CreateResponseBody wraps the create response (a UPID).

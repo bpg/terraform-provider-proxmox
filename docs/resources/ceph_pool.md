@@ -46,12 +46,12 @@ resource "proxmox_ceph_pool" "example" {
 - `min_size` (Number) Minimum number of replicas per object.
 - `pg_autoscale_mode` (String) PG autoscaler mode. One of `on`, `off`, `warn`.
 - `pg_num` (Number) Number of placement groups.
-- `pg_num_min` (Number) Minimum number of placement groups (used by the autoscaler). **Write-only:** the PVE list endpoint omits this field, so configured values are not round-tripped from the server.
+- `pg_num_min` (Number) Minimum number of placement groups (used by the autoscaler).
 - `remove_ecprofile` (Boolean) If true, remove the erasure code profile on destroy. Defaults to true. Only relevant for EC pools.
 - `remove_storages` (Boolean) If true, remove all pveceph-managed storages configured for this pool on destroy.
 - `size` (Number) Number of replicas per object.
-- `target_size` (String) Estimated target size for the PG autoscaler (e.g. `100G`). **Write-only:** the PVE list endpoint returns this in bytes, so the configured spec is not round-tripped.
-- `target_size_ratio` (Number) Estimated target ratio for the PG autoscaler. **Write-only:** the PVE list endpoint omits this field, so configured values are not round-tripped from the server.
+- `target_size` (String) Estimated target size for the PG autoscaler (e.g. `100G`). **Write-only:** PVE returns this as a bytes integer (e.g. `1073741824`) while the input accepts a unit-suffixed string, so the configured spec is not round-tripped from the server.
+- `target_size_ratio` (Number) Estimated target ratio for the PG autoscaler. **Write-only:** kept symmetric with `target_size` (which cannot be round-tripped), so the configured value is not refreshed from the server.
 
 ### Read-Only
 

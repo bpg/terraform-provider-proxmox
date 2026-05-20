@@ -139,11 +139,12 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"pg_num_min": schema.Int64Attribute{
-				Description: "Minimum number of placement groups (used by the autoscaler). Write-only.",
-				MarkdownDescription: "Minimum number of placement groups (used by the autoscaler). " +
-					"**Write-only:** the PVE list endpoint omits this field, so configured values " +
-					"are not round-tripped from the server.",
-				Optional: true,
+				Description: "Minimum number of placement groups (used by the autoscaler).",
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"size": schema.Int64Attribute{
 				Description: "Number of replicas per object.",
@@ -159,15 +160,16 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"target_size": schema.StringAttribute{
 				Description: "Estimated target size for the PG autoscaler. Write-only.",
 				MarkdownDescription: "Estimated target size for the PG autoscaler (e.g. `100G`). " +
-					"**Write-only:** the PVE list endpoint returns this in bytes, so the configured " +
-					"spec is not round-tripped.",
+					"**Write-only:** PVE returns this as a bytes integer (e.g. `1073741824`) while " +
+					"the input accepts a unit-suffixed string, so the configured spec is not " +
+					"round-tripped from the server.",
 				Optional: true,
 			},
 			"target_size_ratio": schema.Float64Attribute{
 				Description: "Estimated target ratio for the PG autoscaler. Write-only.",
 				MarkdownDescription: "Estimated target ratio for the PG autoscaler. " +
-					"**Write-only:** the PVE list endpoint omits this field, so configured values " +
-					"are not round-tripped from the server.",
+					"**Write-only:** kept symmetric with `target_size` (which cannot be round-tripped), " +
+					"so the configured value is not refreshed from the server.",
 				Optional: true,
 			},
 			"add_storages": schema.BoolAttribute{
