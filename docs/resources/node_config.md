@@ -22,7 +22,7 @@ Manages Proxmox VE node configuration.
 
 ### Optional
 
-- `description` (String) Description of the node. Shown in the web-interface node notes panel. This is saved as a comment inside the configuration file.
+- `description` (String) Description of the node. Shown in the web-interface node notes panel. This is saved as a comment inside the configuration file. Trailing newlines are not supported by PVE; use trimspace() with heredoc values.
 
 ### Read-Only
 
