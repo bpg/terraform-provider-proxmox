@@ -7,6 +7,8 @@
 package pool
 
 import (
+	"sort"
+
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
@@ -105,12 +107,20 @@ func (m *cephPoolModel) fromAPI(data *poolapi.ListResponseData) {
 	// configured value remains in state.
 }
 
-// applicationFromMetadata extracts the first key from application_metadata. A pool has at
-// most one application, so this is the application name; empty string when absent.
+// applicationFromMetadata returns the application name from application_metadata.
+// PVE guarantees at most one key per pool. If a future API version surfaces multiple
+// entries, the lowest-sorted key wins so callers see deterministic output.
 func applicationFromMetadata(meta map[string]any) string {
-	for k := range meta {
-		return k
+	if len(meta) == 0 {
+		return ""
 	}
 
-	return ""
+	keys := make([]string, 0, len(meta))
+	for k := range meta {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	return keys[0]
 }

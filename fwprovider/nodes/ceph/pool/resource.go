@@ -37,7 +37,6 @@ var (
 	_ resource.Resource                = &cephPoolResource{}
 	_ resource.ResourceWithConfigure   = &cephPoolResource{}
 	_ resource.ResourceWithImportState = &cephPoolResource{}
-	_ resource.ResourceWithModifyPlan  = &cephPoolResource{}
 )
 
 // NewCephPoolResource creates a new resource for managing Ceph pools.
@@ -97,8 +96,11 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"erasure_coding": schema.StringAttribute{
-				Description: "Create an erasure coded pool. Specified as `k+m[,profile=name]` (e.g. `4+2`). Cannot be changed after creation.",
-				Optional:    true,
+				Description: "Create an erasure coded pool. Cannot be changed after creation.",
+				MarkdownDescription: "Create an erasure coded pool. Specified as " +
+					"`k=<int>,m=<int>[,profile=name][,device-class=class][,failure-domain=domain]` " +
+					"(e.g. `k=4,m=2`). Cannot be changed after creation.",
+				Optional: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -137,8 +139,9 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"pg_num_min": schema.Int64Attribute{
-				Description: "Minimum number of placement groups (used by the autoscaler). " +
-					"Write-only: the PVE list endpoint omits this field, so configured values " +
+				Description: "Minimum number of placement groups (used by the autoscaler). Write-only.",
+				MarkdownDescription: "Minimum number of placement groups (used by the autoscaler). " +
+					"**Write-only:** the PVE list endpoint omits this field, so configured values " +
 					"are not round-tripped from the server.",
 				Optional: true,
 			},
@@ -154,13 +157,16 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"target_size": schema.StringAttribute{
-				Description: "Estimated target size for the PG autoscaler (e.g. `100G`). Write-only: " +
-					"the PVE list endpoint returns this in bytes, so the configured spec is not round-tripped.",
+				Description: "Estimated target size for the PG autoscaler. Write-only.",
+				MarkdownDescription: "Estimated target size for the PG autoscaler (e.g. `100G`). " +
+					"**Write-only:** the PVE list endpoint returns this in bytes, so the configured " +
+					"spec is not round-tripped.",
 				Optional: true,
 			},
 			"target_size_ratio": schema.Float64Attribute{
-				Description: "Estimated target ratio for the PG autoscaler. " +
-					"Write-only: the PVE list endpoint omits this field, so configured values " +
+				Description: "Estimated target ratio for the PG autoscaler. Write-only.",
+				MarkdownDescription: "Estimated target ratio for the PG autoscaler. " +
+					"**Write-only:** the PVE list endpoint omits this field, so configured values " +
 					"are not round-tripped from the server.",
 				Optional: true,
 			},
@@ -191,25 +197,6 @@ func (r *cephPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 		},
 	}
-}
-
-// ModifyPlan emits a plan-time warning that this resource is experimental.
-// The warning fires on create or update plans (the user is about to change the
-// resource), but not on destroy or no-op refreshes to avoid noise.
-func (r *cephPoolResource) ModifyPlan(_ context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-
-	if req.Plan.Raw.Equal(req.State.Raw) {
-		return
-	}
-
-	resp.Diagnostics.AddWarning(
-		"Experimental resource",
-		"The proxmox_ceph_pool resource is experimental. Schema and behavior may change in future "+
-			"releases. Pin the provider version if stability matters.",
-	)
 }
 
 // Configure captures the provider-configured API client.
@@ -315,13 +302,11 @@ func (r *cephPoolResource) Delete(ctx context.Context, req resource.DeleteReques
 	client := r.poolClient(state.NodeName.ValueString())
 
 	result := client.Delete(ctx, state.Name.ValueString(), state.toDeleteParams())
-	if err := result.Err(); err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			return
-		}
-
-		result.AddDiags(&resp.Diagnostics, fmt.Sprintf("Unable to Delete Ceph pool %q", state.Name.ValueString()))
+	if err := result.Err(); err != nil && errors.Is(err, api.ErrResourceDoesNotExist) {
+		return
 	}
+
+	result.AddDiags(&resp.Diagnostics, fmt.Sprintf("Unable to Delete Ceph pool %q", state.Name.ValueString()))
 }
 
 // ImportState parses the composite import id `node_name/pool_name` and seeds the

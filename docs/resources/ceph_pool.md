@@ -41,17 +41,17 @@ resource "proxmox_ceph_pool" "example" {
 - `add_storages` (Boolean) Configure VM and CT storage entries using the new pool. Applied at create time only; changing this value forces replacement.
 - `application` (String) The application using the pool. One of `rbd`, `cephfs`, `rgw`. Defaults to `rbd` server-side.
 - `crush_rule` (String) The CRUSH rule name used for object placement.
-- `erasure_coding` (String) Create an erasure coded pool. Specified as `k+m[,profile=name]` (e.g. `4+2`). Cannot be changed after creation.
+- `erasure_coding` (String) Create an erasure coded pool. Specified as `k=<int>,m=<int>[,profile=name][,device-class=class][,failure-domain=domain]` (e.g. `k=4,m=2`). Cannot be changed after creation.
 - `force_destroy` (Boolean) If true, destroy the pool even when in use. Passed as `force=1` on delete.
 - `min_size` (Number) Minimum number of replicas per object.
 - `pg_autoscale_mode` (String) PG autoscaler mode. One of `on`, `off`, `warn`.
 - `pg_num` (Number) Number of placement groups.
-- `pg_num_min` (Number) Minimum number of placement groups (used by the autoscaler). Write-only: the PVE list endpoint omits this field, so configured values are not round-tripped from the server.
+- `pg_num_min` (Number) Minimum number of placement groups (used by the autoscaler). **Write-only:** the PVE list endpoint omits this field, so configured values are not round-tripped from the server.
 - `remove_ecprofile` (Boolean) If true, remove the erasure code profile on destroy. Defaults to true. Only relevant for EC pools.
 - `remove_storages` (Boolean) If true, remove all pveceph-managed storages configured for this pool on destroy.
 - `size` (Number) Number of replicas per object.
-- `target_size` (String) Estimated target size for the PG autoscaler (e.g. `100G`). Write-only: the PVE list endpoint returns this in bytes, so the configured spec is not round-tripped.
-- `target_size_ratio` (Number) Estimated target ratio for the PG autoscaler. Write-only: the PVE list endpoint omits this field, so configured values are not round-tripped from the server.
+- `target_size` (String) Estimated target size for the PG autoscaler (e.g. `100G`). **Write-only:** the PVE list endpoint returns this in bytes, so the configured spec is not round-tripped.
+- `target_size_ratio` (Number) Estimated target ratio for the PG autoscaler. **Write-only:** the PVE list endpoint omits this field, so configured values are not round-tripped from the server.
 
 ### Read-Only
 
