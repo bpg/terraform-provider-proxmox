@@ -49,6 +49,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_datastores.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/datastores.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/backup_jobs.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/ceph_status.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/files.md ./docs/data-sources/
