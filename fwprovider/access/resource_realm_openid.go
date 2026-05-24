@@ -135,7 +135,7 @@ func (r *realmOpenIDResource) Schema(
 				Optional:    true,
 			},
 			"audiences": schema.StringAttribute{
-				Description: "Audiences that the OpenID Issuer may include that are accepted for the client.",
+				Description: "Audiences that the OpenID Issuer may include that are accepted for the client (comma-separated).",
 				Optional:    true,
 			},
 			"query_userinfo": schema.BoolAttribute{
