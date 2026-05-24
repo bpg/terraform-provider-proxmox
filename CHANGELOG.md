@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.107.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.106.0...v0.107.0) (2026-05-24)
+
+
+### Features
+
+* **ceph:** add proxmox_ceph_pool resource ([#2884](https://github.com/bpg/terraform-provider-proxmox/issues/2884)) ([8fb6738](https://github.com/bpg/terraform-provider-proxmox/commit/8fb673836fe15ad1db2e5ba4302494d40c661b04))
+* **ha:** add failback attribute to haresource ([#2865](https://github.com/bpg/terraform-provider-proxmox/issues/2865)) ([1b5e7d8](https://github.com/bpg/terraform-provider-proxmox/commit/1b5e7d85e97c7c4ab05ab2b1f6f16ef1e1da813d))
+* **node:** add `node_config` resource and datasource ([#2875](https://github.com/bpg/terraform-provider-proxmox/issues/2875)) ([e00e81a](https://github.com/bpg/terraform-provider-proxmox/commit/e00e81a43e61f9a440f5dfb38afa4a9137e0091b))
+
+
+### Bug Fixes
+
+* **access:** gate user/group acl read; deprecate inline acl ([e40c1ab](https://github.com/bpg/terraform-provider-proxmox/commit/e40c1ab8e27ae87a75db3530c4062d5f7d659156))
+* **lxc:** avoid nil-bool panic when disk block is omitted ([#2908](https://github.com/bpg/terraform-provider-proxmox/issues/2908)) ([053ce10](https://github.com/bpg/terraform-provider-proxmox/commit/053ce103eb6f01827535efabb794060e1fdbafda))
+* **lxc:** skip empty config PUT for lifecycle-only updates ([#2888](https://github.com/bpg/terraform-provider-proxmox/issues/2888)) ([32b1194](https://github.com/bpg/terraform-provider-proxmox/commit/32b1194b2df88c61f2cf407f490dcd6592650512))
+* **sdn:** add missing acceptance build tag to EVPN Zone test  ([#2872](https://github.com/bpg/terraform-provider-proxmox/issues/2872)) ([93ed6a8](https://github.com/bpg/terraform-provider-proxmox/commit/93ed6a845674136833342539711660871c9c4967))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v3.1.1 → v3.2.0) ([#2879](https://github.com/bpg/terraform-provider-proxmox/issues/2879)) ([84f9d53](https://github.com/bpg/terraform-provider-proxmox/commit/84f9d539b68be80b29dd6f36e57794d9a29387b3))
+* **ci:** update golangci/golangci-lint-action digest (1e7e51e → 82606bf) ([#2903](https://github.com/bpg/terraform-provider-proxmox/issues/2903)) ([287ae68](https://github.com/bpg/terraform-provider-proxmox/commit/287ae6837fe28c779cfdd4a93c18a5eeb337ec5b))
+* **ci:** update goreleaser/goreleaser-action action (v7.2.1 → v7.2.2) ([#2909](https://github.com/bpg/terraform-provider-proxmox/issues/2909)) ([4e63070](https://github.com/bpg/terraform-provider-proxmox/commit/4e63070a87caada0c2ad7bb19d9a53ce8005029b))
+* **ci:** update hashicorp/setup-terraform action (v4.0.0 → v4.0.1) ([#2878](https://github.com/bpg/terraform-provider-proxmox/issues/2878)) ([519319e](https://github.com/bpg/terraform-provider-proxmox/commit/519319e36e720a29760a46033f81fb2ec996eb6e))
+* **ci:** update hashicorp/setup-terraform digest (5e8dbf3 → dfe3c3f) ([#2876](https://github.com/bpg/terraform-provider-proxmox/issues/2876)) ([e9d0381](https://github.com/bpg/terraform-provider-proxmox/commit/e9d038136c0baac7652992c6fcdd302b129e08fd))
+* **ci:** use pull_request_target in project-automation ([f40c393](https://github.com/bpg/terraform-provider-proxmox/commit/f40c3939713d34387d46bc5a17162bbea90039e8))
+* **deps:** update golangci/golangci-lint (v2.12.1 → v2.12.2) ([#2867](https://github.com/bpg/terraform-provider-proxmox/issues/2867)) ([832e174](https://github.com/bpg/terraform-provider-proxmox/commit/832e1743f5d66183eedf4981dead9016a172d060))
+* **deps:** update image golang (1.26.2 → 1.26.3) ([#2868](https://github.com/bpg/terraform-provider-proxmox/issues/2868)) ([a729891](https://github.com/bpg/terraform-provider-proxmox/commit/a7298914781465acbcd900e25788793315747653))
+* **deps:** update image golang (2981696 → 313faae) ([#2877](https://github.com/bpg/terraform-provider-proxmox/issues/2877)) ([4237a30](https://github.com/bpg/terraform-provider-proxmox/commit/4237a3055f0a773ea0c9a9eba0ae70bbc0255358))
+* **deps:** update image golang (313faae → 6df14f4) ([#2904](https://github.com/bpg/terraform-provider-proxmox/issues/2904)) ([1c97160](https://github.com/bpg/terraform-provider-proxmox/commit/1c97160ab931c338e4ee352f9b8e6fe4eb24ba6b))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.14.1 → v7.15.0) ([#2885](https://github.com/bpg/terraform-provider-proxmox/issues/2885)) ([b4d87e8](https://github.com/bpg/terraform-provider-proxmox/commit/b4d87e8ef70a2c3dfbd40452cec7c02cdcdb6812))
+* **deps:** update module golang.org/x/crypto (v0.51.0 → v0.52.0) ([#2905](https://github.com/bpg/terraform-provider-proxmox/issues/2905)) ([5c4d15d](https://github.com/bpg/terraform-provider-proxmox/commit/5c4d15d081a31ee0bc6155e986a2e00c90924dde))
+* **deps:** update module golang.org/x/net (v0.53.0 → v0.54.0) ([#2870](https://github.com/bpg/terraform-provider-proxmox/issues/2870)) ([c4f2de6](https://github.com/bpg/terraform-provider-proxmox/commit/c4f2de66446f8c1a155637ab1f62aee117f58ae6))
+* **deps:** update module golang.org/x/net (v0.54.0 → v0.55.0) ([#2906](https://github.com/bpg/terraform-provider-proxmox/issues/2906)) ([ecb905d](https://github.com/bpg/terraform-provider-proxmox/commit/ecb905dc3623b1d7c09c7361e0c0a645e841fcfa))
+* **docs:** update terraform local (2.8.0 → 2.9.0) ([#2880](https://github.com/bpg/terraform-provider-proxmox/issues/2880)) ([7b51658](https://github.com/bpg/terraform-provider-proxmox/commit/7b51658860c6e6c28ebce1e6d487921a234672c8))
+* **docs:** update terraform tls (4.2.1 → 4.3.0) ([#2881](https://github.com/bpg/terraform-provider-proxmox/issues/2881)) ([15fc5ab](https://github.com/bpg/terraform-provider-proxmox/commit/15fc5abfe1c911cd0459181be1ace00f1af45fa8))
+* **vm2:** error format sweep ([#2861](https://github.com/bpg/terraform-provider-proxmox/issues/2861)) ([047c4d4](https://github.com/bpg/terraform-provider-proxmox/commit/047c4d426c682030c6988479393bf32976908c4d))
+
 ## [0.106.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.105.0...v0.106.0) (2026-05-06)
 
 
