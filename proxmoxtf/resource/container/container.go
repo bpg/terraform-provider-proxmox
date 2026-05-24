@@ -390,7 +390,7 @@ func Container() *schema.Resource {
 						map[string]any{
 							mkDiskACL:          dvDiskACL,
 							mkDiskDatastoreID:  dvDiskDatastoreID,
-							mkDiskMountOptions: nil,
+							mkDiskMountOptions: []any{},
 							mkDiskQuota:        dvDiskQuota,
 							mkDiskReplicate:    dvDiskReplicate,
 							mkDiskSize:         dvDiskSize,

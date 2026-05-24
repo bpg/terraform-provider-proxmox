@@ -3005,16 +3005,7 @@ func TestAccResourceContainerStartedToggle(t *testing.T) {
 	})
 }
 
-// TestAccResourceContainerNoDiskBlock verifies that omitting the `disk { ... }` block from
-// the HCL config does not crash the provider. PR #2824 added unguarded `.(bool)` reads on
-// `acl`, `quota`, `replicate` from the disk block, but the `mkDisk` DefaultFunc returns a
-// partial map missing those keys, so create panicked with
-// `interface conversion: interface {} is nil, not bool`. Regression test for issue #2893.
-//
-// `ExpectNonEmptyPlan: true` covers a pre-existing latent UX issue with the `mkDisk` schema
-// (Optional list + non-empty DefaultFunc): after apply, state holds the synthesized default
-// block, but Terraform's diff against a still-empty user config wants to remove it. That's
-// a separate UX issue, out of scope for this narrow panic fix.
+// Regression test for #2893: omitting the `disk { ... }` block must not panic create.
 //
 //nolint:paralleltest
 func TestAccResourceContainerNoDiskBlock(t *testing.T) {
@@ -3064,6 +3055,88 @@ func TestAccResourceContainerNoDiskBlock(t *testing.T) {
 						"disk.0.replicate": "false",
 					}),
 				),
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+// Regression test for #2893: removing an explicit `disk { ... }` block must not panic
+// containerUpdate. Step 1's `datastore_id = "local"` matches the DefaultFunc so removal
+// does not trigger ForceNew and takes the update path.
+//
+//nolint:paralleltest
+func TestAccResourceContainerRemoveDiskBlock(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					disk {
+						datastore_id  = "local"
+						size          = 4
+						mount_options = ["discard"]
+					}
+					initialization {
+						hostname = "test-remove-disk"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"disk.0.mount_options.#": "1",
+					"disk.0.mount_options.0": "discard",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					initialization {
+						hostname = "test-remove-disk"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
 				ExpectNonEmptyPlan: true,
 			},
 		},
