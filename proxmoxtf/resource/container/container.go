@@ -388,9 +388,12 @@ func Container() *schema.Resource {
 				DefaultFunc: func() (any, error) {
 					return []any{
 						map[string]any{
+							mkDiskACL:          dvDiskACL,
 							mkDiskDatastoreID:  dvDiskDatastoreID,
-							mkDiskSize:         dvDiskSize,
 							mkDiskMountOptions: nil,
+							mkDiskQuota:        dvDiskQuota,
+							mkDiskReplicate:    dvDiskReplicate,
+							mkDiskSize:         dvDiskSize,
 						},
 					}, nil
 				},
