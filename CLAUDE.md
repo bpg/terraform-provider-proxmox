@@ -121,7 +121,7 @@ Tests are classified via `//testacc:tier=X` annotations in test files:
 | medium | Simple VMs with unique IDs     | -p 4        | ~3 min  |
 | heavy  | Cloud images, shared state     | -p 1        | ~15 min |
 
-Resource targeting via `//testacc:resource=X` annotations: `vm`, `container`, `firewall`, `sdn`, `file`, `pool`, `acme`, `access`, `backup`, `ha`, `hardwaremapping`, `metrics`, `options`, `replication`, `apt`, `datastores`, `storage`, `network`, `misc`
+Resource targeting via `//testacc:resource=X` annotations: `vm`, `container`, `firewall`, `sdn`, `file`, `pool`, `acme`, `access`, `backup`, `ceph`, `ha`, `hardwaremapping`, `metrics`, `options`, `replication`, `apt`, `datastores`, `storage`, `network`, `misc`
 
 Requires `testacc.env` — see [CONTRIBUTING.md](CONTRIBUTING.md#acceptance-tests) for setup.
 

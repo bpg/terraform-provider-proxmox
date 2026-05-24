@@ -7,11 +7,14 @@
 package test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -82,6 +85,44 @@ func ResourceAttributesSet(res string, attrs []string) resource.TestCheckFunc {
 		}
 
 		return nil
+	}
+}
+
+// onceCephStatus/errCephStatus cache the cluster-wide Ceph status probe so
+// tests calling RequireCeph share one HTTP call per `go test` invocation per
+// package.
+//
+//nolint:gochecknoglobals
+var (
+	onceCephStatus sync.Once
+	errCephStatus  error
+)
+
+// RequireCeph skips the calling test when Ceph is not initialized on the
+// testacc cluster. Probes the cluster-wide `/cluster/ceph/status` endpoint,
+// which returns an error when Ceph is uninstalled or uninitialized — making
+// it a cheap, cluster-scoped probe. The probe result is cached for the
+// lifetime of the test binary; the first caller pays the HTTP cost,
+// subsequent callers reuse the cached outcome.
+//
+// Default `./testacc` runs include every acceptance test in `fwprovider/...`
+// regardless of `--tier` or `--resource` filters, so tests tagged
+// `//testacc:resource=ceph` must self-skip on clusters without Ceph or
+// they will fail the maintainer's release-cycle runs with API 500s.
+func (e *Environment) RequireCeph() {
+	e.t.Helper()
+
+	onceCephStatus.Do(func() {
+		// Use a fresh background context with a short timeout so the cached
+		// result doesn't get bound to the first caller's test lifetime.
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		_, errCephStatus = e.ClusterClient().Ceph().GetStatus(ctx)
+	})
+
+	if errCephStatus != nil {
+		e.t.Skipf("Skipping: Ceph is not available on the testacc cluster (%v)", errCephStatus)
 	}
 }
 
