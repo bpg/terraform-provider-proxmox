@@ -10,10 +10,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	clusterceph "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ceph"
@@ -62,6 +65,9 @@ func (d *DataSource) Schema(
 				Description: "Optional node name. When set, the data source queries the per-node endpoint; " +
 					"when omitted, it queries the cluster-wide endpoint.",
 				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"fsid": schema.StringAttribute{
 				Description: "Ceph cluster UUID.",
@@ -118,7 +124,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		err  error
 	)
 
-	if !state.NodeName.IsNull() && !state.NodeName.IsUnknown() {
+	if attribute.IsDefined(state.NodeName) {
 		data, err = d.client.Node(state.NodeName.ValueString()).Ceph().GetStatus(ctx)
 	} else {
 		data, err = d.client.Cluster().Ceph().GetStatus(ctx)

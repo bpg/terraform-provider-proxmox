@@ -35,6 +35,12 @@ func (m *model) fromAPI(ctx context.Context, data *clusterceph.StatusResponseDat
 	m.FSID = types.StringValue(data.FSID)
 	m.HealthStatus = types.StringValue(data.Health.Status)
 
+	// A null list is invalid for a Computed attribute after Read; coerce a nil
+	// API response to an empty list so downstream configs see a known value.
+	if data.QuorumNames == nil {
+		data.QuorumNames = []string{}
+	}
+
 	quorum, diags := types.ListValueFrom(ctx, types.StringType, data.QuorumNames)
 	if diags.HasError() {
 		return diags
