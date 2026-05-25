@@ -26,6 +26,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -785,6 +787,68 @@ func TestAccResourceVMImport(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestAccResourceVMImportEffectiveDefaults verifies that importing an externally-created VM
+// reads back the provider's effective defaults for fields whose schema default is non-empty
+// (keyboard_layout, agent.type), instead of "". A "" read-back diffs against the defaulted
+// config and, on apply, reboots / stop-starts the VM (issue #2902, continuation of #932).
+func TestAccResourceVMImportEffectiveDefaults(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+
+	// Create a bare VM directly via the API (not via the provider) so PVE has agent enabled
+	// without an explicit type and no keyboard set — the state an externally-created VM has.
+	ctx := context.Background()
+	createResult := te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{
+		VMID:  vmID,
+		Agent: &vms.CustomAgent{Enabled: types.CustomBool(true).Pointer()},
+	})
+	require.NoError(t, createResult.Err(), "failed to create bare VM %d", vmID)
+
+	t.Cleanup(func() {
+		_ = te.NodeClient().VM(vmID).DeleteVM(context.Background(), true, true).Err()
+	})
+
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_defaults" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+
+						agent {
+							enabled = true
+						}
+					}`),
+				ResourceName:  "proxmox_virtual_environment_vm.vm_defaults",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, vmID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+
+					if got := attrs["keyboard_layout"]; got != "en-us" {
+						return fmt.Errorf("keyboard_layout = %q, want %q (effective default)", got, "en-us")
+					}
+
+					if got := attrs["agent.0.type"]; got != "virtio" {
+						return fmt.Errorf("agent.0.type = %q, want %q (effective default)", got, "virtio")
+					}
+
+					return nil
+				},
+			},
+		},
+	})
 }
 
 func TestAccResourceVMInitialization(t *testing.T) {
