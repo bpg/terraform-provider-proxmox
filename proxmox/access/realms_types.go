@@ -47,6 +47,7 @@ type RealmCreateRequestBody struct {
 	Scopes           *string           `json:"scopes,omitempty"            url:"scopes,omitempty"`                // OAuth scopes
 	Prompt           *string           `json:"prompt,omitempty"            url:"prompt,omitempty"`                // OAuth prompt
 	ACRValues        *string           `json:"acr-values,omitempty"        url:"acr-values,omitempty"`            // ACR values
+	Audiences        *string           `json:"audiences,omitempty"         url:"audiences,omitempty"`             // Audiences
 	AutoCreate       *types.CustomBool `json:"autocreate,omitempty"        url:"autocreate,omitempty,int"`        // Auto-create users
 	GroupsClaim      *string           `json:"groups-claim,omitempty"      url:"groups-claim,omitempty"`          // Groups claim
 	GroupsAutocreate *types.CustomBool `json:"groups-autocreate,omitempty" url:"groups-autocreate,omitempty,int"` // Auto-create groups
@@ -93,6 +94,7 @@ type RealmUpdateRequestBody struct {
 	Scopes           *string           `json:"scopes,omitempty"                url:"scopes,omitempty"`
 	Prompt           *string           `json:"prompt,omitempty"                url:"prompt,omitempty"`
 	ACRValues        *string           `json:"acr-values,omitempty"            url:"acr-values,omitempty"`
+	Audiences        *string           `json:"audiences,omitempty"             url:"audiences,omitempty"`
 	AutoCreate       *types.CustomBool `json:"autocreate,omitempty"            url:"autocreate,omitempty,int"`
 	GroupsClaim      *string           `json:"groups-claim,omitempty"          url:"groups-claim,omitempty"`
 	GroupsAutocreate *types.CustomBool `json:"groups-autocreate,omitempty"     url:"groups-autocreate,omitempty,int"`
@@ -143,6 +145,7 @@ type RealmGetResponseData struct {
 	Scopes           *string           `json:"scopes,omitempty"`
 	Prompt           *string           `json:"prompt,omitempty"`
 	ACRValues        *string           `json:"acr-values,omitempty"`
+	Audiences        *string           `json:"audiences,omitempty"`
 	AutoCreate       *types.CustomBool `json:"autocreate,omitempty"`
 	GroupsClaim      *string           `json:"groups-claim,omitempty"`
 	GroupsAutocreate *types.CustomBool `json:"groups-autocreate,omitempty"`

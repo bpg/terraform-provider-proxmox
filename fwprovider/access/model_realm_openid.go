@@ -28,6 +28,7 @@ type realmOpenIDModel struct {
 	Scopes           types.String `tfsdk:"scopes"`
 	Prompt           types.String `tfsdk:"prompt"`
 	ACRValues        types.String `tfsdk:"acr_values"`
+	Audiences        types.String `tfsdk:"audiences"`
 	QueryUserinfo    types.Bool   `tfsdk:"query_userinfo"`
 	Comment          types.String `tfsdk:"comment"`
 	Default          types.Bool   `tfsdk:"default"`
@@ -77,6 +78,10 @@ func (m *realmOpenIDModel) toCreateRequest() *access.RealmCreateRequestBody {
 		req.ACRValues = m.ACRValues.ValueStringPointer()
 	}
 
+	if !m.Audiences.IsNull() {
+		req.Audiences = m.Audiences.ValueStringPointer()
+	}
+
 	if !m.QueryUserinfo.IsNull() {
 		req.QueryUserinfo = proxmoxtypes.CustomBoolPtr(m.QueryUserinfo.ValueBoolPointer())
 	}
@@ -110,6 +115,7 @@ func (m *realmOpenIDModel) toUpdateRequest(state *realmOpenIDModel) *access.Real
 	updateStringAttribute(&req.Scopes, m.Scopes, state.Scopes, &toDelete, "scopes")
 	updateStringAttribute(&req.Prompt, m.Prompt, state.Prompt, &toDelete, "prompt")
 	updateStringAttribute(&req.ACRValues, m.ACRValues, state.ACRValues, &toDelete, "acr-values")
+	updateStringAttribute(&req.Audiences, m.Audiences, state.Audiences, &toDelete, "audiences")
 	updateStringAttribute(&req.GroupsClaim, m.GroupsClaim, state.GroupsClaim, &toDelete, "groups-claim")
 	updateStringAttribute(&req.Comment, m.Comment, state.Comment, &toDelete, "comment")
 	updateStringAttribute(&req.UsernameClaim, m.UsernameClaim, state.UsernameClaim, &toDelete, "username-claim")
@@ -173,6 +179,7 @@ func (m *realmOpenIDModel) fromAPIResponse(data *access.RealmGetResponseData, di
 	m.GroupsClaim = types.StringPointerValue(data.GroupsClaim)
 	m.Prompt = types.StringPointerValue(data.Prompt)
 	m.ACRValues = types.StringPointerValue(data.ACRValues)
+	m.Audiences = types.StringPointerValue(data.Audiences)
 	m.Comment = types.StringPointerValue(data.Comment)
 
 	m.Scopes = types.StringPointerValue(data.Scopes)
