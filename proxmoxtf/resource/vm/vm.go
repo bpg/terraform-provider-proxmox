@@ -4417,7 +4417,8 @@ func vmReadCustom(
 			if vmConfig.Agent.Type != nil {
 				agent[mkAgentType] = *vmConfig.Agent.Type
 			} else {
-				agent[mkAgentType] = ""
+				// PVE omits an unset agent type; report the schema default so imported VMs don't diff and stop-start.
+				agent[mkAgentType] = dvAgentType
 			}
 
 			// preserve wait_for_ip from current state if present
@@ -5736,8 +5737,8 @@ func vmReadPrimitiveValues(
 		if vmConfig.KeyboardLayout != nil {
 			err = d.Set(mkKeyboardLayout, *vmConfig.KeyboardLayout)
 		} else {
-			// Default value of "keyboard" is "" according to the API documentation.
-			err = d.Set(mkKeyboardLayout, "")
+			// PVE omits an unset keyboard; report the schema default so imported VMs don't diff and reboot.
+			err = d.Set(mkKeyboardLayout, dvKeyboardLayout)
 		}
 
 		diags = append(diags, diag.FromErr(err)...)
