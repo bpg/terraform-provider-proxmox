@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	clusterceph "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ceph"
 )
 
@@ -31,7 +32,7 @@ func NewDataSource() datasource.DataSource {
 
 // DataSource is the proxmox_ceph_status data source.
 type DataSource struct {
-	cfg *config.DataSource
+	client proxmox.Client
 }
 
 // Metadata returns the data source type name.
@@ -99,7 +100,7 @@ func (d *DataSource) Configure(
 		return
 	}
 
-	d.cfg = &cfg
+	d.client = cfg.Client
 }
 
 // Read fetches Ceph status from either the cluster or node endpoint.
@@ -118,9 +119,9 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	)
 
 	if !state.NodeName.IsNull() && !state.NodeName.IsUnknown() {
-		data, err = d.cfg.Client.Node(state.NodeName.ValueString()).Ceph().GetStatus(ctx)
+		data, err = d.client.Node(state.NodeName.ValueString()).Ceph().GetStatus(ctx)
 	} else {
-		data, err = d.cfg.Client.Cluster().Ceph().GetStatus(ctx)
+		data, err = d.client.Cluster().Ceph().GetStatus(ctx)
 	}
 
 	if err != nil {
