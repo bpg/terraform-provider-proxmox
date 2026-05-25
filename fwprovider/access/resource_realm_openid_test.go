@@ -115,6 +115,7 @@ func TestAccRealmOpenID(t *testing.T) {
 						scopes            = "openid email profile"
 						query_userinfo    = false
 						comment           = "Updated OpenID realm"
+						audiences         = "1234567890"
 					}
 				`),
 				Check: test.ResourceAttributes("proxmox_realm_openid.test", map[string]string{
@@ -128,6 +129,7 @@ func TestAccRealmOpenID(t *testing.T) {
 					"scopes":            "openid email profile",
 					"query_userinfo":    "false",
 					"comment":           "Updated OpenID realm",
+					"audiences":         "1234567890",
 				}),
 			},
 			// Step 4: Remove optional fields to verify proper cleanup via delete parameter
