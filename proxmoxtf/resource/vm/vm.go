@@ -5688,6 +5688,18 @@ func vmReadPrimitiveValues(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentHookScript := d.Get(mkHookScriptFileID).(string)
+
+	if len(clone) == 0 || currentHookScript != dvHookScript {
+		if vmConfig.HookScript != nil {
+			err = d.Set(mkHookScriptFileID, *vmConfig.HookScript)
+		} else {
+			err = d.Set(mkHookScriptFileID, "")
+		}
+
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	currentTags := d.Get(mkTags).([]any)
 
 	err = d.Set(mkOnBoot, vmConfig.StartOnBoot)
