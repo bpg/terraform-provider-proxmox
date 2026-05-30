@@ -27,6 +27,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/access"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/acme"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/backup"
+	cephstatus "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ceph/status"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
@@ -677,6 +678,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		apt.NewStandardRepositoryDataSource,
 		apt.NewShortStandardRepositoryDataSource,
 		backup.NewDataSource,
+		cephstatus.NewDataSource, // proxmox_ceph_status
 		datastores.NewDataSource,
 		datastores.NewShortDataSource,
 		nodeconfig.NewNodeConfigDataSource,
