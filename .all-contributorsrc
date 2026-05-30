@@ -1864,6 +1864,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "dspanakis",
+      "name": "Dimitrios Spanakis",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50661458?v=4",
+      "profile": "https://github.com/dspanakis",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
