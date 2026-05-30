@@ -140,8 +140,6 @@ func (r *userTokenResource) Configure(
 	}
 
 	r.client = cfg.Client
-
-	r.client = cfg.Client
 }
 
 func (r *userTokenResource) Metadata(
@@ -255,7 +253,7 @@ func (r *userTokenResource) Update(ctx context.Context, req resource.UpdateReque
 
 	err := r.client.Access().UpdateUserToken(ctx, plan.UserID.ValueString(), plan.TokenName.ValueString(), &body)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating user token", err.Error())
+		resp.Diagnostics.AddError("Error updating user token", err.Error())
 	}
 
 	if resp.Diagnostics.HasError() {

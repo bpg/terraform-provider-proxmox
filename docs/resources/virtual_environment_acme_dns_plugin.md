@@ -32,7 +32,7 @@ resource "proxmox_virtual_environment_acme_dns_plugin" "example" {
 ### Required
 
 - `api` (String) API plugin name.
-- `plugin` (String) ACME Plugin ID name.
+- `plugin` (String) ACME plugin ID name.
 
 ### Optional
 
