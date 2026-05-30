@@ -62,6 +62,7 @@ resource "proxmox_virtual_environment_realm_openid" "example" {
 ### Optional
 
 - `acr_values` (String) Authentication Context Class Reference values for the OpenID provider.
+- `audiences` (String) Audiences that the OpenID Issuer may include that are accepted for the client (comma-separated).
 - `autocreate` (Boolean) Automatically create users on the Proxmox cluster if they do not exist.
 - `client_key` (String, Sensitive) OpenID Connect Client Key (secret). Note: stored in Proxmox but not returned by API.
 - `comment` (String) Description of the realm.

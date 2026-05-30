@@ -388,9 +388,12 @@ func Container() *schema.Resource {
 				DefaultFunc: func() (any, error) {
 					return []any{
 						map[string]any{
+							mkDiskACL:          dvDiskACL,
 							mkDiskDatastoreID:  dvDiskDatastoreID,
+							mkDiskMountOptions: []any{},
+							mkDiskQuota:        dvDiskQuota,
+							mkDiskReplicate:    dvDiskReplicate,
 							mkDiskSize:         dvDiskSize,
-							mkDiskMountOptions: nil,
 						},
 					}, nil
 				},
@@ -3526,6 +3529,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		Delete: []string{},
 	}
 
+	// Tracks whether any field of updateBody (other than Delete) was populated.
+	// Required so attributes that don't map to PUT /config — `started` (Start/Shutdown),
+	// `idmap` (SSH), timeouts and `wait_for_ip` (provider-local) — don't trigger an
+	// empty-body PUT that PVE rejects with HTTP 500 "no options specified" (#2883).
+	bodyDirty := false
+
 	rebootRequired := false
 	container := Container()
 
@@ -3536,11 +3545,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	if d.HasChange(mkDescription) {
 		description := d.Get(mkDescription).(string)
 		updateBody.Description = &description
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkTemplate) {
 		template := types.CustomBool(d.Get(mkTemplate).(bool))
 		updateBody.Template = &template
+		bodyDirty = true
 	}
 
 	// Prepare the new console configuration.
@@ -3567,6 +3578,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.TTY = &consoleTTYCount
 
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	// Prepare the new CPU configuration.
@@ -3599,6 +3611,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		if cpuUnits > 0 {
 			updateBody.CPUUnits = &cpuUnits
 		}
+
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkDisk) {
@@ -3678,6 +3692,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		updateBody.RootFS = rootFS
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkEnvironmentVariables) {
@@ -3689,6 +3704,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkFeatures) {
@@ -3698,6 +3714,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		updateBody.Features = features
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkHookScriptFileID) {
@@ -3707,6 +3724,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		} else {
 			updateBody.Delete = append(updateBody.Delete, "hookscript")
 		}
+
+		bodyDirty = true
 	}
 
 	// Prepare the new initialization configuration.
@@ -3806,11 +3825,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkInitialization + ".0." + mkInitializationHostname) {
 		updateBody.Hostname = &initializationHostname
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkInitialization + ".0." + mkInitializationEntrypoint) {
@@ -3821,6 +3842,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	// Prepare the new memory configuration.
@@ -3843,6 +3865,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.Swap = &memorySwap
 
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	// Prepare the new device passthrough configuration.
@@ -3877,6 +3900,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.PassthroughDevices = passthroughDevices
 
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	// Prepare the new idmap configuration (applied via SSH after the lock is released).
@@ -3904,6 +3928,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.MountPoints = mountPointsMap
 
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	// Prepare the new network interface configuration.
@@ -4004,6 +4029,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkStartup) {
@@ -4011,6 +4037,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		if updateBody.StartupBehavior == nil {
 			updateBody.Delete = append(updateBody.Delete, "startup")
 		}
+
+		bodyDirty = true
 	}
 
 	// Prepare the new operating system configuration.
@@ -4031,25 +4059,31 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		updateBody.OSType = &operatingSystemType
 
 		rebootRequired = true
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkProtection) {
 		protection := types.CustomBool(d.Get(mkProtection).(bool))
 		updateBody.Protection = &protection
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkStartOnBoot) {
 		startOnBoot := types.CustomBool(d.Get(mkStartOnBoot).(bool))
 		updateBody.StartOnBoot = &startOnBoot
+		bodyDirty = true
 	}
 
 	if d.HasChange(mkTags) {
 		tagString := containerGetTagsString(d)
 		updateBody.Tags = &tagString
+		bodyDirty = true
 	}
 
-	// Update the configuration via API if there are non-idmap changes.
-	if len(updateBody.Delete) > 0 || d.HasChangesExcept(mkIDMap) {
+	// Only PUT /config when we actually have fields to send. Attributes whose changes
+	// don't populate updateBody (`started`, `idmap`, timeouts, `wait_for_ip`) must not
+	// trigger an empty-body request — PVE rejects those with HTTP 500 (#2883).
+	if bodyDirty || len(updateBody.Delete) > 0 {
 		e = containerAPI.UpdateContainer(ctx, &updateBody)
 		if e != nil {
 			return diag.FromErr(e)

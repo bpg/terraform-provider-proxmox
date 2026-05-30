@@ -2914,6 +2914,235 @@ func TestAccResourceContainerStartOnBootRefresh(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerStartedToggle verifies that toggling `started` from `true` to
+// `false` (and back) succeeds when no other attribute changes. Without the fix for #2883,
+// such an apply sent an empty PUT /config to PVE and failed with
+// `HTTP 500 - no options specified`, because the `containerUpdate` gate fired on
+// `HasChangesExcept(mkIDMap)` without excluding `mkStarted` — which is applied through
+// Start/Shutdown calls, not through the config PUT.
+func TestAccResourceContainerStartedToggle(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	containerConfig := func(started bool) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name    = "{{.NodeName}}"
+				vm_id        = {{.TestContainerID}}
+				unprivileged = true
+				started      = %t
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test-started-toggle"
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}`, started), WithRootUser())
+	}
+
+	expectStatus := func(want string) func(*terraform.State) error {
+		return func(*terraform.State) error {
+			st, err := te.NodeClient().Container(accTestContainerID).GetContainerStatus(t.Context())
+			require.NoError(te.t, err, "failed to get container status")
+			require.Equal(te.t, want, st.Status, "container status mismatch in Proxmox")
+
+			return nil
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig(true),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"started": "true",
+					}),
+					expectStatus("running"),
+				),
+			},
+			{
+				Config: containerConfig(false),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"started": "false",
+					}),
+					expectStatus("stopped"),
+				),
+			},
+			{
+				Config: containerConfig(true),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"started": "true",
+					}),
+					expectStatus("running"),
+				),
+			},
+		},
+	})
+}
+
+// Regression test for #2893: omitting the `disk { ... }` block must not panic create.
+//
+//nolint:paralleltest
+func TestAccResourceContainerNoDiskBlock(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					initialization {
+						hostname = "test-no-disk-block"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"disk.#":           "1",
+						"disk.0.size":      "4",
+						"disk.0.acl":       "false",
+						"disk.0.quota":     "false",
+						"disk.0.replicate": "false",
+					}),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+// Regression test for #2893: removing an explicit `disk { ... }` block must not panic
+// containerUpdate. Step 1's `datastore_id = "local"` matches the DefaultFunc so removal
+// does not trigger ForceNew and takes the update path.
+//
+//nolint:paralleltest
+func TestAccResourceContainerRemoveDiskBlock(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					disk {
+						datastore_id  = "local"
+						size          = 4
+						mount_options = ["discard"]
+					}
+					initialization {
+						hostname = "test-remove-disk"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"disk.0.mount_options.#": "1",
+					"disk.0.mount_options.0": "discard",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					initialization {
+						hostname = "test-remove-disk"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
 func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
 	t.Helper()
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{

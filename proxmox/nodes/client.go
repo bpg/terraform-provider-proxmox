@@ -13,6 +13,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/ceph"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	nodefirewall "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/hardware"
@@ -36,6 +37,13 @@ func (c *Client) ExpandPath(path string) string {
 // APT returns a client for managing APT related settings.
 func (c *Client) APT() *apt.Client {
 	return &apt.Client{
+		Client: c,
+	}
+}
+
+// Ceph returns a client for managing the node's Ceph resources.
+func (c *Client) Ceph() *ceph.Client {
+	return &ceph.Client{
 		Client: c,
 	}
 }
