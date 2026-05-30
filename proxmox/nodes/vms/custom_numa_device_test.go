@@ -7,7 +7,10 @@
 package vms
 
 import (
+	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestCustomNUMADevice_UnmarshalJSON(t *testing.T) {
@@ -49,4 +52,22 @@ func TestCustomNUMADevice_UnmarshalJSON(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCustomNUMADevices_EncodeValuesSparseSlots(t *testing.T) {
+	t.Parallel()
+
+	values := url.Values{}
+	devices := CustomNUMADevices{
+		5: {
+			CPUIDs: []string{"0", "1"},
+			Memory: new(1024),
+		},
+	}
+
+	err := devices.EncodeValues("numa", &values)
+
+	require.NoError(t, err)
+	require.Equal(t, []string{"cpus=0;1,memory=1024"}, values["numa5"])
+	require.NotContains(t, values, "numa0")
 }
