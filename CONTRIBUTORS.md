@@ -262,6 +262,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Idalen"><img src="https://avatars.githubusercontent.com/u/48536015?v=4?s=100" width="100px;" alt="Daniel Martins Vieira"/><br /><sub><b>Daniel Martins Vieira</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Idalen" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/matheus-moraes-soares-692b4322a/"><img src="https://avatars.githubusercontent.com/u/98968318?v=4?s=100" width="100px;" alt="Matheus"/><br /><sub><b>Matheus</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=MatheusMoraesSoares" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/granda"><img src="https://avatars.githubusercontent.com/u/3467219?v=4?s=100" width="100px;" alt="Matthew"/><br /><sub><b>Matthew</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=granda" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/dspanakis"><img src="https://avatars.githubusercontent.com/u/50661458?v=4?s=100" width="100px;" alt="Dimitrios Spanakis"/><br /><sub><b>Dimitrios Spanakis</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=dspanakis" title="Documentation">📖</a></td>
     </tr>
   </tbody>
   <tfoot>
