@@ -13,6 +13,7 @@ import (
 	"maps"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -34,6 +35,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -281,6 +283,58 @@ func (e *Environment) NodeClient() *nodes.Client {
 // NodeStorageClient returns a new storage client for the test environment.
 func (e *Environment) NodeStorageClient() *storage.Client {
 	return &storage.Client{Client: e.NodeClient(), StorageName: e.DatastoreID}
+}
+
+// staticNodeResolver resolves any node name to a fixed SSH address/port.
+type staticNodeResolver struct {
+	node ssh.ProxmoxNode
+}
+
+func (r staticNodeResolver) Resolve(context.Context, string) (ssh.ProxmoxNode, error) {
+	return r.node, nil
+}
+
+// ExecuteNodeCommands runs shell commands on the test node over SSH as the root API user
+// (PROXMOX_VE_USERNAME / PROXMOX_VE_PASSWORD) and returns the combined output. Connecting as
+// root avoids the restricted sudoers allowlist of the provider's SSH user, so privileged
+// commands such as `pct exec` work without sudo.
+func (e *Environment) ExecuteNodeCommands(commands []string) string {
+	e.t.Helper()
+
+	address := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NODE_SSH_ADDRESS")
+	if address == "" {
+		u, err := url.Parse(utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT"))
+		require.NoError(e.t, err)
+
+		address = u.Hostname()
+	}
+
+	port := int32(22)
+
+	if p := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NODE_SSH_PORT"); p != "" {
+		v, err := strconv.ParseInt(p, 10, 32)
+		require.NoError(e.t, err)
+
+		port = int32(v)
+	}
+
+	// Strip the realm from "root@pam" to get the SSH login name.
+	username := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+
+	client, err := ssh.NewClient(
+		username,
+		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
+		false, "", false,
+		"",
+		"", "", "",
+		staticNodeResolver{node: ssh.ProxmoxNode{Address: address, Port: port}},
+	)
+	require.NoError(e.t, err)
+
+	out, err := client.ExecuteNodeCommands(context.Background(), e.NodeName, commands)
+	require.NoError(e.t, err)
+
+	return string(out)
 }
 
 // DownloadCloudImage downloads a cloud image with a unique filename for use in VM tests.
