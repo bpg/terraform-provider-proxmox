@@ -331,7 +331,7 @@ func (e *Environment) ExecuteNodeCommands(commands []string) string {
 	)
 	require.NoError(e.t, err)
 
-	out, err := client.ExecuteNodeCommands(context.Background(), e.NodeName, commands)
+out, err := client.ExecuteNodeCommands(e.t.Context(), e.NodeName, commands)
 	require.NoError(e.t, err)
 
 	return string(out)
