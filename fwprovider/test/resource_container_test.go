@@ -2159,6 +2159,108 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerIDMapFirstBoot verifies that a configured idmap is active on the
+// container's first boot after create, not only after an out-of-band reboot (issue #2895).
+// It inspects the running container's /proc/self/uid_map and /proc/self/gid_map via the node,
+// since the API config read-back passes regardless of whether the map is actually applied.
+func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	// assertConfiguredMapActive reads the given map file inside the running container and requires
+	// the configured second range "1000 101000 64536" to be present. Under the default unprivileged
+	// mapping (a single "0 100000 65536" line) that row cannot appear, so this fails when the idmap
+	// is not active on first boot. The map stays within root's default subuid/subgid range
+	// (100000+65536) so the container can actually start on a stock host.
+	assertConfiguredMapActive := func(mapFile string) func(*terraform.State) error {
+		return func(*terraform.State) error {
+			out := te.ExecuteNodeCommands([]string{
+				fmt.Sprintf("/usr/sbin/pct exec %d -- cat %s", accTestContainerID, mapFile),
+			})
+
+			for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+				if f := strings.Fields(line); len(f) == 3 && f[0] == "1000" && f[1] == "101000" && f[2] == "64536" {
+					return nil
+				}
+			}
+
+			return fmt.Errorf("%s inside running container should contain the configured mapping (1000 101000 64536), got:\n%s", mapFile, out)
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name      = "{{.NodeName}}"
+					vm_id          = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged   = true
+					started        = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					idmap {
+						type         = "uid"
+						container_id = 0
+						host_id      = 100000
+						size         = 1000
+					}
+					idmap {
+						type         = "uid"
+						container_id = 1000
+						host_id      = 101000
+						size         = 64536
+					}
+					idmap {
+						type         = "gid"
+						container_id = 0
+						host_id      = 100000
+						size         = 1000
+					}
+					idmap {
+						type         = "gid"
+						container_id = 1000
+						host_id      = 101000
+						size         = 64536
+					}
+					initialization {
+						hostname = "test-idmap-boot"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					assertConfiguredMapActive("/proc/self/uid_map"),
+					assertConfiguredMapActive("/proc/self/gid_map"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerEntrypoint(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)

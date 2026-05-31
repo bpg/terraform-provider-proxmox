@@ -2320,6 +2320,24 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 		return diags
 	}
 
+	// idmap is written to the config via SSH after create, but PVE's first start does not apply
+	// it; a reboot regenerates the runtime mapping. Mirrors the rebootRequired path in update.
+	if len(containerGetIDMaps(d.Get(mkIDMap).([]any))) > 0 {
+		rebootTimeoutSec := d.Get(mkTimeoutCreate).(int)
+
+		rebootDiags := sdkresource.TaskResultDiags(containerAPI.RebootContainer(
+			ctx,
+			&containers.RebootRequestBody{
+				Timeout: &rebootTimeoutSec,
+			},
+		), "Container reboot")
+		if rebootDiags.HasError() {
+			return append(diags, rebootDiags...)
+		}
+
+		diags = append(diags, rebootDiags...)
+	}
+
 	return append(diags, containerRead(ctx, d, m)...)
 }
 
