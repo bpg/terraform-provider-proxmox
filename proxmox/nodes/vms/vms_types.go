@@ -35,6 +35,7 @@ var (
 
 // WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
 type WaitForIPConfig struct {
+	Skip bool // Skip the agent IP wait entirely (wait_for_ip.enabled = false)
 	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
 	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
 }

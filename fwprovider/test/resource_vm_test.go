@@ -1362,6 +1362,73 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				}),
 			),
 		}}},
+		{"disable agent IP wait", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_file" "cloud_config" {
+				content_type = "snippets"
+				datastore_id = "local"
+				node_name = "{{.NodeName}}"
+				overwrite = true
+				source_raw {
+					data = <<-EOF
+					#cloud-config
+					runcmd:
+					  - apt update
+					  - apt install -y qemu-guest-agent
+					  - systemctl enable qemu-guest-agent
+					  - systemctl start qemu-guest-agent
+					EOF
+					file_name = "{{.TestName}}-disable-wait-cloud-config.yaml"
+				}
+			}
+
+			resource "proxmox_virtual_environment_vm" "test_vm_no_wait" {
+				node_name = "{{.NodeName}}"
+				started   = true
+				stop_on_destroy = true
+				agent {
+					enabled = true
+					wait_for_ip {
+						enabled = false
+					}
+				}
+				cpu {
+					cores = 2
+				}
+				memory {
+					dedicated = 2048
+				}
+				disk {
+					datastore_id = "local-lvm"
+					file_id      = "{{.ImageFileID}}"
+					interface    = "virtio0"
+					iothread     = true
+					discard      = "on"
+					size         = 20
+				}
+				initialization {
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+					user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+				}
+				network_device {
+					bridge = "vmbr0"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				// wait_for_ip.enabled = false: the provider skips the agent IP lookup, so the
+				// address attributes stay empty even though the guest agent is running.
+				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_no_wait", map[string]string{
+					"agent.0.wait_for_ip.0.enabled": "false",
+					"ipv4_addresses.#":              "0",
+					"ipv6_addresses.#":              "0",
+					"network_interface_names.#":     "0",
+				}),
+			),
+		}}},
 		{"network device disconnected", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
