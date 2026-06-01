@@ -561,6 +561,14 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	timeout time.Duration,
 	waitForIPConfig *WaitForIPConfig, // configuration for which IP types to wait for (nil = wait for any global unicast)
 ) (*GetQEMUNetworkInterfacesResponseData, error) {
+	if waitForIPConfig != nil && waitForIPConfig.Skip {
+		// wait_for_ip.enabled = false: the caller disabled the agent IP lookup entirely.
+		// Return a non-nil empty Result to honor the success contract (err == nil => Result != nil).
+		return &GetQEMUNetworkInterfacesResponseData{
+			Result: &[]GetQEMUNetworkInterfacesResponseResult{},
+		}, nil
+	}
+
 	errNoIPsYet := errors.New("no ips yet")
 
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout)
