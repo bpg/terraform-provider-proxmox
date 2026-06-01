@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.108.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.107.0...v0.108.0) (2026-06-01)
+
+
+### Features
+
+* **access:** add audiences parameter to openid realm resource ([#2907](https://github.com/bpg/terraform-provider-proxmox/issues/2907)) ([71cfead](https://github.com/bpg/terraform-provider-proxmox/commit/71cfeadb6cfdd6cad434090ed0537d07b4108f9f))
+* **ceph:** add proxmox_ceph_status data source ([#2910](https://github.com/bpg/terraform-provider-proxmox/issues/2910)) ([776d8bf](https://github.com/bpg/terraform-provider-proxmox/commit/776d8bfbf243f9614e2c7887e0a8c3a7c4df769c))
+* **vm:** add agent.wait_for_ip.enabled to disable IP lookup ([#2923](https://github.com/bpg/terraform-provider-proxmox/issues/2923)) ([58db0a0](https://github.com/bpg/terraform-provider-proxmox/commit/58db0a04c422de4ca31995758b33e2e62d67d28a))
+
+
+### Bug Fixes
+
+* **access:** only warn on inline acl when set in config ([#2918](https://github.com/bpg/terraform-provider-proxmox/issues/2918)) ([05f106b](https://github.com/bpg/terraform-provider-proxmox/commit/05f106b5a8fb1eeafd5dadf1a7c2b362e1199725))
+* **core:** correct errors in diagnostic messages ([#2873](https://github.com/bpg/terraform-provider-proxmox/issues/2873)) ([6dfdfb6](https://github.com/bpg/terraform-provider-proxmox/commit/6dfdfb65b7951aa1bb58e151e5bdd568a2464efb))
+* **lxc:** apply idmap on first boot after container create ([#2922](https://github.com/bpg/terraform-provider-proxmox/issues/2922)) ([f062e3e](https://github.com/bpg/terraform-provider-proxmox/commit/f062e3e4758f118c41047e586f38cee15a931c51))
+* **vm:** prevent VM restart on import from keyboard/agent defaults ([#2911](https://github.com/bpg/terraform-provider-proxmox/issues/2911)) ([7080ae0](https://github.com/bpg/terraform-provider-proxmox/commit/7080ae06721934fe61b6e8c8c16d6dbe33a32ce7))
+* **vm:** refresh hook_script_file_id in read ([#2921](https://github.com/bpg/terraform-provider-proxmox/issues/2921)) ([f8b2dd9](https://github.com/bpg/terraform-provider-proxmox/commit/f8b2dd9f7dfc1caee0f3e92981c2d9d80bb9f194))
+* **vm:** remove node-local devices before migration ([#2837](https://github.com/bpg/terraform-provider-proxmox/issues/2837)) ([7290812](https://github.com/bpg/terraform-provider-proxmox/commit/72908129a5dba98e4233eb3fa13e7e78f2dde129))
+
+
+### Miscellaneous
+
+* **ci:** update actions/stale digest (b5d41d4 → eb5cf3a) ([#2920](https://github.com/bpg/terraform-provider-proxmox/issues/2920)) ([8e93ff7](https://github.com/bpg/terraform-provider-proxmox/commit/8e93ff7b00ab2e95f6c7d354f609e650428fafd3))
+* **deps:** update image golang (6df14f4 → 2d6c802) ([#2916](https://github.com/bpg/terraform-provider-proxmox/issues/2916)) ([50673a0](https://github.com/bpg/terraform-provider-proxmox/commit/50673a0622096f96cd6defdba1914fbba05d5d77))
+* **deps:** update module github.com/rogpeppe/go-internal (v1.14.1 → v1.15.0) ([#2917](https://github.com/bpg/terraform-provider-proxmox/issues/2917)) ([b0c896e](https://github.com/bpg/terraform-provider-proxmox/commit/b0c896ed6d80882463f5355b0b14573f7bbd0b54))
+
 ## [0.107.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.106.0...v0.107.0) (2026-05-24)
 
 
