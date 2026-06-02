@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/pkg/sftp"
@@ -26,6 +27,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/net/proxy"
+	"golang.org/x/sync/singleflight"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -49,6 +51,8 @@ const (
 		`fi; ` +
 		`}`
 )
+
+const defaultDialTimeout = 30 * time.Second
 
 // NewErrUserHasNoPermission creates a new error indicating that the SSH user does not have required permissions.
 func NewErrUserHasNoPermission(username string) error {
@@ -87,6 +91,7 @@ type client struct {
 	nodeResolver    NodeResolver
 	sudoCache       map[string]bool
 	sudoCacheMu     sync.RWMutex
+	sudoProbe       singleflight.Group
 }
 
 // NewClient creates a new SSH client.
@@ -137,8 +142,8 @@ func (c *client) Username() string {
 }
 
 // getSudoAvailability gets the cached sudo availability or checks and caches it.
-// Uses double-checked locking to prevent race conditions when multiple goroutines
-// check the same uncached node simultaneously.
+// The cache lock guards only the map ops; the probe runs outside it via singleflight,
+// so concurrent checks for the same node share one round trip without blocking others.
 func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool, error) {
 	c.sudoCacheMu.RLock()
 	cached, found := c.sudoCache[nodeName]
@@ -148,16 +153,31 @@ func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool
 		return cached, nil
 	}
 
-	c.sudoCacheMu.Lock()
-	defer c.sudoCacheMu.Unlock()
+	// WithoutCancel detaches the shared probe from any single caller's cancellation,
+	// so one caller cancelling can't fail the probe for the other concurrent waiters.
+	ch := c.sudoProbe.DoChan(nodeName, func() (any, error) {
+		return c.probeSudo(context.WithoutCancel(ctx), nodeName)
+	})
 
-	// Re-check the cache after acquiring the write lock in case another goroutine
-	// populated it while we were waiting.
-	cached, found = c.sudoCache[nodeName]
-	if found {
-		return cached, nil
+	select {
+	case <-ctx.Done():
+		return false, fmt.Errorf("sudo availability check cancelled for node %q: %w", nodeName, ctx.Err())
+	case res := <-ch:
+		if res.Err != nil {
+			return false, fmt.Errorf("failed to probe sudo availability for node %q: %w", nodeName, res.Err)
+		}
+
+		shouldUseSudo, _ := res.Val.(bool)
+
+		c.sudoCacheMu.Lock()
+		c.sudoCache[nodeName] = shouldUseSudo
+		c.sudoCacheMu.Unlock()
+
+		return shouldUseSudo, nil
 	}
+}
 
+func (c *client) probeSudo(ctx context.Context, nodeName string) (bool, error) {
 	checkCmd := `if [ "$(id -u)" = "0" ]; then echo "0"; ` +
 		`elif [ $(sudo -n /usr/sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ] ` +
 		`|| sudo -n /usr/sbin/qm --help >/dev/null 2>&1; then echo "1"; else echo "0"; fi`
@@ -183,10 +203,7 @@ func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool
 		return false, fmt.Errorf("failed to check sudo availability: %w", err)
 	}
 
-	shouldUseSudo := strings.TrimSpace(string(output)) == "1"
-	c.sudoCache[nodeName] = shouldUseSudo
-
-	return shouldUseSudo, nil
+	return strings.TrimSpace(string(output)) == "1", nil
 }
 
 // ExecuteNodeCommands executes commands on a given node.
@@ -787,35 +804,95 @@ func (c *client) createSSHClientWithPrivateKey(
 }
 
 func (c *client) connect(ctx context.Context, sshHost string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
-	if c.socks5Server != "" {
-		sshClient, err := c.socks5SSHClient(sshHost, sshConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to dial %s via SOCKS5 proxy %s: %w", sshHost, c.socks5Server, err)
-		}
+	dialCtx, cancel, timeout := dialContext(ctx)
+	defer cancel()
 
-		tflog.Debug(ctx, "SSH connection via SOCKS5 established", map[string]any{
-			"host":          sshHost,
-			"socks5_server": c.socks5Server,
-			"user":          c.username,
-		})
-
-		return sshClient, nil
-	}
-
-	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
-	}
-
-	tflog.Debug(ctx, "SSH connection established", map[string]any{
-		"host": sshHost,
-		"user": c.username,
+	tflog.Trace(ctx, "bounding SSH dial and handshake so a stalled pre-auth handshake fails fast", map[string]any{
+		"host":         sshHost,
+		"dial_timeout": timeout.String(),
 	})
 
-	return sshClient, nil
+	conn, err := c.dial(dialCtx, sshHost)
+	if err != nil {
+		return nil, err
+	}
+
+	type result struct {
+		client *ssh.Client
+		err    error
+	}
+
+	ch := make(chan result, 1)
+
+	go func() {
+		sshConn, chans, reqs, herr := ssh.NewClientConn(conn, sshHost, sshConfig)
+		if herr != nil {
+			ch <- result{err: herr}
+
+			return
+		}
+
+		ch <- result{client: ssh.NewClient(sshConn, chans, reqs)}
+	}()
+
+	select {
+	case <-dialCtx.Done():
+		_ = conn.Close()
+
+		// join the handshake goroutine; close the client if it connected in the photo-finish
+		if r := <-ch; r.client != nil {
+			_ = r.client.Close()
+		}
+
+		tflog.Debug(ctx, "SSH handshake aborted: dial deadline exceeded", map[string]any{"host": sshHost})
+
+		return nil, fmt.Errorf("SSH handshake to %s timed out (dial timeout %s): %w", sshHost, timeout, dialCtx.Err())
+	case r := <-ch:
+		if r.err != nil {
+			_ = conn.Close()
+
+			return nil, fmt.Errorf("failed SSH handshake to %s: %w", sshHost, r.err)
+		}
+
+		tflog.Debug(ctx, "SSH connection established", map[string]any{
+			"host":          sshHost,
+			"user":          c.username,
+			"socks5_server": c.socks5Server,
+		})
+
+		return r.client, nil
+	}
 }
 
-func (c *client) socks5SSHClient(sshServerAddress string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
+// dialContext bounds the dial+handshake to defaultDialTimeout, or to the caller's
+// own deadline when that is sooner. It returns the effective timeout so callers can
+// report the bound that actually applied rather than the nominal default.
+func dialContext(ctx context.Context) (context.Context, context.CancelFunc, time.Duration) {
+	timeout := defaultDialTimeout
+	deadline := time.Now().Add(timeout)
+
+	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
+		deadline = d
+		timeout = time.Until(d).Round(time.Millisecond)
+	}
+
+	dialCtx, cancel := context.WithDeadline(ctx, deadline)
+
+	return dialCtx, cancel, timeout
+}
+
+func (c *client) dial(ctx context.Context, sshHost string) (net.Conn, error) {
+	if c.socks5Server == "" {
+		var dialer net.Dialer
+
+		conn, err := dialer.DialContext(ctx, "tcp", sshHost)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
+		}
+
+		return conn, nil
+	}
+
 	dialer, err := proxy.SOCKS5("tcp", c.socks5Server, &proxy.Auth{
 		User:     c.socks5Username,
 		Password: c.socks5Password,
@@ -824,15 +901,20 @@ func (c *client) socks5SSHClient(sshServerAddress string, sshConfig *ssh.ClientC
 		return nil, fmt.Errorf("failed to create SOCKS5 proxy dialer: %w", err)
 	}
 
-	conn, err := dialer.Dial("tcp", sshServerAddress)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial %s via SOCKS5 proxy %s: %w", sshServerAddress, c.socks5Server, err)
+	cd, ok := dialer.(proxy.ContextDialer)
+	if !ok {
+		return nil, fmt.Errorf("SOCKS5 dialer for %s does not support context-aware dialing", c.socks5Server)
 	}
 
-	sshConn, ch, reqs, err := ssh.NewClientConn(conn, sshServerAddress, sshConfig)
+	tflog.Trace(ctx, "dialing SSH via SOCKS5 proxy", map[string]any{
+		"host":          sshHost,
+		"socks5_server": c.socks5Server,
+	})
+
+	conn, err := cd.DialContext(ctx, "tcp", sshHost)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SSH client connection: %w", err)
+		return nil, fmt.Errorf("failed to dial %s via SOCKS5 proxy %s: %w", sshHost, c.socks5Server, err)
 	}
 
-	return ssh.NewClient(sshConn, ch, reqs), nil
+	return conn, nil
 }
