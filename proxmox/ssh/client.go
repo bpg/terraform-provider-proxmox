@@ -804,12 +804,12 @@ func (c *client) createSSHClientWithPrivateKey(
 }
 
 func (c *client) connect(ctx context.Context, sshHost string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
-	dialCtx, cancel := dialContext(ctx)
+	dialCtx, cancel, timeout := dialContext(ctx)
 	defer cancel()
 
 	tflog.Trace(ctx, "bounding SSH dial and handshake so a stalled pre-auth handshake fails fast", map[string]any{
 		"host":         sshHost,
-		"dial_timeout": defaultDialTimeout.String(),
+		"dial_timeout": timeout.String(),
 	})
 
 	conn, err := c.dial(dialCtx, sshHost)
@@ -846,7 +846,7 @@ func (c *client) connect(ctx context.Context, sshHost string, sshConfig *ssh.Cli
 
 		tflog.Debug(ctx, "SSH handshake aborted: dial deadline exceeded", map[string]any{"host": sshHost})
 
-		return nil, fmt.Errorf("SSH handshake to %s timed out (dial timeout %s): %w", sshHost, defaultDialTimeout, dialCtx.Err())
+		return nil, fmt.Errorf("SSH handshake to %s timed out (dial timeout %s): %w", sshHost, timeout, dialCtx.Err())
 	case r := <-ch:
 		if r.err != nil {
 			_ = conn.Close()
@@ -864,13 +864,21 @@ func (c *client) connect(ctx context.Context, sshHost string, sshConfig *ssh.Cli
 	}
 }
 
-func dialContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	deadline := time.Now().Add(defaultDialTimeout)
+// dialContext bounds the dial+handshake to defaultDialTimeout, or to the caller's
+// own deadline when that is sooner. It returns the effective timeout so callers can
+// report the bound that actually applied rather than the nominal default.
+func dialContext(ctx context.Context) (context.Context, context.CancelFunc, time.Duration) {
+	timeout := defaultDialTimeout
+	deadline := time.Now().Add(timeout)
+
 	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
 		deadline = d
+		timeout = time.Until(d).Round(time.Millisecond)
 	}
 
-	return context.WithDeadline(ctx, deadline)
+	dialCtx, cancel := context.WithDeadline(ctx, deadline)
+
+	return dialCtx, cancel, timeout
 }
 
 func (c *client) dial(ctx context.Context, sshHost string) (net.Conn, error) {
