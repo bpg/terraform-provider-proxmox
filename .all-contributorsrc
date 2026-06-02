@@ -1873,6 +1873,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "venkatamutyala",
+      "name": "Venkat",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6570292?v=4",
+      "profile": "https://github.com/venkatamutyala",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
