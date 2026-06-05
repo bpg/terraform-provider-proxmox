@@ -1389,7 +1389,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				agent {
 					enabled = true
 					wait_for_ip {
-						enabled = false
+						disabled = true
 					}
 				}
 				cpu {
@@ -1419,13 +1419,13 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				// wait_for_ip.enabled = false: the provider skips the agent IP lookup, so the
+				// wait_for_ip.disabled = true: the provider skips the agent IP lookup, so the
 				// address attributes stay empty even though the guest agent is running.
 				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_no_wait", map[string]string{
-					"agent.0.wait_for_ip.0.enabled": "false",
-					"ipv4_addresses.#":              "0",
-					"ipv6_addresses.#":              "0",
-					"network_interface_names.#":     "0",
+					"agent.0.wait_for_ip.0.disabled": "true",
+					"ipv4_addresses.#":               "0",
+					"ipv6_addresses.#":               "0",
+					"network_interface_names.#":      "0",
 				}),
 			),
 		}}},

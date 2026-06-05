@@ -138,11 +138,11 @@ output "ubuntu_vm_public_key" {
         - `isa` - ISA Serial Port.
         - `virtio` - VirtIO (paravirtualized).
     - `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the VM starts.
-        - `enabled` - (Optional) Whether to wait for the agent to report an IP address (defaults to `true`). Set to `false` to disable the IP lookup entirely, so the provider does not wait for the agent during `refresh` and at the end of `apply`. Useful when the guest agent is slow to start, not yet installed, or not running, to avoid blocking those operations. When disabled, `ipv4_addresses`, `ipv6_addresses`, and `network_interface_names` are left empty.
+        - `disabled` - (Optional) Whether to disable waiting for the agent to report an IP address (defaults to `false`). Set to `true` to skip the IP lookup entirely, so the provider does not wait for the agent during `refresh` and at the end of `apply`. Useful when the guest agent is slow to start, not yet installed, or not running, to avoid blocking those operations. When disabled, `ipv4_addresses`, `ipv6_addresses`, and `network_interface_names` are left empty.
         - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
         - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
 
-        When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false` (and `enabled` is `true`), the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
+        When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false` (and `disabled` is `false`), the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
 - `amd_sev` - (Optional) Secure Encrypted Virtualization (SEV) features by AMD CPUs.
     - `type` - (Optional) Enable standard SEV with `std` or enable experimental SEV-ES with the `es` option or enable experimental SEV-SNP with the `snp` option (defaults to `std`).
     - `allow_smt` - (Optional) Sets policy bit to allow Simultaneous Multi Threading (SMT)
