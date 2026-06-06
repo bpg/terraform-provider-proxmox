@@ -188,6 +188,7 @@ func GetDiskDeviceObjects(
 		fileID, _ := block[mkDiskFileID].(string)
 		importFrom, _ := block[mkDiskImportFrom].(string)
 		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
+		queues, _ := block[mkDiskQueues].(int)
 		replicate := types.CustomBool(block[mkDiskReplicate].(bool))
 		serial := block[mkDiskSerial].(string)
 		size, _ := block[mkDiskSize].(int)
@@ -234,6 +235,18 @@ func GetDiskDeviceObjects(
 
 		if !strings.HasPrefix(diskInterface, "sata") && !strings.HasPrefix(diskInterface, "ide") {
 			diskDevice.IOThread = &ioThread
+		}
+
+		if queues > 0 {
+			// PVE accepts the queues option for SCSI drives only, and applies it
+			// only when scsi_hardware is virtio-scsi-single.
+			if !strings.HasPrefix(diskInterface, "scsi") {
+				return diskDeviceObjects, fmt.Errorf(
+					"disk queues are only supported for SCSI disks, but disk interface was %s", diskInterface,
+				)
+			}
+
+			diskDevice.Queues = &queues
 		}
 
 		if len(speedBlock) > 0 {
@@ -466,6 +479,12 @@ func Read(
 			disk[mkDiskIOThread] = false
 		}
 
+		if dd.Queues != nil {
+			disk[mkDiskQueues] = *dd.Queues
+		} else {
+			disk[mkDiskQueues] = 0
+		}
+
 		if dd.Replicate != nil {
 			disk[mkDiskReplicate] = *dd.Replicate
 		} else {
@@ -658,6 +677,11 @@ func Update(
 				tmp.AIO = disk.AIO
 			}
 
+			// PVE applies a queues change as a pending change, it takes effect at the next power cycle.
+			if !ptr.Eq(tmp.Queues, disk.Queues) {
+				rebootRequired = true
+			}
+
 			// Never re-import existing disks - import_from is only for initial disk creation.
 			// See https://github.com/bpg/terraform-provider-proxmox/issues/2385
 
@@ -673,6 +697,7 @@ func Update(
 			tmp.MaxIopsWrite = disk.MaxIopsWrite
 			tmp.MaxReadSpeedMbps = disk.MaxReadSpeedMbps
 			tmp.MaxWriteSpeedMbps = disk.MaxWriteSpeedMbps
+			tmp.Queues = disk.Queues
 			tmp.Replicate = disk.Replicate
 			tmp.Serial = disk.Serial
 			tmp.SSD = disk.SSD

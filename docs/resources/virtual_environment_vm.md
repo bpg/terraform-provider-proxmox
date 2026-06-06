@@ -318,6 +318,10 @@ output "ubuntu_vm_public_key" {
         the second, etc.
     - `iothread` - (Optional) Whether to use iothreads for this disk (defaults
         to `false`).
+    - `queues` - (Optional) The number of I/O queues for this disk, `2` or
+        greater. Only supported for SCSI disks, and applied by Proxmox only
+        when `scsi_hardware` is set to `virtio-scsi-single`. A change requires
+        a VM power cycle (or reboot via the Proxmox API) to take effect.
     - `replicate` - (Optional) Whether the drive should be considered for replication jobs (defaults to `true`).
     - `serial` - (Optional) The serial number of the disk, up to 20 bytes long.
     - `size` - (Optional) The disk size in gigabytes (defaults to `8`).

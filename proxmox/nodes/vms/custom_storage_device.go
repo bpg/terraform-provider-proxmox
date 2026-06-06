@@ -45,6 +45,7 @@ type CustomStorageDevice struct {
 	MaxReadSpeedMbps        *int              `json:"mbps_rd,omitempty"     url:"mbps_rd,omitempty"`
 	MaxWriteSpeedMbps       *int              `json:"mbps_wr,omitempty"     url:"mbps_wr,omitempty"`
 	Media                   *string           `json:"media,omitempty"       url:"media,omitempty"`
+	Queues                  *int              `json:"queues,omitempty"      url:"queues,omitempty"`
 	Replicate               *types.CustomBool `json:"replicate,omitempty"   url:"replicate,omitempty,int"`
 	Serial                  *string           `json:"serial,omitempty"      url:"serial,omitempty"`
 	Size                    *types.DiskSize   `json:"size,omitempty"        url:"size,omitempty"`
@@ -151,6 +152,10 @@ func (d *CustomStorageDevice) EncodeOptions() string {
 		} else {
 			values = append(values, "iothread=0")
 		}
+	}
+
+	if d.Queues != nil {
+		values = append(values, fmt.Sprintf("queues=%d", *d.Queues))
 	}
 
 	if d.Serial != nil && *d.Serial != "" {
@@ -316,6 +321,10 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				}
 			case "media":
 				d.Media = &v[1]
+			case "queues":
+				if d.Queues, err = ptr.ParseIntPtr(v[1], "queues"); err != nil {
+					return err
+				}
 			case "replicate":
 				d.Replicate = types.CustomBool(v[1] == "1").Pointer()
 			case "serial":
@@ -358,6 +367,7 @@ func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
 	updated = ptr.UpdateIfChanged(&d.MaxIopsWrite, m.MaxIopsWrite) || updated
 	updated = ptr.UpdateIfChanged(&d.MaxReadSpeedMbps, m.MaxReadSpeedMbps) || updated
 	updated = ptr.UpdateIfChanged(&d.MaxWriteSpeedMbps, m.MaxWriteSpeedMbps) || updated
+	updated = ptr.UpdateIfChanged(&d.Queues, m.Queues) || updated
 	updated = ptr.UpdateIfChanged(&d.Replicate, m.Replicate) || updated
 	updated = ptr.UpdateIfChanged(&d.SSD, m.SSD) || updated
 	updated = ptr.UpdateIfChanged(&d.Serial, m.Serial) || updated
@@ -423,6 +433,7 @@ func (d *CustomStorageDevice) Equals(other *CustomStorageDevice) bool {
 		ptr.Eq(d.MaxIopsWrite, other.MaxIopsWrite) &&
 		ptr.Eq(d.MaxReadSpeedMbps, other.MaxReadSpeedMbps) &&
 		ptr.Eq(d.MaxWriteSpeedMbps, other.MaxWriteSpeedMbps) &&
+		ptr.Eq(d.Queues, other.Queues) &&
 		ptr.Eq(d.Replicate, other.Replicate) &&
 		ptr.Eq(d.Serial, other.Serial) &&
 		ptr.Eq(d.Size, other.Size) &&

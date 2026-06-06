@@ -1415,6 +1415,90 @@ func TestAccResourceVMDisks(t *testing.T) {
 				),
 			},
 		}, nil},
+		{"create scsi disk with queues, then change and remove it", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk" {
+					node_name     = "{{.NodeName}}"
+					started       = false
+					name          = "test-disk"
+					scsi_hardware = "virtio-scsi-single"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						queues       = 4
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.queues":    "4",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk" {
+					node_name     = "{{.NodeName}}"
+					started       = false
+					name          = "test-disk"
+					scsi_hardware = "virtio-scsi-single"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						queues       = 8
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
+						"disk.0.queues": "8",
+					}),
+				),
+			},
+			{
+				// Removing queues falls back to the default 0, i.e. not set on the disk.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk" {
+					node_name     = "{{.NodeName}}"
+					started       = false
+					name          = "test-disk"
+					scsi_hardware = "virtio-scsi-single"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
+						"disk.0.queues": "0",
+					}),
+				),
+			},
+		}, nil},
+		{"queues on a non-scsi disk is rejected", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						size         = 8
+						queues       = 4
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`queues are only supported for SCSI disks`),
+			},
+		}, nil},
 	}
 
 	for _, tt := range tests {

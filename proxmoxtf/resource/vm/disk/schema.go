@@ -43,6 +43,7 @@ const (
 	mkDiskIopsWriteBurstable  = "iops_write_burstable"
 	mkDiskIOThread            = "iothread"
 	mkDiskPathInDatastore     = "path_in_datastore"
+	mkDiskQueues              = "queues"
 	mkDiskReplicate           = "replicate"
 	mkDiskSerial              = "serial"
 	mkDiskSize                = "size"
@@ -74,6 +75,7 @@ func Schema() map[string]*schema.Schema {
 						mkDiskInterface:       dvDiskInterface,
 						mkDiskIOThread:        false,
 						mkDiskPathInDatastore: nil,
+						mkDiskQueues:          0,
 						mkDiskReplicate:       true,
 						mkDiskSerial:          "",
 						mkDiskSize:            dvDiskSize,
@@ -170,6 +172,19 @@ func Schema() map[string]*schema.Schema {
 						Description: "Whether to use iothreads for this disk drive",
 						Optional:    true,
 						Default:     false,
+					},
+					mkDiskQueues: {
+						Type: schema.TypeInt,
+						Description: "Number of I/O queues for this disk, requires SCSI interface " +
+							"and `virtio-scsi-single` SCSI controller",
+						Optional: true,
+						Default:  0,
+						ValidateDiagFunc: validation.ToDiagFunc(
+							validation.Any(
+								validation.IntInSlice([]int{0}),
+								validation.IntAtLeast(2),
+							),
+						),
 					},
 					mkDiskReplicate: {
 						Type:        schema.TypeBool,
