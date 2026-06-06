@@ -3,7 +3,7 @@ layout: page
 page_title: "Upgrade Guide"
 subcategory: Guides
 description: |-
-    Breaking changes and migration steps across provider versions.
+  Breaking changes and migration steps across provider versions.
 ---
 
 # Upgrade Guide
@@ -36,6 +36,38 @@ This guide documents breaking changes across provider versions and the recommend
 6. Apply when satisfied.
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
+
+## v0.109.0
+
+### `vm` `agent.wait_for_ip.enabled` replaced by `agent.wait_for_ip.disabled`
+
+The `agent.wait_for_ip.enabled` attribute on `proxmox_virtual_environment_vm` (introduced in v0.108.0) has been replaced by `agent.wait_for_ip.disabled` with inverted semantics. The previous attribute defaulted to `true`, which caused `ipv4_addresses`, `ipv6_addresses`, and `network_interface_names` to become empty on `refresh`/`plan` for VMs created before v0.108.0: their stored state had no value for the new switch, so it read back as `false` ("disabled") and the provider skipped the agent IP lookup.
+
+**Before (v0.108.0):**
+
+```terraform
+agent {
+  enabled = true
+  wait_for_ip {
+    enabled = false # skip the agent IP lookup
+  }
+}
+```
+
+**After (v0.109.0):**
+
+```terraform
+agent {
+  enabled = true
+  wait_for_ip {
+    disabled = true # skip the agent IP lookup
+  }
+}
+```
+
+The new switch defaults to `false` (do not skip), so its zero value preserves the original behavior — VMs upgraded from any earlier version keep reading IP addresses from the guest agent without any configuration change.
+
+**Action required:** Only if you set `wait_for_ip.enabled = false` (added in v0.108.0). Replace it with `wait_for_ip.disabled = true`. The stale `enabled` value in state is dropped automatically. If you never set `wait_for_ip.enabled`, no action is needed and the `ipv4_addresses`/`ipv6_addresses` regression is resolved.
 
 ## v0.102.0
 
@@ -121,7 +153,7 @@ All existing Framework resources now have shorter aliases using the `proxmox_` p
 Examples of the new short names:
 
 | Old name                                           | New name                       |
-|----------------------------------------------------|--------------------------------|
+| -------------------------------------------------- | ------------------------------ |
 | `proxmox_virtual_environment_vm2` (resource)       | `proxmox_vm`                   |
 | `proxmox_virtual_environment_download_file`        | `proxmox_download_file`        |
 | `proxmox_virtual_environment_network_linux_bridge` | `proxmox_network_linux_bridge` |
@@ -310,9 +342,9 @@ The deprecated `vga.enabled` attribute was removed from the `proxmox_virtual_env
 
 ## Earlier versions
 
-| Version | Breaking change | Action |
-| ------- | --------------- | ------ |
-| v0.48.0 | File snippets now upload via SSH input stream instead of SCP | No config change; ensure SSH connectivity to nodes |
-| v0.40.0 | LXC `features` block is now updatable; mount type support added | Review LXC `features` blocks — previously ignored updates now apply |
-| v0.4.0 | `disk.interface` is now required | Add `interface` to all `disk` blocks |
-| v0.2.0 | `cloud_init` renamed to `initialization`; `os_type` renamed to `operating_system.type` | Rename attributes in configuration |
+| Version | Breaking change                                                                        | Action                                                              |
+| ------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| v0.48.0 | File snippets now upload via SSH input stream instead of SCP                           | No config change; ensure SSH connectivity to nodes                  |
+| v0.40.0 | LXC `features` block is now updatable; mount type support added                        | Review LXC `features` blocks — previously ignored updates now apply |
+| v0.4.0  | `disk.interface` is now required                                                       | Add `interface` to all `disk` blocks                                |
+| v0.2.0  | `cloud_init` renamed to `initialization`; `os_type` renamed to `operating_system.type` | Rename attributes in configuration                                  |

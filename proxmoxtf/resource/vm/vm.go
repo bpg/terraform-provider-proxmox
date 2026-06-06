@@ -44,40 +44,40 @@ import (
 )
 
 const (
-	dvRebootAfterCreation   = false
-	dvRebootAfterUpdate     = true
-	dvOnBoot                = true
-	dvACPI                  = true
-	dvAgentEnabled          = false
-	dvAgentTimeout          = "15m"
-	dvAgentTrim             = false
-	dvAgentType             = "virtio"
-	dvAgentWaitForIPEnabled = true
-	dvAMDSEVType            = "std"
-	dvAMDSEVAllowSMT        = true
-	dvAMDSEVKernelHashes    = false
-	dvAMDSEVNoDebug         = false
-	dvAMDSEVNoKeySharing    = false
-	dvAudioDeviceDevice     = "intel-hda"
-	dvAudioDeviceDriver     = "spice"
-	dvAudioDeviceEnabled    = true
-	dvBIOS                  = "seabios"
-	dvCDROMEnabled          = false
-	dvCDROMFileID           = ""
-	dvCDROMInterface        = "ide3"
-	dvCloneDatastoreID      = ""
-	dvCloneNodeName         = ""
-	dvCloneFull             = true
-	dvCloneRetries          = 1
-	dvCPUArchitecture       = ""
-	dvCPUCores              = 1
-	dvCPUHotplugged         = 0
-	dvCPULimit              = float64(0)
-	dvCPUNUMA               = false
-	dvCPUSockets            = 1
-	dvCPUType               = "qemu64"
-	dvCPUAffinity           = ""
-	dvDescription           = ""
+	dvRebootAfterCreation    = false
+	dvRebootAfterUpdate      = true
+	dvOnBoot                 = true
+	dvACPI                   = true
+	dvAgentEnabled           = false
+	dvAgentTimeout           = "15m"
+	dvAgentTrim              = false
+	dvAgentType              = "virtio"
+	dvAgentWaitForIPDisabled = false
+	dvAMDSEVType             = "std"
+	dvAMDSEVAllowSMT         = true
+	dvAMDSEVKernelHashes     = false
+	dvAMDSEVNoDebug          = false
+	dvAMDSEVNoKeySharing     = false
+	dvAudioDeviceDevice      = "intel-hda"
+	dvAudioDeviceDriver      = "spice"
+	dvAudioDeviceEnabled     = true
+	dvBIOS                   = "seabios"
+	dvCDROMEnabled           = false
+	dvCDROMFileID            = ""
+	dvCDROMInterface         = "ide3"
+	dvCloneDatastoreID       = ""
+	dvCloneNodeName          = ""
+	dvCloneFull              = true
+	dvCloneRetries           = 1
+	dvCPUArchitecture        = ""
+	dvCPUCores               = 1
+	dvCPUHotplugged          = 0
+	dvCPULimit               = float64(0)
+	dvCPUNUMA                = false
+	dvCPUSockets             = 1
+	dvCPUType                = "qemu64"
+	dvCPUAffinity            = ""
+	dvDescription            = ""
 
 	// dvHotplug is the Proxmox VE default hotplug value.
 	// When hotplug is not explicitly configured, PVE uses "network,disk,usb".
@@ -159,53 +159,53 @@ const (
 	maxResourceVirtualEnvironmentVMNUMADevices  = 8
 	maxResourceVirtualEnvironmentVirtiofsShares = 8
 
-	mkRebootAfterCreation   = "reboot"
-	mkRebootAfterUpdate     = "reboot_after_update"
-	mkOnBoot                = "on_boot"
-	mkBootOrder             = "boot_order"
-	mkACPI                  = "acpi"
-	mkAgent                 = "agent"
-	mkAgentEnabled          = "enabled"
-	mkAgentTimeout          = "timeout"
-	mkAgentTrim             = "trim"
-	mkAgentType             = "type"
-	mkAgentWaitForIP        = "wait_for_ip"
-	mkAgentWaitForIPEnabled = "enabled"
-	mkAgentWaitForIPIPv4    = "ipv4"
-	mkAgentWaitForIPIPv6    = "ipv6"
-	mkAMDSEV                = "amd_sev"
-	mkAMDSEVType            = "type"
-	mkAMDSEVAllowSMT        = "allow_smt"
-	mkAMDSEVKernelHashes    = "kernel_hashes"
-	mkAMDSEVNoDebug         = "no_debug"
-	mkAMDSEVNoKeySharing    = "no_key_sharing"
-	mkAudioDevice           = "audio_device"
-	mkAudioDeviceDevice     = "device"
-	mkAudioDeviceDriver     = "driver"
-	mkAudioDeviceEnabled    = "enabled"
-	mkBIOS                  = "bios"
-	mkCDROM                 = "cdrom"
-	mkCDROMEnabled          = "enabled"
-	mkCDROMFileID           = "file_id"
-	mkCDROMInterface        = "interface"
-	mkClone                 = "clone"
-	mkCloneRetries          = "retries"
-	mkCloneDatastoreID      = "datastore_id"
-	mkCloneNodeName         = "node_name"
-	mkCloneVMID             = "vm_id"
-	mkCloneFull             = "full"
-	mkCPU                   = "cpu"
-	mkCPUArchitecture       = "architecture"
-	mkCPUCores              = "cores"
-	mkCPUFlags              = "flags"
-	mkCPUHotplugged         = "hotplugged"
-	mkCPULimit              = "limit"
-	mkCPUNUMA               = "numa"
-	mkCPUSockets            = "sockets"
-	mkCPUType               = "type"
-	mkCPUUnits              = "units"
-	mkCPUAffinity           = "affinity"
-	mkDescription           = "description"
+	mkRebootAfterCreation    = "reboot"
+	mkRebootAfterUpdate      = "reboot_after_update"
+	mkOnBoot                 = "on_boot"
+	mkBootOrder              = "boot_order"
+	mkACPI                   = "acpi"
+	mkAgent                  = "agent"
+	mkAgentEnabled           = "enabled"
+	mkAgentTimeout           = "timeout"
+	mkAgentTrim              = "trim"
+	mkAgentType              = "type"
+	mkAgentWaitForIP         = "wait_for_ip"
+	mkAgentWaitForIPDisabled = "disabled"
+	mkAgentWaitForIPIPv4     = "ipv4"
+	mkAgentWaitForIPIPv6     = "ipv6"
+	mkAMDSEV                 = "amd_sev"
+	mkAMDSEVType             = "type"
+	mkAMDSEVAllowSMT         = "allow_smt"
+	mkAMDSEVKernelHashes     = "kernel_hashes"
+	mkAMDSEVNoDebug          = "no_debug"
+	mkAMDSEVNoKeySharing     = "no_key_sharing"
+	mkAudioDevice            = "audio_device"
+	mkAudioDeviceDevice      = "device"
+	mkAudioDeviceDriver      = "driver"
+	mkAudioDeviceEnabled     = "enabled"
+	mkBIOS                   = "bios"
+	mkCDROM                  = "cdrom"
+	mkCDROMEnabled           = "enabled"
+	mkCDROMFileID            = "file_id"
+	mkCDROMInterface         = "interface"
+	mkClone                  = "clone"
+	mkCloneRetries           = "retries"
+	mkCloneDatastoreID       = "datastore_id"
+	mkCloneNodeName          = "node_name"
+	mkCloneVMID              = "vm_id"
+	mkCloneFull              = "full"
+	mkCPU                    = "cpu"
+	mkCPUArchitecture        = "architecture"
+	mkCPUCores               = "cores"
+	mkCPUFlags               = "flags"
+	mkCPUHotplugged          = "hotplugged"
+	mkCPULimit               = "limit"
+	mkCPUNUMA                = "numa"
+	mkCPUSockets             = "sockets"
+	mkCPUType                = "type"
+	mkCPUUnits               = "units"
+	mkCPUAffinity            = "affinity"
+	mkDescription            = "description"
 
 	mkNUMA              = "numa"
 	mkNUMADevice        = "device"
@@ -425,11 +425,11 @@ func VM() *schema.Resource {
 						MinItems:    0,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
-								mkAgentWaitForIPEnabled: {
+								mkAgentWaitForIPDisabled: {
 									Type:        schema.TypeBool,
-									Description: "Whether to wait for the agent to report an IP address; set to false to skip the lookup entirely",
+									Description: "Disable waiting for the agent to report an IP address; set to true to skip the lookup entirely",
 									Optional:    true,
-									Default:     dvAgentWaitForIPEnabled,
+									Default:     dvAgentWaitForIPDisabled,
 								},
 								mkAgentWaitForIPIPv4: {
 									Type:        schema.TypeBool,
@@ -4226,12 +4226,12 @@ func getStringFromBlock(block map[string]any, key string, defaultValue string) s
 	return defaultValue
 }
 
-func getBoolFromBlock(block map[string]any, key string, defaultValue bool) bool {
+func getBoolFromBlock(block map[string]any, key string) bool {
 	if val, ok := block[key].(bool); ok {
 		return val
 	}
 
-	return defaultValue
+	return false
 }
 
 // hotplugContains checks whether a specific feature is enabled in a hotplug setting string.
@@ -6399,7 +6399,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 		oldCPUType := getStringFromBlock(oldCPUBlock, mkCPUType, "")
 		oldCPUArchitecture := getStringFromBlock(oldCPUBlock, mkCPUArchitecture, "")
-		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA, false)
+		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA)
 
 		// Only vcpus (hotplugged) changes are hotpluggable for CPU, and only when
 		// "cpu" is in the VM's hotplug setting. Changing cores or sockets always requires a reboot.
@@ -7599,15 +7599,17 @@ func getAgentWaitForIPConfig(d *schema.ResourceData) *vms.WaitForIPConfig {
 }
 
 // agentWaitForIPConfigFromBlock translates a wait_for_ip block into a WaitForIPConfig.
-// enabled=false disables the agent IP wait entirely (Skip); otherwise nil means "wait for any".
+// disabled=true disables the agent IP wait entirely (Skip); otherwise nil means "wait for any".
+// The switch defaults to false (do not skip) so that state written before the switch existed —
+// where the key reads back as its zero value — keeps querying the agent (see #2928).
 func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
-	if !getBoolFromBlock(block, mkAgentWaitForIPEnabled, true) {
+	if getBoolFromBlock(block, mkAgentWaitForIPDisabled) {
 		return &vms.WaitForIPConfig{Skip: true}
 	}
 
 	config := &vms.WaitForIPConfig{
-		IPv4: getBoolFromBlock(block, mkAgentWaitForIPIPv4, false),
-		IPv6: getBoolFromBlock(block, mkAgentWaitForIPIPv6, false),
+		IPv4: getBoolFromBlock(block, mkAgentWaitForIPIPv4),
+		IPv6: getBoolFromBlock(block, mkAgentWaitForIPIPv6),
 	}
 
 	// if both are false, return nil for backward compatibility (wait for any)
