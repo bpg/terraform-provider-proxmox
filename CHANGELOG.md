@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.109.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.108.0...v0.109.0) (2026-06-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **vm:** restore ipv4_addresses on refresh for existing VMs ([#2932](https://github.com/bpg/terraform-provider-proxmox/issues/2932))
+
+### Features
+
+* **vm:** add queues option for scsi disks ([#2931](https://github.com/bpg/terraform-provider-proxmox/issues/2931)) ([f95abbc](https://github.com/bpg/terraform-provider-proxmox/commit/f95abbc00c87750e8f498c94c785b1f5310bd7a7))
+
+
+### Bug Fixes
+
+* **core:** bound SSH dial and handshake with a timeout, improve concurrent sudo checks ([#2924](https://github.com/bpg/terraform-provider-proxmox/issues/2924)) ([d59b7bb](https://github.com/bpg/terraform-provider-proxmox/commit/d59b7bb71b884737ce11400b7ae8d1deb10da29d))
+* **vm:** restore ipv4_addresses on refresh for existing VMs ([#2932](https://github.com/bpg/terraform-provider-proxmox/issues/2932)) ([fdcc890](https://github.com/bpg/terraform-provider-proxmox/commit/fdcc890d6eb71ac8cb51d43d6227b13ce0dd63c5))
+
+
+### Miscellaneous
+
+* **ci:** update actions/checkout action (v6.0.2 → v6.0.3) ([#2937](https://github.com/bpg/terraform-provider-proxmox/issues/2937)) ([832d2f8](https://github.com/bpg/terraform-provider-proxmox/commit/832d2f8bb2cb1a686dfb3f475afeb399aecabf00))
+* **ci:** update actions/checkout digest (de0fac2 → df4cb1c) ([#2936](https://github.com/bpg/terraform-provider-proxmox/issues/2936)) ([e064604](https://github.com/bpg/terraform-provider-proxmox/commit/e064604608f56948ef6ae11efa2aa128680e32b5))
+* **deps:** update image golang (1.26.3 → 1.26.4) ([#2933](https://github.com/bpg/terraform-provider-proxmox/issues/2933)) ([3159f24](https://github.com/bpg/terraform-provider-proxmox/commit/3159f2461250559d2a1412be2cf5c861acde865b))
+
 ## [0.108.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.107.0...v0.108.0) (2026-06-01)
 
 
