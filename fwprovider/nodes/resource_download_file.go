@@ -41,9 +41,10 @@ import (
 )
 
 var (
-	_         resource.Resource              = &downloadFileResource{}
-	_         resource.ResourceWithConfigure = &downloadFileResource{}
-	httpRegex                                = regexp.MustCompile(`https?://.*`)
+	_         resource.Resource                = &downloadFileResource{}
+	_         resource.ResourceWithConfigure   = &downloadFileResource{}
+	_         resource.ResourceWithImportState = &downloadFileResource{}
+	httpRegex                                  = regexp.MustCompile(`https?://.*`)
 )
 
 type sizeRequiresReplaceModifier struct{}
@@ -685,4 +686,62 @@ func isErrFileAlreadyExists(err error) bool {
 	}
 
 	return strings.Contains(err.Error(), "refusing to override existing file")
+}
+
+// ImportState imports a download file resource by its identifier.
+func (r *downloadFileResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	// Accept either node_name:datastore_id:content_type/file_name or datastore_id:content_type/file_name
+	parts := strings.SplitN(req.ID, ":", 3)
+
+	var nodeName, datastoreID, filePart string
+
+	if len(parts) == 3 {
+		nodeName = parts[0]
+		datastoreID = parts[1]
+		filePart = parts[2]
+	} else if len(parts) == 2 {
+		// Try parsing as node/datastore_id:content_type/file_name for backward compatibility
+		slashParts := strings.SplitN(parts[0], "/", 2)
+		if len(slashParts) == 2 {
+			nodeName = slashParts[0]
+			datastoreID = slashParts[1]
+			filePart = parts[1]
+		} else {
+			// Tests and newer TF import block might use datastore_id:content_type/file_name
+			datastoreID = parts[0]
+			filePart = parts[1]
+		}
+	} else {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: node_name:datastore_id:content_type/file_name. Got: %q", req.ID),
+		)
+		return
+	}
+
+	fileParts := strings.SplitN(filePart, "/", 2)
+	if len(fileParts) != 2 {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: content_type/file_name in the file part. Got: %q", filePart),
+		)
+		return
+	}
+
+	contentType := fileParts[0]
+	fileName := fileParts[1]
+
+	id := datastoreID + ":" + filePart
+
+	if nodeName != "" {
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("node_name"), nodeName)...)
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("datastore_id"), datastoreID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("content_type"), contentType)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("file_name"), fileName)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
