@@ -737,9 +737,14 @@ func (r *downloadFileResource) ImportState(
 
 	id := datastoreID + ":" + filePart
 
-	if nodeName != "" {
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("node_name"), nodeName)...)
+	if nodeName == "" {
+		resp.Diagnostics.AddError(
+			"Missing Node Name in Import Identifier",
+			fmt.Sprintf("The node name is required for import. Expected format: node_name:datastore_id:content_type/file_name. Got: %q", req.ID),
+		)
+		return
 	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("node_name"), nodeName)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("datastore_id"), datastoreID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("content_type"), contentType)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("file_name"), fileName)...)
