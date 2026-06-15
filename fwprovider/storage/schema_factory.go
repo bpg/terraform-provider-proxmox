@@ -64,6 +64,18 @@ func newStorageSchemaFactory() *schemaFactory {
 				Default:     booldefault.StaticBool(false),
 				Computed:    true,
 			},
+			"create_base_path": schema.BoolAttribute{
+				Description: "Create the base directory if it doesn't exist.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(true),
+			},
+			"create_subdirs": schema.BoolAttribute{
+				Description: "Populate the directory with the default structure.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(true),
+			},
 		},
 		Blocks: map[string]schema.Block{},
 	}
