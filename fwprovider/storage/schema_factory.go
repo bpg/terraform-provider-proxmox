@@ -64,18 +64,6 @@ func newStorageSchemaFactory() *schemaFactory {
 				Default:     booldefault.StaticBool(false),
 				Computed:    true,
 			},
-			"create_base_path": schema.BoolAttribute{
-				Description: "Create the base directory if it doesn't exist.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(true),
-			},
-			"create_subdirs": schema.BoolAttribute{
-				Description: "Populate the directory with the default structure.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(true),
-			},
 		},
 		Blocks: map[string]schema.Block{},
 	}
@@ -100,6 +88,23 @@ func (s *schemaFactory) WithBlocks(blocks map[string]schema.Block) *schemaFactor
 	maps.Copy(s.Schema.Blocks, blocks)
 
 	return s
+}
+
+func (s *schemaFactory) WithDirCreationOptions() *schemaFactory {
+	return s.WithAttributes(map[string]schema.Attribute{
+		"create_base_path": schema.BoolAttribute{
+			Description: "Create the base directory if it doesn't exist.",
+			Optional:    true,
+			Computed:    true,
+			Default:     booldefault.StaticBool(true),
+		},
+		"create_subdirs": schema.BoolAttribute{
+			Description: "Populate the directory with the default structure.",
+			Optional:    true,
+			Computed:    true,
+			Default:     booldefault.StaticBool(true),
+		},
+	})
 }
 
 func (s *schemaFactory) WithBackupBlock() *schemaFactory {

@@ -109,6 +109,7 @@ func (r *cifsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 
 	factory := newStorageSchemaFactory()
 	factory.WithAttributes(attributes)
+	factory.WithDirCreationOptions()
 	factory.WithDescription("Manages an SMB/CIFS based storage server in Proxmox VE.")
 	factory.WithBackupBlock()
 	resp.Schema = *factory.Schema

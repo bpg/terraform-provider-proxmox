@@ -18,6 +18,7 @@ import (
 // CIFSStorageModel maps the Terraform schema for CIFS storage.
 type CIFSStorageModel struct {
 	modelBase
+	modelDirOptions
 
 	Server                 types.String `tfsdk:"server"`
 	Username               types.String `tfsdk:"username"`
@@ -50,6 +51,8 @@ func (m *CIFSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) 
 	request.Subdirectory = m.SubDirectory.ValueStringPointer()
 	request.Preallocation = m.Preallocation.ValueStringPointer()
 	request.SnapshotsAsVolumeChain = proxmoxtypes.CustomBool(m.SnapshotsAsVolumeChain.ValueBool())
+	request.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
+	request.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
@@ -71,6 +74,8 @@ func (m *CIFSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) 
 	}
 
 	request.Preallocation = m.Preallocation.ValueStringPointer()
+	request.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
+	request.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
@@ -88,6 +93,8 @@ func (m *CIFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datas
 	if err := m.populateBaseFromAPI(ctx, datastore); err != nil {
 		return err
 	}
+
+	m.populateFromAPI(datastore)
 
 	if datastore.Server != nil {
 		m.Server = types.StringValue(*datastore.Server)

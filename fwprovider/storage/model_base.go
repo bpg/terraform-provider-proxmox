@@ -19,13 +19,32 @@ import (
 
 // modelBase contains the common fields for all storage models.
 type modelBase struct {
-	ID             types.String `tfsdk:"id"`
-	Nodes          types.Set    `tfsdk:"nodes"`
-	ContentTypes   types.Set    `tfsdk:"content"`
-	Disable        types.Bool   `tfsdk:"disable"`
-	Shared         types.Bool   `tfsdk:"shared"`
-	CreateBasePath types.Bool   `tfsdk:"create_base_path"`
-	CreateSubdirs  types.Bool   `tfsdk:"create_subdirs"`
+	ID           types.String `tfsdk:"id"`
+	Nodes        types.Set    `tfsdk:"nodes"`
+	ContentTypes types.Set    `tfsdk:"content"`
+	Disable      types.Bool   `tfsdk:"disable"`
+	Shared       types.Bool   `tfsdk:"shared"`
+}
+
+// modelDirOptions holds path-creation options supported only by directory-backed storage types
+// (dir, cifs, nfs, cephfs, btrfs).
+type modelDirOptions struct {
+	CreateBasePath types.Bool `tfsdk:"create_base_path"`
+	CreateSubdirs  types.Bool `tfsdk:"create_subdirs"`
+}
+
+func (m *modelDirOptions) populateFromAPI(datastore *storage.DatastoreGetResponseData) {
+	if datastore.CreateBasePath != nil {
+		m.CreateBasePath = datastore.CreateBasePath.ToValue()
+	} else {
+		m.CreateBasePath = types.BoolValue(true)
+	}
+
+	if datastore.CreateSubdirs != nil {
+		m.CreateSubdirs = datastore.CreateSubdirs.ToValue()
+	} else {
+		m.CreateSubdirs = types.BoolValue(true)
+	}
 }
 
 // GetID returns the storage identifier from the base model.
@@ -71,18 +90,6 @@ func (m *modelBase) populateBaseFromAPI(ctx context.Context, datastore *storage.
 		m.Shared = types.BoolValue(false)
 	}
 
-	if datastore.CreateBasePath != nil {
-		m.CreateBasePath = datastore.CreateBasePath.ToValue()
-	} else {
-		m.CreateBasePath = types.BoolValue(true)
-	}
-
-	if datastore.CreateSubdirs != nil {
-		m.CreateSubdirs = datastore.CreateSubdirs.ToValue()
-	} else {
-		m.CreateSubdirs = types.BoolValue(true)
-	}
-
 	return nil
 }
 
@@ -94,8 +101,6 @@ func (m *modelBase) populateCreateFields(
 ) error {
 	immutableReq.ID = m.ID.ValueStringPointer()
 	mutableReq.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
-	mutableReq.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
-	mutableReq.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
 		var nodes proxmoxtypes.CustomCommaSeparatedList
@@ -125,8 +130,6 @@ func (m *modelBase) populateCreateFields(
 // populateUpdateFields is a helper to populate the common fields for an update request.
 func (m *modelBase) populateUpdateFields(ctx context.Context, mutableReq *storage.DataStoreCommonMutableFields) error {
 	mutableReq.Disable = proxmoxtypes.CustomBoolPtr(m.Disable.ValueBoolPointer())
-	mutableReq.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
-	mutableReq.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
 		var nodes proxmoxtypes.CustomCommaSeparatedList
