@@ -90,6 +90,10 @@ func (r *cifsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
+		"options": schema.StringAttribute{
+			Description: "The mount options for the SMB/CIFS share (see 'man mount.cifs').",
+			Optional:    true,
+		},
 		"preallocation": schema.StringAttribute{
 			Description: "The preallocation mode for raw and qcow2 images.",
 			Optional:    true,
