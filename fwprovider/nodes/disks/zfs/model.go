@@ -25,7 +25,7 @@ type draidConfigModel struct {
 	Spares types.Int64 `tfsdk:"spares"`
 }
 
-// zfsPoolModel maps the proxmox_disk_zfs schema.
+// zfsPoolModel maps the proxmox_disks_zfs schema.
 type zfsPoolModel struct {
 	ID       types.String `tfsdk:"id"`
 	NodeName types.String `tfsdk:"node_name"`

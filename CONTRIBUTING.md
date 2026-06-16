@@ -146,7 +146,7 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
   ```env
   PROXMOX_VE_ACC_NODE_2_NAME="pve2"
   PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
-  PROXMOX_VE_ACC_ZFS_DISK="/dev/sdb"  # spare disk for proxmox_disk_zfs tests — will be fully wiped
+  PROXMOX_VE_ACC_ZFS_DISK="/dev/sdb"  # spare disk for proxmox_disks_zfs tests — will be fully wiped
   ```
 
 #### Running acceptance tests

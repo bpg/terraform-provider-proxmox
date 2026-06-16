@@ -84,7 +84,7 @@ Tests that require ZFS storage will be skipped if this variable is not set.
 
 ### Optional: spare disk for ZFS pool management tests
 
-Some acceptance tests for `proxmox_disk_zfs` require a spare block device that Proxmox
+Some acceptance tests for `proxmox_disks_zfs` require a spare block device that Proxmox
 can fully wipe and use as a ZFS pool. On a VM-based dev setup you can add a small virtual
 disk in virt-manager:
 
