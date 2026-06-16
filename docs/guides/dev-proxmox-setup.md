@@ -82,6 +82,32 @@ Some acceptance tests (e.g., `TestAccResourceVMDisks/clone_with_moving_disk`) re
 
 Tests that require ZFS storage will be skipped if this variable is not set.
 
+### Optional: spare disk for ZFS pool management tests
+
+Some acceptance tests for `proxmox_disk_zfs` require a spare block device that Proxmox
+can fully wipe and use as a ZFS pool. On a VM-based dev setup you can add a small virtual
+disk in virt-manager:
+
+1. In virt-manager, shut down the Proxmox VM, add a new virtual disk (e.g., 8 GB, VirtIO),
+   then start it again.
+
+2. Identify the new device name inside Proxmox (it will appear as `/dev/vdb` or similar):
+
+   ```sh
+   lsblk --output NAME,SIZE,TYPE | grep disk
+   ```
+
+3. Set the environment variable in your `testacc.env`:
+
+   ```env
+   PROXMOX_VE_ACC_ZFS_DISK="/dev/vdb"
+   ```
+
+Tests that require a spare disk will be skipped if this variable is not set.
+
+> [!WARNING]
+> The entire device will be wiped during testing. Do not point this at a disk that contains data.
+
 ## SSH access
 
 The default provider configuration uses API token authentication. Since there is no password to inherit for SSH, you need one of the following:
