@@ -41,9 +41,10 @@ import (
 )
 
 var (
-	_         resource.Resource              = &downloadFileResource{}
-	_         resource.ResourceWithConfigure = &downloadFileResource{}
-	httpRegex                                = regexp.MustCompile(`https?://.*`)
+	_         resource.Resource                = &downloadFileResource{}
+	_         resource.ResourceWithConfigure   = &downloadFileResource{}
+	_         resource.ResourceWithImportState = &downloadFileResource{}
+	httpRegex                                  = regexp.MustCompile(`https?://.*`)
 )
 
 type sizeRequiresReplaceModifier struct{}
@@ -685,4 +686,50 @@ func isErrFileAlreadyExists(err error) bool {
 	}
 
 	return strings.Contains(err.Error(), "refusing to override existing file")
+}
+
+// ImportState imports a download file resource using the format node_name/datastore_id:content_type/file_name,
+// where the part after the node name is the resource id.
+func (r *downloadFileResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	const format = "node_name/datastore_id:content_type/file_name"
+
+	nodeName, id, found := strings.Cut(req.ID, "/")
+	if !found || nodeName == "" || id == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: %s. Got: %q", format, req.ID),
+		)
+
+		return
+	}
+
+	datastoreID, filePart, found := strings.Cut(id, ":")
+	if !found || datastoreID == "" || filePart == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: %s. Got: %q", format, req.ID),
+		)
+
+		return
+	}
+
+	contentType, fileName, found := strings.Cut(filePart, "/")
+	if !found || contentType == "" || fileName == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: %s. Got: %q", format, req.ID),
+		)
+
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("node_name"), nodeName)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("datastore_id"), datastoreID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("content_type"), contentType)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("file_name"), fileName)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
