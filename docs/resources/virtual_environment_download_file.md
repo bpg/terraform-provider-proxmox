@@ -115,3 +115,13 @@ resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc
 
 - `id` (String) The unique identifier of this resource.
 - `size` (Number) The file size in PVE.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+#!/usr/bin/env sh
+# A download file can be imported using its identifier in the format: node_name/datastore_id:content_type/file_name, e.g.:
+terraform import proxmox_virtual_environment_download_file.ubuntu_iso pve/local:iso/ubuntu-24.04-server.iso
+```

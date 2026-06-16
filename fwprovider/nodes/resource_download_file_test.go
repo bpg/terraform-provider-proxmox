@@ -13,6 +13,7 @@ package nodes_test
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"os"
 	"path"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -171,6 +173,57 @@ func TestAccResourceDownloadFile(t *testing.T) {
 						"decompression_algorithm",
 					}),
 				),
+			},
+		}},
+		{"import existing file", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_download_file" "import_image" {
+					content_type        = "iso"
+					node_name           = "{{.NodeName}}"
+					datastore_id        = "{{.DatastoreID}}"
+					file_name           = "fake_import_file.iso"
+					url                 = "{{.FakeFileISO}}"
+					overwrite_unmanaged = true
+				}`),
+				Check: test.ResourceAttributes("proxmox_download_file.import_image", map[string]string{
+					"id":        "local:iso/fake_import_file.iso",
+					"node_name": te.NodeName,
+					"size":      "3",
+				}),
+			},
+			{
+				ResourceName:      "proxmox_download_file.import_image",
+				ImportState:       true,
+				ImportStateId:     te.NodeName + "/" + te.DatastoreID + ":iso/fake_import_file.iso",
+				ImportStateVerify: false,
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 state, got %d", len(states))
+					}
+
+					want := map[string]string{
+						"id":           "local:iso/fake_import_file.iso",
+						"node_name":    te.NodeName,
+						"datastore_id": te.DatastoreID,
+						"content_type": "iso",
+						"file_name":    "fake_import_file.iso",
+						"size":         "3",
+					}
+					for k, v := range want {
+						if got := states[0].Attributes[k]; got != v {
+							return fmt.Errorf("attribute %q: expected %q, got %q", k, v, got)
+						}
+					}
+
+					return nil
+				},
+			},
+			{
+				ResourceName:  "proxmox_download_file.import_image",
+				ImportState:   true,
+				ImportStateId: "local:iso/fake_import_file.iso",
+				ExpectError:   regexp.MustCompile(`Unexpected Import Identifier`),
 			},
 		}},
 		{"override file", []resource.TestStep{{

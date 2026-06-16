@@ -688,62 +688,45 @@ func isErrFileAlreadyExists(err error) bool {
 	return strings.Contains(err.Error(), "refusing to override existing file")
 }
 
-// ImportState imports a download file resource by its identifier.
+// ImportState imports a download file resource using the format node_name/datastore_id:content_type/file_name,
+// where the part after the node name is the resource id.
 func (r *downloadFileResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
-	// Accept either node_name:datastore_id:content_type/file_name or datastore_id:content_type/file_name
-	parts := strings.SplitN(req.ID, ":", 3)
+	const format = "node_name/datastore_id:content_type/file_name"
 
-	var nodeName, datastoreID, filePart string
-
-	if len(parts) == 3 {
-		nodeName = parts[0]
-		datastoreID = parts[1]
-		filePart = parts[2]
-	} else if len(parts) == 2 {
-		// Try parsing as node/datastore_id:content_type/file_name for backward compatibility
-		slashParts := strings.SplitN(parts[0], "/", 2)
-		if len(slashParts) == 2 {
-			nodeName = slashParts[0]
-			datastoreID = slashParts[1]
-			filePart = parts[1]
-		} else {
-			// Tests and newer TF import block might use datastore_id:content_type/file_name
-			datastoreID = parts[0]
-			filePart = parts[1]
-		}
-	} else {
+	nodeName, id, found := strings.Cut(req.ID, "/")
+	if !found || nodeName == "" || id == "" {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: node_name:datastore_id:content_type/file_name. Got: %q", req.ID),
+			fmt.Sprintf("Expected import identifier with format: %s. Got: %q", format, req.ID),
 		)
+
 		return
 	}
 
-	fileParts := strings.SplitN(filePart, "/", 2)
-	if len(fileParts) != 2 {
+	datastoreID, filePart, found := strings.Cut(id, ":")
+	if !found || datastoreID == "" || filePart == "" {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: content_type/file_name in the file part. Got: %q", filePart),
+			fmt.Sprintf("Expected import identifier with format: %s. Got: %q", format, req.ID),
 		)
+
 		return
 	}
 
-	contentType := fileParts[0]
-	fileName := fileParts[1]
-
-	id := datastoreID + ":" + filePart
-
-	if nodeName == "" {
+	contentType, fileName, found := strings.Cut(filePart, "/")
+	if !found || contentType == "" || fileName == "" {
 		resp.Diagnostics.AddError(
-			"Missing Node Name in Import Identifier",
-			fmt.Sprintf("The node name is required for import. Expected format: node_name:datastore_id:content_type/file_name. Got: %q", req.ID),
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: %s. Got: %q", format, req.ID),
 		)
+
 		return
 	}
+
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("node_name"), nodeName)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("datastore_id"), datastoreID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("content_type"), contentType)...)
