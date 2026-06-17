@@ -16,7 +16,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	zfsapi "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/disks/zfs"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // draidConfigModel maps the draid_config nested attribute.

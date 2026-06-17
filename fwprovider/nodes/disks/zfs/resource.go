@@ -228,9 +228,27 @@ func (r *zfsPoolResource) ValidateConfig(ctx context.Context, req resource.Valid
 		return
 	}
 
+	// Skip cross-attribute validation when raidlevel is not yet known (e.g. cross-resource reference).
+	if cfg.RaidLevel.IsUnknown() {
+		return
+	}
+
+	var draidConfig types.Object
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("draid_config"), &draidConfig)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Skip when draid_config is not yet known; validation will re-run once it resolves.
+	if draidConfig.IsUnknown() {
+		return
+	}
+
 	isDraid := attribute.IsDefined(cfg.RaidLevel) && strings.HasPrefix(cfg.RaidLevel.ValueString(), "draid")
 
-	if isDraid && cfg.DraidConfig == nil {
+	if isDraid && draidConfig.IsNull() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("draid_config"),
 			"Missing dRAID configuration",
@@ -238,7 +256,7 @@ func (r *zfsPoolResource) ValidateConfig(ctx context.Context, req resource.Valid
 		)
 	}
 
-	if !isDraid && cfg.DraidConfig != nil {
+	if !isDraid && attribute.IsDefined(draidConfig) {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("draid_config"),
 			"Invalid attribute combination",
