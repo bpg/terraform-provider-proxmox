@@ -85,8 +85,8 @@ func (m *zfsPoolModel) toCreateBody(ctx context.Context, diags *diag.Diagnostics
 // toDeleteParams builds the DELETE query parameters from local-only state.
 func (m *zfsPoolModel) toDeleteParams() *zfsapi.DeleteRequestParams {
 	return &zfsapi.DeleteRequestParams{
-		CleanupConfig: proxmoxtypes.CustomBool(m.CleanupConfig.ValueBool()).Pointer(),
-		CleanupDisks:  proxmoxtypes.CustomBool(m.CleanupDisks.ValueBool()).Pointer(),
+		CleanupConfig: attribute.CustomBoolPtrFromValue(m.CleanupConfig),
+		CleanupDisks:  attribute.CustomBoolPtrFromValue(m.CleanupDisks),
 	}
 }
 
