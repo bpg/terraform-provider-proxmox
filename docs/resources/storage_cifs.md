@@ -54,6 +54,7 @@ resource "proxmox_storage_cifs" "example" {
 - `disable` (Boolean) Whether the storage is disabled.
 - `domain` (String) The SMB/CIFS domain.
 - `nodes` (Set of String) A list of nodes where this storage is available.
+- `options` (String) The mount options for the SMB/CIFS share (see 'man mount.cifs').
 - `preallocation` (String) The preallocation mode for raw and qcow2 images.
 - `snapshot_as_volume_chain` (Boolean) Enable support for creating snapshots through volume backing-chains.
 - `subdirectory` (String) A subdirectory to mount within the share.

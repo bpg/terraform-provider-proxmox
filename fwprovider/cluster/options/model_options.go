@@ -37,27 +37,32 @@ const (
 )
 
 type clusterOptionsModel struct {
-	ID                      types.String               `tfsdk:"id"`
-	BandwidthLimitClone     types.Int64                `tfsdk:"bandwidth_limit_clone"`
-	BandwidthLimitDefault   types.Int64                `tfsdk:"bandwidth_limit_default"`
-	BandwidthLimitMigration types.Int64                `tfsdk:"bandwidth_limit_migration"`
-	BandwidthLimitMove      types.Int64                `tfsdk:"bandwidth_limit_move"`
-	BandwidthLimitRestore   types.Int64                `tfsdk:"bandwidth_limit_restore"`
-	Console                 types.String               `tfsdk:"console"`
-	CrsHA                   types.String               `tfsdk:"crs_ha"`
-	CrsHARebalanceOnStart   types.Bool                 `tfsdk:"crs_ha_rebalance_on_start"`
-	Description             types.String               `tfsdk:"description"`
-	EmailFrom               types.String               `tfsdk:"email_from"`
-	HAShutdownPolicy        types.String               `tfsdk:"ha_shutdown_policy"`
-	HTTPProxy               types.String               `tfsdk:"http_proxy"`
-	Keyboard                types.String               `tfsdk:"keyboard"`
-	Language                types.String               `tfsdk:"language"`
-	MacPrefix               types.String               `tfsdk:"mac_prefix"`
-	MaxWorkers              types.Int64                `tfsdk:"max_workers"`
-	MigrationNetwork        customtypes.IPCIDRValue    `tfsdk:"migration_cidr"`
-	MigrationType           types.String               `tfsdk:"migration_type"`
-	NextID                  *clusterOptionsNextIDModel `tfsdk:"next_id"`
-	Notify                  *clusterOptionsNotifyModel `tfsdk:"notify"`
+	ID                             types.String               `tfsdk:"id"`
+	BandwidthLimitClone            types.Int64                `tfsdk:"bandwidth_limit_clone"`
+	BandwidthLimitDefault          types.Int64                `tfsdk:"bandwidth_limit_default"`
+	BandwidthLimitMigration        types.Int64                `tfsdk:"bandwidth_limit_migration"`
+	BandwidthLimitMove             types.Int64                `tfsdk:"bandwidth_limit_move"`
+	BandwidthLimitRestore          types.Int64                `tfsdk:"bandwidth_limit_restore"`
+	Console                        types.String               `tfsdk:"console"`
+	CrsHA                          types.String               `tfsdk:"crs_ha"`
+	CrsHAAutoRebalance             types.Bool                 `tfsdk:"crs_ha_auto_rebalance"`
+	CrsHAAutoRebalanceHoldDuration types.Int64                `tfsdk:"crs_ha_auto_rebalance_hold_duration"`
+	CrsHAAutoRebalanceMargin       types.Int64                `tfsdk:"crs_ha_auto_rebalance_margin"`
+	CrsHAAutoRebalanceMethod       types.String               `tfsdk:"crs_ha_auto_rebalance_method"`
+	CrsHAAutoRebalanceThreshold    types.Int64                `tfsdk:"crs_ha_auto_rebalance_threshold"`
+	CrsHARebalanceOnStart          types.Bool                 `tfsdk:"crs_ha_rebalance_on_start"`
+	Description                    types.String               `tfsdk:"description"`
+	EmailFrom                      types.String               `tfsdk:"email_from"`
+	HAShutdownPolicy               types.String               `tfsdk:"ha_shutdown_policy"`
+	HTTPProxy                      types.String               `tfsdk:"http_proxy"`
+	Keyboard                       types.String               `tfsdk:"keyboard"`
+	Language                       types.String               `tfsdk:"language"`
+	MacPrefix                      types.String               `tfsdk:"mac_prefix"`
+	MaxWorkers                     types.Int64                `tfsdk:"max_workers"`
+	MigrationNetwork               customtypes.IPCIDRValue    `tfsdk:"migration_cidr"`
+	MigrationType                  types.String               `tfsdk:"migration_type"`
+	NextID                         *clusterOptionsNextIDModel `tfsdk:"next_id"`
+	Notify                         *clusterOptionsNotifyModel `tfsdk:"notify"`
 }
 
 type clusterOptionsNextIDModel struct {
@@ -191,26 +196,36 @@ func (m *clusterOptionsModel) notifyData() string {
 func (m *clusterOptionsModel) crsData() string {
 	var crsDataParams []string
 
-	if attribute.IsDefined(m.CrsHA) {
-		crsDataParams = append(crsDataParams, fmt.Sprintf("ha=%s", m.CrsHA.ValueString()))
-	}
-
-	if attribute.IsDefined(m.CrsHARebalanceOnStart) {
-		var haRebalanceOnStart string
-		if m.CrsHARebalanceOnStart.ValueBool() {
-			haRebalanceOnStart = "1"
-		} else {
-			haRebalanceOnStart = "0"
+	addString := func(name string, v types.String) {
+		if attribute.IsDefined(v) {
+			crsDataParams = append(crsDataParams, fmt.Sprintf("%s=%s", name, v.ValueString()))
 		}
+	}
+	addBool := func(name string, v types.Bool) {
+		if attribute.IsDefined(v) {
+			value := "0"
+			if v.ValueBool() {
+				value = "1"
+			}
 
-		crsDataParams = append(crsDataParams, fmt.Sprintf("ha-rebalance-on-start=%s", haRebalanceOnStart))
+			crsDataParams = append(crsDataParams, fmt.Sprintf("%s=%s", name, value))
+		}
+	}
+	addInt64 := func(name string, v types.Int64) {
+		if attribute.IsDefined(v) {
+			crsDataParams = append(crsDataParams, fmt.Sprintf("%s=%d", name, v.ValueInt64()))
+		}
 	}
 
-	if len(crsDataParams) > 0 {
-		return strings.Join(crsDataParams, ",")
-	}
+	addString("ha", m.CrsHA)
+	addBool("ha-auto-rebalance", m.CrsHAAutoRebalance)
+	addInt64("ha-auto-rebalance-hold-duration", m.CrsHAAutoRebalanceHoldDuration)
+	addInt64("ha-auto-rebalance-margin", m.CrsHAAutoRebalanceMargin)
+	addString("ha-auto-rebalance-method", m.CrsHAAutoRebalanceMethod)
+	addInt64("ha-auto-rebalance-threshold", m.CrsHAAutoRebalanceThreshold)
+	addBool("ha-rebalance-on-start", m.CrsHARebalanceOnStart)
 
-	return ""
+	return strings.Join(crsDataParams, ",")
 }
 
 // bandwidthData returns bandwidth limit settings parameter string for API, if any of bandwidth
@@ -411,11 +426,22 @@ func (m *clusterOptionsModel) fromAPI(opts *cluster.OptionsResponseData) error {
 	}
 
 	if opts.ClusterResourceScheduling != nil {
-		m.CrsHARebalanceOnStart = types.BoolPointerValue(opts.ClusterResourceScheduling.HaRebalanceOnStart.PointerBool())
-		m.CrsHA = types.StringPointerValue(opts.ClusterResourceScheduling.HA)
+		crs := opts.ClusterResourceScheduling
+		m.CrsHA = types.StringPointerValue(crs.HA)
+		m.CrsHAAutoRebalance = types.BoolPointerValue(crs.HaAutoRebalance.PointerBool())
+		m.CrsHAAutoRebalanceHoldDuration = types.Int64PointerValue(crs.HaAutoRebalanceHoldDuration.PointerInt64())
+		m.CrsHAAutoRebalanceMargin = types.Int64PointerValue(crs.HaAutoRebalanceMargin.PointerInt64())
+		m.CrsHAAutoRebalanceMethod = types.StringPointerValue(crs.HaAutoRebalanceMethod)
+		m.CrsHAAutoRebalanceThreshold = types.Int64PointerValue(crs.HaAutoRebalanceThreshold.PointerInt64())
+		m.CrsHARebalanceOnStart = types.BoolPointerValue(crs.HaRebalanceOnStart.PointerBool())
 	} else {
-		m.CrsHARebalanceOnStart = types.BoolNull()
 		m.CrsHA = types.StringNull()
+		m.CrsHAAutoRebalance = types.BoolNull()
+		m.CrsHAAutoRebalanceHoldDuration = types.Int64Null()
+		m.CrsHAAutoRebalanceMargin = types.Int64Null()
+		m.CrsHAAutoRebalanceMethod = types.StringNull()
+		m.CrsHAAutoRebalanceThreshold = types.Int64Null()
+		m.CrsHARebalanceOnStart = types.BoolNull()
 	}
 
 	return nil
