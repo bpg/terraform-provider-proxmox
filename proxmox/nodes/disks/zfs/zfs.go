@@ -111,5 +111,5 @@ func (c *Client) Delete(ctx context.Context, name string, params *DeleteRequestP
 // isPoolNotFoundErr checks for PVE's ZFS "no such pool" HTTP 500 error, which the
 // generic API client does not map to ErrResourceDoesNotExist on its own.
 func isPoolNotFoundErr(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "no such pool")
+	return err != nil && strings.Contains(strings.ToLower(err.Error()), "no such pool")
 }
