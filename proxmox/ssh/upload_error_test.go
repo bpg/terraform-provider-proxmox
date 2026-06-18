@@ -151,6 +151,7 @@ func TestUploadFileSurfacesUnderlyingError(t *testing.T) {
 			if err != nil {
 				t.Fatalf("temp file: %v", err)
 			}
+			defer tmp.Close()
 
 			if _, err = tmp.WriteString("#cloud-config\n"); err != nil {
 				t.Fatalf("write temp file: %v", err)
