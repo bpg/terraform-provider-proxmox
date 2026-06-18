@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // ConfigGetResponseBody contains the body from a config get response.
@@ -39,7 +41,8 @@ type ConfigGetResponseData struct {
 	// Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.
 	Digest *string `json:"digest,omitempty"`
 	// Initial delay in seconds, before starting all the Virtual Guests with on-boot enabled.
-	StartAllOnbootDelay *int `json:"startall-onboot-delay,omitempty"`
+	// PVE serializes this as a string when explicitly set, so use CustomInt to accept both forms.
+	StartAllOnbootDelay *types.CustomInt `json:"startall-onboot-delay,omitempty"`
 	// Node specific wake on LAN settings.
 	WakeOnLan *WakeOnLandConfig `json:"wakeonlan,omitempty"`
 }
