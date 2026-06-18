@@ -63,6 +63,8 @@ type DatastoreGetResponseData struct {
 	SubDirectory           *string                         `json:"subdir,omitempty"                   url:"subdir,omitempty"`
 	MaxProtectedBackups    *types.CustomInt64              `json:"max-protected-backups,omitempty"    url:"max-protected-backups,omitempty"`
 	PruneBackups           *string                         `json:"prune-backups,omitempty"            url:"prune-backups,omitempty"`
+	CreateBasePath         *types.CustomBool               `json:"create-base-path,omitempty"         url:"create-base-path,omitempty,int"`
+	CreateSubdirs          *types.CustomBool               `json:"create-subdirs,omitempty"           url:"create-subdirs,omitempty,int"`
 }
 
 type DatastoreCreateResponse struct {
@@ -85,10 +87,12 @@ type DataStoreCommonImmutableFields struct {
 }
 
 type DataStoreCommonMutableFields struct {
-	ContentTypes *types.CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`
-	Nodes        *types.CustomCommaSeparatedList `json:"nodes,omitempty"   url:"nodes,omitempty,comma"`
-	Disable      *types.CustomBool               `json:"disable,omitempty" url:"disable,omitempty,int"`
-	Shared       *types.CustomBool               `json:"shared,omitempty"  url:"shared,omitempty,int"`
+	ContentTypes   *types.CustomCommaSeparatedList `json:"content,omitempty"          url:"content,omitempty,comma"`
+	Nodes          *types.CustomCommaSeparatedList `json:"nodes,omitempty"            url:"nodes,omitempty,comma"`
+	Disable        *types.CustomBool               `json:"disable,omitempty"          url:"disable,omitempty,int"`
+	Shared         *types.CustomBool               `json:"shared,omitempty"           url:"shared,omitempty,int"`
+	CreateBasePath *types.CustomBool               `json:"create-base-path,omitempty" url:"create-base-path,omitempty,int"`
+	CreateSubdirs  *types.CustomBool               `json:"create-subdirs,omitempty"   url:"create-subdirs,omitempty,int"`
 }
 
 // DataStoreWithBackups holds optional retention settings for backups.

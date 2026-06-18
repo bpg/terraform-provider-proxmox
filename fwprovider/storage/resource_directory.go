@@ -67,6 +67,7 @@ func (r *directoryStorageResource) Schema(_ context.Context, _ resource.SchemaRe
 
 	factory := newStorageSchemaFactory()
 	factory.WithAttributes(attributes)
+	factory.WithDirCreationOptions()
 	factory.WithDescription("Manages directory-based storage in Proxmox VE.")
 	factory.WithBackupBlock()
 	resp.Schema = *factory.Schema

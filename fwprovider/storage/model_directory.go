@@ -18,6 +18,7 @@ import (
 // DirectoryStorageModel maps the Terraform schema for directory storage.
 type DirectoryStorageModel struct {
 	modelBase
+	modelDirOptions
 
 	Path          types.String `tfsdk:"path"`
 	Preallocation types.String `tfsdk:"preallocation"`
@@ -39,6 +40,8 @@ func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (any, er
 	request.Path = m.Path.ValueStringPointer()
 	request.Preallocation = m.Preallocation.ValueStringPointer()
 	request.Shared = proxmoxtypes.CustomBoolPtr(m.Shared.ValueBoolPointer())
+	request.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
+	request.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
@@ -61,6 +64,8 @@ func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (any, er
 
 	request.Preallocation = m.Preallocation.ValueStringPointer()
 	request.Shared = proxmoxtypes.CustomBoolPtr(m.Shared.ValueBoolPointer())
+	request.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
+	request.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
@@ -78,6 +83,8 @@ func (m *DirectoryStorageModel) fromAPI(ctx context.Context, datastore *storage.
 	if err := m.populateBaseFromAPI(ctx, datastore); err != nil {
 		return err
 	}
+
+	m.populateFromAPI(datastore)
 
 	if datastore.Path != nil {
 		m.Path = types.StringValue(*datastore.Path)
