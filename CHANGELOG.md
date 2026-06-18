@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.110.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.109.0...v0.110.0) (2026-06-18)
+
+
+### Features
+
+* **cluster:** add dynamic crs ha scheduler and auto-rebalance options ([#2940](https://github.com/bpg/terraform-provider-proxmox/issues/2940)) ([1b14b39](https://github.com/bpg/terraform-provider-proxmox/commit/1b14b39de0c174cf9b9f11bf9322b2ab61b64cee))
+* **file:** add ImportState to `proxmox_virtual_environment_download_file` ([#2938](https://github.com/bpg/terraform-provider-proxmox/issues/2938)) ([e7a1032](https://github.com/bpg/terraform-provider-proxmox/commit/e7a1032ca8340597c027fe3ea0b479035b3409a3))
+* **storage:** add `options` parameter for proxmox_storage_cifs resource ([#2947](https://github.com/bpg/terraform-provider-proxmox/issues/2947)) ([e152990](https://github.com/bpg/terraform-provider-proxmox/commit/e152990cdea28898c0055d77fd06ee356d162d97))
+* **storage:** add create_base_path and create_subdirs base options for cifs,nfs,dir storage resources ([#2949](https://github.com/bpg/terraform-provider-proxmox/issues/2949)) ([c1262fd](https://github.com/bpg/terraform-provider-proxmox/commit/c1262fd3c73dd326de42b67a459d9b86f70b8a34))
+
+
+### Bug Fixes
+
+* **core:** surface underlying error on SSH file transfer failure ([#2956](https://github.com/bpg/terraform-provider-proxmox/issues/2956)) ([45d73a6](https://github.com/bpg/terraform-provider-proxmox/commit/45d73a6e3511de6ea82d8e97b6bc9a0ac7cc7dab))
+* **node:** accept string-typed startall-onboot-delay in node config ([#2957](https://github.com/bpg/terraform-provider-proxmox/issues/2957)) ([87b7992](https://github.com/bpg/terraform-provider-proxmox/commit/87b7992cbb73ddf28cf532e528601ec2ee5b9a34))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (68cb6d6 → 87a41d2) ([#2941](https://github.com/bpg/terraform-provider-proxmox/issues/2941)) ([b5dafd8](https://github.com/bpg/terraform-provider-proxmox/commit/b5dafd84c96e45c6ff573faf8339f1bc4d82c731))
+* **deps:** update module golang.org/x/crypto (v0.52.0 → v0.53.0) ([#2942](https://github.com/bpg/terraform-provider-proxmox/issues/2942)) ([5bedef1](https://github.com/bpg/terraform-provider-proxmox/commit/5bedef142033fb8112dca06fcd983931f6a7daa1))
+* **deps:** update module golang.org/x/net (v0.55.0 → v0.56.0) ([#2943](https://github.com/bpg/terraform-provider-proxmox/issues/2943)) ([804860f](https://github.com/bpg/terraform-provider-proxmox/commit/804860f6252a27d9d032517235589c0283d18cb8))
+
 ## [0.109.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.108.0...v0.109.0) (2026-06-06)
 
 
