@@ -141,7 +141,6 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
    PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
    ```
 
-<<<<<<< HEAD
   Some tests require multi node cluster, a ZFS datastore and a spare disk to run. To include these (otherwise skipped) tests add additional configuration corresponding to the cluster.
 
   ```env
