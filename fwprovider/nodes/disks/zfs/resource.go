@@ -52,7 +52,7 @@ type zfsPoolResource struct {
 
 // Metadata defines the resource type name.
 func (r *zfsPoolResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "proxmox_disk_zfs"
+	resp.TypeName = "proxmox_node_disk_zfs"
 }
 
 // Schema defines the schema for the resource.

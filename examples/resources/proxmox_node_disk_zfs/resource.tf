@@ -1,4 +1,4 @@
-resource "proxmox_disk_zfs" "example" {
+resource "proxmox_node_disk_zfs" "example" {
   node_name = "pve"
   name      = "tank"
   devices   = ["/dev/sdb", "/dev/sdc"]
