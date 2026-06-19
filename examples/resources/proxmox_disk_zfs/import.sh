@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 # ZFS pools can be imported using the format `node_name/pool_name`, e.g.:
-terraform import proxmox_disks_zfs.example pve/tank
+terraform import proxmox_disk_zfs.example pve/tank

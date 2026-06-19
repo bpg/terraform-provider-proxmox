@@ -1,20 +1,20 @@
 ---
 layout: page
-title: proxmox_disks_zfs
+title: proxmox_disk_zfs
 parent: Resources
 subcategory: Virtual Environment
 description: |-
   Manages a ZFS pool (zpool) on a Proxmox VE node.
 ---
 
-# Resource: proxmox_disks_zfs
+# Resource: proxmox_disk_zfs
 
 Manages a ZFS pool (zpool) on a Proxmox VE node.
 
 ## Example Usage
 
 ```terraform
-resource "proxmox_disks_zfs" "example" {
+resource "proxmox_disk_zfs" "example" {
   node_name = "pve"
   name      = "tank"
   devices   = ["/dev/sdb", "/dev/sdc"]
@@ -85,7 +85,7 @@ Import is supported using the following syntax:
 ```shell
 #!/usr/bin/env sh
 # ZFS pools can be imported using the format `node_name/pool_name`, e.g.:
-terraform import proxmox_disks_zfs.example pve/tank
+terraform import proxmox_disk_zfs.example pve/tank
 ```
 
 ~> **Note on import:** The write-only attributes `devices`, `raidlevel`, `ashift`, `compression`, `draid_config`, and `add_storage` cannot be reconstructed from the Proxmox API and must be added to the configuration manually after import. Once added, the next `terraform apply` will record them in state without replacing the pool.

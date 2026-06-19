@@ -36,7 +36,7 @@ func TestAccResourceDiskZFS(t *testing.T) {
 		{"create and read back", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_disks_zfs" "test" {
+				resource "proxmox_disk_zfs" "test" {
 					node_name     = "{{.NodeName}}"
 					name          = "test-zpool"
 					devices       = ["{{.ZfsDisk}}"]
@@ -44,7 +44,7 @@ func TestAccResourceDiskZFS(t *testing.T) {
 					cleanup_disks = true
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_disks_zfs.test", map[string]string{
+					test.ResourceAttributes("proxmox_disk_zfs.test", map[string]string{
 						"node_name": te.NodeName,
 						"name":      "test-zpool",
 						"raidlevel": "single",
@@ -56,7 +56,7 @@ func TestAccResourceDiskZFS(t *testing.T) {
 		{"update cleanup flags in-place", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_disks_zfs" "test" {
+				resource "proxmox_disk_zfs" "test" {
 					node_name     = "{{.NodeName}}"
 					name          = "test-zpool"
 					devices       = ["{{.ZfsDisk}}"]
@@ -66,7 +66,7 @@ func TestAccResourceDiskZFS(t *testing.T) {
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_disks_zfs" "test" {
+				resource "proxmox_disk_zfs" "test" {
 					node_name      = "{{.NodeName}}"
 					name           = "test-zpool"
 					devices        = ["{{.ZfsDisk}}"]
@@ -75,7 +75,7 @@ func TestAccResourceDiskZFS(t *testing.T) {
 					cleanup_disks  = true
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_disks_zfs.test", map[string]string{
+					test.ResourceAttributes("proxmox_disk_zfs.test", map[string]string{
 						"cleanup_config": "true",
 						"cleanup_disks":  "true",
 					}),
@@ -87,7 +87,7 @@ func TestAccResourceDiskZFS(t *testing.T) {
 		{"import", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_disks_zfs" "test" {
+				resource "proxmox_disk_zfs" "test" {
 					node_name     = "{{.NodeName}}"
 					name          = "test-zpool"
 					devices       = ["{{.ZfsDisk}}"]
@@ -96,7 +96,7 @@ func TestAccResourceDiskZFS(t *testing.T) {
 				}`),
 			},
 			{
-				ResourceName:  "proxmox_disks_zfs.test",
+				ResourceName:  "proxmox_disk_zfs.test",
 				ImportState:   true,
 				ImportStateId: te.NodeName + "/test-zpool",
 				// Write-only attributes (devices, raidlevel) cannot be reconstructed from the API.
@@ -105,7 +105,7 @@ func TestAccResourceDiskZFS(t *testing.T) {
 			{
 				// After import + providing write-only values in config, plan must be empty (no replace).
 				Config: te.RenderConfig(`
-				resource "proxmox_disks_zfs" "test" {
+				resource "proxmox_disk_zfs" "test" {
 					node_name     = "{{.NodeName}}"
 					name          = "test-zpool"
 					devices       = ["{{.ZfsDisk}}"]
