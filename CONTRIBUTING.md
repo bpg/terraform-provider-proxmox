@@ -143,11 +143,11 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
 
 Some tests require multi node cluster, a ZFS datastore and a spare disk to run. To include these (otherwise skipped) tests add additional configuration corresponding to the cluster.
 
-  ```env
-  PROXMOX_VE_ACC_NODE_2_NAME="pve2"
-  PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
-  PROXMOX_VE_ACC_ZFS_DISK="/dev/sdb"  # spare disk for proxmox_node_disk_zfs tests — will be fully wiped
-  ```
+```env
+PROXMOX_VE_ACC_NODE_2_NAME="pve2"
+PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
+PROXMOX_VE_ACC_ZFS_DISK="/dev/sdb"  # spare disk for proxmox_node_disk_zfs tests — will be fully wiped
+```
 
 > [!NOTE]
 >
