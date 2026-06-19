@@ -544,7 +544,11 @@ func (c *client) uploadFile(
 
 	output, err := sshSession.CombinedOutput(cmd)
 	if err != nil {
-		return fmt.Errorf("error transferring file: %s", string(output))
+		if len(output) > 0 {
+			return fmt.Errorf("error transferring file: %w (output: %s)", err, string(output))
+		}
+
+		return fmt.Errorf("error transferring file: %w", err)
 	}
 
 	return nil

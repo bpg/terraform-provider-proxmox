@@ -18,6 +18,7 @@ import (
 // NFSStorageModel maps the Terraform schema for NFS storage.
 type NFSStorageModel struct {
 	modelBase
+	modelDirOptions
 
 	Server                 types.String `tfsdk:"server"`
 	Export                 types.String `tfsdk:"export"`
@@ -44,6 +45,8 @@ func (m *NFSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	request.Options = m.Options.ValueStringPointer()
 	request.Preallocation = m.Preallocation.ValueStringPointer()
 	request.SnapshotsAsVolumeChain = proxmoxtypes.CustomBool(m.SnapshotsAsVolumeChain.ValueBool())
+	request.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
+	request.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
@@ -65,6 +68,8 @@ func (m *NFSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 	}
 
 	request.Options = m.Options.ValueStringPointer()
+	request.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
+	request.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
@@ -82,6 +87,8 @@ func (m *NFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 	if err := m.populateBaseFromAPI(ctx, datastore); err != nil {
 		return err
 	}
+
+	m.populateFromAPI(datastore)
 
 	if datastore.Server != nil {
 		m.Server = types.StringValue(*datastore.Server)
