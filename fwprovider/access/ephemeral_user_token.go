@@ -145,6 +145,13 @@ func (r *ephemeralUserToken) Open(ctx context.Context, req ephemeral.OpenRequest
 		return
 	}
 
+	if r.client == nil {
+		resp.Diagnostics.AddError("Provider Not Configured",
+			"Cannot create ephemeral user token: provider client is nil.")
+
+		return
+	}
+
 	body := access.UserTokenCreateRequestBody{
 		Comment:      attribute.StringPtrFromValue(m.Comment),
 		PrivSeparate: proxmoxtypes.CustomBoolPtr(m.PrivSeparation.ValueBoolPointer()),
@@ -221,6 +228,17 @@ func (r *ephemeralUserToken) Close(ctx context.Context, req ephemeral.CloseReque
 		return
 	}
 
+	if len(data) == 0 {
+		return
+	}
+
+	if r.client == nil {
+		resp.Diagnostics.AddError("Provider Not Configured",
+			"Cannot revoke ephemeral user token: provider client is nil.")
+
+		return
+	}
+
 	var private ephemeralTokenPrivate
 
 	if err := json.Unmarshal(data, &private); err != nil {
@@ -259,4 +277,9 @@ func NewEphemeralUserTokenLong() ephemeral.EphemeralResource {
 
 func (r *ephemeralUserTokenLong) Metadata(_ context.Context, _ ephemeral.MetadataRequest, resp *ephemeral.MetadataResponse) {
 	resp.TypeName = "proxmox_virtual_environment_user_token"
+}
+
+func (r *ephemeralUserTokenLong) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
+	r.ephemeralUserToken.Schema(ctx, req, resp)
+	resp.Schema.DeprecationMessage = "Use proxmox_user_token instead. This resource will be removed in a future major release."
 }
