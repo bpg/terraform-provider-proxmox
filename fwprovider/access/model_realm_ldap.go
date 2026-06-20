@@ -264,7 +264,7 @@ func (m *realmLDAPModel) fromAPIResponse(data *access.RealmGetResponseData, diag
 	m.Server2 = types.StringPointerValue(data.Server2)
 	m.BindDN = types.StringPointerValue(data.BindDN)
 
-	// Note: bind_password is never returned by the API, preserve from state
+	// Note: bind_password is write-only and never returned by the API; leave null in state.
 
 	if data.UserAttr != nil {
 		m.UserAttr = types.StringPointerValue(data.UserAttr)

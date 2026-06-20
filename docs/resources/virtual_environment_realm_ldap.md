@@ -18,8 +18,8 @@ LDAP realms allow Proxmox to authenticate users against an LDAP directory servic
 
 ## Privileges Required
 
-| Path | Attribute |
-|-----------------|----------------|
+| Path            | Attribute      |
+| --------------- | -------------- |
 | /access/domains | Realm.Allocate |
 
 ## Example Usage
@@ -63,8 +63,10 @@ resource "proxmox_virtual_environment_realm_ldap" "example" {
 
 ### Optional
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `bind_dn` (String) LDAP bind DN for authentication (e.g., 'cn=admin,dc=example,dc=com').
-- `bind_password` (String, Sensitive) Password for the bind DN. Note: stored in Proxmox but not returned by API.
+- `bind_password` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Password for the bind DN. Note: stored in Proxmox but not returned by API.
 - `ca_path` (String) Path to CA certificate file for SSL verification.
 - `case_sensitive` (Boolean) Enable case-sensitive username matching.
 - `cert_key_path` (String) Path to client certificate key.
@@ -108,9 +110,10 @@ terraform import proxmox_virtual_environment_realm_ldap.example example.com
 ### Password Security
 
 The `bind_password` is sent to Proxmox and stored securely, but it's never returned by the API. This means:
+
 - Terraform cannot detect if the password was changed outside of Terraform
 - You must maintain the password in your Terraform configuration or use a variable
-- The password will be marked as sensitive in Terraform state
+- The password is a write-only attribute and is **not stored in Terraform state** (requires Terraform/OpenTofu 1.11+)
 
 ### LDAP vs LDAPS
 
@@ -125,7 +128,9 @@ To trigger synchronization, use the `proxmox_virtual_environment_realm_sync` res
 ### Common Configuration Scenarios
 
 #### Anonymous Binding
+
 For testing or public LDAP servers, omit `bind_dn` and `bind_password` to use anonymous binding:
+
 ```hcl
 resource "proxmox_virtual_environment_realm_ldap" "anonymous" {
   realm     = "public-ldap"
@@ -136,6 +141,7 @@ resource "proxmox_virtual_environment_realm_ldap" "anonymous" {
 ```
 
 #### Secure LDAPS with Failover
+
 ```hcl
 resource "proxmox_virtual_environment_realm_ldap" "secure" {
   realm         = "secure-ldap"
@@ -152,6 +158,7 @@ resource "proxmox_virtual_environment_realm_ldap" "secure" {
 ```
 
 #### With Group Synchronization
+
 ```hcl
 resource "proxmox_virtual_environment_realm_ldap" "with_groups" {
   realm                 = "corporate-ldap"
@@ -177,4 +184,3 @@ resource "proxmox_virtual_environment_realm_ldap" "with_groups" {
 - [Proxmox VE User Management](https://pve.proxmox.com/wiki/User_Management)
 - [Proxmox VE LDAP Authentication](https://pve.proxmox.com/wiki/User_Management#pveum_ldap)
 - [Proxmox API: /access/domains](https://pve.proxmox.com/pve-docs/api-viewer/index.html#/access/domains)
-

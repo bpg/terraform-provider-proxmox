@@ -34,9 +34,11 @@ resource "proxmox_acme_account" "example" {
 
 ### Optional
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `directory` (String) The URL of the ACME CA directory endpoint.
-- `eab_hmac_key` (String, Sensitive) The HMAC key for External Account Binding.
-- `eab_kid` (String, Sensitive) The Key Identifier for External Account Binding.
+- `eab_hmac_key` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The HMAC key for External Account Binding.
+- `eab_kid` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The Key Identifier for External Account Binding.
 - `name` (String) The ACME account config file name.
 - `tos` (String) The URL of CA TermsOfService - setting this indicates agreement.
 

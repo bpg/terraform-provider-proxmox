@@ -38,6 +38,8 @@ However, we will try to maintain backward compatibility between provider version
 - [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 9.x
 - TLS 1.3 for the Proxmox API endpoint (legacy TLS 1.2 is optionally supported)
 - [Terraform](https://www.terraform.io/downloads.html) 1.5+ or [OpenTofu](https://opentofu.org) 1.6+
+  - Terraform 1.11+ / OpenTofu 1.11+ required for resources with write-only arguments
+    (e.g. `proxmox_storage_cifs`, `proxmox_storage_pbs`)
 
 ### Development Requirements
 

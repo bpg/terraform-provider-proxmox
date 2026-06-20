@@ -104,6 +104,29 @@ func TestAccRealmLDAP(t *testing.T) {
 					}),
 				),
 			},
+			// Verify bind_password is write-only: set in config, must not appear in state.
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_realm_ldap" "test" {
+						realm         = "test-realm.local"
+						server1       = "ldap2.example.com"
+						base_dn       = "dc=example,dc=com"
+						user_attr     = "uid"
+						secure        = false
+						verify        = false
+						comment       = "Updated test realm"
+						bind_dn       = "cn=admin,dc=example,dc=com"
+						bind_password = "secret"
+					}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_realm_ldap.test", map[string]string{
+						"bind_dn": "cn=admin,dc=example,dc=com",
+					}),
+					// Write-only: value must not be persisted to state.
+					test.NoResourceAttributesSet("proxmox_realm_ldap.test", []string{"bind_password"}),
+				),
+			},
 		},
 	})
 }

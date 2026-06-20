@@ -101,11 +101,9 @@ func (r *realmLDAPResource) Schema(
 				Description: "Password for the bind DN. Note: stored in Proxmox but not returned by API.",
 				Optional:    true,
 				Sensitive:   true,
+				WriteOnly:   true,
 				Validators: []validator.String{
 					stringvalidator.AlsoRequires(path.MatchRoot("bind_dn")),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"user_attr": schema.StringAttribute{

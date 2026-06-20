@@ -77,11 +77,14 @@ func TestAccResourceACMEAccount(t *testing.T) {
 					}`, test.WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_acme_account.test_account_eab", map[string]string{
-						"name":         fmt.Sprintf("%s-eab", accountName),
-						"directory":    "https://acme-staging-v02.api.letsencrypt.org/directory",
-						"tos":          "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf",
-						"eab_hmac_key": "test-hmac-key",
-						"eab_kid":      "test-kid",
+						"name":      fmt.Sprintf("%s-eab", accountName),
+						"directory": "https://acme-staging-v02.api.letsencrypt.org/directory",
+						"tos":       "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf",
+					}),
+					// Write-only fields must not be stored in state.
+					test.NoResourceAttributesSet("proxmox_acme_account.test_account_eab", []string{
+						"eab_hmac_key",
+						"eab_kid",
 					}),
 				),
 			},

@@ -162,6 +162,19 @@ func TestAccRealmOpenID(t *testing.T) {
 					}),
 				),
 			},
+			// Step 5: Verify client_key is write-only: set in config, must not appear in state.
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_realm_openid" "test" {
+						realm      = "test-oidc"
+						issuer_url = "https://accounts.google.com"
+						client_id  = "test-client-id"
+						client_key = "super-secret-key"
+						comment    = "Cleaned OpenID realm"
+					}
+				`),
+				Check: test.NoResourceAttributesSet("proxmox_realm_openid.test", []string{"client_key"}),
+			},
 		},
 	})
 }

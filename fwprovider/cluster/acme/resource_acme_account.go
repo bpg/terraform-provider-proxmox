@@ -109,6 +109,7 @@ func (r *acmeAccountResource) Schema(
 				Description: "The HMAC key for External Account Binding.",
 				Optional:    true,
 				Sensitive:   true,
+				WriteOnly:   true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -117,6 +118,7 @@ func (r *acmeAccountResource) Schema(
 				Description: "The Key Identifier for External Account Binding.",
 				Optional:    true,
 				Sensitive:   true,
+				WriteOnly:   true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
+	proxmoxstorage "github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 )
 
 func TestPBSStorageModel_FromAPI_EncryptionKeyFingerprint(t *testing.T) {
@@ -40,7 +40,7 @@ func TestPBSStorageModel_FromAPI_EncryptionKeyFingerprint(t *testing.T) {
 			GeneratedEncryptionKey:   types.StringUnknown(),
 		}
 
-		err := model.fromAPI(ctx, &storage.DatastoreGetResponseData{
+		err := model.fromAPI(ctx, &proxmoxstorage.DatastoreGetResponseData{
 			ID:            &storageID,
 			Server:        &server,
 			Datastore:     &datastore,
@@ -70,7 +70,7 @@ func TestPBSStorageModel_FromAPI_EncryptionKeyFingerprint(t *testing.T) {
 			GeneratedEncryptionKey:   types.StringUnknown(),
 		}
 
-		err := model.fromAPI(ctx, &storage.DatastoreGetResponseData{
+		err := model.fromAPI(ctx, &proxmoxstorage.DatastoreGetResponseData{
 			ID:        &storageID,
 			Server:    &server,
 			Datastore: &datastore,
@@ -81,4 +81,30 @@ func TestPBSStorageModel_FromAPI_EncryptionKeyFingerprint(t *testing.T) {
 		require.True(t, model.EncryptionKeyFingerprint.IsNull(),
 			"EncryptionKeyFingerprint should be null when no encryption key, got: %s", model.EncryptionKeyFingerprint)
 	})
+}
+
+func TestPBSStorageModel_toCreateAPIRequest_IncludesPassword(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	m := &PBSStorageModel{
+		modelBase: modelBase{
+			ID:           types.StringValue("pbs-test"),
+			Nodes:        types.SetNull(types.StringType),
+			ContentTypes: types.SetNull(types.StringType),
+		},
+		Server:    types.StringValue("pbs.example.com"),
+		Datastore: types.StringValue("backup1"),
+		Username:  types.StringValue("user@pbs"),
+		Password:  types.StringValue("mypassword"),
+	}
+
+	result, err := m.toCreateAPIRequest(ctx)
+	require.NoError(t, err)
+
+	req, ok := result.(proxmoxstorage.PBSStorageCreateRequest)
+	require.True(t, ok)
+	require.NotNil(t, req.Password, "Password must be present in create request")
+	require.Equal(t, "mypassword", *req.Password)
 }
