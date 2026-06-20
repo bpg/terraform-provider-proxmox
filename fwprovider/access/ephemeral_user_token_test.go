@@ -20,7 +20,43 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
+	proxmoxaccess "github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	proxmoxapi "github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
+
+// rootAccessClient returns an access client authenticated with the root user
+// credentials from the test environment. Used for verification in tests that
+// use WithRootUser() provider config, where te.AccessClient() (API-token-based)
+// would lack permission to manage root@pam tokens.
+func rootAccessClient(t *testing.T) *proxmoxaccess.Client {
+	t.Helper()
+
+	username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME")
+	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+
+	if username == "" || password == "" || endpoint == "" {
+		t.Skip("PROXMOX_VE_USERNAME, PROXMOX_VE_PASSWORD, and PROXMOX_VE_ENDPOINT must be set")
+	}
+
+	creds, err := proxmoxapi.NewCredentials(username, password, "", "", "", "")
+	if err != nil {
+		t.Fatalf("failed to build root credentials: %v", err)
+	}
+
+	conn, err := proxmoxapi.NewConnection(endpoint, true, "")
+	if err != nil {
+		t.Fatalf("failed to build connection: %v", err)
+	}
+
+	client, err := proxmoxapi.NewClient(creds, conn)
+	if err != nil {
+		t.Fatalf("failed to build API client: %v", err)
+	}
+
+	return &proxmoxaccess.Client{Client: client}
+}
 
 func TestAccEphemeralUserToken_AutoRevoke(t *testing.T) {
 	t.Parallel()
@@ -54,13 +90,11 @@ func TestAccEphemeralUserToken_AutoRevoke(t *testing.T) {
 				`, test.WithRootUser()),
 				Check: func(*terraform.State) error {
 					// Close() was called at end of apply → token must be gone.
-					_, err := te.AccessClient().GetUserToken(
-						context.Background(), "root@pam", tokenName,
-					)
+					_, err := rootAccessClient(t).GetUserToken(context.Background(), "root@pam", tokenName)
 					if err == nil {
 						return fmt.Errorf("token %q still exists after apply — Close() did not revoke it", tokenName)
 					}
-					// Any error from the API means the token is gone; that's the expected outcome.
+
 					return nil
 				},
 			},
@@ -81,7 +115,7 @@ func TestAccEphemeralUserToken_NoAutoRevoke(t *testing.T) {
 
 	// Register cleanup before the steps so interrupted runs don't leave stale tokens.
 	t.Cleanup(func() {
-		_ = te.AccessClient().DeleteUserToken(context.Background(), "root@pam", tokenName)
+		_ = rootAccessClient(t).DeleteUserToken(context.Background(), "root@pam", tokenName)
 	})
 
 	resource.Test(t, resource.TestCase{
@@ -104,7 +138,7 @@ func TestAccEphemeralUserToken_NoAutoRevoke(t *testing.T) {
 				`, test.WithRootUser()),
 				Check: func(*terraform.State) error {
 					// Close() ran but skipped deletion → token must still exist.
-					_, err := te.AccessClient().GetUserToken(context.Background(), "root@pam", tokenName)
+					_, err := rootAccessClient(t).GetUserToken(context.Background(), "root@pam", tokenName)
 					if err != nil {
 						return fmt.Errorf("token %q was deleted unexpectedly — auto_revoke=false should leave it: %w", tokenName, err)
 					}
