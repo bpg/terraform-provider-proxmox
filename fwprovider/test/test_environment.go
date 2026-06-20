@@ -48,6 +48,7 @@ type Environment struct {
 	Node2Name      string
 	DatastoreID    string
 	ZfsDatastoreID string
+	ZfsDisk        string
 
 	AccProviders          map[string]func() (tfprotov6.ProviderServer, error)
 	once                  sync.Once
@@ -156,6 +157,7 @@ func InitEnvironment(t *testing.T) *Environment {
 	const datastoreID = "local"
 
 	zfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_ZFS_DATASTORE_ID")
+	zfsDisk := utils.GetAnyStringEnv("PROXMOX_VE_ACC_ZFS_DISK")
 
 	cloudImagesServer := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CLOUD_IMAGES_SERVER")
 	if cloudImagesServer == "" {
@@ -177,11 +179,13 @@ func InitEnvironment(t *testing.T) *Environment {
 			"ContainerImagesServer": containerImagesServer,
 			"TestName":              sanitizeTemplateName(t.Name()),
 			"ZfsDatastoreID":        zfsDatastoreID,
+			"ZfsDisk":               zfsDisk,
 		},
 		NodeName:              nodeName,
 		Node2Name:             node2Name,
 		DatastoreID:           datastoreID,
 		ZfsDatastoreID:        zfsDatastoreID,
+		ZfsDisk:               zfsDisk,
 		CloudImagesServer:     cloudImagesServer,
 		ContainerImagesServer: containerImagesServer,
 

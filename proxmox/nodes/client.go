@@ -15,6 +15,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/ceph"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/disks"
 	nodefirewall "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/hardware"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
@@ -84,6 +85,11 @@ func (c *Client) Hardware() *hardware.Client {
 	return &hardware.Client{
 		Client: c,
 	}
+}
+
+// Disks returns a client for managing node disk resources (ZFS, LVM, etc.).
+func (c *Client) Disks() *disks.Client {
+	return &disks.Client{Client: c}
 }
 
 // Firewall returns a client for managing the node firewall.

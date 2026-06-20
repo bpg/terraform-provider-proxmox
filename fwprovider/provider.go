@@ -47,6 +47,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/clonedvm"
 	nodeconfig "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
+	diskzfs "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/disks/zfs"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/file"
 	nodefirewall "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/firewall"
 	nodeHardware "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/hardware"
@@ -583,6 +584,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		cephpool.NewCephPoolResource,
 		clonedvm.NewResource,
 		clonedvm.NewShortResource,
+		diskzfs.NewZFSPoolResource,
 		ha.NewHAGroupResource,
 		ha.NewHAGroupShortResource, // proxmox_hagroup
 		ha.NewHAResourceResource,
