@@ -30,19 +30,35 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 
 ### Optional
 
+- `agent` (Attributes) Configure the QEMU guest agent. The agent enables the hypervisor to communicate with the guest OS for operations like graceful shutdown, IP address retrieval, and file system freeze. (see [below for nested schema](#nestedatt--agent))
 - `cdrom` (Attributes Map) The CD-ROM configuration. The key is the interface of the CD-ROM, could be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces. (see [below for nested schema](#nestedatt--cdrom))
+- `clone` (Attributes) Clone an existing VM as the base for this VM. All fields cause replacement when changed. (see [below for nested schema](#nestedatt--clone))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `delete_unreferenced_disks_on_destroy` (Boolean) Set to true to delete unreferenced disks on destroy (defaults to `true`).
 - `description` (String) The description of the VM.
 - `id` (Number) The unique identifier of the VM in the Proxmox cluster.
+- `initialization` (Attributes) The cloud-init initialization configuration. (see [below for nested schema](#nestedatt--initialization))
+- `memory` (Attributes) Memory configuration for the VM. Uses Proxmox memory ballooning to allow dynamic memory allocation. The `size` sets the total available RAM, while `balloon` sets the guaranteed floor. The host can reclaim memory between these values when needed. (see [below for nested schema](#nestedatt--memory))
 - `name` (String) The name of the VM. Doesn't have to be unique.
+- `network_device` (Attributes List) Network device configurations. (see [below for nested schema](#nestedatt--network_device))
 - `purge_on_destroy` (Boolean) Set to true to purge the VM from backup configurations on destroy (defaults to `true`).
 - `rng` (Attributes) Configure the RNG (Random Number Generator) device. The RNG device provides entropy to guests to ensure good quality random numbers for guest applications that require them. Can only be set by `root@pam.` See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for more information. (see [below for nested schema](#nestedatt--rng))
+- `started` (Boolean) Whether the VM should be running. The VM is started after creation and after configuration updates when true.
 - `stop_on_destroy` (Boolean) Set to true to stop (rather than shutdown) the VM on destroy (defaults to `false`).
 - `tags` (Set of String) The tags assigned to the VM.
 - `template` (Boolean) Set to true to create a VM template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 - `vga` (Attributes) Configure the VGA Hardware. If you want to use high resolution modes (>= 1280x1024x16) you may need to increase the vga memory option. Since QEMU 2.9 the default VGA display type is `std` for all OS types besides some Windows versions (XP and older) which use `cirrus`. The `qxl` option enables the SPICE display server. For win* OS you can select how many independent displays you want, Linux guests can add displays themself. You can also run without any graphic card, using a serial device as terminal. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information and available configuration parameters. (see [below for nested schema](#nestedatt--vga))
+
+<a id="nestedatt--agent"></a>
+### Nested Schema for `agent`
+
+Optional:
+
+- `enabled` (Boolean) Whether the QEMU guest agent is enabled.
+- `trim` (Boolean) Whether to run fstrim after cloning or moving a disk.
+- `type` (String) Guest agent channel type.
+
 
 <a id="nestedatt--cdrom"></a>
 ### Nested Schema for `cdrom`
@@ -50,6 +66,21 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 Optional:
 
 - `file_id` (String) The file ID of the CD-ROM, or `cdrom|none`. Defaults to `cdrom` (i.e. empty CD-ROM drive — `cdrom` is PVE's literal "no media inserted" storage path). Use `none` to leave the CD-ROM unplugged, or a storage path like `local:iso/debian.iso` to insert an image.
+
+
+<a id="nestedatt--clone"></a>
+### Nested Schema for `clone`
+
+Required:
+
+- `vm_id` (Number) The VM ID of the source VM to clone.
+
+Optional:
+
+- `datastore_id` (String) The storage location for the clone's disks.
+- `full` (Boolean) Whether to create a full clone rather than a linked clone. Defaults to `true`.
+- `node_name` (String) The node where the source VM resides. Defaults to the target node if not specified.
+- `retries` (Number) The number of retries if the clone operation fails due to transient errors.
 
 
 <a id="nestedatt--cpu"></a>
@@ -67,6 +98,91 @@ Optional:
 - `type` (String) Emulated CPU type, it's recommended to use `x86-64-v2-AES` or higher. See [the PVE admin guide](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for the full list of supported types.
 - `units` (Number) CPU weight for a VM. Argument is used in the kernel fair scheduler. The larger the number is, the more CPU time this VM gets. Number is relative to weights of all the other running VMs. On cgroup v2 `0` is a valid value meaning disable CPU share weighting.
 - `vcpus` (Number) Number of vCPUs started with the VM, bounded by `cores * sockets`. Matches the PVE Processors → **VCPUs** field. Leave unset to start with `cores * sockets` vCPUs. Requires PVE hotplug feature enabled to change at runtime.
+
+
+<a id="nestedatt--initialization"></a>
+### Nested Schema for `initialization`
+
+Optional:
+
+- `dns` (Attributes) DNS configuration applied via cloud-init. (see [below for nested schema](#nestedatt--initialization--dns))
+- `ip_config` (Attributes List) IP configuration per network interface (up to 8). The first entry maps to `ipconfig0`, the second to `ipconfig1`, etc. (see [below for nested schema](#nestedatt--initialization--ip_config))
+- `meta_data_file_id` (String) The file ID of a custom cloud-init meta data snippet.
+- `network_data_file_id` (String) The file ID of a custom cloud-init network configuration snippet.
+- `type` (String) The cloud-init configuration format. Defaults to the format inferred from the OS type.
+- `upgrade` (Boolean) Whether to run package upgrades on the first boot.
+- `user_account` (Attributes) Cloud-init user account configuration. (see [below for nested schema](#nestedatt--initialization--user_account))
+- `user_data_file_id` (String) The file ID of a custom cloud-init user data snippet.
+- `vendor_data_file_id` (String) The file ID of a custom cloud-init vendor data snippet.
+
+<a id="nestedatt--initialization--dns"></a>
+### Nested Schema for `initialization.dns`
+
+Optional:
+
+- `domain` (String) The DNS search domain.
+- `servers` (List of String) List of DNS server IP addresses.
+
+
+<a id="nestedatt--initialization--ip_config"></a>
+### Nested Schema for `initialization.ip_config`
+
+Optional:
+
+- `ipv4_address` (String) IPv4 address in CIDR notation, or "dhcp".
+- `ipv4_gateway` (String) Default IPv4 gateway.
+- `ipv6_address` (String) IPv6 address in CIDR notation, "dhcp", or "auto".
+- `ipv6_gateway` (String) Default IPv6 gateway.
+
+
+<a id="nestedatt--initialization--user_account"></a>
+### Nested Schema for `initialization.user_account`
+
+Optional:
+
+- `keys` (List of String) SSH public keys to add to the default user's authorized_keys file.
+- `password` (String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The login password for the default user. This is a write-only field: the value is applied to Proxmox during apply but is never stored in Terraform state.
+- `username` (String) The default user to configure.
+
+
+
+<a id="nestedatt--memory"></a>
+### Nested Schema for `memory`
+
+Optional:
+
+- `balloon` (Number) Minimum guaranteed memory in MiB via balloon device. This is the floor amount of RAM that is always guaranteed to the VM. Setting to `0` disables the balloon driver entirely. 
+
+**How it works:** The host can reclaim memory between `balloon` and `size` when under memory pressure. The VM is guaranteed to always have at least `balloon` MiB available.
+- `hugepages` (String) Enable hugepages for VM memory allocation. Hugepages can improve performance for memory-intensive workloads by reducing TLB misses. 
+
+**Options:**
+- `2` - Use 2 MiB hugepages
+- `1024` - Use 1 GiB hugepages
+- `any` - Use any available hugepage size
+- `keep_hugepages` (Boolean) Don't release hugepages when the VM shuts down. By default, hugepages are released back to the host when the VM stops. Setting this to `true` keeps them allocated for faster VM startup.
+- `shares` (Number) CPU scheduler priority for memory ballooning. This is used by the kernel fair scheduler. Higher values mean this VM gets more CPU time during memory ballooning operations. The value is relative to other running VMs.
+- `size` (Number) Total memory available to the VM in MiB. This is the total RAM the VM can use. When ballooning is enabled (balloon > 0), memory between `balloon` and `size` can be reclaimed by the host. When ballooning is disabled (balloon = 0), this is the fixed amount of RAM allocated to the VM. Defaults to PVE's implicit `512` MiB when unset.
+
+
+<a id="nestedatt--network_device"></a>
+### Nested Schema for `network_device`
+
+Required:
+
+- `model` (String) The network device model.
+
+Optional:
+
+- `bridge` (String) The bridge to attach the network device to (e.g. `vmbr0`).
+- `disconnected` (Boolean) Whether the network cable is disconnected.
+- `firewall` (Boolean) Whether the Proxmox firewall is enabled on this network device.
+- `mac_address` (String) The MAC address of the network device. PVE generates one when not provided.
+- `mtu` (Number) The MTU for the network device. Only valid for `virtio` model.
+- `queues` (Number) The number of packet queues. Only valid for `virtio` model.
+- `rate_limit` (Number) The rate limit in megabytes per second.
+- `trunks` (List of Number) List of VLAN IDs passed through the network device.
+- `vlan_id` (Number) The VLAN identifier assigned to the network device.
 
 
 <a id="nestedatt--rng"></a>

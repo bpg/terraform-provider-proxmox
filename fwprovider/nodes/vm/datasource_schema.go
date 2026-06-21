@@ -14,8 +14,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/agent"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/initialization"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/memory"
+	network_device "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/network_device"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
@@ -31,8 +35,12 @@ func (d *Datasource) Schema(
 		DeprecationMessage: migration.DeprecationMessage("proxmox_vm"),
 		Description:        "Retrieves information about a specific VM.",
 		Attributes: map[string]schema.Attribute{
-			"cdrom": cdrom.DataSourceSchema(),
-			"cpu":   cpu.DataSourceSchema(),
+			"agent":          agent.DataSourceSchema(),
+			"cdrom":          cdrom.DataSourceSchema(),
+			"cpu":            cpu.DataSourceSchema(),
+			"initialization": initialization.DataSourceSchema(),
+			"memory":         memory.DataSourceSchema(),
+			"network_device": network_device.DataSourceSchema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
 				Computed:    true,
@@ -50,6 +58,10 @@ func (d *Datasource) Schema(
 				Required:    true,
 			},
 			"rng": rng.DataSourceSchema(),
+			"started": schema.BoolAttribute{
+				Description: "Whether the VM is currently running.",
+				Computed:    true,
+			},
 			"status": schema.StringAttribute{
 				Description: "The status of the VM (e.g., `running`, `stopped`).",
 				Computed:    true,

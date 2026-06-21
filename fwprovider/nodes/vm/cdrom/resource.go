@@ -8,6 +8,7 @@ package cdrom
 
 import (
 	"context"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -26,9 +27,16 @@ type Value = types.Map
 // non-null empty Map would produce a permanent plan-vs-state diff now that the map-level
 // schema is Optional only (per ADR-004 §Provider Defaults vs PVE Defaults).
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
-	// find storage devices with media=cdrom
+	// find storage devices with media=cdrom, excluding PVE-managed cloud-init drives.
+	// Cloud-init drives have a FileVolume starting with "data:" (internal cloudinit format)
+	// or containing "cloudinit" in the volume name. They are managed by the initialization
+	// block, not the cdrom block.
 	cdroms := config.StorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
-		return device.Media != nil && *device.Media == "cdrom"
+		if device.Media == nil || *device.Media != "cdrom" {
+			return false
+		}
+
+		return !strings.HasPrefix(device.FileVolume, "data:") && !strings.Contains(device.FileVolume, "cloudinit")
 	})
 
 	if len(cdroms) == 0 {
