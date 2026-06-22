@@ -59,10 +59,14 @@ resource "proxmox_realm_openid" "example" {
 
 ### Optional
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `acr_values` (String) Authentication Context Class Reference values for the OpenID provider.
 - `audiences` (String) Audiences that the OpenID Issuer may include that are accepted for the client (comma-separated).
 - `autocreate` (Boolean) Automatically create users on the Proxmox cluster if they do not exist.
 - `client_key` (String, Sensitive) OpenID Connect Client Key (secret). Note: stored in Proxmox but not returned by API.
+- `client_key_wo` (String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) OpenID Connect Client Key (secret), supplied as a [write-only argument](https://developer.hashicorp.com/terraform/language/resources/ephemeral/write-only) so it is never stored in Terraform state or plan. Requires Terraform 1.11+. Mutually exclusive with `client_key`. Pair with `client_key_wo_version` to push a rotated secret.
+- `client_key_wo_version` (Number) Version counter for `client_key_wo`. Because write-only values are not stored in state, Terraform cannot detect when `client_key_wo` changes; increment this value to signal a rotation and force the new secret to be sent.
 - `comment` (String) Description of the realm.
 - `default` (Boolean) Use this realm as the default for login.
 - `groups_autocreate` (Boolean) Automatically create groups from claims rather than using existing Proxmox VE groups.
@@ -98,6 +102,30 @@ The `client_key` is sent to Proxmox and stored securely, but it's never returned
 - Terraform cannot detect if the client key was changed outside of Terraform
 - You must maintain the client key in your Terraform configuration or use a variable
 - The client key will be marked as sensitive in Terraform state
+
+#### Write-Only Client Key
+
+Because the client key is never read back, persisting it in state serves no drift-detection purpose. To keep the
+secret out of state entirely, use the write-only `client_key_wo` attribute instead of `client_key`. It requires
+Terraform 1.11+ (or OpenTofu 1.10+) and is mutually exclusive with `client_key`.
+
+Since write-only values are invisible to Terraform's diff, changing `client_key_wo` alone has no effect. Pair it
+with `client_key_wo_version` and increment that counter to push a rotated secret to Proxmox.
+
+```hcl
+ephemeral "vault_kv_secret_v2" "sso" {
+  mount = "example"
+  name  = "proxmox/sso"
+}
+
+resource "proxmox_realm_openid" "entra" {
+  realm                 = "sso"
+  issuer_url            = "https://login.microsoftonline.com/<tenant>/v2.0"
+  client_id             = var.oidc_client_id
+  client_key_wo         = ephemeral.vault_kv_secret_v2.sso.data["client_secret"]
+  client_key_wo_version = 1
+}
+```
 
 ### Username Claim
 

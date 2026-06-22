@@ -15,26 +15,30 @@ import (
 )
 
 type realmOpenIDModel struct {
-	ID               types.String `tfsdk:"id"`
-	Realm            types.String `tfsdk:"realm"`
-	IssuerURL        types.String `tfsdk:"issuer_url"`
-	ClientID         types.String `tfsdk:"client_id"`
-	ClientKey        types.String `tfsdk:"client_key"`
-	AutoCreate       types.Bool   `tfsdk:"autocreate"`
-	UsernameClaim    types.String `tfsdk:"username_claim"`
-	GroupsClaim      types.String `tfsdk:"groups_claim"`
-	GroupsAutocreate types.Bool   `tfsdk:"groups_autocreate"`
-	GroupsOverwrite  types.Bool   `tfsdk:"groups_overwrite"`
-	Scopes           types.String `tfsdk:"scopes"`
-	Prompt           types.String `tfsdk:"prompt"`
-	ACRValues        types.String `tfsdk:"acr_values"`
-	Audiences        types.String `tfsdk:"audiences"`
-	QueryUserinfo    types.Bool   `tfsdk:"query_userinfo"`
-	Comment          types.String `tfsdk:"comment"`
-	Default          types.Bool   `tfsdk:"default"`
+	ID        types.String `tfsdk:"id"`
+	Realm     types.String `tfsdk:"realm"`
+	IssuerURL types.String `tfsdk:"issuer_url"`
+	ClientID  types.String `tfsdk:"client_id"`
+	ClientKey types.String `tfsdk:"client_key"`
+	// Write-only client secret; never persisted to state. Read via req.Config.
+	ClientKeyWO types.String `tfsdk:"client_key_wo"`
+	// Change-detection trigger for the write-only ClientKeyWO; bump to force a resend.
+	ClientKeyWOVersion types.Int64  `tfsdk:"client_key_wo_version"`
+	AutoCreate         types.Bool   `tfsdk:"autocreate"`
+	UsernameClaim      types.String `tfsdk:"username_claim"`
+	GroupsClaim        types.String `tfsdk:"groups_claim"`
+	GroupsAutocreate   types.Bool   `tfsdk:"groups_autocreate"`
+	GroupsOverwrite    types.Bool   `tfsdk:"groups_overwrite"`
+	Scopes             types.String `tfsdk:"scopes"`
+	Prompt             types.String `tfsdk:"prompt"`
+	ACRValues          types.String `tfsdk:"acr_values"`
+	Audiences          types.String `tfsdk:"audiences"`
+	QueryUserinfo      types.Bool   `tfsdk:"query_userinfo"`
+	Comment            types.String `tfsdk:"comment"`
+	Default            types.Bool   `tfsdk:"default"`
 }
 
-func (m *realmOpenIDModel) toCreateRequest() *access.RealmCreateRequestBody {
+func (m *realmOpenIDModel) toCreateRequest(clientKeyWO types.String) *access.RealmCreateRequestBody {
 	req := &access.RealmCreateRequestBody{
 		Realm:     m.Realm.ValueString(),
 		Type:      "openid",
@@ -42,7 +46,12 @@ func (m *realmOpenIDModel) toCreateRequest() *access.RealmCreateRequestBody {
 		ClientID:  m.ClientID.ValueStringPointer(),
 	}
 
-	if !m.ClientKey.IsNull() {
+	// client_key (state-persisted) and client_key_wo (write-only) are mutually
+	// exclusive (enforced by ConfigValidators); prefer the write-only value.
+	switch {
+	case !clientKeyWO.IsNull():
+		req.ClientKey = clientKeyWO.ValueStringPointer()
+	case !m.ClientKey.IsNull():
 		req.ClientKey = m.ClientKey.ValueStringPointer()
 	}
 
@@ -97,7 +106,7 @@ func (m *realmOpenIDModel) toCreateRequest() *access.RealmCreateRequestBody {
 	return req
 }
 
-func (m *realmOpenIDModel) toUpdateRequest(state *realmOpenIDModel) *access.RealmUpdateRequestBody {
+func (m *realmOpenIDModel) toUpdateRequest(state *realmOpenIDModel, clientKeyWO types.String) *access.RealmUpdateRequestBody {
 	req := &access.RealmUpdateRequestBody{}
 	var toDelete []string
 
@@ -110,8 +119,16 @@ func (m *realmOpenIDModel) toUpdateRequest(state *realmOpenIDModel) *access.Real
 		req.ClientID = m.ClientID.ValueStringPointer()
 	}
 
+	// Client key: when supplied via the write-only client_key_wo, resend it on every
+	// update (write-only values are invisible to diffs, so rotation is driven by the
+	// client_key_wo_version bump). Otherwise diff the state-tracked client_key.
+	if !clientKeyWO.IsNull() {
+		req.ClientKey = clientKeyWO.ValueStringPointer()
+	} else {
+		updateStringAttribute(&req.ClientKey, m.ClientKey, state.ClientKey, &toDelete, "client-key")
+	}
+
 	// Optional fields: support unsetting using the API's `delete` parameter.
-	updateStringAttribute(&req.ClientKey, m.ClientKey, state.ClientKey, &toDelete, "client-key")
 	updateStringAttribute(&req.Scopes, m.Scopes, state.Scopes, &toDelete, "scopes")
 	updateStringAttribute(&req.Prompt, m.Prompt, state.Prompt, &toDelete, "prompt")
 	updateStringAttribute(&req.ACRValues, m.ACRValues, state.ACRValues, &toDelete, "acr-values")

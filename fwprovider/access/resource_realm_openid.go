@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -20,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
@@ -29,9 +32,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = (*realmOpenIDResource)(nil)
-	_ resource.ResourceWithConfigure   = (*realmOpenIDResource)(nil)
-	_ resource.ResourceWithImportState = (*realmOpenIDResource)(nil)
+	_ resource.Resource                     = (*realmOpenIDResource)(nil)
+	_ resource.ResourceWithConfigure        = (*realmOpenIDResource)(nil)
+	_ resource.ResourceWithImportState      = (*realmOpenIDResource)(nil)
+	_ resource.ResourceWithConfigValidators = (*realmOpenIDResource)(nil)
 )
 
 type realmOpenIDResource struct {
@@ -91,6 +95,25 @@ func (r *realmOpenIDResource) Schema(
 				Sensitive:   true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"client_key_wo": schema.StringAttribute{
+				Description: "OpenID Connect Client Key (secret), supplied as a write-only argument.",
+				MarkdownDescription: "OpenID Connect Client Key (secret), supplied as a " +
+					"[write-only argument](https://developer.hashicorp.com/terraform/language/resources/ephemeral/write-only) " +
+					"so it is never stored in Terraform state or plan. Requires Terraform 1.11+. " +
+					"Mutually exclusive with `client_key`. Pair with `client_key_wo_version` to push a rotated secret.",
+				Optional:  true,
+				WriteOnly: true,
+			},
+			"client_key_wo_version": schema.Int64Attribute{
+				Description: "Version counter for client_key_wo.",
+				MarkdownDescription: "Version counter for `client_key_wo`. Because write-only values are not stored in " +
+					"state, Terraform cannot detect when `client_key_wo` changes; increment this value to signal a rotation " +
+					"and force the new secret to be sent.",
+				Optional: true,
+				Validators: []validator.Int64{
+					int64validator.AlsoRequires(path.MatchRoot("client_key_wo")),
 				},
 			},
 			"autocreate": schema.BoolAttribute{
@@ -179,6 +202,16 @@ func (r *realmOpenIDResource) Configure(
 	r.client = cfg.Client
 }
 
+// ConfigValidators enforces mutual exclusion between client_key and its write-only sibling.
+func (r *realmOpenIDResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		resourcevalidator.Conflicting(
+			path.MatchRoot("client_key"),
+			path.MatchRoot("client_key_wo"),
+		),
+	}
+}
+
 func (r *realmOpenIDResource) Create(
 	ctx context.Context,
 	req resource.CreateRequest,
@@ -192,7 +225,16 @@ func (r *realmOpenIDResource) Create(
 		return
 	}
 
-	createReq := plan.toCreateRequest()
+	// Write-only client_key_wo is present only in config, never in plan or state.
+	var clientKeyWO types.String
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("client_key_wo"), &clientKeyWO)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	createReq := plan.toCreateRequest(clientKeyWO)
 
 	err := r.client.Access().CreateRealm(ctx, createReq)
 	if err != nil {
@@ -265,7 +307,6 @@ func (r *realmOpenIDResource) readOpenID(
 	return nil
 }
 
-//nolint:dupl
 func (r *realmOpenIDResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,
@@ -281,7 +322,16 @@ func (r *realmOpenIDResource) Update(
 		return
 	}
 
-	updateReq := plan.toUpdateRequest(&state)
+	// Write-only client_key_wo is present only in config, never in plan or state.
+	var clientKeyWO types.String
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("client_key_wo"), &clientKeyWO)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateReq := plan.toUpdateRequest(&state, clientKeyWO)
 
 	err := r.client.Access().UpdateRealm(ctx, plan.Realm.ValueString(), updateReq)
 	if err != nil {
