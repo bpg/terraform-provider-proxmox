@@ -65,7 +65,7 @@ resource "proxmox_realm_openid" "example" {
 - `audiences` (String) Audiences that the OpenID Issuer may include that are accepted for the client (comma-separated).
 - `autocreate` (Boolean) Automatically create users on the Proxmox cluster if they do not exist.
 - `client_key` (String, Sensitive) OpenID Connect Client Key (secret). Note: stored in Proxmox but not returned by API.
-- `client_key_wo` (String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) OpenID Connect Client Key (secret), supplied as a [write-only argument](https://developer.hashicorp.com/terraform/language/resources/ephemeral/write-only) so it is never stored in Terraform state or plan. Requires Terraform 1.11+. Mutually exclusive with `client_key`. Pair with `client_key_wo_version` to push a rotated secret.
+- `client_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) OpenID Connect Client Key (secret), supplied as a [write-only argument](https://developer.hashicorp.com/terraform/language/resources/ephemeral/write-only) so it is never stored in Terraform state or plan. Requires Terraform 1.11+. Mutually exclusive with `client_key`. Pair with `client_key_wo_version` to push a rotated secret.
 - `client_key_wo_version` (Number) Version counter for `client_key_wo`. Because write-only values are not stored in state, Terraform cannot detect when `client_key_wo` changes; increment this value to signal a rotation and force the new secret to be sent.
 - `comment` (String) Description of the realm.
 - `default` (Boolean) Use this realm as the default for login.

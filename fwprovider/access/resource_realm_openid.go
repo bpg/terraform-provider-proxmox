@@ -104,6 +104,7 @@ func (r *realmOpenIDResource) Schema(
 					"so it is never stored in Terraform state or plan. Requires Terraform 1.11+. " +
 					"Mutually exclusive with `client_key`. Pair with `client_key_wo_version` to push a rotated secret.",
 				Optional:  true,
+				Sensitive: true,
 				WriteOnly: true,
 			},
 			"client_key_wo_version": schema.Int64Attribute{
