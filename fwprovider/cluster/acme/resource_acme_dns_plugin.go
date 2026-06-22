@@ -179,9 +179,13 @@ func (r *acmePluginResource) Create(ctx context.Context, req resource.CreateRequ
 	data := make(plugins.DNSPluginData)
 
 	if !dataWO.IsNull() {
-		dataWO.ElementsAs(ctx, &data, false)
+		resp.Diagnostics.Append(dataWO.ElementsAs(ctx, &data, false)...)
 	} else {
-		plan.Data.ElementsAs(ctx, &data, false)
+		resp.Diagnostics.Append(plan.Data.ElementsAs(ctx, &data, false)...)
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	createRequest.Data = &data
@@ -294,13 +298,17 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	switch {
 	case !dataWO.IsNull():
-		dataWO.ElementsAs(ctx, &data, false)
+		resp.Diagnostics.Append(dataWO.ElementsAs(ctx, &data, false)...)
 		updateRequest.Data = &data
 	case !plan.Data.IsNull():
-		plan.Data.ElementsAs(ctx, &data, false)
+		resp.Diagnostics.Append(plan.Data.ElementsAs(ctx, &data, false)...)
 		updateRequest.Data = &data
 	case !state.Data.IsNull():
 		toDelete = append(toDelete, "data")
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	updateRequest.Digest = plan.Digest.ValueString()
