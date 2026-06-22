@@ -205,7 +205,7 @@ func TestAccResourceACMEDNSPluginWriteOnly(t *testing.T) {
 						"digest",
 					}),
 					// Write-only data_wo must never be persisted to state, and the
-					// deprecated data mirror must stay empty when data_wo is used.
+					// data mirror must stay empty when data_wo is used.
 					resource.TestCheckNoResourceAttr("proxmox_acme_dns_plugin.test_plugin_wo", "data_wo.%"),
 					resource.TestCheckNoResourceAttr("proxmox_acme_dns_plugin.test_plugin_wo", "data.%"),
 					// Behavioral proof: the write-only value actually reached the API
@@ -215,6 +215,55 @@ func TestAccResourceACMEDNSPluginWriteOnly(t *testing.T) {
 						"CF_API_KEY":   "test-api-key",
 					}),
 				),
+			},
+		}},
+		{"data_wo_version triggers rotation", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_rotate" {
+						plugin = "{{.PluginName}}-rotate"
+						api = "cf"
+						data_wo = {
+							"CF_API_KEY" = "old-key"
+						}
+						data_wo_version = 1
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_acme_dns_plugin.test_plugin_rotate", "data_wo_version", "1"),
+					testCheckACMEPluginDataStored(te, fmt.Sprintf("%s-rotate", pluginName), map[string]string{
+						"CF_API_KEY": "old-key",
+					}),
+				),
+			},
+			{
+				// Rotate the secret: new data_wo value + bumped version. The version
+				// bump is what produces a diff (write-only values are invisible to TF).
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_rotate" {
+						plugin = "{{.PluginName}}-rotate"
+						api = "cf"
+						data_wo = {
+							"CF_API_KEY" = "new-key"
+						}
+						data_wo_version = 2
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_acme_dns_plugin.test_plugin_rotate", "data_wo_version", "2"),
+					testCheckACMEPluginDataStored(te, fmt.Sprintf("%s-rotate", pluginName), map[string]string{
+						"CF_API_KEY": "new-key",
+					}),
+				),
+			},
+		}},
+		{"data_wo_version requires data_wo", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_noversion" {
+						plugin = "{{.PluginName}}-noversion"
+						api = "cf"
+						data_wo_version = 1
+					}`),
+				ExpectError: regexp.MustCompile(`Attribute "data_wo" must be specified when "data_wo_version" is specified`),
 			},
 		}},
 		{"data and data_wo are mutually exclusive", []resource.TestStep{

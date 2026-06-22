@@ -74,10 +74,20 @@ func (r *acmePluginResource) Schema(
 			"data_wo": schema.MapAttribute{
 				Description: "DNS plugin data (write-only).",
 				MarkdownDescription: "DNS plugin data, supplied as a [write-only argument](https://developer.hashicorp.com/terraform/language/resources/ephemeral/write-only) " +
-					"so credentials are never stored in Terraform state. Requires Terraform 1.11+. Mutually exclusive with `data`.",
+					"so credentials are never stored in Terraform state. Requires Terraform 1.11+. Mutually exclusive with `data`. " +
+					"Pair with `data_wo_version` to push rotated values.",
 				Optional:    true,
 				WriteOnly:   true,
 				ElementType: types.StringType,
+			},
+			"data_wo_version": schema.Int64Attribute{
+				Description: "Version counter for data_wo.",
+				MarkdownDescription: "Version counter for `data_wo`. Because write-only values are not stored in state, Terraform cannot " +
+					"detect when `data_wo` changes; increment this value to signal a rotation and force the new `data_wo` to be sent.",
+				Optional: true,
+				Validators: []validator.Int64{
+					int64validator.AlsoRequires(path.MatchRoot("data_wo")),
+				},
 			},
 			"digest": schema.StringAttribute{
 				Description: "SHA1 digest of the current configuration.",
