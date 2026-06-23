@@ -40,6 +40,10 @@ type acmePluginModel struct {
 type acmePluginCreateModel struct {
 	baseACMEPluginModel
 
+	// Write-only DNS plugin data; never persisted to state. Read via req.Config.
+	DataWO types.Map `tfsdk:"data_wo"`
+	// Change-detection trigger for the write-only DataWO; bump to force a resend.
+	DataWOVersion types.Int64 `tfsdk:"data_wo_version"`
 	// Flag to disable the config
 	Disable types.Bool `tfsdk:"disable"`
 }

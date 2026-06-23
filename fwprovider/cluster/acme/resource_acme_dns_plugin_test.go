@@ -12,11 +12,14 @@
 package acme_test
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
@@ -166,5 +169,155 @@ func TestAccResourceACMEDNSPlugin(t *testing.T) {
 				Steps:                    tt.step,
 			})
 		})
+	}
+}
+
+func TestAccResourceACMEDNSPluginWriteOnly(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+	pluginName := test.SafeResourceName("test-plugin-wo")
+	te.AddTemplateVars(map[string]interface{}{
+		"PluginName": pluginName,
+	})
+
+	tests := []struct {
+		name string
+		step []resource.TestStep
+	}{
+		{"data_wo keeps secrets out of state", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_wo" {
+						plugin = "{{.PluginName}}"
+						api = "cf"
+						data_wo = {
+							"CF_API_EMAIL" = "test@example.com"
+							"CF_API_KEY"   = "test-api-key"
+						}
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_acme_dns_plugin.test_plugin_wo", map[string]string{
+						"plugin": pluginName,
+						"api":    "cf",
+					}),
+					test.ResourceAttributesSet("proxmox_acme_dns_plugin.test_plugin_wo", []string{
+						"digest",
+					}),
+					// Write-only data_wo must never be persisted to state, and the
+					// data mirror must stay empty when data_wo is used.
+					resource.TestCheckNoResourceAttr("proxmox_acme_dns_plugin.test_plugin_wo", "data_wo.%"),
+					resource.TestCheckNoResourceAttr("proxmox_acme_dns_plugin.test_plugin_wo", "data.%"),
+					// Behavioral proof: the write-only value actually reached the API
+					// and was stored, even though it never lands in state.
+					testCheckACMEPluginDataStored(te, pluginName, map[string]string{
+						"CF_API_EMAIL": "test@example.com",
+						"CF_API_KEY":   "test-api-key",
+					}),
+				),
+			},
+		}},
+		{"data_wo_version triggers rotation", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_rotate" {
+						plugin = "{{.PluginName}}-rotate"
+						api = "cf"
+						data_wo = {
+							"CF_API_KEY" = "old-key"
+						}
+						data_wo_version = 1
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_acme_dns_plugin.test_plugin_rotate", "data_wo_version", "1"),
+					testCheckACMEPluginDataStored(te, fmt.Sprintf("%s-rotate", pluginName), map[string]string{
+						"CF_API_KEY": "old-key",
+					}),
+				),
+			},
+			{
+				// Rotate the secret: new data_wo value + bumped version. The version
+				// bump is what produces a diff (write-only values are invisible to TF).
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_rotate" {
+						plugin = "{{.PluginName}}-rotate"
+						api = "cf"
+						data_wo = {
+							"CF_API_KEY" = "new-key"
+						}
+						data_wo_version = 2
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_acme_dns_plugin.test_plugin_rotate", "data_wo_version", "2"),
+					testCheckACMEPluginDataStored(te, fmt.Sprintf("%s-rotate", pluginName), map[string]string{
+						"CF_API_KEY": "new-key",
+					}),
+				),
+			},
+		}},
+		{"data_wo_version requires data_wo", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_noversion" {
+						plugin = "{{.PluginName}}-noversion"
+						api = "cf"
+						data_wo_version = 1
+					}`),
+				ExpectError: regexp.MustCompile(`Attribute "data_wo" must be specified when "data_wo_version" is specified`),
+			},
+		}},
+		{"data and data_wo are mutually exclusive", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_conflict" {
+						plugin = "{{.PluginName}}-conflict"
+						api = "cf"
+						data = {
+							"CF_API_KEY" = "test-api-key"
+						}
+						data_wo = {
+							"CF_API_KEY" = "test-api-key"
+						}
+					}`),
+				ExpectError: regexp.MustCompile(`These attributes cannot be configured together: \[data,data_wo\]`),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				// Write-only attributes require Terraform 1.11+.
+				TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+					tfversion.SkipBelow(tfversion.Version1_11_0),
+				},
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.step,
+			})
+		})
+	}
+}
+
+// testCheckACMEPluginDataStored verifies, via a direct API read, that the plugin's
+// DNS data matches want. Used to prove write-only data_wo reaches the API even
+// though it is absent from Terraform state.
+func testCheckACMEPluginDataStored(te *test.Environment, pluginID string, want map[string]string) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		plugin, err := te.ClusterClient().ACME().Plugins().Get(context.Background(), pluginID)
+		if err != nil {
+			return fmt.Errorf("reading ACME plugin %q: %w", pluginID, err)
+		}
+
+		if plugin.Data == nil {
+			return fmt.Errorf("ACME plugin %q has no data; write-only data_wo was not stored", pluginID)
+		}
+
+		for k, v := range want {
+			if got := (*plugin.Data)[k]; got != v {
+				return fmt.Errorf("ACME plugin %q data[%q] = %q, want %q", pluginID, k, got, v)
+			}
+		}
+
+		return nil
 	}
 }

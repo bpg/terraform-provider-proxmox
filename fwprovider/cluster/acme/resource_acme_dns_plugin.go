@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -25,9 +26,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &acmePluginResource{}
-	_ resource.ResourceWithConfigure   = &acmePluginResource{}
-	_ resource.ResourceWithImportState = &acmePluginResource{}
+	_ resource.Resource                     = &acmePluginResource{}
+	_ resource.ResourceWithConfigure        = &acmePluginResource{}
+	_ resource.ResourceWithImportState      = &acmePluginResource{}
+	_ resource.ResourceWithConfigValidators = &acmePluginResource{}
 )
 
 // NewACMEPluginResource creates a new resource for managing ACME plugins.
@@ -68,6 +70,24 @@ func (r *acmePluginResource) Schema(
 				Description: "DNS plugin data.",
 				Optional:    true,
 				ElementType: types.StringType,
+			},
+			"data_wo": schema.MapAttribute{
+				Description: "DNS plugin data (write-only).",
+				MarkdownDescription: "DNS plugin data, supplied as a [write-only argument](https://developer.hashicorp.com/terraform/language/resources/ephemeral/write-only) " +
+					"so credentials are never stored in Terraform state. Requires Terraform 1.11+. Mutually exclusive with `data`. " +
+					"Pair with `data_wo_version` to push rotated values.",
+				Optional:    true,
+				WriteOnly:   true,
+				ElementType: types.StringType,
+			},
+			"data_wo_version": schema.Int64Attribute{
+				Description: "Version counter for data_wo.",
+				MarkdownDescription: "Version counter for `data_wo`. Because write-only values are not stored in state, Terraform cannot " +
+					"detect when `data_wo` changes; increment this value to signal a rotation and force the new `data_wo` to be sent.",
+				Optional: true,
+				Validators: []validator.Int64{
+					int64validator.AlsoRequires(path.MatchRoot("data_wo")),
+				},
 			},
 			"digest": schema.StringAttribute{
 				Description: "SHA1 digest of the current configuration.",
@@ -123,11 +143,30 @@ func (r *acmePluginResource) Configure(
 	r.client = cfg.Client.Cluster().ACME().Plugins()
 }
 
+// ConfigValidators enforces mutual exclusion between data and its write-only sibling.
+func (r *acmePluginResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		resourcevalidator.Conflicting(
+			path.MatchRoot("data"),
+			path.MatchRoot("data_wo"),
+		),
+	}
+}
+
 // Create creates a new ACME plugin on the Proxmox cluster.
 func (r *acmePluginResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan acmePluginCreateModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Write-only data_wo is only present in config, never in plan.
+	var dataWO types.Map
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("data_wo"), &dataWO)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -139,7 +178,15 @@ func (r *acmePluginResource) Create(ctx context.Context, req resource.CreateRequ
 	createRequest.API = plan.API.ValueString()
 	data := make(plugins.DNSPluginData)
 
-	plan.Data.ElementsAs(ctx, &data, false)
+	if !dataWO.IsNull() {
+		resp.Diagnostics.Append(dataWO.ElementsAs(ctx, &data, false)...)
+	} else {
+		resp.Diagnostics.Append(plan.Data.ElementsAs(ctx, &data, false)...)
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	createRequest.Data = &data
 	createRequest.Disable = plan.Disable.ValueBool()
@@ -199,14 +246,25 @@ func (r *acmePluginResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
+	// A freshly imported resource has only `plugin` set; `digest` is always populated
+	// by Create/Update, so a null digest means "imported, not yet reconciled" and we
+	// must hydrate the `data` attribute from the API for import to work.
+	imported := state.Digest.IsNull()
+
 	state.API = types.StringValue(plugin.API)
 	state.Digest = types.StringValue(plugin.Digest)
 	state.ValidationDelay = types.Int64Value(plugin.ValidationDelay)
 
-	mapValue, diags := types.MapValueFrom(ctx, types.StringType, plugin.Data)
-	resp.Diagnostics.Append(diags...)
+	// Mirror the API data back into the `data` attribute only when it is the source of
+	// truth (the `data` path, or import). When credentials were supplied via the
+	// write-only `data_wo`, `data` is null in state and must stay null; otherwise GET
+	// (which returns the stored data) would create a perpetual diff against null config.
+	if imported || !state.Data.IsNull() {
+		mapValue, diags := types.MapValueFrom(ctx, types.StringType, plugin.Data)
+		resp.Diagnostics.Append(diags...)
 
-	state.Data = mapValue
+		state.Data = mapValue
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -224,17 +282,33 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
+	// Write-only data_wo is only present in config, never in plan/state.
+	var dataWO types.Map
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("data_wo"), &dataWO)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	updateRequest := &plugins.ACMEPluginsUpdateRequestBody{}
 	updateRequest.API = plan.API.ValueString()
 
 	data := make(plugins.DNSPluginData)
 
-	plan.Data.ElementsAs(ctx, &data, false)
-
-	if plan.Data.IsNull() && !state.Data.IsNull() {
-		toDelete = append(toDelete, "data")
-	} else {
+	switch {
+	case !dataWO.IsNull():
+		resp.Diagnostics.Append(dataWO.ElementsAs(ctx, &data, false)...)
 		updateRequest.Data = &data
+	case !plan.Data.IsNull():
+		resp.Diagnostics.Append(plan.Data.ElementsAs(ctx, &data, false)...)
+		updateRequest.Data = &data
+	case !state.Data.IsNull():
+		toDelete = append(toDelete, "data")
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	updateRequest.Digest = plan.Digest.ValueString()

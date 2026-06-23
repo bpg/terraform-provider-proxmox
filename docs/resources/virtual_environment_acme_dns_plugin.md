@@ -36,7 +36,11 @@ resource "proxmox_virtual_environment_acme_dns_plugin" "example" {
 
 ### Optional
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `data` (Map of String) DNS plugin data.
+- `data_wo` (Map of String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) DNS plugin data, supplied as a [write-only argument](https://developer.hashicorp.com/terraform/language/resources/ephemeral/write-only) so credentials are never stored in Terraform state. Requires Terraform 1.11+. Mutually exclusive with `data`. Pair with `data_wo_version` to push rotated values.
+- `data_wo_version` (Number) Version counter for `data_wo`. Because write-only values are not stored in state, Terraform cannot detect when `data_wo` changes; increment this value to signal a rotation and force the new `data_wo` to be sent.
 - `digest` (String) SHA1 digest of the current configuration. Prevent changes if current configuration file has a different digest. This can be used to prevent concurrent modifications.
 - `disable` (Boolean) Flag to disable the config.
 - `validation_delay` (Number) Extra delay in seconds to wait before requesting validation. Allows to cope with a long TTL of DNS records (0 - 172800).
