@@ -161,6 +161,44 @@ Mark secret fields (tokens, passwords) as sensitive so Terraform redacts them:
 },
 ```
 
+### Write-Only Attributes
+
+`Sensitive: true` only redacts a value in CLI output — the secret is **still written to state**. For credentials that must never be persisted, use a write-only attribute (Terraform 1.11+). Write-only values are supplied in config, sent to the API, and then discarded; they are `null` in both plan and state.
+
+Pair the write-only attribute with a plain integer `*_version` counter. Because the value is absent from state, Terraform cannot detect when it changes and will not plan an update on its own; bumping the counter is what produces a diff and forces the new value to be re-sent (e.g. for credential rotation).
+
+```go
+"data_wo": schema.MapAttribute{
+    Optional:    true,
+    WriteOnly:   true,
+    ElementType: types.StringType,
+},
+"data_wo_version": schema.Int64Attribute{
+    Optional: true,
+    Validators: []validator.Int64{
+        // version is meaningless without the value it tracks
+        int64validator.AlsoRequires(path.MatchRoot("data_wo")),
+    },
+},
+```
+
+Conventions:
+
+- **Model placement.** The write-only field belongs only on the create/update model, as `types.Map` / `types.String`. The `*_version` counter is _not_ write-only — it is a plain `types.Int64` that **is** persisted to state (it is a counter, not a secret).
+- **Read from config, never plan/state.** Write-only attributes are nulled in plan and state, so `req.Plan.Get` / `req.State.Get` never return them. Read the value explicitly in `Create` and `Update`:
+
+  ```go
+  var dataWO types.Map
+  resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("data_wo"), &dataWO)...)
+  ```
+
+  Prefer the write-only value when present, falling back to the plaintext sibling: `if !dataWO.IsNull() { /* use dataWO */ } else { /* use plan.Data */ }`.
+
+- **Mutual exclusion with the plaintext sibling.** When a write-only attribute coexists with a plaintext equivalent (e.g. `data` / `data_wo`), make them conflicting via `ResourceWithConfigValidators` (see [Cross-Field Validation](#cross-field-validation)) using `resourcevalidator.Conflicting(...)`.
+- **Do not mirror the API value back into the plaintext attribute when the write-only path is the source of truth.** The API GET returns the stored secret; writing it into a plaintext attribute that the user left `null` produces a perpetual diff. Keep the plaintext attribute `null`. Hydrate it only on import, detected via an always-populated computed field (e.g. `imported := state.Digest.IsNull()` — `digest` is set by every Create/Update, so a null digest means "freshly imported").
+
+See `proxmox_acme_dns_plugin` for the canonical implementation. Acceptance tests for write-only attributes must gate on the Terraform version with `tfversion.SkipBelow(tfversion.Version1_11_0)` and prove the value reached the API with a direct API read (state assertions alone cannot, since the value is never in state) — see [ADR-006](006-testing-requirements.md).
+
 ### Attribute Descriptions
 
 Every schema attribute must have a non-empty `Description`. This text appears in Terraform CLI output (`terraform show`, `terraform plan`) and in auto-generated documentation.
