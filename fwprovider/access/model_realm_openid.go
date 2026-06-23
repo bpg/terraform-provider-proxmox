@@ -172,7 +172,7 @@ func (m *realmOpenIDModel) fromAPIResponse(data *access.RealmGetResponseData, di
 	m.IssuerURL = types.StringPointerValue(data.IssuerURL)
 	m.ClientID = types.StringPointerValue(data.ClientID)
 
-	// Note: client_key is never returned by the API, preserve from state
+	// Note: client_key is write-only and never returned by the API; leave null in state.
 
 	// Set optional string fields
 	m.UsernameClaim = types.StringPointerValue(data.UsernameClaim)

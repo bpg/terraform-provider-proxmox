@@ -23,8 +23,13 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/agent"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/clone"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/initialization"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/memory"
+	network_device "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/network_device"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -125,6 +130,13 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
+	// Snapshot plan values for Optional-only sub-blocks before create() or read()
+	// can overwrite them. Used below to restore them after read() in the clone case.
+	cloneWasUsed := !plan.Clone.IsNull() && !plan.Clone.IsUnknown()
+	planCPU := plan.CPU
+	planCDROM := plan.CDROM
+	planInit := plan.Initialization
+
 	r.create(ctx, plan, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
@@ -144,11 +156,27 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
+	// After clone, read() picks up template-inherited values for Optional-only attributes
+	// (e.g. cpu.sockets=1, cpu.numa=false, initialization keys/vendor). These contradict
+	// the plan (which had them null) and cause "inconsistent result after apply" errors.
+	// Restore plan snapshot so state matches the plan. The inherited values will be
+	// cleaned up on the next apply via FillUpdateBody's delete-on-null logic.
+	if cloneWasUsed {
+		plan.CPU = planCPU
+		plan.CDROM = planCDROM
+		plan.Initialization = planInit
+	}
+
 	// set state to the updated plan data
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
 func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnostics) {
+	if !plan.Clone.IsNull() && !plan.Clone.IsUnknown() {
+		r.createFromClone(ctx, plan, diags)
+		return
+	}
+
 	createBody := &vms.CreateRequestBody{
 		Description: plan.Description.ValueStringPointer(),
 		Name:        plan.Name.ValueStringPointer(),
@@ -157,8 +185,12 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	}
 
 	// fill out create body fields with values from other resource blocks
+	agent.FillCreateBody(ctx, plan.Agent, createBody, diags)
 	cdrom.FillCreateBody(ctx, plan.CDROM, createBody, diags)
 	cpu.FillCreateBody(ctx, plan.CPU, createBody, diags)
+	initialization.FillCreateBody(ctx, plan.Initialization, createBody, diags)
+	memory.FillCreateBody(ctx, plan.Memory, createBody, diags)
+	network_device.FillCreateBody(ctx, plan.NetworkDevice, createBody, diags)
 	rng.FillCreateBody(ctx, plan.RNG, createBody, diags)
 	vga.FillCreateBody(ctx, plan.VGA, createBody, diags)
 
@@ -173,12 +205,94 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 		return
 	}
 
+	r.postCreateVM(ctx, plan, diags)
+}
+
+// createFromClone clones an existing VM and applies the desired config via UpdateVM.
+func (r *Resource) createFromClone(ctx context.Context, plan Model, diags *diag.Diagnostics) {
+	targetNodeName := plan.NodeName.ValueString()
+	newVMID := int(plan.ID.ValueInt64())
+
+	sourceNodeName := clone.SourceNodeName(ctx, plan.Clone, targetNodeName, diags)
+	sourceVMID := clone.SourceVMID(ctx, plan.Clone, diags)
+	retries := clone.Retries(ctx, plan.Clone, diags)
+	cloneBody := clone.BuildCloneBody(ctx, plan.Clone, newVMID, diags)
+
+	if diags.HasError() {
+		return
+	}
+
+	// Set target node if cloning cross-node (PVE handles migration when target != source)
+	if sourceNodeName != targetNodeName {
+		cloneBody.TargetNodeName = &targetNodeName
+	}
+
+	tflog.Info(ctx, fmt.Sprintf("Cloning VM %d from %s/%d", newVMID, sourceNodeName, sourceVMID))
+
+	sourceVMAPI := r.client.Node(sourceNodeName).VM(sourceVMID)
+
+	if sourceVMAPI.CloneVM(ctx, retries, cloneBody).AddDiags(diags, fmt.Sprintf("Unable to Clone VM %d", newVMID)) {
+		return
+	}
+
+	// Wait for the cloned VM to become ready
+	targetVMAPI := r.client.Node(targetNodeName).VM(newVMID)
+
+	if err := targetVMAPI.WaitForVMConfigUnlock(ctx, true); err != nil {
+		diags.AddError(fmt.Sprintf("Unable to Clone VM %d", newVMID), err.Error())
+		return
+	}
+
+	// Apply the desired config on top of the cloned VM via UpdateVM
+	updateBody := &vms.CreateRequestBody{
+		Description: plan.Description.ValueStringPointer(),
+		Name:        plan.Name.ValueStringPointer(),
+		Tags:        plan.Tags.ValueStringPointer(ctx, diags),
+	}
+
+	agent.FillCreateBody(ctx, plan.Agent, updateBody, diags)
+	cdrom.FillCreateBody(ctx, plan.CDROM, updateBody, diags)
+	cpu.FillCreateBody(ctx, plan.CPU, updateBody, diags)
+	initialization.FillCreateBody(ctx, plan.Initialization, updateBody, diags)
+	memory.FillCreateBody(ctx, plan.Memory, updateBody, diags)
+	network_device.FillCreateBody(ctx, plan.NetworkDevice, updateBody, diags)
+	rng.FillCreateBody(ctx, plan.RNG, updateBody, diags)
+	vga.FillCreateBody(ctx, plan.VGA, updateBody, diags)
+
+	// For any Optional-only CPU attribute that is null in the plan, explicitly delete it
+	// so the template's inherited value does not persist and cause drift on subsequent plans.
+	// Only runs when the user set at least one CPU attribute (plan.CPU non-null).
+	if !plan.CPU.IsNull() && !plan.CPU.IsUnknown() {
+		cpu.AddCloneCleanupDeletes(ctx, plan.CPU, updateBody, diags)
+	}
+
+	if diags.HasError() {
+		return
+	}
+
+	if err := targetVMAPI.UpdateVM(ctx, updateBody); err != nil {
+		diags.AddError(fmt.Sprintf("Unable to Configure Cloned VM %d", newVMID), err.Error())
+		return
+	}
+
+	r.postCreateVM(ctx, plan, diags)
+}
+
+// postCreateVM handles common post-create actions: starting the VM and converting to template.
+func (r *Resource) postCreateVM(ctx context.Context, plan Model, diags *diag.Diagnostics) {
+	vmID := int(plan.ID.ValueInt64())
+	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(vmID)
+
+	// Start failure is a warning, not an error: the VM was created successfully.
+	// State is saved with started=false; the update path retries on the next apply.
+	if !plan.Started.IsNull() && !plan.Started.IsUnknown() && plan.Started.ValueBool() {
+		vmStart(ctx, vmAPI).AddDiagsAsWarnings(diags, fmt.Sprintf("Unable to Start VM %d", vmID))
+	}
+
 	// Convert to template if requested
 	if !plan.Template.IsNull() && plan.Template.ValueBool() {
-		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", plan.ID.ValueInt64()))
-
-		vmAPI = r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
-		vmAPI.ConvertToTemplate(ctx).AddDiags(diags, fmt.Sprintf("Unable to Convert VM %d to Template", plan.ID.ValueInt64()))
+		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
+		vmAPI.ConvertToTemplate(ctx).AddDiags(diags, fmt.Sprintf("Unable to Convert VM %d to Template", vmID))
 	}
 }
 
@@ -275,8 +389,12 @@ func (r *Resource) update(ctx context.Context, plan, state Model, diags *diag.Di
 	}
 
 	// fill out update body fields with values from other resource blocks
+	agent.FillUpdateBody(ctx, plan.Agent, state.Agent, updateBody, diags)
 	cdrom.FillUpdateBody(ctx, plan.CDROM, state.CDROM, updateBody, diags)
 	cpu.FillUpdateBody(ctx, plan.CPU, state.CPU, updateBody, diags)
+	initialization.FillUpdateBody(ctx, plan.Initialization, state.Initialization, updateBody, diags)
+	memory.FillUpdateBody(ctx, plan.Memory, state.Memory, updateBody, diags)
+	network_device.FillUpdateBody(ctx, plan.NetworkDevice, state.NetworkDevice, updateBody, diags)
 	rng.FillUpdateBody(ctx, plan.RNG, state.RNG, updateBody, diags)
 	vga.FillUpdateBody(ctx, plan.VGA, state.VGA, updateBody, diags)
 
@@ -288,6 +406,16 @@ func (r *Resource) update(ctx context.Context, plan, state Model, diags *diag.Di
 			diags.AddError(fmt.Sprintf("Unable to Update VM %d", plan.ID.ValueInt64()), err.Error())
 			return
 		}
+	}
+
+	// Handle started transitions
+	planStarted := !plan.Started.IsNull() && !plan.Started.IsUnknown() && plan.Started.ValueBool()
+	stateStarted := !state.Started.IsNull() && !state.Started.IsUnknown() && state.Started.ValueBool()
+
+	if planStarted && !stateStarted {
+		vmStart(ctx, vmAPI).AddDiags(diags, fmt.Sprintf("Unable to Start VM %d", plan.ID.ValueInt64()))
+	} else if !planStarted && !plan.Started.IsNull() && stateStarted {
+		vmShutdown(ctx, vmAPI).AddDiags(diags, fmt.Sprintf("Unable to Shutdown VM %d", plan.ID.ValueInt64()))
 	}
 
 	// Handle template conversion if the template flag changed to true
@@ -429,9 +557,35 @@ func (r *Resource) ImportState(
 	state.StopOnDestroy = types.BoolValue(false)
 	state.PurgeOnDestroy = types.BoolValue(true)
 	state.DeleteUnreferencedDisksOnDestroy = types.BoolValue(true)
+	// clone is write-only; imported VMs have no tracked clone origin.
+	state.Clone = clone.NullValue()
 
 	diags := resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
+}
+
+// Start the VM and wait for it to reach running status.
+func vmStart(ctx context.Context, vmAPI *vms.Client) tasks.TaskResult {
+	tflog.Debug(ctx, "Starting VM")
+
+	startTimeoutSec := 300
+	if dl, ok := ctx.Deadline(); ok {
+		startTimeoutSec = int(time.Until(dl).Seconds())
+	}
+
+	result := vmAPI.StartVM(ctx, startTimeoutSec)
+	if result.Err() != nil {
+		return result
+	}
+
+	if err := vmAPI.WaitForVMStatus(ctx, "running"); err != nil {
+		return tasks.TaskFailedWithWarnings(
+			fmt.Errorf("failed to wait for VM to start: %w", err),
+			result.Warnings(),
+		)
+	}
+
+	return result
 }
 
 // Shutdown the VM, then wait for it to actually shut down (it may not be shut down immediately if

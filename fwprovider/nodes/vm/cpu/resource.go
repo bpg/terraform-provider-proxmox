@@ -68,6 +68,43 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 	plan.toAPI(ctx, body, diags)
 }
 
+// AddCloneCleanupDeletes adds delete entries for Optional-only CPU attributes that are null
+// in the plan. Called after cloning (when the user set at least one CPU attribute) so that
+// PVE removes inherited template values the user did not set, preventing drift on subsequent plans.
+//
+// Restricted attributes (affinity, arch) and compound parameters (cpu type) are excluded
+// because they require root privileges or have special deletion semantics.
+func AddCloneCleanupDeletes(ctx context.Context, planValue Value, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
+	plan := unpackOrEmpty(ctx, planValue, diags)
+	if diags.HasError() {
+		return
+	}
+
+	if plan.Cores.IsNull() {
+		body.Delete = append(body.Delete, "cores")
+	}
+
+	if plan.Limit.IsNull() {
+		body.Delete = append(body.Delete, "cpulimit")
+	}
+
+	if plan.Numa.IsNull() {
+		body.Delete = append(body.Delete, "numa")
+	}
+
+	if plan.Sockets.IsNull() {
+		body.Delete = append(body.Delete, "sockets")
+	}
+
+	if plan.Units.IsNull() {
+		body.Delete = append(body.Delete, "cpuunits")
+	}
+
+	if plan.Vcpus.IsNull() {
+		body.Delete = append(body.Delete, "vcpus")
+	}
+}
+
 // FillUpdateBody fills the UpdateRequestBody with the CPU settings diff from state → plan.
 //
 // Each scalar CPU field is an independent top-level PVE API key (`affinity`, `arch`, `cores`,

@@ -19,7 +19,7 @@ OpenID Connect realms allow Proxmox to authenticate users against an external Op
 ## Privileges Required
 
 | Path            | Attribute      |
-|-----------------|----------------|
+| --------------- | -------------- |
 | /access/domains | Realm.Allocate |
 
 ## Example Usage
@@ -61,10 +61,12 @@ resource "proxmox_virtual_environment_realm_openid" "example" {
 
 ### Optional
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `acr_values` (String) Authentication Context Class Reference values for the OpenID provider.
 - `audiences` (String) Audiences that the OpenID Issuer may include that are accepted for the client (comma-separated).
 - `autocreate` (Boolean) Automatically create users on the Proxmox cluster if they do not exist.
-- `client_key` (String, Sensitive) OpenID Connect Client Key (secret). Note: stored in Proxmox but not returned by API.
+- `client_key` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) OpenID Connect Client Key (secret). Note: stored in Proxmox but not returned by API.
 - `comment` (String) Description of the realm.
 - `default` (Boolean) Use this realm as the default for login.
 - `groups_autocreate` (Boolean) Automatically create groups from claims rather than using existing Proxmox VE groups.
@@ -99,7 +101,7 @@ The `client_key` is sent to Proxmox and stored securely, but it's never returned
 
 - Terraform cannot detect if the client key was changed outside of Terraform
 - You must maintain the client key in your Terraform configuration or use a variable
-- The client key will be marked as sensitive in Terraform state
+- The client key is a write-only attribute and is **not stored in Terraform state** (requires Terraform/OpenTofu 1.11+)
 
 ### Username Claim
 

@@ -89,9 +89,7 @@ func (r *realmOpenIDResource) Schema(
 				Description: "OpenID Connect Client Key (secret). Note: stored in Proxmox but not returned by API.",
 				Optional:    true,
 				Sensitive:   true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				WriteOnly:   true,
 			},
 			"autocreate": schema.BoolAttribute{
 				Description: "Automatically create users on the Proxmox cluster if they do not exist.",

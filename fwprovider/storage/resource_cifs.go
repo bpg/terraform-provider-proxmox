@@ -65,6 +65,7 @@ func (r *cifsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest
 			Description: "The password for authenticating with the SMB/CIFS server.",
 			Required:    true,
 			Sensitive:   true,
+			WriteOnly:   true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},

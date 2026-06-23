@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -558,6 +559,10 @@ func (p *proxmoxProvider) Configure(
 	resp.DataSourceData = config.DataSource{
 		Client: client,
 	}
+
+	resp.EphemeralResourceData = config.DataSource{
+		Client: client,
+	}
 }
 
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
@@ -739,6 +744,13 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		replication.NewShortDataSource,
 		replication.NewReplicationsDataSource,
 		replication.NewReplicationsShortDataSource,
+	}
+}
+
+func (p *proxmoxProvider) EphemeralResources(_ context.Context) []func() ephemeral.EphemeralResource {
+	return []func() ephemeral.EphemeralResource{
+		access.NewEphemeralUserToken,
+		access.NewEphemeralUserTokenLong, // proxmox_virtual_environment_user_token
 	}
 }
 

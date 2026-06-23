@@ -43,8 +43,10 @@ resource "proxmox_virtual_environment_storage_cifs" "example" {
 
 ### Required
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `id` (String) The unique identifier of the storage.
-- `password` (String, Sensitive) The password for authenticating with the SMB/CIFS server.
+- `password` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The password for authenticating with the SMB/CIFS server.
 - `server` (String) The IP address or DNS name of the SMB/CIFS server.
 - `share` (String) The name of the SMB/CIFS share.
 - `username` (String) The username for authenticating with the SMB/CIFS server.

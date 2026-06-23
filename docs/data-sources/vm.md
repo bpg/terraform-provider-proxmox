@@ -27,11 +27,16 @@ Retrieves information about a specific VM.
 
 ### Read-Only
 
+- `agent` (Attributes) QEMU guest agent configuration. (see [below for nested schema](#nestedatt--agent))
 - `cdrom` (Attributes Map) The CD-ROM configuration. (see [below for nested schema](#nestedatt--cdrom))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `description` (String) The description of the VM.
+- `initialization` (Attributes) The cloud-init initialization configuration. (see [below for nested schema](#nestedatt--initialization))
+- `memory` (Attributes) Memory configuration for the VM. (see [below for nested schema](#nestedatt--memory))
 - `name` (String) The name of the VM.
+- `network_device` (Attributes List) Network device configurations. (see [below for nested schema](#nestedatt--network_device))
 - `rng` (Attributes) The RNG (Random Number Generator) configuration. (see [below for nested schema](#nestedatt--rng))
+- `started` (Boolean) Whether the VM is currently running.
 - `status` (String) The status of the VM (e.g., `running`, `stopped`).
 - `tags` (Set of String) The tags assigned to the VM.
 - `template` (Boolean) Whether the VM is a template.
@@ -43,6 +48,16 @@ Retrieves information about a specific VM.
 Optional:
 
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
+
+<a id="nestedatt--agent"></a>
+### Nested Schema for `agent`
+
+Read-Only:
+
+- `enabled` (Boolean) Whether the QEMU guest agent is enabled.
+- `trim` (Boolean) Whether fstrim runs after cloning or moving a disk.
+- `type` (String) Guest agent channel type.
 
 
 <a id="nestedatt--cdrom"></a>
@@ -68,6 +83,80 @@ Read-Only:
 - `type` (String) Emulated CPU type.
 - `units` (Number) CPU weight for a VM
 - `vcpus` (Number) Number of active vCPUs.
+
+
+<a id="nestedatt--initialization"></a>
+### Nested Schema for `initialization`
+
+Read-Only:
+
+- `dns` (Attributes) DNS configuration applied via cloud-init. (see [below for nested schema](#nestedatt--initialization--dns))
+- `ip_config` (Attributes List) IP configuration per network interface. (see [below for nested schema](#nestedatt--initialization--ip_config))
+- `meta_data_file_id` (String) The file ID of a custom cloud-init meta data snippet.
+- `network_data_file_id` (String) The file ID of a custom cloud-init network configuration snippet.
+- `type` (String) The cloud-init configuration format.
+- `upgrade` (Boolean) Whether to run package upgrades on the first boot.
+- `user_account` (Attributes) Cloud-init user account configuration. (see [below for nested schema](#nestedatt--initialization--user_account))
+- `user_data_file_id` (String) The file ID of a custom cloud-init user data snippet.
+- `vendor_data_file_id` (String) The file ID of a custom cloud-init vendor data snippet.
+
+<a id="nestedatt--initialization--dns"></a>
+### Nested Schema for `initialization.dns`
+
+Read-Only:
+
+- `domain` (String) The DNS search domain.
+- `servers` (List of String) List of DNS server IP addresses.
+
+
+<a id="nestedatt--initialization--ip_config"></a>
+### Nested Schema for `initialization.ip_config`
+
+Read-Only:
+
+- `ipv4_address` (String) IPv4 address in CIDR notation, or "dhcp".
+- `ipv4_gateway` (String) Default IPv4 gateway.
+- `ipv6_address` (String) IPv6 address in CIDR notation, "dhcp", or "auto".
+- `ipv6_gateway` (String) Default IPv6 gateway.
+
+
+<a id="nestedatt--initialization--user_account"></a>
+### Nested Schema for `initialization.user_account`
+
+Read-Only:
+
+- `keys` (List of String) SSH public keys for the default user.
+- `username` (String) The default user.
+
+
+
+<a id="nestedatt--memory"></a>
+### Nested Schema for `memory`
+
+Read-Only:
+
+- `balloon` (Number) Minimum guaranteed memory in MiB via balloon device. 0 disables the balloon driver.
+- `hugepages` (String) Use hugepages for VM memory. Options: '2' (2 MiB), '1024' (1 GiB), 'any'.
+- `keep_hugepages` (Boolean) Keep hugepages allocated when VM is stopped.
+- `shares` (Number) CPU scheduler priority for memory ballooning.
+- `size` (Number) Total memory available to the VM in MiB.
+
+
+<a id="nestedatt--network_device"></a>
+### Nested Schema for `network_device`
+
+Read-Only:
+
+- `bridge` (String)
+- `disconnected` (Boolean)
+- `firewall` (Boolean)
+- `mac_address` (String)
+- `model` (String)
+- `mtu` (Number)
+- `queues` (Number)
+- `rate_limit` (Number)
+- `trunks` (List of Number)
+- `vlan_id` (Number)
 
 
 <a id="nestedatt--rng"></a>

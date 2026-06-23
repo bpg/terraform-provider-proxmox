@@ -37,18 +37,22 @@ resource "proxmox_virtual_environment_storage_pbs" "example" {
 
 ### Required
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `datastore` (String) The name of the datastore on the Proxmox Backup Server.
 - `id` (String) The unique identifier of the storage.
-- `password` (String, Sensitive) The password for authenticating with the Proxmox Backup Server.
+- `password` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The password for authenticating with the Proxmox Backup Server.
 - `server` (String) The IP address or DNS name of the Proxmox Backup Server.
 - `username` (String) The username for authenticating with the Proxmox Backup Server.
 
 ### Optional
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `backups` (Block, Optional) Configure backup retention settings for the storage type. (see [below for nested schema](#nestedblock--backups))
 - `content` (Set of String) The content types that can be stored on this storage. Valid values: `backup` (VM backups), `images` (VM disk images), `import` (VM disk images for import), `iso` (ISO images), `rootdir` (container root directories), `snippets` (cloud-init, hook scripts, etc.), `vztmpl` (container templates).
 - `disable` (Boolean) Whether the storage is disabled.
-- `encryption_key` (String, Sensitive) An existing encryption key for the datastore. This is a sensitive value. Conflicts with `generate_encryption_key`.
+- `encryption_key` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) An existing encryption key for the datastore. This is a sensitive value. Conflicts with `generate_encryption_key`.
 - `fingerprint` (String) The SHA256 fingerprint of the Proxmox Backup Server's certificate.
 - `generate_encryption_key` (Boolean) If set to true, Proxmox will generate a new encryption key. The key will be stored in the `generated_encryption_key` attribute. Conflicts with `encryption_key`.
 - `namespace` (String) The namespace to use on the Proxmox Backup Server.

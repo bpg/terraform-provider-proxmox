@@ -21,8 +21,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/agent"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/clone"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/initialization"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/memory"
+	network_device "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/network_device"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
@@ -41,8 +46,13 @@ func (r *Resource) Schema(
 			"<br><br>It is a Proof of Concept, highly experimental and **will** change in future. " +
 			"It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.",
 		Attributes: map[string]schema.Attribute{
-			"cdrom": cdrom.ResourceSchema(),
-			"cpu":   cpu.ResourceSchema(),
+			"agent":          agent.ResourceSchema(),
+			"cdrom":          cdrom.ResourceSchema(),
+			"clone":          clone.ResourceSchema(),
+			"cpu":            cpu.ResourceSchema(),
+			"initialization": initialization.ResourceSchema(),
+			"network_device": network_device.ResourceSchema(),
+			"memory":         memory.ResourceSchema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
 				Optional:    true,
@@ -72,6 +82,11 @@ func (r *Resource) Schema(
 				Required:    true,
 			},
 			"rng": rng.ResourceSchema(),
+			"started": schema.BoolAttribute{
+				Description: "Whether the VM should be running. The VM is started after creation and after configuration updates when true.",
+				Optional:    true,
+				Computed:    true,
+			},
 			"stop_on_destroy": schema.BoolAttribute{
 				Description:         "Set to true to stop (rather than shutdown) the VM on destroy.",
 				MarkdownDescription: "Set to true to stop (rather than shutdown) the VM on destroy (defaults to `false`).",
