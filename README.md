@@ -21,7 +21,7 @@ The project is not affiliated with [Proxmox Server Solutions GmbH](https://www.p
 
 ## Compatibility Promise
 
-This provider is compatible with Proxmox VE 9.x (currently **9.1**). See [Known Issues](#known-issues) below for compatibility details.
+This provider is compatible with Proxmox VE 9.x (currently **9.2**). See [Known Issues](#known-issues) below for compatibility details.
 
 > [!IMPORTANT]
 > Proxmox VE 8.x is supported, but some functionality might be limited or not work as expected. Testing against 8.x is not a priority, and issues specific to 8.x will not be addressed.
@@ -37,7 +37,7 @@ However, we will try to maintain backward compatibility between provider version
 
 - [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 9.x
 - TLS 1.3 for the Proxmox API endpoint (legacy TLS 1.2 is optionally supported)
-- [Terraform](https://www.terraform.io/downloads.html) 1.5+ or [OpenTofu](https://opentofu.org) 1.6+
+- [Terraform](https://www.terraform.io/downloads.html) 1.5+ or [OpenTofu](https://opentofu.org) 1.6+. Some feature (like write-only attributes) require Terraform 1.11+ / OpenTofu 1.10+.
 
 ### Development Requirements
 
@@ -195,9 +195,14 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Serge](https://github.com/sergelogvinov)
 - [Daniel Brennand](https://github.com/dbrennand)
 - [Brian King](https://github.com/inflatador)
-- [Radosław Szamszur](https://github.com/rszamszur)
 - [Marshall Ford](https://github.com/marshallford)
 - [Simon Caron](https://github.com/simoncaron)
 - [/ar/sh](https://github.com/0x0000ARSH)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
+
+## Acknowledgements
+
+This project has been developed with **GoLand** IDE under the [JetBrains Open Source license](https://www.jetbrains.com/community/opensource/#support), generously provided by JetBrains s.r.o.
+
+<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/GoLand_icon.png" alt="GoLand logo" width="80">
