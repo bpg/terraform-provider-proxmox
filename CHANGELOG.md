@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.111.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.110.0...v0.111.0) (2026-06-23)
+
+
+### Features
+
+* **acme:** add write-only data_wo argument to proxmox_acme_dns_plugin ([#2962](https://github.com/bpg/terraform-provider-proxmox/issues/2962)) ([cd4ecd7](https://github.com/bpg/terraform-provider-proxmox/commit/cd4ecd7156f6ff6df610a79c586e5d15eb6da8a6))
+* **disk:** add support for ZFS disk/zpool creation with `proxmox_node_disk_zfs` ([#2952](https://github.com/bpg/terraform-provider-proxmox/issues/2952)) ([087b1d0](https://github.com/bpg/terraform-provider-proxmox/commit/087b1d0a7a034d1935a0f9d976cd43806483dbfa))
+* **openid:** add write-only client_key_wo to proxmox_realm_openid ([#2964](https://github.com/bpg/terraform-provider-proxmox/issues/2964)) ([0ef7bdc](https://github.com/bpg/terraform-provider-proxmox/commit/0ef7bdcc258cf01e05f2d5609356171641eb02f5))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/checkout action (v6.0.3 → v7.0.0) ([#2958](https://github.com/bpg/terraform-provider-proxmox/issues/2958)) ([0a5bf04](https://github.com/bpg/terraform-provider-proxmox/commit/0a5bf04053200e99446409dd813ee66ad4b19163))
+* **docs:** update README.md ([5fd272a](https://github.com/bpg/terraform-provider-proxmox/commit/5fd272a4d6439a6f33be1fecef9b0e1080d5d407))
+
 ## [0.110.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.109.0...v0.110.0) (2026-06-18)
 
 
