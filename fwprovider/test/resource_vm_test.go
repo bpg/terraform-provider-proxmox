@@ -1663,6 +1663,37 @@ func TestAccResourceVMClone(t *testing.T) {
 				}),
 			),
 		}}},
+		{"clone persists boot_order on first apply", []resource.TestStep{{
+			// Template auto-derives boot order ["scsi0", "net0"]; the clone overrides it to
+			// just ["scsi0"]. Without applying boot_order on the clone create path, state
+			// retains the inherited order, producing a non-empty plan after the first apply.
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name  = "{{.NodeName}}"
+					started    = false
+					boot_order = ["scsi0"]
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
+				"boot_order.#": "1",
+				"boot_order.0": "scsi0",
+			}),
+		}}},
 		{"clone cpu.architecture as root", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
