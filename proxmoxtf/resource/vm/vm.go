@@ -2775,6 +2775,18 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 	updateBody.StartOnBoot = &onBoot
 
+	// Apply an explicit boot order to the clone; when empty, preserve the source VM's order.
+	if bootOrder := d.Get(mkBootOrder).([]any); len(bootOrder) > 0 {
+		bootOrderConverted := make([]string, len(bootOrder))
+		for i, device := range bootOrder {
+			bootOrderConverted[i] = device.(string)
+		}
+
+		updateBody.Boot = &vms.CustomBoot{
+			Order: &bootOrderConverted,
+		}
+	}
+
 	updateBody.SMBIOS = vmGetSMBIOS(d)
 
 	updateBody.StartupOrder = vmGetStartupOrder(d)
