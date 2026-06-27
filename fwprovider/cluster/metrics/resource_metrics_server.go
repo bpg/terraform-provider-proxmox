@@ -12,13 +12,16 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
@@ -28,9 +31,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &metricsServerResource{}
-	_ resource.ResourceWithConfigure   = &metricsServerResource{}
-	_ resource.ResourceWithImportState = &metricsServerResource{}
+	_ resource.Resource                     = &metricsServerResource{}
+	_ resource.ResourceWithConfigure        = &metricsServerResource{}
+	_ resource.ResourceWithImportState      = &metricsServerResource{}
+	_ resource.ResourceWithConfigValidators = &metricsServerResource{}
 )
 
 type metricsServerResource struct {
@@ -157,10 +161,26 @@ func (r *metricsServerResource) Schema(
 			},
 			"influx_token": schema.StringAttribute{
 				Description: "The InfluxDB access token. Only necessary when using the http v2 " +
-					"api. If the v2 compatibility api is used, use `user:password` instead.",
+					"api. If the v2 compatibility api is used, use `user:password` instead. " +
+					"Cannot be used together with `influx_token_wo`.",
 				Optional:  true,
 				Default:   nil,
 				Sensitive: true,
+			},
+			"influx_token_wo": schema.StringAttribute{
+				Description: "The InfluxDB access token (write-only). Prefer this over " +
+					"`influx_token` to avoid storing the secret in Terraform state. " +
+					"Cannot be used together with `influx_token`.",
+				Optional:  true,
+				WriteOnly: true,
+				Sensitive: true,
+			},
+			"influx_token_wo_version": schema.Int64Attribute{
+				Description: "Increment this counter to rotate `influx_token_wo` without changing other fields.",
+				Optional:    true,
+				Validators: []validator.Int64{
+					int64validator.AlsoRequires(path.MatchRoot("influx_token_wo")),
+				},
 			},
 			"influx_verify": schema.BoolAttribute{
 				Description: "Set to `false` to disable certificate verification for https " +
@@ -234,6 +254,15 @@ func (r *metricsServerResource) Schema(
 	}
 }
 
+func (r *metricsServerResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		resourcevalidator.Conflicting(
+			path.MatchRoot("influx_token"),
+			path.MatchRoot("influx_token_wo"),
+		),
+	}
+}
+
 func (r *metricsServerResource) Read(
 	ctx context.Context,
 	req resource.ReadRequest,
@@ -265,6 +294,7 @@ func (r *metricsServerResource) Read(
 	// PVE omits verify-certificate / otel-verify-ssl from GET responses when they equal
 	// the server default; preserve the prior state so we don't churn them to null.
 	preserveTypeSpecificBools(readModel, &state)
+	preserveSensitiveFields(readModel, &state)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
@@ -282,7 +312,20 @@ func (r *metricsServerResource) Create(
 		return
 	}
 
-	err := r.client.CreateServer(ctx, plan.toAPI())
+	reqData := plan.toAPI()
+
+	var tokenWO types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("influx_token_wo"), &tokenWO)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !tokenWO.IsNull() {
+		reqData.Token = tokenWO.ValueStringPointer()
+	}
+
+	err := r.client.CreateServer(ctx, reqData)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to Create Metrics Server", err.Error())
 		return
@@ -299,6 +342,7 @@ func (r *metricsServerResource) Create(
 	// PVE omits verify-certificate / otel-verify-ssl from GET responses when they equal
 	// the server default; preserve the plan so explicit values survive the round-trip.
 	preserveTypeSpecificBools(readModel, &plan)
+	preserveSensitiveFields(readModel, &plan)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
@@ -319,6 +363,13 @@ func (r *metricsServerResource) Update(
 		return
 	}
 
+	var tokenWO types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("influx_token_wo"), &tokenWO)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	var toDelete []string
 
 	attribute.CheckDelete(plan.Disable, state.Disable, &toDelete, "disable")
@@ -329,7 +380,11 @@ func (r *metricsServerResource) Update(
 	attribute.CheckDelete(plan.InfluxDBProto, state.InfluxDBProto, &toDelete, "influxdbproto")
 	attribute.CheckDelete(plan.InfluxMaxBodySize, state.InfluxMaxBodySize, &toDelete, "max-body-size")
 	attribute.CheckDelete(plan.InfluxOrganization, state.InfluxOrganization, &toDelete, "organization")
-	attribute.CheckDelete(plan.InfluxToken, state.InfluxToken, &toDelete, "token")
+	// Skip the token delete when the write-only path is active — the new value replaces it.
+	if tokenWO.IsNull() {
+		attribute.CheckDelete(plan.InfluxToken, state.InfluxToken, &toDelete, "token")
+	}
+
 	attribute.CheckDelete(plan.InfluxVerify, state.InfluxVerify, &toDelete, "verify-certificate")
 	attribute.CheckDelete(plan.GraphitePath, state.GraphitePath, &toDelete, "path")
 	attribute.CheckDelete(plan.GraphiteProto, state.GraphiteProto, &toDelete, "proto")
@@ -344,6 +399,10 @@ func (r *metricsServerResource) Update(
 
 	reqData := plan.toAPI()
 	reqData.Delete = toDelete
+
+	if !tokenWO.IsNull() {
+		reqData.Token = tokenWO.ValueStringPointer()
+	}
 
 	err := r.client.UpdateServer(ctx, reqData)
 	if err != nil {
@@ -362,6 +421,7 @@ func (r *metricsServerResource) Update(
 	// PVE omits verify-certificate / otel-verify-ssl from GET responses when they equal
 	// the server default; preserve the plan so explicit values survive the round-trip.
 	preserveTypeSpecificBools(readModel, &plan)
+	preserveSensitiveFields(readModel, &plan)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

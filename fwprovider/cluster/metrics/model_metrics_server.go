@@ -29,6 +29,8 @@ type metricsServerModel struct {
 	InfluxMaxBodySize      types.Int64  `tfsdk:"influx_max_body_size"`
 	InfluxOrganization     types.String `tfsdk:"influx_organization"`
 	InfluxToken            types.String `tfsdk:"influx_token"`
+	InfluxTokenWO          types.String `tfsdk:"influx_token_wo"`
+	InfluxTokenWOVersion   types.Int64  `tfsdk:"influx_token_wo_version"`
 	InfluxVerify           types.Bool   `tfsdk:"influx_verify"`
 	GraphitePath           types.String `tfsdk:"graphite_path"`
 	GraphiteProto          types.String `tfsdk:"graphite_proto"`
@@ -66,7 +68,8 @@ func (m *metricsServerModel) fromAPI(name string, data *metrics.ServerData) {
 	m.InfluxDBProto = types.StringPointerValue(data.InfluxDBProto)
 	m.InfluxMaxBodySize = types.Int64PointerValue(data.MaxBodySize)
 	m.InfluxOrganization = types.StringPointerValue(data.Organization)
-	m.InfluxToken = types.StringPointerValue(data.Token)
+	// InfluxToken is not set here — PVE never returns the token in GET responses.
+	// The caller preserves it from the plan (Create/Update) or prior state (Read) via preserveSensitiveFields.
 	m.GraphitePath = types.StringPointerValue(data.Path)
 	m.GraphiteProto = types.StringPointerValue(data.Proto)
 	m.OTelProto = types.StringPointerValue(data.OTelProto)
@@ -86,6 +89,15 @@ func boolOrDefault(b *proxmoxtypes.CustomBool, def bool) types.Bool {
 	}
 
 	return types.BoolValue(def)
+}
+
+// preserveSensitiveFields copies InfluxToken from src onto dst when dst has a null value.
+// PVE never returns the token in GET responses; the plan (Create/Update) or prior state (Read)
+// is the authoritative source.
+func preserveSensitiveFields(dst, src *metricsServerModel) {
+	if dst.InfluxToken.IsNull() {
+		dst.InfluxToken = src.InfluxToken
+	}
 }
 
 // preserveTypeSpecificBools copies InfluxVerify and OTelVerifySSL from src onto dst
