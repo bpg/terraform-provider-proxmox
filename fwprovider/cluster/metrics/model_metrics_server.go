@@ -91,12 +91,16 @@ func boolOrDefault(b *proxmoxtypes.CustomBool, def bool) types.Bool {
 	return types.BoolValue(def)
 }
 
-// preserveSensitiveFields copies InfluxToken from src onto dst when dst has a null value.
+// preserveSensitiveFields copies InfluxToken and InfluxTokenWOVersion from src onto dst when dst has a null value.
 // PVE never returns the token in GET responses; the plan (Create/Update) or prior state (Read)
 // is the authoritative source.
 func preserveSensitiveFields(dst, src *metricsServerModel) {
 	if dst.InfluxToken.IsNull() {
 		dst.InfluxToken = src.InfluxToken
+	}
+
+	if dst.InfluxTokenWOVersion.IsNull() {
+		dst.InfluxTokenWOVersion = src.InfluxTokenWOVersion
 	}
 }
 

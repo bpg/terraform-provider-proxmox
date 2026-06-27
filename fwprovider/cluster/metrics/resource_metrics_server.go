@@ -321,8 +321,8 @@ func (r *metricsServerResource) Create(
 		return
 	}
 
-	if !tokenWO.IsNull() {
-		reqData.Token = tokenWO.ValueStringPointer()
+	if token := attribute.StringPtrFromValue(tokenWO); token != nil {
+		reqData.Token = token
 	}
 
 	err := r.client.CreateServer(ctx, reqData)
@@ -400,8 +400,8 @@ func (r *metricsServerResource) Update(
 	reqData := plan.toAPI()
 	reqData.Delete = toDelete
 
-	if !tokenWO.IsNull() {
-		reqData.Token = tokenWO.ValueStringPointer()
+	if token := attribute.StringPtrFromValue(tokenWO); token != nil {
+		reqData.Token = token
 	}
 
 	err := r.client.UpdateServer(ctx, reqData)
