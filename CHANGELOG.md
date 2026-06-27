@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.111.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.111.0...v0.111.1) (2026-06-27)
+
+
+### Bug Fixes
+
+* **vm:** persist `boot_order` on first apply when cloning ([#2969](https://github.com/bpg/terraform-provider-proxmox/issues/2969)) ([505cb8d](https://github.com/bpg/terraform-provider-proxmox/commit/505cb8d2f78d80e59034ff0112aaf3f5effad909))
+
+
+### Miscellaneous
+
+* **ci:** update actions/setup-go digest (4a36011 → 924ae3a) ([#2970](https://github.com/bpg/terraform-provider-proxmox/issues/2970)) ([41f4c40](https://github.com/bpg/terraform-provider-proxmox/commit/41f4c407b8a2fe75979ddddaa79330d9a731948a))
+* **deps:** update image golang (792443b → 32c0e6e) ([#2967](https://github.com/bpg/terraform-provider-proxmox/issues/2967)) ([efd1e95](https://github.com/bpg/terraform-provider-proxmox/commit/efd1e95b10efdf13df686495b1738a0570b65e82))
+
 ## [0.111.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.110.0...v0.111.0) (2026-06-23)
 
 
