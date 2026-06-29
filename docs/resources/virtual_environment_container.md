@@ -278,6 +278,14 @@ The `mount_point.volume` attribute accepts three forms:
     - `container_id` - (Required) Starting ID in the container namespace.
     - `host_id` - (Required) Starting ID in the host namespace.
     - `size` - (Required) Number of IDs to map (must be at least `1`).
+- `lxc` - (Optional) Additional low-level LXC configuration options (multiple
+    blocks supported). These are written as `lxc.*` entries in the container
+    configuration file via SSH, since the Proxmox API does not support writing
+    `lxc[n]` parameters. The `lxc.idmap` key is reserved; use the `idmap` block
+    instead. Changing this option requires a container reboot.
+    - `key` - (Required) The LXC option name, without the `lxc.` prefix
+        (e.g. `cgroup2.devices.allow`).
+    - `value` - (Optional) The LXC option value.
 - `device_passthrough` - (Optional) Device to pass through to the container (multiple blocks supported).
     - `deny_write` - (Optional) Deny the container to write to the device (defaults to `false`).
     - `gid` - (Optional) Group ID to be assigned to the device node.
