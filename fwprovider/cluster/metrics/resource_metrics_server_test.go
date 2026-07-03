@@ -12,10 +12,13 @@
 package metrics_test
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -321,6 +324,23 @@ func TestAccResourceMetricsServer(t *testing.T) {
 	}
 }
 
+// checkMetricsTokenFile asserts presence (or absence) of the metrics server token file
+// in /etc/pve/priv/metricserver/ on the PVE node.
+func checkMetricsTokenFile(te *test.Environment, name string, wantExists bool) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		out := te.ExecuteNodeCommands([]string{
+			fmt.Sprintf("cat /etc/pve/priv/metricserver/%s.pw 2>/dev/null || echo MISSING", name),
+		})
+
+		exists := !strings.Contains(out, "MISSING")
+		if exists != wantExists {
+			return fmt.Errorf("token file for %q: exists=%t, want %t", name, exists, wantExists)
+		}
+
+		return nil
+	}
+}
+
 func TestAccResourceMetricsServerWriteOnly(t *testing.T) {
 	t.Parallel()
 
@@ -378,6 +398,34 @@ func TestAccResourceMetricsServerWriteOnly(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo_rotate", "influx_token_wo_version", "2"),
 					resource.TestCheckNoResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo_rotate", "influx_token"),
+				),
+			},
+		}},
+		{"removing influx_token_wo deletes the token from PVE", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token_wo_remove" {
+					name                    = "acc_influxdb_token_wo_remove"
+					server                  = "192.168.3.2"
+					port                    = 18096
+					type                    = "influxdb"
+					influx_token_wo         = "supersecrettoken"
+					influx_token_wo_version = 1
+				  }`),
+				// GET never returns the token; the root-only priv file is the only observable.
+				Check: checkMetricsTokenFile(te, "acc_influxdb_token_wo_remove", true),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token_wo_remove" {
+					name   = "acc_influxdb_token_wo_remove"
+					server = "192.168.3.2"
+					port   = 18096
+					type   = "influxdb"
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo_remove", "influx_token_wo_version"),
+					checkMetricsTokenFile(te, "acc_influxdb_token_wo_remove", false),
 				),
 			},
 		}},

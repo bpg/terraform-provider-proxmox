@@ -383,6 +383,12 @@ func (r *metricsServerResource) Update(
 	// Skip the token delete when the write-only path is active — the new value replaces it.
 	if tokenWO.IsNull() {
 		attribute.CheckDelete(plan.InfluxToken, state.InfluxToken, &toDelete, "token")
+
+		// The write-only token is never mirrored into state, so CheckDelete can't see it;
+		// the version counter leaving state is the removal signal.
+		if plan.InfluxToken.IsNull() && plan.InfluxTokenWOVersion.IsNull() && !state.InfluxTokenWOVersion.IsNull() {
+			toDelete = append(toDelete, "token")
+		}
 	}
 
 	attribute.CheckDelete(plan.InfluxVerify, state.InfluxVerify, &toDelete, "verify-certificate")
