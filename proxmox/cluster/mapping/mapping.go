@@ -16,9 +16,35 @@ import (
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
 
+// encodedDescription returns a percent-encoded copy of a description so it survives the round-trip through
+// the Proxmox VE API, which double-encodes stored non-ASCII bytes on read.
+func encodedDescription(description *string) *string {
+	if description == nil {
+		return nil
+	}
+
+	encoded := proxmoxtypes.EncodeText(*description)
+
+	return &encoded
+}
+
+// decodeDescription reverses encodedDescription.
+func decodeDescription(description *string) *string {
+	if description == nil {
+		return nil
+	}
+
+	decoded := proxmoxtypes.DecodeText(*description)
+
+	return &decoded
+}
+
 // Create creates a new hardware mapping.
 func (c *Client) Create(ctx context.Context, hmType proxmoxtypes.Type, data *CreateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(hmType, ""), data, nil)
+	body := *data
+	body.Description = encodedDescription(data.Description)
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(hmType, ""), &body, nil)
 	if err != nil {
 		return fmt.Errorf("creating hardware mapping %q: %w", data.ID, err)
 	}
@@ -49,6 +75,8 @@ func (c *Client) Get(ctx context.Context, hmType proxmoxtypes.Type, name string)
 		return nil, api.ErrNoDataObjectInResponse
 	}
 
+	resBody.Data.Description = decodeDescription(resBody.Data.Description)
+
 	return resBody.Data, nil
 }
 
@@ -71,12 +99,19 @@ func (c *Client) List(ctx context.Context, hmType proxmoxtypes.Type, checkNode s
 		return nil, api.ErrNoDataObjectInResponse
 	}
 
+	for _, item := range resBody.Data {
+		item.Description = decodeDescription(item.Description)
+	}
+
 	return resBody.Data, nil
 }
 
 // Update updates an existing hardware mapping.
 func (c *Client) Update(ctx context.Context, hmType proxmoxtypes.Type, name string, data *UpdateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(hmType, url.PathEscape(name)), data, nil)
+	body := *data
+	body.Description = encodedDescription(data.Description)
+
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(hmType, url.PathEscape(name)), &body, nil)
 	if err != nil {
 		return fmt.Errorf("udating hardware mapping %q: %w", name, err)
 	}

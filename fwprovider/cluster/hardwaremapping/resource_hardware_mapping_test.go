@@ -921,6 +921,175 @@ func TestAccResourceHardwareMappingUSBInvalidInput(t *testing.T) {
 	)
 }
 
+// TestAccResourceHardwareMappingCommentSpecialChars verifies that comments containing non-ASCII or percent
+// characters round-trip intact through the Proxmox VE API for all hardware mapping types.
+func TestAccResourceHardwareMappingCommentSpecialChars(t *testing.T) {
+	data, te := testAccResourceHardwareMappingInit(t)
+
+	commentCreate := "NVIDIA RTX 2000 Ada Generation — MS-A2 discrete GPU"
+	commentUpdate := "reserved for host — 50% shared ✓"
+	mapComment := "café über GPU—passthrough"
+
+	resource.Test(
+		t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: fmt.Sprintf(
+						`
+					resource "proxmox_hardware_mapping_pci" "test" {
+						comment = "%s"
+						name    = "test-comment-special-pci"
+						map     = [
+							{
+								comment      = "%s"
+								id           = "%s"
+								iommu_group  = %d
+								node         = "%s"
+								path         = "%s"
+								subsystem_id = "%s"
+							},
+						]
+					}
+					`,
+						commentCreate,
+						mapComment,
+						data.MapDeviceIDs[0],
+						data.MapIOMMUGroups[0],
+						te.NodeName,
+						data.MapPathsPCI[0],
+						data.MapSubsystemIDs[0],
+					),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(accTestHardwareMappingNamePCI, "comment", commentCreate),
+						resource.TestCheckTypeSetElemNestedAttrs(
+							accTestHardwareMappingNamePCI, "map.*", map[string]string{
+								"comment": mapComment,
+							},
+						),
+					),
+				},
+
+				// The "Read" implementation must decode the same way, otherwise import produces a mismatch.
+				{
+					ImportState:       true,
+					ImportStateId:     "test-comment-special-pci",
+					ImportStateVerify: true,
+					ResourceName:      accTestHardwareMappingNamePCI,
+				},
+
+				{
+					Config: fmt.Sprintf(
+						`
+					resource "proxmox_hardware_mapping_pci" "test" {
+						comment = "%s"
+						name    = "test-comment-special-pci"
+						map     = [
+							{
+								comment      = "%s"
+								id           = "%s"
+								iommu_group  = %d
+								node         = "%s"
+								path         = "%s"
+								subsystem_id = "%s"
+							},
+						]
+					}
+					`,
+						commentUpdate,
+						mapComment,
+						data.MapDeviceIDs[0],
+						data.MapIOMMUGroups[0],
+						te.NodeName,
+						data.MapPathsPCI[0],
+						data.MapSubsystemIDs[0],
+					),
+					Check: resource.TestCheckResourceAttr(accTestHardwareMappingNamePCI, "comment", commentUpdate),
+				},
+			},
+		},
+	)
+
+	resource.Test(
+		t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: fmt.Sprintf(
+						`
+					resource "proxmox_hardware_mapping_usb" "test" {
+						comment = "%s"
+						name    = "test-comment-special-usb"
+						map     = [
+							{
+								comment = "%s"
+								id      = "%s"
+								node    = "%s"
+								path    = "%s"
+							},
+						]
+					}
+					`,
+						commentCreate,
+						mapComment,
+						data.MapDeviceIDs[0],
+						te.NodeName,
+						data.MapPathsUSB[0],
+					),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(accTestHardwareMappingNameUSB, "comment", commentCreate),
+						resource.TestCheckTypeSetElemNestedAttrs(
+							accTestHardwareMappingNameUSB, "map.*", map[string]string{
+								"comment": mapComment,
+							},
+						),
+					),
+				},
+				{
+					ImportState:       true,
+					ImportStateId:     "test-comment-special-usb",
+					ImportStateVerify: true,
+					ResourceName:      accTestHardwareMappingNameUSB,
+				},
+			},
+		},
+	)
+
+	resource.Test(
+		t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: fmt.Sprintf(
+						`
+					resource "proxmox_hardware_mapping_dir" "test" {
+						comment = "%s"
+						name    = "test-comment-special-dir"
+						map     = [
+							{
+								node = "%s"
+								path = "%s"
+							},
+						]
+					}
+					`,
+						commentUpdate,
+						te.NodeName,
+						data.MapPathsDir[0],
+					),
+					Check: resource.TestCheckResourceAttr(accTestHardwareMappingNameDir, "comment", commentUpdate),
+				},
+				{
+					ImportState:       true,
+					ImportStateId:     "test-comment-special-dir",
+					ImportStateVerify: true,
+					ResourceName:      accTestHardwareMappingNameDir,
+				},
+			},
+		},
+	)
+}
+
 // TestAccResourceHardwareMappingDirImportNonExistent verifies that importing a non-existent directory mapping
 // returns an error instead of silently removing it from state.
 func TestAccResourceHardwareMappingDirImportNonExistent(t *testing.T) {
