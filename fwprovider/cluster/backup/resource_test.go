@@ -263,6 +263,73 @@ func TestAccResourceBackupJob(t *testing.T) {
 	}
 }
 
+func TestAccResourceBackupJobExclude(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_exclude" {
+					id       = "acc-test-excl"
+					schedule = "*-*-* 08:00"
+					storage  = "local"
+					all      = true
+					exclude  = ["100", "101"]
+					mode     = "snapshot"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "id", "acc-test-excl"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "all", "true"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.#", "2"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.0", "100"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.1", "101"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "mode", "snapshot"),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_exclude" {
+					id       = "acc-test-excl"
+					schedule = "*-*-* 08:00"
+					storage  = "local"
+					all      = true
+					exclude  = ["200"]
+					mode     = "stop"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.#", "1"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.0", "200"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "mode", "stop"),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_exclude" {
+					id       = "acc-test-excl"
+					schedule = "*-*-* 08:00"
+					storage  = "local"
+					all      = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "id", "acc-test-excl"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "all", "true"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.#", "0"),
+				),
+			},
+			{
+				ResourceName:      "proxmox_backup_job.test_exclude",
+				ImportStateId:     "acc-test-excl",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccDataSourceBackupJobs(t *testing.T) {
 	t.Parallel()
 
