@@ -2760,33 +2760,18 @@ func containerSetLXCConfigs(
 	lines []string,
 ) error {
 	configFile := fmt.Sprintf("/etc/pve/lxc/%d.conf", vmID)
-	tmpFile := fmt.Sprintf("/etc/pve/lxc/%d.conf.tmp", vmID)
-
-	var content string
-	if len(lines) > 0 {
-		content = base64.StdEncoding.EncodeToString([]byte(strings.Join(lines, "\n")))
-	}
 
 	commands := []string{
 		`set -e`,
 		ssh.TrySudo,
-		fmt.Sprintf(`config_file=%q`, configFile),
-		fmt.Sprintf(`tmp_file=%q`, tmpFile),
-		`cleanup() { try_sudo rm -f "$tmp_file"; }`,
-		`trap cleanup EXIT`,
-		`try_sudo cp "$config_file" "$tmp_file"`,
-		`try_sudo sed -i '/^lxc\./d' "$tmp_file"`,
+		fmt.Sprintf(`try_sudo sed -i '/^lxc\./d' %s`, configFile),
 	}
 
-	if content != "" {
+	if len(lines) > 0 {
+		content := base64.StdEncoding.EncodeToString([]byte(strings.Join(lines, "\n")))
 		commands = append(commands,
-			fmt.Sprintf(`printf '%%s' %q | base64 -d | try_sudo tee -a "$tmp_file" > /dev/null`, content))
+			fmt.Sprintf(`printf '%%s' %q | base64 -d | try_sudo tee -a %s > /dev/null`, content, configFile))
 	}
-
-	commands = append(commands,
-		`try_sudo mv "$tmp_file" "$config_file"`,
-		`trap - EXIT`,
-	)
 
 	_, err := client.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
 	if err != nil {
