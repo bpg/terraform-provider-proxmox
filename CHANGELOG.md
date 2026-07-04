@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.111.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.111.0...v0.111.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **cluster:** handle `influx_token` write-only status in `metrics_server` ([#2972](https://github.com/bpg/terraform-provider-proxmox/issues/2972)) ([65831bb](https://github.com/bpg/terraform-provider-proxmox/commit/65831bb78abe518998cf298b74212bf3eb94c45e))
+* **hwmapping:** percent-encode comments to survive PVE round-trip ([#2980](https://github.com/bpg/terraform-provider-proxmox/issues/2980)) ([dcc0c36](https://github.com/bpg/terraform-provider-proxmox/commit/dcc0c3601e05a7d357c35e02f76396a4df8a3297))
+* **vm:** persist `boot_order` on first apply when cloning ([#2969](https://github.com/bpg/terraform-provider-proxmox/issues/2969)) ([505cb8d](https://github.com/bpg/terraform-provider-proxmox/commit/505cb8d2f78d80e59034ff0112aaf3f5effad909))
+
+
+### Miscellaneous
+
+* **ci:** update actions/attest-build-provenance digest (a2bbfa2 → 0f67c3f) ([#2976](https://github.com/bpg/terraform-provider-proxmox/issues/2976)) ([1a3c1b1](https://github.com/bpg/terraform-provider-proxmox/commit/1a3c1b1071ec5d84cd7d9780ab4a1c018033ea69))
+* **ci:** update actions/setup-go digest (4a36011 → 924ae3a) ([#2970](https://github.com/bpg/terraform-provider-proxmox/issues/2970)) ([41f4c40](https://github.com/bpg/terraform-provider-proxmox/commit/41f4c407b8a2fe75979ddddaa79330d9a731948a))
+* **ci:** update dorny/paths-filter action (v4.0.1 → v4.0.2) ([#2979](https://github.com/bpg/terraform-provider-proxmox/issues/2979)) ([90d03f7](https://github.com/bpg/terraform-provider-proxmox/commit/90d03f7015e5045dcabae06d6b07b2e898ff2d98))
+* **ci:** update golangci/golangci-lint-action digest (82606bf → ba0d7d2) ([#2977](https://github.com/bpg/terraform-provider-proxmox/issues/2977)) ([2cc0206](https://github.com/bpg/terraform-provider-proxmox/commit/2cc0206bbd2a1588215a69d6085b7edb9ad77db7))
+* **deps:** update image golang (32c0e6e → f96cc55) ([#2978](https://github.com/bpg/terraform-provider-proxmox/issues/2978)) ([95d97fe](https://github.com/bpg/terraform-provider-proxmox/commit/95d97fea630f3a55db06451931ea2786afb00895))
+* **deps:** update image golang (792443b → 32c0e6e) ([#2967](https://github.com/bpg/terraform-provider-proxmox/issues/2967)) ([efd1e95](https://github.com/bpg/terraform-provider-proxmox/commit/efd1e95b10efdf13df686495b1738a0570b65e82))
+
 ## [0.111.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.110.0...v0.111.0) (2026-06-23)
 
 
