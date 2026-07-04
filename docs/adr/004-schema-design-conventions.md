@@ -92,6 +92,24 @@ This helper returns a `schema.StringAttribute` with `Computed: true`, `UseStateF
 
 For resources where the user provides the ID (e.g., SDN VNet's `id` is user-specified), define the attribute manually with `Required: true` and `RequiresReplace()`.
 
+### Import ID Format
+
+For **node-scoped** resources, the import ID is not the resource `id` — it is `node_name/<resource id>`. The resource `id` stays the bare PVE identifier (a vmid, or a volume ID like `datastore:content/file`) with no node in it; the node is a separate attribute that the importer sets.
+
+The canonical parse splits on the **first** `/` so the remainder can itself contain slashes:
+
+```go
+nodeName, id, found := strings.Cut(importID, "/")
+if !found {
+    return fmt.Errorf("unexpected format of ID (%s), expected node_name/id", importID)
+}
+// importer: keep id verbatim as the resource id, set node_name separately; Read fills the rest
+```
+
+`pve/100` → node `pve`, id `100`. For multi-segment IDs (e.g. `pve/local:iso/image.iso`), chain `strings.Cut` on each delimiter and validate `found` plus non-empty parts at every step. When Read cannot re-derive all lookup keys from the bare id, the importer must set them explicitly (not rely on Read alone) — verify with `ImportStateCheck`; `ImportStateVerify` is often impractical because config-only attributes (URLs, timeouts) are not recoverable from the API.
+
+Baking the node **into** the id (e.g. `id = "<node>:<iface>"`, used by the Linux bridge/VLAN/bond resources, where import ID == resource id) is acceptable only when designing a **new** id that has no other unique key. Never change an already-released id format to add the node — that is a breaking state change requiring a `StateUpgrader`. Keep the released bare id and add the node as an import-time prefix instead.
+
 ### Validators
 
 Use validators from the `terraform-plugin-framework-validators` module for standard rules. Use project-specific validators from `fwprovider/validators/` for reusable domain rules (e.g., `validators.SDNID()`).
@@ -148,6 +166,17 @@ func (r *myResource) ConfigValidators(_ context.Context) []resource.ConfigValida
 ```
 
 For more complex validation that requires parsing attribute values, implement `ResourceWithValidateConfig` and add logic in the `ValidateConfig` method.
+
+**Null and unknown need different treatment in `ValidateConfig`.** Config values that come from unresolved references (e.g. `vlan_aware = other_resource.attr`) are **unknown** at validate time, and `ValueBool()` returns `false` for unknown — so a naive check false-positives. But skipping the check for null _and_ unknown alike is the symmetric mistake: for a field whose omission lets a known default apply, **null still represents a real misconfiguration** worth flagging. When one field triggers the rule and another gates it, treat each side differently — require the trigger to be defined, and skip only when the gating field is unknown:
+
+```go
+// Trigger field: attribute.IsDefined (must have a real value).
+// Gating field: !IsUnknown (null = omitted, default applies — still checked;
+//               unknown = unresolvable yet — skip, PVE validates at apply).
+if attribute.IsDefined(data.VIDs) && !data.VLANAware.IsUnknown() && !data.VLANAware.ValueBool() {
+    resp.Diagnostics.AddAttributeError(...)
+}
+```
 
 **When to add a validator vs document the constraint.** Cross-attribute constraints are documented in `MarkdownDescription` by default — let PVE reject invalid combinations at apply time. Promote to a plan-time validator only when (a) the constraint is hit _frequently_ in support issues, or (b) PVE's apply-time error is unhelpful (cryptic, mislocated, or only surfaces after partial side-effects). Every plan-time validator is a maintenance liability: it duplicates PVE's logic, drifts as PVE evolves, and adds a failure point distinct from the API's own. Keep the bar high.
 
@@ -362,6 +391,8 @@ The project provides custom attribute types in `fwprovider/types/`:
 - Using non-standard model method names (`importFromAPI`, `toAPIRequestBody`, `toCreateRequest`, etc.) instead of the canonical `toAPI()` / `toAPICreate()` / `toAPIUpdate()` / `fromAPI()`. See [Model-API Conversion](#model-api-conversion).
 - Omitting `Description` on schema attributes — every attribute must have a non-empty description.
 - Defining local bool-to-int64 conversion helpers instead of updating the API type to use `*proxmoxtypes.CustomBool`.
+- Treating null and unknown alike in `ValidateConfig` cross-field checks — unknown references false-positive with `ValueBool()`, while skipping null drops real misconfigurations. See [Cross-Field Validation](#cross-field-validation).
+- Changing a released resource `id` format (e.g. to embed the node name) when adding import support — breaking state change. Add the node as an import-time prefix instead. See [Import ID Format](#import-id-format).
 
 ## References
 

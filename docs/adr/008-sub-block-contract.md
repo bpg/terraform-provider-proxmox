@@ -107,6 +107,51 @@ The body-taking form coexists with the universal `(plan, state, *[]string, "api-
 
 Hand-rolled `ShouldBeRemoved` + `IsDefined` cascades that branch on `plan.Field.Equal(state.Field)` are not used in either form — `attribute.StringPtrFromValue` already returns nil for null/unknown, so the explicit `IsDefined` guard is redundant in `FillCreateBody` _and_ `FillUpdateBody`. A reflection-based `body.ToDelete(GoFieldName)` helper on `vms.UpdateRequestBody` exists for legacy callers, but new sub-package code must not use it — the canonical pattern is `attribute.CheckDeleteBody` with the API name. See [Common Mistakes](#common-mistakes).
 
+### Guard Ordering in `FillUpdateBody`
+
+When a single-nested sub-package normalizes null/unknown plan Objects into an all-null `Model` for per-field diffing (an `unpackOrEmpty`-style helper), the top-of-function guards must come in a specific order:
+
+```go
+// FIRST: skip when the plan is unknown or identical to state.
+if planValue.IsUnknown() || planValue.Equal(stateValue) {
+    return
+}
+
+plan := unpackOrEmpty(ctx, planValue, diags)
+state := unpackOrEmpty(ctx, stateValue, diags)
+if diags.HasError() {
+    return
+}
+
+// Per-field CheckDeleteBody calls, then compound/atomic field deletion.
+// Gate compound deletion on plan.Type.IsNull() (not !IsDefined) so an
+// inner-field plan that is unknown is not mis-read as a removal.
+
+// THEN: skip population on full block removal.
+if planValue.IsNull() {
+    return
+}
+
+plan.toAPI(ctx, body, diags)
+```
+
+Two failure modes make the ordering load-bearing. First, the unpack helper collapses a block-level unknown into all-null fields — without the top `IsUnknown()` guard, every `CheckDeleteBody(plan.X, state.X, ...)` fires a spurious `delete=`. Second, `!attribute.IsDefined(plan.Type)` matches both null and unknown, so an inner field set from an unresolved reference (e.g. `cpu.type = other_resource.x.computed_attr`) would mis-trigger a compound `delete=cpu`; gate compound deletion on `plan.Type.IsNull()` so only explicit user removal triggers it.
+
+### Conversion Pitfalls
+
+**Zero is a value.** A user-set `0` on an `Int64` attribute must reach PVE when `0` is a meaningful PVE value (e.g. "no limit"). The pattern `if v.ValueInt64() != 0` silently drops it — use `attribute.Int64PtrFromValue`, which returns a pointer to `0` when the user set 0 and nil when null/unknown. When the API struct field is `*int` rather than `*int64`, cast explicitly:
+
+```go
+if v := attribute.Int64PtrFromValue(m.MaxBytes); v != nil {
+    n := int(*v)
+    dev.MaxBytes = &n
+}
+```
+
+Verify with mitmproxy that PVE accepts `0` as meaningful for the specific field; if PVE rejects it, raise the validator's lower bound instead of silently dropping the value.
+
+**Empty string vs null on non-pointer subfields.** Some PVE wire types have `string` (not `*string`) subfields (e.g. `CustomRNGDevice.Source`). In `NewValue`, map an empty string from the API to `types.StringNull()` — otherwise plan=null vs state=`""` produces a permanent diff.
+
 ### Map-keyed Update Diff
 
 Map-keyed sub-packages diff plan against state with `utils.MapDiff`, which returns three maps (`toCreate`, `toUpdate`, `toDelete`):
@@ -120,6 +165,8 @@ for slot := range toDelete      { body.Delete = append(body.Delete, slot) }
 ```
 
 Slot-level deletion appends the slot key (e.g. `"net1"`, `"ide2"`) directly to `body.Delete`. This is the same `body.Delete []string` (`url:"delete,omitempty,comma"`) that scalar field deletion populates via `attribute.CheckDeleteBody` — slot keys and scalar API names share one comma-separated `delete=…` parameter on the wire. The per-device add helper (`AddCustomStorageDevice`, `AddNetworkDevice`, etc.) is sub-package-specific; cdrom is the reference, calling `body.AddCustomStorageDevice(iface, dev.toAPI())` — the `toAPI()` / `fromAPI()` names mandated by [ADR-004 §Model-API Conversion](004-schema-design-conventions.md#model-api-conversion).
+
+Do not add an `if planValue.IsNull() { return }` early-return ahead of the diff. When the user removes the whole block after having slots, the plan is null and the slot deletes come precisely from `MapDiff(nil, state)`'s `toDelete` — Go ranges over nil maps as no-ops, so the null plan needs no special-casing, and an early return silently leaks every slot on block removal.
 
 ### File Layout
 
@@ -151,6 +198,30 @@ Sub-block names normally correspond to one PVE concept (`cpu` → CPU emulation,
 
 The `cpu` block is the historical exception: `cpu.numa` (PVE: `numa=1` — a top-level VM toggle) and `cpu.hotplugged` (PVE: `vcpus=N` — a top-level vCPU count) are SDK-inherited misnomers scheduled for relocation — `numa.enabled` under a dedicated top-level `numa` block, `vcpus` as a top-level scalar — tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231). Future sub-packages should not repeat the pattern.
 
+### Per-Commit Verification Gate
+
+Each sub-package port commit passes all of:
+
+1. `make lint` — 0 issues.
+2. `go build ./...` — clean.
+3. `./testacc TestAccResourceVM2<Sub>` — all scenarios pass.
+4. `./testacc TestAccResourceClonedVM` — the joint-ownership gate: sub-packages consumed by `proxmox_cloned_vm` break it silently otherwise.
+5. Mitmproxy trace reviewed — Create and Update send the expected wire parameters; block removal emits `delete=<key>` (compound) or `delete=<slot>` per removed slot (map-keyed), not silence; field removal emits per-field `delete=<api-name>` for multi-key sub-blocks.
+6. `make docs` — regenerate when the schema shape changed visibly (`Computed` flag, description text).
+
+Skipping step 3 masks schema-shape bugs; skipping step 4 breaks `proxmox_cloned_vm` silently; skipping step 5 misses behavioral regressions that state assertions cannot catch (a leaked block-removal delete leaves state clean while PVE still has the device).
+
+### Mandatory Acceptance Scenarios
+
+Per [ADR-006 §Functional Coverage](006-testing-requirements.md#functional-coverage-requirement), every sub-package covers:
+
+- No block in HCL → state has no block attributes set (verifies the `NullValue` guard).
+- Block set with a subset of fields → set fields in state, others null (plan stability).
+- Update changes the block → state matches the new config (compound replacement / map update).
+- Block removed entirely after being set → state has no block attributes (verifies block-level delete).
+- Map-keyed only: add slot, update slot, remove slot — the three `MapDiff` paths; plus apply → empty re-plan (reorder immunity).
+- Fields where zero is meaningful: set to `0` → state has `0` (see [Conversion Pitfalls](#conversion-pitfalls)).
+
 ## Consequences
 
 ### Positive
@@ -176,6 +247,10 @@ The `cpu` block is the historical exception: `cpu.numa` (PVE: `numa=1` — a top
 - Importing a sub-package's `Model` from the parent resource or another sub-package. Even though `Model` is Go-visible (capital `M`), it is sub-package-internal by contract — the parent resource composes via `Value` / `NewValue` / `Fill…Body` only.
 - Exposing the block as `proxmox_vm.attribute_name` when the block contains attributes from unrelated PVE concepts — split into separate blocks instead. The cpu→numa→vcpus relocation is the cautionary tale.
 - Map-keyed slot regex too loose (`^[a-z]+[0-9]+$`) or too tight (only the slots used in tests). Bound it from the PVE Perl source's `MAX_*` constants.
+- An `if planValue.IsNull() { return }` early-return before the map diff — leaks every slot delete on whole-block removal. See [Map-keyed Update Diff](#map-keyed-update-diff).
+- Running per-field `CheckDeleteBody` calls before the block-level `IsUnknown()` guard — a block-unknown plan collapses to all-null fields and fires spurious deletes. See [Guard Ordering in `FillUpdateBody`](#guard-ordering-in-fillupdatebody).
+- Using `!= 0` as an unset check on integer fields where `0` is a valid PVE value — use `attribute.Int64PtrFromValue`. See [Conversion Pitfalls](#conversion-pitfalls).
+- Guarding body assignment with `reflect.DeepEqual(dev, &vms.Custom<X>{})` zero-checks — assign `body.<Device> = plan.toAPI()` directly; the compound serializer already skips zero fields via `omitempty`.
 
 ## References
 
