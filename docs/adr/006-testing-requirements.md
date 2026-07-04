@@ -17,7 +17,7 @@ Contributions need clear testing expectations. Without documented requirements, 
 ### Test Coverage Requirements
 
 | Test Type              | Requirement                                      | Purpose                                             |
-|------------------------|--------------------------------------------------|-----------------------------------------------------|
+| ---------------------- | ------------------------------------------------ | --------------------------------------------------- |
 | Acceptance tests       | **Required** for all new resources and bug fixes | Verify real API behavior end-to-end                 |
 | Unit tests             | **Recommended** for complex logic                | Test parsing, validation, model conversion          |
 | Example configurations | **Optional**                                     | Legacy tests and user-facing examples in `example/` |
@@ -102,7 +102,7 @@ for _, tt := range tests {
 The `fwprovider/test/` package provides shared utilities:
 
 | Helper                                      | Purpose                                         |
-|---------------------------------------------|-------------------------------------------------|
+| ------------------------------------------- | ----------------------------------------------- |
 | `test.InitEnvironment(t)`                   | Provider factories, config rendering, node name |
 | `test.ResourceAttributes(addr, map)`        | Bulk attribute assertions                       |
 | `test.NoResourceAttributesSet(addr, attrs)` | Assert attributes are null/unset                |
@@ -168,6 +168,19 @@ func TestAccMyResource_Validators(t *testing.T) {
 ### API Verification
 
 Tests passing does not guarantee correct API calls. After tests pass, verify API calls with mitmproxy using the "debug API" workflow. See [DEBUGGING.md](../../.dev/DEBUGGING.md).
+
+**Proving the absence of an API call needs a positive control.** When a change's effect is that a call is _no longer made_ (a skip flag, a removed redundant request), "grepped the flow log, found 0 matches" is weak evidence — 0 also results from a wrong endpoint string or a test that never reached the code path. Make it conclusive: confirm the exact endpoint string from the client code first, assert that the _other_ expected calls are present in the same capture (proving the capture worked), and run a control scenario where the call _should_ fire, confirming a non-zero count. The 0-vs-N contrast across two near-identical runs is the proof; a bare 0 is not.
+
+**Write-only and secret values need out-of-band assertions.** Write-only attribute values are never in state, and PVE redacts many secrets from GET responses — state checks and direct API reads both come back empty whether or not the secret arrived. Many such secrets are observable as root-only files under `/etc/pve/priv/` on the PVE host (e.g. `metricserver/<id>.pw`); assert via root SSH:
+
+```go
+out := te.ExecuteNodeCommands([]string{
+    fmt.Sprintf("cat /etc/pve/priv/metricserver/%s.pw 2>/dev/null || echo MISSING", name),
+})
+exists := !strings.Contains(out, "MISSING")
+```
+
+Assert the file exists after create-with-secret and is gone after the secret's removal — this catches delete-path gaps that state-only checks cannot. Before reaching for mitmproxy, probe `ls -R /etc/pve/priv/` on the test host for a per-resource credentials file.
 
 ## Consequences
 
