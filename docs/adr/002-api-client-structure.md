@@ -69,7 +69,7 @@ type Client struct {
 func (c *Client) Cluster() *cluster.Client { ... }
 func (c *Client) Node(name string) *nodes.Client { ... }
 func (c *Client) Access() *access.Client { ... }
-func (c *Client) Pools() *pools.Client { ... }
+func (c *Client) Pool() *pools.Client { ... }
 ```
 
 ### Layer 3: Domain Clients (`proxmox/{domain}/client.go`)
