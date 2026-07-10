@@ -1,3 +1,8 @@
 CHANGELOG.md
 docs/resources/**
 docs/data-sources/**
+# Template-generated guides (rendered by `make docs`); do not reformat.
+docs/guides/clone-vm.md
+docs/guides/cloud-image.md
+docs/guides/cloud-init.md
+docs/guides/vm-lifecycle.md

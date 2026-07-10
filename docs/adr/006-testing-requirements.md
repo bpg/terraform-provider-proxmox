@@ -151,7 +151,7 @@ func TestAccMyResource_Validators(t *testing.T) {
         Steps: []resource.TestStep{
             {
                 PlanOnly: true,
-                Config:   `resource "proxmox_virtual_environment_my_resource" "test" { ... }`,
+                Config:   `resource "proxmox_my_resource" "test" { ... }`,
                 ExpectError: regexp.MustCompile(`Invalid Attribute Combination`),
             },
         },

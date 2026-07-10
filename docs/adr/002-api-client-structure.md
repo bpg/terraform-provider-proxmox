@@ -57,19 +57,28 @@ Handles all HTTP communication:
 
 ### Layer 2: Top-Level Client (`proxmox/client.go`)
 
-Wraps API client and provides factory methods for domain clients:
+Wraps API client and provides factory methods for domain clients. `Client` is an
+interface implemented by an unexported `client` struct:
 
 ```go
-type Client struct {
-    api    api.Client
-    ssh    ssh.Client
+type Client interface {
+    Cluster() *cluster.Client
+    Node(nodeName string) *nodes.Client
+    Access() *access.Client
+    Pool() *pools.Client
     // ...
 }
 
-func (c *Client) Cluster() *cluster.Client { ... }
-func (c *Client) Node(name string) *nodes.Client { ... }
-func (c *Client) Access() *access.Client { ... }
-func (c *Client) Pools() *pools.Client { ... }
+type client struct {
+    apiClient      api.Client
+    sshClient      ssh.Client
+    tmpDirOverride string
+}
+
+func (c *client) Cluster() *cluster.Client { ... }
+func (c *client) Node(nodeName string) *nodes.Client { ... }
+func (c *client) Access() *access.Client { ... }
+func (c *client) Pool() *pools.Client { ... }
 ```
 
 ### Layer 3: Domain Clients (`proxmox/{domain}/client.go`)

@@ -6,11 +6,11 @@ This document identifies the cleanest framework provider implementations in the 
 
 Three implementations were selected after auditing 47 resources and 36 datasources in `fwprovider/`:
 
-| Rank      | Implementation   | Why Selected                                                                               |
-|-----------|------------------|--------------------------------------------------------------------------------------------|
-| Primary   | **SDN VNet**     | Simplest clean implementation, perfect 3-file pattern (resource, model, datasource)        |
-| Secondary | **Replication**  | Many optional fields, split create/update methods, perfect audit score (66/66)             |
-| Tertiary  | **Backup Job**   | `ConfigValidators`, comma-separated-to-list, nested objects, shared fillCommonFields       |
+| Rank      | Implementation  | Why Selected                                                                         |
+| --------- | --------------- | ------------------------------------------------------------------------------------ |
+| Primary   | **SDN VNet**    | Simplest clean implementation, perfect 3-file pattern (resource, model, datasource)  |
+| Secondary | **Replication** | Many optional fields, split create/update methods, perfect audit score (66/66)       |
+| Tertiary  | **Backup Job**  | `ConfigValidators`, comma-separated-to-list, nested objects, shared fillCommonFields |
 
 Start with SDN VNet for any new resource. Refer to Replication when you need many optional fields or split create/update shapes. Refer to Backup Job for `ConfigValidators`, comma-separated-to-list conversion, or nested objects.
 
@@ -19,7 +19,7 @@ Start with SDN VNet for any new resource. Refer to Replication when you need man
 ## How to Use This Document
 
 | I need to...                                 | Start here                                                                                                          |
-|----------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Create a basic resource                      | [SDN VNet walkthrough](#primary-reference-sdn-vnet)                                                                 |
 | Handle many optional fields                  | [Replication walkthrough](#secondary-reference-replication)                                                         |
 | Handle split create/update patterns          | [Replication walkthrough](#secondary-reference-replication)                                                         |
@@ -902,16 +902,16 @@ if !m.Fleecing.IsNull() && !m.Fleecing.IsUnknown() {
 These patterns appear in more complex resources. Refer to them when your resource
 outgrows the simple 3-file pattern.
 
-| Pattern | Where to Find | When to Use |
-| ------- | ------------- | ----------- |
-| Generic factory resource | `fwprovider/cluster/sdn/zone/resource_generic.go` | Multiple resources sharing CRUD logic with different schemas |
-| Go generics | `fwprovider/storage/resource_generic.go` with `storageResource[T, M]` | API structure allows generic handling across similar resource types |
-| Modular sub-schemas | `fwprovider/nodes/vm/` with sub-packages `cdrom/`, `cpu/`, `memory/`, `rng/`, `vga/` | Very large resources that benefit from splitting into sub-packages |
-| Opt-in management | `fwprovider/nodes/clonedvm/resource.go` with `optInManagedAttribute()` | Cloned resources where only explicitly listed fields are managed |
-| `ValidateConfig` method | `fwprovider/cluster/sdn/subnet/resource.go` | Complex validation that requires reading multiple attributes |
-| Shared model | `fwprovider/cluster/acme/plugin_model.go` shared by `resource_acme_dns_plugin.go` and `resource_acme_account.go` | Multiple resources sharing one model file with common types |
-| Custom `stringset.Value` type | `fwprovider/types/stringset/` | Comma-separated list attributes (e.g., node lists) |
-| Comma-separated to List/Map | fwprovider/cluster/backup/model.go with toAPICreate()/fromAPI() | API fields using comma-separated strings exposed as Terraform lists or maps |
+| Pattern                       | Where to Find                                                                                                    | When to Use                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Generic factory resource      | `fwprovider/cluster/sdn/zone/resource_generic.go`                                                                | Multiple resources sharing CRUD logic with different schemas                |
+| Go generics                   | `fwprovider/storage/resource_generic.go` with `storageResource[T, M]`                                            | API structure allows generic handling across similar resource types         |
+| Modular sub-schemas           | `fwprovider/nodes/vm/` with sub-packages `cdrom/`, `cpu/`, `memory/`, `rng/`, `vga/`                             | Very large resources that benefit from splitting into sub-packages          |
+| Opt-in management             | `fwprovider/nodes/clonedvm/schema.go` with `optInManagedAttribute()`                                             | Cloned resources where only explicitly listed fields are managed            |
+| `ValidateConfig` method       | `fwprovider/cluster/sdn/subnet/resource.go`                                                                      | Complex validation that requires reading multiple attributes                |
+| Shared model                  | `fwprovider/cluster/acme/model_plugin.go` shared by `resource_acme_dns_plugin.go` and `resource_acme_account.go` | Multiple resources sharing one model file with common types                 |
+| Custom `stringset.Value` type | `fwprovider/types/stringset/`                                                                                    | Comma-separated list attributes (e.g., node lists)                          |
+| Comma-separated to List/Map   | `fwprovider/cluster/backup/model.go` with `toAPICreate()`/`fromAPI()`                                            | API fields using comma-separated strings exposed as Terraform lists or maps |
 
 ---
 
@@ -1039,7 +1039,7 @@ As of 2026-03-27, a comprehensive audit scored all 47 Framework resources. Resul
 ### Tier 1: Critical (Grade D -- need rework)
 
 | Resource    | Score | Primary Issues                                              |
-|-------------|-------|-------------------------------------------------------------|
+| ----------- | ----- | ----------------------------------------------------------- |
 | UserToken   | 31/66 | Bare State.Set calls, no read-back, missing RemoveResource  |
 | ACMEAccount | 34/66 | No toAPI/fromAPI, no CheckDelete, credentials not Sensitive |
 | ACMEPlugin  | 34/66 | Incomplete read-back, no CheckDelete, copy-paste bug        |
@@ -1047,7 +1047,7 @@ As of 2026-03-27, a comprehensive audit scored all 47 Framework resources. Resul
 ### Tier 2: High-ROI Fixes (fix shared code -- many resources improve)
 
 | Fix                                                     | Affected Resources     |
-|---------------------------------------------------------|------------------------|
+| ------------------------------------------------------- | ---------------------- |
 | Storage generic base: add CheckDelete, fix error prefix | 7 storage resources    |
 | HW Mapping shared.go: fix silent error swallowing       | 3 HW mapping resources |
 | Error message standardization codemod                   | ~33 resources          |
@@ -1064,7 +1064,7 @@ Nearly universal compliance with types.*, validators, and descriptions.
 ### Reference Implementation Scores
 
 | Resource      | Score | Grade | Notes                                                         |
-|---------------|-------|-------|---------------------------------------------------------------|
+| ------------- | ----- | ----- | ------------------------------------------------------------- |
 | Replication   | 66/66 | A     | Perfect score -- additional reference for split create/update |
 | BackupJob     | 64/66 | A     | Excellent -- uses `proxmox_` prefix natively per ADR-007      |
 | SDN VNet      | 63/66 | A     | Primary reference (gold standard)                             |

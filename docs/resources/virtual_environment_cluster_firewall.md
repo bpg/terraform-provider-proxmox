@@ -31,9 +31,9 @@ resource "proxmox_virtual_environment_cluster_firewall" "example" {
 
 - `enabled` - (Optional) Enable or disable the firewall cluster wide.
 - `ebtables` - (Optional) Enable ebtables rules cluster wide.
-- `input_policy` - (Optional) The default input policy (`ACCEPT`, `DROP`, `REJECT`).
-- `output_policy` - (Optional) The default output policy (`ACCEPT`, `DROP`, `REJECT`).
-- `forward_policy` - (Optional) The default forward policy (`ACCEPT`, `DROP`).
+- `input_policy` - (Optional) The default input policy (`ACCEPT`, `DROP`, `REJECT`). Defaults to `DROP`.
+- `output_policy` - (Optional) The default output policy (`ACCEPT`, `DROP`, `REJECT`). Defaults to `ACCEPT`.
+- `forward_policy` - (Optional) The default forward policy (`ACCEPT`, `DROP`). Defaults to `ACCEPT`.
 - `log_ratelimit` - (Optional) The log rate limit.
     - `enabled` - (Optional) Enable or disable the log rate limit.
     - `burst` - (Optional) Initial burst of packages which will always get
@@ -47,7 +47,8 @@ There are no additional attributes available for this resource.
 
 ## Important Notes
 
-Be careful not to use this resource multiple times for the same node.
+This resource manages cluster-wide firewall options, so it should be used only
+once per cluster. Declaring it multiple times results in conflicting updates.
 
 ## Import
 

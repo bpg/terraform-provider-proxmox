@@ -68,7 +68,7 @@ The provider supports three authentication methods (in order of precedence):
 ### Authentication Methods Comparison
 
 | Method                                                                                   | Use Case             | Pros                                                              | Cons                                                              | Security Level |
-|------------------------------------------------------------------------------------------|----------------------|-------------------------------------------------------------------|-------------------------------------------------------------------|----------------|
+| ---------------------------------------------------------------------------------------- | -------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- | -------------- |
 | [API Token](#api-token-authentication)                                                   | Production, CI/CD    | - No password needed<br>- Fine-grained permissions<br>- Revocable | - Some operations not supported<br>- Requires SSH username config | High           |
 | [Auth Ticket](#pre-authentication-or-passing-an-authentication-ticket-into-the-provider) | Automated scripts    | - Short-lived<br>- No password storage<br>- TOTP support          | - More complex setup<br>- Needs periodic renewal                  | High           |
 | Username/Password                                                                        | Development, Testing | - Full API support<br>- Simple setup                              | - Password in config/env<br>- Not revocable individually          | Medium         |
@@ -112,7 +112,7 @@ A better approach is to extract these values into Terraform variables and refere
 ```hcl
 provider "proxmox" {
   endpoint = var.virtual_environment_endpoint
-  
+
   # Choose one authentication method:
   api_token = var.virtual_environment_api_token
   # OR
@@ -171,32 +171,32 @@ You can create an API Token via the Proxmox UI or the command line on the Proxmo
 
 - Create a user:
 
-    ```sh
-    pveum user add terraform@pve
-    ```
+  ```sh
+  pveum user add terraform@pve
+  ```
 
 - Create a role for the user (you can skip this step if you want to use any of the existing roles):
 
-    ```sh
-    pveum role add Terraform -privs "Realm.AllocateUser, VM.PowerMgmt, VM.GuestAgent.Unrestricted, Sys.Console, Sys.Audit, Sys.AccessNetwork, VM.Config.Cloudinit, VM.Replicate, Pool.Allocate, SDN.Audit, Realm.Allocate, SDN.Use, Mapping.Modify, VM.Config.Memory, VM.GuestAgent.FileSystemMgmt, VM.Allocate, SDN.Allocate, VM.Console, VM.Clone, VM.Backup, Datastore.AllocateTemplate, VM.Snapshot, VM.Config.Network, Sys.Incoming, Sys.Modify, VM.Snapshot.Rollback, VM.Config.Disk, Datastore.Allocate, VM.Config.CPU, VM.Config.CDROM, Group.Allocate, Datastore.Audit, VM.Migrate, VM.GuestAgent.FileWrite, Mapping.Use, Datastore.AllocateSpace, Sys.Syslog, VM.Config.Options, Pool.Audit, User.Modify, VM.Config.HWType, VM.Audit, Sys.PowerMgmt, VM.GuestAgent.Audit, Mapping.Audit, VM.GuestAgent.FileRead, Permissions.Modify"
-    ```
+  ```sh
+  pveum role add Terraform -privs "Realm.AllocateUser, VM.PowerMgmt, VM.GuestAgent.Unrestricted, Sys.Console, Sys.Audit, Sys.AccessNetwork, VM.Config.Cloudinit, VM.Replicate, Pool.Allocate, SDN.Audit, Realm.Allocate, SDN.Use, Mapping.Modify, VM.Config.Memory, VM.GuestAgent.FileSystemMgmt, VM.Allocate, SDN.Allocate, VM.Console, VM.Clone, VM.Backup, Datastore.AllocateTemplate, VM.Snapshot, VM.Config.Network, Sys.Incoming, Sys.Modify, VM.Snapshot.Rollback, VM.Config.Disk, Datastore.Allocate, VM.Config.CPU, VM.Config.CDROM, Group.Allocate, Datastore.Audit, VM.Migrate, VM.GuestAgent.FileWrite, Mapping.Use, Datastore.AllocateSpace, Sys.Syslog, VM.Config.Options, Pool.Audit, User.Modify, VM.Config.HWType, VM.Audit, Sys.PowerMgmt, VM.GuestAgent.Audit, Mapping.Audit, VM.GuestAgent.FileRead, Permissions.Modify"
+  ```
 
   ~> The list of available privileges has changed in PVE 9.0. The above list is only an example (and likely too permissive for most use cases). Please review and adjust to your needs.
   Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
 
 - Assign the role to the previously created user:
 
-    ```sh
-    pveum aclmod / -user terraform@pve -role Terraform
-    ```
+  ```sh
+  pveum aclmod / -user terraform@pve -role Terraform
+  ```
 
 - Create an API token for the user:
 
-    ```sh
-    pveum user token add terraform@pve provider --privsep=0
-    ```
+  ```sh
+  pveum user token add terraform@pve provider --privsep=0
+  ```
 
-    -> Make sure you copy the token value, as it will not be displayed again.
+  -> Make sure you copy the token value, as it will not be displayed again.
 
 Refer to the [PVE User Management](https://pve.proxmox.com/wiki/User_Management) documentation for more details.
 
@@ -273,12 +273,12 @@ terraform plan
 
 SSH connection is **only** required for these specific operations:
 
-| Operation | Resource | Why SSH is needed |
-| --------- | -------- | ----------------- |
-| Upload snippets | `proxmox_virtual_environment_file` | Proxmox API doesn't support snippet uploads |
-| Upload certain file types | `proxmox_virtual_environment_file` | Some content types require direct node access |
-| Import disks via `source_file.path` | `proxmox_virtual_environment_vm` | Local file transfer to node |
-| Configure `idmap` entries | `proxmox_virtual_environment_container` | Proxmox API doesn't support `lxc[n]` parameters |
+| Operation                           | Resource                                | Why SSH is needed                               |
+| ----------------------------------- | --------------------------------------- | ----------------------------------------------- |
+| Upload snippets                     | `proxmox_virtual_environment_file`      | Proxmox API doesn't support snippet uploads     |
+| Upload certain file types           | `proxmox_virtual_environment_file`      | Some content types require direct node access   |
+| Import disks via `source_file.path` | `proxmox_virtual_environment_vm`        | Local file transfer to node                     |
+| Configure `idmap` entries           | `proxmox_virtual_environment_container` | Proxmox API doesn't support `lxc[n]` parameters |
 
 **SSH is NOT required for:**
 
@@ -389,36 +389,36 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
 
 - Create a new system user:
 
-    ```sh
-    useradd -m terraform
-    ```
+  ```sh
+  useradd -m terraform
+  ```
 
 - Configure the `sudo` privilege for the user, by adding a new sudoers file to the `/etc/sudoers.d` directory:
 
-    ```sh
-    visudo -f /etc/sudoers.d/terraform
-    ```
+  ```sh
+  visudo -f /etc/sudoers.d/terraform
+  ```
 
   Add the following lines to the file:
 
-    ```text
-    terraform ALL=(root) NOPASSWD: /usr/sbin/pvesm
-    terraform ALL=(root) NOPASSWD: /usr/sbin/qm
-    terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
-    ```
+  ```text
+  terraform ALL=(root) NOPASSWD: /usr/sbin/pvesm
+  terraform ALL=(root) NOPASSWD: /usr/sbin/qm
+  terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
+  ```
 
   If you use the `idmap` attribute on `proxmox_virtual_environment_container`, the provider edits the container configuration file via SSH. Add the following rules to allow `sed` and `tee` access to the LXC configuration directory:
 
-    ```text
-    terraform ALL=(root) NOPASSWD: /usr/bin/sed -i * /etc/pve/lxc/*.conf
-    terraform ALL=(root) NOPASSWD: /usr/bin/tee -a /etc/pve/lxc/*.conf
-    ```
+  ```text
+  terraform ALL=(root) NOPASSWD: /usr/bin/sed -i * /etc/pve/lxc/*.conf
+  terraform ALL=(root) NOPASSWD: /usr/bin/tee -a /etc/pve/lxc/*.conf
+  ```
 
   If you're using a different datastore for snippets, not the default `local`, you should add the datastore's mount point to the sudoers file as well, for example:
 
-    ```text
-    terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
-    ```
+  ```text
+  terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
+  ```
 
   You can find the mount point of the datastore by running `pvesh get /storage/<name>` on the Proxmox node.
 
@@ -427,10 +427,10 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
 - Copy your SSH public key to the `~/.ssh/authorized_keys` file of the `terraform` user on the target node.
 
 - Test the SSH connection and password-less `sudo`:
-  
-    ```sh
-    ssh terraform@<target-node> sudo pvesm apiinfo 
-    ```
+
+  ```sh
+  ssh terraform@<target-node> sudo pvesm apiinfo
+  ```
 
   You should be able to connect to the target node and see the output containing `APIVER <number>` on the screen without being prompted for your password.
 
@@ -481,7 +481,7 @@ provider "proxmox" {
   ssh {
     // ...
     socks5_server     = "ip-or-fqdn-of-socks5-server:port"
-    socks5_username   = "username"  # optional  
+    socks5_username   = "username"  # optional
     socks5_password   = "password"  # optional
   }
 }
@@ -511,41 +511,41 @@ All provider arguments can be configured via environment variables. This is the 
 
 **API Connection (required):**
 
-| Environment Variable | Description |
-| -------------------- | ----------- |
+| Environment Variable  | Description                                              |
+| --------------------- | -------------------------------------------------------- |
 | `PROXMOX_VE_ENDPOINT` | API endpoint URL (e.g., `https://pve.example.com:8006/`) |
 
 **Authentication (one method required):**
 
-| Environment Variable | Description |
-| -------------------- | ----------- |
-| `PROXMOX_VE_API_TOKEN` | API token (recommended for production) |
-| `PROXMOX_VE_USERNAME` | Username with realm (e.g., `root@pam`) |
-| `PROXMOX_VE_PASSWORD` | Password for username/password auth |
-| `PROXMOX_VE_AUTH_TICKET` | Pre-authenticated session ticket |
-| `PROXMOX_VE_CSRF_PREVENTION_TOKEN` | CSRF token (used with auth ticket) |
+| Environment Variable               | Description                            |
+| ---------------------------------- | -------------------------------------- |
+| `PROXMOX_VE_API_TOKEN`             | API token (recommended for production) |
+| `PROXMOX_VE_USERNAME`              | Username with realm (e.g., `root@pam`) |
+| `PROXMOX_VE_PASSWORD`              | Password for username/password auth    |
+| `PROXMOX_VE_AUTH_TICKET`           | Pre-authenticated session ticket       |
+| `PROXMOX_VE_CSRF_PREVENTION_TOKEN` | CSRF token (used with auth ticket)     |
 
 **API Options (optional):**
 
-| Environment Variable | Description |
-| -------------------- | ----------- |
-| `PROXMOX_VE_INSECURE` | Skip TLS verification (`true`/`false`) |
-| `PROXMOX_VE_MIN_TLS` | Minimum TLS version (`1.0`, `1.1`, `1.2`, `1.3`) |
-| `PROXMOX_VE_TMPDIR` | Custom temporary directory |
+| Environment Variable  | Description                                      |
+| --------------------- | ------------------------------------------------ |
+| `PROXMOX_VE_INSECURE` | Skip TLS verification (`true`/`false`)           |
+| `PROXMOX_VE_MIN_TLS`  | Minimum TLS version (`1.0`, `1.1`, `1.2`, `1.3`) |
+| `PROXMOX_VE_TMPDIR`   | Custom temporary directory                       |
 
 **SSH Connection (optional — only if [SSH is required](#when-is-ssh-required)):**
 
-| Environment Variable | Description |
-| -------------------- | ----------- |
-| `PROXMOX_VE_SSH_USERNAME` | SSH username |
-| `PROXMOX_VE_SSH_PASSWORD` | SSH password |
-| `PROXMOX_VE_SSH_PRIVATE_KEY` | SSH private key (PEM format) |
-| `PROXMOX_VE_SSH_AGENT` | Use SSH agent (`true`/`false`) |
-| `PROXMOX_VE_SSH_AUTH_SOCK` | SSH agent socket path |
-| `PROXMOX_VE_SSH_AGENT_FORWARDING` | Enable SSH agent forwarding |
-| `PROXMOX_VE_SSH_SOCKS5_SERVER` | SOCKS5 proxy server address |
-| `PROXMOX_VE_SSH_SOCKS5_USERNAME` | SOCKS5 proxy username |
-| `PROXMOX_VE_SSH_SOCKS5_PASSWORD` | SOCKS5 proxy password |
+| Environment Variable              | Description                    |
+| --------------------------------- | ------------------------------ |
+| `PROXMOX_VE_SSH_USERNAME`         | SSH username                   |
+| `PROXMOX_VE_SSH_PASSWORD`         | SSH password                   |
+| `PROXMOX_VE_SSH_PRIVATE_KEY`      | SSH private key (PEM format)   |
+| `PROXMOX_VE_SSH_AGENT`            | Use SSH agent (`true`/`false`) |
+| `PROXMOX_VE_SSH_AUTH_SOCK`        | SSH agent socket path          |
+| `PROXMOX_VE_SSH_AGENT_FORWARDING` | Enable SSH agent forwarding    |
+| `PROXMOX_VE_SSH_SOCKS5_SERVER`    | SOCKS5 proxy server address    |
+| `PROXMOX_VE_SSH_SOCKS5_USERNAME`  | SOCKS5 proxy username          |
+| `PROXMOX_VE_SSH_SOCKS5_PASSWORD`  | SOCKS5 proxy password          |
 
 ## Argument Reference
 
@@ -555,7 +555,7 @@ In addition to [generic provider arguments](https://developer.hashicorp.com/terr
 - `insecure` - (Optional) Whether to skip the TLS verification step (can also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults to `false`.
 - `min_tls` - (Optional) The minimum required TLS version for API calls (can also be sourced from `PROXMOX_VE_MIN_TLS`). Supported values: `1.0|1.1|1.2|1.3`. If omitted, defaults to `1.3`.
 
-- `auth_ticket` - (Optional) The auth ticket from an external auth call (can also be sourced from `PROXMOX_VE_AUTH_TICKET`). To be used in conjunction with `csrf_prevention_token`, takes precedence over `api_token` and `username` with `password`. For example, `PVE:username@realm:12345678::some_base64_payload==`.
+- `auth_ticket` - (Optional) The auth ticket from an external auth call (can also be sourced from `PROXMOX_VE_AUTH_TICKET`). To be used in conjunction with `csrf_prevention_token`. Note that `api_token` takes precedence over the auth ticket, which in turn takes precedence over `username` with `password`. For example, `PVE:username@realm:12345678::some_base64_payload==`.
 - `csrf_prevention_token` - (Optional) The CSRF Prevention Token from an external auth call (can also be sourced from `PROXMOX_VE_CSRF_PREVENTION_TOKEN`). For example, `12345678:some_blob`.
 
 - `api_token` - (Optional) The API Token for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_API_TOKEN`). Takes precedence over `username` with `password`. For example, `username@realm!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
@@ -566,20 +566,20 @@ In addition to [generic provider arguments](https://developer.hashicorp.com/terr
 - `password` - (Required) The password for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_PASSWORD`).
 
 - `ssh` - (Optional) The SSH connection configuration to a Proxmox node. This is a block, whose fields are documented below.
-    - `username` - (Optional) The username to use for the SSH connection. Defaults to the username used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_USERNAME`. Required when using API Token.
-    - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection when using username/password authentication. Default has no effect when using API token authentication, as there is no password to inherit. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.
-    - `agent` - (Optional) Whether to use the SSH agent for the SSH authentication. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_AGENT`.
-    - `agent_socket` - (Optional) The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
-    - `agent_forwarding` - (Optional) Whether to enable SSH agent forwarding. Defaults to the value of the `PROXMOX_VE_SSH_AGENT_FORWARDING` environment variable, or `false` if not set.
-    - `private_key` - (Optional) The private key to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_PRIVATE_KEY`. The private key must be in PEM format.
-    - `socks5_server` - (Optional) The address of the SOCKS5 proxy server to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_SERVER`.
-    - `socks5_username` - (Optional) The username to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_USERNAME`.
-    - `socks5_password` - (Optional) The password to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_PASSWORD`.
-    - `node_address_source` - (Optional) The method used to resolve node IP addresses for SSH connections. Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. DNS resolution prefers IPv4 but falls back to IPv6 if no IPv4 addresses are available. Useful in multi-subnet environments where the API may return an inaccessible IP (e.g., a Ceph network address). Defaults to `api`.
-    - `node` - (Optional) The node configuration for the SSH connection. Can be specified multiple times to provide configuration for multiple nodes.
-        - `name` - (Required) The name of the node.
-        - `address` - (Required) The FQDN/IP address of the node.
-        - `port` - (Optional) SSH port of the node. Defaults to 22.
+  - `username` - (Optional) The username to use for the SSH connection. Defaults to the username used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_USERNAME`. Required when using API Token.
+  - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection when using username/password authentication. Default has no effect when using API token authentication, as there is no password to inherit. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.
+  - `agent` - (Optional) Whether to use the SSH agent for the SSH authentication. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_AGENT`.
+  - `agent_socket` - (Optional) The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
+  - `agent_forwarding` - (Optional) Whether to enable SSH agent forwarding. Defaults to the value of the `PROXMOX_VE_SSH_AGENT_FORWARDING` environment variable, or `false` if not set.
+  - `private_key` - (Optional) The private key to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_PRIVATE_KEY`. The private key must be in PEM format.
+  - `socks5_server` - (Optional) The address of the SOCKS5 proxy server to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_SERVER`.
+  - `socks5_username` - (Optional) The username to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_USERNAME`.
+  - `socks5_password` - (Optional) The password to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_PASSWORD`.
+  - `node_address_source` - (Optional) The method used to resolve node IP addresses for SSH connections. Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. DNS resolution prefers IPv4 but falls back to IPv6 if no IPv4 addresses are available. Useful in multi-subnet environments where the API may return an inaccessible IP (e.g., a Ceph network address). Defaults to `api`.
+  - `node` - (Optional) The node configuration for the SSH connection. Can be specified multiple times to provide configuration for multiple nodes.
+    - `name` - (Required) The name of the node.
+    - `address` - (Required) The FQDN/IP address of the node.
+    - `port` - (Optional) SSH port of the node. Defaults to 22.
 - `tmp_dir` - (Optional) Use a custom temporary directory. (can also be sourced from `PROXMOX_VE_TMPDIR`)
 - `random_vm_ids` - (Optional) Use random VM IDs for VMs and Containers when `vm_id` attribute is not specified. Defaults to `false`.
 - `random_vm_id_start` - (Optional) The start of the range for random VM IDs. Defaults to `10000`.

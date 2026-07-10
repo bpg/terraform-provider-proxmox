@@ -14,9 +14,12 @@ if [[ -n "$GO_STAGED" ]]; then
     fi
 fi
 
-# Check for staged Markdown files (excluding auto-generated docs)
+# Check for staged Markdown files (excluding auto-generated docs, including
+# template-generated guides rendered by `make docs`).
 MD_STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.md' \
-    ':!docs/resources/**' ':!docs/data-sources/**' ':!CHANGELOG.md' || true)
+    ':!docs/resources/**' ':!docs/data-sources/**' ':!CHANGELOG.md' \
+    ':!docs/guides/clone-vm.md' ':!docs/guides/cloud-image.md' \
+    ':!docs/guides/cloud-init.md' ':!docs/guides/vm-lifecycle.md' || true)
 if [[ -n "$MD_STAGED" ]]; then
     echo "pre-commit: running prettier on staged .md files..."
     # shellcheck disable=SC2086
