@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go vet *)",
+      "Bash(./testacc *)",
+      "Bash(gh search *)",
+      "Bash(lychee *)",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__plugin_context7_context7__resolve-library-id"
+    ]
+  }
+}

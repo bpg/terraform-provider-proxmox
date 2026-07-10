@@ -82,7 +82,7 @@ resource "proxmox_virtual_environment_firewall_rules" "inbound" {
         - `macro`- (Optional) Macro name. Use predefined standard macro
             from <https://pve.proxmox.com/pve-docs/pve-admin-guide.html#_firewall_macro_definitions>
         - `proto` - (Optional) Restrict packet protocol. You can use protocol
-            names as defined in '/etc/protocols'.
+            names or simple numbers (0-255), as defined in '/etc/protocols'.
         - `source` - (Optional) Restrict packet source address. This can refer
             to a single IP address, an IP set ('+ipsetname') or an IP alias
             definition. You can also specify an address range

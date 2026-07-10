@@ -24,7 +24,6 @@ resource "tls_private_key" "proxmox_virtual_environment_certificate" {
 }
 
 resource "tls_self_signed_cert" "proxmox_virtual_environment_certificate" {
-  key_algorithm   = tls_private_key.proxmox_virtual_environment_certificate.algorithm
   private_key_pem = tls_private_key.proxmox_virtual_environment_certificate.private_key_pem
 
   subject {

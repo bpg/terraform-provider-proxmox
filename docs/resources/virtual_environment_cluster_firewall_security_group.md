@@ -11,6 +11,10 @@ A security group is a collection of rules, defined at cluster level, which can
 be used in all VMs' rules. For example, you can define a group named “webserver”
 with rules to open the http and https ports.
 
+~> Security groups are always cluster-scoped. Any node- or guest-scoping
+attributes (`node_name`, `vm_id`, `container_id`) have no effect on this
+resource and are silently ignored.
+
 ## Example Usage
 
 ```hcl
@@ -68,7 +72,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
     - `macro`- (Optional) Macro name. Use predefined standard macro
         from <https://pve.proxmox.com/pve-docs/pve-admin-guide.html#_firewall_macro_definitions>
     - `proto` - (Optional) Restrict packet protocol. You can use protocol names
-        as defined in '/etc/protocols'.
+        or simple numbers (0-255), as defined in '/etc/protocols'.
     - `source` - (Optional) Restrict packet source address. This can refer
         to a single IP address, an IP set ('+ipsetname') or an IP alias
         definition. You can also specify an address range like

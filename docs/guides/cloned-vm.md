@@ -3,12 +3,12 @@ layout: page
 page_title: "Clone a VM with cloned_vm Resource"
 subcategory: Guides
 description: |-
-    This guide explains how to use the proxmox_virtual_environment_cloned_vm resource to clone VMs from templates with explicit opt-in device management.
+  This guide explains how to use the proxmox_cloned_vm resource to clone VMs from templates with explicit opt-in device management.
 ---
 
 # Clone a VM with cloned_vm Resource
 
-The `proxmox_virtual_environment_cloned_vm` resource provides explicit opt-in management: only devices and configuration explicitly listed in Terraform are managed. Inherited settings from templates are preserved unless explicitly overridden or deleted. This prevents accidental deletion of inherited devices and provides predictable behavior.
+The `proxmox_cloned_vm` resource provides explicit opt-in management: only devices and configuration explicitly listed in Terraform are managed. Inherited settings from templates are preserved unless explicitly overridden or deleted. This prevents accidental deletion of inherited devices and provides predictable behavior.
 
 ## Create a VM template
 
@@ -77,7 +77,7 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
 Once you have a template, clone it using the `cloned_vm` resource:
 
 ```terraform
-resource "proxmox_virtual_environment_cloned_vm" "ubuntu_clone" {
+resource "proxmox_cloned_vm" "ubuntu_clone" {
   node_name = var.virtual_environment_node_name
   name      = "ubuntu-clone"
 
@@ -108,7 +108,7 @@ resource "proxmox_virtual_environment_cloned_vm" "ubuntu_clone" {
 }
 
 output "vm_id" {
-  value = proxmox_virtual_environment_cloned_vm.ubuntu_clone.id
+  value = proxmox_cloned_vm.ubuntu_clone.id
 }
 ```
 
@@ -128,7 +128,7 @@ This provides stable, addressable references to specific devices that don't chan
 To delete inherited devices, use the `delete` block:
 
 ```terraform
-resource "proxmox_virtual_environment_cloned_vm" "example" {
+resource "proxmox_cloned_vm" "example" {
   # ... other configuration ...
 
   delete = {
@@ -157,7 +157,7 @@ If you need to customize any of these after cloning, use the legacy `proxmox_vir
 
 ## When to Use
 
-Use `proxmox_virtual_environment_cloned_vm` when:
+Use `proxmox_cloned_vm` when:
 
 - You want explicit control over which devices are managed
 - You need to prevent accidental deletion of inherited devices

@@ -3,7 +3,7 @@ layout: page
 page_title: "Clone VM: Choosing Between Resources"
 subcategory: Guides
 description: |-
-  Guide to help you choose between proxmox_virtual_environment_vm and proxmox_virtual_environment_cloned_vm for VM cloning
+  Guide to help you choose between proxmox_virtual_environment_vm and proxmox_cloned_vm for VM cloning
 ---
 
 # Clone VM: Choosing Between Resources
@@ -13,7 +13,7 @@ description: |-
 Terraform provider for Proxmox offers two approaches for cloning VMs:
 
 1. **`proxmox_virtual_environment_vm`** (Legacy VM resource) - Simple clone support for straightforward scenarios
-2. **`proxmox_virtual_environment_cloned_vm`** (Framework resource) - Advanced clone management with explicit device control
+2. **`proxmox_cloned_vm`** (Framework resource) - Advanced clone management with explicit device control
 
 This guide helps you choose the right resource and migrate if needed.
 
@@ -27,7 +27,7 @@ This guide helps you choose the right resource and migrate if needed.
 - You don't need fine-grained control over specific devices
 - You want to avoid VM recreation during migration
 
-### Use `proxmox_virtual_environment_cloned_vm` When
+### Use `proxmox_cloned_vm` When
 
 - You need explicit control over which devices are managed
 - Templates have complex multi-device configurations
@@ -49,7 +49,7 @@ When cloning a VM in Proxmox, the cloned VM inherits configuration from the temp
 
 ### How `cloned_vm` Solves These Issues
 
-The `proxmox_virtual_environment_cloned_vm` resource addresses these challenges with:
+The `proxmox_cloned_vm` resource addresses these challenges with:
 
 - **Explicit opt-in management**: Only configuration you explicitly declare is managed by Terraform
 - **Map-based devices**: Network and disk devices use slot-based keys (`net0`, `scsi0`) instead of lists
@@ -85,7 +85,7 @@ resource "proxmox_virtual_environment_vm" "cloned_vm" {
 **After (using cloned_vm):**
 
 ```terraform
-resource "proxmox_virtual_environment_cloned_vm" "cloned_vm" {
+resource "proxmox_cloned_vm" "cloned_vm" {
   node_name = "pve"
   name      = "my-cloned-vm"
 
@@ -109,7 +109,7 @@ resource "proxmox_virtual_environment_cloned_vm" "cloned_vm" {
 
 **Key Changes:**
 
-1. Resource type: `proxmox_virtual_environment_vm` → `proxmox_virtual_environment_cloned_vm`
+1. Resource type: `proxmox_virtual_environment_vm` → `proxmox_cloned_vm`
 2. Clone syntax: `clone { vm_id = X }` → `clone = { source_vm_id = X }` (attribute syntax, not block)
 3. Network devices: `network_device { ... }` → `network = { net0 = { ... } }` (map-based, not list)
 4. Disk devices: `disk { interface = "scsi0" }` → `disk = { scsi0 = { ... } }` (map-based, not list)
@@ -175,7 +175,7 @@ resource "proxmox_virtual_environment_vm" "old" {
 **After (cloned_vm):**
 
 ```terraform
-resource "proxmox_virtual_environment_cloned_vm" "new" {
+resource "proxmox_cloned_vm" "new" {
   node_name = "pve"
 
   clone = {
@@ -227,7 +227,7 @@ resource "proxmox_virtual_environment_vm" "old" {
 **After (cloned_vm):**
 
 ```terraform
-resource "proxmox_virtual_environment_cloned_vm" "new" {
+resource "proxmox_cloned_vm" "new" {
   node_name = "pve"
 
   clone = {
@@ -265,7 +265,7 @@ resource "proxmox_virtual_environment_vm" "template" {
 }
 
 # Clone and manage only net0, leave net1 and net2 as-is
-resource "proxmox_virtual_environment_cloned_vm" "partial_management" {
+resource "proxmox_cloned_vm" "partial_management" {
   clone = {
     source_vm_id = proxmox_virtual_environment_vm.template.id
   }
@@ -284,7 +284,7 @@ resource "proxmox_virtual_environment_cloned_vm" "partial_management" {
 
 ```terraform
 # Clone but delete net1 from the template
-resource "proxmox_virtual_environment_cloned_vm" "selective_delete" {
+resource "proxmox_cloned_vm" "selective_delete" {
   clone = {
     source_vm_id = proxmox_virtual_environment_vm.template.id
   }
@@ -325,7 +325,7 @@ resource "proxmox_virtual_environment_vm" "old" {
 **After (cloned_vm):**
 
 ```terraform
-resource "proxmox_virtual_environment_cloned_vm" "new" {
+resource "proxmox_cloned_vm" "new" {
   node_name = "pve"
 
   clone = {
@@ -359,7 +359,7 @@ resource "proxmox_virtual_environment_cloned_vm" "new" {
 
 When migrating from legacy VM resource (`proxmox_virtual_environment_vm`) with clone to `cloned_vm`:
 
-- [ ] Update resource type from `proxmox_virtual_environment_vm` to `proxmox_virtual_environment_cloned_vm`
+- [ ] Update resource type from `proxmox_virtual_environment_vm` to `proxmox_cloned_vm`
 - [ ] Change `clone { vm_id = X }` to `clone = { source_vm_id = X }`
 - [ ] Update clone block attributes:
   - [ ] `datastore_id` → `target_datastore`
@@ -395,7 +395,7 @@ If you need to preserve the VM ID, you can:
 2. Use the `id` attribute to specify the desired VM ID
 
 ```terraform
-resource "proxmox_virtual_environment_cloned_vm" "imported" {
+resource "proxmox_cloned_vm" "imported" {
   id        = 123
   node_name = "pve"
 
@@ -410,7 +410,7 @@ resource "proxmox_virtual_environment_cloned_vm" "imported" {
 Then import the existing VM:
 
 ```bash
-terraform import proxmox_virtual_environment_cloned_vm.imported pve/123
+terraform import proxmox_cloned_vm.imported pve/123
 ```
 
 ## FAQs
