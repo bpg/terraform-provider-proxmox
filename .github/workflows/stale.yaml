@@ -26,8 +26,8 @@ jobs:
           repo-token: "${{ steps.app-token.outputs.token }}"
           days-before-stale: 180
           days-before-close: 30
-          exempt-issue-labels: "needs-triage, acknowledged, in-progress"
-          exempt-pr-labels: "needs-review, under-review, acknowledged, planned"
+          exempt-issue-labels: "lifecycle:acknowledged, lifecycle:needs-repro, status:in-progress, status:blocked, priority:P0, priority:P1"
+          exempt-pr-labels: "status:in-progress, status:blocked"
           remove-stale-when-updated: true
           delete-branch: false
           stale-issue-label: stale
