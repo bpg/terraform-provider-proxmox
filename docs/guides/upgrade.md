@@ -148,7 +148,7 @@ Operations that require a VM shutdown — TPM state migration, cloud-init disk m
 
 ### Short-name resource aliases (`proxmox_*` prefix)
 
-All existing Framework resources now have shorter aliases using the `proxmox_` prefix instead of `proxmox_virtual_environment_`. Both names work simultaneously — the old names emit a deprecation warning. New resources added from v0.99.0 onward (such as `proxmox_backup_job` and `proxmox_harule`) use the short prefix exclusively. See [ADR-007](https://github.com/bpg/terraform-provider-proxmox/blob/main/docs/adr/007-resource-type-name-migration.md) for full details.
+All existing Framework resources now have shorter aliases using the `proxmox_` prefix instead of `proxmox_virtual_environment_`. Both names work simultaneously — the old names emit a deprecation warning. New resources added from v0.99.0 onward (such as `proxmox_backup_job`) use the short prefix exclusively. See [ADR-007](https://github.com/bpg/terraform-provider-proxmox/blob/main/docs/adr/007-resource-type-name-migration.md) for full details.
 
 Examples of the new short names:
 

@@ -244,7 +244,7 @@ proxmox.Client
 
 ### Framework (fwprovider/)
 
-Each resource has 3 files: `resource_*.go` (CRUD), `*_model.go` (API mapping), `resource_*_test.go` (acceptance tests). Client access flows through `config.Resource` → `cfg.Client.Domain().SubClient()`.
+Each resource package has 3 files (see [ADR-003](docs/adr/003-resource-file-organization.md)): `resource.go` / `resource_{name}.go` (CRUD), `model.go` / `model_{name}.go` (API mapping), `resource_test.go` / `resource_{name}_test.go` (acceptance tests). Use the short form for a single-resource package, the qualified form when a package holds multiple resources. Client access flows through `config.Resource` → `cfg.Client.Domain().SubClient()`.
 
 ```go
 schema.StringAttribute{

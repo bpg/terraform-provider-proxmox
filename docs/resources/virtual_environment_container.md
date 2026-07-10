@@ -201,7 +201,8 @@ The `mount_point.volume` attribute accepts three forms:
         - `i386` - x86 (32 bit).
     - `cores` - (Optional) The number of CPU cores (defaults to `1`).
     - `limit` - (Optional) Limit of CPU usage. Value `0` indicates no limit (defaults to `0`).
-    - `units` - (Optional) The CPU units (defaults to `1024`).
+    - `units` - (Optional) The CPU units (between `1` and `500000`). When unset,
+        Proxmox applies its own default.
 - `description` - (Optional) The description.
 - `disk` - (Optional) The root filesystem (rootfs) storage configuration.
     Selects the Proxmox storage pool the container's root volume is created
@@ -212,7 +213,10 @@ The `mount_point.volume` attribute accepts three forms:
     - `size` - (Optional) The size of the root filesystem in gigabytes (defaults
         to `4`). When set to 0 a directory or zfs/btrfs subvolume will be created.
         Requires `datastore_id` to be set.
+    - `acl` (Optional) Explicitly enable or disable ACL support.
     - `mount_options` (Optional) List of extra mount options.
+    - `quota` (Optional) Enable user quotas for the container rootfs.
+    - `replicate` (Optional) Whether to include this volume in a storage replication job (defaults to `true`).
     - `path_in_datastore` (Computed) The in-datastore path to the disk image.
         Use this attribute for cross-resource references.
 - `environment_variables` - (Optional) A map of runtime environment variables for the container init process.
@@ -258,7 +262,7 @@ The `mount_point.volume` attribute accepts three forms:
     - `quota` (Optional) Enable user quotas inside the container (not supported
         with ZFS subvolumes).
     - `read_only` (Optional) Read-only mount point.
-    - `replicate` (Optional) Will include this volume to a storage replica job.
+    - `replicate` (Optional) Will include this volume to a storage replica job (defaults to `true`).
     - `shared` (Optional) Mark this non-volume mount point as available on all
         nodes.
     - `size` (Optional) Volume size (only for volume mount points).
@@ -323,8 +327,8 @@ The `mount_point.volume` attribute accepts three forms:
 - `protection` - (Optional) Whether to set the protection flag of the container (defaults to `false`). This will prevent the container itself and its disk for remove/update operations.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
 - `startup` - (Optional) Defines startup and shutdown behavior of the container.
-    - `order` - (Required) A non-negative number defining the general startup
-        order.
+    - `order` - (Optional) A non-negative number defining the general startup
+        order (defaults to `-1`, meaning no specific order).
     - `up_delay` - (Optional) A non-negative number defining the delay in
         seconds before the next container is started.
     - `down_delay` - (Optional) A non-negative number defining the delay in

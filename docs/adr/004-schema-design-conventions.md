@@ -52,7 +52,7 @@ The provider does not duplicate PVE's documented defaults via schema `Default(..
 | Returns null/absent when unset               | `Optional` only                    | `cpu.affinity`, `cpu.limit`, `cpu.type`, `vga.type`, `rng.source`, `description` |
 | Provider-only attribute (no PVE counterpart) | `Optional + Default`               | `purge_on_destroy`, `stop_on_destroy`, `delete_unreferenced_disks_on_destroy`    |
 
-> **Note.** The `cpu`/`vga`/`rng` examples above describe the target classification. The current `fwprovider/nodes/vm/{cpu,vga,rng}` schemas carry `Optional+Computed` inherited from the SDK and the initial Framework scaffold; conformance — dropping `Computed` from all `cpu`/`vga`/`rng`/`memory` attributes — is tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231). The originally-proposed `Optional+Computed` carve-out on `cpu.cores`/`cpu.sockets` was abandoned after empirical testing (see `.dev/1231_AUDIT.md` §4) showed PVE does not auto-populate those keys on Read.
+> **Note.** The `cpu`/`vga`/`rng` examples above describe the target classification. The current `fwprovider/nodes/vm/{cpu,vga,rng}` schemas carry `Optional+Computed` inherited from the SDK and the initial Framework scaffold; conformance — dropping `Computed` from all `cpu`/`vga`/`rng`/`memory` attributes — is tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231). The originally-proposed `Optional+Computed` carve-out on `cpu.cores`/`cpu.sockets` was abandoned after empirical testing showed PVE does not auto-populate those keys on Read.
 
 PVE Read behavior must be verified empirically per attribute. The prescribed method:
 
@@ -63,7 +63,7 @@ PVE Read behavior must be verified empirically per attribute. The prescribed met
 
 See `/bpg:debug-api` for the mitmproxy workflow.
 
-**Per-field carve-outs are possible but rare.** A sub-block can have a mix of auto-populated and null-absent fields, in which case only the auto-populated fields keep `Optional+Computed`. Verify per field via mitmproxy rather than trusting `$confdesc` or prior sentinels: the `cpu` block was originally expected to carve out `cores` and `sockets` as `Optional+Computed` because PVE was thought to auto-populate them, but empirical traces (see `.dev/1231_AUDIT.md` §4) showed it does not, and the carve-out was abandoned before landing.
+**Per-field carve-outs are possible but rare.** A sub-block can have a mix of auto-populated and null-absent fields, in which case only the auto-populated fields keep `Optional+Computed`. Verify per field via mitmproxy rather than trusting `$confdesc` or prior sentinels: the `cpu` block was originally expected to carve out `cores` and `sockets` as `Optional+Computed` because PVE was thought to auto-populate them, but empirical traces (verified under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231)) showed it does not, and the carve-out was abandoned before landing.
 
 **`NewValue` must coordinate.** When changing a sub-block's schema from `Optional+Computed` to `Optional` only, the sub-package's `NewValue` (FromAPI) function MUST return `NullValue()` (i.e. `types.ObjectNull(attributeTypes())`) when the underlying API device pointer is nil. Returning a non-null Object with null inner fields creates a permanent plan-vs-state diff for users without the block in HCL. See [ADR-008 §`NewValue` (FromAPI Direction)](008-sub-block-contract.md#newvalue-fromapi-direction).
 
