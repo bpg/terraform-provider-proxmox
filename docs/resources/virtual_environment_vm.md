@@ -173,8 +173,8 @@ output "ubuntu_vm_public_key" {
     - `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as
         in the physical drive). Use `none` to leave the CD-ROM drive empty.
     - `interface` - (Optional) A hardware interface to connect CD-ROM drive to (defaults to `ide3`).
-      "Must be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. " +
-      "Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces.
+      Must be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface.
+      Note that the `q35` machine type only supports `ide0` and `ide2` of the IDE interfaces.
 - `clone` - (Optional) The cloning configuration.
     - `datastore_id` - (Optional) The identifier for the target datastore.
     - `node_name` - (Optional) The name of the source node (leave blank, if
@@ -216,7 +216,7 @@ output "ubuntu_vm_public_key" {
         to `0`).
     - `limit` - (Optional) Limit of CPU usage, `0...128` (supports
         fractional values, e.g. `63.5`). (defaults to `0` -- no limit).
-    - `numa` - (Boolean) Enable/disable NUMA. (default to `false`)
+    - `numa` - (Optional) Enable/disable NUMA (defaults to `false`).
     - `sockets` - (Optional) The number of CPU sockets (defaults to `1`).
     - `type` - (Optional) The emulated CPU type, it's recommended to
         use `x86-64-v2-AES` (defaults to `qemu64`).
@@ -292,7 +292,7 @@ output "ubuntu_vm_public_key" {
     - `datastore_id` - (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
     - `path_in_datastore` - (Optional) The in-datastore path to the disk image.
-        ***Experimental.***Use to attach another VM's disks,
+        ***Experimental.*** Use to attach another VM's disks,
         or (as root only) host's filesystem paths (`datastore_id` empty string).
         See "*Example: Attached disks*".
     - `discard` - (Optional) Whether to pass discard/trim requests to the
@@ -543,8 +543,8 @@ output "ubuntu_vm_public_key" {
     instead of being applied automatically. Changes that are applied
     successfully but still need a later manual reboot emit a warning instead
     (defaults to `true`).
-- `rng` - (Optional) The random number generator configuration. Can only be set by `root@pam.`
-    - `source` - The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
+- `rng` - (Optional) The random number generator configuration. Can only be set by `root@pam`.
+    - `source` - (Required) The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
     - `max_bytes` - (Optional) Maximum bytes of entropy allowed to get injected into the guest every `period` milliseconds (defaults to `1024`). Prefer a lower value when using `/dev/random` as source.
     - `period` - (Optional) Every `period` milliseconds the entropy-injection quota is reset, allowing the guest to retrieve another `max_bytes` of entropy (defaults to `1000`).
 - `serial_device` - (Optional) A serial device (multiple blocks supported).
@@ -570,8 +570,8 @@ output "ubuntu_vm_public_key" {
 - `started` - (Optional) Whether to start the virtual machine (defaults
     to `true`).
 - `startup` - (Optional) Defines startup and shutdown behavior of the VM.
-    - `order` - (Required) A non-negative number defining the general startup
-        order.
+    - `order` - (Optional) A non-negative number defining the general startup
+        order (defaults to `-1`, meaning no specific order).
     - `up_delay` - (Optional) A non-negative number defining the delay in
         seconds before the next VM is started.
     - `down_delay` - (Optional) A non-negative number defining the delay in

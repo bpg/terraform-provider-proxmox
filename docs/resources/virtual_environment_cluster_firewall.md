@@ -47,7 +47,8 @@ There are no additional attributes available for this resource.
 
 ## Important Notes
 
-Be careful not to use this resource multiple times for the same node.
+This resource manages cluster-wide firewall options, so it should be used only
+once per cluster. Declaring it multiple times results in conflicting updates.
 
 ## Import
 

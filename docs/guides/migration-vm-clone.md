@@ -3,7 +3,7 @@ layout: page
 page_title: "Clone VM: Choosing Between Resources"
 subcategory: Guides
 description: |-
-    Guide to help you choose between proxmox_virtual_environment_vm and proxmox_virtual_environment_cloned_vm for VM cloning
+  Guide to help you choose between proxmox_virtual_environment_vm and proxmox_virtual_environment_cloned_vm for VM cloning
 ---
 
 # Clone VM: Choosing Between Resources
@@ -340,13 +340,13 @@ resource "proxmox_virtual_environment_cloned_vm" "new" {
 
 **Clone Option Mapping:**
 
-| Legacy Attribute | cloned_vm Attribute | Notes |
-| ---------------- | ------------------- | ----- |
-| `vm_id` | `source_vm_id` | Required in both |
-| `full` | `full` | Defaults to `true` in both |
-| `datastore_id` | `target_datastore` | Renamed for clarity |
-| `node_name` | `source_node_name` | Renamed for clarity |
-| `retries` | `retries` | Defaults to `3` in both |
+| Legacy Attribute | cloned_vm Attribute | Notes                                                      |
+| ---------------- | ------------------- | ---------------------------------------------------------- |
+| `vm_id`          | `source_vm_id`      | Required in both                                           |
+| `full`           | `full`              | Defaults to `true` in both                                 |
+| `datastore_id`   | `target_datastore`  | Renamed for clarity                                        |
+| `node_name`      | `source_node_name`  | Renamed for clarity                                        |
+| `retries`        | `retries`           | Defaults to `1` in the legacy resource, `3` in `cloned_vm` |
 
 **Additional clone options available in `cloned_vm` (not in legacy):**
 

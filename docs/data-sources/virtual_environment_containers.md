@@ -45,12 +45,13 @@ data "proxmox_virtual_environment_containers" "ubuntu_templates" {
 
 ## Argument Reference
 
-- `node_name` - (Optional) The node name. All cluster nodes will be queried in case this is omitted
+- `node_name` - (Optional) The node name. If omitted, all cluster nodes are queried.
 - `tags` - (Optional) A list of tags to filter the containers. The container must have all
   the tags to be included in the result.
 - `filter` - (Optional) Filter blocks. The container must satisfy all filter blocks to be included in the result.
     - `name` - Name of the container attribute to filter on. One of [`name`, `template`, `status`, `node_name`]
     - `values` - List of values to pass the filter. Container's attribute should match at least one value in the list.
+    - `regex` - (Optional) Whether to treat the `values` as regex patterns (defaults to `false`).
 
 ## Attribute Reference
 

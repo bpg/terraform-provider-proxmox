@@ -47,6 +47,7 @@ resource "tls_self_signed_cert" "proxmox_virtual_environment_certificate" {
 - `certificate` - (Required) The PEM encoded certificate.
 - `certificate_chain` - (Optional) The PEM encoded certificate chain.
 - `node_name` - (Required) A node name.
+- `overwrite` - (Optional) Whether to overwrite an existing certificate (defaults to `false`).
 - `private_key` - (Required) The PEM encoded private key.
 
 ## Attribute Reference
