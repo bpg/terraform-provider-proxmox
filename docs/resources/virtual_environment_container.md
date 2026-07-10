@@ -213,10 +213,10 @@ The `mount_point.volume` attribute accepts three forms:
     - `size` - (Optional) The size of the root filesystem in gigabytes (defaults
         to `4`). When set to 0 a directory or zfs/btrfs subvolume will be created.
         Requires `datastore_id` to be set.
-    - `acl` (Optional) Explicitly enable or disable ACL support (defaults to `false`).
+    - `acl` (Optional) Explicitly enable or disable ACL support.
     - `mount_options` (Optional) List of extra mount options.
-    - `quota` (Optional) Enable user quotas for the container rootfs (defaults to `false`).
-    - `replicate` (Optional) Whether to include this volume in a storage replication job (defaults to `false`).
+    - `quota` (Optional) Enable user quotas for the container rootfs.
+    - `replicate` (Optional) Whether to include this volume in a storage replication job (defaults to `true`).
     - `path_in_datastore` (Computed) The in-datastore path to the disk image.
         Use this attribute for cross-resource references.
 - `environment_variables` - (Optional) A map of runtime environment variables for the container init process.
