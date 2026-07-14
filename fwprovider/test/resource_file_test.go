@@ -306,22 +306,67 @@ func TestAccResourceFile(t *testing.T) {
 	})
 }
 
-func uploadSnippetFile(t *testing.T, fileName string) {
+// TestAccNodeStreamUpload verifies that NodeStreamUpload succeeds when the SSH
+// user relies on sudo to write to the snippets directory.
+func TestAccNodeStreamUpload(t *testing.T) {
+	te := InitEnvironment(t)
+
+	f := CreateTempFile(t, "stream-upload-*.yaml", "#cloud-config\nruncmd:\n  - echo hello\n")
+	fname := filepath.Base(f.Name())
+
+	t.Cleanup(func() { _ = os.Remove(f.Name()) })
+
+	t.Cleanup(func() {
+		err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
+		if err != nil {
+			t.Logf("cleanup: failed to delete snippet %s: %v", fname, err)
+		}
+	})
+
+	client := newSSHClient(t)
+
+	fh, err := os.Open(f.Name())
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = fh.Close() })
+
+	err = client.NodeStreamUpload(
+		context.Background(),
+		te.NodeName,
+		"/var/lib/vz/",
+		&api.FileUploadRequest{
+			ContentType: "snippets",
+			FileName:    fname,
+			File:        fh,
+		},
+	)
+	require.NoError(t, err)
+
+	out := te.ExecuteNodeCommands([]string{
+		fmt.Sprintf("cat /var/lib/vz/snippets/%s", fname),
+	})
+	require.Contains(t, out, "#cloud-config")
+}
+
+func newSSHClient(t *testing.T) ssh.Client {
 	t.Helper()
 
 	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
 	u, err := url.ParseRequestURI(endpoint)
 	require.NoError(t, err)
 
-	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT")
-	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
-	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
-	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
-	sshAgentForwarding := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT_FORWARDING")
-	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
 	sshPort := utils.GetAnyIntEnv("PROXMOX_VE_ACC_NODE_SSH_PORT")
-	sshClient, err := ssh.NewClient(
-		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshAgentForwarding, sshPrivateKey,
+	if sshPort == 0 {
+		sshPort = 22
+	}
+
+	c, err := ssh.NewClient(
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD"),
+		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT"),
+		utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK"),
+		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT_FORWARDING"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY"),
 		"", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{
@@ -332,6 +377,12 @@ func uploadSnippetFile(t *testing.T, fileName string) {
 	)
 	require.NoError(t, err)
 
+	return c
+}
+
+func uploadSnippetFile(t *testing.T, fileName string) {
+	t.Helper()
+
 	f, err := os.Open(fileName)
 	require.NoError(t, err)
 
@@ -340,7 +391,7 @@ func uploadSnippetFile(t *testing.T, fileName string) {
 	}(f)
 
 	fname := filepath.Base(fileName)
-	err = sshClient.NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/",
+	err = newSSHClient(t).NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/",
 		&api.FileUploadRequest{
 			ContentType: "snippets",
 			FileName:    fname,
