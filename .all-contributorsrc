@@ -1900,6 +1900,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "FelixLutze",
+      "name": "Felix Lutze",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43958257?v=4",
+      "profile": "https://github.com/FelixLutze",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
