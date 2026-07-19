@@ -347,6 +347,7 @@ func TestVMSchema(t *testing.T) {
 		mkInitializationUpgrade:     schema.TypeBool,
 		mkInitializationUserAccount: schema.TypeList,
 	})
+	test.AssertListMaxItems(t, initializationSchema, mkInitializationIPConfig, network.MaxNetworkDevices)
 
 	hostPCISchema := test.AssertNestedSchemaExistence(t, s, mkHostPCI)
 

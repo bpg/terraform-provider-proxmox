@@ -1227,6 +1227,43 @@ func TestAccResourceVMInitialization(t *testing.T) {
 	}
 }
 
+func TestAccResourceVMInitializationMaxIPConfigs(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_ip_configs" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						dynamic "ip_config" {
+							for_each = range(32)
+							content {
+								ipv4 {
+									address = "dhcp"
+								}
+							}
+						}
+					}
+					dynamic "network_device" {
+						for_each = range(32)
+						content {
+							bridge = "vmbr0"
+						}
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_ip_configs", map[string]string{
+				"initialization.0.ip_config.#": "32",
+				"network_device.#":             "32",
+			}),
+		}},
+	})
+}
+
 func TestAccResourceVMNetwork(t *testing.T) {
 	te := InitEnvironment(t)
 	imageFileID := te.DownloadCloudImage()

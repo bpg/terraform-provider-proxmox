@@ -952,7 +952,7 @@ func VM() *schema.Resource {
 								},
 							},
 						},
-						MaxItems: 8,
+						MaxItems: network.MaxNetworkDevices,
 						MinItems: 0,
 					},
 					mkInitializationUserAccount: {
