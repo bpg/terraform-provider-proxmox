@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
@@ -48,6 +49,7 @@ func TestContainerSchema(t *testing.T) {
 		mkMemory,
 		mkDevicePassthrough,
 		mkMountPoint,
+		mkLXC,
 		mkOperatingSystem,
 		mkPoolID,
 		mkProtection,
@@ -71,6 +73,7 @@ func TestContainerSchema(t *testing.T) {
 		mkMemory:               schema.TypeList,
 		mkDevicePassthrough:    schema.TypeList,
 		mkMountPoint:           schema.TypeList,
+		mkLXC:                  schema.TypeList,
 		mkOperatingSystem:      schema.TypeList,
 		mkPoolID:               schema.TypeString,
 		mkProtection:           schema.TypeBool,
@@ -277,6 +280,21 @@ func TestContainerSchema(t *testing.T) {
 		mkIDMapSize:        schema.TypeInt,
 	})
 
+	lxcSchema := test.AssertNestedSchemaExistence(t, s, mkLXC)
+
+	test.AssertRequiredArguments(t, lxcSchema, []string{
+		mkLXCKey,
+	})
+
+	test.AssertOptionalArguments(t, lxcSchema, []string{
+		mkLXCValue,
+	})
+
+	test.AssertValueTypes(t, lxcSchema, map[string]schema.ValueType{
+		mkLXCKey:   schema.TypeString,
+		mkLXCValue: schema.TypeString,
+	})
+
 	devicePassthroughSchema := test.AssertNestedSchemaExistence(t, s, mkDevicePassthrough)
 
 	test.AssertRequiredArguments(t, devicePassthroughSchema, []string{
@@ -441,4 +459,119 @@ func TestInitializationDnsBlockDiffIgnore(t *testing.T) {
 		actual := skipDnsDiffIfEmpty(dnsBlockKey+".#", "0", "1", d)
 		assert.Equal(t, tt.expected, actual)
 	}
+}
+
+func TestContainerValidateLXCKey(t *testing.T) {
+	t.Parallel()
+
+	validCases := []string{
+		"cgroup2.devices.allow",
+		"cap.drop",
+		"mount.entry",
+		"seccomp.profile",
+	}
+
+	for _, key := range validCases {
+		warnings, errs := containerValidateLXCKey(key, "")
+		assert.Empty(t, warnings)
+		assert.Empty(t, errs, "expected %q to be valid", key)
+	}
+
+	invalidCases := []struct {
+		key     string
+		message string
+	}{
+		{"", "empty key"},
+		{"idmap", "reserved key"},
+		{"cgroup2 devices", "space in key"},
+		{"cgroup2:devices", "colon in key"},
+		{"cgroup2=devices", "equals sign in key"},
+		{"lxc.cgroup2.devices.allow", "lxc prefix"},
+	}
+
+	for _, tc := range invalidCases {
+		warnings, errs := containerValidateLXCKey(tc.key, "")
+		assert.Empty(t, warnings)
+		assert.NotEmpty(t, errs, "expected %q (%s) to be invalid", tc.key, tc.message)
+	}
+}
+
+func TestContainerValidateLXCValue(t *testing.T) {
+	t.Parallel()
+
+	validCases := []string{
+		"c 10:200 rwm",
+		"/dev/dri dev/dri none bind,optional,create=dir",
+		"",
+		"NVIDIA_VISIBLE_DEVICES=all",
+	}
+
+	for _, val := range validCases {
+		warnings, errs := containerValidateLXCValue(val, "")
+		assert.Empty(t, warnings)
+		assert.Empty(t, errs, "expected %q to be valid", val)
+	}
+
+	invalidCases := []string{
+		"line1\nline2",
+		"line1\rline2",
+		"line1\r\nline2",
+	}
+
+	for _, val := range invalidCases {
+		warnings, errs := containerValidateLXCValue(val, "")
+		assert.Empty(t, warnings)
+		assert.NotEmpty(t, errs, "expected %q to be invalid", val)
+	}
+}
+
+func TestContainerLXCConfigLines(t *testing.T) {
+	t.Parallel()
+
+	idmaps := []containers.CustomIDMapEntry{
+		{Type: "uid", ContainerID: 0, HostID: 100000, Size: 65536},
+		{Type: "gid", ContainerID: 0, HostID: 100000, Size: 65536},
+	}
+
+	configs := []containerLXCConfigEntry{
+		{Key: "cgroup2.devices.allow", Value: "c 10:200 rwm"},
+		{Key: "cap.drop", Value: ""},
+		{Key: "mount.entry", Value: "/src /dst none bind 0 0"},
+	}
+
+	lines := containerLXCConfigLines(idmaps, configs)
+
+	expected := []string{
+		"lxc.idmap: u 0 100000 65536",
+		"lxc.idmap: g 0 100000 65536",
+		"lxc.cgroup2.devices.allow: c 10:200 rwm",
+		"lxc.cap.drop: ",
+		"lxc.mount.entry: /src /dst none bind 0 0",
+	}
+
+	assert.Equal(t, expected, lines)
+}
+
+func TestContainerGetLXCConfigs(t *testing.T) {
+	t.Parallel()
+
+	input := []any{
+		map[string]any{
+			mkLXCKey:   "cgroup2.devices.allow",
+			mkLXCValue: "c 10:200 rwm",
+		},
+		map[string]any{
+			mkLXCKey:   "cap.drop",
+			mkLXCValue: "",
+		},
+	}
+
+	configs := containerGetLXCConfigs(input)
+
+	expected := []containerLXCConfigEntry{
+		{Key: "cgroup2.devices.allow", Value: "c 10:200 rwm"},
+		{Key: "cap.drop", Value: ""},
+	}
+
+	assert.Equal(t, expected, configs)
 }
