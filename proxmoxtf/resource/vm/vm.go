@@ -152,7 +152,7 @@ const (
 
 	maxResourceVirtualEnvironmentVMAudioDevices  = 1
 	maxResourceVirtualEnvironmentVMSerialDevices = 4
-	maxInitializationIPConfigs                   = 16
+	maxInitializationIPConfigs                   = network.MaxNetworkDevices
 	// see /usr/share/perl5/PVE/QemuServer/PCI.pm.
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 16
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4

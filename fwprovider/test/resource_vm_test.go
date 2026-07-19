@@ -1228,10 +1228,10 @@ func TestAccResourceVMInitialization(t *testing.T) {
 	}
 }
 
-func TestAccResourceVMInitializationSixteenIPConfigs(t *testing.T) {
+func TestAccResourceVMInitializationMaxIPConfigs(t *testing.T) {
 	te := InitEnvironment(t)
 
-	const ipConfigCount = 16
+	const ipConfigCount = 32
 
 	ipConfigs := strings.Repeat(`
 						ip_config {
@@ -1261,8 +1261,8 @@ func TestAccResourceVMInitializationSixteenIPConfigs(t *testing.T) {
 					%s
 				}`, ipConfigs, networkDevices)),
 			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_ip_configs", map[string]string{
-				"initialization.0.ip_config.#": "16",
-				"network_device.#":             "16",
+				"initialization.0.ip_config.#": "32",
+				"network_device.#":             "32",
 			}),
 		}},
 	})

@@ -28,10 +28,10 @@ func TestVMInstantiation(t *testing.T) {
 	}
 }
 
-func TestVMSchemaAcceptsSixteenInitializationIPConfigs(t *testing.T) {
+func TestVMSchemaAcceptsMaxInitializationIPConfigs(t *testing.T) {
 	t.Parallel()
 
-	ipConfigs := make([]any, 16)
+	ipConfigs := make([]any, network.MaxNetworkDevices)
 	for i := range ipConfigs {
 		ipConfigs[i] = map[string]any{
 			mkInitializationIPConfigIPv4: []any{
