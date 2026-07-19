@@ -17,7 +17,6 @@ import (
 	"math/rand"
 	"regexp"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -1231,35 +1230,32 @@ func TestAccResourceVMInitialization(t *testing.T) {
 func TestAccResourceVMInitializationMaxIPConfigs(t *testing.T) {
 	te := InitEnvironment(t)
 
-	const ipConfigCount = 32
-
-	ipConfigs := strings.Repeat(`
-						ip_config {
-							ipv4 {
-								address = "dhcp"
-							}
-						}
-`, ipConfigCount)
-	networkDevices := strings.Repeat(`
-					network_device {
-						bridge = "vmbr0"
-					}
-`, ipConfigCount)
-
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{{
-			Config: te.RenderConfig(fmt.Sprintf(`
+			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm_ip_configs" {
 					node_name = "{{.NodeName}}"
 					started   = false
 
 					initialization {
 						datastore_id = "local-lvm"
-						%s
+						dynamic "ip_config" {
+							for_each = range(32)
+							content {
+								ipv4 {
+									address = "dhcp"
+								}
+							}
+						}
 					}
-					%s
-				}`, ipConfigs, networkDevices)),
+					dynamic "network_device" {
+						for_each = range(32)
+						content {
+							bridge = "vmbr0"
+						}
+					}
+				}`),
 			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_ip_configs", map[string]string{
 				"initialization.0.ip_config.#": "32",
 				"network_device.#":             "32",
