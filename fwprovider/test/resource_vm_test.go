@@ -1255,7 +1255,7 @@ func TestAccResourceVMInitializationMaxIPConfigs(t *testing.T) {
 					started   = false
 
 					initialization {
-						datastore_id = "{{.DatastoreID}}"
+						datastore_id = "local-lvm"
 						%s
 					}
 					%s
