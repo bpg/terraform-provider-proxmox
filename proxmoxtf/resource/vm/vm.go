@@ -152,6 +152,7 @@ const (
 
 	maxResourceVirtualEnvironmentVMAudioDevices  = 1
 	maxResourceVirtualEnvironmentVMSerialDevices = 4
+	maxInitializationIPConfigs                   = 16
 	// see /usr/share/perl5/PVE/QemuServer/PCI.pm.
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 16
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
@@ -952,7 +953,7 @@ func VM() *schema.Resource {
 								},
 							},
 						},
-						MaxItems: 8,
+						MaxItems: maxInitializationIPConfigs,
 						MinItems: 0,
 					},
 					mkInitializationUserAccount: {

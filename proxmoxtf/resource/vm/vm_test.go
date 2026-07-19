@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
@@ -25,6 +26,29 @@ func TestVMInstantiation(t *testing.T) {
 	if r == nil {
 		t.Fatalf("Cannot instantiate VM")
 	}
+}
+
+func TestVMSchemaAcceptsSixteenInitializationIPConfigs(t *testing.T) {
+	t.Parallel()
+
+	ipConfigs := make([]any, 16)
+	for i := range ipConfigs {
+		ipConfigs[i] = map[string]any{
+			mkInitializationIPConfigIPv4: []any{
+				map[string]any{mkInitializationIPConfigIPv4Address: "dhcp"},
+			},
+		}
+	}
+
+	config := terraform.NewResourceConfigRaw(map[string]any{
+		mkNodeName: "pve",
+		mkInitialization: []any{
+			map[string]any{mkInitializationIPConfig: ipConfigs},
+		},
+	})
+	diagnostics := schema.InternalMap(VM().Schema).Validate(config)
+
+	require.Empty(t, diagnostics)
 }
 
 func TestVMChangedOrRemovedSlotsFromValues(t *testing.T) {

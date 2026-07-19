@@ -408,7 +408,7 @@ output "ubuntu_vm_public_key" {
             `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers.
     - `ip_config` - (Optional) The IP configuration (one block per network
-        device).
+        device, up to 16 blocks).
         - `ipv4` - (Optional) The IPv4 configuration.
             - `address` - (Optional) The IPv4 address in CIDR notation
                 (e.g. 192.168.2.2/24). Alternatively, set this to `dhcp` for
