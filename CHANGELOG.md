@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.111.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.111.1...v0.111.2) (2026-07-19)
+
+
+### Bug Fixes
+
+* **core:** send delete to PVE when write-only attributes are removed ([#3011](https://github.com/bpg/terraform-provider-proxmox/issues/3011)) ([d4bb9f3](https://github.com/bpg/terraform-provider-proxmox/commit/d4bb9f38cbd6af56aecc9c04d46d6f403715ecc5))
+* **vm:** support 32 cloud-init IP configurations ([#3004](https://github.com/bpg/terraform-provider-proxmox/issues/3004)) ([0282e6c](https://github.com/bpg/terraform-provider-proxmox/commit/0282e6c396cb77fd0b70fd085213bf9b6d6d238f))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/setup-go action (v6.5.0 → v7.0.0) ([#3008](https://github.com/bpg/terraform-provider-proxmox/issues/3008)) ([b008298](https://github.com/bpg/terraform-provider-proxmox/commit/b008298d4816f36172c33ee5c581c36446b1e46c))
+* **ci:** update actions/stale digest (eb5cf3a → 1e223db) ([#3010](https://github.com/bpg/terraform-provider-proxmox/issues/3010)) ([2f5d1d7](https://github.com/bpg/terraform-provider-proxmox/commit/2f5d1d798243f8d351b3e54bfc89acefef145b29))
+* **ci:** update goreleaser/goreleaser-action action (v7.2.2 → v7.2.3) ([#2988](https://github.com/bpg/terraform-provider-proxmox/issues/2988)) ([6066b15](https://github.com/bpg/terraform-provider-proxmox/commit/6066b15ca0ae4f3b1fd372ac3d4ccfc2ca8be0b6))
+* **ci:** update lycheeverse/lychee-action action (v2.8.0 → v2.9.0) ([#2990](https://github.com/bpg/terraform-provider-proxmox/issues/2990)) ([2989c41](https://github.com/bpg/terraform-provider-proxmox/commit/2989c41dd0e238e7d10d6fda10266295dcd5265b))
+* **deps:** update image golang (079e598 → ae5a231) ([#3006](https://github.com/bpg/terraform-provider-proxmox/issues/3006)) ([f8ee39f](https://github.com/bpg/terraform-provider-proxmox/commit/f8ee39f718b056e39bbcf26cd7a36de1c0bf8220))
+* **deps:** update image golang (1.26.4 → 1.26.5) ([#2989](https://github.com/bpg/terraform-provider-proxmox/issues/2989)) ([f0f2e57](https://github.com/bpg/terraform-provider-proxmox/commit/f0f2e57b307834a14d077dd2499517734c59b6c8))
+* **deps:** update module github.com/pkg/sftp (v1.13.10 → v1.13.11) ([#3007](https://github.com/bpg/terraform-provider-proxmox/issues/3007)) ([99ef1bc](https://github.com/bpg/terraform-provider-proxmox/commit/99ef1bcfe776b16deed80ac46e614c68e8f4a45d))
+* **deps:** update module golang.org/x/crypto (v0.53.0 → v0.54.0) ([#2991](https://github.com/bpg/terraform-provider-proxmox/issues/2991)) ([667f65f](https://github.com/bpg/terraform-provider-proxmox/commit/667f65f0e733fe2acafea399a8a8bf1ff252d526))
+* **deps:** update module golang.org/x/net (v0.56.0 → v0.57.0) ([#2992](https://github.com/bpg/terraform-provider-proxmox/issues/2992)) ([7cef701](https://github.com/bpg/terraform-provider-proxmox/commit/7cef701a9cd007b7c46c3eb404f0dff56d4f0a32))
+* **deps:** update module golang.org/x/sync (v0.21.0 → v0.22.0) ([#2993](https://github.com/bpg/terraform-provider-proxmox/issues/2993)) ([94dfe53](https://github.com/bpg/terraform-provider-proxmox/commit/94dfe53a60e44c1a9f23c691b47423b533627626))
+* **docs:** close convention gaps in ADRs 002/004/005/006/008 ([#2984](https://github.com/bpg/terraform-provider-proxmox/issues/2984)) ([e0c8582](https://github.com/bpg/terraform-provider-proxmox/commit/e0c8582b589afba1a9ce70f81ee1fbe7ddcdbaf0))
+* **docs:** documentation review and cleanup ([#2994](https://github.com/bpg/terraform-provider-proxmox/issues/2994)) ([dc6785c](https://github.com/bpg/terraform-provider-proxmox/commit/dc6785cd4858c5e5e8684b7654cdd1e171c15b5a))
+
 ## [0.111.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.111.0...v0.111.1) (2026-07-03)
 
 
