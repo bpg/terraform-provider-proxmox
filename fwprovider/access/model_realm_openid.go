@@ -126,6 +126,12 @@ func (m *realmOpenIDModel) toUpdateRequest(state *realmOpenIDModel, clientKeyWO 
 		req.ClientKey = clientKeyWO.ValueStringPointer()
 	} else {
 		updateStringAttribute(&req.ClientKey, m.ClientKey, state.ClientKey, &toDelete, "client-key")
+
+		// Write-only client_key_wo is never mirrored into state, so the version counter
+		// leaving state is the removal signal.
+		if m.ClientKey.IsNull() && m.ClientKeyWOVersion.IsNull() && !state.ClientKeyWOVersion.IsNull() {
+			toDelete = append(toDelete, "client-key")
+		}
 	}
 
 	// Optional fields: support unsetting using the API's `delete` parameter.
@@ -189,7 +195,9 @@ func (m *realmOpenIDModel) fromAPIResponse(data *access.RealmGetResponseData, di
 	m.IssuerURL = types.StringPointerValue(data.IssuerURL)
 	m.ClientID = types.StringPointerValue(data.ClientID)
 
-	// Note: client_key is never returned by the API, preserve from state
+	// client_key is deliberately not mirrored from the API response (which does return
+	// it): when the key is supplied via the write-only client_key_wo it must stay null
+	// in state, so preserve whatever state already holds.
 
 	// Set optional string fields
 	m.UsernameClaim = types.StringPointerValue(data.UsernameClaim)

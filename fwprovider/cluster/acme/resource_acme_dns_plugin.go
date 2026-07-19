@@ -305,6 +305,10 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 		updateRequest.Data = &data
 	case !state.Data.IsNull():
 		toDelete = append(toDelete, "data")
+	// Write-only data_wo is never mirrored into state, so the version counter
+	// leaving state is the removal signal.
+	case plan.DataWOVersion.IsNull() && !state.DataWOVersion.IsNull():
+		toDelete = append(toDelete, "data")
 	}
 
 	if resp.Diagnostics.HasError() {

@@ -127,6 +127,34 @@ func TestAccRealmOpenIDWriteOnly(t *testing.T) {
 				),
 			},
 		}},
+		{"removing client_key_wo deletes the key from PVE", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_realm_openid" "test_remove" {
+						realm                 = "{{.Realm}}-rm"
+						issuer_url            = "https://accounts.google.com"
+						client_id             = "test-client-id"
+						client_key_wo         = "remove-me"
+						client_key_wo_version = 1
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_realm_openid.test_remove", "client_key_wo_version", "1"),
+					testCheckOpenIDRealmClientKey(te, fmt.Sprintf("%s-rm", realm), true),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_realm_openid" "test_remove" {
+						realm      = "{{.Realm}}-rm"
+						issuer_url = "https://accounts.google.com"
+						client_id  = "test-client-id"
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("proxmox_realm_openid.test_remove", "client_key_wo_version"),
+					testCheckOpenIDRealmClientKey(te, fmt.Sprintf("%s-rm", realm), false),
+				),
+			},
+		}},
 		{"migrating from client_key to client_key_wo clears it from state", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -198,7 +226,7 @@ func TestAccRealmOpenIDWriteOnly(t *testing.T) {
 // testCheckOpenIDRealmExists verifies, via a direct API read, that the realm exists
 // on the server and is an OpenID realm. Used to prove a realm configured solely with
 // the write-only client_key_wo is actually created, even though the secret never
-// lands in Terraform state (and the API never returns it for read-back).
+// lands in Terraform state.
 func testCheckOpenIDRealmExists(te *test.Environment, realm string) resource.TestCheckFunc {
 	return func(*terraform.State) error {
 		data, err := te.AccessClient().GetRealm(context.Background(), realm)
@@ -208,6 +236,28 @@ func testCheckOpenIDRealmExists(te *test.Environment, realm string) resource.Tes
 
 		if data.Type != "openid" {
 			return fmt.Errorf("realm %q has type %q, want %q", realm, data.Type, "openid")
+		}
+
+		return nil
+	}
+}
+
+// testCheckOpenIDRealmClientKey verifies, via a direct API read, whether the realm has a
+// client-key configured. Used to prove that removing client_key_wo sends delete=client-key.
+func testCheckOpenIDRealmClientKey(te *test.Environment, realm string, want bool) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		data, err := te.AccessClient().GetRealm(context.Background(), realm)
+		if err != nil {
+			return fmt.Errorf("reading OpenID realm %q: %w", realm, err)
+		}
+
+		has := data.ClientKey != nil && *data.ClientKey != ""
+		if has != want {
+			if want {
+				return fmt.Errorf("realm %q has no client-key; write-only client_key_wo was not stored", realm)
+			}
+
+			return fmt.Errorf("client-key still present on PVE after removing client_key_wo")
 		}
 
 		return nil

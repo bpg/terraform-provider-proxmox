@@ -255,6 +255,36 @@ func TestAccResourceACMEDNSPluginWriteOnly(t *testing.T) {
 				),
 			},
 		}},
+		{"removing data_wo deletes data from PVE", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_remove" {
+						plugin = "{{.PluginName}}-remove"
+						api = "cf"
+						data_wo = {
+							"CF_API_KEY" = "remove-me"
+						}
+						data_wo_version = 1
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_acme_dns_plugin.test_plugin_remove", "data_wo_version", "1"),
+					testCheckACMEPluginDataStored(te, fmt.Sprintf("%s-remove", pluginName), map[string]string{
+						"CF_API_KEY": "remove-me",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_acme_dns_plugin" "test_plugin_remove" {
+						plugin = "{{.PluginName}}-remove"
+						api = "cf"
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("proxmox_acme_dns_plugin.test_plugin_remove", "data_wo_version"),
+					testCheckACMEPluginDataEmpty(te, fmt.Sprintf("%s-remove", pluginName)),
+				),
+			},
+		}},
 		{"data_wo_version requires data_wo", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -316,6 +346,23 @@ func testCheckACMEPluginDataStored(te *test.Environment, pluginID string, want m
 			if got := (*plugin.Data)[k]; got != v {
 				return fmt.Errorf("ACME plugin %q data[%q] = %q, want %q", pluginID, k, got, v)
 			}
+		}
+
+		return nil
+	}
+}
+
+// testCheckACMEPluginDataEmpty verifies, via a direct API read, that the plugin has no
+// DNS data configured. Used to prove that removing data_wo sends delete=data.
+func testCheckACMEPluginDataEmpty(te *test.Environment, pluginID string) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		plugin, err := te.ClusterClient().ACME().Plugins().Get(context.Background(), pluginID)
+		if err != nil {
+			return fmt.Errorf("reading ACME plugin %q: %w", pluginID, err)
+		}
+
+		if plugin.Data != nil && len(*plugin.Data) > 0 {
+			return fmt.Errorf("data still present on PVE after removing data_wo: %v", *plugin.Data)
 		}
 
 		return nil
