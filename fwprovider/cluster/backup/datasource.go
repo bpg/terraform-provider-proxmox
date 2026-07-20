@@ -111,6 +111,11 @@ func (d *backupJobsDataSource) Schema(
 							Computed:    true,
 							ElementType: types.StringType,
 						},
+						"exclude": schema.ListAttribute{
+							Description: "List of guest VM/CT IDs excluded from the backup.",
+							Computed:    true,
+							ElementType: types.StringType,
+						},
 						"all": schema.BoolAttribute{
 							Description: "Indicates whether all VMs and CTs are backed up.",
 							Computed:    true,

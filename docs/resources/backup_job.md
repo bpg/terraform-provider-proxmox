@@ -39,6 +39,7 @@ resource "proxmox_backup_job" "daily_backup" {
 - `bwlimit` (Number) I/O bandwidth limit in KiB/s.
 - `compress` (String) The compression algorithm (0, 1, gzip, lzo, or zstd).
 - `enabled` (Boolean) Whether the backup job is enabled.
+- `exclude` (List of String) A list of guest VM/CT IDs to exclude from the backup.
 - `exclude_path` (List of String) A list of paths to exclude from the backup.
 - `fleecing` (Attributes) Fleecing configuration for the backup job. (see [below for nested schema](#nestedatt--fleecing))
 - `ionice` (Number) I/O priority (0-8).

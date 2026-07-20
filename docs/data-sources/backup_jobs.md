@@ -33,6 +33,7 @@ Read-Only:
 - `all` (Boolean) Indicates whether all VMs and CTs are backed up.
 - `compress` (String) Compression algorithm used for the backup.
 - `enabled` (Boolean) Indicates whether the backup job is enabled.
+- `exclude` (List of String) List of guest VM/CT IDs excluded from the backup.
 - `id` (String) Unique identifier of the backup job.
 - `mailnotification` (String) When to send email notifications (always or failure).
 - `mailto` (List of String) List of email addresses for notifications.
