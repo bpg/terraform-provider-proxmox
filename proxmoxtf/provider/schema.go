@@ -43,6 +43,15 @@ const (
 	mkProviderSSHNodeName    = "name"
 	mkProviderSSHNodeAddress = "address"
 	mkProviderSSHNodePort    = "port"
+
+	mkProviderCloudflareAccess             = "cloudflare_access"
+	mkProviderCloudflareAccessClientID     = "client_id"
+	mkProviderCloudflareAccessClientSecret = "client_secret"
+
+	envProviderCloudflareAccessClientID        = "PROXMOX_VE_CF_ACCESS_CLIENT_ID"
+	envProviderCloudflareAccessClientSecret    = "PROXMOX_VE_CF_ACCESS_CLIENT_SECRET" //nolint:gosec
+	envProviderCloudflareAccessClientIDAlt     = "PM_VE_CF_ACCESS_CLIENT_ID"
+	envProviderCloudflareAccessClientSecretAlt = "PM_VE_CF_ACCESS_CLIENT_SECRET" //nolint:gosec
 )
 
 func createSchema() map[string]*schema.Schema {
@@ -292,6 +301,38 @@ func createSchema() map[string]*schema.Schema {
 			Optional:     true,
 			Description:  "The ending number for random VM / Container IDs.",
 			ValidateFunc: validation.IntBetween(100, 999999999),
+		},
+		mkProviderCloudflareAccess: {
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Description: "Cloudflare Access service-token authentication for the Proxmox VE API endpoint.",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkProviderCloudflareAccessClientID: {
+						Type:         schema.TypeString,
+						Optional:     true,
+						Sensitive:    true,
+						Description:  "The Cloudflare Access service-token client ID.",
+						ValidateFunc: validation.StringIsNotEmpty,
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{envProviderCloudflareAccessClientID, envProviderCloudflareAccessClientIDAlt},
+							nil,
+						),
+					},
+					mkProviderCloudflareAccessClientSecret: {
+						Type:         schema.TypeString,
+						Optional:     true,
+						Sensitive:    true,
+						Description:  "The Cloudflare Access service-token client secret.",
+						ValidateFunc: validation.StringIsNotEmpty,
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{envProviderCloudflareAccessClientSecret, envProviderCloudflareAccessClientSecretAlt},
+							nil,
+						),
+					},
+				},
+			},
 		},
 	}
 }

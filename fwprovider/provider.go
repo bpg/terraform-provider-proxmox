@@ -113,6 +113,11 @@ type proxmoxProviderModel struct {
 			Port    types.Int64  `tfsdk:"port"`
 		} `tfsdk:"node"`
 	} `tfsdk:"ssh"`
+
+	CloudflareAccess []struct {
+		ClientID     types.String `tfsdk:"client_id"`
+		ClientSecret types.String `tfsdk:"client_secret"`
+	} `tfsdk:"cloudflare_access"`
 	TmpDir         types.String `tfsdk:"tmp_dir"`
 	RandomVMIDs    types.Bool   `tfsdk:"random_vm_ids"`
 	RandomVMIDStat types.Int64  `tfsdk:"random_vm_id_start"`
@@ -293,6 +298,32 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 					},
 				},
 			},
+			"cloudflare_access": schema.ListNestedBlock{
+				Description: "Cloudflare Access service-token authentication for the Proxmox VE API endpoint.",
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"client_id": schema.StringAttribute{
+							Description: "The Cloudflare Access service-token client ID.",
+							Optional:    true,
+							Sensitive:   true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
+						},
+						"client_secret": schema.StringAttribute{
+							Description: "The Cloudflare Access service-token client secret.",
+							Optional:    true,
+							Sensitive:   true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -343,6 +374,8 @@ func (p *proxmoxProvider) Configure(
 	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
 	username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME")
 	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+	cfClientID := utils.GetAnyStringEnv("PROXMOX_VE_CF_ACCESS_CLIENT_ID", "PM_VE_CF_ACCESS_CLIENT_ID")
+	cfClientSecret := utils.GetAnyStringEnv("PROXMOX_VE_CF_ACCESS_CLIENT_SECRET", "PM_VE_CF_ACCESS_CLIENT_SECRET")
 
 	if !cfg.APIToken.IsNull() {
 		apiToken = cfg.APIToken.ValueString()
@@ -404,10 +437,41 @@ func (p *proxmoxProvider) Configure(
 		)
 	}
 
+	var cfConfig *api.CloudflareAccessConfig
+
+	if len(cfg.CloudflareAccess) > 0 {
+		cf := cfg.CloudflareAccess[0]
+		if !cf.ClientID.IsNull() {
+			cfClientID = cf.ClientID.ValueString()
+		}
+
+		if !cf.ClientSecret.IsNull() {
+			cfClientSecret = cf.ClientSecret.ValueString()
+		}
+	}
+
+	if cfClientID != "" || cfClientSecret != "" {
+		if cfClientID == "" || cfClientSecret == "" {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("cloudflare_access"),
+				"Incomplete Cloudflare Access Configuration",
+				"Cloudflare Access service-token authentication requires both client_id and client_secret. "+
+					"Set both values in the cloudflare_access block or with PROXMOX_VE_CF_ACCESS_CLIENT_ID and "+
+					"PROXMOX_VE_CF_ACCESS_CLIENT_SECRET.",
+			)
+		} else {
+			cfConfig = &api.CloudflareAccessConfig{
+				ClientID:     cfClientID,
+				ClientSecret: cfClientSecret,
+			}
+		}
+	}
+
 	conn, err := api.NewConnection(
 		endpoint,
 		insecure,
 		minTLS,
+		cfConfig,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
