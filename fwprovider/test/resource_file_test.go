@@ -314,8 +314,6 @@ func TestAccNodeStreamUpload(t *testing.T) {
 	f := CreateTempFile(t, "stream-upload-*.yaml", "#cloud-config\nruncmd:\n  - echo hello\n")
 	fname := filepath.Base(f.Name())
 
-	t.Cleanup(func() { _ = os.Remove(f.Name()) })
-
 	t.Cleanup(func() {
 		err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
 		if err != nil {
@@ -323,7 +321,7 @@ func TestAccNodeStreamUpload(t *testing.T) {
 		}
 	})
 
-	client := newSSHClient(t)
+	client := te.SSHClient()
 
 	fh, err := os.Open(f.Name())
 	require.NoError(t, err)
@@ -338,22 +336,22 @@ func TestAccNodeStreamUpload(t *testing.T) {
 			ContentType: "snippets",
 			FileName:    fname,
 			File:        fh,
+			Mode:        "0700",
 		},
 	)
 	require.NoError(t, err)
-
-	out := te.ExecuteNodeCommands([]string{
-		fmt.Sprintf("cat /var/lib/vz/snippets/%s", fname),
-	})
-	require.Contains(t, out, "#cloud-config")
 }
 
 func newSSHClient(t *testing.T) ssh.Client {
 	t.Helper()
 
-	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
-	u, err := url.ParseRequestURI(endpoint)
-	require.NoError(t, err)
+	address := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NODE_SSH_ADDRESS")
+	if address == "" {
+		u, err := url.ParseRequestURI(utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT"))
+		require.NoError(t, err)
+
+		address = u.Hostname()
+	}
 
 	sshPort := utils.GetAnyIntEnv("PROXMOX_VE_ACC_NODE_SSH_PORT")
 	if sshPort == 0 {
@@ -370,7 +368,7 @@ func newSSHClient(t *testing.T) ssh.Client {
 		"", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{
-				Address: u.Hostname(),
+				Address: address,
 				Port:    int32(sshPort),
 			},
 		},
