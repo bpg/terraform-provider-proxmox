@@ -289,6 +289,58 @@ func (e *Environment) NodeStorageClient() *storage.Client {
 	return &storage.Client{Client: e.NodeClient(), StorageName: e.DatastoreID}
 }
 
+// SSHClient returns an SSH client configured identically to the provider's SSH client:
+// PROXMOX_VE_SSH_USERNAME / PROXMOX_VE_SSH_PASSWORD are used first, falling back to the
+// stripped PROXMOX_VE_USERNAME / PROXMOX_VE_PASSWORD when the SSH-specific vars are unset.
+// All other SSH settings (agent, private key, socks5) mirror the provider's env var lookup.
+// The node resolver maps every node name to the configured test node SSH address and port.
+func (e *Environment) SSHClient() ssh.Client {
+	e.t.Helper()
+
+	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
+	if sshUsername == "" {
+		sshUsername = strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	}
+
+	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
+	if sshPassword == "" {
+		sshPassword = utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+	}
+
+	address := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NODE_SSH_ADDRESS")
+	if address == "" {
+		u, err := url.Parse(utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT"))
+		require.NoError(e.t, err)
+
+		address = u.Hostname()
+	}
+
+	port := int32(22)
+
+	if p := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NODE_SSH_PORT"); p != "" {
+		v, err := strconv.ParseInt(p, 10, 32)
+		require.NoError(e.t, err)
+
+		port = int32(v)
+	}
+
+	client, err := ssh.NewClient(
+		sshUsername,
+		sshPassword,
+		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT"),
+		utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK"),
+		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT_FORWARDING"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD"),
+		staticNodeResolver{node: ssh.ProxmoxNode{Address: address, Port: port}},
+	)
+	require.NoError(e.t, err)
+
+	return client
+}
+
 // staticNodeResolver resolves any node name to a fixed SSH address/port.
 type staticNodeResolver struct {
 	node ssh.ProxmoxNode
