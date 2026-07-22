@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -99,7 +100,45 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 	creds, err = api.NewCredentials(username, password, otp, apiToken, authTicket, csrfPreventionToken)
 	diags = append(diags, diag.FromErr(err)...)
 
-	conn, err = api.NewConnection(endpoint, insecure, minTLS)
+	cfClientID := os.Getenv(envProviderCloudflareAccessClientID)
+	if cfClientID == "" {
+		cfClientID = os.Getenv(envProviderCloudflareAccessClientIDAlt)
+	}
+
+	cfClientSecret := os.Getenv(envProviderCloudflareAccessClientSecret)
+	if cfClientSecret == "" {
+		cfClientSecret = os.Getenv(envProviderCloudflareAccessClientSecretAlt)
+	}
+
+	if v, ok := d.GetOk(mkProviderCloudflareAccess); ok {
+		cfBlock := v.([]any)
+		if len(cfBlock) > 0 {
+			cf := cfBlock[0].(map[string]any)
+
+			if v, ok := cf[mkProviderCloudflareAccessClientID].(string); ok && v != "" {
+				cfClientID = v
+			}
+
+			if v, ok := cf[mkProviderCloudflareAccessClientSecret].(string); ok && v != "" {
+				cfClientSecret = v
+			}
+		}
+	}
+
+	var cfConfig *api.CloudflareAccessConfig
+
+	if cfClientID != "" || cfClientSecret != "" {
+		if cfClientID == "" || cfClientSecret == "" {
+			diags = append(diags, diag.Errorf("cloudflare_access requires both client_id and client_secret")...)
+		} else {
+			cfConfig = &api.CloudflareAccessConfig{
+				ClientID:     cfClientID,
+				ClientSecret: cfClientSecret,
+			}
+		}
+	}
+
+	conn, err = api.NewConnection(endpoint, insecure, minTLS, cfConfig)
 	diags = append(diags, diag.FromErr(err)...)
 
 	if diags.HasError() {
