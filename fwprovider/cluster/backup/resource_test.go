@@ -268,7 +268,7 @@ func TestAccResourceBackupJobExclude(t *testing.T) {
 
 	te := test.InitEnvironment(t)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
