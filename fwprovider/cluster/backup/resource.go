@@ -90,6 +90,10 @@ func (r *backupJobResource) ConfigValidators(_ context.Context) []resource.Confi
 			path.MatchRoot("vmid"),
 			path.MatchRoot("pool"),
 		),
+		resourcevalidator.Conflicting(
+			path.MatchRoot("vmid"),
+			path.MatchRoot("exclude"),
+		),
 	}
 }
 
@@ -130,6 +134,11 @@ func (r *backupJobResource) Schema(
 			},
 			"vmid": schema.ListAttribute{
 				Description: "A list of guest VM/CT IDs to include in the backup job.",
+				Optional:    true,
+				ElementType: types.StringType,
+			},
+			"exclude": schema.ListAttribute{
+				Description: "A list of guest VM/CT IDs to exclude from the backup.",
 				Optional:    true,
 				ElementType: types.StringType,
 			},

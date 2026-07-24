@@ -105,6 +105,7 @@ type GetResponseData struct {
 	Storage                string                          `json:"storage"`
 	Node                   *string                         `json:"node,omitempty"`
 	VMID                   *string                         `json:"vmid,omitempty"`
+	Exclude                *string                         `json:"exclude,omitempty"`
 	All                    *types.CustomBool               `json:"all,omitempty"`
 	Mode                   *string                         `json:"mode,omitempty"`
 	Compress               *string                         `json:"compress,omitempty"`
@@ -138,6 +139,7 @@ type RequestBodyCommon struct {
 	Enabled                *types.CustomBool  `json:"enabled,omitempty"                   url:"enabled,omitempty,int"`
 	Node                   *string            `json:"node,omitempty"                      url:"node,omitempty"`
 	VMID                   *string            `json:"vmid,omitempty"                      url:"vmid,omitempty"`
+	Exclude                *string            `json:"exclude,omitempty"                   url:"exclude,omitempty"`
 	All                    *types.CustomBool  `json:"all,omitempty"                       url:"all,omitempty,int"`
 	Mode                   *string            `json:"mode,omitempty"                      url:"mode,omitempty"`
 	Compress               *string            `json:"compress,omitempty"                  url:"compress,omitempty"`
