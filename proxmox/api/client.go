@@ -65,8 +65,9 @@ type Connection struct {
 	httpClient *http.Client
 }
 
-// NewConnection creates and initializes a Connection instance.
-func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, error) {
+// NewConnection creates and initializes a Connection instance. The extraHeaders are added to every
+// request sent to the endpoint, e.g. to satisfy an authenticating reverse proxy in front of the API.
+func NewConnection(endpoint string, insecure bool, minTLS string, extraHeaders map[string]string) (*Connection, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, errors.New(
@@ -85,6 +86,10 @@ func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, 
 		return nil, err
 	}
 
+	if err := validateExtraHeaders(extraHeaders); err != nil {
+		return nil, err
+	}
+
 	var transport http.RoundTripper = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{
@@ -94,6 +99,17 @@ func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, 
 		},
 	}
 
+	if len(extraHeaders) > 0 {
+		transport = &headerTransport{
+			next:    transport,
+			scheme:  u.Scheme,
+			host:    u.Host,
+			headers: maps.Clone(extraHeaders),
+		}
+	}
+
+	// Keep the logging transport outermost: it records request headers, and it has no way of
+	// knowing that a user-defined header holds a credential. Use mitmproxy to inspect the wire.
 	if logging.IsDebugOrHigher() {
 		transport = logging.NewLoggingHTTPTransport(transport)
 	}

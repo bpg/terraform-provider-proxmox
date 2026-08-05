@@ -85,6 +85,7 @@ type proxmoxProvider struct {
 // proxmoxProviderModel maps provider schema data.
 type proxmoxProviderModel struct {
 	Endpoint            types.String `tfsdk:"endpoint"`
+	APIHeaders          types.Map    `tfsdk:"api_headers"`
 	Insecure            types.Bool   `tfsdk:"insecure"`
 	MinTLS              types.String `tfsdk:"min_tls"`
 	AuthTicket          types.String `tfsdk:"auth_ticket"`
@@ -128,6 +129,17 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 	resp.Schema = schema.Schema{
 		// Attributes specified in alphabetical order.
 		Attributes: map[string]schema.Attribute{
+			// NOTE: the description must stay identical to the SDK provider's `api_headers`
+			// attribute, otherwise tf6muxserver rejects the mismatching provider schemas.
+			"api_headers": schema.MapAttribute{
+				Description: "Additional HTTP headers to send with every Proxmox VE API request. " +
+					"Useful when the API is behind an authenticating reverse proxy, e.g. Cloudflare Access. " +
+					"Headers managed by the provider or by the HTTP client, such as `Authorization`, are rejected. " +
+					"Can also be sourced from `PROXMOX_VE_API_HEADERS` as a comma-separated list of `Name=Value` pairs.",
+				ElementType: types.StringType,
+				Optional:    true,
+				Sensitive:   true,
+			},
 			"api_token": schema.StringAttribute{
 				Description: "The API token for the Proxmox VE API.",
 				Optional:    true,
@@ -327,6 +339,17 @@ func (p *proxmoxProvider) Configure(
 		)
 	}
 
+	// Silently sending no headers would turn every API call into an authentication failure.
+	if cfg.APIHeaders.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("api_headers"),
+			"Unknown Proxmox VE API Headers",
+			"The provider cannot create the Proxmox VE API client as there is an unknown configuration value "+
+				"for the API headers. Either target apply the source of the value first, set the value statically in "+
+				"the configuration, or use the PROXMOX_VE_API_HEADERS environment variable.",
+		)
+	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -380,6 +403,22 @@ func (p *proxmoxProvider) Configure(
 		password = cfg.Password.ValueString()
 	}
 
+	// The configuration wins wholesale, including an explicit empty map, so the environment
+	// variable is only parsed - and only able to fail - when the attribute is absent.
+	var apiHeaders map[string]string
+
+	if cfg.APIHeaders.IsNull() {
+		var headersErr error
+
+		apiHeaders, headersErr = utils.GetAnyStringMapEnv("PROXMOX_VE_API_HEADERS")
+		if headersErr != nil {
+			resp.Diagnostics.AddError("Invalid PROXMOX_VE_API_HEADERS Value", headersErr.Error())
+		}
+	} else {
+		apiHeaders = make(map[string]string, len(cfg.APIHeaders.Elements()))
+		resp.Diagnostics.Append(cfg.APIHeaders.ElementsAs(ctx, &apiHeaders, false)...)
+	}
+
 	if endpoint == "" {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("endpoint"),
@@ -408,6 +447,7 @@ func (p *proxmoxProvider) Configure(
 		endpoint,
 		insecure,
 		minTLS,
+		apiHeaders,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(

@@ -15,6 +15,7 @@ import (
 
 const (
 	mkProviderEndpoint             = "endpoint"
+	mkProviderAPIHeaders           = "api_headers"
 	mkProviderInsecure             = "insecure"
 	mkProviderMinTLS               = "min_tls"
 	mkProviderAuthTicket           = "auth_ticket"
@@ -52,6 +53,18 @@ func createSchema() map[string]*schema.Schema {
 			Optional:     true,
 			Description:  "The endpoint for the Proxmox VE API.",
 			ValidateFunc: validation.IsURLWithHTTPorHTTPS,
+		},
+		// NOTE: the description must stay identical to the Framework provider's `api_headers`
+		// attribute, otherwise tf6muxserver rejects the mismatching provider schemas.
+		mkProviderAPIHeaders: {
+			Type:      schema.TypeMap,
+			Optional:  true,
+			Sensitive: true,
+			Elem:      &schema.Schema{Type: schema.TypeString},
+			Description: "Additional HTTP headers to send with every Proxmox VE API request. " +
+				"Useful when the API is behind an authenticating reverse proxy, e.g. Cloudflare Access. " +
+				"Headers managed by the provider or by the HTTP client, such as `Authorization`, are rejected. " +
+				"Can also be sourced from `PROXMOX_VE_API_HEADERS` as a comma-separated list of `Name=Value` pairs.",
 		},
 		mkProviderInsecure: {
 			Type:        schema.TypeBool,

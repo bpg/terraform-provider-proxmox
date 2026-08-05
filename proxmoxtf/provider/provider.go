@@ -96,10 +96,28 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		password = v.(string)
 	}
 
+	// The configuration wins wholesale, including an explicit empty map, so the environment
+	// variable is only parsed - and only able to fail - when the attribute is absent. Presence is
+	// read from the raw config because GetOk cannot tell an empty map from an unset one, and
+	// GetOkExists is deprecated with undefined behaviour for anything but booleans.
+	var apiHeaders map[string]string
+
+	if isAPIHeadersSet(d) {
+		apiHeaders = map[string]string{}
+
+		for k, v := range d.Get(mkProviderAPIHeaders).(map[string]any) {
+			apiHeaders[k] = v.(string)
+		}
+	} else {
+		headers, headersErr := utils.GetAnyStringMapEnv("PROXMOX_VE_API_HEADERS", "PM_VE_API_HEADERS")
+		diags = append(diags, diag.FromErr(headersErr)...)
+		apiHeaders = headers
+	}
+
 	creds, err = api.NewCredentials(username, password, otp, apiToken, authTicket, csrfPreventionToken)
 	diags = append(diags, diag.FromErr(err)...)
 
-	conn, err = api.NewConnection(endpoint, insecure, minTLS)
+	conn, err = api.NewConnection(endpoint, insecure, minTLS, apiHeaders)
 	diags = append(diags, diag.FromErr(err)...)
 
 	if diags.HasError() {
@@ -256,6 +274,18 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 	}
 
 	return config, nil
+}
+
+// isAPIHeadersSet reports whether `api_headers` is present in the configuration, treating an
+// explicit empty map as present so that it can override the environment variable.
+func isAPIHeadersSet(d *schema.ResourceData) bool {
+	raw := d.GetRawConfig()
+
+	if raw.IsNull() || !raw.Type().IsObjectType() || !raw.Type().HasAttribute(mkProviderAPIHeaders) {
+		return false
+	}
+
+	return !raw.GetAttr(mkProviderAPIHeaders).IsNull()
 }
 
 type apiResolver struct {
