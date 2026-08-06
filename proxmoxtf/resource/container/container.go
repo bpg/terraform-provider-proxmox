@@ -747,7 +747,9 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "A mount point",
 				Optional:    true,
-				ForceNew:    true,
+				// Not ForceNew: adding, removing and reconfiguring mount points is applied in place by
+				// containerUpdate. Recreation is narrowed down to repointing or resizing an existing
+				// mount point, which is handled by containerMountPointForceNew in CustomizeDiff.
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkMountPointACL: {
@@ -807,24 +809,13 @@ func Container() *schema.Resource {
 							Description:      "Volume size (only used for volume mount points)",
 							Optional:         true,
 							Default:          dvMountPointSize,
-							ForceNew:         true,
 							ValidateDiagFunc: validators.FileSize(),
 						},
 						mkMountPointVolume: {
-							Type:        schema.TypeString,
-							Description: "Volume, device or directory to mount into the container",
-							Required:    true,
-							ForceNew:    true,
-							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
-								// For *new* volume mounts PVE returns an actual volume ID which is saved in the state,
-								// so on reapply the provider will try override it:
-								//   "local-lvm" -> "local-lvm:vm-101-disk-1"
-								//   "local-lvm:8" -> "local-lvm:vm-101-disk-1"
-								// There is also an option to mount an existing volume, so
-								//   "local-lvm:vm-101-disk-1" -> "local-lvm:vm-101-disk-1"
-								// which is a valid case.
-								return oldVal == newVal || strings.HasPrefix(oldVal, strings.Split(newVal, ":")[0]+":")
-							},
+							Type:             schema.TypeString,
+							Description:      "Volume, device or directory to mount into the container",
+							Required:         true,
+							DiffSuppressFunc: mountPointVolumeDiffSuppress,
 						},
 						mkMountPointPathInDatastore: {
 							Type:        schema.TypeString,
@@ -1226,6 +1217,9 @@ func Container() *schema.Resource {
 					return false
 				},
 			),
+			// Mount points are updated in place; only repointing or resizing an existing one
+			// requires recreation.
+			containerMountPointForceNew,
 		),
 		Importer: &schema.ResourceImporter{
 			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
@@ -2446,6 +2440,99 @@ func containerGetTagsString(d *schema.ResourceData) string {
 	sort.Strings(sanitizedTags)
 
 	return strings.Join(sanitizedTags, ";")
+}
+
+// mountPointVolumeDiffSuppress reports whether an old/new mount point volume pair refers to the
+// same volume.
+//
+// For *new* volume mounts PVE returns an actual volume ID which is saved in the state,
+// so on reapply the provider will try override it:
+//
+//	"local-lvm" -> "local-lvm:vm-101-disk-1"
+//	"local-lvm:8" -> "local-lvm:vm-101-disk-1"
+//
+// There is also an option to mount an existing volume, so
+//
+//	"local-lvm:vm-101-disk-1" -> "local-lvm:vm-101-disk-1"
+//
+// which is a valid case.
+func mountPointVolumeDiffSuppress(_, oldVal, newVal string, _ *schema.ResourceData) bool {
+	return oldVal == newVal || strings.HasPrefix(oldVal, strings.Split(newVal, ":")[0]+":")
+}
+
+// containerMountPointForceNew flags mount point changes that require recreating the container.
+// Adding, removing and reconfiguring mount points is applied in place by containerUpdate, so only
+// mount points present on both sides of the diff are considered: repointing an existing mount
+// point to a different volume, or changing its size, cannot be done in place.
+//
+// The replacement is flagged on the specific nested attribute rather than on the mkMountPoint
+// block: a block-level ForceNew only propagates to the list count, which is unchanged when an
+// existing mount point is modified in place.
+func containerMountPointForceNew(_ context.Context, d *schema.ResourceDiff, _ any) error {
+	oldRaw, newRaw := d.GetChange(mkMountPoint)
+
+	oldList, _ := oldRaw.([]any)
+	newList, _ := newRaw.([]any)
+
+	for i := range min(len(oldList), len(newList)) {
+		oldMountPoint, ok := oldList[i].(map[string]any)
+		if !ok {
+			continue
+		}
+
+		newMountPoint, ok := newList[i].(map[string]any)
+		if !ok {
+			continue
+		}
+
+		oldVolume, _ := oldMountPoint[mkMountPointVolume].(string)
+		newVolume, _ := newMountPoint[mkMountPointVolume].(string)
+
+		if !mountPointVolumeDiffSuppress("", oldVolume, newVolume, nil) {
+			return forceNewMountPointAttr(d, i, mkMountPointVolume)
+		}
+
+		oldSize, _ := oldMountPoint[mkMountPointSize].(string)
+		newSize, _ := newMountPoint[mkMountPointSize].(string)
+
+		if !mountPointSizeEqual(oldSize, newSize) {
+			return forceNewMountPointAttr(d, i, mkMountPointSize)
+		}
+	}
+
+	return nil
+}
+
+func forceNewMountPointAttr(d *schema.ResourceDiff, index int, attr string) error {
+	key := fmt.Sprintf("%s.%d.%s", mkMountPoint, index, attr)
+
+	if err := d.ForceNew(key); err != nil {
+		return fmt.Errorf("failed to require replacement for %q: %w", key, err)
+	}
+
+	return nil
+}
+
+// mountPointSizeEqual compares two mount point sizes by value, so that equivalent spellings
+// (e.g. "4G" and "4096M") are not mistaken for a resize.
+func mountPointSizeEqual(oldSize, newSize string) bool {
+	if oldSize == newSize {
+		return true
+	}
+
+	// An unset size in the configuration means "whatever PVE reported", not a resize.
+	if newSize == dvMountPointSize {
+		return true
+	}
+
+	oldParsed, oldErr := types.ParseDiskSize(oldSize)
+	newParsed, newErr := types.ParseDiskSize(newSize)
+
+	if oldErr != nil || newErr != nil {
+		return false
+	}
+
+	return oldParsed == newParsed
 }
 
 func containerGetMountPointsMap(mountPoint []any) (containers.CustomMountPoints, error) {
@@ -3934,7 +4021,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	// Prepare the new mount point configuration.
 	if d.HasChange(mkMountPoint) {
-		_, newMountPoints := d.GetChange(mkMountPoint)
+		oldMountPoints, newMountPoints := d.GetChange(mkMountPoint)
 
 		mountPoints := newMountPoints.([]any)
 
@@ -3944,6 +4031,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 
 		updateBody.MountPoints = mountPointsMap
+
+		// Detach mount points that were dropped from the configuration. Detaching leaves the
+		// underlying volume in place (PVE marks it "unused"), so no data is destroyed.
+		oldMountPointsList, _ := oldMountPoints.([]any)
+		for i := len(mountPoints); i < len(oldMountPointsList); i++ {
+			updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("mp%d", i))
+		}
 
 		rebootRequired = true
 		bodyDirty = true
