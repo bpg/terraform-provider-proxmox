@@ -6119,6 +6119,35 @@ func vmAppendMissingDeviceDeletes(
 	return del
 }
 
+// vmRemovedIPConfigKeys returns the ipconfigN keys present on the VM that the planned
+// cloud-init configuration no longer covers. Cloud-init IP configuration is sent as a
+// numbered list, so dropping an ip_config block simply omits its key from the payload
+// instead of removing it from the VM; the keys have to be deleted explicitly.
+func vmRemovedIPConfigKeys(vmConfig *vms.GetResponseData, cloudInitConfig *vms.CustomCloudInitConfig) []string {
+	if vmConfig == nil {
+		return nil
+	}
+
+	planned := 0
+	if cloudInitConfig != nil {
+		planned = len(cloudInitConfig.IPConfig)
+	}
+
+	var removed []string
+
+	for key := range vmConfig.IPConfigs {
+		var index int
+
+		if _, err := fmt.Sscanf(key, "ipconfig%d", &index); err == nil && index >= planned {
+			removed = append(removed, key)
+		}
+	}
+
+	sort.Strings(removed)
+
+	return removed
+}
+
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	// reset the default timeout for the update operation
 	ctx = context.WithoutCancel(ctx)
@@ -6593,6 +6622,13 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		cloudInitConfig := vmGetCloudInitConfig(d)
 
 		updateBody.CloudInitConfig = cloudInitConfig
+
+		// The update payload only carries the ip_config blocks that are still present in
+		// the configuration, so removing one leaves its ipconfigN key on the VM: the plan
+		// keeps showing the same removal forever, and every apply power-cycles the guest
+		// for a change that is never made. Delete the leftover keys explicitly, the same
+		// way network devices are handled below.
+		del = append(del, vmRemovedIPConfigKeys(vmConfig, cloudInitConfig)...)
 
 		initialization := d.Get(mkInitialization).([]any)
 

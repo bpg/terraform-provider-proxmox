@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
@@ -613,6 +614,65 @@ func Test_parseImportIDWIthNodeName(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tt.expectedNodeName, nodeName)
 			require.Equal(t, tt.expectedID, id)
+		})
+	}
+}
+
+// TestVMRemovedIPConfigKeys tests that ipconfigN keys no longer covered by the planned
+// cloud-init configuration are reported for deletion.
+func TestVMRemovedIPConfigKeys(t *testing.T) {
+	t.Parallel()
+
+	existing := func(keys ...string) *vms.GetResponseData {
+		data := &vms.GetResponseData{IPConfigs: vms.CustomCloudInitIPConfigMap{}}
+		for _, key := range keys {
+			data.IPConfigs[key] = &vms.CustomCloudInitIPConfig{}
+		}
+
+		return data
+	}
+
+	planned := func(count int) *vms.CustomCloudInitConfig {
+		return &vms.CustomCloudInitConfig{IPConfig: make([]vms.CustomCloudInitIPConfig, count)}
+	}
+
+	tests := []struct {
+		name            string
+		vmConfig        *vms.GetResponseData
+		cloudInitConfig *vms.CustomCloudInitConfig
+		expected        []string
+	}{
+		{
+			name:            "removed block is deleted",
+			vmConfig:        existing("ipconfig0", "ipconfig1"),
+			cloudInitConfig: planned(1),
+			expected:        []string{"ipconfig1"},
+		},
+		{
+			name:            "unchanged configuration deletes nothing",
+			vmConfig:        existing("ipconfig0", "ipconfig1"),
+			cloudInitConfig: planned(2),
+			expected:        nil,
+		},
+		{
+			name:            "all blocks removed",
+			vmConfig:        existing("ipconfig0", "ipconfig1", "ipconfig2"),
+			cloudInitConfig: nil,
+			expected:        []string{"ipconfig0", "ipconfig1", "ipconfig2"},
+		},
+		{
+			name:            "no VM configuration",
+			vmConfig:        nil,
+			cloudInitConfig: planned(1),
+			expected:        nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, tt.expected, vmRemovedIPConfigKeys(tt.vmConfig, tt.cloudInitConfig))
 		})
 	}
 }
