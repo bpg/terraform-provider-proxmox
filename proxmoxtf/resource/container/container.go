@@ -96,6 +96,8 @@ const (
 	dvStartupUpDelay                    = -1
 	dvStartupDownDelay                  = -1
 	dvStartOnBoot                       = true
+	dvPurgeOnDestroy                    = true
+	dvDeleteUnreferencedDisksOnDestroy  = true
 	dvTemplate                          = false
 	dvTimeoutCreate                     = 1800
 	dvTimeoutClone                      = 1800
@@ -203,6 +205,8 @@ const (
 	mkStartupUpDelay                    = "up_delay"
 	mkStartupDownDelay                  = "down_delay"
 	mkStartOnBoot                       = "start_on_boot"
+	mkPurgeOnDestroy                    = "purge_on_destroy"
+	mkDeleteUnreferencedDisksOnDestroy  = "delete_unreferenced_disks_on_destroy"
 	mkTags                              = "tags"
 	mkTemplate                          = "template"
 	mkTimeoutCreate                     = "timeout_create"
@@ -1075,6 +1079,20 @@ func Container() *schema.Resource {
 				Optional:    true,
 				ForceNew:    false,
 				Default:     dvStartOnBoot,
+			},
+			mkPurgeOnDestroy: {
+				Type:        schema.TypeBool,
+				Description: "Whether to purge the container from backup/replication/HA configurations on destroy",
+				Optional:    true,
+				ForceNew:    false,
+				Default:     dvPurgeOnDestroy,
+			},
+			mkDeleteUnreferencedDisksOnDestroy: {
+				Type:        schema.TypeBool,
+				Description: "Whether to delete unreferenced disks on destroy",
+				Optional:    true,
+				ForceNew:    false,
+				Default:     dvDeleteUnreferencedDisksOnDestroy,
 			},
 			mkTags: {
 				Type:        schema.TypeList,
@@ -4233,7 +4251,10 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 	}
 
-	deleteResult := containerAPI.DeleteContainer(ctx)
+	purge := d.Get(mkPurgeOnDestroy).(bool)
+	deleteUnreferencedDisks := d.Get(mkDeleteUnreferencedDisksOnDestroy).(bool)
+
+	deleteResult := containerAPI.DeleteContainer(ctx, purge, deleteUnreferencedDisks)
 	if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
 		d.SetId("")
 

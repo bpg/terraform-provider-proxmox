@@ -206,7 +206,7 @@ func TestDeleteContainerWaitsForTask(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	result := client.DeleteContainer(t.Context())
+	result := client.DeleteContainer(t.Context(), true, true)
 	require.NoError(t, result.Err())
 }
 

@@ -335,6 +335,12 @@ The `mount_point.volume` attribute accepts three forms:
         seconds before the next container is shut down.
 - `start_on_boot` - (Optional) Automatically start container when the host
   system boots (defaults to `true`).
+- `purge_on_destroy` - (Optional) Whether to purge the container from backup,
+  replication and HA configurations on destroy (defaults to `true`). Proxmox
+  refuses to delete a container that is still referenced by an HA resource
+  unless this is set.
+- `delete_unreferenced_disks_on_destroy` - (Optional) Whether to delete
+  unreferenced disks on destroy (defaults to `true`)
 - `tags` - (Optional) A list of tags the container tags. This is only meta
   information (defaults to `[]`). Note: Proxmox always sorts the container tags and set them to lowercase.
   If tag contains capital letters, then Proxmox will always report a
