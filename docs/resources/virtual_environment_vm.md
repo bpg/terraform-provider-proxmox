@@ -690,7 +690,12 @@ install and *start* it using cloud-init, e.g. using custom `user_data_file_id`
 file.
 
 This provider requires `agent.enabled = true` to populate `ipv4_addresses`,
-`ipv6_addresses` and `network_interface_names` output attributes.
+`ipv6_addresses` and `network_interface_names` output attributes. Note that the
+provider honors the agent flag from the VM's *actual* Proxmox configuration,
+not only from the Terraform configuration: a cloned VM inherits the `agent`
+setting from the template, so omitting the `agent` block on the clone does not
+disable the agent wait (up to 15 minutes by default). Set
+`agent { enabled = false }` explicitly on the clone to override the template.
 
 Setting `agent.enabled = true` without running `qemu-guest-agent` in the VM will
 also result in long timeouts when using the provider, both when creating VMs,
