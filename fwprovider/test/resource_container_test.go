@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
@@ -1202,9 +1203,70 @@ func TestAccResourceContainerMountPoint(t *testing.T) {
 						type             = "alpine"
 				    }
 				}`),
+				// Adding a mount point must be applied in place, not by recreating the container.
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
 					"mount_point.#": "2",
 				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+					vm_id = {{ .TestContainerID }}
+				  	started   = false
+				    disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					// drop the second mount point again
+				    mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "mnt/local1"
+				    }
+				    initialization {
+				  		hostname = "test"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}`),
+				// Removing a mount point must also be applied in place.
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
+						"mount_point.#": "1",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						_, ok := ctInfo.MountPoints["mp1"]
+						require.False(te.t, ok, `"mp1" should have been detached from the container`)
+
+						return nil
+					},
+				),
 			},
 		},
 	})
