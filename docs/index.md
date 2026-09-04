@@ -24,6 +24,15 @@ To use this provider, you only need:
 **Minimal configuration (no SSH):**
 
 ```hcl
+terraform {
+  required_providers {
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = "~> 0.111.1"
+    }
+  }
+}
+
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
 
