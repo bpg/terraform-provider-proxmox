@@ -13,6 +13,7 @@ import (
 	"maps"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -63,7 +64,13 @@ type RenderConfigOption interface {
 }
 
 type renderConfig struct {
-	providerConfig string
+	auth       string
+	apiHeaders string
+}
+
+// render assembles the provider configuration block from the applied options.
+func (r *renderConfig) render() string {
+	return fmt.Sprintf("provider \"proxmox\" {\n%s%s\n%s\n}", r.auth, r.apiHeaders, r.ssh())
 }
 
 // returns the ssh configuration section of the provider config.
@@ -113,12 +120,10 @@ func (o *rootUserConfigOption) apply(rc *renderConfig) error {
 		return fmt.Errorf("PROXMOX_VE_USERNAME and PROXMOX_VE_PASSWORD must be set")
 	}
 
-	rootUser := fmt.Sprintf("\tusername = \"%s\"\n\tpassword = \"%s\"\n\tapi_token = \"\"",
+	rc.auth = fmt.Sprintf("\tusername = \"%s\"\n\tpassword = \"%s\"\n\tapi_token = \"\"",
 		utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"),
 		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
 	)
-
-	rc.providerConfig = fmt.Sprintf("provider \"proxmox\" {\n%s\n%s\n}", rootUser, rc.ssh())
 
 	return nil
 }
@@ -135,10 +140,33 @@ func (o *apiTokenConfigOption) apply(rc *renderConfig) error {
 		return fmt.Errorf("PROXMOX_VE_API_TOKEN must be set")
 	}
 
-	apiToken := fmt.Sprintf("\tapi_token = \"%s\"\n\tusername = \"\"\n\tpassword = \"\"",
+	rc.auth = fmt.Sprintf("\tapi_token = \"%s\"\n\tusername = \"\"\n\tpassword = \"\"",
 		utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN"))
 
-	rc.providerConfig = fmt.Sprintf("provider \"proxmox\" {\n%s\n%s\n}", apiToken, rc.ssh())
+	return nil
+}
+
+// WithAPIHeaders returns a configuration option that adds custom HTTP headers to the API requests.
+func WithAPIHeaders(headers map[string]string) RenderConfigOption {
+	return &apiHeadersConfigOption{headers: headers}
+}
+
+type apiHeadersConfigOption struct {
+	headers map[string]string
+}
+
+func (o *apiHeadersConfigOption) apply(rc *renderConfig) error {
+	var sb strings.Builder
+
+	sb.WriteString("\n\tapi_headers = {\n")
+
+	for _, name := range slices.Sorted(maps.Keys(o.headers)) {
+		fmt.Fprintf(&sb, "\t\t%q = %q\n", name, o.headers[name])
+	}
+
+	sb.WriteString("\t}")
+
+	rc.apiHeaders = sb.String()
 
 	return nil
 }
@@ -217,14 +245,15 @@ func (e *Environment) AddTemplateVars(vars map[string]any) {
 
 // RenderConfig renders the given configuration with for the current test environment using template engine.
 func (e *Environment) RenderConfig(cfg string, opt ...RenderConfigOption) string {
-	if len(opt) == 0 {
-		opt = append(opt, WithAPIToken())
-	}
-
 	rc := &renderConfig{}
 	for _, o := range opt {
 		err := o.apply(rc)
 		require.NoError(e.t, err, "configuration error")
+	}
+
+	// default to API token authentication when no authentication option was given
+	if rc.auth == "" {
+		require.NoError(e.t, WithAPIToken().apply(rc), "configuration error")
 	}
 
 	tmpl, err := template.New("config").Parse(cfg)
@@ -235,7 +264,7 @@ func (e *Environment) RenderConfig(cfg string, opt ...RenderConfigOption) string
 	err = tmpl.Execute(&buf, e.templateVars)
 	require.NoError(e.t, err)
 
-	return rc.providerConfig + "\n" + buf.String()
+	return rc.render() + "\n" + buf.String()
 }
 
 // Client returns a new API client for the test environment.
@@ -259,7 +288,7 @@ func (e *Environment) Client() api.Client {
 					panic(err)
 				}
 
-				conn, err := api.NewConnection(endpoint, true, "")
+				conn, err := api.NewConnection(endpoint, true, "", nil)
 				if err != nil {
 					panic(err)
 				}
