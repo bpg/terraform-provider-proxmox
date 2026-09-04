@@ -29,6 +29,7 @@ type backupJobModel struct {
 	Enabled                types.Bool   `tfsdk:"enabled"`
 	Node                   types.String `tfsdk:"node"`
 	VMIDs                  types.List   `tfsdk:"vmid"`
+	Exclude                types.List   `tfsdk:"exclude"`
 	All                    types.Bool   `tfsdk:"all"`
 	Mode                   types.String `tfsdk:"mode"`
 	Compress               types.String `tfsdk:"compress"`
@@ -153,6 +154,7 @@ func (m *backupJobModel) toAPIUpdate(
 
 	attribute.CheckDelete(m.Node, state.Node, &toDelete, "node")
 	attribute.CheckDelete(m.VMIDs, state.VMIDs, &toDelete, "vmid")
+	attribute.CheckDelete(m.Exclude, state.Exclude, &toDelete, "exclude")
 
 	attribute.CheckDelete(m.Mode, state.Mode, &toDelete, "mode")
 	attribute.CheckDelete(m.Compress, state.Compress, &toDelete, "compress")
@@ -270,6 +272,19 @@ func (m *backupJobModel) fillCommonFields(
 		}
 	}
 
+	// Exclude: convert types.List to comma-separated string
+	if !m.Exclude.IsNull() && !m.Exclude.IsUnknown() {
+		var exclude []string
+
+		d := m.Exclude.ElementsAs(ctx, &exclude, false)
+		diags.Append(d...)
+
+		if !d.HasError() && len(exclude) > 0 {
+			excludeStr := strings.Join(exclude, ",")
+			common.Exclude = &excludeStr
+		}
+	}
+
 	// ExcludePath: convert types.List to comma-separated string
 	if !m.ExcludePath.IsNull() && !m.ExcludePath.IsUnknown() {
 		var paths []string
@@ -342,6 +357,23 @@ func (m *backupJobModel) fromAPI(
 		m.VMIDs = listVal
 	} else {
 		m.VMIDs = types.ListNull(types.StringType)
+	}
+
+	// Exclude: convert comma-separated string to list
+	if data.Exclude != nil && *data.Exclude != "" {
+		excludes := strings.Split(*data.Exclude, ",")
+		excludeValues := make([]attr.Value, len(excludes))
+
+		for i, e := range excludes {
+			excludeValues[i] = types.StringValue(strings.TrimSpace(e))
+		}
+
+		listVal, d := types.ListValue(types.StringType, excludeValues)
+		diags.Append(d...)
+
+		m.Exclude = listVal
+	} else {
+		m.Exclude = types.ListNull(types.StringType)
 	}
 
 	m.Mode = types.StringPointerValue(data.Mode)
@@ -463,6 +495,7 @@ type backupJobDatasourceModel struct {
 	Enabled          types.Bool   `tfsdk:"enabled"`
 	Node             types.String `tfsdk:"node"`
 	VMIDs            types.List   `tfsdk:"vmid"`
+	Exclude          types.List   `tfsdk:"exclude"`
 	All              types.Bool   `tfsdk:"all"`
 	Mode             types.String `tfsdk:"mode"`
 	Compress         types.String `tfsdk:"compress"`
@@ -515,6 +548,20 @@ func (m *backupJobDatasourceModel) fromAPI(data *backup.GetResponseData) {
 		m.VMIDs = types.ListValueMust(types.StringType, vmidValues)
 	} else {
 		m.VMIDs = types.ListNull(types.StringType)
+	}
+
+	// Exclude: convert comma-separated string to list
+	if data.Exclude != nil && *data.Exclude != "" {
+		excludes := strings.Split(*data.Exclude, ",")
+		excludeValues := make([]attr.Value, len(excludes))
+
+		for i, e := range excludes {
+			excludeValues[i] = types.StringValue(strings.TrimSpace(e))
+		}
+
+		m.Exclude = types.ListValueMust(types.StringType, excludeValues)
+	} else {
+		m.Exclude = types.ListNull(types.StringType)
 	}
 
 	// PruneBackups: convert comma-separated key=value string to map
