@@ -39,6 +39,7 @@ import (
 	sdnfabricnode "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/fabric_node"
 	sdnsubnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/subnet"
 	sdnvnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/vnet"
+	sdnvnetfirewall "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/vnet/firewall"
 	sdnzone "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/zone"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
@@ -623,6 +624,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnsubnet.NewShortResource,
 		sdnvnet.NewResource,
 		sdnvnet.NewShortResource,
+		sdnvnetfirewall.NewResource,
 		sdnzone.NewEVPNResource,
 		sdnzone.NewEVPNShortResource,
 		sdnzone.NewQinQResource,
