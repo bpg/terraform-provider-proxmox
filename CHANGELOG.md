@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.112.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.112.0...v0.112.1) (2026-09-05)
+
+
+### Miscellaneous
+
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.15.0 → v7.16.0) ([#3043](https://github.com/bpg/terraform-provider-proxmox/issues/3043)) ([972215b](https://github.com/bpg/terraform-provider-proxmox/commit/972215bfda5b2d5c3f0716b67bd6423c48ab2ba0))
+* **deps:** update module github.com/hashicorp/terraform-plugin-log (v0.10.0 → v0.11.0) ([#3023](https://github.com/bpg/terraform-provider-proxmox/issues/3023)) ([8ea6d0b](https://github.com/bpg/terraform-provider-proxmox/commit/8ea6d0b146c5612e9dc21a4ed3403109c2842ca0))
+* **deps:** update module github.com/rogpeppe/go-internal (v1.15.0 → v1.16.0) ([#3034](https://github.com/bpg/terraform-provider-proxmox/issues/3034)) ([d82609e](https://github.com/bpg/terraform-provider-proxmox/commit/d82609ea63a2c89aee44f797d222b5997d8f82b7))
+* **deps:** update module github.com/skeema/knownhosts (v1.3.2 → v1.3.3) ([#3050](https://github.com/bpg/terraform-provider-proxmox/issues/3050)) ([7961d11](https://github.com/bpg/terraform-provider-proxmox/commit/7961d11866da5f81386545320dba96b0dad12fa7))
+* **deps:** update module github.com/stretchr/testify (v1.11.1 → v1.12.1) ([#3044](https://github.com/bpg/terraform-provider-proxmox/issues/3044)) ([00b4610](https://github.com/bpg/terraform-provider-proxmox/commit/00b461078bd996422ec87d1a1608aaea3708cd37))
+* **deps:** update module golang.org/x/crypto (v0.55.0 → v0.56.0) ([#3036](https://github.com/bpg/terraform-provider-proxmox/issues/3036)) ([e159565](https://github.com/bpg/terraform-provider-proxmox/commit/e159565d3432c99e5b46472bbf1e608763a50d66))
+* **deps:** update module golang.org/x/net (v0.57.0 → v0.58.0) ([#3037](https://github.com/bpg/terraform-provider-proxmox/issues/3037)) ([5caed7d](https://github.com/bpg/terraform-provider-proxmox/commit/5caed7de570ab2a8535ff1791be558f40161e08f))
+
 ## [0.112.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.111.1...v0.112.0) (2026-09-04)
 
 
