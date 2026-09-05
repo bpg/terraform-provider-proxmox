@@ -66,7 +66,7 @@ type Connection struct {
 }
 
 // NewConnection creates and initializes a Connection instance.
-func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, error) {
+func NewConnection(endpoint string, insecure bool, minTLS string, cfConfig *CloudflareAccessConfig) (*Connection, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, errors.New(
@@ -96,6 +96,10 @@ func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, 
 
 	if logging.IsDebugOrHigher() {
 		transport = logging.NewLoggingHTTPTransport(transport)
+	}
+
+	if cfConfig != nil && cfConfig.ClientID != "" && cfConfig.ClientSecret != "" {
+		transport = NewCloudflareAccessTransport(transport, *cfConfig, endpoint)
 	}
 
 	// make sure the path does not contain "/api2/json"
