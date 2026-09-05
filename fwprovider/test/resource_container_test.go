@@ -2261,6 +2261,176 @@ func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerLXC(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create container with low-level lxc entries.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					started = false
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					lxc {
+						key   = "cgroup.relative"
+						value = "1"
+					}
+					lxc {
+						key   = "log.level"
+						value = "0"
+					}
+					initialization {
+						hostname = "test-lxc"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"lxc.#":       "2",
+						"lxc.0.key":   "cgroup.relative",
+						"lxc.0.value": "1",
+						"lxc.1.key":   "log.level",
+						"lxc.1.value": "0",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						require.Len(te.t, ctInfo.LXCConfig.Raw, 2, "Raw should preserve all LXC entries")
+						require.Equal(te.t, "lxc.cgroup.relative", ctInfo.LXCConfig.Raw[0][0])
+						require.Equal(te.t, "1", ctInfo.LXCConfig.Raw[0][1])
+						require.Equal(te.t, "lxc.log.level", ctInfo.LXCConfig.Raw[1][0])
+						require.Equal(te.t, "0", ctInfo.LXCConfig.Raw[1][1])
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 2: Update lxc entries.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					started = false
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					lxc {
+						key   = "cgroup.relative"
+						value = "0"
+					}
+					initialization {
+						hostname = "test-lxc"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"lxc.#":       "1",
+						"lxc.0.key":   "cgroup.relative",
+						"lxc.0.value": "0",
+					}),
+				),
+			},
+			{
+				// Step 3: Remove all lxc entries.
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					started = false
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-lxc"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"lxc.#": "0",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						for _, pair := range ctInfo.LXCConfig.Raw {
+							require.NotEqual(te.t, "lxc.cgroup.relative", pair[0])
+							require.NotEqual(te.t, "lxc.log.level", pair[0])
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerEntrypoint(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
