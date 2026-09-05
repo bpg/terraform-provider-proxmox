@@ -37,6 +37,7 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `delete_unreferenced_disks_on_destroy` (Boolean) Set to true to delete unreferenced disks on destroy (defaults to `true`).
 - `description` (String) The description of the VM.
+- `disk` (Attributes Map) The disk configuration. The key is the interface of the Disk, could be one of `ide[0-3]`, `sata[0-5]`, `scsi[0-30]`, where the number is the index of the interface. (see [below for nested schema](#nestedatt--disk))
 - `id` (Number) The unique identifier of the VM in the Proxmox cluster.
 - `name` (String) The name of the VM. Doesn't have to be unique.
 - `purge_on_destroy` (Boolean) Set to true to purge the VM from backup configurations on destroy (defaults to `true`).
@@ -70,6 +71,22 @@ Optional:
 - `type` (String) Emulated CPU type, it's recommended to use `x86-64-v2-AES` or higher. See [the PVE admin guide](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for the full list of supported types.
 - `units` (Number) CPU weight for a VM. Argument is used in the kernel fair scheduler. The larger the number is, the more CPU time this VM gets. Number is relative to weights of all the other running VMs. On cgroup v2 `0` is a valid value meaning disable CPU share weighting.
 - `vcpus` (Number) Number of vCPUs started with the VM, bounded by `cores * sockets`. Matches the PVE Processors → **VCPUs** field. Leave unset to start with `cores * sockets` vCPUs. Requires PVE hotplug feature enabled to change at runtime.
+
+
+<a id="nestedatt--disk"></a>
+### Nested Schema for `disk`
+
+Optional:
+
+- `aio` (String) The disk AIO mode `<io_uring | native | thread>` (defaults to `io_uring` when unset).
+- `backup` (Boolean) Whether the drive should be included when making backups (defaults to `true`).
+- `cache` (String) The cache type. `<none | directsync | writethrough | writeback | unsafe>` (defaults to `none`).
+- `datastore_id` (String) The identifier for the datastore to create the disk in (defaults to `local-lvm`).
+- `discard` (String) Whether to pass discard/trim requests to the underlying storage. Supported values are `on`/`ignore` (defaults to `ignore`).
+- `file_format` (String) The file format `<qcow2 | raw | vmdk>`
+- `import_from` (String) The file ID for a disk image to import into VM. The image must be of `import` content type (uncompressed images only). The ID format is `<datastore_id>:import/<file_name>`, Can be also taken from `proxmox_download_file` resource. Note: compressed images downloaded with `decompression_algorithm` cannot use `import_from`; use `file_id`instead.
+- `iothread` (Boolean) Whether to use IOThreads for this disk. (defaults to `false`).
+- `size` (Number) The disk size in gigabytes
 
 
 <a id="nestedatt--rng"></a>
