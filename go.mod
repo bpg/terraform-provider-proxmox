@@ -23,7 +23,7 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
 	github.com/pkg/sftp v1.13.11
 	github.com/rogpeppe/go-internal v1.16.0
-	github.com/skeema/knownhosts v1.3.2
+	github.com/skeema/knownhosts v1.3.3
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.56.0
 	golang.org/x/net v0.58.0
