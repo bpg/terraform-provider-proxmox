@@ -28,7 +28,8 @@ func validateExtraHeaders(headers map[string]string) error {
 		// disables the transparent gzip handling, and Header.Set("Host") is a no-op (req.Host is
 		// the real field), so accepting it would silently do nothing.
 		"accept-encoding", "host",
-		// hop-by-hop: ignored when serializing HTTP/1 requests, rejected outright by HTTP/2
+		// hop-by-hop: these change how net/http handles the connection (e.g. "Connection: close"
+		// disables keep-alive) instead of reaching the API
 		"connection", "keep-alive", "proxy-connection", "te", "trailer", "transfer-encoding", "upgrade",
 		// ineffective here: for an HTTPS endpoint, forward proxy authentication travels in the
 		// CONNECT request (Transport.ProxyConnectHeader), so these would be tunnelled to Proxmox
@@ -86,8 +87,7 @@ func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return t.next.RoundTrip(req)
 	}
 
-	// Clone instead of mutating: required by the RoundTripper contract, and it keeps the headers
-	// out of the snapshot http.Client takes of the original request to populate redirects.
+	// The RoundTripper contract forbids modifying the caller's request.
 	req = req.Clone(req.Context())
 
 	for name, value := range t.headers {

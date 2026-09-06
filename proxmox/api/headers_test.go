@@ -28,22 +28,13 @@ func testHeaders() map[string]string {
 	}
 }
 
-// newConnectionForServer points a Connection at a test server. NewConnection insists on https,
-// so the http test server URL is injected afterwards, keeping the transport wiring under test.
+// newConnectionForServer points a Connection at a TLS test server, going through NewConnection so the
+// whole transport chain (including the logging transport enabled by TF_LOG) is exercised.
 func newConnectionForServer(t *testing.T, serverURL string, headers map[string]string) *Connection {
 	t.Helper()
 
-	u, err := url.Parse(serverURL)
+	conn, err := NewConnection(serverURL, true, "", headers)
 	require.NoError(t, err)
-
-	conn, err := NewConnection("https://"+u.Host, true, "", headers)
-	require.NoError(t, err)
-
-	ht, ok := conn.httpClient.Transport.(*headerTransport)
-	require.True(t, ok, "expected the header transport to be the outermost one")
-
-	ht.scheme = u.Scheme
-	conn.endpoint = serverURL
 
 	return conn
 }
@@ -53,7 +44,7 @@ func TestHeaderTransportAddsHeadersToAPIRequests(t *testing.T) {
 
 	var got http.Header
 
-	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		got = r.Header.Clone()
 	}))
 	defer server.Close()
@@ -83,7 +74,7 @@ func TestHeaderTransportSkipsOtherHosts(t *testing.T) {
 	}))
 	defer other.Close()
 
-	endpoint := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {}))
+	endpoint := httptest.NewTLSServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {}))
 	defer endpoint.Close()
 
 	conn := newConnectionForServer(t, endpoint.URL, testHeaders())
@@ -99,19 +90,18 @@ func TestHeaderTransportSkipsOtherHosts(t *testing.T) {
 	require.Empty(t, got.Get(cfSecretHeader))
 }
 
-// Go populates a redirected request from a snapshot of the original request taken before any
-// RoundTrip runs, so cloning inside RoundTrip keeps the headers out of a cross-host redirect.
+// A redirect to another host is followed by http.Client, and the credentials must not follow it.
 func TestHeaderTransportDoesNotFollowHeadersAcrossRedirect(t *testing.T) {
 	t.Parallel()
 
 	var got http.Header
 
-	other := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+	other := httptest.NewTLSServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		got = r.Header.Clone()
 	}))
 	defer other.Close()
 
-	endpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	endpoint := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, other.URL, http.StatusFound)
 	}))
 	defer endpoint.Close()
@@ -125,6 +115,8 @@ func TestHeaderTransportDoesNotFollowHeadersAcrossRedirect(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, res.Body.Close())
 
+	require.Equal(t, http.StatusOK, res.StatusCode)
+	require.NotNil(t, got)
 	require.Empty(t, got.Get(cfIDHeader))
 	require.Empty(t, got.Get(cfSecretHeader))
 }
@@ -216,14 +208,6 @@ func TestNewConnectionRejectsInvalidHeaders(t *testing.T) {
 			require.NotContains(t, err.Error(), "Bearer x")
 		})
 	}
-}
-
-func TestNewConnectionAcceptsCustomHeaders(t *testing.T) {
-	t.Parallel()
-
-	conn, err := NewConnection("https://pve.example.com", true, "", testHeaders())
-	require.NoError(t, err)
-	require.IsType(t, &headerTransport{}, conn.httpClient.Transport)
 }
 
 func TestNewConnectionWithoutHeadersLeavesTransportUnwrapped(t *testing.T) {

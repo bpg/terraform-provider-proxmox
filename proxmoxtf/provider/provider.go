@@ -109,7 +109,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 			apiHeaders[k] = v.(string)
 		}
 	} else {
-		headers, headersErr := utils.GetAnyStringMapEnv("PROXMOX_VE_API_HEADERS", "PM_VE_API_HEADERS")
+		headers, headersErr := utils.GetAnyStringMapEnv("PROXMOX_VE_API_HEADERS")
 		diags = append(diags, diag.FromErr(headersErr)...)
 		apiHeaders = headers
 	}

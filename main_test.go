@@ -22,8 +22,8 @@ import (
 )
 
 // TestMuxServerProviderSchemaParity ensures the Framework and SDK provider schemas stay identical.
-// tf6muxserver compares them when the server is created, so any attribute added to only one of the
-// two providers - or described differently in each - breaks the provider at startup. Acceptance
+// tf6muxserver compares them on the first GetProviderSchema call, so any attribute added to only one
+// of the two providers - or described differently in each - breaks the provider at startup. Acceptance
 // tests would catch it, but they only run on demand, so this guards the invariant in PR CI.
 func TestMuxServerProviderSchemaParity(t *testing.T) {
 	t.Parallel()

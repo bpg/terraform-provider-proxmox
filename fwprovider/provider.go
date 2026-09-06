@@ -339,15 +339,30 @@ func (p *proxmoxProvider) Configure(
 		)
 	}
 
+	const unknownAPIHeadersDetail = "The provider cannot create the Proxmox VE API client as there is an unknown " +
+		"configuration value for the API headers. Either target apply the source of the value first, set the value " +
+		"statically in the configuration, or use the PROXMOX_VE_API_HEADERS environment variable."
+
 	// Silently sending no headers would turn every API call into an authentication failure.
 	if cfg.APIHeaders.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("api_headers"),
-			"Unknown Proxmox VE API Headers",
-			"The provider cannot create the Proxmox VE API client as there is an unknown configuration value "+
-				"for the API headers. Either target apply the source of the value first, set the value statically in "+
-				"the configuration, or use the PROXMOX_VE_API_HEADERS environment variable.",
-		)
+		resp.Diagnostics.AddAttributeError(path.Root("api_headers"), "Unknown Proxmox VE API Headers", unknownAPIHeadersDetail)
+	}
+
+	// A known map can still hold unknown or null values, which ElementsAs rejects with a generic conversion error.
+	for name, value := range cfg.APIHeaders.Elements() {
+		if value.IsUnknown() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("api_headers").AtMapKey(name), "Unknown Proxmox VE API Headers", unknownAPIHeadersDetail,
+			)
+		}
+
+		if value.IsNull() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("api_headers").AtMapKey(name),
+				"Invalid Proxmox VE API Headers",
+				fmt.Sprintf("The value of the API header %q is null. Set a value or remove the header.", name),
+			)
+		}
 	}
 
 	if resp.Diagnostics.HasError() {
