@@ -66,7 +66,7 @@ type Connection struct {
 }
 
 // NewConnection creates and initializes a Connection instance.
-func NewConnection(endpoint string, insecure bool, minTLS string, cfConfig *CloudflareAccessConfig) (*Connection, error) {
+func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, errors.New(
@@ -92,11 +92,6 @@ func NewConnection(endpoint string, insecure bool, minTLS string, cfConfig *Clou
 			MinVersion:         version,
 			InsecureSkipVerify: insecure, //nolint:gosec
 		},
-	}
-
-	// Inject Cloudflare Access headers below the logging transport so the secret never reaches TF_LOG output.
-	if cfConfig != nil && cfConfig.ClientID != "" && cfConfig.ClientSecret != "" {
-		transport = NewCloudflareAccessTransport(transport, *cfConfig, endpoint)
 	}
 
 	if logging.IsDebugOrHigher() {
