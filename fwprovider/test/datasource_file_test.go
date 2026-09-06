@@ -29,7 +29,7 @@ func TestAccDatasourceFile(t *testing.T) {
 
 	// Upload snippet via SSH (DownloadFileByURL doesn't support snippets content type)
 	snippetFile := CreateTempFile(t, "datasource-test-*.yaml", "test: yaml\nkey: value\n")
-	uploadSnippetFile(t, snippetFile.Name())
+	uploadSnippetFile(te, snippetFile.Name())
 
 	// Use the actual filename from the created temp file
 	fileName := filepath.Base(snippetFile.Name())

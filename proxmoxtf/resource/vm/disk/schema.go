@@ -91,7 +91,7 @@ func Schema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 					mkDiskInterface: {
 						Type:        schema.TypeString,
-						Description: "The datastore name",
+						Description: "The disk interface",
 						Required:    true,
 					},
 					mkDiskDatastoreID: {

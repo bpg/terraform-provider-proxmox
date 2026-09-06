@@ -505,6 +505,33 @@ Consider pointing `tmp_dir` to a directory with enough space, especially if the 
 
 A better approach is to use the `proxmox_virtual_environment_download_file` resource to download files directly to the target node without buffering to the local machine.
 
+## Connecting through an authenticating reverse proxy
+
+When the Proxmox VE API is published through a reverse proxy that authenticates callers itself, use `api_headers` to attach the headers that proxy expects. Cloudflare Zero Trust Access service tokens are the most common case:
+
+```hcl
+provider "proxmox" {
+  endpoint  = "https://pve.example.com"
+  api_token = "terraform@pve!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+  api_headers = {
+    "CF-Access-Client-Id"     = var.cf_access_client_id
+    "CF-Access-Client-Secret" = var.cf_access_client_secret
+  }
+}
+```
+
+The same mechanism works for oauth2-proxy, Authelia, Pomerium or an internal gateway that requires an `X-Api-Key`-style header. The headers are also sent with the `/access/ticket` login request, so username/password authentication works too.
+
+Keep the following in mind:
+
+- The headers are sent **only** to the scheme and host of `endpoint`. A URL pointing anywhere else — for example the `source_file.path` of a `proxmox_virtual_environment_file` resource — never receives them, and neither does a redirect that downgrades `https` to `http`. A URL on the same host written with a different port form does not match either.
+- Headers managed by the provider or by its HTTP client are rejected with an error rather than silently ignored. This covers `Authorization`, `Cookie`, `CSRFPreventionToken`, `Accept`, `Content-Type`, `Content-Length`, `Accept-Encoding`, `Host`, the hop-by-hop headers, and `Proxy-Authorization`.
+- Header values are treated as credentials: they are marked sensitive and are kept out of the provider's debug logs. Use a proxy such as mitmproxy if you need to confirm what goes on the wire.
+- When using `PROXMOX_VE_API_HEADERS`, a header value cannot contain a comma. Set such a value in the configuration instead.
+
+~> Features that rely on SSH — uploading snippets, and the other cases listed under [When is SSH Required?](#when-is-ssh-required) — do **not** go through the HTTP API and are therefore not covered by `api_headers`. Give SSH its own route through the proxy (for example `cloudflared access ssh`), or use the `ssh.socks5_server` option.
+
 ## Environment Variables Summary
 
 All provider arguments can be configured via environment variables. This is the recommended approach for credentials.
@@ -527,11 +554,12 @@ All provider arguments can be configured via environment variables. This is the 
 
 **API Options (optional):**
 
-| Environment Variable  | Description                                      |
-| --------------------- | ------------------------------------------------ |
-| `PROXMOX_VE_INSECURE` | Skip TLS verification (`true`/`false`)           |
-| `PROXMOX_VE_MIN_TLS`  | Minimum TLS version (`1.0`, `1.1`, `1.2`, `1.3`) |
-| `PROXMOX_VE_TMPDIR`   | Custom temporary directory                       |
+| Environment Variable     | Description                                                      |
+| ------------------------ | ---------------------------------------------------------------- |
+| `PROXMOX_VE_INSECURE`    | Skip TLS verification (`true`/`false`)                           |
+| `PROXMOX_VE_MIN_TLS`     | Minimum TLS version (`1.0`, `1.1`, `1.2`, `1.3`)                 |
+| `PROXMOX_VE_API_HEADERS` | Extra API request headers, as `Name=Value` pairs split by commas |
+| `PROXMOX_VE_TMPDIR`      | Custom temporary directory                                       |
 
 **SSH Connection (optional — only if [SSH is required](#when-is-ssh-required)):**
 
@@ -554,6 +582,7 @@ In addition to [generic provider arguments](https://developer.hashicorp.com/terr
 - `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is `https://<your-cluster-endpoint>:8006/`. **Do not** include `/api2/json` at the end.
 - `insecure` - (Optional) Whether to skip the TLS verification step (can also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults to `false`.
 - `min_tls` - (Optional) The minimum required TLS version for API calls (can also be sourced from `PROXMOX_VE_MIN_TLS`). Supported values: `1.0|1.1|1.2|1.3`. If omitted, defaults to `1.3`.
+- `api_headers` - (Optional) A map of additional HTTP headers to send with every Proxmox VE API request (can also be sourced from `PROXMOX_VE_API_HEADERS`). Intended for an authenticating reverse proxy in front of the API — see [Connecting through an authenticating reverse proxy](#connecting-through-an-authenticating-reverse-proxy). Headers managed by the provider or by its HTTP client (such as `Authorization`, `Cookie`, `CSRFPreventionToken`, `Content-Type` and `Accept-Encoding`) are rejected.
 
 - `auth_ticket` - (Optional) The auth ticket from an external auth call (can also be sourced from `PROXMOX_VE_AUTH_TICKET`). To be used in conjunction with `csrf_prevention_token`. Note that `api_token` takes precedence over the auth ticket, which in turn takes precedence over `username` with `password`. For example, `PVE:username@realm:12345678::some_base64_payload==`.
 - `csrf_prevention_token` - (Optional) The CSRF Prevention Token from an external auth call (can also be sourced from `PROXMOX_VE_CSRF_PREVENTION_TOKEN`). For example, `12345678:some_blob`.

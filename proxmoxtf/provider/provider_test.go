@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
@@ -32,6 +33,7 @@ func TestProviderSchema(t *testing.T) {
 
 	test.AssertOptionalArguments(t, s, []string{
 		mkProviderEndpoint,
+		mkProviderAPIHeaders,
 		mkProviderInsecure,
 		mkProviderMinTLS,
 		mkProviderAuthTicket,
@@ -43,6 +45,7 @@ func TestProviderSchema(t *testing.T) {
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkProviderEndpoint:            schema.TypeString,
+		mkProviderAPIHeaders:          schema.TypeMap,
 		mkProviderInsecure:            schema.TypeBool,
 		mkProviderMinTLS:              schema.TypeString,
 		mkProviderAuthTicket:          schema.TypeString,
@@ -52,8 +55,21 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderPassword:            schema.TypeString,
 	})
 
+	// header values are credentials
+	require.True(t, s[mkProviderAPIHeaders].Sensitive)
+
 	providerSSHSchema := test.AssertNestedSchemaExistence(t, s, mkProviderSSH)
 
 	// do not limit number of nodes in the cluster
 	test.AssertListMaxItems(t, providerSSHSchema, mkProviderSSHNode, 0)
+}
+
+// TestIsAPIHeadersSetWithoutRawConfig ensures the presence check falls back to "not set" - and so to
+// the environment variable - rather than panicking when no raw configuration is available.
+func TestIsAPIHeadersSetWithoutRawConfig(t *testing.T) {
+	t.Parallel()
+
+	d := schema.TestResourceDataRaw(t, ProxmoxVirtualEnvironment().Schema, map[string]any{})
+
+	require.False(t, isAPIHeadersSet(d))
 }
