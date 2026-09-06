@@ -124,20 +124,6 @@ provider "proxmox" {
 }
 ```
 
-If the Proxmox API endpoint is protected by Cloudflare Access, add a service-token block or provide the matching environment variables:
-
-```hcl
-provider "proxmox" {
-  endpoint  = var.virtual_environment_endpoint
-  api_token = var.virtual_environment_api_token
-
-  cloudflare_access {
-    client_id     = var.cloudflare_access_client_id
-    client_secret = var.cloudflare_access_client_secret
-  }
-}
-```
-
 The variable values can be provided via a separate `.tfvars` file (add it to `.gitignore`).
 See the [Terraform documentation](https://developer.hashicorp.com/terraform/language/values/variables#input-variables) for more information.
 
@@ -278,6 +264,26 @@ export PROXMOX_VE_CSRF_PREVENTION_TOKEN="${resp_csrf}"
 
 terraform plan
 ```
+
+### Cloudflare Access
+
+If the Proxmox VE API endpoint is published behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/identity/service-tokens/), the provider can authenticate to Cloudflare with a service token. Add a `cloudflare_access` block, or set the `PROXMOX_VE_CF_ACCESS_CLIENT_ID` and `PROXMOX_VE_CF_ACCESS_CLIENT_SECRET` environment variables:
+
+```hcl
+provider "proxmox" {
+  endpoint  = "https://pve.example.com/"
+  api_token = var.virtual_environment_api_token
+
+  cloudflare_access {
+    client_id     = var.cloudflare_access_client_id
+    client_secret = var.cloudflare_access_client_secret
+  }
+}
+```
+
+The `CF-Access-Client-Id` and `CF-Access-Client-Secret` headers are added only to requests sent to the configured `endpoint` host. Both `client_id` and `client_secret` must be provided together.
+
+~> Cloudflare Access protects the API endpoint only. Features that require an [SSH connection](#ssh-connection) to the Proxmox nodes still need direct network access to them.
 
 ## SSH Connection
 
@@ -581,9 +587,9 @@ In addition to [generic provider arguments](https://developer.hashicorp.com/terr
 
 - `api_token` - (Optional) The API Token for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_API_TOKEN`). Takes precedence over `username` with `password`. For example, `username@realm!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
 
-- `cloudflare_access` - (Optional) Cloudflare Access service-token authentication for the Proxmox VE API endpoint. Can also be sourced from `PROXMOX_VE_CF_ACCESS_CLIENT_ID` and `PROXMOX_VE_CF_ACCESS_CLIENT_SECRET`.
-  - `client_id` - (Optional) The Cloudflare Access service-token client ID.
-  - `client_secret` - (Optional) The Cloudflare Access service-token client secret.
+- `cloudflare_access` - (Optional) Cloudflare Access service-token authentication for the Proxmox VE API endpoint. See [Cloudflare Access](#cloudflare-access).
+  - `client_id` - (Optional) The Cloudflare Access service-token client ID. Must be set together with `client_secret` (can also be sourced from `PROXMOX_VE_CF_ACCESS_CLIENT_ID`).
+  - `client_secret` - (Optional) The Cloudflare Access service-token client secret. Must be set together with `client_id` (can also be sourced from `PROXMOX_VE_CF_ACCESS_CLIENT_SECRET`).
 
 - `otp` - (Optional, Deprecated) The one-time password for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_OTP`).
 

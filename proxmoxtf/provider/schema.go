@@ -48,10 +48,8 @@ const (
 	mkProviderCloudflareAccessClientID     = "client_id"
 	mkProviderCloudflareAccessClientSecret = "client_secret"
 
-	envProviderCloudflareAccessClientID        = "PROXMOX_VE_CF_ACCESS_CLIENT_ID"
-	envProviderCloudflareAccessClientSecret    = "PROXMOX_VE_CF_ACCESS_CLIENT_SECRET" //nolint:gosec
-	envProviderCloudflareAccessClientIDAlt     = "PM_VE_CF_ACCESS_CLIENT_ID"
-	envProviderCloudflareAccessClientSecretAlt = "PM_VE_CF_ACCESS_CLIENT_SECRET" //nolint:gosec
+	envProviderCloudflareAccessClientID     = "PROXMOX_VE_CF_ACCESS_CLIENT_ID"
+	envProviderCloudflareAccessClientSecret = "PROXMOX_VE_CF_ACCESS_CLIENT_SECRET" //nolint:gosec
 )
 
 func createSchema() map[string]*schema.Schema {
@@ -310,26 +308,24 @@ func createSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkProviderCloudflareAccessClientID: {
-						Type:         schema.TypeString,
-						Optional:     true,
-						Sensitive:    true,
-						Description:  "The Cloudflare Access service-token client ID.",
+						Type:      schema.TypeString,
+						Optional:  true,
+						Sensitive: true,
+						Description: "The Cloudflare Access service-token client ID. " +
+							"Must be set together with `client_secret`. " +
+							"Defaults to the value of the `PROXMOX_VE_CF_ACCESS_CLIENT_ID` environment variable.",
 						ValidateFunc: validation.StringIsNotEmpty,
-						DefaultFunc: schema.MultiEnvDefaultFunc(
-							[]string{envProviderCloudflareAccessClientID, envProviderCloudflareAccessClientIDAlt},
-							nil,
-						),
+						DefaultFunc:  schema.EnvDefaultFunc(envProviderCloudflareAccessClientID, nil),
 					},
 					mkProviderCloudflareAccessClientSecret: {
-						Type:         schema.TypeString,
-						Optional:     true,
-						Sensitive:    true,
-						Description:  "The Cloudflare Access service-token client secret.",
+						Type:      schema.TypeString,
+						Optional:  true,
+						Sensitive: true,
+						Description: "The Cloudflare Access service-token client secret. " +
+							"Must be set together with `client_id`. " +
+							"Defaults to the value of the `PROXMOX_VE_CF_ACCESS_CLIENT_SECRET` environment variable.",
 						ValidateFunc: validation.StringIsNotEmpty,
-						DefaultFunc: schema.MultiEnvDefaultFunc(
-							[]string{envProviderCloudflareAccessClientSecret, envProviderCloudflareAccessClientSecretAlt},
-							nil,
-						),
+						DefaultFunc:  schema.EnvDefaultFunc(envProviderCloudflareAccessClientSecret, nil),
 					},
 				},
 			},

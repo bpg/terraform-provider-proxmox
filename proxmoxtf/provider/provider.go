@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -100,43 +99,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 	creds, err = api.NewCredentials(username, password, otp, apiToken, authTicket, csrfPreventionToken)
 	diags = append(diags, diag.FromErr(err)...)
 
-	cfClientID := os.Getenv(envProviderCloudflareAccessClientID)
-	if cfClientID == "" {
-		cfClientID = os.Getenv(envProviderCloudflareAccessClientIDAlt)
-	}
-
-	cfClientSecret := os.Getenv(envProviderCloudflareAccessClientSecret)
-	if cfClientSecret == "" {
-		cfClientSecret = os.Getenv(envProviderCloudflareAccessClientSecretAlt)
-	}
-
-	if v, ok := d.GetOk(mkProviderCloudflareAccess); ok {
-		cfBlock := v.([]any)
-		if len(cfBlock) > 0 {
-			cf := cfBlock[0].(map[string]any)
-
-			if v, ok := cf[mkProviderCloudflareAccessClientID].(string); ok && v != "" {
-				cfClientID = v
-			}
-
-			if v, ok := cf[mkProviderCloudflareAccessClientSecret].(string); ok && v != "" {
-				cfClientSecret = v
-			}
-		}
-	}
-
-	var cfConfig *api.CloudflareAccessConfig
-
-	if cfClientID != "" || cfClientSecret != "" {
-		if cfClientID == "" || cfClientSecret == "" {
-			diags = append(diags, diag.Errorf("cloudflare_access requires both client_id and client_secret")...)
-		} else {
-			cfConfig = &api.CloudflareAccessConfig{
-				ClientID:     cfClientID,
-				ClientSecret: cfClientSecret,
-			}
-		}
-	}
+	cfConfig, cfDiags := cloudflareAccessConfig(d)
+	diags = append(diags, cfDiags...)
 
 	conn, err = api.NewConnection(endpoint, insecure, minTLS, cfConfig)
 	diags = append(diags, diag.FromErr(err)...)
@@ -295,6 +259,42 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 	}
 
 	return config, nil
+}
+
+// cloudflareAccessConfig resolves the Cloudflare Access service-token credentials from the provider block,
+// falling back to environment variables. It returns nil when neither value is set.
+func cloudflareAccessConfig(d *schema.ResourceData) (*api.CloudflareAccessConfig, diag.Diagnostics) {
+	clientID := utils.GetAnyStringEnv(envProviderCloudflareAccessClientID)
+	clientSecret := utils.GetAnyStringEnv(envProviderCloudflareAccessClientSecret)
+
+	if v, ok := d.GetOk(mkProviderCloudflareAccess); ok {
+		cfBlock := v.([]any)
+		// An empty block, or one whose attributes are all null, is read back as a nil element.
+		if len(cfBlock) > 0 {
+			if cf, ok := cfBlock[0].(map[string]any); ok {
+				if v, ok := cf[mkProviderCloudflareAccessClientID].(string); ok && v != "" {
+					clientID = v
+				}
+
+				if v, ok := cf[mkProviderCloudflareAccessClientSecret].(string); ok && v != "" {
+					clientSecret = v
+				}
+			}
+		}
+	}
+
+	if clientID == "" && clientSecret == "" {
+		return nil, nil
+	}
+
+	if clientID == "" || clientSecret == "" {
+		return nil, diag.Errorf("cloudflare_access requires both client_id and client_secret")
+	}
+
+	return &api.CloudflareAccessConfig{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+	}, nil
 }
 
 type apiResolver struct {

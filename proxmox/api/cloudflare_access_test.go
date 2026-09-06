@@ -358,33 +358,47 @@ func TestCloudflareAccessTransport_TransportError_NoCredentialsInError(t *testin
 
 func TestCloudflareAccessTransport_Redirect_CrossHost(t *testing.T) {
 	t.Parallel()
-	var redirectHeaders http.Header
 
-	redirectServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		redirectHeaders = r.Header.Clone()
-		w.Header().Set("Location", "http://127.0.0.1:0/target")
-		w.WriteHeader(http.StatusFound)
+	var (
+		mu            sync.Mutex
+		sourceHeaders http.Header
+		targetHeaders http.Header
+	)
+
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		targetHeaders = r.Header.Clone()
+		mu.Unlock()
+
+		w.WriteHeader(http.StatusOK)
 	}))
-	defer redirectServer.Close()
+	defer target.Close()
+
+	// httptest binds to 127.0.0.1; redirecting to "localhost" gives a different hostname on the same machine.
+	targetURL := strings.Replace(target.URL, "127.0.0.1", "localhost", 1) + "/target"
+
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		sourceHeaders = r.Header.Clone()
+		mu.Unlock()
+
+		http.Redirect(w, r, targetURL, http.StatusFound)
+	}))
+	defer source.Close()
 
 	config := CloudflareAccessConfig{
 		ClientID:     "test-client-id",
 		ClientSecret: "test-client-secret",
 	}
 
-	transport := NewCloudflareAccessTransport(nil, config, "https://pve.example.com/")
+	transport := NewCloudflareAccessTransport(nil, config, source.URL)
 
-	client := &http.Client{
-		Transport: transport,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
+	client := &http.Client{Transport: transport}
 
 	req, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		redirectServer.URL+"/source",
+		source.URL+"/source",
 		nil,
 	)
 	if err != nil {
@@ -397,10 +411,31 @@ func TestCloudflareAccessTransport_Redirect_CrossHost(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if redirectHeaders != nil {
-		if got := redirectHeaders.Get("CF-Access-Client-Id"); got != "" {
-			t.Errorf("redirect request should not have CF-Access-Client-Id, got %q", got)
-		}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected redirect to be followed, got status %d", resp.StatusCode)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if sourceHeaders == nil {
+		t.Fatal("endpoint host was never requested")
+	}
+
+	if got := sourceHeaders.Get("CF-Access-Client-Id"); got != "test-client-id" {
+		t.Errorf("endpoint host request CF-Access-Client-Id = %q, want %q", got, "test-client-id")
+	}
+
+	if targetHeaders == nil {
+		t.Fatal("redirect target was never requested")
+	}
+
+	if got := targetHeaders.Get("CF-Access-Client-Id"); got != "" {
+		t.Errorf("redirect target should not receive CF-Access-Client-Id, got %q", got)
+	}
+
+	if got := targetHeaders.Get("CF-Access-Client-Secret"); got != "" {
+		t.Errorf("redirect target should not receive CF-Access-Client-Secret, got %q", got)
 	}
 }
 
@@ -473,4 +508,71 @@ type errorTransport struct {
 
 func (t *errorTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return nil, t.err
+}
+
+func TestNewConnection_CloudflareAccessHeadersSent(t *testing.T) {
+	t.Parallel()
+
+	var (
+		mu  sync.Mutex
+		got http.Header
+	)
+
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		got = r.Header.Clone()
+		mu.Unlock()
+
+		w.Header().Set("Content-Type", "application/json")
+
+		if _, err := w.Write([]byte(`{"data":{"version":"8.4.1","release":"8.4","repoid":"abc"}}`)); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	config := &CloudflareAccessConfig{
+		ClientID:     "test-client-id",
+		ClientSecret: "test-client-secret",
+	}
+
+	conn, err := NewConnection(server.URL, true, "", config)
+	if err != nil {
+		t.Fatalf("NewConnection: %v", err)
+	}
+
+	creds, err := NewCredentials("", "", "", "user@pve!token=test", "", "")
+	if err != nil {
+		t.Fatalf("NewCredentials: %v", err)
+	}
+
+	client, err := NewClient(creds, conn)
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	var resp map[string]any
+
+	if err := client.DoRequest(context.Background(), http.MethodGet, "version", nil, &resp); err != nil {
+		t.Fatalf("DoRequest: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if got == nil {
+		t.Fatal("server was never called")
+	}
+
+	if v := got.Get("CF-Access-Client-Id"); v != "test-client-id" {
+		t.Errorf("CF-Access-Client-Id = %q, want %q", v, "test-client-id")
+	}
+
+	if v := got.Get("CF-Access-Client-Secret"); v != "test-client-secret" {
+		t.Errorf("CF-Access-Client-Secret = %q, want %q", v, "test-client-secret")
+	}
+
+	if v := got.Get("Authorization"); v == "" {
+		t.Error("Authorization header missing")
+	}
 }

@@ -94,12 +94,13 @@ func NewConnection(endpoint string, insecure bool, minTLS string, cfConfig *Clou
 		},
 	}
 
-	if logging.IsDebugOrHigher() {
-		transport = logging.NewLoggingHTTPTransport(transport)
-	}
-
+	// Inject Cloudflare Access headers below the logging transport so the secret never reaches TF_LOG output.
 	if cfConfig != nil && cfConfig.ClientID != "" && cfConfig.ClientSecret != "" {
 		transport = NewCloudflareAccessTransport(transport, *cfConfig, endpoint)
+	}
+
+	if logging.IsDebugOrHigher() {
+		transport = logging.NewLoggingHTTPTransport(transport)
 	}
 
 	// make sure the path does not contain "/api2/json"
