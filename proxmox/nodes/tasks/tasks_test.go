@@ -24,7 +24,7 @@ const testUPID = "UPID:pve:00001234:00005678:AABBCCDD:vzcreate:100:root@pam:"
 func newTestClient(t *testing.T, endpoint string) *Client {
 	t.Helper()
 
-	conn, err := api.NewConnection(endpoint, true, "")
+	conn, err := api.NewConnection(endpoint, true, "", nil)
 	require.NoError(t, err)
 
 	creds, err := api.NewCredentials("", "", "", "user@pve!token=test", "", "")

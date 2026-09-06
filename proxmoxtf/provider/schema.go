@@ -43,6 +43,13 @@ const (
 	mkProviderSSHNodeName    = "name"
 	mkProviderSSHNodeAddress = "address"
 	mkProviderSSHNodePort    = "port"
+
+	mkProviderCloudflareAccess             = "cloudflare_access"
+	mkProviderCloudflareAccessClientID     = "client_id"
+	mkProviderCloudflareAccessClientSecret = "client_secret"
+
+	envProviderCloudflareAccessClientID     = "PROXMOX_VE_CF_ACCESS_CLIENT_ID"
+	envProviderCloudflareAccessClientSecret = "PROXMOX_VE_CF_ACCESS_CLIENT_SECRET" //nolint:gosec
 )
 
 func createSchema() map[string]*schema.Schema {
@@ -292,6 +299,36 @@ func createSchema() map[string]*schema.Schema {
 			Optional:     true,
 			Description:  "The ending number for random VM / Container IDs.",
 			ValidateFunc: validation.IntBetween(100, 999999999),
+		},
+		mkProviderCloudflareAccess: {
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Description: "Cloudflare Access service-token authentication for the Proxmox VE API endpoint.",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkProviderCloudflareAccessClientID: {
+						Type:      schema.TypeString,
+						Optional:  true,
+						Sensitive: true,
+						Description: "The Cloudflare Access service-token client ID. " +
+							"Must be set together with `client_secret`. " +
+							"Defaults to the value of the `PROXMOX_VE_CF_ACCESS_CLIENT_ID` environment variable.",
+						ValidateFunc: validation.StringIsNotEmpty,
+						DefaultFunc:  schema.EnvDefaultFunc(envProviderCloudflareAccessClientID, nil),
+					},
+					mkProviderCloudflareAccessClientSecret: {
+						Type:      schema.TypeString,
+						Optional:  true,
+						Sensitive: true,
+						Description: "The Cloudflare Access service-token client secret. " +
+							"Must be set together with `client_id`. " +
+							"Defaults to the value of the `PROXMOX_VE_CF_ACCESS_CLIENT_SECRET` environment variable.",
+						ValidateFunc: validation.StringIsNotEmpty,
+						DefaultFunc:  schema.EnvDefaultFunc(envProviderCloudflareAccessClientSecret, nil),
+					},
+				},
+			},
 		},
 	}
 }

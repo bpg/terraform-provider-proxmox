@@ -259,7 +259,7 @@ func (e *Environment) Client() api.Client {
 					panic(err)
 				}
 
-				conn, err := api.NewConnection(endpoint, true, "")
+				conn, err := api.NewConnection(endpoint, true, "", nil)
 				if err != nil {
 					panic(err)
 				}
