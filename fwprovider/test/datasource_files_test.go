@@ -26,7 +26,7 @@ func TestAccDatasourceFiles(t *testing.T) {
 
 	// Upload a snippet file so we have at least one file to list
 	snippetFile := CreateTempFile(t, "files-ds-test-*.yaml", "test: yaml\nkey: value\n")
-	uploadSnippetFile(t, snippetFile.Name())
+	uploadSnippetFile(te, snippetFile.Name())
 
 	fileName := filepath.Base(snippetFile.Name())
 
@@ -74,7 +74,7 @@ func TestAccDatasourceFilesNoFilter(t *testing.T) {
 
 	// Upload a snippet so there's at least one file
 	snippetFile := CreateTempFile(t, "files-ds-nofilter-*.yaml", "test: yaml\n")
-	uploadSnippetFile(t, snippetFile.Name())
+	uploadSnippetFile(te, snippetFile.Name())
 
 	fileName := filepath.Base(snippetFile.Name())
 
@@ -111,7 +111,7 @@ func TestAccDatasourceFilesNameRegexMatch(t *testing.T) {
 
 	// Upload a snippet file so we have a known file to match
 	snippetFile := CreateTempFile(t, "files-ds-regex-*.yaml", "test: yaml\n")
-	uploadSnippetFile(t, snippetFile.Name())
+	uploadSnippetFile(te, snippetFile.Name())
 
 	fileName := filepath.Base(snippetFile.Name())
 
