@@ -209,8 +209,7 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 
 	op := retry.NewPollOperation("container network interfaces",
 		retry.WithRetryIf(func(err error) bool {
-			var target *api.HTTPError
-			if errors.As(err, &target) {
+			if target, ok := errors.AsType[*api.HTTPError](err); ok {
 				if target.Code == http.StatusBadRequest {
 					return true
 				}

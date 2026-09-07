@@ -6,7 +6,8 @@ linters:
     - cyclop
     - depguard
     - err113
-    - exhaustruct
+    - exhaustruct # deprecated since v2.13.0, replaced by exhaustruct_v5 (auto-enabled by `default: all`)
+    - exhaustruct_v5
     - forcetypeassert
     - funlen
     - funcorder # nice to have, but currently generating too many errors

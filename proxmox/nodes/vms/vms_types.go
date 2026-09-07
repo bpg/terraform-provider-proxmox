@@ -510,7 +510,7 @@ func (b *UpdateRequestBody) ToDelete(fieldName string) error {
 
 	if field, ok := reflect.TypeFor[UpdateRequestBody]().FieldByName(fieldName); ok {
 		fieldTag := field.Tag.Get("url")
-		name := strings.Split(fieldTag, ",")[0]
+		name, _, _ := strings.Cut(fieldTag, ",")
 		b.Delete = append(b.Delete, name)
 	} else {
 		return fmt.Errorf("field %s not found in struct %s", fieldName, reflect.TypeFor[*UpdateRequestBody]().Name())

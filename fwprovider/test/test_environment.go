@@ -391,7 +391,7 @@ func (e *Environment) ExecuteNodeCommands(commands []string) string {
 	e.t.Helper()
 
 	// Strip the realm from "root@pam" to get the SSH login name.
-	username := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	username, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")
 
 	client, err := ssh.NewClient(
 		username,

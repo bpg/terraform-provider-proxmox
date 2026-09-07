@@ -42,6 +42,6 @@ jobs:
         if: ${{ steps.filter.outputs.go == 'true' || steps.filter.outputs.linter == 'true'}}
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9
         with: 
-          version: v2.12.2 # renovate: depName=golangci/golangci-lint datasource=github-releases
+          version: v2.13.2 # renovate: depName=golangci/golangci-lint datasource=github-releases
           skip-cache: true
           args: -v --timeout=10m

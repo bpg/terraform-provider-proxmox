@@ -253,8 +253,7 @@ func (c *client) DoRequest(
 	res, err := retry.NewWithData[*http.Response](
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
-			var urlErr *url.Error
-			if errors.As(err, &urlErr) {
+			if urlErr, ok := errors.AsType[*url.Error](err); ok {
 				return strings.ToUpper(urlErr.Op) == http.MethodGet
 			}
 
