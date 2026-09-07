@@ -210,6 +210,56 @@ func TestDeleteContainerWaitsForTask(t *testing.T) {
 	require.NoError(t, result.Err())
 }
 
+func TestDeleteContainerSendsDestroyParams(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                     string
+		purge                    bool
+		destroyUnreferencedDisks bool
+		wantQuery                string
+	}{
+		{"both enabled", true, true, "destroy-unreferenced-disks=1&purge=1"},
+		{"both disabled", false, false, "destroy-unreferenced-disks=0&purge=0"},
+		{"purge only", true, false, "destroy-unreferenced-disks=0&purge=1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var (
+				mu       sync.Mutex
+				gotQuery string
+			)
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("DELETE /api2/json/lxc/100", func(w http.ResponseWriter, r *http.Request) {
+				mu.Lock()
+				gotQuery = r.URL.RawQuery
+				mu.Unlock()
+
+				w.Header().Set("Content-Type", "application/json")
+				writeJSON(w, map[string]any{"data": testUPID})
+			})
+			mux.HandleFunc("GET /api2/json/nodes/", taskCompletedHandler(&requestCaptures{}))
+
+			server := newTestServer(t, mux)
+			defer server.Close()
+
+			client := newTestClient(t, server.URL)
+
+			result := client.DeleteContainer(t.Context(), tt.purge, tt.destroyUnreferencedDisks)
+			require.NoError(t, result.Err())
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			assert.Equal(t, tt.wantQuery, gotQuery)
+		})
+	}
+}
+
 func TestResizeContainerDiskWaitsForTask(t *testing.T) {
 	t.Parallel()
 

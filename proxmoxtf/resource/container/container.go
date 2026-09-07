@@ -97,7 +97,7 @@ const (
 	dvStartupDownDelay                  = -1
 	dvStartOnBoot                       = true
 	dvPurgeOnDestroy                    = true
-	dvDeleteUnreferencedDisksOnDestroy  = true
+	dvDeleteUnreferencedDisksOnDestroy  = false
 	dvTemplate                          = false
 	dvTimeoutCreate                     = 1800
 	dvTimeoutClone                      = 1800
@@ -1082,14 +1082,14 @@ func Container() *schema.Resource {
 			},
 			mkPurgeOnDestroy: {
 				Type:        schema.TypeBool,
-				Description: "Whether to purge the container from backup/replication/HA configurations on destroy",
+				Description: "Whether to purge the container from backup, replication and HA configurations on destroy",
 				Optional:    true,
 				ForceNew:    false,
 				Default:     dvPurgeOnDestroy,
 			},
 			mkDeleteUnreferencedDisksOnDestroy: {
 				Type:        schema.TypeBool,
-				Description: "Whether to delete unreferenced disks on destroy",
+				Description: "Whether to also delete disks that carry the container ID but are not referenced in its configuration on destroy",
 				Optional:    true,
 				ForceNew:    false,
 				Default:     dvDeleteUnreferencedDisksOnDestroy,
@@ -3533,6 +3533,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	e = d.Set(mkStarted, started)
 	diags = append(diags, diag.FromErr(e)...)
 
+	// Backfill provider-only flags so pre-existing or imported state reads the default on destroy, not the zero value
+	diags = setDefaultIfNotExists(d, diags, mkPurgeOnDestroy, dvPurgeOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
+
 	return diags
 }
 
@@ -4311,6 +4315,17 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	}
 
 	return nodeName, id, nil
+}
+
+func setDefaultIfNotExists(d *schema.ResourceData, diags diag.Diagnostics, key string, value any) diag.Diagnostics {
+	//nolint:staticcheck
+	if _, ok := d.GetOkExists(key); !ok {
+		if err := d.Set(key, value); err != nil {
+			return append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	return diags
 }
 
 func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {
