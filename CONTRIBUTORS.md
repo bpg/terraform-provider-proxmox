@@ -272,6 +272,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/rohm1"><img src="https://avatars.githubusercontent.com/u/2657075?v=4?s=100" width="100px;" alt="rohm1"/><br /><sub><b>rohm1</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=rohm1" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/TalhaTahir24"><img src="https://avatars.githubusercontent.com/u/165506239?v=4?s=100" width="100px;" alt="Talha Tahir Bukhari"/><br /><sub><b>Talha Tahir Bukhari</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=TalhaTahir24" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://artur.zdolinski.com"><img src="https://avatars.githubusercontent.com/u/15941777?v=4?s=100" width="100px;" alt="Artur Zdolinski"/><br /><sub><b>Artur Zdolinski</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=azdolinski" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.evequefou.be"><img src="https://avatars.githubusercontent.com/u/4273797?v=4?s=100" width="100px;" alt="Mike Bishop"/><br /><sub><b>Mike Bishop</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=MikeBishop" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
