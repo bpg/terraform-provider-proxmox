@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
+	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -3259,5 +3261,184 @@ func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileNa
 	t.Cleanup(func() {
 		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName))
 		require.NoError(t, e)
+	})
+}
+
+func TestAccResourceContainerDestroyOptions(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	containerConfig := func(destroyOptions string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name    = "{{.NodeName}}"
+				vm_id        = {{.TestContainerID}}
+				started      = false
+				unprivileged = true
+				%s
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test-destroy-options"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}`, destroyOptions))
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig(""),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"purge_on_destroy":                     "true",
+					"delete_unreferenced_disks_on_destroy": "false",
+				}),
+			},
+			{
+				ResourceName:  accTestContainerName,
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, accTestContainerID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+					if attrs["purge_on_destroy"] != "true" {
+						return fmt.Errorf("expected purge_on_destroy=true after import, got %q", attrs["purge_on_destroy"])
+					}
+
+					if attrs["delete_unreferenced_disks_on_destroy"] != "false" {
+						return fmt.Errorf(
+							"expected delete_unreferenced_disks_on_destroy=false after import, got %q",
+							attrs["delete_unreferenced_disks_on_destroy"],
+						)
+					}
+
+					return nil
+				},
+			},
+			{
+				Config: containerConfig(`
+				purge_on_destroy                     = false
+				delete_unreferenced_disks_on_destroy = true`),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"purge_on_destroy":                     "false",
+					"delete_unreferenced_disks_on_destroy": "true",
+				}),
+			},
+			{
+				Config: containerConfig(`
+				purge_on_destroy                     = true
+				delete_unreferenced_disks_on_destroy = false`),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"purge_on_destroy":                     "true",
+					"delete_unreferenced_disks_on_destroy": "false",
+				}),
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerDestroyPurgesHAResource(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	haClient := te.ClusterClient().HA().Resources()
+	haResourceID := proxmoxtypes.HAResourceID{
+		Type: proxmoxtypes.HAResourceTypeContainer,
+		Name: strconv.Itoa(accTestContainerID),
+	}
+
+	t.Cleanup(func() {
+		// Only needed when destroy failed before PVE purged the HA entry.
+		_ = haClient.Delete(context.Background(), haResourceID)
+	})
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		CheckDestroy: func(*terraform.State) error {
+			exists, err := haClient.Exists(context.Background(), haResourceID)
+			if err != nil {
+				return fmt.Errorf("checking HA resource %s: %w", haResourceID.String(), err)
+			}
+
+			if exists {
+				return fmt.Errorf("HA resource %s still exists after destroy, purge was not applied", haResourceID.String())
+			}
+
+			return nil
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-destroy-ha"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"purge_on_destroy": "true",
+					}),
+					func(*terraform.State) error {
+						err := haClient.Create(t.Context(), &haresources.HAResourceCreateRequestBody{
+							HAResourceDataBase: haresources.HAResourceDataBase{
+								State: proxmoxtypes.HAResourceStateDisabled,
+							},
+							ID: haResourceID,
+						})
+						if err != nil {
+							return fmt.Errorf("adding container to HA: %w", err)
+						}
+
+						exists, err := haClient.Exists(t.Context(), haResourceID)
+						if err != nil {
+							return fmt.Errorf("checking HA resource %s: %w", haResourceID.String(), err)
+						}
+
+						if !exists {
+							return fmt.Errorf("HA resource %s was not created", haResourceID.String())
+						}
+
+						return nil
+					},
+				),
+			},
+		},
 	})
 }

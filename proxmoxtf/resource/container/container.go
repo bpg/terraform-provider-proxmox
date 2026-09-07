@@ -96,6 +96,8 @@ const (
 	dvStartupUpDelay                    = -1
 	dvStartupDownDelay                  = -1
 	dvStartOnBoot                       = true
+	dvPurgeOnDestroy                    = true
+	dvDeleteUnreferencedDisksOnDestroy  = false
 	dvTemplate                          = false
 	dvTimeoutCreate                     = 1800
 	dvTimeoutClone                      = 1800
@@ -203,6 +205,8 @@ const (
 	mkStartupUpDelay                    = "up_delay"
 	mkStartupDownDelay                  = "down_delay"
 	mkStartOnBoot                       = "start_on_boot"
+	mkPurgeOnDestroy                    = "purge_on_destroy"
+	mkDeleteUnreferencedDisksOnDestroy  = "delete_unreferenced_disks_on_destroy"
 	mkTags                              = "tags"
 	mkTemplate                          = "template"
 	mkTimeoutCreate                     = "timeout_create"
@@ -1075,6 +1079,20 @@ func Container() *schema.Resource {
 				Optional:    true,
 				ForceNew:    false,
 				Default:     dvStartOnBoot,
+			},
+			mkPurgeOnDestroy: {
+				Type:        schema.TypeBool,
+				Description: "Whether to purge the container from backup, replication and HA configurations on destroy",
+				Optional:    true,
+				ForceNew:    false,
+				Default:     dvPurgeOnDestroy,
+			},
+			mkDeleteUnreferencedDisksOnDestroy: {
+				Type:        schema.TypeBool,
+				Description: "Whether to also delete disks that carry the container ID but are not referenced in its configuration on destroy",
+				Optional:    true,
+				ForceNew:    false,
+				Default:     dvDeleteUnreferencedDisksOnDestroy,
 			},
 			mkTags: {
 				Type:        schema.TypeList,
@@ -3515,6 +3533,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	e = d.Set(mkStarted, started)
 	diags = append(diags, diag.FromErr(e)...)
 
+	// Backfill provider-only flags so pre-existing or imported state reads the default on destroy, not the zero value
+	diags = setDefaultIfNotExists(d, diags, mkPurgeOnDestroy, dvPurgeOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
+
 	return diags
 }
 
@@ -4233,7 +4255,10 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 	}
 
-	deleteResult := containerAPI.DeleteContainer(ctx)
+	purge := d.Get(mkPurgeOnDestroy).(bool)
+	deleteUnreferencedDisks := d.Get(mkDeleteUnreferencedDisksOnDestroy).(bool)
+
+	deleteResult := containerAPI.DeleteContainer(ctx, purge, deleteUnreferencedDisks)
 	if errors.Is(deleteResult.Err(), api.ErrResourceDoesNotExist) {
 		d.SetId("")
 
@@ -4290,6 +4315,17 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	}
 
 	return nodeName, id, nil
+}
+
+func setDefaultIfNotExists(d *schema.ResourceData, diags diag.Diagnostics, key string, value any) diag.Diagnostics {
+	//nolint:staticcheck
+	if _, ok := d.GetOkExists(key); !ok {
+		if err := d.Set(key, value); err != nil {
+			return append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	return diags
 }
 
 func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {

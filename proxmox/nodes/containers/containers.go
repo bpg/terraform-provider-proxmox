@@ -82,7 +82,11 @@ func (c *Client) CreateContainerAsync(ctx context.Context, d *CreateRequestBody)
 }
 
 // DeleteContainer deletes a container.
-func (c *Client) DeleteContainer(ctx context.Context) tasks.TaskResult {
+func (c *Client) DeleteContainer(
+	ctx context.Context,
+	purge bool,
+	destroyUnreferencedDisks bool,
+) tasks.TaskResult {
 	op := retry.NewTaskOperation("container delete",
 		retry.WithRetryIf(func(err error) bool {
 			return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
@@ -90,15 +94,36 @@ func (c *Client) DeleteContainer(ctx context.Context) tasks.TaskResult {
 	)
 
 	return c.Tasks().DoTask(ctx, op,
-		func() (*string, error) { return c.DeleteContainerAsync(ctx) },
+		func() (*string, error) { return c.DeleteContainerAsync(ctx, purge, destroyUnreferencedDisks) },
 	)
 }
 
 // DeleteContainerAsync deletes a container asynchronously.
-func (c *Client) DeleteContainerAsync(ctx context.Context) (*string, error) {
+func (c *Client) DeleteContainerAsync(
+	ctx context.Context,
+	purge bool,
+	destroyUnreferencedDisks bool,
+) (*string, error) {
+	purgeValue := 0
+	if purge {
+		purgeValue = 1
+	}
+
+	destroyUnreferencedDisksValue := 0
+	if destroyUnreferencedDisks {
+		destroyUnreferencedDisksValue = 1
+	}
+
 	resBody := &DeleteResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(""), nil, resBody)
+	// Appended to the expanded path rather than passed through ExpandPath:
+	// that helper joins with a "/", which would yield ".../100/?purge=1".
+	path := fmt.Sprintf(
+		"%s?destroy-unreferenced-disks=%d&purge=%d",
+		c.ExpandPath(""), destroyUnreferencedDisksValue, purgeValue,
+	)
+
+	err := c.DoRequest(ctx, http.MethodDelete, path, nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error deleting container: %w", err)
 	}
