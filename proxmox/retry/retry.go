@@ -59,8 +59,7 @@ func IsTransientAPIError(err error) bool {
 		return false
 	}
 
-	var httpErr *api.HTTPError
-	if errors.As(err, &httpErr) {
+	if httpErr, ok := errors.AsType[*api.HTTPError](err); ok {
 		return httpErr.Code >= http.StatusInternalServerError
 	}
 

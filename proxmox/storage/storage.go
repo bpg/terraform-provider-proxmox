@@ -35,7 +35,7 @@ func (c *Client) ListDatastore(ctx context.Context, d *DatastoreListRequest) ([]
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
-		return *(resBody.Data[i]).ID < *(resBody.Data[j]).ID
+		return *resBody.Data[i].ID < *resBody.Data[j].ID
 	})
 
 	return resBody.Data, nil

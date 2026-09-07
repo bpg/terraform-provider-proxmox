@@ -3821,7 +3821,7 @@ func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []any) (*vms.Custo
 	var storageDevice *vms.CustomStorageDevice
 
 	if efiDisk != nil {
-		datastoreID := strings.SplitN(efiDisk.FileVolume, ":", 2)[0]
+		datastoreID, _, _ := strings.Cut(efiDisk.FileVolume, ":")
 
 		storageDevice = &vms.CustomStorageDevice{
 			FileVolume:  efiDisk.FileVolume,
@@ -3875,7 +3875,7 @@ func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []any) *vms.Custo
 	var storageDevice *vms.CustomStorageDevice
 
 	if tpmState != nil {
-		datastoreID := strings.SplitN(tpmState.FileVolume, ":", 2)[0]
+		datastoreID, _, _ := strings.Cut(tpmState.FileVolume, ":")
 		storageDevice = &vms.CustomStorageDevice{
 			FileVolume:  tpmState.FileVolume,
 			DatastoreID: &datastoreID,
@@ -5873,7 +5873,7 @@ func vmUpdatePool(
 		return nil
 	}
 
-	vmList := (types.CustomCommaSeparatedList)([]string{strconv.Itoa(vmID)})
+	vmList := types.CustomCommaSeparatedList([]string{strconv.Itoa(vmID)})
 
 	tflog.Debug(ctx, fmt.Sprintf("Moving VM %d from pool '%s' to pool '%s'", vmID, oldPool, newPool))
 

@@ -600,8 +600,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	err := op.DoPoll(ctxWithTimeout, func() error {
 		data, err := c.GetVMNetworkInterfacesFromAgent(ctxWithTimeout)
 		if err != nil {
-			var httpError *api.HTTPError
-			if errors.As(err, &httpError) {
+			if httpError, ok := errors.AsType[*api.HTTPError](err); ok {
 				if httpError.Code == http.StatusForbidden {
 					return err
 				}
