@@ -38,8 +38,8 @@ func TestContainersSchema(t *testing.T) {
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentContainerNodeName: schema.TypeString,
 		mkDataSourceVirtualEnvironmentContainerTags:     schema.TypeList,
-		mkDataSourceFilter:                       schema.TypeList,
-		mkDataSourceVirtualEnvironmentContainers: schema.TypeList,
+		mkDataSourceVirtualEnvironmentContainers:        schema.TypeList,
+		mkDataSourceFilter:                              schema.TypeList,
 	})
 
 	containersSchema := test.AssertNestedSchemaExistence(t, s, mkDataSourceVirtualEnvironmentContainers)
