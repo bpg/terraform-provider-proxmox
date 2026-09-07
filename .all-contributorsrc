@@ -1936,6 +1936,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "MikeBishop",
+      "name": "Mike Bishop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4273797?v=4",
+      "profile": "http://www.evequefou.be",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
