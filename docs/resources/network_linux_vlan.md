@@ -51,6 +51,7 @@ resource "proxmox_network_linux_vlan" "vlan98" {
 - `gateway6` (String) Default IPv6 gateway address.
 - `interface` (String) The VLAN raw device. See also `name`.
 - `mtu` (Number) The interface MTU.
+- `reload` (Boolean) Whether to reload the node network configuration after this interface is created, updated or deleted (defaults to `true`). When `false`, the change is only staged on the node and takes effect on the next reload.
 - `timeout_reload` (Number) Timeout for network reload operations in seconds (defaults to `100`).
 - `vlan` (Number) The VLAN tag. See also `name`.
 

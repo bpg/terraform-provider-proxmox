@@ -56,6 +56,7 @@ type linuxBondResourceModel struct {
 	MTU       types.Int64             `tfsdk:"mtu"`
 	Comment   types.String            `tfsdk:"comment"`
 	Timeout   types.Int64             `tfsdk:"timeout_reload"`
+	Reload    types.Bool              `tfsdk:"reload"`
 	// Linux bond attributes
 	Slaves             []types.String `tfsdk:"slaves"`
 	BondMode           types.String   `tfsdk:"bond_mode"`
@@ -260,6 +261,14 @@ func (r *linuxBondResource) Schema(
 					int64validator.AtLeast(5),
 				},
 			},
+			"reload": schema.BoolAttribute{
+				Description: "Whether to reload the node network configuration after this interface is created, " +
+					"updated or deleted (defaults to `true`). When `false`, the change is only staged on the node " +
+					"and takes effect on the next reload.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(true),
+			},
 			// Linux Bond attributes
 			"slaves": schema.ListAttribute{
 				Description:         "The interface bond slaves (member interfaces).",
@@ -376,15 +385,17 @@ func (r *linuxBondResource) Create(ctx context.Context, req resource.CreateReque
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
-	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
-	defer cancel()
+	if plan.Reload.ValueBool() {
+		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+		defer cancel()
 
-	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Reload Network Configuration",
-			err.Error(),
-		)
+		err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to Reload Network Configuration",
+				err.Error(),
+			)
+		}
 	}
 }
 
@@ -503,15 +514,17 @@ func (r *linuxBondResource) Update(ctx context.Context, req resource.UpdateReque
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
-	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
-	defer cancel()
+	if plan.Reload.ValueBool() {
+		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+		defer cancel()
 
-	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Reload Network Configuration",
-			err.Error(),
-		)
+		err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to Reload Network Configuration",
+				err.Error(),
+			)
+		}
 	}
 }
 
@@ -536,15 +549,17 @@ func (r *linuxBondResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(state.Timeout.ValueInt64())*time.Second)
-	defer cancel()
+	if state.Reload.ValueBool() {
+		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(state.Timeout.ValueInt64())*time.Second)
+		defer cancel()
 
-	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Reload Network Configuration",
-			err.Error(),
-		)
+		err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to Reload Network Configuration",
+				err.Error(),
+			)
+		}
 	}
 }
 
@@ -572,6 +587,7 @@ func (r *linuxBondResource) ImportState(
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),
 		Timeout:  types.Int64Value(int64(nodes.NetworkReloadTimeout.Seconds())),
+		Reload:   types.BoolValue(true),
 	}
 	found := r.read(ctx, &state, &resp.Diagnostics)
 

@@ -34,6 +34,7 @@ Manages a Linux Bond network interface in a Proxmox VE node.
 - `gateway` (String) Default gateway address.
 - `gateway6` (String) Default IPv6 gateway address.
 - `mtu` (Number) The interface MTU.
+- `reload` (Boolean) Whether to reload the node network configuration after this interface is created, updated or deleted (defaults to `true`). When `false`, the change is only staged on the node and takes effect on the next reload.
 - `timeout_reload` (Number) Timeout for network reload operations in seconds (defaults to `100`).
 
 ### Read-Only
