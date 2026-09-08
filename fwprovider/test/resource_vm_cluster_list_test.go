@@ -1,6 +1,6 @@
 //go:build acceptance || all
 
-//testacc:tier=medium
+//testacc:tier=heavy
 //testacc:resource=vm
 
 /*
@@ -105,7 +105,7 @@ func TestAccResourceVMReadSurvivesClusterListLag(t *testing.T) {
 						vm_id     = {{.TestVMID}}
 						name      = "test-cluster-list-lag"
 						started   = false
-					}`, WithEndpoint(endpoint)),
+					}`, WithInsecureEndpoint(endpoint)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "id", strconv.Itoa(vmID)),
 					func(*terraform.State) error {
@@ -120,6 +120,72 @@ func TestAccResourceVMReadSurvivesClusterListLag(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, vmID),
+			},
+		},
+	})
+}
+
+// TestAccResourceVMReadSurvivesClusterListLagImportFrom mirrors the reported configuration: a disk imported from a
+// downloaded cloud image, which the provider resizes right after creation before the first read.
+func TestAccResourceVMReadSurvivesClusterListLagImportFrom(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+	vmID := 100000 + rand.Intn(99999)
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	t.Cleanup(func() {
+		err := te.NodeClient().VM(vmID).DeleteVM(context.Background(), true, true).Err()
+		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
+			t.Logf("cleanup: delete VM %d: %v", vmID, err)
+		}
+	})
+
+	endpoint := newEmptyClusterListProxy(t)
+	resourceName := "proxmox_virtual_environment_vm.test_cluster_list_lag_import"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_download_file" "test_cluster_list_lag_image" {
+						content_type        = "import"
+						datastore_id        = "local"
+						node_name           = "{{.NodeName}}"
+						url                 = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+						file_name           = "{{.TestName}}-image.img.raw"
+						overwrite_unmanaged = true
+					}
+
+					resource "proxmox_virtual_environment_vm" "test_cluster_list_lag_import" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+						name      = "test-cluster-list-lag-import"
+						started   = false
+
+						disk {
+							datastore_id = "local-lvm"
+							import_from  = proxmox_virtual_environment_download_file.test_cluster_list_lag_image.id
+							interface    = "virtio0"
+							iothread     = true
+							discard      = "on"
+						}
+
+						initialization {
+							datastore_id = "local-lvm"
+							interface    = "ide2"
+						}
+					}`, WithInsecureEndpoint(endpoint)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "id", strconv.Itoa(vmID)),
+					resource.TestCheckResourceAttr(resourceName, "disk.0.size", "8"),
+					func(*terraform.State) error {
+						_, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+
+						return err
+					},
+				),
 			},
 		},
 	})

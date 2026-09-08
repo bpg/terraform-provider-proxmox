@@ -172,17 +172,18 @@ func (o *apiHeadersConfigOption) apply(rc *renderConfig) error {
 	return nil
 }
 
-// WithEndpoint returns a configuration option that points the provider at the given API endpoint instead of
-// PROXMOX_VE_ENDPOINT, with TLS verification disabled so an in-test proxy can front the real node.
-func WithEndpoint(endpoint string) RenderConfigOption {
-	return &endpointConfigOption{endpoint: endpoint}
+// WithInsecureEndpoint returns a configuration option that points the provider at the given API endpoint instead
+// of PROXMOX_VE_ENDPOINT and disables TLS verification, so an in-test TLS proxy with a self-signed certificate can
+// front the real node.
+func WithInsecureEndpoint(endpoint string) RenderConfigOption {
+	return &insecureEndpointConfigOption{endpoint: endpoint}
 }
 
-type endpointConfigOption struct {
+type insecureEndpointConfigOption struct {
 	endpoint string
 }
 
-func (o *endpointConfigOption) apply(rc *renderConfig) error {
+func (o *insecureEndpointConfigOption) apply(rc *renderConfig) error {
 	rc.endpoint = fmt.Sprintf("\tendpoint = %q\n\tinsecure = true\n", o.endpoint)
 
 	return nil
