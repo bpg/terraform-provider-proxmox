@@ -64,13 +64,14 @@ type RenderConfigOption interface {
 }
 
 type renderConfig struct {
+	endpoint   string
 	auth       string
 	apiHeaders string
 }
 
 // render assembles the provider configuration block from the applied options.
 func (r *renderConfig) render() string {
-	return fmt.Sprintf("provider \"proxmox\" {\n%s%s\n%s\n}", r.auth, r.apiHeaders, r.ssh())
+	return fmt.Sprintf("provider \"proxmox\" {\n%s%s%s\n%s\n}", r.endpoint, r.auth, r.apiHeaders, r.ssh())
 }
 
 // returns the ssh configuration section of the provider config.
@@ -167,6 +168,22 @@ func (o *apiHeadersConfigOption) apply(rc *renderConfig) error {
 	sb.WriteString("\t}")
 
 	rc.apiHeaders = sb.String()
+
+	return nil
+}
+
+// WithEndpoint returns a configuration option that points the provider at the given API endpoint instead of
+// PROXMOX_VE_ENDPOINT, with TLS verification disabled so an in-test proxy can front the real node.
+func WithEndpoint(endpoint string) RenderConfigOption {
+	return &endpointConfigOption{endpoint: endpoint}
+}
+
+type endpointConfigOption struct {
+	endpoint string
+}
+
+func (o *endpointConfigOption) apply(rc *renderConfig) error {
+	rc.endpoint = fmt.Sprintf("\tendpoint = %q\n\tinsecure = true\n", o.endpoint)
 
 	return nil
 }

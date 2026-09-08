@@ -4303,19 +4303,15 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics
 		return diag.FromErr(err)
 	}
 
+	// A miss in the cluster resource list is not proof the VM is gone: on a multi-node cluster the list can lag
+	// behind a VM created moments ago. Fall through to the node config endpoint, which is authoritative.
 	vmNodeName, err := client.Cluster().GetVMNodeName(ctx, vmID)
-	if err != nil {
-		if errors.Is(err, cluster.ErrVMDoesNotExist) {
-			d.SetId("")
-
-			return nil
-		}
-
+	if err != nil && !errors.Is(err, cluster.ErrVMDoesNotExist) {
 		return diag.FromErr(err)
 	}
 
-	if vmNodeName != d.Get(mkNodeName) {
-		err = d.Set(mkNodeName, vmNodeName)
+	if vmNodeName != nil && *vmNodeName != d.Get(mkNodeName).(string) {
+		err = d.Set(mkNodeName, *vmNodeName)
 		if err != nil {
 			return diag.FromErr(err)
 		}
