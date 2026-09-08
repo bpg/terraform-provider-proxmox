@@ -215,4 +215,9 @@ func (m *realmOpenIDModel) fromAPIResponse(data *access.RealmGetResponseData, di
 	m.GroupsOverwrite = types.BoolPointerValue(data.GroupsOverwrite.PointerBool())
 	m.QueryUserinfo = types.BoolPointerValue(data.QueryUserinfo.PointerBool())
 	m.Default = types.BoolPointerValue(data.Default.PointerBool())
+
+	// PVE drops `default` from every other realm when one becomes the default; absent means false.
+	if m.Default.IsNull() {
+		m.Default = types.BoolValue(false)
+	}
 }
