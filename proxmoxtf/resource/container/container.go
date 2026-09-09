@@ -2197,7 +2197,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	poolID := d.Get(mkPoolID).(string)
 	protection := types.CustomBool(d.Get(mkProtection).(bool))
-	started := types.CustomBool(d.Get(mkStarted).(bool))
 	startOnBoot := types.CustomBool(d.Get(mkStartOnBoot).(bool))
 	startupBehavior := containerGetStartupBehavior(d)
 	tags := d.Get(mkTags).([]any)
@@ -2221,7 +2220,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		OSType:               &operatingSystemType,
 		Protection:           &protection,
 		RootFS:               rootFS,
-		Start:                &started,
 		StartOnBoot:          &startOnBoot,
 		StartupBehavior:      startupBehavior,
 		Swap:                 &memorySwap,
@@ -2332,28 +2330,10 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 
 	containerAPI := client.Node(nodeName).Container(vmID)
 
-	// Start the container and wait for it to reach a running state before continuing.
+	// The first start happens here, after the idmap is written, so PVE picks up the mapping on a cold boot.
 	diags := sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
 	if diags.HasError() {
 		return diags
-	}
-
-	// idmap is written to the config via SSH after create, but PVE's first start does not apply
-	// it; a reboot regenerates the runtime mapping. Mirrors the rebootRequired path in update.
-	if len(containerGetIDMaps(d.Get(mkIDMap).([]any))) > 0 {
-		rebootTimeoutSec := d.Get(mkTimeoutCreate).(int)
-
-		rebootDiags := sdkresource.TaskResultDiags(containerAPI.RebootContainer(
-			ctx,
-			&containers.RebootRequestBody{
-				Timeout: &rebootTimeoutSec,
-			},
-		), "Container reboot")
-		if rebootDiags.HasError() {
-			return append(diags, rebootDiags...)
-		}
-
-		diags = append(diags, rebootDiags...)
 	}
 
 	return append(diags, containerRead(ctx, d, m)...)
