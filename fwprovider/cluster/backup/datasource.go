@@ -134,8 +134,9 @@ func (d *backupJobsDataSource) Schema(
 							ElementType: types.StringType,
 						},
 						"mailnotification": schema.StringAttribute{
-							Description: "When to send email notifications (always or failure).",
-							Computed:    true,
+							Description: "When to send email notifications (`always` or `failure`). " +
+								"Ignored by Proxmox VE unless `mailto` is set or the job uses the `legacy-sendmail` notification mode.",
+							Computed: true,
 						},
 						"notes_template": schema.StringAttribute{
 							Description: "Template for backup notes.",

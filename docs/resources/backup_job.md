@@ -44,7 +44,7 @@ resource "proxmox_backup_job" "daily_backup" {
 - `fleecing` (Attributes) Fleecing configuration for the backup job. (see [below for nested schema](#nestedatt--fleecing))
 - `ionice` (Number) I/O priority (0-8).
 - `lockwait` (Number) Maximum wait time in minutes for the global lock.
-- `mailnotification` (String) Email notification setting (always or failure).
+- `mailnotification` (String) Email notification setting (`always` or `failure`). Deprecated by Proxmox VE in favour of the notification system: it is only honoured when `mailto` is set (notification mode `auto`) or the job uses the `legacy-sendmail` notification mode. Otherwise notifications are routed through the PVE notification system and this setting is ignored.
 - `mailto` (List of String) A list of email addresses to send notifications to.
 - `maxfiles` (Number) Deprecated: use prune_backups instead. Maximum number of backup files per guest.
 - `mode` (String) The backup mode (snapshot, suspend, or stop).
