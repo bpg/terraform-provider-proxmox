@@ -17,6 +17,7 @@ import (
 	"math/rand"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -856,6 +857,31 @@ func TestAccResourceVMInitialization(t *testing.T) {
 	imageFileID := te.DownloadCloudImage()
 	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
 
+	// PVE only ever returns a mask for cipassword, so the proof that a password reached PVE is the value in the VM
+	// config file: plaintext after a create, a crypt hash after a config update. Verify with perl on the node.
+	assertCloudInitPassword := func(resourceName, password string) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			rs, ok := s.RootModule().Resources[resourceName]
+			if !ok {
+				return fmt.Errorf("resource %s not found in state", resourceName)
+			}
+
+			vmID := rs.Primary.Attributes["vm_id"]
+			out := te.ExecuteNodeCommands([]string{fmt.Sprintf(
+				`/usr/bin/perl -e 'my ($h) = map { /^cipassword:\s*(\S+)/ ? $1 : () } `+
+					"`cat /etc/pve/qemu-server/%s.conf`"+
+					`; print((defined $h && ($h eq %[2]q || crypt(%[2]q, $h) eq $h)) ? "match" : "mismatch: $h"), "\n"'`,
+				vmID, password,
+			)})
+
+			if strings.TrimSpace(out) != "match" {
+				return fmt.Errorf("cipassword hash of VM %s does not verify against the configured password: %s", vmID, out)
+			}
+
+			return nil
+		}
+	}
+
 	tests := []struct {
 		name string
 		step []resource.TestStep
@@ -990,9 +1016,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				}`),
 			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit4", map[string]string{
 				"initialization.0.user_account.0.username": "ubuntu",
-				// override by PVE, set when reading back from the API
-				// have to escape the asterisks because of regex match
-				"initialization.0.user_account.0.password": `\*\*\*\*\*\*\*\*\*\*`,
+				"initialization.0.user_account.0.password": "^password$",
 			}),
 		}, {
 			Config: te.RenderConfig(`
@@ -1012,8 +1036,48 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				}`),
 			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit4", map[string]string{
 				"initialization.0.user_account.0.username": "ubuntu",
-				"initialization.0.user_account.0.password": `\*\*\*\*\*\*\*\*\*\*`,
+				"initialization.0.user_account.0.password": "^password$",
 			}),
+		}}},
+		{"native cloud-init: password update is applied in place", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_password" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						user_account {
+							username = "ubuntu"
+							password = "password1"
+						}
+					}
+				}`),
+			Check: assertCloudInitPassword("proxmox_virtual_environment_vm.test_vm_cloudinit_password", "password1"),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_password" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						user_account {
+							username = "ubuntu"
+							password = "password2"
+						}
+					}
+				}`),
+			ConfigPlanChecks: resource.ConfigPlanChecks{
+				PreApply: []plancheck.PlanCheck{
+					plancheck.ExpectResourceAction(
+						"proxmox_virtual_environment_vm.test_vm_cloudinit_password",
+						plancheck.ResourceActionUpdate,
+					),
+				},
+			},
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_password", map[string]string{
+					"initialization.0.user_account.0.password": "^password2$",
+				}),
+				assertCloudInitPassword("proxmox_virtual_environment_vm.test_vm_cloudinit_password", "password2"),
+			),
 		}}},
 		{"native cloud-init: username update should not cause replacement", []resource.TestStep{{
 			Config: te.RenderConfig(`
