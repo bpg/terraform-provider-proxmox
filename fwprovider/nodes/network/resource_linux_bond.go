@@ -369,17 +369,17 @@ func (r *linuxBondResource) Create(ctx context.Context, req resource.CreateReque
 
 	found := r.read(ctx, &plan, &resp.Diagnostics)
 
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !found {
+	if !found && !resp.Diagnostics.HasError() {
 		resp.Diagnostics.AddError(
 			"Unable to Read Linux Bond After Creation",
 			fmt.Sprintf(
 				"Interface %q on node %q could not be found",
 				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
+	}
+
+	if resp.Diagnostics.HasError() {
+		rollbackCreatedInterface(ctx, r.client.Node(plan.NodeName.ValueString()), plan.Name.ValueString(), &resp.Diagnostics)
 
 		return
 	}

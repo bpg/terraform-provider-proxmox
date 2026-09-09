@@ -399,23 +399,22 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 
 	found := r.read(ctx, &plan, &resp.Diagnostics)
 
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !found {
+	if !found && !resp.Diagnostics.HasError() {
 		resp.Diagnostics.AddError(
 			"Linux Bridge interface not found after creation",
 			fmt.Sprintf(
 				"Interface %q on node %q could not be read after creation",
 				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
+	}
+
+	if resp.Diagnostics.HasError() {
+		rollbackCreatedInterface(ctx, r.client.Node(plan.NodeName.ValueString()), plan.Name.ValueString(), &resp.Diagnostics)
 
 		return
 	}
 
-	resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
 	if plan.Reload.ValueBool() {
 		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
