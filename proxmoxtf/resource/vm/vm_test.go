@@ -616,3 +616,35 @@ func Test_parseImportIDWIthNodeName(t *testing.T) {
 		})
 	}
 }
+
+func TestVMCloudInitPasswordDiffSuppress(t *testing.T) {
+	t.Parallel()
+
+	initializationSchema := test.AssertNestedSchemaExistence(t, VM().Schema, mkInitialization)
+	userAccountSchema := test.AssertNestedSchemaExistence(t, initializationSchema, mkInitializationUserAccount)
+	suppress := userAccountSchema[mkInitializationUserAccountPassword].DiffSuppressFunc
+
+	require.NotNil(t, suppress)
+
+	tests := []struct {
+		name     string
+		state    string
+		config   string
+		expected bool
+	}{
+		{"masked state, no configured password", MaskedPassword, "", true},
+		{"masked state, configured password (legacy state migrates)", MaskedPassword, "secret", false},
+		{"kept state, changed password", "secret", "other", false},
+		{"kept state, same password", "secret", "secret", false},
+		{"empty state, configured password", "", "secret", false},
+		{"empty state, no password", "", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, tt.expected, suppress(mkInitializationUserAccountPassword, tt.state, tt.config, nil))
+		})
+	}
+}

@@ -976,9 +976,12 @@ func VM() *schema.Resource {
 									Optional:    true,
 									Sensitive:   true,
 									Default:     dvInitializationUserAccountPassword,
-									DiffSuppressFunc: func(_, oldVal, _ string, _ *schema.ResourceData) bool {
-										return len(oldVal) > 0 &&
-											strings.ReplaceAll(oldVal, "*", "") == ""
+									DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
+										// PVE never returns the password, so a masked state value with no configured
+										// password stays unmanaged; a configured value against the mask is a real change.
+										masked := len(oldVal) > 0 && strings.ReplaceAll(oldVal, "*", "") == ""
+
+										return masked && newVal == ""
 									},
 								},
 								mkInitializationUserAccountUsername: {
@@ -5139,7 +5142,17 @@ func vmReadCustom(
 		}
 
 		if vmConfig.CloudInitPassword != nil {
-			initializationUserAccount[mkInitializationUserAccountPassword] = *vmConfig.CloudInitPassword
+			password := *vmConfig.CloudInitPassword
+
+			// PVE only returns a mask; keep the locally known value so a config change still produces a diff.
+			current, _ := d.Get(
+				fmt.Sprintf("%s.0.%s.0.%s", mkInitialization, mkInitializationUserAccount, mkInitializationUserAccountPassword),
+			).(string)
+			if password == MaskedPassword && current != "" && current != MaskedPassword {
+				password = current
+			}
+
+			initializationUserAccount[mkInitializationUserAccountPassword] = password
 		} else {
 			initializationUserAccount[mkInitializationUserAccountPassword] = ""
 		}
