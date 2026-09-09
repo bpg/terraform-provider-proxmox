@@ -35,7 +35,7 @@ Read-Only:
 - `enabled` (Boolean) Indicates whether the backup job is enabled.
 - `exclude` (List of String) List of guest VM/CT IDs excluded from the backup.
 - `id` (String) Unique identifier of the backup job.
-- `mailnotification` (String) When to send email notifications (always or failure).
+- `mailnotification` (String) When to send email notifications (`always` or `failure`). Ignored by Proxmox VE unless `mailto` is set or the job uses the `legacy-sendmail` notification mode.
 - `mailto` (List of String) List of email addresses for notifications.
 - `mode` (String) Backup mode (e.g. snapshot, suspend, stop).
 - `node` (String) Node on which the backup job runs.

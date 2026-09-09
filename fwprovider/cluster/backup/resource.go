@@ -186,9 +186,11 @@ func (r *backupJobResource) Schema(
 				ElementType: types.StringType,
 			},
 			"mailnotification": schema.StringAttribute{
-				Description: "Email notification setting (always or failure).",
-				Optional:    true,
-				Computed:    true,
+				Description: "Email notification setting (`always` or `failure`). Deprecated by Proxmox VE in favour of the notification system: " +
+					"it is only honoured when `mailto` is set (notification mode `auto`) or the job uses the `legacy-sendmail` notification mode. " +
+					"Otherwise notifications are routed through the PVE notification system and this setting is ignored.",
+				Optional: true,
+				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("always", "failure"),
 				},
