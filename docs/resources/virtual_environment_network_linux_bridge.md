@@ -5,6 +5,7 @@ parent: Resources
 subcategory: Virtual Environment
 description: |-
   Manages a Linux Bridge network interface in a Proxmox VE node.
+  ~> Proxmox VE hides bridges from the interface list (GET /nodes/{node}/network) when the API user lacks SDN.Audit or SDN.Use on /sdn/zones/localnetwork/<iface> (a grant on / propagates). The provider reads this resource from that list, so a token without these privileges fails with "interface not found" after create or on import. Privilege-separated tokens (privsep=1, the pveum default) need the grant on the token itself, not only on the user.
 ---
 
 # Resource: proxmox_virtual_environment_network_linux_bridge
@@ -12,6 +13,8 @@ description: |-
 ~> **Deprecated:** Use [`proxmox_network_linux_bridge`](network_linux_bridge.md) instead. This resource will be removed in v1.0.
 
 Manages a Linux Bridge network interface in a Proxmox VE node.
+
+~> Proxmox VE hides bridges from the interface list (`GET /nodes/{node}/network`) when the API user lacks `SDN.Audit` or `SDN.Use` on `/sdn/zones/localnetwork/<iface>` (a grant on `/` propagates). The provider reads this resource from that list, so a token without these privileges fails with "interface not found" after create or on import. Privilege-separated tokens (`privsep=1`, the `pveum` default) need the grant on the token itself, not only on the user.
 
 ## Example Usage
 

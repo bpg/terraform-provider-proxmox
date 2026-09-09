@@ -184,6 +184,8 @@ You can create an API Token via the Proxmox UI or the command line on the Proxmo
   ~> The list of available privileges has changed in PVE 9.0. The above list is only an example (and likely too permissive for most use cases). Please review and adjust to your needs.
   Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
 
+  ~> Keep `SDN.Audit` or `SDN.Use` in the role: PVE hides bridges from `GET /nodes/{node}/network` when the caller lacks either of them on `/sdn/zones/localnetwork/<iface>`. The provider uses that list to read `proxmox_network_linux_bridge` resources and to resolve node IP addresses for SSH, so a token without them fails with "interface not found" and falls back to DNS for the SSH node address. Privilege-separated tokens (`privsep=1`, the `pveum` default) need the privileges granted to the token itself.
+
 - Assign the role to the previously created user:
 
   ```sh
@@ -446,6 +448,8 @@ The following methods are used to resolve the node name, in the specified order:
    2. Has an IPv6 address with IPv6 gateway configured, or
    3. Has an IPv4 address
 2. Resolve the Proxmox node name (usually a shortname) via DNS using the system DNS resolver of the machine running Terraform.
+
+~> The interface enumeration in step 1 is subject to PVE permission filtering: bridges are omitted from the list when the API user lacks `SDN.Audit` or `SDN.Use` on `/sdn/zones/localnetwork/<iface>`. If the node address lives on such a bridge, resolution falls through to DNS. See [Creating an API Token](#creating-an-api-token-on-the-proxmox-server).
 
 In some cases, this may not be the desired behavior — for example, when the node has multiple network interfaces and the one that should be used for SSH is not the first one.
 
