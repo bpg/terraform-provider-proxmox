@@ -2179,60 +2179,6 @@ func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
 		"TimeoutDelete":   300,
 	})
 
-	// assertConfiguredMapActive reads the given map file inside the running container and requires
-	// the configured second range "1000 101000 64536" to be present. Under the default unprivileged
-	// mapping (a single "0 100000 65536" line) that row cannot appear, so this fails when the idmap
-	// is not active on first boot. The map stays within root's default subuid/subgid range
-	// (100000+65536) so the container can actually start on a stock host.
-	assertConfiguredMapActive := func(mapFile string) func(*terraform.State) error {
-		return func(*terraform.State) error {
-			out := te.ExecuteNodeCommands([]string{
-				fmt.Sprintf("/usr/sbin/pct exec %d -- cat %s", accTestContainerID, mapFile),
-			})
-
-			for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
-				if f := strings.Fields(line); len(f) == 3 && f[0] == "1000" && f[1] == "101000" && f[2] == "64536" {
-					return nil
-				}
-			}
-
-			return fmt.Errorf("%s inside running container should contain the configured mapping (1000 101000 64536), got:\n%s", mapFile, out)
-		}
-	}
-
-	// The mapping must be active from the first start alone; a post-create reboot hangs on guests whose PID 1
-	// cannot handle the halt signal yet. The vzstart check is the positive control: PVE hides other users' tasks
-	// from a caller without Sys.Audit, so an empty listing must fail rather than pass.
-	assertNoRebootTask := func(*terraform.State) error {
-		var resBody struct {
-			Data []struct {
-				Type string `json:"type"`
-			} `json:"data,omitempty"`
-		}
-
-		nodeClient := te.NodeClient()
-		path := nodeClient.ExpandPath(fmt.Sprintf("tasks?vmid=%d", accTestContainerID))
-
-		if err := nodeClient.DoRequest(context.Background(), http.MethodGet, path, nil, &resBody); err != nil {
-			return fmt.Errorf("listing tasks for container %d: %w", accTestContainerID, err)
-		}
-
-		counts := map[string]int{}
-		for _, task := range resBody.Data {
-			counts[task.Type]++
-		}
-
-		if counts["vzstart"] == 0 {
-			return fmt.Errorf("expected a vzstart task for container %d in the task list, got %v", accTestContainerID, counts)
-		}
-
-		if counts["vzreboot"] > 0 {
-			return fmt.Errorf("expected no vzreboot task for container %d, found %d", accTestContainerID, counts["vzreboot"])
-		}
-
-		return nil
-	}
-
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
@@ -2289,9 +2235,177 @@ func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
 					}
 				}`, WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
-					assertConfiguredMapActive("/proc/self/uid_map"),
-					assertConfiguredMapActive("/proc/self/gid_map"),
-					assertNoRebootTask,
+					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/uid_map"),
+					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/gid_map"),
+					assertContainerStartedWithoutReboot(te, accTestContainerID),
+				),
+			},
+		},
+	})
+}
+
+// assertContainerIDMapActive reads the given map file inside the running container and requires the configured
+// second range "1000 101000 64536" to be present. Under the default unprivileged mapping (a single
+// "0 100000 65536" line) that row cannot appear, so this fails when the idmap is not active. The map stays within
+// root's default subuid/subgid range (100000+65536) so the container can actually start on a stock host.
+func assertContainerIDMapActive(te *Environment, containerID int, mapFile string) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		out := te.ExecuteNodeCommands([]string{
+			fmt.Sprintf("/usr/sbin/pct exec %d -- cat %s", containerID, mapFile),
+		})
+
+		for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+			if f := strings.Fields(line); len(f) == 3 && f[0] == "1000" && f[1] == "101000" && f[2] == "64536" {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("%s inside running container should contain the configured mapping (1000 101000 64536), got:\n%s", mapFile, out)
+	}
+}
+
+// assertContainerStartedWithoutReboot requires a vzstart task and no vzreboot task in the node task list for the
+// container. A reboot right after a cold start hangs on guests whose PID 1 cannot handle the halt signal yet. The
+// vzstart check is the positive control: PVE hides other users' tasks from a caller without Sys.Audit, so an empty
+// listing must fail rather than pass.
+func assertContainerStartedWithoutReboot(te *Environment, containerID int) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		var resBody struct {
+			Data []struct {
+				Type string `json:"type"`
+			} `json:"data,omitempty"`
+		}
+
+		nodeClient := te.NodeClient()
+		path := nodeClient.ExpandPath(fmt.Sprintf("tasks?vmid=%d", containerID))
+
+		if err := nodeClient.DoRequest(context.Background(), http.MethodGet, path, nil, &resBody); err != nil {
+			return fmt.Errorf("listing tasks for container %d: %w", containerID, err)
+		}
+
+		counts := map[string]int{}
+		for _, task := range resBody.Data {
+			counts[task.Type]++
+		}
+
+		if counts["vzstart"] == 0 {
+			return fmt.Errorf("expected a vzstart task for container %d in the task list, got %v", containerID, counts)
+		}
+
+		if counts["vzreboot"] > 0 {
+			return fmt.Errorf("expected no vzreboot task for container %d, found %d", containerID, counts["vzreboot"])
+		}
+
+		return nil
+	}
+}
+
+func TestAccResourceContainerIDMapChangeOnStart(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	containerConfig := func(started bool, idmap string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name      = "{{.NodeName}}"
+				vm_id          = {{.TestContainerID}}
+				timeout_delete = {{ .TimeoutDelete }}
+				unprivileged   = true
+				started        = %t
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				%s
+				initialization {
+					hostname = "test-idmap-change"
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}`, started, idmap), WithRootUser())
+	}
+
+	singleRangeIDMap := `
+				idmap {
+					type         = "uid"
+					container_id = 0
+					host_id      = 100000
+					size         = 65536
+				}
+				idmap {
+					type         = "gid"
+					container_id = 0
+					host_id      = 100000
+					size         = 65536
+				}`
+
+	splitRangeIDMap := `
+				idmap {
+					type         = "uid"
+					container_id = 0
+					host_id      = 100000
+					size         = 1000
+				}
+				idmap {
+					type         = "uid"
+					container_id = 1000
+					host_id      = 101000
+					size         = 64536
+				}
+				idmap {
+					type         = "gid"
+					container_id = 0
+					host_id      = 100000
+					size         = 1000
+				}
+				idmap {
+					type         = "gid"
+					container_id = 1000
+					host_id      = 101000
+					size         = 64536
+				}`
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig(false, singleRangeIDMap),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"started": "false",
+					}),
+				),
+			},
+			{
+				// Changing the idmap and starting the container in one apply must be a single cold start with the
+				// new mapping, not a start followed by a reboot.
+				Config: containerConfig(true, splitRangeIDMap),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"started": "true",
+					}),
+					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/uid_map"),
+					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/gid_map"),
+					assertContainerStartedWithoutReboot(te, accTestContainerID),
 				),
 			},
 		},
