@@ -4134,6 +4134,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			if updateDiags.HasError() {
 				return updateDiags
 			}
+
+			// The config and idmap were written before this cold start, so it already applies every pending change.
+			rebootRequired = false
 		} else {
 			forceStop := types.CustomBool(true)
 			// Using delete timeout here as we're in the similar situation
@@ -4163,7 +4166,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	// As a final step in the update procedure, we might need to reboot the container.
 	if !template && started && rebootRequired {
-		rebootTimeout := 300
+		rebootTimeout := updateTimeoutSec
 
 		rebootDiags := sdkresource.TaskResultDiags(containerAPI.RebootContainer(
 			ctx,
