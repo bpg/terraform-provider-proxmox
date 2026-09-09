@@ -15,6 +15,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -2199,6 +2200,39 @@ func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
 		}
 	}
 
+	// The mapping must be active from the first start alone; a post-create reboot hangs on guests whose PID 1
+	// cannot handle the halt signal yet. The vzstart check is the positive control: PVE hides other users' tasks
+	// from a caller without Sys.Audit, so an empty listing must fail rather than pass.
+	assertNoRebootTask := func(*terraform.State) error {
+		var resBody struct {
+			Data []struct {
+				Type string `json:"type"`
+			} `json:"data,omitempty"`
+		}
+
+		nodeClient := te.NodeClient()
+		path := nodeClient.ExpandPath(fmt.Sprintf("tasks?vmid=%d", accTestContainerID))
+
+		if err := nodeClient.DoRequest(context.Background(), http.MethodGet, path, nil, &resBody); err != nil {
+			return fmt.Errorf("listing tasks for container %d: %w", accTestContainerID, err)
+		}
+
+		counts := map[string]int{}
+		for _, task := range resBody.Data {
+			counts[task.Type]++
+		}
+
+		if counts["vzstart"] == 0 {
+			return fmt.Errorf("expected a vzstart task for container %d in the task list, got %v", accTestContainerID, counts)
+		}
+
+		if counts["vzreboot"] > 0 {
+			return fmt.Errorf("expected no vzreboot task for container %d, found %d", accTestContainerID, counts["vzreboot"])
+		}
+
+		return nil
+	}
+
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
@@ -2257,6 +2291,7 @@ func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					assertConfiguredMapActive("/proc/self/uid_map"),
 					assertConfiguredMapActive("/proc/self/gid_map"),
+					assertNoRebootTask,
 				),
 			},
 		},
