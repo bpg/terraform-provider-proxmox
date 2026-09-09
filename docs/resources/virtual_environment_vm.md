@@ -340,7 +340,7 @@ output "ubuntu_vm_public_key" {
         defaults to `false`). Note that SSD emulation is not supported on VirtIO
         Block drives.
 - `efi_disk` - (Optional) The efi disk device (required if `bios` is set
-    to `ovmf`)
+    to `ovmf`). See [Example: UEFI boot](#example-uefi-boot).
     - `datastore_id` (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
     - `file_format` (Optional) The file format (defaults to `raw`).
@@ -348,10 +348,11 @@ output "ubuntu_vm_public_key" {
         recommended, and required for Secure Boot. For backwards compatibility
         use `2m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
         to `2m`).
-    - `pre_enrolled_keys` (Optional) Use am EFI vars template with
+    - `pre_enrolled_keys` (Optional) Use an EFI vars template with
         distribution-specific and Microsoft Standard keys enrolled, if used with
-        EFI type=`4m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
-        to `false`).
+        EFI type=`4m`. For VMs with cpu.architecture=`aarch64` this requires
+        `pve-edk2-firmware-aarch64` newer than `4.2025.05-2` on the host and is
+        ignored otherwise (defaults to `false`).
 - `tpm_state` - (Optional) The TPM state device. The VM must be stopped before
     adding, removing, or moving a TPM state device; the provider automatically
     handles the shutdown/start cycle. Changing `version` requires recreating the
@@ -879,6 +880,41 @@ resource "proxmox_virtual_environment_vm" "test_vm" {
   ...
 }
 ```
+
+## Example: UEFI boot
+
+Set `bios = "ovmf"` and add an `efi_disk` block. The EFI disk stores the UEFI
+variables (boot entries, Secure Boot state). Without it, Proxmox VE starts the
+VM with a temporary variables file and those settings are lost on every stop
+and start.
+
+```hcl
+resource "proxmox_virtual_environment_vm" "uefi_vm" {
+  name      = "terraform-provider-proxmox-uefi-vm"
+  node_name = "first-node"
+
+  bios = "ovmf"
+
+  efi_disk {
+    datastore_id      = "local-lvm"
+    type              = "4m"
+    pre_enrolled_keys = true # Secure Boot keys; set to false for unsigned kernels
+  }
+
+  disk {
+    datastore_id = "local-lvm"
+    interface    = "scsi0"
+    size         = 20
+  }
+
+  # ...
+}
+```
+
+~> **arm64 hosts** always boot VMs through UEFI (AAVMF); SeaBIOS is not
+available there. The provider still defaults `bios` to `seabios`, so set
+`bios = "ovmf"` explicitly together with `cpu.architecture = "aarch64"`.
+`efi_disk.type` is ignored on `aarch64`.
 
 ## Pool Management
 
