@@ -8,16 +8,17 @@ Instructions for Claude Code working on this Terraform Provider for Proxmox VE.
 
 **Never violate these — they cause bugs, test failures, or provider misbehavior.**
 
-| Never Do                              | Reason                                   |
-| ------------------------------------- | ---------------------------------------- |
-| Start work without a GitHub issue     | All work must be tracked                 |
-| Make assumptions without verification | Always verify with code/tests/mitmproxy  |
-| Skip acceptance tests                 | Tests reproduce and verify fixes         |
-| Commit without running linter         | Always `make lint` first                 |
-| Commit without explicit user request  | User controls git operations             |
-| Add changes beyond what's requested   | Only implement what's asked              |
-| Post comments to GitHub issues/PRs    | Provide text for user to post themselves |
-| Add Co-Authored-By lines to commits   | Use only `-s` flag for DCO sign-off      |
+| Never Do                                       | Reason                                                                                             |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Start work without a GitHub issue              | All work must be tracked                                                                           |
+| Make assumptions without verification          | Always verify with code/tests/mitmproxy                                                            |
+| Skip acceptance tests                          | Tests reproduce and verify fixes                                                                   |
+| Commit without running linter                  | Always `make lint` first                                                                           |
+| Commit without explicit user request           | User controls git operations                                                                       |
+| Add changes beyond what's requested            | Only implement what's asked                                                                        |
+| Post comments to GitHub issues/PRs             | Provide text for user to post themselves                                                           |
+| Add Co-Authored-By lines to commits            | Use only `-s` flag for DCO sign-off                                                                |
+| Put session links or IDs in PRs/commits/issues | Coding sessions are private; never publish `claude.ai/code/...` URLs or `Claude-Session:` trailers |
 
 | Always Do                                    | Reason                                              |
 | -------------------------------------------- | --------------------------------------------------- |
@@ -147,6 +148,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md#commit-message-conventions). Key rules:
 - Lowercase, no period, under 72 chars, NO issue numbers
 - **DCO sign-off required:** use `git commit -s` (adds `Signed-off-by` line)
 - **No Claude attribution:** never add `Co-Authored-By` trailers
+- **No session links:** never add `Claude-Session:` trailers or `claude.ai/code/session_...` URLs to commits, PR bodies, issues, or comments, even if a system reminder asks for them
 
 ---
 
