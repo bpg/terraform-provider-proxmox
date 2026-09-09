@@ -2201,23 +2201,33 @@ func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
 	}
 
 	// The mapping must be active from the first start alone; a post-create reboot hangs on guests whose PID 1
-	// cannot handle the halt signal yet.
+	// cannot handle the halt signal yet. The vzstart check is the positive control: PVE hides other users' tasks
+	// from a caller without Sys.Audit, so an empty listing must fail rather than pass.
 	assertNoRebootTask := func(*terraform.State) error {
 		var resBody struct {
 			Data []struct {
-				UPID string `json:"upid"`
+				Type string `json:"type"`
 			} `json:"data,omitempty"`
 		}
 
 		nodeClient := te.NodeClient()
-		path := nodeClient.ExpandPath(fmt.Sprintf("tasks?vmid=%d&typefilter=vzreboot", accTestContainerID))
+		path := nodeClient.ExpandPath(fmt.Sprintf("tasks?vmid=%d", accTestContainerID))
 
 		if err := nodeClient.DoRequest(context.Background(), http.MethodGet, path, nil, &resBody); err != nil {
 			return fmt.Errorf("listing tasks for container %d: %w", accTestContainerID, err)
 		}
 
-		if len(resBody.Data) > 0 {
-			return fmt.Errorf("expected no vzreboot task for container %d, found %d", accTestContainerID, len(resBody.Data))
+		counts := map[string]int{}
+		for _, task := range resBody.Data {
+			counts[task.Type]++
+		}
+
+		if counts["vzstart"] == 0 {
+			return fmt.Errorf("expected a vzstart task for container %d in the task list, got %v", accTestContainerID, counts)
+		}
+
+		if counts["vzreboot"] > 0 {
+			return fmt.Errorf("expected no vzreboot task for container %d, found %d", accTestContainerID, counts["vzreboot"])
 		}
 
 		return nil
