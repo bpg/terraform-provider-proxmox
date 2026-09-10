@@ -2818,13 +2818,18 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	}
 
 	hookScript := d.Get(mkHookScriptFileID).(string)
-	currentHookScript := vmConfig.HookScript
 
 	if len(hookScript) > 0 {
-		updateBody.HookScript = &hookScript
-	} else if currentHookScript != nil {
-		del = append(del, "hookscript")
+		// Only write hookscript if it differs from the value inherited from the
+		// clone source. Any write to hookscript (even identical) requires a
+		// root@pam password session; any API token returns HTTP 500.
+		clonedVMConfig, configErr := vmAPI.GetVM(ctx)
+		if configErr != nil || clonedVMConfig.HookScript == nil || *clonedVMConfig.HookScript != hookScript {
+			updateBody.HookScript = &hookScript
+		}
 	}
+	// Do not delete hookscript inherited from clone source: same root@pam
+	// constraint applies to unsetting it.
 
 	if len(watchdog) > 0 && watchdog[0] != nil {
 		watchdogBlock := watchdog[0].(map[string]any)
