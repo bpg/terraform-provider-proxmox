@@ -194,3 +194,100 @@ func TestAccResourceLinuxBond(t *testing.T) {
 		},
 	})
 }
+
+func TestAccResourceLinuxBondReload(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	slave1 := os.Getenv("PROXMOX_VE_ACC_BOND_SLAVE1")
+	slave2 := os.Getenv("PROXMOX_VE_ACC_BOND_SLAVE2")
+
+	if slave1 == "" || slave2 == "" {
+		t.Skip("skipping: PROXMOX_VE_ACC_BOND_SLAVE1 and PROXMOX_VE_ACC_BOND_SLAVE2 must be set to eth-type interfaces")
+	}
+
+	iface := fmt.Sprintf("bond%d", gofakeit.Number(10, 9999))
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bond" "test" {
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					slaves    = ["%s", "%s"]
+					reload    = false
+				}`, iface, slave1, slave2)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bond.test", map[string]string{
+						"reload": "false",
+					}),
+					checkInterfaceActive(te, iface, false),
+				),
+			},
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bond" "test" {
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					slaves    = ["%s", "%s"]
+					reload    = true
+				}`, iface, slave1, slave2)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bond.test", map[string]string{
+						"reload": "true",
+					}),
+					checkInterfaceActive(te, iface, true),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceLinuxBondStagedDestroy(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	slave1 := os.Getenv("PROXMOX_VE_ACC_BOND_SLAVE1")
+	slave2 := os.Getenv("PROXMOX_VE_ACC_BOND_SLAVE2")
+
+	if slave1 == "" || slave2 == "" {
+		t.Skip("skipping: PROXMOX_VE_ACC_BOND_SLAVE1 and PROXMOX_VE_ACC_BOND_SLAVE2 must be set to eth-type interfaces")
+	}
+
+	iface := fmt.Sprintf("bond%d", gofakeit.Number(10, 9999))
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		CheckDestroy:             checkStagedDestroy(te),
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bond" "test" {
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					slaves    = ["%s", "%s"]
+				}`, iface, slave1, slave2)),
+				Check: resource.ComposeTestCheckFunc(
+					checkInterfaceActive(te, iface, true),
+					checkNodePendingChanges(te, false),
+				),
+			},
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bond" "test" {
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					slaves    = ["%s", "%s"]
+					reload    = false
+				}`, iface, slave1, slave2)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bond.test", map[string]string{
+						"reload": "false",
+					}),
+					checkInterfaceActive(te, iface, true),
+					checkNodePendingChanges(te, false),
+				),
+			},
+		},
+	})
+}

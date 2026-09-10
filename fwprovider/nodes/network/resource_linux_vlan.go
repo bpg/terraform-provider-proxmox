@@ -208,7 +208,8 @@ func (r *linuxVLANResource) Schema(
 			"reload": schema.BoolAttribute{
 				Description: "Whether to reload the node network configuration after this interface is created, " +
 					"updated or deleted (defaults to `true`). When `false`, the change is only staged on the node " +
-					"and takes effect on the next reload.",
+					"and takes effect on the next reload. Any reload on the node, including one triggered by " +
+					"another resource, applies all staged changes.",
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(true),
@@ -346,6 +347,10 @@ func (r *linuxVLANResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
+	if state.Reload.IsNull() {
+		state.Reload = types.BoolValue(true)
+	}
+
 	found := r.read(ctx, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
@@ -463,7 +468,7 @@ func (r *linuxVLANResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	if state.Reload.ValueBool() {
+	if state.Reload.IsNull() || state.Reload.ValueBool() {
 		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(state.Timeout.ValueInt64())*time.Second)
 		defer cancel()
 
