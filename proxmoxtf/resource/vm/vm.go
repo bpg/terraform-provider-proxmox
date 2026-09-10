@@ -2818,12 +2818,14 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	}
 
 	hookScript := d.Get(mkHookScriptFileID).(string)
-	currentHookScript := vmConfig.HookScript
 
+	// Any write to hookscript (setting or unsetting it) requires a root@pam password
+	// session; any API token returns HTTP 500.
+	// Only write it when it differs from the clone source value; never unset an inherited hookscript.
 	if len(hookScript) > 0 {
-		updateBody.HookScript = &hookScript
-	} else if currentHookScript != nil {
-		del = append(del, "hookscript")
+		if vmConfig.HookScript == nil || *vmConfig.HookScript != hookScript {
+			updateBody.HookScript = &hookScript
+		}
 	}
 
 	if len(watchdog) > 0 && watchdog[0] != nil {
