@@ -113,6 +113,11 @@ func (r *haResourceResource) Schema(
 					"Leave unset to use the cluster default.",
 				Optional: true,
 			},
+			"auto_rebalance": schema.BoolAttribute{
+				MarkdownDescription: "Whether this HA resource may be migrated during automatic rebalancing " +
+					"(Proxmox VE 9+). Leave unset to use the cluster default.",
+				Optional: true,
+			},
 			"group": schema.StringAttribute{
 				Description: "The identifier of the High Availability group this resource is a member of.",
 				Optional:    true,

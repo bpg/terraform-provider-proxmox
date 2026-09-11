@@ -30,6 +30,8 @@ type ResourceModel struct {
 	Comment types.String `tfsdk:"comment"`
 	// Whether the resource should automatically fail back to its preferred node when it becomes available again
 	Failback types.Bool `tfsdk:"failback"`
+	// Whether the resource may be migrated during automatic rebalancing
+	AutoRebalance types.Bool `tfsdk:"auto_rebalance"`
 	// The identifier of the High Availability group this resource is a member of.
 	Group types.String `tfsdk:"group"`
 	// The maximal number of relocation attempts.
@@ -50,6 +52,12 @@ func (d *ResourceModel) ImportFromAPI(data *haresources.HAResourceGetResponseDat
 		d.Failback = types.BoolValue(bool(*data.Failback))
 	} else {
 		d.Failback = types.BoolNull()
+	}
+
+	if data.AutoRebalance != nil {
+		d.AutoRebalance = types.BoolValue(bool(*data.AutoRebalance))
+	} else {
+		d.AutoRebalance = types.BoolNull()
 	}
 
 	d.Group = types.StringPointerValue(data.Group)
@@ -76,12 +84,13 @@ func (d *ResourceModel) toRequestBase() haresources.HAResourceDataBase {
 	}
 
 	return haresources.HAResourceDataBase{
-		State:       state,
-		Comment:     d.Comment.ValueStringPointer(),
-		Failback:    attribute.CustomBoolPtrFromValue(d.Failback),
-		Group:       d.Group.ValueStringPointer(),
-		MaxRelocate: d.MaxRelocate.ValueInt64Pointer(),
-		MaxRestart:  d.MaxRestart.ValueInt64Pointer(),
+		State:         state,
+		AutoRebalance: attribute.CustomBoolPtrFromValue(d.AutoRebalance),
+		Comment:       d.Comment.ValueStringPointer(),
+		Failback:      attribute.CustomBoolPtrFromValue(d.Failback),
+		Group:         d.Group.ValueStringPointer(),
+		MaxRelocate:   d.MaxRelocate.ValueInt64Pointer(),
+		MaxRestart:    d.MaxRestart.ValueInt64Pointer(),
 	}
 }
 
@@ -104,6 +113,10 @@ func (d *ResourceModel) ToUpdateRequest(state *ResourceModel) *haresources.HARes
 
 	if d.Failback.IsNull() && !state.Failback.IsNull() {
 		del = append(del, "failback")
+	}
+
+	if d.AutoRebalance.IsNull() && !state.AutoRebalance.IsNull() {
+		del = append(del, "auto-rebalance")
 	}
 
 	if d.Group.IsNull() && !state.Group.IsNull() {
