@@ -42,6 +42,9 @@ jobs:
         with:
           gpg_private_key: "${{ secrets.GPG_PRIVATE_KEY }}"
           passphrase: "${{ secrets.PASSPHRASE }}"
+          # Signing subkey of the master key; the primary secret lives on a smartcard,
+          # so the action must preset the passphrase for this subkey only.
+          fingerprint: "DFE55260A45246244FACE9623FF640C0C9ABD10F"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
