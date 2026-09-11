@@ -185,6 +185,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/sdn_fabric_ospf.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/sdn_subnet.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/sdn_vnet.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/sdn_vnet_firewall_rules.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/sdn_zone_evpn.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/sdn_zone_qinq.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/sdn_zone_simple.md ./docs/resources/
