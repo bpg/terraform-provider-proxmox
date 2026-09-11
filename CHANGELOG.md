@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.113.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.113.0...v0.113.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **ci:** pin release signing to the ci subkey ([#3087](https://github.com/bpg/terraform-provider-proxmox/issues/3087)) ([de9e603](https://github.com/bpg/terraform-provider-proxmox/commit/de9e60316c456f9d6b20e2de22854edb8009137c))
+
 ## [0.113.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.112.0...v0.113.0) (2026-09-09)
 
 
