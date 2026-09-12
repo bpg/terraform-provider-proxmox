@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 
@@ -23,12 +22,7 @@ import (
 // with "interface already exists".
 func rollbackCreatedInterface(ctx context.Context, client *nodes.Client, iface string, diags *diag.Diagnostics) {
 	err := client.DeleteNetworkInterface(ctx, iface)
-	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) &&
-		// PVE answers with HTTP 400 for a missing interface, which the client does not map to the sentinel.
-		!strings.Contains(err.Error(), "interface does not exist") {
-		diags.AddError(
-			fmt.Sprintf("Unable to Roll Back Network Interface %q", iface),
-			"The interface was staged on the node but could not be read back, and removing it failed: "+err.Error(),
-		)
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
+		diags.AddError(fmt.Sprintf("Unable to Roll Back Network Interface %q", iface), err.Error())
 	}
 }
