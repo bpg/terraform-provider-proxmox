@@ -14,6 +14,7 @@ package network_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"testing"
 
@@ -278,4 +279,36 @@ func TestAccResourceLinuxVLANStagedDestroy(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceLinuxVLANCreateRollsBackOnReadMiss(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	parent := os.Getenv("PROXMOX_VE_ACC_IFACE_NAME")
+	if parent == "" {
+		parent = "ens18"
+	}
+
+	iface := fmt.Sprintf("%s.%d", parent, gofakeit.Number(10, 4094))
+	cleanupStagedInterface(t, te, iface)
+
+	endpoint := newInterfaceListDropProxy(t, iface)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_vlan" "test_rollback" {
+					name           = "%s"
+					node_name      = "{{.NodeName}}"
+					timeout_reload = 60
+				}
+				`, iface), test.WithInsecureEndpoint(endpoint)),
+				ExpectError: regexp.MustCompile(`not found after creation`),
+			},
+		},
+	})
+
+	requireInterfaceNotStaged(t, te, iface)
 }

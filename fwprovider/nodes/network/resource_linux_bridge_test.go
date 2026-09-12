@@ -506,3 +506,30 @@ func TestAccResourceLinuxBridgeStagedDestroy(t *testing.T) {
 		},
 	})
 }
+
+func TestAccResourceLinuxBridgeCreateRollsBackOnReadMiss(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))
+	cleanupStagedInterface(t, te, iface)
+
+	endpoint := newInterfaceListDropProxy(t, iface)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test_rollback" {
+					name           = "%s"
+					node_name      = "{{.NodeName}}"
+					timeout_reload = 60
+				}
+				`, iface), test.WithInsecureEndpoint(endpoint)),
+				ExpectError: regexp.MustCompile(`not found after creation`),
+			},
+		},
+	})
+
+	requireInterfaceNotStaged(t, te, iface)
+}
