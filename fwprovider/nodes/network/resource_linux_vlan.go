@@ -53,6 +53,7 @@ type linuxVLANResourceModel struct {
 	MTU       types.Int64             `tfsdk:"mtu"`
 	Comment   types.String            `tfsdk:"comment"`
 	Timeout   types.Int64             `tfsdk:"timeout_reload"`
+	Reload    types.Bool              `tfsdk:"reload"`
 	// Linux VLAN attributes
 	Interface types.String `tfsdk:"interface"`
 	VLAN      types.Int64  `tfsdk:"vlan"`
@@ -204,6 +205,15 @@ func (r *linuxVLANResource) Schema(
 					int64validator.AtLeast(5),
 				},
 			},
+			"reload": schema.BoolAttribute{
+				Description: "Whether to reload the node network configuration after this interface is created, " +
+					"updated or deleted (defaults to `true`). When `false`, the change is only staged on the node " +
+					"and takes effect on the next reload. Any reload on the node, including one triggered by " +
+					"another resource, applies all staged changes.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(true),
+			},
 			// Linux VLAN attributes
 			"interface": schema.StringAttribute{
 				Description: "The VLAN raw device. See also `name`.",
@@ -286,16 +296,18 @@ func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateReque
 	resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 
-	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
-	defer cancel()
+	if plan.Reload.ValueBool() {
+		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+		defer cancel()
 
-	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				plan.NodeName.ValueString(), err.Error()),
-		)
+		err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error reloading network configuration",
+				fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
+					plan.NodeName.ValueString(), err.Error()),
+			)
+		}
 	}
 }
 
@@ -333,6 +345,10 @@ func (r *linuxVLANResource) Read(ctx context.Context, req resource.ReadRequest, 
 
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	if state.Reload.IsNull() {
+		state.Reload = types.BoolValue(true)
 	}
 
 	found := r.read(ctx, &state, &resp.Diagnostics)
@@ -405,16 +421,18 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
-	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
-	defer cancel()
+	if plan.Reload.ValueBool() {
+		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+		defer cancel()
 
-	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				plan.NodeName.ValueString(), err.Error()),
-		)
+		err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error reloading network configuration",
+				fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
+					plan.NodeName.ValueString(), err.Error()),
+			)
+		}
 	}
 }
 
@@ -450,16 +468,18 @@ func (r *linuxVLANResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(state.Timeout.ValueInt64())*time.Second)
-	defer cancel()
+	if state.Reload.IsNull() || state.Reload.ValueBool() {
+		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(state.Timeout.ValueInt64())*time.Second)
+		defer cancel()
 
-	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				state.NodeName.ValueString(), err.Error()),
-		)
+		err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error reloading network configuration",
+				fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
+					state.NodeName.ValueString(), err.Error()),
+			)
+		}
 	}
 }
 
@@ -487,6 +507,7 @@ func (r *linuxVLANResource) ImportState(
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),
 		Timeout:  types.Int64Value(int64(nodes.NetworkReloadTimeout.Seconds())),
+		Reload:   types.BoolValue(true),
 	}
 	found := r.read(ctx, &state, &resp.Diagnostics)
 

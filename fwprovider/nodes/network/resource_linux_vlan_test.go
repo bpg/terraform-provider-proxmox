@@ -188,3 +188,94 @@ func testAccResourceLinuxVLANAddressRemovedCheck(iface string, vlan int) resourc
 		}),
 	)
 }
+
+func TestAccResourceLinuxVLANReload(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	parent := os.Getenv("PROXMOX_VE_ACC_IFACE_NAME")
+	if parent == "" {
+		parent = "ens18"
+	}
+
+	vlan := gofakeit.Number(10, 4094)
+	iface := fmt.Sprintf("%s.%d", parent, vlan)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_vlan" "test" {
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					reload    = false
+				}`, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_vlan.test", map[string]string{
+						"reload": "false",
+					}),
+					checkInterfaceActive(te, iface, false),
+				),
+			},
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_vlan" "test" {
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					reload    = true
+				}`, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_vlan.test", map[string]string{
+						"reload": "true",
+					}),
+					checkInterfaceActive(te, iface, true),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceLinuxVLANStagedDestroy(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	parent := os.Getenv("PROXMOX_VE_ACC_IFACE_NAME")
+	if parent == "" {
+		parent = "ens18"
+	}
+
+	vlan := gofakeit.Number(10, 4094)
+	iface := fmt.Sprintf("%s.%d", parent, vlan)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		CheckDestroy:             checkStagedDestroy(te),
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_vlan" "test" {
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+				}`, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					checkInterfaceActive(te, iface, true),
+					checkNodePendingChanges(te, false),
+				),
+			},
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_vlan" "test" {
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					reload    = false
+				}`, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_vlan.test", map[string]string{
+						"reload": "false",
+					}),
+					checkInterfaceActive(te, iface, true),
+					checkNodePendingChanges(te, false),
+				),
+			},
+		},
+	})
+}

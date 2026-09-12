@@ -399,3 +399,110 @@ func TestAccResourceLinuxBridgeVIDsValidation(t *testing.T) {
 		},
 	})
 }
+
+func TestAccResourceLinuxBridgeReload(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))
+	ipV4cidr := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address   = "%s"
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					reload    = false
+				}`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"reload": "false",
+					}),
+					checkInterfaceActive(te, iface, false),
+				),
+			},
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address   = "%s"
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					reload    = true
+				}`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"reload": "true",
+					}),
+					checkInterfaceActive(te, iface, true),
+				),
+			},
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address   = "%s"
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+				}`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"reload": "true",
+					}),
+					checkInterfaceActive(te, iface, true),
+				),
+			},
+			{
+				ResourceName:      "proxmox_network_linux_bridge.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"timeout_reload",
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceLinuxBridgeStagedDestroy(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))
+	ipV4cidr := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		CheckDestroy:             checkStagedDestroy(te),
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address   = "%s"
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+				}`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					checkInterfaceActive(te, iface, true),
+					checkNodePendingChanges(te, false),
+				),
+			},
+			{
+				Config: te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_network_linux_bridge" "test" {
+					address   = "%s"
+					name      = "%s"
+					node_name = "{{.NodeName}}"
+					reload    = false
+				}`, ipV4cidr, iface)),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_network_linux_bridge.test", map[string]string{
+						"reload": "false",
+					}),
+					checkInterfaceActive(te, iface, true),
+					checkNodePendingChanges(te, false),
+				),
+			},
+		},
+	})
+}
