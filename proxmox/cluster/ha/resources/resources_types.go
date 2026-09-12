@@ -27,6 +27,8 @@ type HAResourceGetResponseBody struct {
 
 // HAResourceDataBase contains data common to all HA resource API calls.
 type HAResourceDataBase struct {
+	// Whether the resource may be migrated during automatic rebalancing
+	AutoRebalance *types.CustomBool `json:"auto-rebalance,omitempty" url:"auto-rebalance,omitempty,int"`
 	// Resource comment, if defined
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
 	// Automatic failback to the preferred node when it becomes available again

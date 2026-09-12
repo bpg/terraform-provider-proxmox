@@ -37,6 +37,7 @@ output "proxmox_haresources_full" {
 
 ### Read-Only
 
+- `auto_rebalance` (Boolean) Whether this HA resource may be migrated during automatic rebalancing (PVE 9+).
 - `comment` (String) The comment associated with this resource.
 - `failback` (Boolean) Automatic failback to the preferred node when it becomes available again (PVE 9+).
 - `group` (String) The identifier of the High Availability group this resource is a member of.

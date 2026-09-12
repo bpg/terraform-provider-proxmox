@@ -72,6 +72,10 @@ func (d *haResourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequ
 				Description: "Automatic failback to the preferred node when it becomes available again (PVE 9+).",
 				Computed:    true,
 			},
+			"auto_rebalance": schema.BoolAttribute{
+				Description: "Whether this HA resource may be migrated during automatic rebalancing (PVE 9+).",
+				Computed:    true,
+			},
 			"group": schema.StringAttribute{
 				Description: "The identifier of the High Availability group this resource is a member of.",
 				Computed:    true,
