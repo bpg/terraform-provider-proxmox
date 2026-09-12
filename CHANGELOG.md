@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.114.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.113.1...v0.114.0) (2026-09-12)
+
+
+### Features
+
+* **network:** add reload flag to linux bridge, vlan and bond ([#3071](https://github.com/bpg/terraform-provider-proxmox/issues/3071)) ([07bcfdb](https://github.com/bpg/terraform-provider-proxmox/commit/07bcfdb7939d8400e983e10900bec19addef2a1b))
+
+
+### Bug Fixes
+
+* **network:** roll back staged interface when post-create read fails ([#3081](https://github.com/bpg/terraform-provider-proxmox/issues/3081)) ([a2c4fe8](https://github.com/bpg/terraform-provider-proxmox/commit/a2c4fe8608cdd4242f012916b81a8b00c831d0c8))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (512690a → f44f6e8) ([#3093](https://github.com/bpg/terraform-provider-proxmox/issues/3093)) ([48470db](https://github.com/bpg/terraform-provider-proxmox/commit/48470db99b01bd57fbd27821c8c1d40f969c4f29))
+* **deps:** update module golang.org/x/crypto (v0.56.0 → v0.57.0) ([#3094](https://github.com/bpg/terraform-provider-proxmox/issues/3094)) ([220a2c5](https://github.com/bpg/terraform-provider-proxmox/commit/220a2c53761ac5b849d1f6fa8258c9b951adef09))
+* **deps:** update module golang.org/x/net (v0.58.0 → v0.59.0) ([#3095](https://github.com/bpg/terraform-provider-proxmox/issues/3095)) ([9dc5ea5](https://github.com/bpg/terraform-provider-proxmox/commit/9dc5ea54614e87bae2f099b81ed96a581448b02c))
+* **deps:** update module golang.org/x/sync (v0.22.0 → v0.23.0) ([#3096](https://github.com/bpg/terraform-provider-proxmox/issues/3096)) ([6bf5f20](https://github.com/bpg/terraform-provider-proxmox/commit/6bf5f20998882b310c05574dc6583bcc5c498449))
+
 ## [0.113.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.113.0...v0.113.1) (2026-09-11)
 
 
