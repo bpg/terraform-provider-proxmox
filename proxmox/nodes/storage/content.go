@@ -20,11 +20,18 @@ import (
 )
 
 // DeleteDatastoreFile deletes a file in a datastore.
+// The PVE API returns the UPID of the async deletion task (imgdel) in the
+// response body; the file is only guaranteed to be gone once that task has
+// finished. Waiting for the task prevents a delayed unlink from removing a
+// file that has been re-uploaded in the meantime (e.g. during a replace
+// operation), which would leave the state inconsistent with the datastore.
 func (c *Client) DeleteDatastoreFile(
 	ctx context.Context,
 	volumeID string,
 ) error {
 	path := c.ExpandPath(fmt.Sprintf("content/%s", url.PathEscape(volumeID)))
+
+	resBody := &DeleteDatastoreFileResponseBody{}
 
 	err := retry.New(
 		retry.Context(ctx),
@@ -39,11 +46,25 @@ func (c *Client) DeleteDatastoreFile(
 		retry.LastErrorOnly(true),
 	).Do(
 		func() error {
-			return c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
+			return c.DoRequest(ctx, http.MethodDelete, path, nil, resBody)
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("error deleting file %s from datastore %s: %w", volumeID, c.StorageName, err)
+	}
+
+	// PVE may not return a task for some deletions (e.g. when the file does
+	// not exist); in that case there is nothing to wait for.
+	if resBody.TaskID == nil {
+		return nil
+	}
+
+	taskErr := c.Tasks().WaitForTask(ctx, *resBody.TaskID).Err()
+	if taskErr != nil {
+		return fmt.Errorf(
+			"error deleting file %s from datastore %s: failed waiting for deletion task: %w",
+			volumeID, c.StorageName, taskErr,
+		)
 	}
 
 	return nil

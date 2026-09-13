@@ -364,3 +364,53 @@ func deleteSnippet(te *Environment, fname string) {
 	err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
 	require.NoError(te.t, err)
 }
+
+// TestAccDeleteDatastoreFileWaitsForTask verifies that deleting a datastore
+// file waits for the completion of the async deletion task started by PVE.
+//
+// Regression test for #3062: PVE storage DELETE returns immediately with the
+// UPID of an async imgdel task. Without waiting for that task, a subsequent
+// upload of a file with the same name races the delayed unlink and can lose
+// the freshly uploaded file. Each iteration below deletes a file, confirms it
+// is gone, re-uploads it, and then confirms the new file survives.
+func TestAccDeleteDatastoreFileWaitsForTask(t *testing.T) {
+	te := InitEnvironment(t)
+
+	fname := SafeResourceName("delete-task-wait") + ".yaml"
+	volid := "snippets/" + fname
+	content := "# delete-task-wait test snippet\n"
+
+	// uploadSnippetFile uploads under the base name of the given path, so the
+	// local file must carry the exact target file name.
+	dir := t.TempDir()
+	path := filepath.Join(dir, fname)
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
+
+	t.Cleanup(func() {
+		deleteSnippet(te, fname)
+	})
+
+	snippetExists := func() bool {
+		files, err := te.NodeStorageClient().ListDatastoreFiles(context.Background(), nil)
+		require.NoError(t, err)
+
+		for _, file := range files {
+			if strings.HasSuffix(file.VolumeID, volid) {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	for range 3 {
+		uploadSnippetFile(te, path)
+		require.True(t, snippetExists(), "file %s should exist after upload", volid)
+
+		deleteSnippet(te, fname)
+		require.False(t, snippetExists(), "file %s should be gone immediately after delete", volid)
+
+		uploadSnippetFile(te, path)
+		require.True(t, snippetExists(), "file %s should exist after delete + re-upload", volid)
+	}
+}
