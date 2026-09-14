@@ -7,10 +7,13 @@
 package resource
 
 import (
+	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -372,6 +375,171 @@ func TestContainerSchema(t *testing.T) {
 		mkOperatingSystemTemplateFileID: schema.TypeString,
 		mkOperatingSystemType:           schema.TypeString,
 	})
+}
+
+// mountPointStateAttrs builds the flatmap state attributes for a list of mount points.
+func mountPointStateAttrs(mountPoints ...map[string]string) map[string]string {
+	attrs := map[string]string{
+		mkVMID:                     "100",
+		mkNodeName:                 "pve",
+		mkMountPoint + ".#":        strconv.Itoa(len(mountPoints)),
+		mkNetworkInterface + ".#":  "0",
+		mkDisk + ".#":              "0",
+		mkInitialization + ".#":    "0",
+		mkOperatingSystem + ".#":   "0",
+		mkDevicePassthrough + ".#": "0",
+		mkIDMap + ".#":             "0",
+		// Unrelated ForceNew attributes: pinned to their defaults so they do not contribute
+		// RequiresNew to the diff under test.
+		mkTemplate:     "false",
+		mkUnprivileged: "false",
+		mkPoolID:       "",
+	}
+
+	for i, mp := range mountPoints {
+		prefix := fmt.Sprintf("%s.%d.", mkMountPoint, i)
+		attrs[prefix+mkMountPointMountOptions+".#"] = "0"
+		attrs[prefix+mkMountPointACL] = "false"
+		attrs[prefix+mkMountPointBackup] = "false"
+		attrs[prefix+mkMountPointQuota] = "false"
+		attrs[prefix+mkMountPointReadOnly] = "false"
+		attrs[prefix+mkMountPointReplicate] = "true"
+		attrs[prefix+mkMountPointShared] = "false"
+		attrs[prefix+mkMountPointSize] = ""
+
+		for k, v := range mp {
+			attrs[prefix+k] = v
+		}
+	}
+
+	return attrs
+}
+
+// TestContainerMountPointForceNew verifies that mount point changes only force container
+// recreation when the volume of an *existing* mount point is repointed or resized. Adding,
+// removing, or reconfiguring mount points must be handled in place by containerUpdate.
+//
+// See https://github.com/bpg/terraform-provider-proxmox/issues/3028.
+func TestContainerMountPointForceNew(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name              string
+		state             []map[string]string
+		config            []any
+		expectRequiresNew bool
+	}{
+		{
+			name: "adding a mount point is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/local1"},
+				map[string]any{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name:  "adding the first mount point is an in-place update",
+			state: nil,
+			config: []any{
+				map[string]any{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "removing a mount point is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+				{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/local1"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "toggling read_only on an existing mount point is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			config: []any{
+				map[string]any{
+					mkMountPointVolume:   "/mnt/pve/share",
+					mkMountPointPath:     "/mnt/share",
+					mkMountPointReadOnly: true,
+				},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "repointing the volume of an existing mount point forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "/mnt/pve/other", mkMountPointPath: "/mnt/share"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "resizing an existing mount point forces recreation",
+			state: []map[string]string{
+				{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "4G",
+				},
+			},
+			config: []any{
+				map[string]any{
+					mkMountPointVolume: "local-lvm",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "8G",
+				},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			// PVE resolves a datastore-only volume to a concrete volume ID; the resulting
+			// state-vs-config drift must not be mistaken for a repoint.
+			name: "resolved volume id is not treated as a repoint",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/local1"},
+			},
+			expectRequiresNew: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			container := Container()
+
+			state := &terraform.InstanceState{
+				ID:         "100",
+				Attributes: mountPointStateAttrs(tt.state...),
+			}
+
+			config := terraform.NewResourceConfigRaw(map[string]any{
+				mkNodeName:   "pve",
+				mkVMID:       100,
+				mkMountPoint: tt.config,
+			})
+
+			diff, err := container.Diff(t.Context(), state, config, nil)
+			require.NoError(t, err)
+			require.NotNil(t, diff, "expected a non-empty diff")
+
+			assert.Equal(t, tt.expectRequiresNew, diff.RequiresNew(),
+				"unexpected RequiresNew; diff attributes: %v", diff.Attributes)
+		})
+	}
 }
 
 func TestInitializationEntrypointValidation(t *testing.T) {
