@@ -57,6 +57,7 @@ type linuxBridgeResourceModel struct {
 	MTU       types.Int64             `tfsdk:"mtu"`
 	Comment   types.String            `tfsdk:"comment"`
 	Timeout   types.Int64             `tfsdk:"timeout_reload"`
+	Reload    types.Bool              `tfsdk:"reload"`
 	// Linux bridge attributes
 	Ports     types.List   `tfsdk:"ports"`
 	VLANAware types.Bool   `tfsdk:"vlan_aware"`
@@ -271,6 +272,15 @@ func (r *linuxBridgeResource) Schema(
 					int64validator.AtLeast(5),
 				},
 			},
+			"reload": schema.BoolAttribute{
+				Description: "Whether to reload the node network configuration after this interface is created, " +
+					"updated or deleted (defaults to `true`). When `false`, the change is only staged on the node " +
+					"and takes effect on the next reload. Any reload on the node, including one triggered by " +
+					"another resource, applies all staged changes.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(true),
+			},
 			// Linux Bridge attributes
 			"ports": schema.ListAttribute{
 				Description: "The interface bridge ports.",
@@ -389,34 +399,35 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 
 	found := r.read(ctx, &plan, &resp.Diagnostics)
 
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !found {
+	if !found && !resp.Diagnostics.HasError() {
 		resp.Diagnostics.AddError(
 			"Linux Bridge interface not found after creation",
 			fmt.Sprintf(
 				"Interface %q on node %q could not be read after creation",
 				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
+	}
+
+	if resp.Diagnostics.HasError() {
+		rollbackCreatedInterface(ctx, r.client.Node(plan.NodeName.ValueString()), plan.Name.ValueString(), &resp.Diagnostics)
 
 		return
 	}
 
-	resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
-	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
-	defer cancel()
+	if plan.Reload.ValueBool() {
+		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+		defer cancel()
 
-	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				plan.NodeName.ValueString(), err.Error()),
-		)
+		err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error reloading network configuration",
+				fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
+					plan.NodeName.ValueString(), err.Error()),
+			)
+		}
 	}
 }
 
@@ -462,6 +473,10 @@ func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest
 
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	if state.Reload.IsNull() {
+		state.Reload = types.BoolValue(true)
 	}
 
 	found := r.read(ctx, &state, &resp.Diagnostics)
@@ -544,16 +559,18 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
-	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
-	defer cancel()
+	if plan.Reload.ValueBool() {
+		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(plan.Timeout.ValueInt64())*time.Second)
+		defer cancel()
 
-	err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				plan.NodeName.ValueString(), err.Error()),
-		)
+		err = r.client.Node(plan.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error reloading network configuration",
+				fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
+					plan.NodeName.ValueString(), err.Error()),
+			)
+		}
 	}
 }
 
@@ -589,16 +606,18 @@ func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteReq
 		return
 	}
 
-	reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(state.Timeout.ValueInt64())*time.Second)
-	defer cancel()
+	if state.Reload.IsNull() || state.Reload.ValueBool() {
+		reloadCtx, cancel := context.WithTimeout(ctx, time.Duration(state.Timeout.ValueInt64())*time.Second)
+		defer cancel()
 
-	err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reloading network configuration",
-			fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
-				state.NodeName.ValueString(), err.Error()),
-		)
+		err = r.client.Node(state.NodeName.ValueString()).ReloadNetworkConfiguration(reloadCtx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error reloading network configuration",
+				fmt.Sprintf("Could not reload network configuration on node '%s', unexpected error: %s",
+					state.NodeName.ValueString(), err.Error()),
+			)
+		}
 	}
 }
 
@@ -626,6 +645,7 @@ func (r *linuxBridgeResource) ImportState(
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),
 		Timeout:  types.Int64Value(int64(nodes.NetworkReloadTimeout.Seconds())),
+		Reload:   types.BoolValue(true),
 	}
 	found := r.read(ctx, &state, &resp.Diagnostics)
 
