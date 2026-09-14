@@ -46,7 +46,7 @@ func TestAccResourceHAResourceAutoRebalance(t *testing.T) {
 		"TestVMID": vmID,
 	})
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			// Step 1: create with auto_rebalance = true
@@ -96,9 +96,14 @@ func TestAccResourceHAResourceAutoRebalance(t *testing.T) {
 						state          = "stopped"
 						auto_rebalance = false
 					}
+
+					data "proxmox_haresource" "test_auto_rebalance" {
+						resource_id = proxmox_haresource.test_auto_rebalance.resource_id
+					}
 				`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_haresource.test_auto_rebalance", "auto_rebalance", "false"),
+					resource.TestCheckResourceAttr("data.proxmox_haresource.test_auto_rebalance", "auto_rebalance", "false"),
 				),
 			},
 			// Step 4: unset auto_rebalance, reverting to the cluster default

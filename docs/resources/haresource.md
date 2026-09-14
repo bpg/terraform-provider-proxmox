@@ -36,7 +36,7 @@ resource "proxmox_haresource" "example" {
 
 ### Optional
 
-- `auto_rebalance` (Boolean) Whether this HA resource may be migrated during automatic rebalancing (Proxmox VE 9+). Leave unset to use the cluster default.
+- `auto_rebalance` (Boolean) Whether this HA resource may be migrated during automatic rebalancing (Proxmox VE 9.2+). Leave unset to use the cluster default.
 - `comment` (String) The comment associated with this resource.
 - `failback` (Boolean) Automatic failback to the preferred node when it becomes available again (Proxmox VE 9+). Leave unset to use the cluster default.
 - `group` (String) The identifier of the High Availability group this resource is a member of.

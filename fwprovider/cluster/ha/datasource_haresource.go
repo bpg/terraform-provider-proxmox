@@ -73,7 +73,7 @@ func (d *haResourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequ
 				Computed:    true,
 			},
 			"auto_rebalance": schema.BoolAttribute{
-				Description: "Whether this HA resource may be migrated during automatic rebalancing (PVE 9+).",
+				Description: "Whether this HA resource may be migrated during automatic rebalancing (PVE 9.2+).",
 				Computed:    true,
 			},
 			"group": schema.StringAttribute{

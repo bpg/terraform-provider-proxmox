@@ -7812,14 +7812,8 @@ func readdToHA(
 	haConfig *haresources.HAResourceGetResponseData,
 ) error {
 	createBody := &haresources.HAResourceCreateRequestBody{
-		ID: haResourceID,
-		HAResourceDataBase: haresources.HAResourceDataBase{
-			Comment:     haConfig.Comment,
-			Group:       haConfig.Group,
-			MaxRelocate: haConfig.MaxRelocate,
-			MaxRestart:  haConfig.MaxRestart,
-			State:       haConfig.State,
-		},
+		ID:                 haResourceID,
+		HAResourceDataBase: haConfig.HAResourceDataBase,
 	}
 
 	return haClient.Create(ctx, createBody)
