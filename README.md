@@ -4,7 +4,7 @@
 [![GitHub Release Date](https://img.shields.io/github/release-date/bpg/terraform-provider-proxmox?display_date=published_at)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![Terraform Provider Downloads](https://img.shields.io/terraform/provider/dw/2185)](https://registry.terraform.io/providers/bpg/proxmox/latest)
 [![All Contributors](https://img.shields.io/github/all-contributors/bpg/terraform-provider-proxmox)](#contributors)
-[![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox?style=flat)](https://github.com/bpg/terraform-provider-proxmox/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox?style=flat)](https://github.com/bpg/terraform-provider-proxmox)
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/bpg-dev)
 
 A Terraform / OpenTofu Provider that adds support for Proxmox Virtual Environment.

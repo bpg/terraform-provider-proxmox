@@ -34,7 +34,7 @@ jobs:
 
       - name: Find Link Checker Issue
         id: link-checker-issue
-        if: steps.lychee.outputs.exit_code != 0
+        if: "!cancelled() && steps.lychee.outputs.exit_code != 0"
         env:
           GH_TOKEN: "${{ steps.app-token.outputs.token }}"
         run: |
@@ -44,7 +44,7 @@ jobs:
 
       - name: Update Issue
         uses: peter-evans/create-issue-from-file@fca9117c27cdc29c6c4db3b86c48e4115a786710 # v6.0.0
-        if: steps.lychee.outputs.exit_code != 0
+        if: "!cancelled() && steps.lychee.outputs.exit_code != 0"
         with:
           title: Broken links detected 🔗
           issue-number: "${{ steps.link-checker-issue.outputs.issue-number }}"
