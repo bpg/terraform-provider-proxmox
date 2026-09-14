@@ -1010,7 +1010,7 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 
-	err = capi.Node(nodeName).Storage(datastoreID).DeleteDatastoreFile(ctx, d.Id())
+	err = capi.Node(nodeName).Storage(datastoreID).DeleteDatastoreFile(ctx, d.Id()).Err()
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		return diag.FromErr(err)
 	}

@@ -14,6 +14,8 @@ package test
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -21,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -311,7 +314,7 @@ func TestAccNodeStreamUpload(t *testing.T) {
 	fname := filepath.Base(f.Name())
 
 	t.Cleanup(func() {
-		err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
+		err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname)).Err()
 		if err != nil {
 			t.Logf("cleanup: failed to delete snippet %s: %v", fname, err)
 		}
@@ -349,7 +352,7 @@ func uploadSnippetFile(te *Environment, fileName string) {
 		_ = f.Close()
 	}(f)
 
-	err = te.SSHClient().NodeStreamUpload(context.Background(), te.NodeName, "/var/lib/vz/",
+	err = te.SSHClient().NodeStreamUpload(context.Background(), te.NodeName, "/var/lib/vz/dump/",
 		&api.FileUploadRequest{
 			ContentType: "snippets",
 			FileName:    filepath.Base(fileName),
@@ -361,56 +364,86 @@ func uploadSnippetFile(te *Environment, fileName string) {
 func deleteSnippet(te *Environment, fname string) {
 	te.t.Helper()
 
-	err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
+	err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname)).Err()
 	require.NoError(te.t, err)
 }
 
 // TestAccDeleteDatastoreFileWaitsForTask verifies that deleting a datastore
-// file waits for the completion of the async deletion task started by PVE.
+// file waits for the completion of the async deletion task started by PVE,
+// and surfaces the task's error if the deletion fails.
 //
-// Regression test for #3062: PVE storage DELETE returns immediately with the
-// UPID of an async imgdel task. Without waiting for that task, a subsequent
-// upload of a file with the same name races the delayed unlink and can lose
-// the freshly uploaded file. Each iteration below deletes a file, confirms it
-// is gone, re-uploads it, and then confirms the new file survives.
+// Regression test for #3062: PVE storage DELETE returns 200 with the UPID of
+// an async imgdel task. A protected backup is used as the discriminator: the
+// imgdel worker fails with "cannot remove protected volume", but the HTTP
+// DELETE still returns 200. Without waiting for the task, the failure is
+// invisible and the delete appears to succeed while the file remains.
 func TestAccDeleteDatastoreFileWaitsForTask(t *testing.T) {
 	te := InitEnvironment(t)
 
-	fname := SafeResourceName("delete-task-wait") + ".yaml"
-	volid := "snippets/" + fname
-	content := "# delete-task-wait test snippet\n"
+	sc := te.NodeStorageClient()
 
-	// uploadSnippetFile uploads under the base name of the given path, so the
-	// local file must carry the exact target file name.
-	dir := t.TempDir()
-	path := filepath.Join(dir, fname)
-	require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
+	fname := "vzdump-qemu-999-2026_01_02-03_04_05.vma.zst"
+	volid := "backup/" + fname
 
 	t.Cleanup(func() {
-		deleteSnippet(te, fname)
+		// best effort: un-protect then delete
+		_ = te.NodeClient().DoRequest(
+			context.Background(), http.MethodPut,
+			te.NodeClient().ExpandPath(fmt.Sprintf("storage/%s/content/%s", sc.StorageName, url.PathEscape(volid))),
+			&struct {
+				Protected string `url:"protected"`
+			}{Protected: "0"},
+			nil,
+		)
+		_ = sc.DeleteDatastoreFile(context.Background(), volid).Err()
 	})
 
-	snippetExists := func() bool {
-		files, err := te.NodeStorageClient().ListDatastoreFiles(context.Background(), nil)
-		require.NoError(t, err)
+	// Create a backup file directly in the datastore directory.
+	f, err := os.CreateTemp("", fname)
+	require.NoError(t, err)
 
-		for _, file := range files {
-			if strings.HasSuffix(file.VolumeID, volid) {
-				return true
-			}
-		}
+	_, werr := f.WriteString("# backup placeholder\n")
+	require.NoError(t, werr)
+	require.NoError(t, f.Close())
 
-		return false
-	}
+	t.Cleanup(func() { _ = os.Remove(f.Name()) })
 
-	for range 3 {
-		uploadSnippetFile(te, path)
-		require.True(t, snippetExists(), "file %s should exist after upload", volid)
+	uf, uerr := os.Open(f.Name())
+	require.NoError(t, uerr)
 
-		deleteSnippet(te, fname)
-		require.False(t, snippetExists(), "file %s should be gone immediately after delete", volid)
+	t.Cleanup(func() { _ = uf.Close() })
 
-		uploadSnippetFile(te, path)
-		require.True(t, snippetExists(), "file %s should exist after delete + re-upload", volid)
-	}
+	// NodeStreamUpload appends the content-type subdir to remote_dir itself;
+	// for backups that on-disk subdir is "dump", so pass "/var/lib/vz" and
+	// "dump" as the content type to land in /var/lib/vz/dump/.
+	require.NoError(t, te.SSHClient().NodeStreamUpload(context.Background(), te.NodeName, "/var/lib/vz",
+		&api.FileUploadRequest{
+			ContentType: "dump",
+			FileName:    fname,
+			File:        uf,
+		},
+	))
+
+	// Protect it: only backups support the 'protected' attribute, and the
+	// imgdel worker refuses to remove protected volumes.
+	require.NoError(t, te.NodeClient().DoRequest(
+		context.Background(), http.MethodPut,
+		te.NodeClient().ExpandPath(fmt.Sprintf("storage/%s/content/%s", sc.StorageName, url.PathEscape(volid))),
+		&struct {
+			Protected string `url:"protected"`
+		}{Protected: "1"},
+		nil,
+	))
+
+	// With the fix, the delete must fail with the task's error...
+	err = sc.DeleteDatastoreFile(context.Background(), volid).Err()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "cannot remove protected volume")
+
+	// ...and the file must still exist (checked on the filesystem, since the
+	// test datastore may not declare the "backup" content type).
+	out, execErr := te.SSHClient().ExecuteNodeCommands(context.Background(), te.NodeName,
+		[]string{fmt.Sprintf("test -f /var/lib/vz/dump/%s && echo present", fname)})
+	require.NoError(t, execErr)
+	assert.Contains(t, string(out), "present", "protected file should still exist after failed delete")
 }

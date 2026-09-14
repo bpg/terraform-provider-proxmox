@@ -434,7 +434,7 @@ func (r *downloadFileResource) Create(
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
 		fileID := plan.ContentType.ValueString() + "/" + plan.FileName.ValueString()
 
-		err = storageClient.DeleteDatastoreFile(ctx, fileID)
+		err = storageClient.DeleteDatastoreFile(ctx, fileID).Err()
 		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError("Error deleting file from datastore",
 				fmt.Sprintf("Could not delete file '%s', unexpected error: %s", fileID, err.Error()),
@@ -660,7 +660,7 @@ func (r *downloadFileResource) Delete(
 	err := storageClient.DeleteDatastoreFile(
 		ctx,
 		state.ID.ValueString(),
-	)
+	).Err()
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		if strings.Contains(err.Error(), "unable to parse") {
 			resp.Diagnostics.AddWarning(

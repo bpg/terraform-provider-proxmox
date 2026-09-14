@@ -87,8 +87,8 @@ func TestDeleteDatastoreFile_WaitsForTask(t *testing.T) {
 
 	c := newStorageTestClient(t, handler)
 
-	err := c.DeleteDatastoreFile(context.Background(), volid)
-	require.NoError(t, err)
+	res := c.DeleteDatastoreFile(context.Background(), volid)
+	require.NoError(t, res.Err())
 
 	assert.True(t, deleteHandled, "DELETE should have been issued")
 	assert.GreaterOrEqual(t, statusPolls, 2, "client should have polled the task status until completion")
@@ -113,6 +113,6 @@ func TestDeleteDatastoreFile_NoTaskInResponse(t *testing.T) {
 
 	c := newStorageTestClient(t, handler)
 
-	err := c.DeleteDatastoreFile(context.Background(), volid)
-	require.NoError(t, err)
+	res := c.DeleteDatastoreFile(context.Background(), volid)
+	require.NoError(t, res.Err())
 }
