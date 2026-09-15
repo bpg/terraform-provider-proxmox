@@ -48,7 +48,7 @@ func TestAccDataSourceReplications(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName))
+		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName)).Err()
 		require.NoError(t, e)
 	})
 

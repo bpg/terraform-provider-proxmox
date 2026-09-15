@@ -446,7 +446,7 @@ func (e *Environment) DownloadCloudImage() string {
 
 	e.t.Cleanup(func() {
 		// Best effort cleanup - the file may already be deleted by Proxmox
-		err = e.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName))
+		err = e.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName)).Err()
 		if err != nil {
 			e.t.Logf("cleanup: failed to delete cloud image %s: %v", imageFileName, err)
 		}

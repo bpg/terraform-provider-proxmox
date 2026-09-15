@@ -299,7 +299,7 @@ func (r *ociImageResource) Create(
 		// OCI images are stored as vztmpl content type in Proxmox
 		fileID := storage.ContentTypeVZTmpl + "/" + plan.FileName.ValueString()
 
-		err = storageClient.DeleteDatastoreFile(ctx, fileID)
+		err = storageClient.DeleteDatastoreFile(ctx, fileID).Err()
 		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError("Error deleting OCI image from datastore",
 				fmt.Sprintf("Could not delete OCI image '%s', unexpected error: %s", fileID, err.Error()),
@@ -455,7 +455,7 @@ func (r *ociImageResource) Delete(
 	err := storageClient.DeleteDatastoreFile(
 		ctx,
 		state.ID.ValueString(),
-	)
+	).Err()
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		if strings.Contains(err.Error(), "unable to parse") {
 			resp.Diagnostics.AddWarning(
