@@ -296,6 +296,33 @@ func (c *Client) checkIPAddresses(
 	return hasIPv4, hasIPv6
 }
 
+// MigrateContainer migrates a container to a different node.
+// The returned TaskResult carries any warnings from the task log.
+func (c *Client) MigrateContainer(ctx context.Context, d *MigrateRequestBody) tasks.TaskResult {
+	taskID, err := c.MigrateContainerAsync(ctx, d)
+	if err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	return c.Tasks().WaitForTask(ctx, *taskID)
+}
+
+// MigrateContainerAsync migrates a container to a different node asynchronously.
+func (c *Client) MigrateContainerAsync(ctx context.Context, d *MigrateRequestBody) (*string, error) {
+	resBody := &MigrateResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("migrate"), d, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error migrating container: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
+}
+
 // RebootContainer reboots a container.
 func (c *Client) RebootContainer(ctx context.Context, d *RebootRequestBody) tasks.TaskResult {
 	taskID, err := c.RebootContainerAsync(ctx, d)
