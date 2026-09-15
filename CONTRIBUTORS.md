@@ -275,6 +275,9 @@
       <td align="center" valign="top" width="14.28%"><a href="http://www.evequefou.be"><img src="https://avatars.githubusercontent.com/u/4273797?v=4?s=100" width="100px;" alt="Mike Bishop"/><br /><sub><b>Mike Bishop</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=MikeBishop" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/iandrewt"><img src="https://avatars.githubusercontent.com/u/12795256?v=4?s=100" width="100px;" alt="Andrew Titmuss"/><br /><sub><b>Andrew Titmuss</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=iandrewt" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/alexant0n0v"><img src="https://avatars.githubusercontent.com/u/7093424?v=4?s=100" width="100px;" alt="Alex Antonov"/><br /><sub><b>Alex Antonov</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=alexant0n0v" title="Code">💻</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
