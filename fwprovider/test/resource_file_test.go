@@ -352,7 +352,7 @@ func uploadSnippetFile(te *Environment, fileName string) {
 		_ = f.Close()
 	}(f)
 
-	err = te.SSHClient().NodeStreamUpload(context.Background(), te.NodeName, "/var/lib/vz/dump/",
+	err = te.SSHClient().NodeStreamUpload(context.Background(), te.NodeName, "/var/lib/vz/",
 		&api.FileUploadRequest{
 			ContentType: "snippets",
 			FileName:    filepath.Base(fileName),

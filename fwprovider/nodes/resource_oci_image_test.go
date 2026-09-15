@@ -171,7 +171,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 				defer cancel()
 
 				fileID := "vztmpl/test_override_image.tar"
-				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, fileID) //nolint: errcheck
+				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, fileID).Err() //nolint: errcheck
 
 				// Pull OCI image outside of Terraform
 				filenameWithoutTar := "test_override_image"
@@ -183,7 +183,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 				require.NoError(t, err)
 
 				t.Cleanup(func() {
-					e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fileID)
+					e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fileID).Err()
 					require.NoError(t, e)
 				})
 			},
@@ -220,7 +220,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 
 				// Manually pull a different version to simulate external change
 				filenameWithoutTar := "test_override_another"
-				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, fileID) //nolint: errcheck
+				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, fileID).Err() //nolint: errcheck
 
 				err := te.NodeStorageClient().DownloadOCIImageByReference(ctx, &storage.OCIRegistryPullRequestBody{
 					Storage:   new(te.DatastoreID),
@@ -252,7 +252,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 
 				// Manually pull a different image to simulate external change with different size
 				filenameWithoutTar := "test_override_another"
-				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, fileID) //nolint: errcheck
+				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, fileID).Err() //nolint: errcheck
 
 				err := te.NodeStorageClient().DownloadOCIImageByReference(ctx, &storage.OCIRegistryPullRequestBody{
 					Storage:   new(te.DatastoreID),

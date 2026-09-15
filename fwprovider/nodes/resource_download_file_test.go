@@ -232,7 +232,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 				defer cancel()
 
-				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, "iso/fake_file.iso") //nolint: errcheck
+				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, "iso/fake_file.iso").Err() //nolint: errcheck
 
 				err := te.NodeStorageClient().DownloadFileByURL(ctx, &storage.DownloadURLPostRequestBody{
 					Content:  new("iso"),
@@ -245,7 +245,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				require.NoError(t, err)
 
 				t.Cleanup(func() {
-					e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")
+					e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso").Err()
 					require.NoError(t, e)
 				})
 			},
