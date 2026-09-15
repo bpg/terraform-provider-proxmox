@@ -147,6 +147,7 @@ Some tests require multi node cluster, a ZFS datastore and a spare disk to run. 
 PROXMOX_VE_ACC_NODE_2_NAME="pve2"
 PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
 PROXMOX_VE_ACC_ZFS_DISK="/dev/sdb"  # spare disk for proxmox_node_disk_zfs tests — will be fully wiped
+PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID="local-lvm"  # datastore for container disk tests, defaults to "local-lvm"
 ```
 
 > [!NOTE]

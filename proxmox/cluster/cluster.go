@@ -81,3 +81,40 @@ func (c *Client) GetVMNodeName(ctx context.Context, vmID int) (*string, error) {
 
 	return nil, ErrVMDoesNotExist
 }
+
+// FindContainerResource returns the cluster resource entry for the given container VMID, filtering
+// out qemu entries so a container and a VM never collide even if VMID uniqueness is ever relaxed.
+func FindContainerResource(resources []*ResourcesListResponseData, vmID int) (*ResourcesListResponseData, error) {
+	for _, r := range resources {
+		if r.Type == "lxc" && r.VMID == vmID {
+			return r, nil
+		}
+	}
+
+	return nil, ErrVMDoesNotExist
+}
+
+// GetContainerResource gets the cluster resource entry for the specified container, carrying its
+// NodeName, Status and HaState.
+func (c *Client) GetContainerResource(ctx context.Context, vmID int) (*ResourcesListResponseData, error) {
+	allClusterVM, err := c.GetClusterResourcesVM(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if allClusterVM == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return FindContainerResource(allClusterVM, vmID)
+}
+
+// GetContainerNodeName gets the node hosting the specified container.
+func (c *Client) GetContainerNodeName(ctx context.Context, vmID int) (*string, error) {
+	res, err := c.GetContainerResource(ctx, vmID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.NodeName, nil
+}
