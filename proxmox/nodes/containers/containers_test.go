@@ -14,10 +14,12 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/google/go-querystring/query"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // testUPID is a valid Proxmox UPID for use in tests.
@@ -620,4 +622,47 @@ func TestCloneContainerNoRetryOn400(t *testing.T) {
 
 	assert.Equal(t, 1, captures.countPOST("/clone"),
 		"expected exactly 1 POST call (no retry on 400)")
+}
+
+func TestMigrateRequestBodyEncoding(t *testing.T) {
+	t.Parallel()
+
+	restart := types.CustomBool(true)
+	timeout := 180
+
+	tests := []struct {
+		name string
+		body *MigrateRequestBody
+		want map[string]string
+	}{
+		{
+			name: "stopped container omits restart and timeout",
+			body: &MigrateRequestBody{TargetNode: "pve2"},
+			want: map[string]string{"target": "pve2"},
+		},
+		{
+			name: "running container sets restart and shutdown timeout",
+			body: &MigrateRequestBody{
+				TargetNode:      "pve2",
+				RestartMigrate:  &restart,
+				ShutdownTimeout: &timeout,
+			},
+			want: map[string]string{"target": "pve2", "restart": "1", "timeout": "180"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			values, err := query.Values(tt.body)
+			require.NoError(t, err)
+
+			require.Len(t, values, len(tt.want))
+
+			for k, v := range tt.want {
+				require.Equal(t, v, values.Get(k), "parameter %q", k)
+			}
+		})
+	}
 }
