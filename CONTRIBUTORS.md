@@ -277,6 +277,7 @@
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/alexant0n0v"><img src="https://avatars.githubusercontent.com/u/7093424?v=4?s=100" width="100px;" alt="Alex Antonov"/><br /><sub><b>Alex Antonov</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=alexant0n0v" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/zeropoint46"><img src="https://avatars.githubusercontent.com/u/6351224?v=4?s=100" width="100px;" alt="Jean-Paul Sergent"/><br /><sub><b>Jean-Paul Sergent</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=zeropoint46" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
