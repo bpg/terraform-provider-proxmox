@@ -401,30 +401,46 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
   visudo -f /etc/sudoers.d/terraform
   ```
 
-  Add the following lines to the file:
+  Add the following line to the file. It is required for **any** SSH-backed feature: the provider probes for `sudo` availability by running `pvesm apiinfo`, and the features below rely on that probe before they write to the node.
 
   ```text
-  terraform ALL=(root) NOPASSWD: /usr/sbin/pvesm
-  terraform ALL=(root) NOPASSWD: /usr/sbin/qm
-  terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
+  terraform ALL=(root) NOPASSWD: /usr/sbin/pvesm apiinfo
   ```
 
-  If you use the `idmap` attribute on `proxmox_virtual_environment_container`, the provider edits the container configuration file via SSH. Add the following rules to allow `sed` and `tee` access to the LXC configuration directory:
+  !> **Security Warning:** Do **not** grant `sudo` on the whole `qm` or `pvesm` binaries (for example `NOPASSWD: /usr/sbin/qm` or `NOPASSWD: /usr/sbin/pvesm`). Both are **root-equivalent** when granted in full: `qm set --args` injects arbitrary arguments into the QEMU command line that Proxmox launches as root, `qm set --hookscript` runs a script as root at VM lifecycle events, and `pvesm export` writes a volume's bytes to any path as root. sudoers `*` wildcards span spaces and trailing arguments, so these options **cannot** be fenced off with an argument pattern — a rule broad enough to allow the provider's real call also allows the dangerous ones. Grant only the exact, safe rules shown here.
 
-  ```text
-  terraform ALL=(root) NOPASSWD: /usr/bin/sed -i * /etc/pve/lxc/*.conf
-  terraform ALL=(root) NOPASSWD: /usr/bin/tee -a /etc/pve/lxc/*.conf
-  ```
+  Then add rules only for the features you actually use.
 
-  If you're using a different datastore for snippets, not the default `local`, you should add the datastore's mount point to the sudoers file as well, for example:
+  - **Snippet uploads** — custom cloud-init and `proxmox_virtual_environment_file` with `content_type = "snippets"`. Grant `tee` on the snippets directory with a strict filename pattern:
 
-  ```text
-  terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
-  ```
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
+    ```
 
-  You can find the mount point of the datastore by running `pvesh get /storage/<name>` on the Proxmox node.
+    If your snippets datastore is not the default `local`, use its mount point instead of (or in addition to) `/var/lib/vz`, for example:
 
-  ~> **Security Warning:** Do not use wildcard patterns like `/var/lib/vz/*` in sudoers rules for `tee`. Such patterns allow path traversal attacks (e.g., `/var/lib/vz/../../../etc/sudoers.d/malicious`) that can lead to privilege escalation. Always restrict to specific subdirectories with strict filename patterns as shown above.
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
+    ```
+
+    Find the mount point with `pvesh get /storage/<name>` on the Proxmox node.
+
+  - **LXC `idmap`** on `proxmox_virtual_environment_container` — the provider edits the container configuration file via SSH:
+
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/sed -i * /etc/pve/lxc/*.conf
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee -a /etc/pve/lxc/*.conf
+    ```
+
+  !> **Security Warning:** Do not use broad wildcards like `/var/lib/vz/*` in a `tee` rule. `*` matches `../`, so such a rule allows path-traversal writes (`/var/lib/vz/../../../etc/sudoers.d/malicious`) and full privilege escalation. Always restrict to a specific subdirectory with a strict filename pattern as shown above.
+
+  If your configuration uses **only** API-backed resources — for example VMs with `import_from` disks and no snippets or `idmap` — the provider never opens an SSH session, so you need no sudoers file at all.
+
+  **Custom disk images (`file_id`).** The legacy `file_id` attribute on a custom disk imports the image with an on-node `qm disk import` / `qm set` over SSH. This is why older versions of this guide granted `sudo` on the whole `qm` binary — **do not do that**, for the reasons in the warning above.
+
+  Prefer the `import_from` disk attribute instead. It performs the import through the Proxmox **API**, so it needs no SSH, no `sudo`, and no sudoers entry for the import.
+
+  If you must keep using `file_id` today, do not grant raw `qm`/`pvesm`. Put a root-owned wrapper script in front of them that accepts only the operations the provider needs — `pvesm path <volume>`, `qm disk import`, and `qm set -<iface> <volume>` — and rejects everything else (`--args`, `--hookscript`, and any other option). Grant `sudo` on the wrapper, not on `qm`/`pvesm`. This is a mitigation, not a full fix.
 
 - Copy your SSH public key to the `~/.ssh/authorized_keys` file of the `terraform` user on the target node.
 

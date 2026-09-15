@@ -178,9 +178,12 @@ func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool
 }
 
 func (c *client) probeSudo(ctx context.Context, nodeName string) (bool, error) {
+	// Probe sudo via `pvesm apiinfo` only: it is read-only and safe to allow-list.
+	// We deliberately do not fall back to `qm --help`; granting sudo on `qm` is
+	// root-equivalent and is no longer a recommended sudoers configuration.
 	checkCmd := `if [ "$(id -u)" = "0" ]; then echo "0"; ` +
-		`elif [ $(sudo -n /usr/sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ] ` +
-		`|| sudo -n /usr/sbin/qm --help >/dev/null 2>&1; then echo "1"; else echo "0"; fi`
+		`elif [ $(sudo -n /usr/sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ]; ` +
+		`then echo "1"; else echo "0"; fi`
 
 	node, err := c.nodeResolver.Resolve(ctx, nodeName)
 	if err != nil {
