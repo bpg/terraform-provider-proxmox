@@ -56,6 +56,7 @@ type Environment struct {
 	c                     api.Client
 	CloudImagesServer     string
 	ContainerImagesServer string
+	ContainerDatastoreID  string
 }
 
 // RenderConfigOption is a configuration option for rendering the provider configuration.
@@ -215,6 +216,11 @@ func InitEnvironment(t *testing.T) *Environment {
 		containerImagesServer = "http://download.proxmox.com"
 	}
 
+	containerDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID")
+	if containerDatastoreID == "" {
+		containerDatastoreID = "local-lvm"
+	}
+
 	return &Environment{
 		t: t,
 		templateVars: map[string]any{
@@ -223,6 +229,7 @@ func InitEnvironment(t *testing.T) *Environment {
 			"DatastoreID":           datastoreID,
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
+			"ContainerDatastoreID":  containerDatastoreID,
 			"TestName":              sanitizeTemplateName(t.Name()),
 			"ZfsDatastoreID":        zfsDatastoreID,
 			"ZfsDisk":               zfsDisk,
@@ -234,6 +241,7 @@ func InitEnvironment(t *testing.T) *Environment {
 		ZfsDisk:               zfsDisk,
 		CloudImagesServer:     cloudImagesServer,
 		ContainerImagesServer: containerImagesServer,
+		ContainerDatastoreID:  containerDatastoreID,
 
 		AccProviders: muxProviders(t),
 	}

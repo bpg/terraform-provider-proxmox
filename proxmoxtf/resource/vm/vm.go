@@ -36,6 +36,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	sdkresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/migrate"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
@@ -7732,7 +7733,19 @@ func migrateHAVM(
 
 	// poll until the VM is accessible on the target node
 	// the HA manager handles the actual migration asynchronously
-	err = waitForVMOnNode(ctx, client, vmID, targetNode)
+	err = migrate.WaitForResourceOnNode(ctx, vmID, targetNode,
+		func(ctx context.Context, id int) (*string, error) {
+			return client.Cluster().GetVMNodeName(ctx, id)
+		},
+		func(ctx context.Context, node string, id int) (bool, error) {
+			status, err := client.Node(node).VM(id).GetVMStatus(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			return status.Lock == nil || *status.Lock == "", nil
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("VM %d not accessible on target node %s after HA migration: %w", vmID, targetNode, err)
 	}
@@ -7836,95 +7849,4 @@ func migrateNonHAVM(
 	}
 
 	return sdkresource.TaskResultDiags(vmAPI.MigrateVM(ctx, migrateBody), "VM migrate")
-}
-
-// waitForVMOnNode polls until the VM is located on the specified node and unlocked.
-// This uses the cluster resources API to find the VM's current location,
-// and then checks that the VM is not locked (e.g., from migration).
-// Maximum wait time is 5 minutes (150 attempts at 2-second intervals).
-func waitForVMOnNode(ctx context.Context, client proxmox.Client, vmID int, targetNode string) error {
-	const maxAttempts = 150 // 5 minutes max
-
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-
-	var lastNode *string
-
-	onTargetNode := false
-
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("waiting for VM on node: %w", ctx.Err())
-		case <-ticker.C:
-			// use cluster resources API to find where the VM currently is
-			currentNode, err := client.Cluster().GetVMNodeName(ctx, vmID)
-			if err != nil {
-				tflog.Debug(ctx, "failed to get VM location, retrying...", map[string]any{
-					"vm_id":   vmID,
-					"attempt": attempt,
-					"error":   err.Error(),
-				})
-
-				continue
-			}
-
-			lastNode = currentNode
-
-			if currentNode != nil && *currentNode == targetNode {
-				onTargetNode = true
-
-				// also check that VM is unlocked before returning
-				vmAPI := client.Node(targetNode).VM(vmID)
-
-				status, err := vmAPI.GetVMStatus(ctx)
-				if err != nil {
-					tflog.Debug(ctx, "failed to get VM status, retrying...", map[string]any{
-						"vm_id":   vmID,
-						"attempt": attempt,
-						"error":   err.Error(),
-					})
-
-					continue
-				}
-
-				if status.Lock != nil && *status.Lock != "" {
-					tflog.Debug(ctx, "VM on target node but still locked, waiting...", map[string]any{
-						"vm_id":       vmID,
-						"target_node": targetNode,
-						"lock":        *status.Lock,
-						"attempt":     attempt,
-					})
-
-					continue
-				}
-
-				tflog.Debug(ctx, "VM is now on target node and unlocked", map[string]any{
-					"vm_id":       vmID,
-					"target_node": targetNode,
-					"attempts":    attempt,
-				})
-
-				return nil
-			}
-
-			tflog.Debug(ctx, "VM not yet on target node, waiting...", map[string]any{
-				"vm_id":        vmID,
-				"current_node": currentNode,
-				"target_node":  targetNode,
-				"attempt":      attempt,
-			})
-		}
-	}
-
-	lastNodeStr := "<unknown>"
-	if lastNode != nil {
-		lastNodeStr = *lastNode
-	}
-
-	if onTargetNode {
-		return fmt.Errorf("VM %d on node %s but still locked after timeout", vmID, targetNode)
-	}
-
-	return fmt.Errorf("VM %d did not migrate to node %s within timeout (last seen on %s)", vmID, targetNode, lastNodeStr)
 }

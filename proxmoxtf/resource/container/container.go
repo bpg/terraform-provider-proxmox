@@ -25,6 +25,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
@@ -33,6 +34,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	sdkresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/migrate"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	vmresource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
@@ -73,6 +75,7 @@ const (
 	dvHookScript                        = ""
 	dvMemoryDedicated                   = 512
 	dvMemorySwap                        = 0
+	dvMigrate                           = false
 	dvMountPointACL                     = false
 	dvMountPointBackup                  = false
 	dvMountPointPath                    = ""
@@ -103,6 +106,7 @@ const (
 	dvTimeoutClone                      = 1800
 	dvTimeoutUpdate                     = 1800
 	dvTimeoutDelete                     = 60
+	dvTimeoutMigrate                    = 1800
 	dvUnprivileged                      = false
 
 	maxNetworkInterfaces  = 10
@@ -160,6 +164,7 @@ const (
 	mkMemory                            = "memory"
 	mkMemoryDedicated                   = "dedicated"
 	mkMemorySwap                        = "swap"
+	mkMigrate                           = "migrate"
 	mkMountPoint                        = "mount_point"
 	mkMountPointACL                     = "acl"
 	mkMountPointBackup                  = "backup"
@@ -213,6 +218,7 @@ const (
 	mkTimeoutClone                      = "timeout_clone"
 	mkTimeoutUpdate                     = "timeout_update"
 	mkTimeoutDelete                     = "timeout_delete"
+	mkTimeoutMigrate                    = "timeout_migrate"
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
 
@@ -988,11 +994,16 @@ func Container() *schema.Resource {
 				MaxItems: maxNetworkInterfaces,
 				MinItems: 0,
 			},
+			mkMigrate: {
+				Type:        schema.TypeBool,
+				Description: "Whether to migrate the container on node change instead of re-creating it",
+				Optional:    true,
+				Default:     dvMigrate,
+			},
 			mkNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
-				ForceNew:    true,
 			},
 			mkOperatingSystem: {
 				Type:        schema.TypeList,
@@ -1136,6 +1147,12 @@ func Container() *schema.Resource {
 				Optional:    true,
 				Default:     dvTimeoutDelete,
 			},
+			mkTimeoutMigrate: {
+				Type:        schema.TypeInt,
+				Description: "Migrate container timeout",
+				Optional:    true,
+				Default:     dvTimeoutMigrate,
+			},
 			"timeout_start": {
 				Type:        schema.TypeInt,
 				Description: "Start container timeout",
@@ -1195,6 +1212,16 @@ func Container() *schema.Resource {
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
 					// (automatic fix from -1 to actual vm_id must not re-create VM)
 					return strconv.Itoa(newValue.(int)) != d.Id()
+				},
+			),
+			customdiff.ForceNewIf(
+				mkNodeName,
+				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
+					if !d.HasChange(mkNodeName) {
+						return false
+					}
+
+					return !d.Get(mkMigrate).(bool)
 				},
 			),
 			// Force recreation if disk is being shrunk (shrinking not supported, only growing)
@@ -2665,12 +2692,26 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		return diag.FromErr(e)
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
-
 	vmID, e := strconv.Atoi(d.Id())
 	if e != nil {
 		return diag.FromErr(e)
 	}
+
+	// A miss in the cluster resource list is not proof the container is gone: the list can lag behind a
+	// container created moments ago. Fall through to the node config endpoint, which is authoritative.
+	ctNodeName, e := client.Cluster().GetContainerNodeName(ctx, vmID)
+	if e != nil && !errors.Is(e, cluster.ErrVMDoesNotExist) {
+		return diag.FromErr(e)
+	}
+
+	if ctNodeName != nil && *ctNodeName != d.Get(mkNodeName).(string) {
+		e = d.Set(mkNodeName, *ctNodeName)
+		if e != nil {
+			return diag.FromErr(e)
+		}
+	}
+
+	nodeName := d.Get(mkNodeName).(string)
 
 	containerAPI := client.Node(nodeName).Container(vmID)
 
@@ -3516,6 +3557,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	// Backfill provider-only flags so pre-existing or imported state reads the default on destroy, not the zero value
 	diags = setDefaultIfNotExists(d, diags, mkPurgeOnDestroy, dvPurgeOnDestroy)
 	diags = setDefaultIfNotExists(d, diags, mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkMigrate, dvMigrate)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutMigrate, dvTimeoutMigrate)
 
 	return diags
 }
@@ -3536,13 +3579,24 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	nodeName := d.Get(mkNodeName).(string)
+	nodeNameChanged := d.HasChange(mkNodeName)
 
 	vmID, e := strconv.Atoi(d.Id())
 	if e != nil {
 		return diag.FromErr(e)
 	}
 
-	containerAPI := client.Node(nodeName).Container(vmID)
+	sourceNodeName := nodeName
+
+	if nodeNameChanged {
+		oldNodeNameValue, _ := d.GetChange(mkNodeName)
+		sourceNodeName = oldNodeNameValue.(string)
+	}
+
+	// The request body is built against the node the container is on right now, because the migration
+	// below runs only once the body is known: whether this apply also changes configuration decides how
+	// the container is moved.
+	containerAPI := client.Node(sourceNodeName).Container(vmID)
 
 	// Prepare the new request object.
 	updateBody := containers.UpdateRequestBody{
@@ -3557,6 +3611,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	rebootRequired := false
 	container := Container()
+
+	// Root filesystem resize, executed further down once the container is on its final node.
+	var pendingResize *containers.ResizeRequestBody
 
 	// Retrieve the clone argument as the update logic varies for clones.
 	clone := d.Get(mkClone).([]any)
@@ -3668,16 +3725,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			return diag.Errorf("new disk size (%s) has to be greater than the current disk (%s)", size, oldSize)
 		}
 
+		// Deferred so it always runs on the node the container ends up on: growing the volume before a
+		// migration would copy the extra space across the wire, and the target may be the only node with
+		// room for it.
 		if !ptr.Eq(oldSize, size) {
-			resizeDiags := sdkresource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
+			pendingResize = &containers.ResizeRequestBody{
 				Disk: "rootfs",
 				Size: size.String(),
-			}), "Container disk resize")
-			if resizeDiags.HasError() {
-				return resizeDiags
 			}
-
-			updateDiags = append(updateDiags, resizeDiags...)
 		}
 
 		rootFS.ACL = &acl
@@ -4100,6 +4155,37 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		bodyDirty = true
 	}
 
+	// A restart migration starts the container on the target from the configuration as it stands when
+	// the migration runs, so an apply that also changes configuration would either bounce the container
+	// a second time to apply it or fail the start outright. Such an apply is migrated offline instead
+	// and the container is started further down, once the new configuration is on the target node.
+	offlineMigration := nodeNameChanged && (bodyDirty || len(updateBody.Delete) > 0)
+
+	if nodeNameChanged {
+		migrateTimeoutSec := d.Get(mkTimeoutMigrate).(int)
+
+		migrateCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Duration(migrateTimeoutSec)*time.Second)
+		defer cancel()
+
+		shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
+
+		migrateDiags := migrateContainer(migrateCtx, client, vmID, sourceNodeName, nodeName, offlineMigration, shutdownTimeoutSec)
+		if migrateDiags.HasError() {
+			return migrateDiags
+		}
+
+		containerAPI = client.Node(nodeName).Container(vmID)
+	}
+
+	if pendingResize != nil {
+		resizeDiags := sdkresource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, pendingResize), "Container disk resize")
+		if resizeDiags.HasError() {
+			return resizeDiags
+		}
+
+		updateDiags = append(updateDiags, resizeDiags...)
+	}
+
 	// Only PUT /config when we actually have fields to send. Attributes whose changes
 	// don't populate updateBody (`started`, `idmap`, timeouts, `wait_for_ip`) must not
 	// trigger an empty-body request — PVE rejects those with HTTP 500 (#2883).
@@ -4128,40 +4214,51 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	started := d.Get(mkStarted).(bool)
 	template := d.Get(mkTemplate).(bool)
 
-	if d.HasChange(mkStarted) && !template {
-		if started {
-			updateDiags = sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
-			if updateDiags.HasError() {
-				return updateDiags
+	// An offline migration left the container stopped on the target node, so the run state it should end
+	// up in is settled here too: `started` itself need not have changed.
+	switch {
+	case !template && started && (offlineMigration || d.HasChange(mkStarted)):
+		status, statusErr := containerAPI.GetContainerStatus(ctx)
+		if statusErr != nil {
+			return diag.FromErr(statusErr)
+		}
+
+		// Only a cold start applies the config and idmap written above; if the container is already
+		// running, the pending changes still need the reboot below.
+		if status.Status != "running" {
+			startDiags := sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
+			if startDiags.HasError() {
+				return startDiags
 			}
 
-			// The config and idmap were written before this cold start, so it already applies every pending change.
-			rebootRequired = false
-		} else {
-			forceStop := types.CustomBool(true)
-			// Using delete timeout here as we're in the similar situation
-			// as in the delete function, where we need to wait for the container
-			// to be stopped before we can proceed with the update.
-			// see `containerDelete` function for more details about the logic here
-			// Needs to be refactored to a common function
-			shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
-
-			shutdownDiags := sdkresource.TaskResultDiags(containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
-				ForceStop: &forceStop,
-				Timeout:   &shutdownTimeoutSec,
-			}), "Container shutdown")
-			if shutdownDiags.HasError() {
-				return shutdownDiags
-			}
-
-			updateDiags = append(updateDiags, shutdownDiags...)
-
-			if e = containerAPI.WaitForContainerStatus(ctx, "stopped"); e != nil {
-				return append(updateDiags, diag.FromErr(e)...)
-			}
+			updateDiags = append(updateDiags, startDiags...)
 
 			rebootRequired = false
 		}
+	case !template && !started && !offlineMigration && d.HasChange(mkStarted):
+		forceStop := types.CustomBool(true)
+		// Using delete timeout here as we're in the similar situation
+		// as in the delete function, where we need to wait for the container
+		// to be stopped before we can proceed with the update.
+		// see `containerDelete` function for more details about the logic here
+		// Needs to be refactored to a common function
+		shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
+
+		shutdownDiags := sdkresource.TaskResultDiags(containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
+			ForceStop: &forceStop,
+			Timeout:   &shutdownTimeoutSec,
+		}), "Container shutdown")
+		if shutdownDiags.HasError() {
+			return shutdownDiags
+		}
+
+		updateDiags = append(updateDiags, shutdownDiags...)
+
+		if e = containerAPI.WaitForContainerStatus(ctx, "stopped"); e != nil {
+			return append(updateDiags, diag.FromErr(e)...)
+		}
+
+		rebootRequired = false
 	}
 
 	// As a final step in the update procedure, we might need to reboot the container.
@@ -4309,6 +4406,156 @@ func setDefaultIfNotExists(d *schema.ResourceData, diags diag.Diagnostics, key s
 	}
 
 	return diags
+}
+
+// migrateContainer migrates a container to a new node.
+// LXC has no live migration: a running container is migrated with restart=1, which makes PVE perform a
+// shutdown, move and start as a single task. PVE rejects a running container without it.
+//
+// With offline set, the caller still has configuration to write on the target node, so PVE must not
+// start the container there from the stale configuration. The container is shut down first and moved
+// cold; starting it again is the caller's job, after the configuration has been applied.
+func migrateContainer(
+	ctx context.Context,
+	client proxmox.Client,
+	vmID int,
+	sourceNode, targetNode string,
+	offline bool,
+	shutdownTimeoutSec int,
+) diag.Diagnostics {
+	sourceAPI := client.Node(sourceNode).Container(vmID)
+
+	status, err := sourceAPI.GetContainerStatus(ctx)
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("failed to get container %d status: %w", vmID, err))
+	}
+
+	running := status.Status == "running"
+
+	body := &containers.MigrateRequestBody{TargetNode: targetNode}
+
+	switch {
+	case running && offline:
+		forceStop := types.CustomBool(true)
+
+		// For an HA-managed container PVE turns this into an hastop, and the HA manager leaves it down.
+		shutdownDiags := sdkresource.TaskResultDiags(sourceAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
+			ForceStop: &forceStop,
+			Timeout:   &shutdownTimeoutSec,
+		}), "Container shutdown")
+		if shutdownDiags.HasError() {
+			return shutdownDiags
+		}
+
+		if err := sourceAPI.WaitForContainerStatus(ctx, "stopped"); err != nil {
+			return diag.FromErr(fmt.Errorf("container %d did not stop before offline migration: %w", vmID, err))
+		}
+
+		running = false
+	case running:
+		restart := types.CustomBool(true)
+		body.RestartMigrate = &restart
+	}
+
+	result := sourceAPI.MigrateContainer(ctx, body)
+	if result.Err() != nil {
+		return sdkresource.TaskResultDiags(result, "container migrate")
+	}
+
+	// For an HA-managed container PVE turns the request into an HA migration that reports success as
+	// soon as it is queued, so the task finishing does not mean the container has moved.
+	haManaged, err := containerIsHAManaged(ctx, client, vmID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if !haManaged {
+		return sdkresource.TaskResultDiags(result, "container migrate")
+	}
+
+	err = migrate.WaitForResourceOnNode(ctx, vmID, targetNode,
+		func(ctx context.Context, id int) (*string, error) {
+			entry, err := client.Cluster().GetContainerResource(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+
+			// Checked here as well as in the settle predicate: a failed relocation usually leaves the
+			// container on the source node, where the settle predicate never runs.
+			if err := haRelocationFailure(entry, id, targetNode); err != nil {
+				return nil, err
+			}
+
+			return &entry.NodeName, nil
+		},
+		func(ctx context.Context, node string, id int) (bool, error) {
+			return containerSettledAfterHAMigration(ctx, client, id, node, running)
+		},
+	)
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("container %d not available on node %s after HA migration: %w", vmID, targetNode, err))
+	}
+
+	return sdkresource.TaskResultDiags(result, "container migrate")
+}
+
+// containerIsHAManaged reports whether the container is managed by HA, using the hastate field the
+// cluster resource list already carries. Safe to check after the migrate call: PVE decided how to
+// route the request when it accepted it, so nothing this check observes can change that outcome.
+func containerIsHAManaged(ctx context.Context, client proxmox.Client, vmID int) (bool, error) {
+	entry, err := client.Cluster().GetContainerResource(ctx, vmID)
+	if err != nil {
+		return false, fmt.Errorf("failed to look up container %d in cluster resources: %w", vmID, err)
+	}
+
+	return entry.HaState != "", nil
+}
+
+// haRelocationFailure reports a terminal HA state as an error. The HA manager parks a resource in
+// "error" once it has exhausted its relocation attempts and in "fence" while the node is being
+// fenced; neither resolves itself, so waiting on them only trades a clear failure for a timeout.
+func haRelocationFailure(entry *cluster.ResourcesListResponseData, vmID int, targetNode string) error {
+	if entry.HaState != "error" && entry.HaState != "fence" {
+		return nil
+	}
+
+	return fmt.Errorf("%w: HA could not relocate container %d to node %s (hastate=%q)",
+		migrate.ErrTerminal, vmID, targetNode, entry.HaState)
+}
+
+// containerSettledAfterHAMigration reports whether the HA manager has finished relocating the
+// container. HA briefly reports the container on the target node before it has been started there.
+func containerSettledAfterHAMigration(
+	ctx context.Context,
+	client proxmox.Client,
+	vmID int,
+	targetNode string,
+	wasRunning bool,
+) (bool, error) {
+	entry, err := client.Cluster().GetContainerResource(ctx, vmID)
+	if err != nil {
+		return false, err
+	}
+
+	if err := haRelocationFailure(entry, vmID, targetNode); err != nil {
+		return false, err
+	}
+
+	if entry.HaState == "migrate" || entry.HaState == "relocate" {
+		return false, nil
+	}
+
+	if !wasRunning {
+		return true, nil
+	}
+
+	// entry.Status can lag immediately after a migration, so run state comes from the node itself.
+	status, err := client.Node(entry.NodeName).Container(vmID).GetContainerStatus(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return status.Status == "running", nil
 }
 
 func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {
