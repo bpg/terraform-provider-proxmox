@@ -8,6 +8,7 @@ package migrate_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -81,4 +82,43 @@ func TestWaitForResourceOnNodeFailsOnContextCancel(t *testing.T) {
 	err := migrate.WaitForResourceOnNode(ctx, 101, "pve2", locate, ready)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "did not migrate")
+}
+
+func TestWaitForResourceOnNodeAbortsOnTerminalLocateError(t *testing.T) {
+	t.Parallel()
+
+	terminal := fmt.Errorf("%w: hastate=%q", migrate.ErrTerminal, "error")
+
+	locate := func(_ context.Context, _ int) (*string, error) {
+		return nil, terminal
+	}
+
+	ready := func(_ context.Context, _ string, _ int) (bool, error) {
+		return true, nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err := migrate.WaitForResourceOnNode(ctx, 101, "pve2", locate, ready)
+	require.ErrorIs(t, err, migrate.ErrTerminal)
+}
+
+func TestWaitForResourceOnNodeAbortsOnTerminalReadyError(t *testing.T) {
+	t.Parallel()
+
+	locate := func(_ context.Context, _ int) (*string, error) {
+		return new("pve2"), nil
+	}
+
+	ready := func(_ context.Context, _ string, _ int) (bool, error) {
+		return false, fmt.Errorf("%w: hastate=%q", migrate.ErrTerminal, "fence")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err := migrate.WaitForResourceOnNode(ctx, 101, "pve2", locate, ready)
+	require.ErrorIs(t, err, migrate.ErrTerminal)
+	require.ErrorContains(t, err, "fence")
 }

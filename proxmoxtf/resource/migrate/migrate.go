@@ -9,6 +9,7 @@ package migrate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -19,6 +20,11 @@ const (
 	pollInterval = 2 * time.Second
 	maxAttempts  = 150 // 5 minutes
 )
+
+// ErrTerminal marks a migration as unrecoverable. A LocateFunc or ReadyFunc that wraps it stops the
+// wait immediately instead of retrying until the timeout, so the caller sees the real cause rather
+// than a generic "did not settle" message.
+var ErrTerminal = errors.New("migration failed")
 
 // LocateFunc reports which node currently hosts the guest.
 type LocateFunc func(ctx context.Context, vmID int) (*string, error)
@@ -49,6 +55,10 @@ func WaitForResourceOnNode(
 		case <-ticker.C:
 			currentNode, err := locate(ctx, vmID)
 			if err != nil {
+				if errors.Is(err, ErrTerminal) {
+					return err
+				}
+
 				tflog.Debug(ctx, "failed to get guest location, retrying...", map[string]any{
 					"vm_id":   vmID,
 					"attempt": attempt,
@@ -68,6 +78,10 @@ func WaitForResourceOnNode(
 
 			settled, err := ready(ctx, targetNode, vmID)
 			if err != nil {
+				if errors.Is(err, ErrTerminal) {
+					return err
+				}
+
 				tflog.Debug(ctx, "failed to get guest status, retrying...", map[string]any{
 					"vm_id":   vmID,
 					"attempt": attempt,
