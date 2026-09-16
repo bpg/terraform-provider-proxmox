@@ -4215,63 +4215,50 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	template := d.Get(mkTemplate).(bool)
 
 	// An offline migration left the container stopped on the target node, so the run state it should end
-	// up in is settled here rather than below: `started` itself need not have changed.
-	if offlineMigration && !template {
-		if started {
-			status, statusErr := containerAPI.GetContainerStatus(ctx)
-			if statusErr != nil {
-				return diag.FromErr(statusErr)
-			}
-
-			if status.Status != "running" {
-				startDiags := sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
-				if startDiags.HasError() {
-					return startDiags
-				}
-
-				updateDiags = append(updateDiags, startDiags...)
-
-				// This cold start ran after the config and idmap were written, so every pending change
-				// is already applied.
-				rebootRequired = false
-			}
+	// up in is settled here too: `started` itself need not have changed.
+	switch {
+	case !template && started && (offlineMigration || d.HasChange(mkStarted)):
+		status, statusErr := containerAPI.GetContainerStatus(ctx)
+		if statusErr != nil {
+			return diag.FromErr(statusErr)
 		}
-	}
 
-	if d.HasChange(mkStarted) && !template && !offlineMigration {
-		if started {
-			updateDiags = sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
-			if updateDiags.HasError() {
-				return updateDiags
+		// Only a cold start applies the config and idmap written above; if the container is already
+		// running, the pending changes still need the reboot below.
+		if status.Status != "running" {
+			startDiags := sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
+			if startDiags.HasError() {
+				return startDiags
 			}
 
-			// The config and idmap were written before this cold start, so it already applies every pending change.
-			rebootRequired = false
-		} else {
-			forceStop := types.CustomBool(true)
-			// Using delete timeout here as we're in the similar situation
-			// as in the delete function, where we need to wait for the container
-			// to be stopped before we can proceed with the update.
-			// see `containerDelete` function for more details about the logic here
-			// Needs to be refactored to a common function
-			shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
-
-			shutdownDiags := sdkresource.TaskResultDiags(containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
-				ForceStop: &forceStop,
-				Timeout:   &shutdownTimeoutSec,
-			}), "Container shutdown")
-			if shutdownDiags.HasError() {
-				return shutdownDiags
-			}
-
-			updateDiags = append(updateDiags, shutdownDiags...)
-
-			if e = containerAPI.WaitForContainerStatus(ctx, "stopped"); e != nil {
-				return append(updateDiags, diag.FromErr(e)...)
-			}
+			updateDiags = append(updateDiags, startDiags...)
 
 			rebootRequired = false
 		}
+	case !template && !started && !offlineMigration && d.HasChange(mkStarted):
+		forceStop := types.CustomBool(true)
+		// Using delete timeout here as we're in the similar situation
+		// as in the delete function, where we need to wait for the container
+		// to be stopped before we can proceed with the update.
+		// see `containerDelete` function for more details about the logic here
+		// Needs to be refactored to a common function
+		shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
+
+		shutdownDiags := sdkresource.TaskResultDiags(containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
+			ForceStop: &forceStop,
+			Timeout:   &shutdownTimeoutSec,
+		}), "Container shutdown")
+		if shutdownDiags.HasError() {
+			return shutdownDiags
+		}
+
+		updateDiags = append(updateDiags, shutdownDiags...)
+
+		if e = containerAPI.WaitForContainerStatus(ctx, "stopped"); e != nil {
+			return append(updateDiags, diag.FromErr(e)...)
+		}
+
+		rebootRequired = false
 	}
 
 	// As a final step in the update procedure, we might need to reboot the container.
