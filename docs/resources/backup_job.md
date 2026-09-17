@@ -37,6 +37,7 @@ resource "proxmox_backup_job" "daily_backup" {
 
 - `all` (Boolean) Whether to back up all known guests on the node.
 - `bwlimit` (Number) I/O bandwidth limit in KiB/s.
+- `comment` (String) Description of the backup job, shown in the Proxmox VE web UI.
 - `compress` (String) The compression algorithm (0, 1, gzip, lzo, or zstd).
 - `enabled` (Boolean) Whether the backup job is enabled.
 - `exclude` (List of String) A list of guest VM/CT IDs to exclude from the backup.
