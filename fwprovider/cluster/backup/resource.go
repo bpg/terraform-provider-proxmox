@@ -243,6 +243,10 @@ func (r *backupJobResource) Schema(
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
+			"comment": schema.StringAttribute{
+				Description: "Description of the backup job, shown in the Proxmox VE web UI.",
+				Optional:    true,
+			},
 			"notes_template": schema.StringAttribute{
 				Description: "Template for notes attached to the backup.",
 				Optional:    true,

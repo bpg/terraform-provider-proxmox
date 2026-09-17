@@ -38,6 +38,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					all      = true
 					mode     = "snapshot"
 					compress = "zstd"
+					comment  = "managed by terraform"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "id", "acc-test-bj"),
@@ -46,6 +47,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "all", "true"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "mode", "snapshot"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "compress", "zstd"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test", "comment", "managed by terraform"),
 				),
 			},
 			{
@@ -58,6 +60,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					mode     = "stop"
 					compress = "lzo"
 					enabled  = false
+					comment  = "updated by terraform"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "id", "acc-test-bj"),
@@ -65,6 +68,23 @@ func TestAccResourceBackupJob(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "mode", "stop"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "compress", "lzo"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "enabled", "false"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test", "comment", "updated by terraform"),
+				),
+			},
+			{
+				// Dropping the attribute must clear it on the server, not leave it stale.
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test" {
+					id       = "acc-test-bj"
+					schedule = "*-*-* 03:00"
+					storage  = "local"
+					all      = true
+					mode     = "stop"
+					compress = "lzo"
+					enabled  = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("proxmox_backup_job.test", "comment"),
 				),
 			},
 			{
