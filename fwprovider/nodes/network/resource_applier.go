@@ -61,13 +61,17 @@ func (r *applierResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 		Description: "Applies staged (pending) node network configuration.",
 		MarkdownDescription: "**EXPERIMENTAL** Reloads the network configuration of a single node, activating " +
 			"changes staged by interface resources that set `reload = false` (equivalent to " +
-			"`PUT /nodes/{node}/network`).\n\n" +
-			"The reload happens on create and on destroy. Use `triggers` to force a new apply when " +
-			"something it depends on changes.",
+			"`PUT /nodes/{node}/network`). The reload applies all staged changes on the node, not only " +
+			"those from resources this applier depends on.\n\n" +
+			"The reload happens on create and on destroy. Changing any other attribute updates the resource " +
+			"in place without reloading; use `triggers` to force a new apply when something it depends on changes.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "Opaque identifier set to the Unix timestamp (milliseconds) when the apply was executed.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"node_name": schema.StringAttribute{
 				Required:    true,
@@ -164,6 +168,8 @@ func (r *applierResource) Create(ctx context.Context, req resource.CreateRequest
 func (r *applierResource) Read(_ context.Context, _ resource.ReadRequest, _ *resource.ReadResponse) {
 }
 
+// Update only records the new settings. Reloading here would activate whatever is staged on the node when an
+// unrelated attribute changes; `triggers` is the explicit way to force a new apply.
 func (r *applierResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan applierResourceModel
 
@@ -172,17 +178,6 @@ func (r *applierResource) Update(ctx context.Context, req resource.UpdateRequest
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	if err := r.reload(ctx, &plan); err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to Apply Network Configuration on Node %q", plan.NodeName.ValueString()),
-			err.Error(),
-		)
-
-		return
-	}
-
-	plan.ID = types.StringValue(strconv.FormatInt(time.Now().UTC().UnixMilli(), 10))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

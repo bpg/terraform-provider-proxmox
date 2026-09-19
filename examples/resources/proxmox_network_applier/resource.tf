@@ -26,9 +26,18 @@ resource "proxmox_network_linux_bridge" "vmbr0" {
   depends_on = [proxmox_network_applier.finalizer]
 }
 
-# Activates everything staged above in a single reload.
+# Reloads on create, and again whenever an interface above changes.
+# on_destroy = false because the finalizer applies the staged deletions.
 resource "proxmox_network_applier" "apply" {
-  node_name = "pve"
+  node_name  = "pve"
+  on_destroy = false
+
+  lifecycle {
+    replace_triggered_by = [
+      proxmox_network_linux_bond.bond0,
+      proxmox_network_linux_bridge.vmbr0,
+    ]
+  }
 
   depends_on = [
     proxmox_network_linux_bond.bond0,

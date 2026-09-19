@@ -4,15 +4,15 @@ title: proxmox_network_applier
 parent: Resources
 subcategory: Virtual Environment
 description: |-
-  EXPERIMENTAL Reloads the network configuration of a single node, activating changes staged by interface resources that set reload = false (equivalent to PUT /nodes/{node}/network).
-  The reload happens on create and on destroy. Use triggers to force a new apply when something it depends on changes.
+  EXPERIMENTAL Reloads the network configuration of a single node, activating changes staged by interface resources that set reload = false (equivalent to PUT /nodes/{node}/network). The reload applies all staged changes on the node, not only those from resources this applier depends on.
+  The reload happens on create and on destroy. Changing any other attribute updates the resource in place without reloading; use triggers to force a new apply when something it depends on changes.
 ---
 
 # Resource: proxmox_network_applier
 
-**EXPERIMENTAL** Reloads the network configuration of a single node, activating changes staged by interface resources that set `reload = false` (equivalent to `PUT /nodes/{node}/network`).
+**EXPERIMENTAL** Reloads the network configuration of a single node, activating changes staged by interface resources that set `reload = false` (equivalent to `PUT /nodes/{node}/network`). The reload applies all staged changes on the node, not only those from resources this applier depends on.
 
-The reload happens on create and on destroy. Use `triggers` to force a new apply when something it depends on changes.
+The reload happens on create and on destroy. Changing any other attribute updates the resource in place without reloading; use `triggers` to force a new apply when something it depends on changes.
 
 ## Example Usage
 
@@ -45,9 +45,18 @@ resource "proxmox_network_linux_bridge" "vmbr0" {
   depends_on = [proxmox_network_applier.finalizer]
 }
 
-# Activates everything staged above in a single reload.
+# Reloads on create, and again whenever an interface above changes.
+# on_destroy = false because the finalizer applies the staged deletions.
 resource "proxmox_network_applier" "apply" {
-  node_name = "pve"
+  node_name  = "pve"
+  on_destroy = false
+
+  lifecycle {
+    replace_triggered_by = [
+      proxmox_network_linux_bond.bond0,
+      proxmox_network_linux_bridge.vmbr0,
+    ]
+  }
 
   depends_on = [
     proxmox_network_linux_bond.bond0,
