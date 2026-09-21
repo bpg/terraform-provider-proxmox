@@ -3541,10 +3541,14 @@ func TestAccResourceContainerImportTimeoutDefaults(t *testing.T) {
 			{
 				// A fresh import must not leave timeout_* unset: an unset timeout_delete becomes a
 				// zero-duration context on the next destroy, which fails instantly with
-				// "context deadline exceeded" instead of ever reaching the API.
-				ResourceName:  accTestContainerName,
-				ImportState:   true,
-				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, accTestContainerID),
+				// "context deadline exceeded" instead of ever reaching the API. ImportStatePersist
+				// carries the imported (not the originally-created) state into the test's final
+				// destroy, so that destroy is the actual regression check: without the fix it fails
+				// instantly on the imported zero timeout_delete instead of deleting normally.
+				ResourceName:       accTestContainerName,
+				ImportState:        true,
+				ImportStatePersist: true,
+				ImportStateId:      fmt.Sprintf("%s/%d", te.NodeName, accTestContainerID),
 				ImportStateCheck: func(states []*terraform.InstanceState) error {
 					if len(states) != 1 {
 						return fmt.Errorf("expected 1 imported state, got %d", len(states))
