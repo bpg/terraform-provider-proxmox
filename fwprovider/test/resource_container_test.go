@@ -3515,36 +3515,44 @@ func TestAccResourceContainerImportTimeoutDefaults(t *testing.T) {
 		"TestContainerID": accTestContainerID,
 	})
 
+	containerConfig := te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			started      = false
+			unprivileged = true
+			disk {
+				datastore_id = "local-lvm"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-import-timeout"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`)
+
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
+				Config: containerConfig,
+			},
+			{
+				// Forget the container without destroying it, so the next step can import it into the same
+				// working directory and the final destroy runs from the imported state.
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_container" "test_container" {
-					node_name    = "{{.NodeName}}"
-					vm_id        = {{.TestContainerID}}
-					started      = false
-					unprivileged = true
-					disk {
-						datastore_id = "local-lvm"
-						size         = 4
-					}
-					initialization {
-						hostname = "test-import-timeout"
-					}
-					operating_system {
-						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "alpine"
+				removed {
+					from = proxmox_virtual_environment_container.test_container
+					lifecycle {
+						destroy = false
 					}
 				}`),
 			},
 			{
-				// A fresh import must not leave timeout_* unset: an unset timeout_delete becomes a
-				// zero-duration context on the next destroy, which fails instantly with
-				// "context deadline exceeded" instead of ever reaching the API. ImportStatePersist
-				// carries the imported (not the originally-created) state into the test's final
-				// destroy, so that destroy is the actual regression check: without the fix it fails
-				// instantly on the imported zero timeout_delete instead of deleting normally.
+				Config:             containerConfig,
 				ResourceName:       accTestContainerName,
 				ImportState:        true,
 				ImportStatePersist: true,
