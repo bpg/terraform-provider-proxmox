@@ -3516,6 +3516,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	// Backfill provider-only flags so pre-existing or imported state reads the default on destroy, not the zero value
 	diags = setDefaultIfNotExists(d, diags, mkPurgeOnDestroy, dvPurgeOnDestroy)
 	diags = setDefaultIfNotExists(d, diags, mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutCreate, dvTimeoutCreate)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutClone, dvTimeoutClone)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutUpdate, dvTimeoutUpdate)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutDelete, dvTimeoutDelete)
 
 	return diags
 }

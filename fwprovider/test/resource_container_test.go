@@ -3503,6 +3503,86 @@ func TestAccResourceContainerDestroyOptions(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerImportTimeoutDefaults(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	containerConfig := te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			started      = false
+			unprivileged = true
+			disk {
+				datastore_id = "local-lvm"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-import-timeout"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig,
+			},
+			{
+				// Forget the container without destroying it, so the next step can import it into the same
+				// working directory and the final destroy runs from the imported state.
+				Config: te.RenderConfig(`
+				removed {
+					from = proxmox_virtual_environment_container.test_container
+					lifecycle {
+						destroy = false
+					}
+				}`),
+			},
+			{
+				Config:             containerConfig,
+				ResourceName:       accTestContainerName,
+				ImportState:        true,
+				ImportStatePersist: true,
+				ImportStateId:      fmt.Sprintf("%s/%d", te.NodeName, accTestContainerID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					wantDefaults := map[string]string{
+						"timeout_create": "1800",
+						"timeout_clone":  "1800",
+						"timeout_update": "1800",
+						"timeout_delete": "60",
+					}
+
+					attrs := states[0].Attributes
+					for key, want := range wantDefaults {
+						if got := attrs[key]; got != want {
+							return fmt.Errorf("expected %s=%s after import, got %q", key, want, got)
+						}
+					}
+
+					return nil
+				},
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerDestroyPurgesHAResource(t *testing.T) {
 	te := InitEnvironment(t)
 	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
