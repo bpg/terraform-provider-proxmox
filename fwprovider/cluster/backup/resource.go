@@ -246,6 +246,11 @@ func (r *backupJobResource) Schema(
 			"comment": schema.StringAttribute{
 				Description: "Description of the backup job, shown in the Proxmox VE web UI.",
 				Optional:    true,
+				Validators: []validator.String{
+					// PVE accepts `comment=` but never writes an empty value to jobs.cfg, so
+					// an empty string reads back as null. 512 is the API's maxLength.
+					stringvalidator.LengthBetween(1, 512),
+				},
 			},
 			"notes_template": schema.StringAttribute{
 				Description: "Template for notes attached to the backup.",
