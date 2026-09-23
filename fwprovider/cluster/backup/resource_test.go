@@ -72,6 +72,13 @@ func TestAccResourceBackupJob(t *testing.T) {
 				),
 			},
 			{
+				// Runs while `comment` is still set, so the import round-trips a value.
+				ResourceName:      "proxmox_backup_job.test",
+				ImportStateId:     "acc-test-bj",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
 				// Dropping the attribute must clear it on the server, not leave it stale.
 				Config: te.RenderConfig(`
 				resource "proxmox_backup_job" "test" {
@@ -86,12 +93,6 @@ func TestAccResourceBackupJob(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("proxmox_backup_job.test", "comment"),
 				),
-			},
-			{
-				ResourceName:      "proxmox_backup_job.test",
-				ImportStateId:     "acc-test-bj",
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		}},
 		{"create with minimal attributes", []resource.TestStep{
@@ -365,6 +366,7 @@ func TestAccDataSourceBackupJobs(t *testing.T) {
 					schedule = "*-*-* 05:00"
 					storage  = "local"
 					all      = true
+					comment  = "managed by terraform"
 				}
 
 				data "proxmox_backup_jobs" "all" {
@@ -372,6 +374,12 @@ func TestAccDataSourceBackupJobs(t *testing.T) {
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.proxmox_backup_jobs.all", "jobs.#"),
+					// The data source returns every job in the cluster, so pin on `id` too.
+					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_backup_jobs.all", "jobs.*",
+						map[string]string{
+							"id":      "acc-test-ds",
+							"comment": "managed by terraform",
+						}),
 				),
 			},
 		},
