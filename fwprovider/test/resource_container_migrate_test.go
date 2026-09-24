@@ -190,3 +190,73 @@ func TestAccResourceContainerNodeDriftRecreatesOnDeclaredNode(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourceContainerDestroyAfterNodeDrift proves the destroy path tolerates a container that
+// moved after the last refresh. Terraform destroys from state, so a container HA relocated since the
+// last read would otherwise be deleted against the node it left, failing with
+// "configuration file does not exist" and leaving the container behind with no way to remove it.
+func TestAccResourceContainerDestroyAfterNodeDrift(t *testing.T) {
+	te := InitEnvironment(t)
+
+	if te.Node2Name == "" {
+		t.Skip("PROXMOX_VE_ACC_NODE_2_NAME must be set")
+	}
+
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	containerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": containerID,
+	})
+
+	config := te.RenderConfig(`
+	resource "proxmox_virtual_environment_container" "test_destroy_drift" {
+		node_name    = "{{.NodeName}}"
+		vm_id        = {{.TestContainerID}}
+		unprivileged = true
+		started      = false
+
+		disk {
+			datastore_id  = "local-lvm"
+			size          = 4
+			mount_options = []
+		}
+
+		initialization {
+			hostname = "test-destroy-drift"
+		}
+
+		operating_system {
+			template_file_id = "local:vztmpl/{{.ImageFileName}}"
+			type             = "alpine"
+		}
+
+		lifecycle {
+			ignore_changes = [node_name]
+		}
+	}`)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				// Move it out of band and do not refresh, so state still names the original node when the
+				// framework's implicit destroy runs at the end of the test.
+				PreConfig: func() {
+					migrateContainerOutOfBand(t, te, containerID, te.Node2Name)
+				},
+				Config:   config,
+				PlanOnly: true,
+				// The plan is computed from the pre-move state, so nothing should be proposed.
+				ExpectNonEmptyPlan: false,
+				RefreshState:       false,
+			},
+		},
+	})
+}

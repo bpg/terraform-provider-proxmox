@@ -4223,6 +4223,17 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		return diag.FromErr(err)
 	}
 
+	// Delete can run without a refresh — after a failed apply, or with -refresh=false — so the node in
+	// state may be stale. Resolve it as the read does, or the delete hits a node the container has left.
+	ctNodeName, nodeErr := client.Cluster().GetContainerNodeName(ctx, vmID)
+	if nodeErr != nil && !errors.Is(nodeErr, cluster.ErrVMDoesNotExist) {
+		return diag.FromErr(nodeErr)
+	}
+
+	if ctNodeName != nil {
+		nodeName = *ctNodeName
+	}
+
 	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Shut down the container before deleting it.
