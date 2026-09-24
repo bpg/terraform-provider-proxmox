@@ -60,7 +60,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					mode     = "stop"
 					compress = "lzo"
 					enabled  = false
-					comment  = "updated by terraform"
+					comment  = "updated by terraform: a colon is stored encoded"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "id", "acc-test-bj"),
@@ -68,11 +68,13 @@ func TestAccResourceBackupJob(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "mode", "stop"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "compress", "lzo"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "enabled", "false"),
-					resource.TestCheckResourceAttr("proxmox_backup_job.test", "comment", "updated by terraform"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test", "comment",
+						"updated by terraform: a colon is stored encoded"),
 				),
 			},
 			{
-				// Runs while `comment` is still set, so the import round-trips a value.
+				// Runs while `comment` is still set, so the import round-trips a value -- and one
+				// holding a colon, which PVE URL-encodes in jobs.cfg but returns decoded.
 				ResourceName:      "proxmox_backup_job.test",
 				ImportStateId:     "acc-test-bj",
 				ImportState:       true,
