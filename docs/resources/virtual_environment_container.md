@@ -250,6 +250,8 @@ The `mount_point.volume` attribute accepts three forms:
     - `dedicated` - (Optional) The dedicated memory in megabytes (defaults
         to `512`).
     - `swap` - (Optional) The swap size in megabytes (defaults to `0`).
+- `migrate` - (Optional) Migrate the container on node change instead of
+    re-creating it (defaults to `false`).
 - `mount_point` - (Optional) An additional volume mount or host bind mount
     (multiple blocks supported). Use this for data volumes, shared
     directories, or attaching pre-existing PVE volumes.
@@ -353,6 +355,8 @@ The `mount_point.volume` attribute accepts three forms:
 - `timeout_create` - (Optional) Timeout for creating a container in seconds (defaults to 1800).
 - `timeout_clone` - (Optional) Timeout for cloning a container in seconds (defaults to 1800).
 - `timeout_delete` - (Optional) Timeout for deleting a container in seconds (defaults to 60).
+- `timeout_migrate` - (Optional) Timeout for migrating the container to another node, in seconds (defaults to
+  1800).
 - `timeout_update` - (Optional) Timeout for updating a container in seconds (defaults to 1800).
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on the host (defaults to `false`).
 - `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the container starts.
@@ -368,6 +372,55 @@ The `mount_point.volume` attribute accepts three forms:
     - `mount` - (Optional) List of allowed mount types (`cifs` or `nfs`)
     - `mknod` - (Optional) Whether the container supports `mknod()` system call (defaults to `false`)
 - `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute).
+
+## Container migration
+
+Setting `migrate = true` makes a change to `node_name` migrate the container instead of destroying and
+recreating it.
+
+~> **Important:** containers cannot be migrated live. Unlike virtual machines, a running container is
+migrated by shutting it down, moving it, and starting it again on the target node, so every migration of
+a running container incurs downtime. Set `timeout_migrate` high enough to cover the shutdown grace
+period, the volume copy and the boot.
+
+A stopped container is migrated offline and is not started as a side effect. If `started = true`, it is
+started on the target node afterwards as usual.
+
+If the same apply also changes something else that the container would have to be restarted for — other
+configuration (e.g. a `mount_point` whose host path differs between nodes), an `idmap` entry, or
+`started` going to `false` — the provider shuts the container down, migrates it offline, applies the
+change on the target node, and then starts it (or leaves it stopped). This avoids starting the container
+with configuration that no longer matches its declared state, and avoids restarting it twice. No extra
+configuration is needed to get this behavior.
+
+The `timeout_update` clock restarts once the container has arrived on the target node, so a long volume
+copy cannot eat into the time available for the configuration write, start or reboot that follows it.
+
+Containers managed by Proxmox HA are temporarily set to the HA state `ignored` for the duration of the
+migration and handed back to HA in their original state once they are running again on the target node.
+Left under HA management, the shutdown and the migration are rewritten into HA requests that return
+before the container has moved, and the resulting stop/start cycle lets CRS (`ha-rebalance-on-start`)
+relocate the container away from the node Terraform declared. Migrating an HA-managed container
+therefore requires permission to modify `/cluster/ha/resources`.
+
+### Bind mounts
+
+A `mount_point` that references a host path rather than a storage volume blocks migration unless the
+mount point has `shared = true`. This asserts that the same path exists on all nodes in the cluster.
+
+~> **Note:** `shared` and `node_name` cannot be changed in the same apply. Proxmox validates the mount
+point against the container's current configuration when the migration starts, and the provider writes
+configuration changes to the target node after the move, so the migration is refused before the new
+`shared = true` takes effect. Apply `shared = true` first, then change `node_name`.
+
+~> **Warning:** if the asserted path does not exist on the target node, the configuration and volumes
+still move, but starting the container there fails. The container is left stopped on the target node and
+its configuration on the source node is gone — there is no automatic fail-back. Create the missing path
+on the target node, then start the container to recover.
+
+Migration behavior for `device_passthrough` devices has not been verified. A device passed through to a
+container is node-local, so the same device should be expected to need to exist on the target node, but
+this has not been tested — do not assume it behaves like a `shared` bind mount.
 
 ## Attribute Reference
 
