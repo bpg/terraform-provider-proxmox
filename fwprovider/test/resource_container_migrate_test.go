@@ -236,11 +236,14 @@ func TestAccResourceContainerDestroyAfterNodeDrift(t *testing.T) {
 				Config: config,
 			},
 			{
+				// Move it out of band in a plan-only step: the plan refreshes but never persists state, so state
+				// still names the original node when the framework's implicit destroy (-refresh=false) runs.
 				PreConfig: func() {
 					migrateContainerOutOfBand(t, te, containerID, te.Node2Name)
 				},
-				Config:             config,
-				PlanOnly:           true,
+				Config:   config,
+				PlanOnly: true,
+				// The refresh finds the container on its new node and ignore_changes hides the node_name diff.
 				ExpectNonEmptyPlan: false,
 			},
 		},
