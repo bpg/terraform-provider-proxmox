@@ -39,10 +39,8 @@ func migrateContainerOutOfBand(t *testing.T, te *Environment, vmID int, targetNo
 	require.NoError(t, err, "out-of-band migration to %s must succeed", targetNode)
 }
 
-// TestAccResourceContainerNodeDriftDoesNotPlanBareCreate proves that a container moved out of band is
-// found on its new node during read, rather than being treated as deleted. Without the fix, the read
-// queries the stale node, gets a 404, blanks the ID, and Terraform plans a create that can never
-// succeed because the VMID is still taken cluster-wide.
+// TestAccResourceContainerNodeDriftDoesNotPlanBareCreate checks that read follows a container moved out of band
+// instead of treating it as deleted.
 func TestAccResourceContainerNodeDriftDoesNotPlanBareCreate(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -68,7 +66,7 @@ func TestAccResourceContainerNodeDriftDoesNotPlanBareCreate(t *testing.T) {
 		started      = false
 
 		disk {
-			datastore_id  = "local-lvm"
+			datastore_id  = "{{.ContainerDatastoreID}}"
 			size          = 4
 			mount_options = []
 		}
@@ -102,18 +100,14 @@ func TestAccResourceContainerNodeDriftDoesNotPlanBareCreate(t *testing.T) {
 				ExpectNonEmptyPlan: false,
 			},
 			{
-				// A real apply, so the persisted state picks up the corrected node_name (ignore_changes only
-				// suppresses the diff, it doesn't skip refresh) and the test's final destroy targets pve-b.
 				Config: config,
 			},
 		},
 	})
 }
 
-// TestAccResourceContainerNodeDriftRecreatesOnDeclaredNode proves the recovery path for a container
-// that HA moved: with no ignore_changes, Terraform must plan a replacement and the destroy half must
-// target the node the container actually sits on. Without the read fix the container reads as deleted,
-// Terraform plans a bare create, and that create fails because the VMID is still taken cluster-wide.
+// TestAccResourceContainerNodeDriftRecreatesOnDeclaredNode checks that a moved container is replaced on the
+// declared node, not planned as a bare create that collides on the VMID.
 func TestAccResourceContainerNodeDriftRecreatesOnDeclaredNode(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -141,7 +135,7 @@ func TestAccResourceContainerNodeDriftRecreatesOnDeclaredNode(t *testing.T) {
 		started      = false
 
 		disk {
-			datastore_id  = "local-lvm"
+			datastore_id  = "{{.ContainerDatastoreID}}"
 			size          = 4
 			mount_options = []
 		}
@@ -169,8 +163,6 @@ func TestAccResourceContainerNodeDriftRecreatesOnDeclaredNode(t *testing.T) {
 				Config: config,
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
-						// Not ResourceActionCreate: the container still exists on the other node, so a bare
-						// create would collide on the VMID and the apply could never succeed.
 						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionDestroyBeforeCreate),
 					},
 				},
@@ -191,10 +183,8 @@ func TestAccResourceContainerNodeDriftRecreatesOnDeclaredNode(t *testing.T) {
 	})
 }
 
-// TestAccResourceContainerDestroyAfterNodeDrift proves the destroy path tolerates a container that
-// moved after the last refresh. Terraform destroys from state, so a container HA relocated since the
-// last read would otherwise be deleted against the node it left, failing with
-// "configuration file does not exist" and leaving the container behind with no way to remove it.
+// TestAccResourceContainerDestroyAfterNodeDrift checks that delete finds a container moved since the last persisted
+// refresh: plan-only steps don't save state and the post-test destroy runs with -refresh=false.
 func TestAccResourceContainerDestroyAfterNodeDrift(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -220,7 +210,7 @@ func TestAccResourceContainerDestroyAfterNodeDrift(t *testing.T) {
 		started      = false
 
 		disk {
-			datastore_id  = "local-lvm"
+			datastore_id  = "{{.ContainerDatastoreID}}"
 			size          = 4
 			mount_options = []
 		}
@@ -246,16 +236,12 @@ func TestAccResourceContainerDestroyAfterNodeDrift(t *testing.T) {
 				Config: config,
 			},
 			{
-				// Move it out of band and do not refresh, so state still names the original node when the
-				// framework's implicit destroy runs at the end of the test.
 				PreConfig: func() {
 					migrateContainerOutOfBand(t, te, containerID, te.Node2Name)
 				},
-				Config:   config,
-				PlanOnly: true,
-				// The plan is computed from the pre-move state, so nothing should be proposed.
+				Config:             config,
+				PlanOnly:           true,
 				ExpectNonEmptyPlan: false,
-				RefreshState:       false,
 			},
 		},
 	})
