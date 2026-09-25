@@ -31,6 +31,7 @@ data "proxmox_backup_jobs" "all" {}
 Read-Only:
 
 - `all` (Boolean) Indicates whether all VMs and CTs are backed up.
+- `comment` (String) Description of the backup job, shown in the Proxmox VE web UI.
 - `compress` (String) Compression algorithm used for the backup.
 - `enabled` (Boolean) Indicates whether the backup job is enabled.
 - `exclude` (List of String) List of guest VM/CT IDs excluded from the backup.

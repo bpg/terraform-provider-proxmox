@@ -138,6 +138,10 @@ func (d *backupJobsDataSource) Schema(
 								"Ignored by Proxmox VE unless `mailto` is set or the job uses the `legacy-sendmail` notification mode.",
 							Computed: true,
 						},
+						"comment": schema.StringAttribute{
+							Description: "Description of the backup job, shown in the Proxmox VE web UI.",
+							Computed:    true,
+						},
 						"notes_template": schema.StringAttribute{
 							Description: "Template for backup notes.",
 							Computed:    true,

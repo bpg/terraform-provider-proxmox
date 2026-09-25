@@ -69,11 +69,11 @@ func TestAccResourceContainer(t *testing.T) {
 						limit = 1.5
 					}
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local"
 					}
@@ -141,12 +141,12 @@ func TestAccResourceContainer(t *testing.T) {
 						limit = 2
 					}
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 						mount_options = ["discard"]
 					}
 					mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local"
 					}
@@ -194,12 +194,12 @@ func TestAccResourceContainer(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 						mount_options = []
 					}
 					mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local"
 					}
@@ -262,7 +262,7 @@ func TestAccResourceContainerMountOptions(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 						mount_options = ["lazytime"]
 					}
@@ -312,7 +312,7 @@ func TestAccResourceContainerMountOptions(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 						mount_options = ["lazytime", "noatime"]
 					}
@@ -381,7 +381,7 @@ func TestAccResourceContainerDiskResize(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -428,7 +428,7 @@ func TestAccResourceContainerDiskResize(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 6
 					}
 					initialization {
@@ -494,11 +494,11 @@ func TestAccResourceContainerClone(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				mount_point {
-					volume = "local-lvm"
+					volume = "{{.ContainerDatastoreID}}"
 					size   = "4G"
 					path   = "mnt/local"
 				}
@@ -587,7 +587,7 @@ func TestAccResourceContainerCloneFullFlag(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -646,7 +646,7 @@ func TestAccResourceContainerCloneFullFlag(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -708,7 +708,7 @@ func TestAccResourceContainerCloneMountPoint(t *testing.T) {
 			vm_id     = {{.TestContainerID}}
 			template  = true
 			disk {
-				datastore_id = "local-lvm"
+				datastore_id = "{{.ContainerDatastoreID}}"
 				size         = 4
 			}
 			initialization {
@@ -737,7 +737,7 @@ func TestAccResourceContainerCloneMountPoint(t *testing.T) {
 			}
 
 			mount_point {
-				volume = "local-lvm"
+				volume = "{{.ContainerDatastoreID}}"
 				size   = "4G"
 				path   = "/mnt/data"
 			}
@@ -799,7 +799,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -832,7 +832,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -866,7 +866,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -900,7 +900,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -938,7 +938,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -979,7 +979,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1047,7 +1047,7 @@ func TestAccResourceContainerHostname(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1079,7 +1079,7 @@ func TestAccResourceContainerHostname(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1140,11 +1140,11 @@ func TestAccResourceContainerMountPoint(t *testing.T) {
 					vm_id = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local1"
 				    }
@@ -1175,17 +1175,17 @@ func TestAccResourceContainerMountPoint(t *testing.T) {
 					vm_id = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local1"
 				    }
 					// add a new mount point
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local2"
 				    }
@@ -1239,7 +1239,7 @@ func TestAccResourceContainerMountPointBindMount(t *testing.T) {
 					vm_id     = {{ .TestContainerID }}
 					started   = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					mount_point {
@@ -1318,7 +1318,7 @@ func TestAccResourceContainerIpv4Ipv6(t *testing.T) {
 					unprivileged = true
 					started   = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1351,7 +1351,7 @@ func TestAccResourceContainerIpv4Ipv6(t *testing.T) {
 				unprivileged = true
 				started   = false
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -1403,7 +1403,7 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1452,7 +1452,7 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1502,7 +1502,7 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1573,11 +1573,11 @@ func TestAccResourceContainerMountExistingVolumeWithSize(t *testing.T) {
 					vm_id     = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "/mnt/data"
 				    }
@@ -1627,16 +1627,16 @@ func TestAccResourceContainerMountExistingVolumeWithSize(t *testing.T) {
 					vm_id     = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "/mnt/data"
 				    }
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "2G"
 						path   = "/mnt/data2"
 				    }
@@ -1717,11 +1717,11 @@ func TestAccResourceContainerMountPointVolumeReference(t *testing.T) {
 					vm_id     = {{ .TestContainerID1 }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "/mnt/data"
 				    }
@@ -1748,7 +1748,7 @@ func TestAccResourceContainerMountPointVolumeReference(t *testing.T) {
 				  	started    = false
 					depends_on = [proxmox_virtual_environment_container.source]
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					# reference the path_in_datastore from source container (computed attribute for cross-resource refs)
@@ -1841,7 +1841,7 @@ func TestAccResourceContainerCloneStartOnBoot(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -1908,7 +1908,7 @@ func TestAccResourceContainerCloneStartOnBoot(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -1994,7 +1994,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 					unprivileged = true
 					started = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					idmap {
@@ -2065,7 +2065,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 					unprivileged = true
 					started = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					idmap {
@@ -2123,7 +2123,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 					unprivileged = true
 					started = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2191,7 +2191,7 @@ func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
 					unprivileged   = true
 					started        = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					idmap {
@@ -2322,7 +2322,7 @@ func TestAccResourceContainerIDMapChangeOnStart(t *testing.T) {
 				unprivileged   = true
 				started        = %t
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				%s
@@ -2435,7 +2435,7 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2477,7 +2477,7 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2521,7 +2521,7 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2583,7 +2583,7 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2633,7 +2633,7 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 						units = 512
 					}
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2685,7 +2685,7 @@ func TestAccResourceContainerHostManaged(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2730,7 +2730,7 @@ func TestAccResourceContainerHostManaged(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2802,7 +2802,7 @@ func TestAccResourceContainerDiskOptionsAtCreate(t *testing.T) {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 8
 						acl          = true
 						quota        = true
@@ -2882,7 +2882,7 @@ func TestAccResourceContainerDiskACLOnlyAtCreate(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						acl          = true
 					}
 					initialization {
@@ -2945,7 +2945,7 @@ func TestAccResourceContainerFeaturesRefresh(t *testing.T) {
 			vm_id        = {{.TestContainerID}}
 			unprivileged = true
 			disk {
-				datastore_id = "local-lvm"
+				datastore_id = "{{.ContainerDatastoreID}}"
 				size         = 4
 			}
 			features {
@@ -3027,7 +3027,7 @@ func TestAccResourceContainerFeaturesToggleOff(t *testing.T) {
 				vm_id        = {{.TestContainerID}}
 				unprivileged = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				features {
@@ -3117,7 +3117,7 @@ func TestAccResourceContainerStartOnBootRefresh(t *testing.T) {
 			unprivileged  = true
 			start_on_boot = false
 			disk {
-				datastore_id = "local-lvm"
+				datastore_id = "{{.ContainerDatastoreID}}"
 				size         = 4
 			}
 			initialization {
@@ -3193,7 +3193,7 @@ func TestAccResourceContainerStartedToggle(t *testing.T) {
 				unprivileged = true
 				started      = %t
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -3434,7 +3434,7 @@ func TestAccResourceContainerDestroyOptions(t *testing.T) {
 				unprivileged = true
 				%s
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -3522,7 +3522,7 @@ func TestAccResourceContainerImportTimeoutDefaults(t *testing.T) {
 			started      = false
 			unprivileged = true
 			disk {
-				datastore_id = "local-lvm"
+				datastore_id = "{{.ContainerDatastoreID}}"
 				size         = 4
 			}
 			initialization {
@@ -3629,7 +3629,7 @@ func TestAccResourceContainerDestroyPurgesHAResource(t *testing.T) {
 					started      = false
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
