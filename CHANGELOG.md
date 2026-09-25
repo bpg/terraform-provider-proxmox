@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.115.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.114.0...v0.115.0) (2026-09-25)
+
+
+### Features
+
+* **backup:** add comment to backup job resource and data source ([#3107](https://github.com/bpg/terraform-provider-proxmox/issues/3107)) ([81b61dc](https://github.com/bpg/terraform-provider-proxmox/commit/81b61dc123b28ab1a4d07f59faff12dc6661c5c9))
+
+
+### Bug Fixes
+
+* **lxc:** backfill container timeout defaults on import ([#3111](https://github.com/bpg/terraform-provider-proxmox/issues/3111)) ([0ed18bd](https://github.com/bpg/terraform-provider-proxmox/commit/0ed18bd2de11b5ee7ddbcd0b744756b1987988f2))
+* **lxc:** resolve container node from the cluster on read and delete ([#3115](https://github.com/bpg/terraform-provider-proxmox/issues/3115)) ([f7f4622](https://github.com/bpg/terraform-provider-proxmox/commit/f7f462263146874044a14104a6c445084b9b099b))
+* **test:** allow overriding the container test datastore ([#3114](https://github.com/bpg/terraform-provider-proxmox/issues/3114)) ([47d1b06](https://github.com/bpg/terraform-provider-proxmox/commit/47d1b06b461bf544ff8b3f0d18fc5ab84ea55bcb))
+
 ## [0.114.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.113.1...v0.114.0) (2026-09-21)
 
 
