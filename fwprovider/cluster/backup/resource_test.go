@@ -38,6 +38,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					all      = true
 					mode     = "snapshot"
 					compress = "zstd"
+					comment  = "managed by terraform"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "id", "acc-test-bj"),
@@ -46,6 +47,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "all", "true"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "mode", "snapshot"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "compress", "zstd"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test", "comment", "managed by terraform"),
 				),
 			},
 			{
@@ -58,6 +60,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					mode     = "stop"
 					compress = "lzo"
 					enabled  = false
+					comment  = "updated by terraform: a colon is stored encoded"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "id", "acc-test-bj"),
@@ -65,13 +68,33 @@ func TestAccResourceBackupJob(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "mode", "stop"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "compress", "lzo"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "enabled", "false"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test", "comment",
+						"updated by terraform: a colon is stored encoded"),
 				),
 			},
 			{
+				// Runs while `comment` is still set, so the import round-trips a value -- and one
+				// holding a colon, which PVE URL-encodes in jobs.cfg but returns decoded.
 				ResourceName:      "proxmox_backup_job.test",
 				ImportStateId:     "acc-test-bj",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				// Dropping the attribute must clear it on the server, not leave it stale.
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test" {
+					id       = "acc-test-bj"
+					schedule = "*-*-* 03:00"
+					storage  = "local"
+					all      = true
+					mode     = "stop"
+					compress = "lzo"
+					enabled  = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("proxmox_backup_job.test", "comment"),
+				),
 			},
 		}},
 		{"create with minimal attributes", []resource.TestStep{
@@ -345,6 +368,7 @@ func TestAccDataSourceBackupJobs(t *testing.T) {
 					schedule = "*-*-* 05:00"
 					storage  = "local"
 					all      = true
+					comment  = "managed by terraform"
 				}
 
 				data "proxmox_backup_jobs" "all" {
@@ -352,6 +376,12 @@ func TestAccDataSourceBackupJobs(t *testing.T) {
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.proxmox_backup_jobs.all", "jobs.#"),
+					// The data source returns every job in the cluster, so pin on `id` too.
+					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_backup_jobs.all", "jobs.*",
+						map[string]string{
+							"id":      "acc-test-ds",
+							"comment": "managed by terraform",
+						}),
 				),
 			},
 		},

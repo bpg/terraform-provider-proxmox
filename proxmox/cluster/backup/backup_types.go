@@ -100,6 +100,7 @@ type GetResponseBody struct {
 type GetResponseData struct {
 	ID                     string                          `json:"id"`
 	Type                   *string                         `json:"type,omitempty"`
+	Comment                *string                         `json:"comment,omitempty"`
 	Enabled                *types.CustomBool               `json:"enabled,omitempty"`
 	Schedule               string                          `json:"schedule"`
 	Storage                string                          `json:"storage"`
@@ -137,6 +138,7 @@ type GetResponseData struct {
 // RequestBodyCommon contains common fields for backup job create and update requests.
 type RequestBodyCommon struct {
 	Enabled                *types.CustomBool  `json:"enabled,omitempty"                   url:"enabled,omitempty,int"`
+	Comment                *string            `json:"comment,omitempty"                   url:"comment,omitempty"`
 	Node                   *string            `json:"node,omitempty"                      url:"node,omitempty"`
 	VMID                   *string            `json:"vmid,omitempty"                      url:"vmid,omitempty"`
 	Exclude                *string            `json:"exclude,omitempty"                   url:"exclude,omitempty"`
