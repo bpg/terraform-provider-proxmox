@@ -25,6 +25,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
@@ -2665,12 +2666,26 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		return diag.FromErr(e)
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
-
 	vmID, e := strconv.Atoi(d.Id())
 	if e != nil {
 		return diag.FromErr(e)
 	}
+
+	// A miss in the cluster resource list is not proof the container is gone: the list can lag behind a
+	// container created moments ago. Fall through to the node config endpoint, which is authoritative.
+	ctNodeName, e := client.Cluster().GetContainerNodeName(ctx, vmID)
+	if e != nil && !errors.Is(e, cluster.ErrVMDoesNotExist) {
+		return diag.FromErr(e)
+	}
+
+	if ctNodeName != nil && *ctNodeName != d.Get(mkNodeName).(string) {
+		e = d.Set(mkNodeName, *ctNodeName)
+		if e != nil {
+			return diag.FromErr(e)
+		}
+	}
+
+	nodeName := d.Get(mkNodeName).(string)
 
 	containerAPI := client.Node(nodeName).Container(vmID)
 
@@ -4206,6 +4221,17 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	vmID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// Delete can run without a refresh — after a failed apply, or with -refresh=false — so the node in
+	// state may be stale. Resolve it as the read does, or the delete hits a node the container has left.
+	ctNodeName, nodeErr := client.Cluster().GetContainerNodeName(ctx, vmID)
+	if nodeErr != nil && !errors.Is(nodeErr, cluster.ErrVMDoesNotExist) {
+		return diag.FromErr(nodeErr)
+	}
+
+	if ctNodeName != nil {
+		nodeName = *ctNodeName
 	}
 
 	containerAPI := client.Node(nodeName).Container(vmID)
