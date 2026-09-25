@@ -215,6 +215,11 @@ func InitEnvironment(t *testing.T) *Environment {
 		containerImagesServer = "http://download.proxmox.com"
 	}
 
+	containerDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID")
+	if containerDatastoreID == "" {
+		containerDatastoreID = "local-lvm"
+	}
+
 	return &Environment{
 		t: t,
 		templateVars: map[string]any{
@@ -223,6 +228,7 @@ func InitEnvironment(t *testing.T) *Environment {
 			"DatastoreID":           datastoreID,
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
+			"ContainerDatastoreID":  containerDatastoreID,
 			"TestName":              sanitizeTemplateName(t.Name()),
 			"ZfsDatastoreID":        zfsDatastoreID,
 			"ZfsDisk":               zfsDisk,

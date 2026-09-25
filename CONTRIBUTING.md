@@ -139,6 +139,10 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
    PROXMOX_VE_ACC_NODE_SSH_ADDRESS="10.0.0.11"
    PROXMOX_VE_ACC_NODE_SSH_PORT="22"
    PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
+
+   # Datastore used for container root filesystems and mount points.
+   # Defaults to "local-lvm"; override it on clusters that use different storage.
+   PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID="local-zfs"
    ```
 
 Some tests require multi node cluster, a ZFS datastore and a spare disk to run. To include these (otherwise skipped) tests add additional configuration corresponding to the cluster.
