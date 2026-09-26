@@ -4062,7 +4062,7 @@ func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 		manufacturer, _ := smbiosBlock[mkSMBIOSManufacturer].(string)
 		product, _ := smbiosBlock[mkSMBIOSProduct].(string)
 		serial, _ := smbiosBlock[mkSMBIOSSerial].(string)
-		sku, _ := smbiosBlock[mkSMBIOS].(string)
+		sku, _ := smbiosBlock[mkSMBIOSSKU].(string)
 		version, _ := smbiosBlock[mkSMBIOSVersion].(string)
 		uid, _ := smbiosBlock[mkSMBIOSUUID].(string)
 
