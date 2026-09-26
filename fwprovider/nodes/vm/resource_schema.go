@@ -23,6 +23,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
@@ -47,6 +48,7 @@ func (r *Resource) Schema(
 				Description: "The description of the VM.",
 				Optional:    true,
 			},
+			"disk": disk.ResourceSchema(),
 			"id": schema.Int64Attribute{
 				Computed: true,
 				Optional: true,
