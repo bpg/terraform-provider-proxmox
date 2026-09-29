@@ -86,11 +86,7 @@ func TestAccResourceFileReadAfterNodeRemoval(t *testing.T) {
 		"SnippetFileName": fileName,
 	})
 
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
+	config := te.RenderConfig(`
 					resource "proxmox_virtual_environment_file" "test_removed_node" {
 						content_type = "snippets"
 						datastore_id = "{{.DatastoreID}}"
@@ -99,7 +95,30 @@ func TestAccResourceFileReadAfterNodeRemoval(t *testing.T) {
 							data      = "#cloud-config\nhostname: removed-node-test\n"
 							file_name = "{{.SnippetFileName}}"
 						}
-					}`, WithInsecureEndpoint(endpoint)),
+					}`, WithInsecureEndpoint(endpoint))
+	removedNodeConfig := strings.Replace(config, `node_name    = "`+te.NodeName+`"`, `node_name    = "`+missingNode+`"`, 1)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		CheckDestroy: func(*terraform.State) error {
+			contentType := "snippets"
+
+			files, err := nodeStorage.ListDatastoreFiles(ctx, &contentType)
+			if err != nil {
+				return err
+			}
+
+			for _, file := range files {
+				if file.VolumeID == volumeID {
+					return fmt.Errorf("snippet %q still exists after destroy", volumeID)
+				}
+			}
+
+			return nil
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "id", volumeID),
 					func(*terraform.State) error {
@@ -115,7 +134,7 @@ func TestAccResourceFileReadAfterNodeRemoval(t *testing.T) {
 				ResourceName:  resourceName,
 				ImportState:   true,
 				ImportStateId: missingNode + "/" + volumeID,
-				// Leave the original state intact so cleanup can use the surviving node
+				// Leave the original state intact so the following step tests creation through the fallback.
 				ImportStatePersist: false,
 				ImportStateCheck: func(states []*terraform.InstanceState) error {
 					if len(states) != 1 {
@@ -126,12 +145,28 @@ func TestAccResourceFileReadAfterNodeRemoval(t *testing.T) {
 						return fmt.Errorf("refresh changed snippet ID: got %q, want %q", states[0].ID, volumeID)
 					}
 
+					if states[0].Attributes["node_name"] != missingNode {
+						return fmt.Errorf("refresh changed the preferred node in state")
+					}
+
 					if states[0].Attributes["file_name"] != fileName {
 						return fmt.Errorf("refresh did not recover snippet file_name %q", fileName)
 					}
 
 					return checkFileExists()
 				},
+			},
+			{
+				Config: removedNodeConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "node_name", missingNode),
+					resource.TestCheckResourceAttr(resourceName, "id", volumeID),
+					func(*terraform.State) error { return checkFileExists() },
+				),
+			},
+			{
+				Config:   removedNodeConfig,
+				PlanOnly: true,
 			},
 		},
 	})
