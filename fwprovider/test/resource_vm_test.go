@@ -2050,6 +2050,79 @@ func TestAccResourceVMClone(t *testing.T) {
 				}),
 			),
 		}}},
+		// Cloning a template that has a hookscript set (which can only be done as root, e.g. via
+		// `qm set`) must not fail for API-token clients: the provider should leave the inherited
+		// hookscript alone instead of trying to delete it. See #3083.
+		{"clone inherits template hookscript", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "template_hookscript" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						template  = true
+						lifecycle {
+							ignore_changes = [hook_script_file_id]
+						}
+					}`),
+				Check: func(s *terraform.State) error {
+					rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.template_hookscript"]
+					if !ok {
+						return fmt.Errorf("resource template_hookscript not found in state")
+					}
+
+					vmID := rs.Primary.Attributes["vm_id"]
+					hookName := "hook-" + vmID + ".sh"
+
+					te.ExecuteNodeCommands([]string{
+						fmt.Sprintf("printf '#!/bin/bash\\nexit 0\\n' > /var/lib/vz/snippets/%s", hookName),
+						fmt.Sprintf("chmod +x /var/lib/vz/snippets/%s", hookName),
+						fmt.Sprintf("qm set %s --hookscript local:snippets/%s", vmID, hookName),
+					})
+
+					return nil
+				},
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "template_hookscript" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						template  = true
+						lifecycle {
+							ignore_changes = [hook_script_file_id]
+						}
+					}
+					resource "proxmox_virtual_environment_vm" "clone_hookscript" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						clone {
+							vm_id = proxmox_virtual_environment_vm.template_hookscript.vm_id
+						}
+					}`),
+				Check: func(s *terraform.State) error {
+					rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.clone_hookscript"]
+					if !ok {
+						return fmt.Errorf("resource clone_hookscript not found in state")
+					}
+
+					vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+					if err != nil {
+						return fmt.Errorf("failed to parse vm_id: %w", err)
+					}
+
+					cfg, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+					if err != nil {
+						return fmt.Errorf("failed to get VM config: %w", err)
+					}
+
+					if cfg.HookScript == nil {
+						return fmt.Errorf("clone lost the hookscript inherited from the template")
+					}
+
+					return nil
+				},
+			},
+		}},
 	}
 
 	for _, tt := range tests {

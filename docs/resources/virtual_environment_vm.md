@@ -634,7 +634,7 @@ output "ubuntu_vm_public_key" {
     - `expose_acl` - (Optional) Enable POSIX ACLs, implies xattr support
     - `expose_xattr` - (Optional) Enable support for extended attributes
 - `vm_id` - (Optional) The VM identifier.
-- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute).
+- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute). When cloning a VM, the hookscript is inherited from the template unless this attribute is explicitly set. Note that setting or changing a hookscript requires a direct `root@pam` password session; API tokens (including one issued for `root@pam`) are rejected by Proxmox with "only root can set 'hookscript' config".
 - `watchdog` - (Optional) The watchdog configuration. Once enabled (by a guest action), the watchdog must be periodically polled by an agent inside the guest or else the watchdog will reset the guest (or execute the respective action specified).
     - `enabled` - (Optional) Whether the watchdog is enabled (defaults to `false`).
     - `model` - (Optional) The watchdog type to emulate (defaults to `i6300esb`).

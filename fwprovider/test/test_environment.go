@@ -414,20 +414,7 @@ func (e *Environment) nodeSSHTarget() ssh.ProxmoxNode {
 func (e *Environment) ExecuteNodeCommands(commands []string) string {
 	e.t.Helper()
 
-	// Strip the realm from "root@pam" to get the SSH login name.
-	username, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")
-
-	client, err := ssh.NewClient(
-		username,
-		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
-		false, "", false,
-		"",
-		"", "", "",
-		staticNodeResolver{node: e.nodeSSHTarget()},
-	)
-	require.NoError(e.t, err)
-
-	out, err := client.ExecuteNodeCommands(e.t.Context(), e.NodeName, commands)
+	out, err := e.SSHClient().ExecuteNodeCommands(e.t.Context(), e.NodeName, commands)
 	require.NoError(e.t, err)
 
 	return string(out)
