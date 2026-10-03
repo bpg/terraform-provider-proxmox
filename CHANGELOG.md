@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.115.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.115.0...v0.115.1) (2026-10-03)
+
+
+### Miscellaneous
+
+* **deps:** update image golang (3680233 → e0174e5) ([#3125](https://github.com/bpg/terraform-provider-proxmox/issues/3125)) ([6b83622](https://github.com/bpg/terraform-provider-proxmox/commit/6b836227f497ebcb1f38071964a3761bff3aaa9c))
+
 ## [0.115.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.114.0...v0.115.0) (2026-10-02)
 
 
