@@ -4508,7 +4508,8 @@ func migrateContainer(
 const haRestoreTimeout = 2 * time.Minute
 
 // suspendContainerHA sets an HA-managed container to "ignored" and returns a function restoring its HA state, or nil
-// when there is nothing to restore. A changed `started` overrides an original "started"/"stopped" state.
+// when there is nothing to restore; the function is also returned with an error once the state has been changed.
+// A changed `started` overrides an original "started"/"stopped" state.
 func suspendContainerHA(
 	ctx context.Context,
 	client proxmox.Client,
@@ -4548,9 +4549,16 @@ func suspendContainerHA(
 		return nil, err
 	}
 
-	return func(ctx context.Context) error {
+	restore := func(ctx context.Context) error {
 		return setState(ctx, restoreState)
-	}, nil
+	}
+
+	// Until the CRM drops the service, the LRM still acts on it, e.g. restarting it after our shutdown.
+	if err := client.Cluster().HA().WaitForServiceUnmanaged(ctx, haResourceID); err != nil {
+		return restore, err
+	}
+
+	return restore, nil
 }
 
 func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {
