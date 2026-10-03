@@ -253,6 +253,12 @@ The `mount_point.volume` attribute accepts three forms:
 - `mount_point` - (Optional) An additional volume mount or host bind mount
     (multiple blocks supported). Use this for data volumes, shared
     directories, or attaching pre-existing PVE volumes.
+
+    -> Adding, removing or reconfiguring a mount point is applied in place and
+    restarts the container. Changing the `volume` or `size` of an *existing*
+    mount point recreates the container. Removing a mount point block detaches
+    the volume, leaving it on the datastore as an unused volume.
+
     - `acl` (Optional) Explicitly enable or disable ACL support.
     - `backup` (Optional) Whether to include the mount point in backups (only
         used for volume mount points, defaults to `false`).
