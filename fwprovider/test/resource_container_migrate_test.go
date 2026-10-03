@@ -243,14 +243,12 @@ func TestAccResourceContainerDestroyAfterNodeDrift(t *testing.T) {
 				Config: config,
 			},
 			{
-				// Move it out of band in a plan-only step: the plan refreshes but never persists state, so state
-				// still names the original node when the framework's implicit destroy (-refresh=false) runs.
+				// Plan-only steps don't persist state, so the implicit destroy still sees the original node.
 				PreConfig: func() {
 					migrateContainerOutOfBand(t, te, containerID, te.Node2Name)
 				},
-				Config:   config,
-				PlanOnly: true,
-				// The refresh finds the container on its new node and ignore_changes hides the node_name diff.
+				Config:             config,
+				PlanOnly:           true,
 				ExpectNonEmptyPlan: false,
 			},
 		},
@@ -278,8 +276,7 @@ func testAccDownloadContainerTemplateOnNode(t *testing.T, te *Environment, image
 	})
 }
 
-// TestAccResourceContainerMigrateDisabledRecreates proves the default (migrate = false) still forces
-// replacement on a node change, as destroy-then-create rather than a VMID-colliding bare create.
+// TestAccResourceContainerMigrateDisabledRecreates checks that without `migrate` a node change still replaces.
 func TestAccResourceContainerMigrateDisabledRecreates(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -289,7 +286,6 @@ func TestAccResourceContainerMigrateDisabledRecreates(t *testing.T) {
 
 	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
 	testAccDownloadContainerTemplate(t, te, imageFileName)
-	// The replacement container is created on Node2Name, so it needs its own copy of the template too.
 	testAccDownloadContainerTemplateOnNode(t, te, imageFileName, te.Node2Name)
 
 	containerID := 100000 + rand.Intn(99999)
@@ -346,15 +342,13 @@ func TestAccResourceContainerMigrateDisabledRecreates(t *testing.T) {
 	})
 }
 
-// containerClientOnNode returns a container client pinned to an arbitrary node, which neither
-// te.NodeClient() (primary node only) nor te.ClusterClient() can provide.
+// containerClientOnNode returns a container client for any node; te.NodeClient() covers only the primary one.
 func containerClientOnNode(te *Environment, node string, vmID int) *containers.Client {
 	nodeClient := &nodes.Client{Client: te.Client(), NodeName: node}
 	return nodeClient.Container(vmID)
 }
 
-// requireContainerOnNode asserts the container is readable on the given node, which the Terraform
-// state alone cannot prove.
+// requireContainerOnNode asserts the container is readable on the given node.
 func requireContainerOnNode(t *testing.T, te *Environment, vmID int, node string) {
 	t.Helper()
 
@@ -396,8 +390,7 @@ func containerMigrateConfig(te *Environment, node, hostname string, started bool
 	}`, node, started, hostname))
 }
 
-// TestAccResourceContainerMigrateStopped proves a stopped container is actually relocated to the
-// target node — not merely recreated — when `migrate = true` and `node_name` changes.
+// TestAccResourceContainerMigrateStopped checks that a stopped container is migrated, not recreated.
 func TestAccResourceContainerMigrateStopped(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -407,7 +400,6 @@ func TestAccResourceContainerMigrateStopped(t *testing.T) {
 
 	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
 	testAccDownloadContainerTemplate(t, te, imageFileName)
-	// "local" storage is node-local: the container must find the template on whichever node it lands on.
 	testAccDownloadContainerTemplateOnNode(t, te, imageFileName, te.Node2Name)
 
 	containerID := 100000 + rand.Intn(99999)
@@ -445,8 +437,7 @@ func TestAccResourceContainerMigrateStopped(t *testing.T) {
 	})
 }
 
-// TestAccResourceContainerMigrateRunning proves a running container is migrated with restart, and
-// ends up running again on the target node.
+// TestAccResourceContainerMigrateRunning checks that a running container is migrated with restart and keeps running.
 func TestAccResourceContainerMigrateRunning(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -500,14 +491,12 @@ func TestAccResourceContainerMigrateRunning(t *testing.T) {
 	})
 }
 
-// containerHAResourceID returns the HA resource identifier ("ct:<vmid>") for a container.
+// containerHAResourceID returns the HA resource ID ("ct:<vmid>") of a container.
 func containerHAResourceID(vmID int) proxmoxtypes.HAResourceID {
 	return proxmoxtypes.HAResourceID{Type: proxmoxtypes.HAResourceTypeContainer, Name: strconv.Itoa(vmID)}
 }
 
-// requireContainerHAState asserts the requested HA state recorded in the HA configuration, which is
-// what the provider suspends and restores around a migration — not the transient `hastate` reported by
-// /cluster/resources.
+// requireContainerHAState asserts the requested state in the HA configuration, not /cluster/resources' hastate.
 func requireContainerHAState(t *testing.T, te *Environment, vmID int, want proxmoxtypes.HAResourceState) {
 	t.Helper()
 
@@ -516,12 +505,10 @@ func requireContainerHAState(t *testing.T, te *Environment, vmID int, want proxm
 
 	haResource, err := te.ClusterClient().HA().Resources().Get(ctx, containerHAResourceID(vmID))
 	require.NoError(t, err, "reading HA configuration of container %d", vmID)
-	require.Equal(t, want, haResource.State,
-		"the provider must hand the container back to HA in its original state, not leave it ignored")
+	require.Equal(t, want, haResource.State, "unexpected HA state for container %d", vmID)
 }
 
-// registerContainerHA puts the container under HA management and returns a deregister function, also
-// wired into t.Cleanup. auto-rebalance is disabled so CRS cannot relocate the container mid-test.
+// registerContainerHA puts the container under HA and returns a deregister function, also run on cleanup.
 func registerContainerHA(t *testing.T, te *Environment, vmID int) func() {
 	t.Helper()
 
@@ -544,9 +531,8 @@ func registerContainerHA(t *testing.T, te *Environment, vmID int) func() {
 
 	err := haClient.Create(ctx, &haresources.HAResourceCreateRequestBody{
 		HAResourceDataBase: haresources.HAResourceDataBase{
-			State:         proxmoxtypes.HAResourceStateStarted,
-			AutoRebalance: new(proxmoxtypes.CustomBool(false)),
-			Comment:       new("terraform provider acceptance test"),
+			State:   proxmoxtypes.HAResourceStateStarted,
+			Comment: new("terraform provider acceptance test"),
 		},
 		ID: haResourceID,
 	})
@@ -557,10 +543,8 @@ func registerContainerHA(t *testing.T, te *Environment, vmID int) func() {
 	return deregister
 }
 
-// waitForContainerHASettled blocks until the container has been reported on node with hastate
-// "started" for several consecutive reads. One read is not enough — verified live on this cluster, a
-// freshly registered resource goes ” -> started -> request_start_balance -> started over roughly 20
-// seconds while the CRM adopts it, and migrating during that window races the manager.
+// waitForContainerHASettled waits for hastate "started" on node across consecutive reads: a newly registered
+// resource cycles through request_start_balance for ~20s while the CRM adopts it.
 func waitForContainerHASettled(t *testing.T, te *Environment, vmID int, node string, timeout time.Duration) {
 	t.Helper()
 
@@ -604,13 +588,9 @@ func waitForContainerHASettled(t *testing.T, te *Environment, vmID int, node str
 	}
 }
 
-// TestAccResourceContainerMigrateHA proves the provider takes an HA-managed container out of HA
-// management for the duration of a migration and hands it back afterwards. While HA manages it, PVE
-// rewrites the provider's calls (shutdown -> hastop, migrate -> hamigrate) and hamigrate reports TASK
-// OK ~2s before the container has moved — measured on this cluster it arrived at ~18s and was running
-// at ~33s. Worse, the offline path flips the HA request state stop->start and, with
-// ha-rebalance-on-start, CRS relocated the container off the declared node ~15s later. With HA parked
-// at "ignored" every call is plain and synchronous again.
+// TestAccResourceContainerMigrateHA checks that an HA-managed container is migrated outside HA and handed back.
+// Under HA, hamigrate reports TASK OK before the container moves (arrived ~18s, running ~33s), and with
+// ha-rebalance-on-start CRS relocated it off the declared node ~15s after an offline-path start.
 func TestAccResourceContainerMigrateHA(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -661,9 +641,7 @@ func TestAccResourceContainerMigrateHA(t *testing.T) {
 						ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 						defer cancel()
 
-						// Read from the target node, never from /cluster/resources: its status field lags a
-						// migration by tens of seconds and reports the container running while the node that
-						// now owns it still has it stopped.
+						// /cluster/resources status lags a migration by tens of seconds.
 						status, err := containerClientOnNode(te, te.Node2Name, containerID).GetContainerStatus(ctx)
 						require.NoError(t, err)
 						require.Equal(t, "running", status.Status,
@@ -677,9 +655,7 @@ func TestAccResourceContainerMigrateHA(t *testing.T) {
 				),
 			},
 			{
-				// node_name and hostname in one apply: with HA parked at "ignored" the provider shuts the
-				// container down (vzshutdown), migrates it stopped (vzmigrate), writes the config, starts it
-				// (vzstart) and only then hands it back to HA.
+				// node_name and hostname together take the offline path.
 				PreConfig: func() {
 					waitForContainerHASettled(t, te, containerID, te.Node2Name, 3*time.Minute)
 					migrationStart = time.Now().Add(-2 * time.Second).Unix()
@@ -723,8 +699,6 @@ func TestAccResourceContainerMigrateHA(t *testing.T) {
 							}
 						}
 
-						// With HA parked at "ignored" nothing is routed through the manager, so every HA task
-						// type is proof the suspension did not take.
 						for _, haTask := range []string{"hastop", "hastart", "hamigrate"} {
 							require.Zero(t, byType[haTask],
 								"HA must not intercept the migration (%s seen): %v", haTask, counts)
@@ -740,12 +714,9 @@ func TestAccResourceContainerMigrateHA(t *testing.T) {
 						require.Zero(t, counts[te.NodeName]["vzshutdown"],
 							"the shutdown belongs on the source node, before the migration: %v", counts)
 
-						// The original request state must be back: a container left "ignored" is silently
-						// unmanaged by HA.
 						requireContainerHAState(t, te, containerID, proxmoxtypes.HAResourceStateStarted)
 
-						// Restoring HA is the last step, after the start, so there is no stop->start
-						// transition for ha-rebalance-on-start to act on — hold the declared node to prove it.
+						// The container must stay where Terraform put it once HA has it back.
 						waitForContainerHASettled(t, te, containerID, te.NodeName, 3*time.Minute)
 
 						return nil
@@ -753,10 +724,28 @@ func TestAccResourceContainerMigrateHA(t *testing.T) {
 				),
 			},
 			{
-				// Hand the container back before the framework destroys it: HA would restart a container
-				// stopped for deletion, so the destroy has to run against an unmanaged guest.
+				// HA must be handed back as "stopped", or it boots the container again.
+				Config: containerMigrateConfig(te, te.Node2Name, "test-migrate-ha", false),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "node_name", te.Node2Name),
+					func(*terraform.State) error {
+						requireContainerHAState(t, te, containerID, proxmoxtypes.HAResourceStateStopped)
+
+						ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+						defer cancel()
+
+						status, err := containerClientOnNode(te, te.Node2Name, containerID).GetContainerStatus(ctx)
+						require.NoError(t, err)
+						require.Equal(t, "stopped", status.Status, "container must stay stopped on the target node")
+
+						return nil
+					},
+				),
+			},
+			{
+				// Deregister before destroy, or HA restarts the container stopped for deletion.
 				PreConfig: func() { deregisterHA() },
-				Config:    containerMigrateConfig(te, te.NodeName, "test-migrate-ha", true),
+				Config:    containerMigrateConfig(te, te.Node2Name, "test-migrate-ha", false),
 			},
 		},
 	})
@@ -770,8 +759,7 @@ type containerTaskEntry struct {
 	StartTime int64  `json:"starttime"`
 }
 
-// containerTasksSince returns the tasks PVE recorded for a container on one node at or after since.
-// Task history is per-node, so a migration's tasks are split between the source and the target.
+// containerTasksSince returns the container's tasks on one node started at or after since.
 func containerTasksSince(t *testing.T, te *Environment, node string, vmID int, since int64) []containerTaskEntry {
 	t.Helper()
 
@@ -796,11 +784,8 @@ func containerTasksSince(t *testing.T, te *Environment, node string, vmID int, s
 	return recent
 }
 
-// containerTaskTypeCounts returns the exact task types PVE recorded for the container at or after
-// since, keyed by node. Every cluster node is queried, not just the source and the target: HA runs the
-// work wherever its manager places the container, so counting two nodes would report a boot that
-// landed on a third node as no boot at all. Types are matched exactly — "start" as a substring matches
-// both hastart and vzstart, while "shutdown" matches neither hastop nor the HA stop it stands for.
+// containerTaskTypeCounts counts the container's exact task types per node, across all nodes since HA may run
+// work on a third one.
 func containerTaskTypeCounts(t *testing.T, te *Environment, vmID int, since int64) map[string]map[string]int {
 	t.Helper()
 
@@ -830,10 +815,8 @@ func containerTaskTypeCounts(t *testing.T, te *Environment, vmID int, since int6
 	return counts
 }
 
-// TestAccResourceContainerMigrateStopOnMove proves a single apply that changes node_name and turns
-// `started` off takes the offline path: the container is shut down once on the source, migrated cold,
-// and left stopped on the target. Under a restart migration it would be booted on the target and then
-// stopped again, which only the task counts reveal.
+// TestAccResourceContainerMigrateStopOnMove checks that node_name plus `started = false` shuts down once, on the
+// source.
 func TestAccResourceContainerMigrateStopOnMove(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -900,9 +883,8 @@ func TestAccResourceContainerMigrateStopOnMove(t *testing.T) {
 	})
 }
 
-// TestAccResourceContainerMigrateWithConfigChange covers a single apply that changes node_name and
-// configuration together: the container must be migrated cold and booted once, not bounced twice.
-// Counting the boots is what makes this meaningful — the end state alone passes under both designs.
+// TestAccResourceContainerMigrateWithConfigChange checks that node_name plus a config change boots the container
+// once, after the config is written.
 func TestAccResourceContainerMigrateWithConfigChange(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -923,8 +905,6 @@ func TestAccResourceContainerMigrateWithConfigChange(t *testing.T) {
 
 	resourceName := "proxmox_virtual_environment_container.test_compound"
 
-	// The hostname is a configuration change that the provider marks as requiring a restart, so under
-	// the old ordering it produced a second bounce after the restart migration.
 	compoundConfig := func(node, hostname string, diskSize int) string {
 		return te.RenderConfig(fmt.Sprintf(`
 		resource "proxmox_virtual_environment_container" "test_compound" {
@@ -983,8 +963,6 @@ func TestAccResourceContainerMigrateWithConfigChange(t *testing.T) {
 
 						targetAPI := containerClientOnNode(te, te.Node2Name, containerID)
 
-						// Read from the node itself: /cluster/resources reports stale status right after
-						// a migration.
 						status, err := targetAPI.GetContainerStatus(ctx)
 						require.NoError(t, err)
 						require.Equal(t, "running", status.Status, "container must be running on the target node")
@@ -1019,8 +997,6 @@ func TestAccResourceContainerMigrateWithConfigChange(t *testing.T) {
 						require.Equal(t, 1, starts, "the container must be started exactly once: %v", tasks)
 						require.Equal(t, 1, shutdowns, "the provider must shut the container down itself before migrating: %v", tasks)
 
-						// The offline migration must not have started the container: that is the restart
-						// migration this path exists to avoid.
 						for _, task := range tasks {
 							if !strings.Contains(task.Type, "migrate") {
 								continue
@@ -1039,10 +1015,7 @@ func TestAccResourceContainerMigrateWithConfigChange(t *testing.T) {
 				),
 			},
 			{
-				// Migrating back while also growing the root filesystem. The resize is a separate API
-				// call, not part of the config PUT, so it has to run only once the container is on its
-				// final node: resizing first would copy the extra space across the wire, and would fail
-				// whenever only the target has room for it.
+				// The resize must run on the target, after the migration.
 				PreConfig: func() { migrationStart = time.Now().Add(-2 * time.Second).Unix() },
 				Config:    compoundConfig(te.NodeName, "test-compound-b", 5),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
@@ -1078,6 +1051,128 @@ func TestAccResourceContainerMigrateWithConfigChange(t *testing.T) {
 						}
 
 						require.Equal(t, 1, resizes, "the resize must run once, on the node the container ended up on")
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+// TestAccResourceContainerMigrateWithIDMap checks that node_name plus an idmap change boots the container once, with
+// the idmap active, and no reboot.
+func TestAccResourceContainerMigrateWithIDMap(t *testing.T) {
+	te := InitEnvironment(t)
+
+	if te.Node2Name == "" {
+		t.Skip("PROXMOX_VE_ACC_NODE_2_NAME must be set")
+	}
+
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+	testAccDownloadContainerTemplateOnNode(t, te, imageFileName, te.Node2Name)
+
+	containerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": containerID,
+	})
+
+	resourceName := "proxmox_virtual_environment_container.test_migrate_idmap"
+
+	idmapConfig := func(node, idmap string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_container" "test_migrate_idmap" {
+			node_name      = "%s"
+			vm_id          = {{.TestContainerID}}
+			timeout_delete = 300
+			unprivileged   = true
+			migrate        = true
+			started        = true
+
+			disk {
+				datastore_id  = "{{.ContainerDatastoreID}}"
+				size          = 4
+				mount_options = []
+			}
+			%s
+			initialization {
+				hostname = "test-migrate-idmap"
+			}
+
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+
+			network_interface {
+				name = "vmbr0"
+			}
+		}`, node, idmap), WithRootUser())
+	}
+
+	idmaps := `
+			idmap {
+				type         = "uid"
+				container_id = 0
+				host_id      = 100000
+				size         = 1000
+			}
+			idmap {
+				type         = "uid"
+				container_id = 1000
+				host_id      = 101000
+				size         = 64536
+			}
+			idmap {
+				type         = "gid"
+				container_id = 0
+				host_id      = 100000
+				size         = 1000
+			}
+			idmap {
+				type         = "gid"
+				container_id = 1000
+				host_id      = 101000
+				size         = 64536
+			}
+`
+
+	var migrationStart int64
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: idmapConfig(te.Node2Name, ""),
+			},
+			{
+				// Migrate onto the primary node, where assertContainerIDMapActive can exec into the container.
+				PreConfig: func() { migrationStart = time.Now().Add(-2 * time.Second).Unix() },
+				Config:    idmapConfig(te.NodeName, idmaps),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "node_name", te.NodeName),
+					assertContainerIDMapActive(te, containerID, "/proc/self/uid_map"),
+					assertContainerIDMapActive(te, containerID, "/proc/self/gid_map"),
+					func(*terraform.State) error {
+						counts := containerTaskTypeCounts(t, te, containerID, migrationStart)
+						t.Logf("idmap migration task types by node: %v", counts)
+
+						for node, perNode := range counts {
+							require.Zero(t, perNode["vzreboot"], "the container must not be rebooted (on %s): %v", node, counts)
+						}
+
+						require.Equal(t, 1, counts[te.Node2Name]["vzshutdown"],
+							"the container must be shut down once, on the source node: %v", counts)
+						require.Equal(t, 1, counts[te.NodeName]["vzstart"],
+							"the container must be booted once, on the target node: %v", counts)
 
 						return nil
 					},

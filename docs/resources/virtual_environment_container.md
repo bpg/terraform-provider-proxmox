@@ -386,22 +386,20 @@ period, the volume copy and the boot.
 A stopped container is migrated offline and is not started as a side effect. If `started = true`, it is
 started on the target node afterwards as usual.
 
-If the same apply also changes something else that the container would have to be restarted for — other
-configuration (e.g. a `mount_point` whose host path differs between nodes), an `idmap` entry, or
-`started` going to `false` — the provider shuts the container down, migrates it offline, applies the
-change on the target node, and then starts it (or leaves it stopped). This avoids starting the container
-with configuration that no longer matches its declared state, and avoids restarting it twice. No extra
-configuration is needed to get this behavior.
+If the same apply also makes any other configuration change — including ones that would not need a
+restart on their own, such as `tags` or `description` — or changes `idmap`, or sets `started` to `false`,
+the provider shuts the container down, migrates it offline, applies the change on the target node, and then
+starts it (or leaves it stopped). This avoids starting the container with stale configuration and
+restarting it twice.
 
 The `timeout_update` clock restarts once the container has arrived on the target node, so a long volume
 copy cannot eat into the time available for the configuration write, start or reboot that follows it.
 
-Containers managed by Proxmox HA are temporarily set to the HA state `ignored` for the duration of the
-migration and handed back to HA in their original state once they are running again on the target node.
-Left under HA management, the shutdown and the migration are rewritten into HA requests that return
-before the container has moved, and the resulting stop/start cycle lets CRS (`ha-rebalance-on-start`)
-relocate the container away from the node Terraform declared. Migrating an HA-managed container
-therefore requires permission to modify `/cluster/ha/resources`.
+Containers managed by Proxmox HA are set to the HA state `ignored` for the duration of the migration, so
+that HA does not intercept the shutdown, migration and start or relocate the container afterwards. Once the
+container is in its final run state on the target node, its original HA state is restored; if the apply
+changes `started`, a `started` or `stopped` HA state is restored to match it instead. Migrating an
+HA-managed container therefore requires permission to modify `/cluster/ha/resources`.
 
 ### Bind mounts
 
