@@ -54,11 +54,14 @@ const (
 
 const defaultDialTimeout = 30 * time.Second
 
+// docsURL points to the SSH connection section of the provider documentation.
+const docsURL = "https://registry.terraform.io/providers/bpg/proxmox/latest/docs#ssh-connection"
+
 // NewErrUserHasNoPermission creates a new error indicating that the SSH user does not have required permissions.
 func NewErrUserHasNoPermission(username string) error {
 	return fmt.Errorf("the SSH user '%s' does not have required permissions. "+
 		"Make sure 'sudo' is installed and the user is configured in sudoers file. "+
-		"Refer to the documentation for more details", username)
+		"Refer to the documentation for more details: %s", username, docsURL)
 }
 
 // Client is an interface for performing SSH requests against the Proxmox Nodes.
@@ -640,7 +643,17 @@ func (c *client) changeModeUploadedFile(
 }
 
 // openNodeShell establishes a new SSH connection to a node.
+// Any failure is wrapped with a pointer to the SSH section of the provider documentation.
 func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Client, error) {
+	sshClient, err := c.dialNodeShell(ctx, node)
+	if err != nil {
+		return nil, fmt.Errorf("%w; this operation requires SSH access to the PVE node, see %s", err, docsURL)
+	}
+
+	return sshClient, nil
+}
+
+func (c *client) dialNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Client, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
