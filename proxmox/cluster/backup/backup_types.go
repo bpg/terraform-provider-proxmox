@@ -114,6 +114,7 @@ type GetResponseData struct {
 	MaxFiles               *int                            `json:"maxfiles,omitempty"`
 	MailTo                 *string                         `json:"mailto,omitempty"`
 	MailNotification       *string                         `json:"mailnotification,omitempty"`
+	NotificationMode       *string                         `json:"notification-mode,omitempty"`
 	BwLimit                *int                            `json:"bwlimit,omitempty"`
 	IONice                 *int                            `json:"ionice,omitempty"`
 	Pigz                   *int                            `json:"pigz,omitempty"`
@@ -149,6 +150,7 @@ type RequestBodyCommon struct {
 	MaxFiles               *int               `json:"maxfiles,omitempty"                  url:"maxfiles,omitempty"`
 	MailTo                 *string            `json:"mailto,omitempty"                    url:"mailto,omitempty"`
 	MailNotification       *string            `json:"mailnotification,omitempty"          url:"mailnotification,omitempty"`
+	NotificationMode       *string            `json:"notification-mode,omitempty"         url:"notification-mode,omitempty"`
 	BwLimit                *int               `json:"bwlimit,omitempty"                   url:"bwlimit,omitempty"`
 	IONice                 *int               `json:"ionice,omitempty"                    url:"ionice,omitempty"`
 	Pigz                   *int               `json:"pigz,omitempty"                      url:"pigz,omitempty"`
