@@ -108,6 +108,41 @@ func TestAccResourceVM(t *testing.T) {
 			ExpectError: regexp.MustCompile(`invalid value for name \(must be a valid DNS name\)`),
 			PlanOnly:    true,
 		}}},
+		{"initialization interface collides with disk", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "pve"
+
+					disk {
+						interface = "scsi0"
+						size      = 8
+					}
+
+					initialization {
+						interface = "scsi0"
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`initialization.0.interface "scsi0" collides with disk.0.interface`),
+				PlanOnly:    true,
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "pve"
+
+					disk {
+						interface = "ide2"
+						size      = 8
+					}
+
+					initialization {
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`initialization.0.interface "ide2" collides with disk.0.interface`),
+				PlanOnly:    true,
+			},
+		}},
 		{"protection", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
