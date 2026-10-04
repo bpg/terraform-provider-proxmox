@@ -42,13 +42,13 @@ func TestVMReadSMBIOSState(t *testing.T) {
 			name:    "clone with configured block refreshes state from Proxmox when SKU is missing",
 			raw:     map[string]any{mkClone: cloneBlock, mkSMBIOS: configuredBlock},
 			pve:     pveSMBIOS(""),
-			wantSKU: ptr(""),
+			wantSKU: new(""),
 		},
 		{
 			name:    "clone with configured block keeps matching SKU",
 			raw:     map[string]any{mkClone: cloneBlock, mkSMBIOS: configuredBlock},
 			pve:     pveSMBIOS("test-sku"),
-			wantSKU: ptr("test-sku"),
+			wantSKU: new("test-sku"),
 		},
 		{
 			name: "clone with configured block and no SMBIOS in Proxmox drops the block from state",
@@ -64,7 +64,7 @@ func TestVMReadSMBIOSState(t *testing.T) {
 			name:    "no clone refreshes state from Proxmox",
 			raw:     map[string]any{mkSMBIOS: configuredBlock},
 			pve:     pveSMBIOS(""),
-			wantSKU: ptr(""),
+			wantSKU: new(""),
 		},
 		{
 			name: "no clone and no SMBIOS in Proxmox leaves the block absent",
@@ -94,8 +94,4 @@ func TestVMReadSMBIOSState(t *testing.T) {
 			require.Equal(t, *tt.wantSKU, got[0].(map[string]any)[mkSMBIOSSKU])
 		})
 	}
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }
