@@ -398,8 +398,11 @@ copy cannot eat into the time available for the configuration write, start or re
 Containers managed by Proxmox HA are set to the HA state `ignored` for the duration of the migration, so
 that HA does not intercept the shutdown, migration and start or relocate the container afterwards. Once the
 container is in its final run state on the target node, its original HA state is restored; if the apply
-changes `started`, a `started` or `stopped` HA state is restored to match it instead. Migrating an
-HA-managed container therefore requires permission to modify `/cluster/ha/resources`.
+changes `started`, a `started`, `stopped` or `disabled` HA state is restored to match it instead.
+
+Every migration needs `VM.Migrate` on the container and `Sys.Audit` on `/`, which the provider uses to check
+whether the container is HA-managed. Migrating an HA-managed container also needs `Sys.Console` on `/` to
+change its HA state.
 
 ### Bind mounts
 

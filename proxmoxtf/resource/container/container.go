@@ -4175,7 +4175,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 		// Park HA at "ignored" so PVE doesn't reroute shutdown/migrate/start through the HA manager.
 		restoreHA, haErr := suspendContainerHA(migrateCtx, client, vmID, d.HasChange(mkStarted), started)
 
-		// Restored last, after any start, so CRS sees no stopped->started transition to rebalance on.
+		// Restored last, after any start, so a rebalance-on-start finds the container already running.
 		defer func() {
 			if restoreHA == nil {
 				return
@@ -4509,7 +4509,7 @@ const haRestoreTimeout = 2 * time.Minute
 
 // suspendContainerHA sets an HA-managed container to "ignored" and returns a function restoring its HA state, or nil
 // when there is nothing to restore; the function is also returned with an error once the state has been changed.
-// A changed `started` overrides an original "started"/"stopped" state.
+// A changed `started` overrides the original state, see haRestoreState.
 func suspendContainerHA(
 	ctx context.Context,
 	client proxmox.Client,
@@ -4528,16 +4528,11 @@ func suspendContainerHA(
 		return nil, err
 	}
 
-	restoreState := haResource.State
-
-	switch {
-	case restoreState == types.HAResourceStateIgnored:
+	if haResource.State == types.HAResourceStateIgnored {
 		return nil, nil //nolint:nilnil // already ignored, nothing to restore.
-	case startedChanged && started && restoreState == types.HAResourceStateStopped:
-		restoreState = types.HAResourceStateStarted
-	case startedChanged && !started && restoreState == types.HAResourceStateStarted:
-		restoreState = types.HAResourceStateStopped
 	}
+
+	restoreState := haRestoreState(haResource.State, startedChanged, started)
 
 	setState := func(ctx context.Context, state types.HAResourceState) error {
 		return haClient.Update(ctx, haResourceID, &haresources.HAResourceUpdateRequestBody{
@@ -4559,6 +4554,20 @@ func suspendContainerHA(
 	}
 
 	return restore, nil
+}
+
+// haRestoreState returns the HA state to restore after a migration. A changed `started` wins over an original
+// "started", "stopped" or "disabled" state, which would otherwise make HA undo this apply's run state.
+func haRestoreState(original types.HAResourceState, startedChanged, started bool) types.HAResourceState {
+	switch {
+	case startedChanged && started &&
+		(original == types.HAResourceStateStopped || original == types.HAResourceStateDisabled):
+		return types.HAResourceStateStarted
+	case startedChanged && !started && original == types.HAResourceStateStarted:
+		return types.HAResourceStateStopped
+	default:
+		return original
+	}
 }
 
 func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
@@ -440,5 +441,34 @@ func TestInitializationDnsBlockDiffIgnore(t *testing.T) {
 
 		actual := skipDnsDiffIfEmpty(dnsBlockKey+".#", "0", "1", d)
 		assert.Equal(t, tt.expected, actual)
+	}
+}
+
+func TestHARestoreState(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		original       types.HAResourceState
+		startedChanged bool
+		started        bool
+		want           types.HAResourceState
+	}{
+		{"unchanged keeps started", types.HAResourceStateStarted, false, true, types.HAResourceStateStarted},
+		{"unchanged keeps disabled", types.HAResourceStateDisabled, false, false, types.HAResourceStateDisabled},
+		{"start overrides stopped", types.HAResourceStateStopped, true, true, types.HAResourceStateStarted},
+		{"start overrides disabled", types.HAResourceStateDisabled, true, true, types.HAResourceStateStarted},
+		{"start keeps started", types.HAResourceStateStarted, true, true, types.HAResourceStateStarted},
+		{"stop overrides started", types.HAResourceStateStarted, true, false, types.HAResourceStateStopped},
+		{"stop keeps disabled", types.HAResourceStateDisabled, true, false, types.HAResourceStateDisabled},
+		{"stop keeps stopped", types.HAResourceStateStopped, true, false, types.HAResourceStateStopped},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, haRestoreState(tt.original, tt.startedChanged, tt.started))
+		})
 	}
 }
