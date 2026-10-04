@@ -12,6 +12,7 @@
 package backup_test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -284,6 +285,30 @@ func TestAccResourceBackupJob(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestAccResourceBackupJobInvalidNotificationMode(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test" {
+					id                = "acc-test-bj-nm"
+					schedule          = "*-*-* 02:00"
+					storage           = "local"
+					all               = true
+					notification_mode = "bogus"
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile("notification_mode"),
+			},
+		},
+	})
 }
 
 func TestAccResourceBackupJobExclude(t *testing.T) {
