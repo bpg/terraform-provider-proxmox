@@ -55,7 +55,7 @@ const (
 const defaultDialTimeout = 30 * time.Second
 
 // docsURL points to the SSH connection section of the provider documentation.
-const docsURL = "https://registry.terraform.io/providers/bpg/proxmox/latest/docs#ssh-connection"
+const docsURL = "https://bpg.sh/docs/#ssh-connection"
 
 // NewErrUserHasNoPermission creates a new error indicating that the SSH user does not have required permissions.
 func NewErrUserHasNoPermission(username string) error {
