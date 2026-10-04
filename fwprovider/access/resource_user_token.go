@@ -185,7 +185,7 @@ func (r *userTokenResource) Create(ctx context.Context, req resource.CreateReque
 
 	plan.ID = types.StringValue(plan.UserID.ValueString() + "!" + plan.TokenName.ValueString())
 	plan.Value = types.StringValue(value)
-	resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
 func (r *userTokenResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -260,7 +260,7 @@ func (r *userTokenResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
 func (r *userTokenResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
