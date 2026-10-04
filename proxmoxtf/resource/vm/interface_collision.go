@@ -16,33 +16,35 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 )
 
-// efiDiskInterface is the fixed interface the provider uses for the efi_disk block.
-const efiDiskInterface = "efidisk0"
+// defaultInitializationInterface is the interface the provider picks for the cloud-init drive
+// on create when initialization.interface is not set.
+const defaultInitializationInterface = "ide2"
 
 // initializationInterfaceCollisionDiff rejects a configuration where initialization.interface
-// is also used by a disk or efi_disk block.
+// is also used by a disk block.
 func initializationInterfaceCollisionDiff(_ context.Context, d *schema.ResourceDiff, _ any) error {
-	return validateInitializationInterface(d.GetRawConfig())
+	return validateInitializationInterface(d.GetRawConfig(), d.Id() == "")
 }
 
-func validateInitializationInterface(config cty.Value) error {
+// validateInitializationInterface checks the raw config for a disk that uses the same interface as the
+// initialization block. When initialization.interface is not set, the provider uses ide2 on create, so
+// that is checked on create; on update the existing drive is detected, so the check is skipped.
+func validateInitializationInterface(config cty.Value, isCreate bool) error {
 	if config.IsNull() || !config.IsKnown() || !config.Type().IsObjectType() {
 		return nil
 	}
 
-	initInterface := initializationInterface(config)
-	if initInterface == "" {
+	initInterface, known := initializationInterface(config)
+	if !known {
 		return nil
 	}
 
-	if config.Type().HasAttribute(mkEFIDisk) {
-		efi := config.GetAttr(mkEFIDisk)
-		if efi.IsKnown() && !efi.IsNull() && efi.LengthInt() > 0 && initInterface == efiDiskInterface {
-			return fmt.Errorf(
-				"%s.0.%s %q collides with the %s device, which always uses that interface",
-				mkInitialization, mkInitializationInterface, initInterface, mkEFIDisk,
-			)
+	if initInterface == "" {
+		if !isCreate {
+			return nil
 		}
+
+		initInterface = defaultInitializationInterface
 	}
 
 	if !config.Type().HasAttribute(disk.MkDisk) {
@@ -75,27 +77,36 @@ func validateInitializationInterface(config cty.Value) error {
 	return nil
 }
 
-// initializationInterface returns the configured initialization interface, or an empty string
-// when it is not set or not known yet.
-func initializationInterface(config cty.Value) string {
+// initializationInterface returns the configured initialization interface. The second value is false
+// when there is no initialization block or the interface is not known yet, so nothing can be checked.
+// An unset interface is returned as an empty string.
+func initializationInterface(config cty.Value) (string, bool) {
 	if !config.Type().HasAttribute(mkInitialization) {
-		return ""
+		return "", false
 	}
 
 	blocks := config.GetAttr(mkInitialization)
 	if !blocks.IsKnown() || blocks.IsNull() || blocks.LengthInt() == 0 {
-		return ""
+		return "", false
 	}
 
 	block := blocks.AsValueSlice()[0]
-	if !block.IsKnown() || block.IsNull() || !block.Type().HasAttribute(mkInitializationInterface) {
-		return ""
+	if !block.IsKnown() || block.IsNull() {
+		return "", false
+	}
+
+	if !block.Type().HasAttribute(mkInitializationInterface) {
+		return "", true
 	}
 
 	v, _ := block.GetAttr(mkInitializationInterface).Unmark()
-	if !v.IsKnown() || v.IsNull() {
-		return ""
+	if !v.IsKnown() {
+		return "", false
 	}
 
-	return v.AsString()
+	if v.IsNull() {
+		return "", true
+	}
+
+	return v.AsString(), true
 }
