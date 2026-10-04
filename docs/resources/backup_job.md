@@ -51,6 +51,7 @@ resource "proxmox_backup_job" "daily_backup" {
 - `mode` (String) The backup mode (snapshot, suspend, or stop).
 - `node` (String) The cluster node name to limit the backup job to.
 - `notes_template` (String) Template for notes attached to the backup.
+- `notification_mode` (String) Notification mode (`auto`, `legacy-sendmail` or `notification-system`). With `auto` (the Proxmox VE default), an email is sent if `mailto` is set, otherwise the notification system is used. `legacy-sendmail` always uses `mailto` and `mailnotification`; `notification-system` always uses the PVE notification system and ignores them.
 - `pbs_change_detection_mode` (String) PBS change detection mode (legacy, data, or metadata).
 - `performance` (Attributes) Performance-related settings for the backup job. (see [below for nested schema](#nestedatt--performance))
 - `pigz` (Number) Number of pigz threads (0 disables, 1 uses single-threaded gzip).
