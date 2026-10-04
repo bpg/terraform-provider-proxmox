@@ -23,13 +23,17 @@ const defaultInitializationInterface = "ide2"
 // initializationInterfaceCollisionDiff rejects a configuration where initialization.interface
 // is also used by a disk block.
 func initializationInterfaceCollisionDiff(_ context.Context, d *schema.ResourceDiff, _ any) error {
-	return validateInitializationInterface(d.GetRawConfig(), d.Id() == "")
+	// A clone reuses the template's cloud-init drive when the interface is unset, so ide2 is only certain for a
+	// plain create.
+	assumeDefault := d.Id() == "" && len(d.Get(mkClone).([]any)) == 0
+
+	return validateInitializationInterface(d.GetRawConfig(), assumeDefault)
 }
 
 // validateInitializationInterface checks the raw config for a disk that uses the same interface as the
-// initialization block. When initialization.interface is not set, the provider uses ide2 on create, so
-// that is checked on create; on update the existing drive is detected, so the check is skipped.
-func validateInitializationInterface(config cty.Value, isCreate bool) error {
+// initialization block. An unset initialization.interface is checked as ide2 only when assumeDefault is set; on
+// update and on clone the provider detects an existing drive instead.
+func validateInitializationInterface(config cty.Value, assumeDefault bool) error {
 	if config.IsNull() || !config.IsKnown() || !config.Type().IsObjectType() {
 		return nil
 	}
@@ -40,7 +44,7 @@ func validateInitializationInterface(config cty.Value, isCreate bool) error {
 	}
 
 	if initInterface == "" {
-		if !isCreate {
+		if !assumeDefault {
 			return nil
 		}
 

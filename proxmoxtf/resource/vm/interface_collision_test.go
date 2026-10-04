@@ -41,10 +41,10 @@ func TestValidateInitializationInterface(t *testing.T) {
 	collides := `collides with disk.`
 
 	tests := []struct {
-		name     string
-		config   cty.Value
-		isCreate bool
-		wantErr  string
+		name          string
+		config        cty.Value
+		assumeDefault bool
+		wantErr       string
 	}{
 		{
 			"no collision",
@@ -123,7 +123,7 @@ func TestValidateInitializationInterface(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := validateInitializationInterface(tt.config, tt.isCreate)
+			err := validateInitializationInterface(tt.config, tt.assumeDefault)
 			if tt.wantErr == "" {
 				require.NoError(t, err)
 				return

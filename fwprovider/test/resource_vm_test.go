@@ -142,6 +142,26 @@ func TestAccResourceVM(t *testing.T) {
 				ExpectError: regexp.MustCompile(`initialization.0.interface "ide2" collides with disk.0.interface`),
 				PlanOnly:    true,
 			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "pve"
+
+					clone {
+						vm_id = 100
+					}
+
+					disk {
+						interface = "ide2"
+						size      = 8
+					}
+
+					initialization {
+					}
+				}`),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+			},
 		}},
 		{"protection", []resource.TestStep{
 			{
