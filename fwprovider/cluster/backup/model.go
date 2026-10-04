@@ -38,6 +38,7 @@ type backupJobModel struct {
 	MaxFiles               types.Int64  `tfsdk:"maxfiles"`
 	MailTo                 types.List   `tfsdk:"mailto"`
 	MailNotification       types.String `tfsdk:"mailnotification"`
+	NotificationMode       types.String `tfsdk:"notification_mode"`
 	BwLimit                types.Int64  `tfsdk:"bwlimit"`
 	IONice                 types.Int64  `tfsdk:"ionice"`
 	Pigz                   types.Int64  `tfsdk:"pigz"`
@@ -163,6 +164,7 @@ func (m *backupJobModel) toAPIUpdate(
 	attribute.CheckDelete(m.MaxFiles, state.MaxFiles, &toDelete, "maxfiles")
 	attribute.CheckDelete(m.MailTo, state.MailTo, &toDelete, "mailto")
 	attribute.CheckDelete(m.MailNotification, state.MailNotification, &toDelete, "mailnotification")
+	attribute.CheckDelete(m.NotificationMode, state.NotificationMode, &toDelete, "notification-mode")
 	attribute.CheckDelete(m.BwLimit, state.BwLimit, &toDelete, "bwlimit")
 	attribute.CheckDelete(m.IONice, state.IONice, &toDelete, "ionice")
 	attribute.CheckDelete(m.Pigz, state.Pigz, &toDelete, "pigz")
@@ -221,6 +223,7 @@ func (m *backupJobModel) fillCommonFields(
 	}
 
 	common.MailNotification = attribute.StringPtrFromValue(m.MailNotification)
+	common.NotificationMode = attribute.StringPtrFromValue(m.NotificationMode)
 	common.BwLimit = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.BwLimit))
 	common.IONice = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.IONice))
 	common.Pigz = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.Pigz))
@@ -403,6 +406,7 @@ func (m *backupJobModel) fromAPI(
 
 	m.Comment = types.StringPointerValue(data.Comment)
 	m.MailNotification = types.StringPointerValue(data.MailNotification)
+	m.NotificationMode = types.StringPointerValue(data.NotificationMode)
 	m.BwLimit = types.Int64PointerValue(intPtrToInt64Ptr(data.BwLimit))
 	m.IONice = types.Int64PointerValue(intPtrToInt64Ptr(data.IONice))
 	m.Pigz = types.Int64PointerValue(intPtrToInt64Ptr(data.Pigz))
@@ -505,6 +509,7 @@ type backupJobDatasourceModel struct {
 	Compress         types.String `tfsdk:"compress"`
 	MailTo           types.List   `tfsdk:"mailto"`
 	MailNotification types.String `tfsdk:"mailnotification"`
+	NotificationMode types.String `tfsdk:"notification_mode"`
 	Comment          types.String `tfsdk:"comment"`
 	NotesTemplate    types.String `tfsdk:"notes_template"`
 	Pool             types.String `tfsdk:"pool"`
@@ -537,6 +542,7 @@ func (m *backupJobDatasourceModel) fromAPI(data *backup.GetResponseData) {
 	}
 
 	m.MailNotification = types.StringPointerValue(data.MailNotification)
+	m.NotificationMode = types.StringPointerValue(data.NotificationMode)
 	m.Comment = types.StringPointerValue(data.Comment)
 	m.NotesTemplate = types.StringPointerValue(data.NotesTemplate)
 	m.Pool = types.StringPointerValue(data.Pool)
