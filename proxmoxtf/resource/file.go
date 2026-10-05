@@ -32,6 +32,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	nodestorage "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
@@ -823,6 +824,56 @@ func fileIsURL(d *schema.ResourceData) bool {
 		strings.HasPrefix(sourceFilePath, "https://")
 }
 
+func fileResolveNode(ctx context.Context, client proxmox.Client, preferredNode, datastoreID string, contentType *string) (string, error) {
+	nodes, err := client.Node("").ListNodes(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	for _, node := range nodes {
+		if node.Name == preferredNode {
+			return preferredNode, nil
+		}
+	}
+
+	// node_name is ForceNew, so the resolved node cannot be written back to state.
+	candidateErrors := []error{fmt.Errorf(
+		"node %q is no longer available and no online node exposes shared datastore %q with the required content type",
+		preferredNode, datastoreID,
+	)}
+
+	for _, node := range nodes {
+		if node.Status == nil || *node.Status != "online" {
+			continue
+		}
+
+		list, err := client.Node(node.Name).Storage(datastoreID).ListDatastores(ctx, &nodestorage.DatastoreListRequestBody{ID: &datastoreID})
+		if err != nil {
+			candidateErrors = append(candidateErrors, fmt.Errorf("node %q: %w", node.Name, err))
+			continue
+		}
+
+		for _, ds := range list {
+			if ds.ID != datastoreID || ds.Shared == nil || !bool(*ds.Shared) ||
+				ds.Enabled == nil || !bool(*ds.Enabled) || ds.Active == nil || !bool(*ds.Active) {
+				continue
+			}
+
+			if contentType != nil && (ds.ContentTypes == nil || !slices.Contains(*ds.ContentTypes, *contentType)) {
+				continue
+			}
+
+			tflog.Debug(ctx, "using shared datastore through another node", map[string]any{
+				"original_node": preferredNode, "node": node.Name, "datastore": datastoreID,
+			})
+
+			return node.Name, nil
+		}
+	}
+
+	return "", errors.Join(candidateErrors...)
+}
+
 func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
@@ -840,6 +891,11 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	var contentType *string
 	if contentTypeStr != "" {
 		contentType = &contentTypeStr
+	}
+
+	nodeName, err = fileResolveNode(ctx, capi, nodeName, datastoreID, contentType)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx, contentType)
@@ -1021,6 +1077,16 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
+
+	volumeID, err := fileParseVolumeID(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	nodeName, err = fileResolveNode(ctx, capi, nodeName, datastoreID, &volumeID.contentType)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	err = capi.Node(nodeName).Storage(datastoreID).DeleteDatastoreFile(ctx, d.Id()).Err()
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
