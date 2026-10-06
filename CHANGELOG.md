@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.116.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.115.0...v0.116.0) (2026-10-06)
+
+
+### Features
+
+* **backup:** add `notification_mode` to backup job ([#3130](https://github.com/bpg/terraform-provider-proxmox/issues/3130)) ([3685082](https://github.com/bpg/terraform-provider-proxmox/commit/3685082bbe88428aab312f05044fcf7bd811831d))
+* **lxc:** migrate container on node change ([#3104](https://github.com/bpg/terraform-provider-proxmox/issues/3104)) ([c7c4177](https://github.com/bpg/terraform-provider-proxmox/commit/c7c417708e733ce0eedb066534509ac2b35edcb2))
+* **ssh:** add docs link to SSH connection errors ([#3128](https://github.com/bpg/terraform-provider-proxmox/issues/3128)) ([08f8d94](https://github.com/bpg/terraform-provider-proxmox/commit/08f8d940707b41b488a35a3c17aa65ea8c812865))
+
+
+### Bug Fixes
+
+* **access:** preserve user token state diagnostics ([#3132](https://github.com/bpg/terraform-provider-proxmox/issues/3132)) ([39cdb0f](https://github.com/bpg/terraform-provider-proxmox/commit/39cdb0fceb281ef73ec5768dcd05dbc9f7a3a3b6))
+* **file:** fallback to other nodes for state refresh ([#3122](https://github.com/bpg/terraform-provider-proxmox/issues/3122)) ([6ea92ce](https://github.com/bpg/terraform-provider-proxmox/commit/6ea92ce21b40d6c786550c548b3061a7563694de))
+* **vm:** refresh smbios from Proxmox for cloned VMs ([#3131](https://github.com/bpg/terraform-provider-proxmox/issues/3131)) ([86bcfcc](https://github.com/bpg/terraform-provider-proxmox/commit/86bcfcc6264e82511ff38ae4453ff58ad9616728))
+* **vm:** reject initialization interface that collides with disk or efi_disk ([#3127](https://github.com/bpg/terraform-provider-proxmox/issues/3127)) ([6c41063](https://github.com/bpg/terraform-provider-proxmox/commit/6c41063d5890f0aa11fb5fe9d89b70a079e82d47))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (3680233 → e0174e5) ([#3125](https://github.com/bpg/terraform-provider-proxmox/issues/3125)) ([6b83622](https://github.com/bpg/terraform-provider-proxmox/commit/6b836227f497ebcb1f38071964a3761bff3aaa9c))
+
 ## [0.115.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.114.0...v0.115.0) (2026-10-02)
 
 
