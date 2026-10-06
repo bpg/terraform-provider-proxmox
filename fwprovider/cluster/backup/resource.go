@@ -203,12 +203,8 @@ func (r *backupJobResource) Schema(
 					"an email is sent if `mailto` is set, otherwise the notification system is used. `legacy-sendmail` always uses " +
 					"`mailto` and `mailnotification`; `notification-system` always uses the PVE notification system and ignores them.",
 				Optional: true,
-				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("auto", "legacy-sendmail", "notification-system"),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"bwlimit": schema.Int64Attribute{
