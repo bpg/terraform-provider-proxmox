@@ -500,7 +500,7 @@ func (r *downloadFileResource) Create(
 		)
 	}
 
-	resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 	resp.Diagnostics.Append(diags...)
 }
 
