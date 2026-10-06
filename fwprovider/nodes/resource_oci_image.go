@@ -339,7 +339,7 @@ func (r *ociImageResource) Create(
 		)
 	}
 
-	resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 	resp.Diagnostics.Append(diags...)
 }
 
