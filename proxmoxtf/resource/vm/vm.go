@@ -5450,29 +5450,7 @@ func vmReadCustom(
 		}
 	}
 
-	currentSMBIOS := d.Get(mkSMBIOS).([]any)
-
-	switch {
-	case len(clone) > 0:
-		if len(currentSMBIOS) > 0 {
-			err := d.Set(mkSMBIOS, currentSMBIOS)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	case len(smbios) == 0:
-		err := d.Set(mkSMBIOS, []any{})
-		diags = append(diags, diag.FromErr(err)...)
-	default:
-		if len(currentSMBIOS) > 0 ||
-			smbios[mkSMBIOSFamily] != dvSMBIOSFamily ||
-			smbios[mkSMBIOSManufacturer] != dvSMBIOSManufacturer ||
-			smbios[mkSMBIOSProduct] != dvSMBIOSProduct ||
-			smbios[mkSMBIOSSerial] != dvSMBIOSSerial ||
-			smbios[mkSMBIOSSKU] != dvSMBIOSSKU ||
-			smbios[mkSMBIOSVersion] != dvSMBIOSVersion {
-			err := d.Set(mkSMBIOS, []any{smbios})
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	}
+	diags = append(diags, vmReadSMBIOSState(d, smbios, clone)...)
 
 	// Compare the startup order to the one stored in the state.
 	var startup map[string]any
@@ -5652,6 +5630,46 @@ func vmReadCustom(
 	diags = setDefaultIfNotExists(d, diags, mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
 	diags = setDefaultIfNotExists(d, diags, mkRebootAfterUpdate, dvRebootAfterUpdate)
 	diags = setDefaultIfNotExists(d, diags, mkRebootAfterCreation, dvRebootAfterCreation)
+
+	return diags
+}
+
+// vmReadSMBIOSState stores the SMBIOS settings reported by Proxmox in the state.
+// For a cloned VM the block is only refreshed when it is configured, so values inherited
+// from the template do not show up as a diff when the block is absent.
+func vmReadSMBIOSState(d *schema.ResourceData, smbios map[string]any, clone []any) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	currentSMBIOS := d.Get(mkSMBIOS).([]any)
+
+	switch {
+	case len(clone) > 0 && len(currentSMBIOS) > 0:
+		if len(smbios) == 0 {
+			err := d.Set(mkSMBIOS, []any{})
+			diags = append(diags, diag.FromErr(err)...)
+
+			break
+		}
+
+		err := d.Set(mkSMBIOS, []any{smbios})
+		diags = append(diags, diag.FromErr(err)...)
+	case len(clone) > 0:
+		// the block is not configured on a clone, keep it absent
+	case len(smbios) == 0:
+		err := d.Set(mkSMBIOS, []any{})
+		diags = append(diags, diag.FromErr(err)...)
+	default:
+		if len(currentSMBIOS) > 0 ||
+			smbios[mkSMBIOSFamily] != dvSMBIOSFamily ||
+			smbios[mkSMBIOSManufacturer] != dvSMBIOSManufacturer ||
+			smbios[mkSMBIOSProduct] != dvSMBIOSProduct ||
+			smbios[mkSMBIOSSerial] != dvSMBIOSSerial ||
+			smbios[mkSMBIOSSKU] != dvSMBIOSSKU ||
+			smbios[mkSMBIOSVersion] != dvSMBIOSVersion {
+			err := d.Set(mkSMBIOS, []any{smbios})
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
 
 	return diags
 }
