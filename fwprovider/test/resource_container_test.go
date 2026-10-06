@@ -3563,10 +3563,12 @@ func TestAccResourceContainerImportTimeoutDefaults(t *testing.T) {
 					}
 
 					wantDefaults := map[string]string{
-						"timeout_create": "1800",
-						"timeout_clone":  "1800",
-						"timeout_update": "1800",
-						"timeout_delete": "60",
+						"timeout_create":  "1800",
+						"timeout_clone":   "1800",
+						"timeout_update":  "1800",
+						"timeout_delete":  "60",
+						"timeout_migrate": "1800",
+						"migrate":         "false",
 					}
 
 					attrs := states[0].Attributes

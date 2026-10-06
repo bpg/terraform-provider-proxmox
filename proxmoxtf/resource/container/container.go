@@ -26,6 +26,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
+	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
@@ -74,6 +75,7 @@ const (
 	dvHookScript                        = ""
 	dvMemoryDedicated                   = 512
 	dvMemorySwap                        = 0
+	dvMigrate                           = false
 	dvMountPointACL                     = false
 	dvMountPointBackup                  = false
 	dvMountPointPath                    = ""
@@ -104,6 +106,7 @@ const (
 	dvTimeoutClone                      = 1800
 	dvTimeoutUpdate                     = 1800
 	dvTimeoutDelete                     = 60
+	dvTimeoutMigrate                    = 1800
 	dvUnprivileged                      = false
 
 	maxNetworkInterfaces  = 10
@@ -161,6 +164,7 @@ const (
 	mkMemory                            = "memory"
 	mkMemoryDedicated                   = "dedicated"
 	mkMemorySwap                        = "swap"
+	mkMigrate                           = "migrate"
 	mkMountPoint                        = "mount_point"
 	mkMountPointACL                     = "acl"
 	mkMountPointBackup                  = "backup"
@@ -214,6 +218,7 @@ const (
 	mkTimeoutClone                      = "timeout_clone"
 	mkTimeoutUpdate                     = "timeout_update"
 	mkTimeoutDelete                     = "timeout_delete"
+	mkTimeoutMigrate                    = "timeout_migrate"
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
 
@@ -989,11 +994,16 @@ func Container() *schema.Resource {
 				MaxItems: maxNetworkInterfaces,
 				MinItems: 0,
 			},
+			mkMigrate: {
+				Type:        schema.TypeBool,
+				Description: "Whether to migrate the container on node change instead of re-creating it",
+				Optional:    true,
+				Default:     dvMigrate,
+			},
 			mkNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
-				ForceNew:    true,
 			},
 			mkOperatingSystem: {
 				Type:        schema.TypeList,
@@ -1137,6 +1147,12 @@ func Container() *schema.Resource {
 				Optional:    true,
 				Default:     dvTimeoutDelete,
 			},
+			mkTimeoutMigrate: {
+				Type:        schema.TypeInt,
+				Description: "Migrate container timeout",
+				Optional:    true,
+				Default:     dvTimeoutMigrate,
+			},
 			"timeout_start": {
 				Type:        schema.TypeInt,
 				Description: "Start container timeout",
@@ -1196,6 +1212,16 @@ func Container() *schema.Resource {
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
 					// (automatic fix from -1 to actual vm_id must not re-create VM)
 					return strconv.Itoa(newValue.(int)) != d.Id()
+				},
+			),
+			customdiff.ForceNewIf(
+				mkNodeName,
+				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
+					if !d.HasChange(mkNodeName) {
+						return false
+					}
+
+					return !d.Get(mkMigrate).(bool)
 				},
 			),
 			// Force recreation if disk is being shrunk (shrinking not supported, only growing)
@@ -3535,16 +3561,20 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	diags = setDefaultIfNotExists(d, diags, mkTimeoutClone, dvTimeoutClone)
 	diags = setDefaultIfNotExists(d, diags, mkTimeoutUpdate, dvTimeoutUpdate)
 	diags = setDefaultIfNotExists(d, diags, mkTimeoutDelete, dvTimeoutDelete)
+	diags = setDefaultIfNotExists(d, diags, mkTimeoutMigrate, dvTimeoutMigrate)
+	diags = setDefaultIfNotExists(d, diags, mkMigrate, dvMigrate)
 
 	return diags
 }
 
-func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
-	var updateDiags diag.Diagnostics
-
+//nolint:nonamedreturns // the deferred HA restore below has to report its failure on every exit path.
+func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (updateDiags diag.Diagnostics) {
 	updateTimeoutSec := d.Get(mkTimeoutUpdate).(int)
 
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(updateTimeoutSec)*time.Second)
+	// Detach from the SDK's 20 minute default so a long migration can't cap the update (#2561).
+	baseCtx := context.WithoutCancel(ctx)
+
+	ctx, cancel := context.WithTimeout(baseCtx, time.Duration(updateTimeoutSec)*time.Second)
 	defer cancel()
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -3555,13 +3585,22 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	}
 
 	nodeName := d.Get(mkNodeName).(string)
+	nodeNameChanged := d.HasChange(mkNodeName)
 
 	vmID, e := strconv.Atoi(d.Id())
 	if e != nil {
 		return diag.FromErr(e)
 	}
 
-	containerAPI := client.Node(nodeName).Container(vmID)
+	sourceNodeName := nodeName
+
+	if nodeNameChanged {
+		oldNodeNameValue, _ := d.GetChange(mkNodeName)
+		sourceNodeName = oldNodeNameValue.(string)
+	}
+
+	// Built against the source node: the body decides how the container is migrated.
+	containerAPI := client.Node(sourceNodeName).Container(vmID)
 
 	// Prepare the new request object.
 	updateBody := containers.UpdateRequestBody{
@@ -3576,6 +3615,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	rebootRequired := false
 	container := Container()
+
+	var pendingResize *containers.ResizeRequestBody
 
 	// Retrieve the clone argument as the update logic varies for clones.
 	clone := d.Get(mkClone).([]any)
@@ -3687,16 +3728,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			return diag.Errorf("new disk size (%s) has to be greater than the current disk (%s)", size, oldSize)
 		}
 
+		// Resized after any migration, on the node the container ends up on.
 		if !ptr.Eq(oldSize, size) {
-			resizeDiags := sdkresource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
+			pendingResize = &containers.ResizeRequestBody{
 				Disk: "rootfs",
 				Size: size.String(),
-			}), "Container disk resize")
-			if resizeDiags.HasError() {
-				return resizeDiags
 			}
-
-			updateDiags = append(updateDiags, resizeDiags...)
 		}
 
 		rootFS.ACL = &acl
@@ -4119,6 +4156,76 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		bodyDirty = true
 	}
 
+	started := d.Get(mkStarted).(bool)
+	template := d.Get(mkTemplate).(bool)
+
+	// Anything left to apply on the target means migrating offline, so the container boots only once.
+	stopRequested := d.HasChange(mkStarted) && !started
+	offlineMigration := nodeNameChanged &&
+		(bodyDirty || len(updateBody.Delete) > 0 || rebootRequired || stopRequested)
+
+	if nodeNameChanged {
+		migrateTimeoutSec := d.Get(mkTimeoutMigrate).(int)
+
+		migrateCtx, cancelMigrate := context.WithTimeout(baseCtx, time.Duration(migrateTimeoutSec)*time.Second)
+		defer cancelMigrate()
+
+		shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
+
+		// Park HA at "ignored" so PVE doesn't reroute shutdown/migrate/start through the HA manager.
+		restoreHA, haErr := suspendContainerHA(migrateCtx, client, vmID, d.HasChange(mkStarted), started)
+
+		// Restored last, after any start, so a rebalance-on-start finds the container already running.
+		defer func() {
+			if restoreHA == nil {
+				return
+			}
+
+			restoreCtx, cancelRestore := context.WithTimeout(baseCtx, haRestoreTimeout)
+			defer cancelRestore()
+
+			if err := restoreHA(restoreCtx); err != nil {
+				updateDiags = append(updateDiags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  fmt.Sprintf("Unable to Restore HA State of Container %d", vmID),
+					Detail:   "The container is left in HA state \"ignored\": " + err.Error(),
+				})
+			}
+		}()
+
+		if haErr != nil {
+			return diag.Diagnostics{{
+				Severity: diag.Error,
+				Summary:  fmt.Sprintf("Unable to Suspend HA Management of Container %d", vmID),
+				Detail:   haErr.Error(),
+			}}
+		}
+
+		migrateDiags := migrateContainer(migrateCtx, client, vmID, sourceNodeName, nodeName, offlineMigration, shutdownTimeoutSec)
+		if migrateDiags.HasError() {
+			return migrateDiags
+		}
+
+		containerAPI = client.Node(nodeName).Container(vmID)
+
+		// The migration has its own budget, so restart the `timeout_update` clock.
+		cancel()
+
+		var cancelUpdate context.CancelFunc
+
+		ctx, cancelUpdate = context.WithTimeout(baseCtx, time.Duration(updateTimeoutSec)*time.Second)
+		defer cancelUpdate()
+	}
+
+	if pendingResize != nil {
+		resizeDiags := sdkresource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, pendingResize), "Container disk resize")
+		if resizeDiags.HasError() {
+			return resizeDiags
+		}
+
+		updateDiags = append(updateDiags, resizeDiags...)
+	}
+
 	// Only PUT /config when we actually have fields to send. Attributes whose changes
 	// don't populate updateBody (`started`, `idmap`, timeouts, `wait_for_ip`) must not
 	// trigger an empty-body request — PVE rejects those with HTTP 500 (#2883).
@@ -4143,44 +4250,53 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 	}
 
-	// Determine if the state of the container needs to be changed.
-	started := d.Get(mkStarted).(bool)
-	template := d.Get(mkTemplate).(bool)
+	// An offline migration leaves the container stopped even when `started` is unchanged.
+	switch {
+	case !template && started && (offlineMigration || d.HasChange(mkStarted)):
+		status, statusErr := containerAPI.GetContainerStatus(ctx)
+		if statusErr != nil {
+			return diag.Diagnostics{{
+				Severity: diag.Error,
+				Summary:  fmt.Sprintf("Unable to Read Container %d Status", vmID),
+				Detail:   statusErr.Error(),
+			}}
+		}
 
-	if d.HasChange(mkStarted) && !template {
-		if started {
-			updateDiags = sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
-			if updateDiags.HasError() {
-				return updateDiags
+		// A running container still needs the reboot below to pick up the pending changes.
+		if status.Status != "running" {
+			startDiags := sdkresource.TaskResultDiags(containerAPI.StartContainer(ctx), "Container start")
+			if startDiags.HasError() {
+				return startDiags
 			}
 
-			// The config and idmap were written before this cold start, so it already applies every pending change.
-			rebootRequired = false
-		} else {
-			forceStop := types.CustomBool(true)
-			// Using delete timeout here as we're in the similar situation
-			// as in the delete function, where we need to wait for the container
-			// to be stopped before we can proceed with the update.
-			// see `containerDelete` function for more details about the logic here
-			// Needs to be refactored to a common function
-			shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
-
-			shutdownDiags := sdkresource.TaskResultDiags(containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
-				ForceStop: &forceStop,
-				Timeout:   &shutdownTimeoutSec,
-			}), "Container shutdown")
-			if shutdownDiags.HasError() {
-				return shutdownDiags
-			}
-
-			updateDiags = append(updateDiags, shutdownDiags...)
-
-			if e = containerAPI.WaitForContainerStatus(ctx, "stopped"); e != nil {
-				return append(updateDiags, diag.FromErr(e)...)
-			}
+			updateDiags = append(updateDiags, startDiags...)
 
 			rebootRequired = false
 		}
+	case !template && !started && !offlineMigration && d.HasChange(mkStarted):
+		forceStop := types.CustomBool(true)
+		// Using delete timeout here as we're in the similar situation
+		// as in the delete function, where we need to wait for the container
+		// to be stopped before we can proceed with the update.
+		// see `containerDelete` function for more details about the logic here
+		// Needs to be refactored to a common function
+		shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
+
+		shutdownDiags := sdkresource.TaskResultDiags(containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
+			ForceStop: &forceStop,
+			Timeout:   &shutdownTimeoutSec,
+		}), "Container shutdown")
+		if shutdownDiags.HasError() {
+			return shutdownDiags
+		}
+
+		updateDiags = append(updateDiags, shutdownDiags...)
+
+		if e = containerAPI.WaitForContainerStatus(ctx, "stopped"); e != nil {
+			return append(updateDiags, diag.FromErr(e)...)
+		}
+
+		rebootRequired = false
 	}
 
 	// As a final step in the update procedure, we might need to reboot the container.
@@ -4339,6 +4455,119 @@ func setDefaultIfNotExists(d *schema.ResourceData, diags diag.Diagnostics, key s
 	}
 
 	return diags
+}
+
+// migrateContainer moves a container to targetNode: with restart=1 if running, or shut down first when offline is set.
+// The caller must suspend HA first (see suspendContainerHA).
+func migrateContainer(
+	ctx context.Context,
+	client proxmox.Client,
+	vmID int,
+	sourceNode, targetNode string,
+	offline bool,
+	shutdownTimeoutSec int,
+) diag.Diagnostics {
+	sourceAPI := client.Node(sourceNode).Container(vmID)
+
+	status, err := sourceAPI.GetContainerStatus(ctx)
+	if err != nil {
+		return diag.Diagnostics{{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Unable to Read Container %d Status", vmID),
+			Detail:   err.Error(),
+		}}
+	}
+
+	body := &containers.MigrateRequestBody{TargetNode: targetNode}
+
+	switch {
+	case status.Status == "running" && offline:
+		forceStop := types.CustomBool(true)
+		shutdownSummary := fmt.Sprintf("Unable to Shut Down Container %d", vmID)
+
+		shutdownDiags := sdkresource.TaskResultDiags(sourceAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
+			ForceStop: &forceStop,
+			Timeout:   &shutdownTimeoutSec,
+		}), shutdownSummary)
+		if shutdownDiags.HasError() {
+			return shutdownDiags
+		}
+
+		if err := sourceAPI.WaitForContainerStatus(ctx, "stopped"); err != nil {
+			return diag.Diagnostics{{Severity: diag.Error, Summary: shutdownSummary, Detail: err.Error()}}
+		}
+	case status.Status == "running":
+		restart := types.CustomBool(true)
+		body.RestartMigrate = &restart
+	}
+
+	return sdkresource.TaskResultDiags(sourceAPI.MigrateContainer(ctx, body), fmt.Sprintf("Unable to Migrate Container %d", vmID))
+}
+
+// haRestoreTimeout bounds the HA restore, which runs on its own context so a timed-out migration still restores it.
+const haRestoreTimeout = 2 * time.Minute
+
+// suspendContainerHA sets an HA-managed container to "ignored" and returns a function restoring its HA state, or nil
+// when there is nothing to restore; the function is also returned with an error once the state has been changed.
+// A changed `started` overrides the original state, see haRestoreState.
+func suspendContainerHA(
+	ctx context.Context,
+	client proxmox.Client,
+	vmID int,
+	startedChanged, started bool,
+) (func(context.Context) error, error) {
+	haClient := client.Cluster().HA().Resources()
+	haResourceID := types.HAResourceID{Type: types.HAResourceTypeContainer, Name: strconv.Itoa(vmID)}
+
+	haResource, err := haClient.Get(ctx, haResourceID)
+	if errors.Is(err, api.ErrResourceDoesNotExist) {
+		return nil, nil //nolint:nilnil // not HA-managed, nothing to restore.
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if haResource.State == types.HAResourceStateIgnored {
+		return nil, nil //nolint:nilnil // already ignored, nothing to restore.
+	}
+
+	restoreState := haRestoreState(haResource.State, startedChanged, started)
+
+	setState := func(ctx context.Context, state types.HAResourceState) error {
+		return haClient.Update(ctx, haResourceID, &haresources.HAResourceUpdateRequestBody{
+			HAResourceDataBase: haresources.HAResourceDataBase{State: state},
+		})
+	}
+
+	if err := setState(ctx, types.HAResourceStateIgnored); err != nil {
+		return nil, err
+	}
+
+	restore := func(ctx context.Context) error {
+		return setState(ctx, restoreState)
+	}
+
+	// Until the CRM drops the service, the LRM still acts on it, e.g. restarting it after our shutdown.
+	if err := client.Cluster().HA().WaitForServiceUnmanaged(ctx, haResourceID); err != nil {
+		return restore, err
+	}
+
+	return restore, nil
+}
+
+// haRestoreState returns the HA state to restore after a migration. A changed `started` wins over an original
+// "started", "stopped" or "disabled" state, which would otherwise make HA undo this apply's run state.
+func haRestoreState(original types.HAResourceState, startedChanged, started bool) types.HAResourceState {
+	switch {
+	case startedChanged && started &&
+		(original == types.HAResourceStateStopped || original == types.HAResourceStateDisabled):
+		return types.HAResourceStateStarted
+	case startedChanged && !started && original == types.HAResourceStateStarted:
+		return types.HAResourceStateStopped
+	default:
+		return original
+	}
 }
 
 func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {
