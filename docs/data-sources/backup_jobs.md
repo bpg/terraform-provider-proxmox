@@ -41,6 +41,7 @@ Read-Only:
 - `mode` (String) Backup mode (e.g. snapshot, suspend, stop).
 - `node` (String) Node on which the backup job runs.
 - `notes_template` (String) Template for backup notes.
+- `notification_mode` (String) Notification mode of the job (`auto`, `legacy-sendmail` or `notification-system`).
 - `pool` (String) Pool whose members are backed up.
 - `protected` (Boolean) Indicates whether backups created by this job are protected from pruning.
 - `prune_backups` (Map of String) Retention options as a map of keep policies (e.g. keep-last = "3", keep-weekly = "2").

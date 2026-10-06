@@ -198,6 +198,15 @@ func (r *backupJobResource) Schema(
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
+			"notification_mode": schema.StringAttribute{
+				Description: "Notification mode (`auto`, `legacy-sendmail` or `notification-system`). With `auto` (the Proxmox VE default), " +
+					"an email is sent if `mailto` is set, otherwise the notification system is used. `legacy-sendmail` always uses " +
+					"`mailto` and `mailnotification`; `notification-system` always uses the PVE notification system and ignores them.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf("auto", "legacy-sendmail", "notification-system"),
+				},
+			},
 			"bwlimit": schema.Int64Attribute{
 				Description: "I/O bandwidth limit in KiB/s.",
 				Optional:    true,
