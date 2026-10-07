@@ -53,17 +53,15 @@ You also can use `gh` tool to verify the binaries provenance, see more details [
 
 ## Testing the Provider
 
-To test the provider, simply run `make test`.
+Unit tests cover the API client, model conversion and schema logic, and run with:
 
 ```sh
 make test
 ```
 
-Tests are limited to regression tests, ensuring backward compatibility.
-
-A limited number of acceptance tests are available in the `fwprovider/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
-These tests are not run by default, as they require a Proxmox VE environment to be available.
-They can be run using `./testacc` (requires `testacc.env` in the project root). The Proxmox connection can be configured using environment variables; see the provider documentation for details.
+Most of the test coverage is acceptance tests, which exercise the provider end-to-end against a real Proxmox VE instance.
+They live next to the resource or data source they cover (and in `fwprovider/test` for cross-resource scenarios), are grouped into light/medium/heavy tiers, and are run with `./testacc` (requires `testacc.env` in the project root, see [CONTRIBUTING.md](CONTRIBUTING.md#acceptance-tests)).
+They are not run in CI by default, as they require a Proxmox VE environment; maintainers run them against a lab cluster before merging changes, and new or changed functionality must come with acceptance tests.
 
 ## Deploying the Example Resources
 
@@ -97,14 +95,12 @@ If you don't have a free Proxmox cluster to play with, there is a dedicated [how
 
 ## Future Work
 
-The provider is using the [Terraform SDKv2](https://developer.hashicorp.com/terraform/plugin/sdkv2), which is considered legacy and is in maintenance mode.
-Work has started to migrate the provider to the new [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework), with the aim of releasing it as a new major version **1.0**.
+The provider was originally built on the [Terraform SDKv2](https://developer.hashicorp.com/terraform/plugin/sdkv2), which is considered legacy and is in maintenance mode.
+New resources and data sources are implemented with the [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework), and both are served from a single binary.
+The core resources, including `proxmox_virtual_environment_vm`, `proxmox_virtual_environment_container`, `proxmox_virtual_environment_file` and the firewall and access-control resources, are still on SDKv2 and continue to receive fixes and enhancements there.
+Migrating them to the Plugin Framework, starting with the VM resource ([#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231)), is a prerequisite for the **1.0** release.
 
 ## Known Issues
-
-### Proxmox VE 9.x
-
-Proxmox VE 9.x has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
 
 ### HA VMs / containers
 
