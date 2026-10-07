@@ -181,9 +181,9 @@ For example, to run all VM-related tests: `./testacc TestAccResourceVM.*`
 
 > [!NOTE]
 >
-> - Acceptance test coverage is still in development.
-> - Only some resources and data sources are currently tested.
-> - Some tests may require specific Proxmox configuration.
+> - Acceptance tests are required for new or changed functionality (see [Functional coverage](#acceptance-tests) above).
+> - Some older resources still lack acceptance coverage; contributions adding tests for them are welcome.
+> - Some tests require specific Proxmox configuration (storage, networks, cloud images); see the `PROXMOX_VE_ACC_*` variables in `testacc.env`.
 
 ### Manual testing
 
