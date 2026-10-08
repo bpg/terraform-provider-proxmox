@@ -320,30 +320,6 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
-	readRule := func(pos int, ruleMap map[string]any) error {
-		rule, err := api.GetRule(ctx, pos)
-		if err != nil {
-			if errors.Is(err, firewall.ErrNoRuleAtPosition) {
-				return firewall.ErrNoRuleAtPosition
-			}
-
-			return fmt.Errorf("error reading rule %d : %w", pos, err)
-		}
-
-		ruleMap[mkRulePos] = pos
-
-		if rule.Type == "group" {
-			ruleMap[mkSecurityGroup] = rule.Action
-			securityGroupBaseRuleToMap(&rule.BaseRule, ruleMap)
-		} else {
-			ruleMap[mkRuleAction] = rule.Action
-			ruleMap[mkRuleType] = rule.Type
-			baseRuleToMap(&rule.BaseRule, ruleMap)
-		}
-
-		return nil
-	}
-
 	ruleIDs, err := api.ListRules(ctx)
 	if err != nil {
 		diags = append(diags, diag.FromErr(err)...)
@@ -355,7 +331,7 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 	for _, id := range ruleIDs {
 		ruleMap := map[string]any{}
 
-		err = readRule(id.Pos, ruleMap)
+		err = readRule(ctx, api, id.Pos, ruleMap)
 		if err != nil {
 			if !errors.Is(err, firewall.ErrNoRuleAtPosition) {
 				diags = append(diags, diag.FromErr(err)...)
@@ -379,9 +355,15 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	oldRules, newRules := d.GetChange(MkRule)
-	oldRulesList := oldRules.([]any)
-	newRulesList := newRules.([]any)
+	// match against the rules actually on the target, not the prior state: the guest may have been
+	// replaced since refresh (PVE drops its firewall config on destroy), leaving state rules that no longer exist.
+	oldRulesList, err := readRuleMaps(ctx, api)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+		return diags
+	}
+
+	newRulesList := d.Get(MkRule).([]any)
 
 	// build per-signature queues for old rules to handle duplicate identities correctly.
 	// multiple rules can share the same signature (identity fields only, excludes comment/enabled/log).
@@ -569,6 +551,65 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	}
 
 	return RulesRead(ctx, api, d)
+}
+
+func readRule(ctx context.Context, api firewall.Rule, pos int, ruleMap map[string]any) error {
+	rule, err := api.GetRule(ctx, pos)
+	if err != nil {
+		if errors.Is(err, firewall.ErrNoRuleAtPosition) {
+			return firewall.ErrNoRuleAtPosition
+		}
+
+		return fmt.Errorf("error reading rule %d : %w", pos, err)
+	}
+
+	ruleMap[mkRulePos] = pos
+
+	if rule.Type == "group" {
+		ruleMap[mkSecurityGroup] = rule.Action
+		securityGroupBaseRuleToMap(&rule.BaseRule, ruleMap)
+	} else {
+		ruleMap[mkRuleAction] = rule.Action
+		ruleMap[mkRuleType] = rule.Type
+		baseRuleToMap(&rule.BaseRule, ruleMap)
+	}
+
+	return nil
+}
+
+// readRuleMaps reads the target's current rules as fully populated maps, so they can be matched with
+// computeRuleSignature and compared field by field like rules from the schema.
+func readRuleMaps(ctx context.Context, api firewall.Rule) ([]any, error) {
+	ruleIDs, err := api.ListRules(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rules := make([]any, 0, len(ruleIDs))
+
+	for _, id := range ruleIDs {
+		ruleMap := map[string]any{}
+
+		for _, key := range []string{
+			mkSecurityGroup, mkRuleAction, mkRuleType, mkRuleComment, mkRuleDPort, mkRuleDest,
+			mkRuleIFace, mkRuleLog, mkRuleMacro, mkRuleProto, mkRuleSource, mkRuleSPort,
+		} {
+			ruleMap[key] = ""
+		}
+
+		err = readRule(ctx, api, id.Pos, ruleMap)
+		if errors.Is(err, firewall.ErrNoRuleAtPosition) {
+			continue
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		rules = append(rules, ruleMap)
+	}
+
+	return rules, nil
 }
 
 // RulesDelete deletes all rules.
