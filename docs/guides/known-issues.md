@@ -44,7 +44,7 @@ An OpenTofu feature request for per-provider parallelism is tracked at [opentofu
 
 The Proxmox VE API has no endpoint for uploading snippets, so the provider uploads them over SFTP.
 This requires SSH access to the node with a PAM account (a regular Linux user), as described in [SSH Connection](../index.md#ssh-connection).
-API-only setups cannot manage snippets.
+API-only setups cannot manage snippets until Proxmox VE adds an API for it, which is tracked upstream in [Bugzilla #2208](https://bugzilla.proxmox.com/show_bug.cgi?id=2208).
 
 ## VMware disk images
 
