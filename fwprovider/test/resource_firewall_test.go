@@ -17,9 +17,11 @@ import (
 	"math/rand"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -2694,6 +2696,139 @@ func TestAccResourceClusterFirewallSecurityGroupReadDeletedGroup(t *testing.T) {
 				}`),
 				// The key assertion: this step does NOT error during the refresh phase.
 				// After refresh removes the resource from state, Terraform recreates it.
+			},
+		},
+	})
+}
+
+func TestAccResourceFirewallRulesGuestReplaced(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	containerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": containerID,
+	})
+
+	config := func(password, sshComment string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_container" "ct" {
+				node_name    = "{{.NodeName}}"
+				vm_id        = {{.TestContainerID}}
+				started      = false
+				unprivileged = true
+				disk {
+					datastore_id = "{{.ContainerDatastoreID}}"
+					size         = 4
+				}
+				initialization {
+					hostname = "test-fw-guest-replaced"
+					user_account {
+						password = "%s"
+					}
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+
+			resource "proxmox_virtual_environment_firewall_rules" "rules" {
+				node_name    = proxmox_virtual_environment_container.ct.node_name
+				container_id = proxmox_virtual_environment_container.ct.vm_id
+
+				rule {
+					type    = "out"
+					action  = "ACCEPT"
+					dest    = "192.168.0.71,192.168.0.72"
+					dport   = "53"
+					proto   = "udp"
+				}
+				rule {
+					type    = "out"
+					action  = "DROP"
+					dest    = "10.0.0.0/8"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					comment = "%s"
+					dport   = "22"
+					proto   = "tcp"
+				}
+			}`, password, sshComment))
+	}
+
+	checkRulesOnPVE := func(sshComment string) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			ctx := context.Background()
+			fw := te.NodeClient().Container(containerID).Firewall()
+
+			rules, err := fw.ListRules(ctx)
+			if err != nil {
+				return err
+			}
+
+			expected := []string{
+				"out ACCEPT dest=192.168.0.71,192.168.0.72 dport=53 proto=udp comment=",
+				"out DROP dest=10.0.0.0/8 dport= proto= comment=",
+				"in ACCEPT dest= dport=22 proto=tcp comment=" + sshComment,
+			}
+
+			if len(rules) != len(expected) {
+				return fmt.Errorf("expected %d rules on container %d, got %d", len(expected), containerID, len(rules))
+			}
+
+			str := func(p *string) string {
+				if p == nil {
+					return ""
+				}
+
+				return *p
+			}
+
+			for pos, want := range expected {
+				rule, err := fw.GetRule(ctx, pos)
+				if err != nil {
+					return err
+				}
+
+				got := fmt.Sprintf("%s %s dest=%s dport=%s proto=%s comment=%s",
+					rule.Type, rule.Action, str(rule.Dest), str(rule.DPort), str(rule.Proto), str(rule.Comment))
+				if got != want {
+					return fmt.Errorf("rule %d on container %d: expected %q, got %q", pos, containerID, want, got)
+				}
+			}
+
+			return nil
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config("Passw0rd-one", "ssh"),
+				Check:  checkRulesOnPVE("ssh"),
+			},
+			{
+				Config: config("Passw0rd-two", "ssh access"),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_container.ct", plancheck.ResourceActionDestroyBeforeCreate),
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_firewall_rules.rules", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					checkRulesOnPVE("ssh access"),
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.rules", map[string]string{
+						"rule.#":         "3",
+						"rule.2.comment": "^ssh access$",
+					}),
+				),
 			},
 		},
 	})
