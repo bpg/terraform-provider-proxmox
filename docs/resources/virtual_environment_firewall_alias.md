@@ -34,9 +34,9 @@ resource "proxmox_virtual_environment_firewall_alias" "ubuntu_vm" {
 
 ## Argument Reference
 
-- `node_name` - (Optional) Node name. Leave empty for cluster level aliases.
-- `vm_id` - (Optional) VM ID. Leave empty for cluster level aliases.
-- `container_id` - (Optional) Container ID. Leave empty for cluster level aliases.
+- `node_name` - (Optional) Node name. Leave empty for cluster level aliases. Changing it forces replacement unless `vm_id` or `container_id` is set, so it can change in place after a migration.
+- `vm_id` - (Optional) VM ID. Leave empty for cluster level aliases. Changing this value forces replacement.
+- `container_id` - (Optional) Container ID. Leave empty for cluster level aliases. Changing this value forces replacement.
 - `name` - (Required) Alias name.
 - `cidr` - (Required) Network/IP specification in CIDR format.
 - `comment` - (Optional) Alias comment.

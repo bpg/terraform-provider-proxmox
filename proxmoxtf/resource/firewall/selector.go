@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
@@ -34,6 +35,7 @@ func selectorSchema() map[string]*schema.Schema {
 			Type:             schema.TypeInt,
 			Optional:         true,
 			Description:      "The ID of the VM to manage the firewall for.",
+			ForceNew:         true,
 			RequiredWith:     []string{mkSelectorNodeName},
 			ValidateDiagFunc: resource.VMIDValidator(),
 		},
@@ -41,16 +43,41 @@ func selectorSchema() map[string]*schema.Schema {
 			Type:             schema.TypeInt,
 			Optional:         true,
 			Description:      "The ID of the container to manage the firewall for.",
+			ForceNew:         true,
 			RequiredWith:     []string{mkSelectorNodeName},
 			ValidateDiagFunc: resource.VMIDValidator(),
 		},
 	}
 }
 
+// selectorCustomizeDiff replaces node and cluster level resources when node_name changes, as an in-place update would
+// only reach the new target and leave the objects on the old one. vm_id and container_id are ForceNew in the schema
+// instead, which also covers values unknown at plan time. A guest's node_name change is not a new target: guest firewall
+// config is stored cluster-wide per VMID, so it survives a migration.
+func selectorCustomizeDiff() schema.CustomizeDiffFunc {
+	return customdiff.ForceNewIf(mkSelectorNodeName, func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
+		if !d.HasChange(mkSelectorNodeName) {
+			return false
+		}
+
+		for _, key := range []string{mkSelectorVMID, mkSelectorContainerID} {
+			o, n := d.GetChange(key)
+			if o.(int) != 0 || n.(int) != 0 || !d.NewValueKnown(key) {
+				return false
+			}
+		}
+
+		return true
+	})
+}
+
 func optionsSelectorSchema() map[string]*schema.Schema {
 	s := selectorSchema()
 	s[mkSelectorNodeName].Optional = false
 	s[mkSelectorNodeName].Required = true
+	// options are a set of values on the target, an in-place update on a new target is fine
+	s[mkSelectorVMID].ForceNew = false
+	s[mkSelectorContainerID].ForceNew = false
 	// required attributes can't be included in RequiredWith
 	s[mkSelectorVMID].RequiredWith = nil
 	s[mkSelectorContainerID].RequiredWith = nil

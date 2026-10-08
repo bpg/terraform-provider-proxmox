@@ -88,6 +88,7 @@ func IPSet() *schema.Resource {
 
 	return &schema.Resource{
 		Schema:        s,
+		CustomizeDiff: selectorCustomizeDiff(),
 		CreateContext: selectFirewallAPI(ipSetCreate),
 		ReadContext:   selectFirewallAPI(ipSetRead),
 		UpdateContext: selectFirewallAPI(ipSetUpdate),

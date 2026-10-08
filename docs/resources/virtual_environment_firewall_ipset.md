@@ -42,9 +42,9 @@ resource "proxmox_virtual_environment_firewall_ipset" "ipset" {
 
 ## Argument Reference
 
-- `node_name` - (Optional) Node name. Leave empty for cluster level ipsets.
-- `vm_id` - (Optional) VM ID. Leave empty for cluster level ipsets.
-- `container_id` - (Optional) Container ID. Leave empty for cluster level ipsets.
+- `node_name` - (Optional) Node name. Leave empty for cluster level ipsets. Changing it forces replacement unless `vm_id` or `container_id` is set, so it can change in place after a migration.
+- `vm_id` - (Optional) VM ID. Leave empty for cluster level ipsets. Changing this value forces replacement.
+- `container_id` - (Optional) Container ID. Leave empty for cluster level ipsets. Changing this value forces replacement.
 - `name` - (Required) IPSet name.
 - `comment` - (Optional) IPSet comment.
 - `cidr` - (Optional) IP/CIDR block (multiple blocks supported).
@@ -57,32 +57,37 @@ resource "proxmox_virtual_environment_firewall_ipset" "ipset" {
 
 There are no attribute references available for this resource.
 
-
 ## Import
 
 ### Cluster IPSet
+
 Use the import ID: `cluster/<ipset_name>`
 Example uses ipset name `local_network`.
 
 **Example:**
+
 ```bash
 terraform import proxmox_virtual_environment_firewall_ipset.cluster_ipset cluster/local_network
 ```
 
 ### VM IPSet
+
 Use the import ID format: `vm/<node_name>/<vm_id>/<ipset_name>`
 Example uses node name `pve` and VM ID `100` and ipset name `local_network`.
 
 **Example:**
+
 ```bash
 terraform import proxmox_virtual_environment_firewall_ipset.vm_ipset vm/pve/100/local_network
 ```
 
 ### Container IPSet
+
 Use the import ID format: `container/<node_name>/<container_id>/<ipset_name>`
 Example uses node name `pve` and container ID `100` and ipset name `local_network`.
 
 **Example:**
+
 ```bash
 terraform import proxmox_virtual_environment_firewall_ipset.container_ipset container/pve/100/local_network
 ```
