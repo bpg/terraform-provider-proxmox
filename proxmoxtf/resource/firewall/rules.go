@@ -175,6 +175,7 @@ func Rules() *schema.Resource {
 
 	return &schema.Resource{
 		Schema:        s,
+		CustomizeDiff: selectorCustomizeDiff(),
 		CreateContext: invokeRuleAPI(RulesCreate),
 		ReadContext:   invokeRuleAPI(RulesRead),
 		UpdateContext: invokeRuleAPI(RulesUpdate),
