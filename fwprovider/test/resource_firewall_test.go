@@ -2772,17 +2772,35 @@ func TestAccResourceFirewallRulesGuestReplaced(t *testing.T) {
 				return err
 			}
 
-			if len(rules) != 3 {
-				return fmt.Errorf("expected 3 rules on container %d, got %d", containerID, len(rules))
+			expected := []string{
+				"out ACCEPT dest=192.168.0.71,192.168.0.72 dport=53 proto=udp comment=",
+				"out DROP dest=10.0.0.0/8 dport= proto= comment=",
+				"in ACCEPT dest= dport=22 proto=tcp comment=" + sshComment,
 			}
 
-			rule, err := fw.GetRule(ctx, 2)
-			if err != nil {
-				return err
+			if len(rules) != len(expected) {
+				return fmt.Errorf("expected %d rules on container %d, got %d", len(expected), containerID, len(rules))
 			}
 
-			if rule.Comment == nil || *rule.Comment != sshComment {
-				return fmt.Errorf("expected rule 2 comment %q, got %v", sshComment, rule.Comment)
+			str := func(p *string) string {
+				if p == nil {
+					return ""
+				}
+
+				return *p
+			}
+
+			for pos, want := range expected {
+				rule, err := fw.GetRule(ctx, pos)
+				if err != nil {
+					return err
+				}
+
+				got := fmt.Sprintf("%s %s dest=%s dport=%s proto=%s comment=%s",
+					rule.Type, rule.Action, str(rule.Dest), str(rule.DPort), str(rule.Proto), str(rule.Comment))
+				if got != want {
+					return fmt.Errorf("rule %d on container %d: expected %q, got %q", pos, containerID, want, got)
+				}
 			}
 
 			return nil
