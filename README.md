@@ -81,8 +81,8 @@ They are not run in CI by default, as they require a Proxmox VE environment; mai
 
 ## Example Resources
 
-The `example` directory contains sample configurations for most resources.
-`make example` builds the provider, applies them against a test Proxmox VE environment, and destroys them again, so it needs a dedicated environment and an `example/terraform.tfvars`.
+The `example` directory contains sample configurations, mostly for the legacy SDKv2 resources; Framework resources are covered by their acceptance tests instead.
+`make example` builds the provider, applies the samples against a test Proxmox VE environment, and destroys them again, so it needs a dedicated environment and an `example/terraform.tfvars`.
 See [Setting up Proxmox in a VM for development](docs/guides/dev-proxmox-setup.md) for the prerequisites and configuration.
 
 ## Future Work
