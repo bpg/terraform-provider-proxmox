@@ -118,6 +118,8 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
 
 **Functional coverage:** acceptance tests must cover all major use cases for the resource — not just one basic scenario. Test each distinct operational mode (e.g., different targeting strategies, list attributes with multiple elements, compound fields, nested objects). PRs with insufficient functional test coverage will be rejected during review. See [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement) for details.
 
+**No faked PVE API as proof:** tests against a mocked or faked Proxmox VE API (`httptest` servers, stub clients, hand-built responses) are not accepted as proof for behavior an acceptance test can exercise. If you don't have a Proxmox VE instance, write the acceptance test anyway and say in the PR that it wasn't run; a maintainer will run it. Fakes are fine only for conditions a live PVE can't produce on demand. See [ADR-006](docs/adr/006-testing-requirements.md#faked-pve-api-tests) for details.
+
 #### Prerequisites
 
 1. A running Proxmox instance (see [Development Proxmox Setup](docs/guides/dev-proxmox-setup.md))
@@ -393,7 +395,7 @@ Guidelines:
 
 **Proof of work is mandatory for all code changes.** Every PR must include evidence that the change works as expected:
 
-- Test output (unit tests, acceptance tests)
+- Test output (unit tests, acceptance tests); tests against a faked PVE API don't count as proof of API-facing behavior (see [Acceptance tests](#acceptance-tests))
 - Logs, screenshots, or terminal output demonstrating the fix/feature
 - Any other relevant information that demonstrates the change works as expected
 
