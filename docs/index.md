@@ -10,6 +10,12 @@ The provider needs to be configured with the proper endpoint and credentials bef
 
 Use the navigation to the left to read about the available resources.
 
+## Requirements
+
+- Proxmox VE 9.x. Proxmox VE 8.x works with some limitations and is not a testing priority; 7.x is not supported.
+- Terraform 1.6+ (tested in CI) or OpenTofu 1.6+ (supported, not exercised in CI). Write-only attributes require Terraform 1.11+ or OpenTofu 1.10+.
+- TLS 1.3 on the Proxmox VE API endpoint. Older TLS versions can be allowed with the `min_tls` provider argument.
+
 ## Getting Started
 
 To use this provider, you only need:
