@@ -137,6 +137,14 @@ When planning tests, identify the distinct operational modes of the resource and
 - Nested object attributes (e.g., `fleecing`, `performance`)
 - Import with non-trivial state (e.g., list attributes that must survive import round-trip)
 
+### Faked PVE API Tests
+
+Tests against a faked Proxmox VE API (`httptest` servers, a stub `api.Client`, hand-built response structs) are **not accepted as proof** for behavior that an acceptance test can exercise. A fake encodes the author's assumptions about PVE (whether unset values are returned, delete semantics, field names), and those assumptions are exactly what the test needs to prove. A mocked test can pass while the real PVE silently keeps an old value.
+
+- If you don't have a Proxmox VE instance, write the acceptance test anyway and say in the PR that it wasn't run. A maintainer will run it.
+- Fakes are acceptable only for conditions a live PVE can't produce on demand, for example serialization errors, disarmed HA, or cluster-only states such as a guest missing from `/cluster/resources`, rewritten by a reverse proxy in front of the real API (see `fwprovider/test/resource_vm_cluster_list_test.go`).
+- Fakes may exist alongside acceptance tests as supplementary unit coverage, but they don't replace them.
+
 ### Validation Tests
 
 Validation logic can be tested without a live Proxmox instance using `resource.UnitTest`:
@@ -204,6 +212,7 @@ Assert the file exists after create-with-secret and is gone after the secret's r
 - Using `t.Run` without `t.Parallel()` at the top-level test function.
 - Including issue numbers in test names or resource names.
 - Assuming passing tests means correct API behavior — always verify with mitmproxy.
+- Submitting tests against a faked PVE API as the only proof of API-facing behavior — see [Faked PVE API Tests](#faked-pve-api-tests).
 
 ## References
 
