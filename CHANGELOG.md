@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.116.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.116.0...v0.116.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* **firewall:** reconcile rules update against live rules ([#3142](https://github.com/bpg/terraform-provider-proxmox/issues/3142)) ([2a081bb](https://github.com/bpg/terraform-provider-proxmox/commit/2a081bb87e8e497aa1c3a7b491da594e400be61b))
+* **firewall:** replace rules, alias and ipset when the target changes ([#3144](https://github.com/bpg/terraform-provider-proxmox/issues/3144)) ([8bc6d08](https://github.com/bpg/terraform-provider-proxmox/commit/8bc6d08d20f007cc7b054f66382e342c855753c0))
+
+
+### Miscellaneous
+
+* **ci:** update actions/upload-artifact digest (043fb46 → cf430e0) ([#3156](https://github.com/bpg/terraform-provider-proxmox/issues/3156)) ([64e8e42](https://github.com/bpg/terraform-provider-proxmox/commit/64e8e42bdefd2df1a37de3764974d2d6d10d0f7b))
+* **deps:** update image golang (1.27.1 → 1.27.2) ([#3151](https://github.com/bpg/terraform-provider-proxmox/issues/3151)) ([736e2cb](https://github.com/bpg/terraform-provider-proxmox/commit/736e2cb56eead27775c7fe272c43d36246bac2da))
+* **deps:** update image golang (e0174e5 → 162be52) ([#3150](https://github.com/bpg/terraform-provider-proxmox/issues/3150)) ([5ce1be9](https://github.com/bpg/terraform-provider-proxmox/commit/5ce1be9c9aa9e2dfea8aabd0b039b41744ffe298))
+* **deps:** update module github.com/microsoft/go-winio (v0.6.2 → v0.6.3) ([#3152](https://github.com/bpg/terraform-provider-proxmox/issues/3152)) ([429e49a](https://github.com/bpg/terraform-provider-proxmox/commit/429e49a2d88bfc22510bc75e3d894730b3ccba27))
+* **deps:** update module golang.org/x/crypto (v0.57.0 → v0.58.0) ([#3153](https://github.com/bpg/terraform-provider-proxmox/issues/3153)) ([111ea3e](https://github.com/bpg/terraform-provider-proxmox/commit/111ea3ef76e501d4af54acba124b674eeb4f7488))
+* **deps:** update module golang.org/x/net (v0.60.0 → v0.61.0) ([#3154](https://github.com/bpg/terraform-provider-proxmox/issues/3154)) ([13d4277](https://github.com/bpg/terraform-provider-proxmox/commit/13d4277c9ef9b3ed7c2f40a7a2b499e907dffd2e))
+* **deps:** update module golang.org/x/sync (v0.23.0 → v0.24.0) ([#3155](https://github.com/bpg/terraform-provider-proxmox/issues/3155)) ([cefe5dd](https://github.com/bpg/terraform-provider-proxmox/commit/cefe5dd89e1b6cb8deee2fef1688a25bd9262397))
+* **docs:** clean up and update README ([#3146](https://github.com/bpg/terraform-provider-proxmox/issues/3146)) ([be9afc0](https://github.com/bpg/terraform-provider-proxmox/commit/be9afc0456fcf108926faa2a2ad4efceb0ffef6b))
+* **docs:** reject faked PVE API tests as proof of work ([#3147](https://github.com/bpg/terraform-provider-proxmox/issues/3147)) ([7a9f51e](https://github.com/bpg/terraform-provider-proxmox/commit/7a9f51e747d416ad1dbe320c46b47e4e359dfed2))
+* **docs:** update README and CONTRIBUTING to reflect current testing and migration state ([#3139](https://github.com/bpg/terraform-provider-proxmox/issues/3139)) ([7d3bce5](https://github.com/bpg/terraform-provider-proxmox/commit/7d3bce544d936ef7beb99e56745e769b4626886f))
+
 ## [0.116.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.115.0...v0.116.0) (2026-10-06)
 
 
