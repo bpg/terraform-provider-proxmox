@@ -1,0 +1,38 @@
+---
+layout: page
+title: {{.Name}}
+parent: Resources
+subcategory: Virtual Environment
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}}: {{.Name}}
+
+{{ .Description | trimspace }}
+
+~> This resource owns the complete ordered firewall ruleset for the VNet. Import a VNet with existing
+rules before managing it; creating this resource will not overwrite unowned rules.
+
+VNet firewall rules apply to forwarded traffic. Proxmox VE does not allow `REJECT` on a forward chain,
+so direct rules support the `ACCEPT` and `DROP` actions. A rule can instead reference a cluster security
+group with `security_group`.
+
+The VNet must be present in the active SDN configuration before its firewall API becomes available. Use
+`proxmox_sdn_applier` after creating the VNet, and make this resource depend on that applier.
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ codefile "terraform" .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}
+{{- if .HasImport }}
+
+## Import
+
+Import is supported using the VNet identifier:
+
+{{ codefile "shell" .ImportFile }}
+{{- end }}
