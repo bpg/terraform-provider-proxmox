@@ -279,6 +279,22 @@ type ListResponseData struct {
 	VMID     int               `json:"vmid,omitempty"`
 }
 
+// MigrateRequestBody contains the body for a container migration request.
+// LXC has no live migration: a running container is migrated by shutting it down, moving it, and
+// starting it again, which PVE performs server-side when restart is set.
+type MigrateRequestBody struct {
+	BandwidthLimit  *float64          `json:"bwlimit,omitempty"        url:"bwlimit,omitempty"`
+	RestartMigrate  *types.CustomBool `json:"restart,omitempty"        url:"restart,omitempty,int"`
+	ShutdownTimeout *int              `json:"timeout,omitempty"        url:"timeout,omitempty"`
+	TargetNode      string            `json:"target"                   url:"target"`
+	TargetStorage   *string           `json:"target-storage,omitempty" url:"target-storage,omitempty"`
+}
+
+// MigrateResponseBody contains the body from a container migrate response.
+type MigrateResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
 // GetNetworkInterfaceResponseBody contains the body from a container get network interface response.
 type GetNetworkInterfaceResponseBody struct {
 	Data []GetNetworkInterfacesData `json:"data,omitempty"`

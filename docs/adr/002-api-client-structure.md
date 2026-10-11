@@ -57,19 +57,28 @@ Handles all HTTP communication:
 
 ### Layer 2: Top-Level Client (`proxmox/client.go`)
 
-Wraps API client and provides factory methods for domain clients:
+Wraps API client and provides factory methods for domain clients. `Client` is an
+interface implemented by an unexported `client` struct:
 
 ```go
-type Client struct {
-    api    api.Client
-    ssh    ssh.Client
+type Client interface {
+    Cluster() *cluster.Client
+    Node(nodeName string) *nodes.Client
+    Access() *access.Client
+    Pool() *pools.Client
     // ...
 }
 
-func (c *Client) Cluster() *cluster.Client { ... }
-func (c *Client) Node(name string) *nodes.Client { ... }
-func (c *Client) Access() *access.Client { ... }
-func (c *Client) Pools() *pools.Client { ... }
+type client struct {
+    apiClient      api.Client
+    sshClient      ssh.Client
+    tmpDirOverride string
+}
+
+func (c *client) Cluster() *cluster.Client { ... }
+func (c *client) Node(nodeName string) *nodes.Client { ... }
+func (c *client) Access() *access.Client { ... }
+func (c *client) Pool() *pools.Client { ... }
 ```
 
 ### Layer 3: Domain Clients (`proxmox/{domain}/client.go`)
@@ -152,6 +161,28 @@ func (c *Client) VNets(zoneID string) *vnets.Client {
 4. **Path expansion** handles URL construction, callers pass relative paths
 5. **Response types** defined in same package as client
 
+### Request/Response Body Conventions
+
+PVE endpoints are form-encoded on write and JSON on read, and both directions have wire quirks that the struct tags must encode.
+
+**Field deletion.** Request bodies that support clearing fields carry:
+
+```go
+Delete []string `url:"delete,omitempty,comma"`
+```
+
+Use `[]string` (not `*string` with manual `strings.Join`). The `comma` modifier makes `go-querystring` serialize as a single `delete=field1,field2` parameter, which is what PVE expects — without it, `[]string` serializes as repeated `delete=field1&delete=field2` parameters, which is wrong for most PVE endpoints.
+
+**Booleans.** Use `*proxmoxtypes.CustomBool` with the `,int` modifier on the `url:` tag:
+
+```go
+Disable *types.CustomBool `json:"disable,omitempty" url:"disable,omitempty,int"`
+```
+
+`CustomBool` marshals JSON as `"0"`/`"1"`; the `,int` modifier makes the URL form encoding emit `0`/`1`. Without it, form encoding emits `true`/`false`, which PVE rejects for bool-as-int fields.
+
+**Integers PVE serializes as strings.** The API viewer documents many fields as `integer`, but the Perl backend returns some of them as JSON **strings** when explicitly set (e.g. `"15"` instead of `15`), which crashes a plain `*int` decode. Type the **GET response** field `*proxmoxtypes.CustomInt` (or `*CustomInt64`) — its `UnmarshalJSON` accepts both quoted and bare forms. The **request** field can stay `*int`: it is only marshaled, never decoded, so the asymmetric narrow fix is correct. Verify which fields are affected with `pvesh get` or mitmproxy before widening the change.
+
 ## Example: Adding a New API Endpoint
 
 To add support for a new Proxmox API at `/api2/json/cluster/foo/bar`:
@@ -202,6 +233,9 @@ func (c *Client) Foo() *foo.Client {
 - Calling the base HTTP API directly from resource code instead of through domain clients.
 - Hardcoding API paths instead of using `ExpandPath()`.
 - Forgetting to wrap errors with `%w` — breaks `errors.Is()` checks in the resource layer.
+- Omitting the `comma` modifier on a `Delete []string` field — serializes as repeated `delete=` parameters instead of one comma-separated value. See [Request/Response Body Conventions](#requestresponse-body-conventions).
+- Omitting the `,int` modifier on a `*CustomBool` `url:` tag — form encoding emits `true`/`false`, which PVE rejects.
+- Using plain `*int` on a GET response field that PVE serializes as a quoted string — decode crashes at runtime; use `*proxmoxtypes.CustomInt`.
 
 ## References
 

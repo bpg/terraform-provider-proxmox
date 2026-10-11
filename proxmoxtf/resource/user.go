@@ -58,9 +58,6 @@ func User() *schema.Resource {
 					"The inline `acl` block is no longer auto-populated from the cluster on refresh " +
 					"or import; existing users with `acl` blocks continue to work, but new code " +
 					"should use `proxmox_acl`.",
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentUserACLPath: {

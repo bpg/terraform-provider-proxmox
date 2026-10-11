@@ -27,5 +27,5 @@ resource "proxmox_virtual_environment_download_file" "centos_cloud_image" {
   content_type = "import"
   datastore_id = "local"
   node_name    = "pve"
-  url          = "https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-latest.x86_64.qcow2"
+  url          = "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2"
 }

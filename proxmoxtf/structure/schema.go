@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -98,6 +100,12 @@ func SuppressIfListsAreEqualIgnoringOrder(key, _, _ string, d *schema.ResourceDa
 		key = key[:lastDotIndex]
 	}
 
+	// An unknown element makes the SDK read the whole list as empty, which would compare equal to an empty
+	// prior state and plan null instead of "known after apply".
+	if isRawConfigUnknown(d, key) {
+		return false
+	}
+
 	oldData, newData := d.GetChange(key)
 	if oldData == nil || newData == nil {
 		return false
@@ -125,6 +133,27 @@ func SuppressIfListsAreEqualIgnoringOrder(key, _, _ string, d *schema.ResourceDa
 	sort.Strings(newEvents)
 
 	return reflect.DeepEqual(oldEvents, newEvents)
+}
+
+// isRawConfigUnknown reports whether the value at the flatmap key (e.g. "disk.0.mount_options") is not wholly
+// known in the raw config. Returns false when the raw config is unavailable (refresh) or the path does not resolve.
+func isRawConfigUnknown(d *schema.ResourceData, key string) bool {
+	var path cty.Path
+
+	for part := range strings.SplitSeq(key, ".") {
+		if idx, err := strconv.Atoi(part); err == nil {
+			path = path.IndexInt(idx)
+		} else {
+			path = path.GetAttr(part)
+		}
+	}
+
+	val, diags := d.GetRawConfigAt(path)
+	if diags.HasError() {
+		return false
+	}
+
+	return !val.IsWhollyKnown()
 }
 
 // SuppressIfListsOfMapsAreEqualIgnoringOrderByKey is a customdiff.SuppressionFunc that suppresses

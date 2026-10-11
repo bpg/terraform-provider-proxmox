@@ -17,7 +17,7 @@ Contributions need clear testing expectations. Without documented requirements, 
 ### Test Coverage Requirements
 
 | Test Type              | Requirement                                      | Purpose                                             |
-|------------------------|--------------------------------------------------|-----------------------------------------------------|
+| ---------------------- | ------------------------------------------------ | --------------------------------------------------- |
 | Acceptance tests       | **Required** for all new resources and bug fixes | Verify real API behavior end-to-end                 |
 | Unit tests             | **Recommended** for complex logic                | Test parsing, validation, model conversion          |
 | Example configurations | **Optional**                                     | Legacy tests and user-facing examples in `example/` |
@@ -102,7 +102,7 @@ for _, tt := range tests {
 The `fwprovider/test/` package provides shared utilities:
 
 | Helper                                      | Purpose                                         |
-|---------------------------------------------|-------------------------------------------------|
+| ------------------------------------------- | ----------------------------------------------- |
 | `test.InitEnvironment(t)`                   | Provider factories, config rendering, node name |
 | `test.ResourceAttributes(addr, map)`        | Bulk attribute assertions                       |
 | `test.NoResourceAttributesSet(addr, attrs)` | Assert attributes are null/unset                |
@@ -137,6 +137,14 @@ When planning tests, identify the distinct operational modes of the resource and
 - Nested object attributes (e.g., `fleecing`, `performance`)
 - Import with non-trivial state (e.g., list attributes that must survive import round-trip)
 
+### Faked PVE API Tests
+
+Tests against a faked Proxmox VE API (`httptest` servers, a stub `api.Client`, hand-built response structs) are **not accepted as proof** for behavior that an acceptance test can exercise. A fake encodes the author's assumptions about PVE (whether unset values are returned, delete semantics, field names), and those assumptions are exactly what the test needs to prove. A mocked test can pass while the real PVE silently keeps an old value.
+
+- If you don't have a Proxmox VE instance, write the acceptance test anyway and say in the PR that it wasn't run. A maintainer will run it.
+- Fakes are acceptable only for conditions a live PVE can't produce on demand, for example serialization errors, disarmed HA, or cluster-only states such as a guest missing from `/cluster/resources`, rewritten by a reverse proxy in front of the real API (see `fwprovider/test/resource_vm_cluster_list_test.go`).
+- Fakes may exist alongside acceptance tests as supplementary unit coverage, but they don't replace them.
+
 ### Validation Tests
 
 Validation logic can be tested without a live Proxmox instance using `resource.UnitTest`:
@@ -151,7 +159,7 @@ func TestAccMyResource_Validators(t *testing.T) {
         Steps: []resource.TestStep{
             {
                 PlanOnly: true,
-                Config:   `resource "proxmox_virtual_environment_my_resource" "test" { ... }`,
+                Config:   `resource "proxmox_my_resource" "test" { ... }`,
                 ExpectError: regexp.MustCompile(`Invalid Attribute Combination`),
             },
         },
@@ -168,6 +176,19 @@ func TestAccMyResource_Validators(t *testing.T) {
 ### API Verification
 
 Tests passing does not guarantee correct API calls. After tests pass, verify API calls with mitmproxy using the "debug API" workflow. See [DEBUGGING.md](../../.dev/DEBUGGING.md).
+
+**Proving the absence of an API call needs a positive control.** When a change's effect is that a call is _no longer made_ (a skip flag, a removed redundant request), "grepped the flow log, found 0 matches" is weak evidence — 0 also results from a wrong endpoint string or a test that never reached the code path. Make it conclusive: confirm the exact endpoint string from the client code first, assert that the _other_ expected calls are present in the same capture (proving the capture worked), and run a control scenario where the call _should_ fire, confirming a non-zero count. The 0-vs-N contrast across two near-identical runs is the proof; a bare 0 is not.
+
+**Write-only and secret values need out-of-band assertions.** Write-only attribute values are never in state, and PVE redacts many secrets from GET responses — state checks and direct API reads both come back empty whether or not the secret arrived. Many such secrets are observable as root-only files under `/etc/pve/priv/` on the PVE host (e.g. `metricserver/<id>.pw`); assert via root SSH:
+
+```go
+out := te.ExecuteNodeCommands([]string{
+    fmt.Sprintf("cat /etc/pve/priv/metricserver/%s.pw 2>/dev/null || echo MISSING", name),
+})
+exists := !strings.Contains(out, "MISSING")
+```
+
+Assert the file exists after create-with-secret and is gone after the secret's removal — this catches delete-path gaps that state-only checks cannot. Before reaching for mitmproxy, probe `ls -R /etc/pve/priv/` on the test host for a per-resource credentials file.
 
 ## Consequences
 
@@ -191,6 +212,7 @@ Tests passing does not guarantee correct API calls. After tests pass, verify API
 - Using `t.Run` without `t.Parallel()` at the top-level test function.
 - Including issue numbers in test names or resource names.
 - Assuming passing tests means correct API behavior — always verify with mitmproxy.
+- Submitting tests against a faked PVE API as the only proof of API-facing behavior — see [Faked PVE API Tests](#faked-pve-api-tests).
 
 ## References
 

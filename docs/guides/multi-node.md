@@ -3,7 +3,7 @@ layout: page
 page_title: "Multi-Node Cluster Management"
 subcategory: Guides
 description: |-
-    Managing resources across multiple nodes in a Proxmox VE cluster.
+  Managing resources across multiple nodes in a Proxmox VE cluster.
 ---
 
 # Multi-Node Cluster Management
@@ -64,9 +64,16 @@ The provider handles the two cases automatically:
 
 ~> **Important:** Cross-node cloning only works within the same Proxmox cluster. The Proxmox API does not support cloning across cluster boundaries.
 
-## VM migration
+## Migrating between nodes
 
-By default, changing a VM's `node_name` forces Terraform to destroy and recreate it. Set `migrate = true` to migrate the VM in-place instead:
+By default, changing a guest's `node_name` forces Terraform to destroy and recreate it. Set
+`migrate = true` to move it in place instead. Both `proxmox_virtual_environment_vm` and
+`proxmox_virtual_environment_container` support `migrate` and `timeout_migrate`, which defaults to 1800
+seconds (30 minutes).
+
+### Virtual machines
+
+A VM is migrated live, so it keeps running throughout:
 
 ```terraform
 resource "proxmox_virtual_environment_vm" "example" {
@@ -78,15 +85,24 @@ resource "proxmox_virtual_environment_vm" "example" {
 }
 ```
 
-Changing `node_name` from `"pve1"` to `"pve2"` now migrates the VM in-place instead of a destroy/create cycle.
-
-The provider handles HA-managed VMs automatically:
+Changing `node_name` from `"pve1"` to `"pve2"` now migrates the VM in place instead of a destroy/create
+cycle. The provider handles HA-managed VMs automatically:
 
 - **Running HA VM** — uses the HA migrate endpoint, which sequences the migration correctly.
 - **Stopped HA VM** — temporarily removes the VM from HA, migrates it, then re-adds it with the original HA configuration.
 - **Non-HA VM** — uses the standard migration API with local disk transfer.
 
-The migration timeout defaults to 1800 seconds (30 minutes) and can be adjusted with `timeout_migrate`.
+### Containers
+
+~> **Important:** containers cannot be migrated live. A running container is migrated by shutting it
+down, moving it, and starting it again on the target node, so every migration of a running container
+incurs downtime. Size `timeout_migrate` to cover the shutdown grace period, the volume copy and the boot,
+not just a transfer.
+
+A stopped container migrates offline and is not started as a side effect; if `started = true`, it is
+started on the target node afterwards as usual. Bind mounts and applies that change configuration
+alongside the node have their own caveats — see the
+[container resource documentation](../resources/virtual_environment_container.md#container-migration).
 
 ## HA clusters and `node_name` drift
 
@@ -114,6 +130,11 @@ resource "proxmox_virtual_environment_haresource" "ha_managed" {
 With `ignore_changes = [node_name]`, Terraform will not attempt to move the VM back to `pve1` if HA migrated it elsewhere. Updates to other VM attributes still work — the Proxmox API accepts configuration changes for a VM from any node in the cluster.
 
 ~> **Caveat:** With `ignore_changes`, you lose the ability to deliberately move a VM by changing `node_name` in Terraform. If you need both HA tolerance and Terraform-driven migration, manage them as separate operational concerns.
+
+The same recipe works for `proxmox_virtual_environment_container` — the provider resolves a container's
+actual node on every read, so `ignore_changes = [node_name]` tolerates HA-driven moves for containers just
+as it does for VMs. Keep in mind that a container migration, HA-driven or not, always involves shutting the
+container down and starting it back up — see [Containers](#containers) above.
 
 ## Node-scoped resources
 

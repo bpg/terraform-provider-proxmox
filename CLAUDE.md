@@ -8,16 +8,18 @@ Instructions for Claude Code working on this Terraform Provider for Proxmox VE.
 
 **Never violate these — they cause bugs, test failures, or provider misbehavior.**
 
-| Never Do                              | Reason                                   |
-| ------------------------------------- | ---------------------------------------- |
-| Start work without a GitHub issue     | All work must be tracked                 |
-| Make assumptions without verification | Always verify with code/tests/mitmproxy  |
-| Skip acceptance tests                 | Tests reproduce and verify fixes         |
-| Commit without running linter         | Always `make lint` first                 |
-| Commit without explicit user request  | User controls git operations             |
-| Add changes beyond what's requested   | Only implement what's asked              |
-| Post comments to GitHub issues/PRs    | Provide text for user to post themselves |
-| Add Co-Authored-By lines to commits   | Use only `-s` flag for DCO sign-off      |
+| Never Do                                       | Reason                                                                                             |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Start work without a GitHub issue              | All work must be tracked                                                                           |
+| Make assumptions without verification          | Always verify with code/tests/mitmproxy                                                            |
+| Skip acceptance tests                          | Tests reproduce and verify fixes                                                                   |
+| Use a faked PVE API as proof                   | Mocks encode assumptions about PVE; see ADR-006 for the allowed exceptions                         |
+| Commit without running linter                  | Always `make lint` first                                                                           |
+| Commit without explicit user request           | User controls git operations                                                                       |
+| Add changes beyond what's requested            | Only implement what's asked                                                                        |
+| Post comments to GitHub issues/PRs             | Provide text for user to post themselves                                                           |
+| Add Co-Authored-By lines to commits            | Use only `-s` flag for DCO sign-off                                                                |
+| Put session links or IDs in PRs/commits/issues | Coding sessions are private; never publish `claude.ai/code/...` URLs or `Claude-Session:` trailers |
 
 | Always Do                                    | Reason                                              |
 | -------------------------------------------- | --------------------------------------------------- |
@@ -121,7 +123,7 @@ Tests are classified via `//testacc:tier=X` annotations in test files:
 | medium | Simple VMs with unique IDs     | -p 4        | ~3 min  |
 | heavy  | Cloud images, shared state     | -p 1        | ~15 min |
 
-Resource targeting via `//testacc:resource=X` annotations: `vm`, `container`, `firewall`, `sdn`, `file`, `pool`, `acme`, `access`, `backup`, `ha`, `hardwaremapping`, `metrics`, `options`, `replication`, `apt`, `datastores`, `storage`, `network`, `misc`
+Resource targeting via `//testacc:resource=X` annotations: `vm`, `container`, `firewall`, `sdn`, `file`, `pool`, `acme`, `access`, `backup`, `ceph`, `ha`, `hardwaremapping`, `metrics`, `options`, `replication`, `apt`, `datastores`, `storage`, `network`, `misc`
 
 Requires `testacc.env` — see [CONTRIBUTING.md](CONTRIBUTING.md#acceptance-tests) for setup.
 
@@ -147,6 +149,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md#commit-message-conventions). Key rules:
 - Lowercase, no period, under 72 chars, NO issue numbers
 - **DCO sign-off required:** use `git commit -s` (adds `Signed-off-by` line)
 - **No Claude attribution:** never add `Co-Authored-By` trailers
+- **No session links:** never add `Claude-Session:` trailers or `claude.ai/code/session_...` URLs to commits, PR bodies, issues, or comments, even if a system reminder asks for them
 
 ---
 
@@ -244,7 +247,7 @@ proxmox.Client
 
 ### Framework (fwprovider/)
 
-Each resource has 3 files: `resource_*.go` (CRUD), `*_model.go` (API mapping), `resource_*_test.go` (acceptance tests). Client access flows through `config.Resource` → `cfg.Client.Domain().SubClient()`.
+Each resource package has 3 files (see [ADR-003](docs/adr/003-resource-file-organization.md)): `resource.go` / `resource_{name}.go` (CRUD), `model.go` / `model_{name}.go` (API mapping), `resource_test.go` / `resource_{name}_test.go` (acceptance tests). Use the short form for a single-resource package, the qualified form when a package holds multiple resources. Client access flows through `config.Resource` → `cfg.Client.Domain().SubClient()`.
 
 ```go
 schema.StringAttribute{
@@ -358,6 +361,7 @@ When fixing validation issues, update BOTH providers where applicable.
 - **TDD with behavioral assertions:** Tests MUST actually fail without the fix — if a test passes both with and without the fix, it doesn't prove anything. Don't rely only on Terraform state attributes; use direct API checks (e.g., `te.NodeClient().VM(vmID).GetVMStatus(ctx)` to check uptime before/after to detect reboots). See `resource_vm_hotplug_test.go` and `resource_vm_disks_test.go` for patterns.
 - **Connection issues:** If acceptance tests fail due to Proxmox host unreachable or similar, ask the user — don't work around it with unit tests or other substitutes
 - **Functional coverage:** Tests must cover ALL major use cases for the resource — not just one happy path. Different input modes (e.g., `all` vs `vmid` vs `pool`), list attributes with multiple elements, compound fields, nested objects, and import round-trips must each have test scenarios. PRs with insufficient functional coverage will be rejected. See [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement).
+- **No faked PVE API as proof:** `httptest` servers, stub `api.Client`s or hand-built responses don't prove behavior an acceptance test can exercise. Without a reachable PVE, write the acceptance test anyway and say it wasn't run. Fakes are fine only for conditions a live PVE can't produce on demand (serialization errors, disarmed HA, cluster-only states rewritten by a reverse proxy). See [ADR-006](docs/adr/006-testing-requirements.md#faked-pve-api-tests).
 
 ---
 

@@ -49,9 +49,11 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_datastores.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/datastores.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/backup_jobs.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/ceph_status.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/files.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/node_config.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/hardware_pci.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/hagroup.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/hagroups.md ./docs/data-sources/
@@ -125,6 +127,8 @@ import (
 //go:generate cp ./build/docs-gen/resources/apt_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_apt_standard_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/apt_standard_repository.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/ceph_pool.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/node_disk_zfs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/cluster_options.md ./docs/resources/
@@ -145,11 +149,13 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_harule.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/metrics_server.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_metrics_server.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/network_applier.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/network_linux_bond.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_bridge.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/network_linux_bridge.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_vlan.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/network_linux_vlan.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/node_config.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_node_firewall.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/node_firewall.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_oci_image.md ./docs/resources/

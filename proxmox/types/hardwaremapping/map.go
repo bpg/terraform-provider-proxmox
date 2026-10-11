@@ -130,7 +130,7 @@ func (hm Map) String() string {
 	}
 
 	if hm.Description != nil {
-		attrs = append(attrs, joinKV(AttrNameDescription, *hm.Description))
+		attrs = append(attrs, joinKV(AttrNameDescription, EncodeText(*hm.Description)))
 	}
 
 	if hm.IOMMUGroup != nil {
@@ -198,7 +198,8 @@ func ParseMap(input string) (Map, error) {
 
 		switch attrSplit[0] {
 		case AttrNameDescription:
-			hm.Description = &attrSplit[1]
+			description := DecodeText(attrSplit[1])
+			hm.Description = &description
 
 		case attrNameDeviceID:
 			id, err := ParseDeviceID(attrSplit[1])

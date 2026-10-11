@@ -29,7 +29,7 @@ func TestAccDatasourceFile(t *testing.T) {
 
 	// Upload snippet via SSH (DownloadFileByURL doesn't support snippets content type)
 	snippetFile := CreateTempFile(t, "datasource-test-*.yaml", "test: yaml\nkey: value\n")
-	uploadSnippetFile(t, snippetFile.Name())
+	uploadSnippetFile(te, snippetFile.Name())
 
 	// Use the actual filename from the created temp file
 	fileName := filepath.Base(snippetFile.Name())
@@ -39,7 +39,7 @@ func TestAccDatasourceFile(t *testing.T) {
 	})
 
 	t.Cleanup(func() {
-		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fileName))
+		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fileName)).Err()
 		require.NoError(t, e)
 	})
 
@@ -164,9 +164,9 @@ func TestAccDatasourceFileContentTypeFiltering(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", vztmplFileName))
+		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", vztmplFileName)).Err()
 		require.NoError(t, e)
-		e = te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", isoFileName))
+		e = te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", isoFileName)).Err()
 		require.NoError(t, e)
 	})
 
@@ -243,7 +243,7 @@ func TestAccDatasourceFileContentTypeMismatch(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", isoFileName))
+		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", isoFileName)).Err()
 		require.NoError(t, e)
 	})
 

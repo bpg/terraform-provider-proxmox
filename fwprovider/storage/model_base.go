@@ -26,6 +26,27 @@ type modelBase struct {
 	Shared       types.Bool   `tfsdk:"shared"`
 }
 
+// modelDirOptions holds path-creation options supported only by directory-backed storage types
+// (dir, cifs, nfs, cephfs, btrfs).
+type modelDirOptions struct {
+	CreateBasePath types.Bool `tfsdk:"create_base_path"`
+	CreateSubdirs  types.Bool `tfsdk:"create_subdirs"`
+}
+
+func (m *modelDirOptions) populateFromAPI(datastore *storage.DatastoreGetResponseData) {
+	if datastore.CreateBasePath != nil {
+		m.CreateBasePath = datastore.CreateBasePath.ToValue()
+	} else {
+		m.CreateBasePath = types.BoolValue(true)
+	}
+
+	if datastore.CreateSubdirs != nil {
+		m.CreateSubdirs = datastore.CreateSubdirs.ToValue()
+	} else {
+		m.CreateSubdirs = types.BoolValue(true)
+	}
+}
+
 // GetID returns the storage identifier from the base model.
 func (m *modelBase) GetID() types.String {
 	return m.ID

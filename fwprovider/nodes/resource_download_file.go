@@ -41,9 +41,10 @@ import (
 )
 
 var (
-	_         resource.Resource              = &downloadFileResource{}
-	_         resource.ResourceWithConfigure = &downloadFileResource{}
-	httpRegex                                = regexp.MustCompile(`https?://.*`)
+	_         resource.Resource                = &downloadFileResource{}
+	_         resource.ResourceWithConfigure   = &downloadFileResource{}
+	_         resource.ResourceWithImportState = &downloadFileResource{}
+	httpRegex                                  = regexp.MustCompile(`https?://.*`)
 )
 
 type sizeRequiresReplaceModifier struct{}
@@ -433,7 +434,7 @@ func (r *downloadFileResource) Create(
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
 		fileID := plan.ContentType.ValueString() + "/" + plan.FileName.ValueString()
 
-		err = storageClient.DeleteDatastoreFile(ctx, fileID)
+		err = storageClient.DeleteDatastoreFile(ctx, fileID).Err()
 		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError("Error deleting file from datastore",
 				fmt.Sprintf("Could not delete file '%s', unexpected error: %s", fileID, err.Error()),
@@ -499,7 +500,7 @@ func (r *downloadFileResource) Create(
 		)
 	}
 
-	resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -659,7 +660,7 @@ func (r *downloadFileResource) Delete(
 	err := storageClient.DeleteDatastoreFile(
 		ctx,
 		state.ID.ValueString(),
-	)
+	).Err()
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		if strings.Contains(err.Error(), "unable to parse") {
 			resp.Diagnostics.AddWarning(
@@ -685,4 +686,50 @@ func isErrFileAlreadyExists(err error) bool {
 	}
 
 	return strings.Contains(err.Error(), "refusing to override existing file")
+}
+
+// ImportState imports a download file resource using the format node_name/datastore_id:content_type/file_name,
+// where the part after the node name is the resource id.
+func (r *downloadFileResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	const format = "node_name/datastore_id:content_type/file_name"
+
+	nodeName, id, found := strings.Cut(req.ID, "/")
+	if !found || nodeName == "" || id == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: %s. Got: %q", format, req.ID),
+		)
+
+		return
+	}
+
+	datastoreID, filePart, found := strings.Cut(id, ":")
+	if !found || datastoreID == "" || filePart == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: %s. Got: %q", format, req.ID),
+		)
+
+		return
+	}
+
+	contentType, fileName, found := strings.Cut(filePart, "/")
+	if !found || contentType == "" || fileName == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: %s. Got: %q", format, req.ID),
+		)
+
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("node_name"), nodeName)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("datastore_id"), datastoreID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("content_type"), contentType)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("file_name"), fileName)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }

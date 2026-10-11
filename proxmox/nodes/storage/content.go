@@ -14,39 +14,50 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/avast/retry-go/v5"
+	retrygo "github.com/avast/retry-go/v5"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 )
 
-// DeleteDatastoreFile deletes a file in a datastore.
+// DeleteDatastoreFile deletes a file in a datastore, waiting for the async
+// deletion task to complete.
 func (c *Client) DeleteDatastoreFile(
 	ctx context.Context,
 	volumeID string,
-) error {
-	path := c.ExpandPath(fmt.Sprintf("content/%s", url.PathEscape(volumeID)))
-
-	err := retry.New(
-		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
-			var httpError *api.HTTPError
-			if errors.As(err, &httpError) && httpError.Code == http.StatusForbidden {
-				return false
-			}
-
-			return !errors.Is(err, api.ErrResourceDoesNotExist)
+) tasks.TaskResult {
+	op := retry.NewTaskOperation("storage delete file",
+		retry.WithRetryIf(func(err error) bool {
+			return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
-		retry.LastErrorOnly(true),
-	).Do(
-		func() error {
-			return c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
-		},
+	)
+
+	return c.Tasks().DoTask(ctx, op,
+		func() (*string, error) { return c.DeleteDatastoreFileAsync(ctx, volumeID) },
+	)
+}
+
+// DeleteDatastoreFileAsync deletes a file in a datastore asynchronously.
+func (c *Client) DeleteDatastoreFileAsync(
+	ctx context.Context,
+	volumeID string,
+) (*string, error) {
+	resBody := &DeleteDatastoreFileResponseBody{}
+
+	err := c.DoRequest(
+		ctx,
+		http.MethodDelete,
+		c.ExpandPath(fmt.Sprintf("content/%s", url.PathEscape(volumeID))),
+		nil,
+		resBody,
 	)
 	if err != nil {
-		return fmt.Errorf("error deleting file %s from datastore %s: %w", volumeID, c.StorageName, err)
+		return nil, fmt.Errorf("error deleting file %s from datastore %s: %w", volumeID, c.StorageName, err)
 	}
 
-	return nil
+	// nil data means the delete completed synchronously (no task to wait for).
+	return resBody.TaskID, nil
 }
 
 // ListDatastoreFiles retrieves a list of the files in a datastore.
@@ -61,9 +72,9 @@ func (c *Client) ListDatastoreFiles(
 		ContentType: contentType,
 	}
 
-	err := retry.New(
-		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
+	err := retrygo.New(
+		retrygo.Context(ctx),
+		retrygo.RetryIf(func(err error) bool {
 			var httpError *api.HTTPError
 			if errors.As(err, &httpError) && httpError.Code == http.StatusForbidden {
 				return false
@@ -71,7 +82,7 @@ func (c *Client) ListDatastoreFiles(
 
 			return !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
-		retry.LastErrorOnly(true),
+		retrygo.LastErrorOnly(true),
 	).Do(
 		func() error {
 			return c.DoRequest(ctx, http.MethodGet, c.ExpandPath("content"), reqBody, resBody)

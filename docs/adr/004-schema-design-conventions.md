@@ -52,7 +52,7 @@ The provider does not duplicate PVE's documented defaults via schema `Default(..
 | Returns null/absent when unset               | `Optional` only                    | `cpu.affinity`, `cpu.limit`, `cpu.type`, `vga.type`, `rng.source`, `description` |
 | Provider-only attribute (no PVE counterpart) | `Optional + Default`               | `purge_on_destroy`, `stop_on_destroy`, `delete_unreferenced_disks_on_destroy`    |
 
-> **Note.** The `cpu`/`vga`/`rng` examples above describe the target classification. The current `fwprovider/nodes/vm/{cpu,vga,rng}` schemas carry `Optional+Computed` inherited from the SDK and the initial Framework scaffold; conformance — dropping `Computed` from all `cpu`/`vga`/`rng`/`memory` attributes — is tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231). The originally-proposed `Optional+Computed` carve-out on `cpu.cores`/`cpu.sockets` was abandoned after empirical testing (see `.dev/1231_AUDIT.md` §4) showed PVE does not auto-populate those keys on Read.
+> **Note.** The `cpu`/`vga`/`rng` examples above describe the target classification. The current `fwprovider/nodes/vm/{cpu,vga,rng}` schemas carry `Optional+Computed` inherited from the SDK and the initial Framework scaffold; conformance — dropping `Computed` from all `cpu`/`vga`/`rng`/`memory` attributes — is tracked under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231). The originally-proposed `Optional+Computed` carve-out on `cpu.cores`/`cpu.sockets` was abandoned after empirical testing showed PVE does not auto-populate those keys on Read.
 
 PVE Read behavior must be verified empirically per attribute. The prescribed method:
 
@@ -63,7 +63,7 @@ PVE Read behavior must be verified empirically per attribute. The prescribed met
 
 See `/bpg:debug-api` for the mitmproxy workflow.
 
-**Per-field carve-outs are possible but rare.** A sub-block can have a mix of auto-populated and null-absent fields, in which case only the auto-populated fields keep `Optional+Computed`. Verify per field via mitmproxy rather than trusting `$confdesc` or prior sentinels: the `cpu` block was originally expected to carve out `cores` and `sockets` as `Optional+Computed` because PVE was thought to auto-populate them, but empirical traces (see `.dev/1231_AUDIT.md` §4) showed it does not, and the carve-out was abandoned before landing.
+**Per-field carve-outs are possible but rare.** A sub-block can have a mix of auto-populated and null-absent fields, in which case only the auto-populated fields keep `Optional+Computed`. Verify per field via mitmproxy rather than trusting `$confdesc` or prior sentinels: the `cpu` block was originally expected to carve out `cores` and `sockets` as `Optional+Computed` because PVE was thought to auto-populate them, but empirical traces (verified under [#1231](https://github.com/bpg/terraform-provider-proxmox/issues/1231)) showed it does not, and the carve-out was abandoned before landing.
 
 **`NewValue` must coordinate.** When changing a sub-block's schema from `Optional+Computed` to `Optional` only, the sub-package's `NewValue` (FromAPI) function MUST return `NullValue()` (i.e. `types.ObjectNull(attributeTypes())`) when the underlying API device pointer is nil. Returning a non-null Object with null inner fields creates a permanent plan-vs-state diff for users without the block in HCL. See [ADR-008 §`NewValue` (FromAPI Direction)](008-sub-block-contract.md#newvalue-fromapi-direction).
 
@@ -91,6 +91,24 @@ Use the `attribute.ResourceID()` helper from `fwprovider/attribute/` to define t
 This helper returns a `schema.StringAttribute` with `Computed: true`, `UseStateForUnknown()`, and `RequiresReplace()` plan modifiers and a standard description.
 
 For resources where the user provides the ID (e.g., SDN VNet's `id` is user-specified), define the attribute manually with `Required: true` and `RequiresReplace()`.
+
+### Import ID Format
+
+For **node-scoped** resources, the import ID is not the resource `id` — it is `node_name/<resource id>`. The resource `id` stays the bare PVE identifier (a vmid, or a volume ID like `datastore:content/file`) with no node in it; the node is a separate attribute that the importer sets.
+
+The canonical parse splits on the **first** `/` so the remainder can itself contain slashes:
+
+```go
+nodeName, id, found := strings.Cut(importID, "/")
+if !found {
+    return fmt.Errorf("unexpected format of ID (%s), expected node_name/id", importID)
+}
+// importer: keep id verbatim as the resource id, set node_name separately; Read fills the rest
+```
+
+`pve/100` → node `pve`, id `100`. For multi-segment IDs (e.g. `pve/local:iso/image.iso`), chain `strings.Cut` on each delimiter and validate `found` plus non-empty parts at every step. When Read cannot re-derive all lookup keys from the bare id, the importer must set them explicitly (not rely on Read alone) — verify with `ImportStateCheck`; `ImportStateVerify` is often impractical because config-only attributes (URLs, timeouts) are not recoverable from the API.
+
+Baking the node **into** the id (e.g. `id = "<node>:<iface>"`, used by the Linux bridge/VLAN/bond resources, where import ID == resource id) is acceptable only when designing a **new** id that has no other unique key. Never change an already-released id format to add the node — that is a breaking state change requiring a `StateUpgrader`. Keep the released bare id and add the node as an import-time prefix instead.
 
 ### Validators
 
@@ -149,6 +167,17 @@ func (r *myResource) ConfigValidators(_ context.Context) []resource.ConfigValida
 
 For more complex validation that requires parsing attribute values, implement `ResourceWithValidateConfig` and add logic in the `ValidateConfig` method.
 
+**Null and unknown need different treatment in `ValidateConfig`.** Config values that come from unresolved references (e.g. `vlan_aware = other_resource.attr`) are **unknown** at validate time, and `ValueBool()` returns `false` for unknown — so a naive check false-positives. But skipping the check for null _and_ unknown alike is the symmetric mistake: for a field whose omission lets a known default apply, **null still represents a real misconfiguration** worth flagging. When one field triggers the rule and another gates it, treat each side differently — require the trigger to be defined, and skip only when the gating field is unknown:
+
+```go
+// Trigger field: attribute.IsDefined (must have a real value).
+// Gating field: !IsUnknown (null = omitted, default applies — still checked;
+//               unknown = unresolvable yet — skip, PVE validates at apply).
+if attribute.IsDefined(data.VIDs) && !data.VLANAware.IsUnknown() && !data.VLANAware.ValueBool() {
+    resp.Diagnostics.AddAttributeError(...)
+}
+```
+
 **When to add a validator vs document the constraint.** Cross-attribute constraints are documented in `MarkdownDescription` by default — let PVE reject invalid combinations at apply time. Promote to a plan-time validator only when (a) the constraint is hit _frequently_ in support issues, or (b) PVE's apply-time error is unhelpful (cryptic, mislocated, or only surfaces after partial side-effects). Every plan-time validator is a maintenance liability: it duplicates PVE's logic, drifts as PVE evolves, and adds a failure point distinct from the API's own. Keep the bar high.
 
 ### Sensitive Attributes
@@ -160,6 +189,44 @@ Mark secret fields (tokens, passwords) as sensitive so Terraform redacts them:
     Sensitive: true,
 },
 ```
+
+### Write-Only Attributes
+
+`Sensitive: true` only redacts a value in CLI output — the secret is **still written to state**. For credentials that must never be persisted, use a write-only attribute (Terraform 1.11+). Write-only values are supplied in config, sent to the API, and then discarded; they are `null` in both plan and state.
+
+Pair the write-only attribute with a plain integer `*_version` counter. Because the value is absent from state, Terraform cannot detect when it changes and will not plan an update on its own; bumping the counter is what produces a diff and forces the new value to be re-sent (e.g. for credential rotation).
+
+```go
+"data_wo": schema.MapAttribute{
+    Optional:    true,
+    WriteOnly:   true,
+    ElementType: types.StringType,
+},
+"data_wo_version": schema.Int64Attribute{
+    Optional: true,
+    Validators: []validator.Int64{
+        // version is meaningless without the value it tracks
+        int64validator.AlsoRequires(path.MatchRoot("data_wo")),
+    },
+},
+```
+
+Conventions:
+
+- **Model placement.** The write-only field belongs only on the create/update model, as `types.Map` / `types.String`. The `*_version` counter is _not_ write-only — it is a plain `types.Int64` that **is** persisted to state (it is a counter, not a secret).
+- **Read from config, never plan/state.** Write-only attributes are nulled in plan and state, so `req.Plan.Get` / `req.State.Get` never return them. Read the value explicitly in `Create` and `Update`:
+
+  ```go
+  var dataWO types.Map
+  resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("data_wo"), &dataWO)...)
+  ```
+
+  Prefer the write-only value when present, falling back to the plaintext sibling: `if !dataWO.IsNull() { /* use dataWO */ } else { /* use plan.Data */ }`.
+
+- **Mutual exclusion with the plaintext sibling.** When a write-only attribute coexists with a plaintext equivalent (e.g. `data` / `data_wo`), make them conflicting via `ResourceWithConfigValidators` (see [Cross-Field Validation](#cross-field-validation)) using `resourcevalidator.Conflicting(...)`.
+- **Do not mirror the API value back into the plaintext attribute when the write-only path is the source of truth.** The API GET returns the stored secret; writing it into a plaintext attribute that the user left `null` produces a perpetual diff. Keep the plaintext attribute `null`. Hydrate it only on import, detected via an always-populated computed field (e.g. `imported := state.Digest.IsNull()` — `digest` is set by every Create/Update, so a null digest means "freshly imported").
+
+See `proxmox_acme_dns_plugin` for the canonical implementation. Acceptance tests for write-only attributes must gate on the Terraform version with `tfversion.SkipBelow(tfversion.Version1_11_0)` and prove the value reached the API with a direct API read (state assertions alone cannot, since the value is never in state) — see [ADR-006](006-testing-requirements.md).
 
 ### Attribute Descriptions
 
@@ -324,6 +391,8 @@ The project provides custom attribute types in `fwprovider/types/`:
 - Using non-standard model method names (`importFromAPI`, `toAPIRequestBody`, `toCreateRequest`, etc.) instead of the canonical `toAPI()` / `toAPICreate()` / `toAPIUpdate()` / `fromAPI()`. See [Model-API Conversion](#model-api-conversion).
 - Omitting `Description` on schema attributes — every attribute must have a non-empty description.
 - Defining local bool-to-int64 conversion helpers instead of updating the API type to use `*proxmoxtypes.CustomBool`.
+- Treating null and unknown alike in `ValidateConfig` cross-field checks — unknown references false-positive with `ValueBool()`, while skipping null drops real misconfigurations. See [Cross-Field Validation](#cross-field-validation).
+- Changing a released resource `id` format (e.g. to embed the node name) when adding import support — breaking state change. Add the node as an import-time prefix instead. See [Import ID Format](#import-id-format).
 
 ## References
 

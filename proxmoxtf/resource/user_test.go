@@ -9,10 +9,26 @@ package resource
 import (
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
+
+// hasACLDeprecationWarning reports whether validating the given config against the
+// resource schema produces an "Argument is deprecated" warning for the `acl` attribute.
+func hasACLDeprecationWarning(s map[string]*schema.Schema, config map[string]any) bool {
+	diags := schema.InternalMap(s).Validate(terraform.NewResourceConfigRaw(config))
+
+	for _, d := range diags {
+		if d.Severity == diag.Warning && d.Summary == "Argument is deprecated" {
+			return true
+		}
+	}
+
+	return false
+}
 
 // TestUserInstantiation tests whether the User instance can be instantiated.
 func TestUserInstantiation(t *testing.T) {
@@ -77,4 +93,30 @@ func TestUserSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentUserACLPropagate: schema.TypeBool,
 		mkResourceVirtualEnvironmentUserACLRoleID:    schema.TypeString,
 	})
+}
+
+// TestUserACLDeprecationWarning verifies the deprecated `acl` block warns only when it is
+// actually set in config, not on every user that omits it.
+func TestUserACLDeprecationWarning(t *testing.T) {
+	t.Parallel()
+
+	s := User().Schema
+
+	if hasACLDeprecationWarning(s, map[string]any{
+		mkResourceVirtualEnvironmentUserUserID: "test@pve",
+	}) {
+		t.Error("unexpected acl deprecation warning when no acl block is configured")
+	}
+
+	if !hasACLDeprecationWarning(s, map[string]any{
+		mkResourceVirtualEnvironmentUserUserID: "test@pve",
+		mkResourceVirtualEnvironmentUserACL: []any{
+			map[string]any{
+				mkResourceVirtualEnvironmentUserACLPath:   "/",
+				mkResourceVirtualEnvironmentUserACLRoleID: "Administrator",
+			},
+		},
+	}) {
+		t.Error("expected acl deprecation warning when an acl block is configured")
+	}
 }

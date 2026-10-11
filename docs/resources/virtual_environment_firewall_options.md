@@ -36,8 +36,8 @@ resource "proxmox_virtual_environment_firewall_options" "example" {
 - `node_name` - (Required) Node name.
 - `vm_id` - (Optional) VM ID. **Exactly one of `vm_id` or `container_id` must be specified.**
 - `container_id` - (Optional) Container ID. **Exactly one of `vm_id` or `container_id` must be specified.**
-- `dhcp` - (Optional) Enable DHCP.
-- `enabled` - (Optional) Enable or disable the firewall.
+- `dhcp` - (Optional) Enable DHCP. Defaults to `false`.
+- `enabled` - (Optional) Enable or disable the firewall. Defaults to `false`.
 - `ipfilter` - (Optional) Enable default IP filters. This is equivalent to
     adding an empty `ipfilter-net<id>` ipset for every interface. Such ipsets
     implicitly contain sane default restrictions such as restricting IPv6 link
@@ -45,17 +45,17 @@ resource "proxmox_virtual_environment_firewall_options" "example" {
     containers the configured IP addresses will be implicitly added.
 - `log_level_in` - (Optional) Log level for incoming
     packets (`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`,
-    `debug`, `nolog`).
+    `debug`, `nolog`). Defaults to `nolog`.
 - `log_level_out` - (Optional) Log level for outgoing
     packets (`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`,
-    `debug`, `nolog`).
-- `macfilter` - (Optional) Enable/disable MAC address filter.
-- `ndp` - (Optional) Enable NDP (Neighbor Discovery Protocol).
+    `debug`, `nolog`). Defaults to `nolog`.
+- `macfilter` - (Optional) Enable/disable MAC address filter. Defaults to `true`.
+- `ndp` - (Optional) Enable NDP (Neighbor Discovery Protocol). Defaults to `false`.
 - `input_policy` - (Optional) The default input
-    policy (`ACCEPT`, `DROP`, `REJECT`).
+    policy (`ACCEPT`, `DROP`, `REJECT`). Defaults to `DROP`.
 - `output_policy` - (Optional) The default output
-    policy (`ACCEPT`, `DROP`, `REJECT`).
-- `radv` - (Optional) Enable Router Advertisement.
+    policy (`ACCEPT`, `DROP`, `REJECT`). Defaults to `ACCEPT`.
+- `radv` - (Optional) Enable Router Advertisement. Defaults to `true`.
 
 ## Attribute Reference
 

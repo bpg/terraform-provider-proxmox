@@ -30,20 +30,37 @@ Where `[Action]` is a CRUD verb and `[Resource]` identifies the Proxmox object.
 
 Standard summaries for the resource lifecycle:
 
-| Operation                      | Summary Format                               | Example                                          |
-|--------------------------------|----------------------------------------------|--------------------------------------------------|
-| Create                         | `"Unable to Create [Resource]"`              | `"Unable to Create SDN VNet"`                    |
-| Read-back after create         | `"Unable to Read [Resource] After Creation"` | `"Unable to Read SDN VNet After Creation"`       |
-| Read                           | `"Unable to Read [Resource]"`                | `"Unable to Read SDN VNet"`                      |
-| Update                         | `"Unable to Update [Resource]"`              | `"Unable to Update SDN VNet"`                    |
-| Read-back after update         | `"Unable to Read [Resource] After Update"`   | `"Unable to Read SDN VNet After Update"`         |
-| Delete                         | `"Unable to Delete [Resource]"`              | `"Unable to Delete SDN VNet"`                    |
-| Import                         | `"Unable to Import [Resource]"`              | `"Unable to Import SDN VNet"`                    |
-| Not found (import/datasource)  | `"[Resource] Not Found"`                     | `"SDN VNet Not Found"`                           |
+| Operation                     | Summary Format                               | Example                                    |
+| ----------------------------- | -------------------------------------------- | ------------------------------------------ |
+| Create                        | `"Unable to Create [Resource]"`              | `"Unable to Create SDN VNet"`              |
+| Read-back after create        | `"Unable to Read [Resource] After Creation"` | `"Unable to Read SDN VNet After Creation"` |
+| Read                          | `"Unable to Read [Resource]"`                | `"Unable to Read SDN VNet"`                |
+| Update                        | `"Unable to Update [Resource]"`              | `"Unable to Update SDN VNet"`              |
+| Read-back after update        | `"Unable to Read [Resource] After Update"`   | `"Unable to Read SDN VNet After Update"`   |
+| Delete                        | `"Unable to Delete [Resource]"`              | `"Unable to Delete SDN VNet"`              |
+| Import                        | `"Unable to Import [Resource]"`              | `"Unable to Import SDN VNet"`              |
+| Not found (import/datasource) | `"[Resource] Not Found"`                     | `"SDN VNet Not Found"`                     |
 
 When the resource name or ID is available, include it in the summary using `fmt.Sprintf` (e.g., `fmt.Sprintf("Unable to Read SDN VNet %q", id)`). Domain clients do not consistently include the resource identity in their error messages, so the summary is the only reliable place for it.
 
 The detail string (second argument) should be `err.Error()`, which carries the full error chain from the API layer.
+
+### Task Result Diagnostics
+
+`tasks.TaskResult.AddDiags(diags, summary)` and `AddDiagsAsWarnings(diags, summary)` (`proxmox/nodes/tasks/task_result.go`) pass `summary` straight through to `diags.AddError` / `AddWarning`. The `"Unable to [Action] [Resource]"` format therefore applies to those call sites exactly as it does to direct `AddError` calls:
+
+```go
+vmAPI.CreateVM(ctx, body).AddDiags(diags, fmt.Sprintf("Unable to Create VM %d", id))
+vmStop(ctx, vmAPI).AddDiagsAsWarnings(diags, fmt.Sprintf("Unable to Stop VM %d", id))
+```
+
+`AddDiagsAsWarnings` exists for deliberately non-fatal task failures (e.g. a best-effort stop before delete) — the severity is downgraded by the caller's choice, but the operation still failed, so the `"Unable to"` prefix still applies.
+
+A format conformance sweep that greps only `AddError(` misses these call sites — audit all four shapes:
+
+```bash
+grep -nE 'AddError\(|AddWarning\(|AddDiags\(|AddDiagsAsWarnings\(' fwprovider/...
+```
 
 ### Diagnostic Severity
 
@@ -99,6 +116,8 @@ const ErrResourceDoesNotExist Error = "the requested resource does not exist"
 errors.Join(ErrResourceDoesNotExist, &HTTPError{Code: 404, Message: "..."})
 errors.Join(ErrResourceDoesNotExist, &HTTPError{Code: 500, Message: "...does not exist..."})
 ```
+
+**Not-found string matching is deliberately case-sensitive**, matching the exact case of the upstream emitter: PVE Perl plugins emit lowercase (`does not exist`, `no such resource`); libc-derived strings passed through tools like qemu-img, rbd, or lvm are capitalized (`No such file or directory`, i.e. `strerror(ENOENT)`). Do not broaden the matcher to case-insensitive "for robustness" — once an error is classified as `ErrResourceDoesNotExist`, retry loops short-circuit and call sites downgrade to "resource gone" semantics, so a too-broad match silently misclassifies recoverable transient errors. When adding a pattern, identify its emitter (PVE Perl source, or a libc passthrough) and match that exact case. When the not-found signal is domain-specific (Ceph pools, qemu-img output, …), translate it at the domain client's call site instead of widening the central matcher — see `isUnrecognizedPoolErr` in `proxmox/nodes/ceph/pool/` for the reference.
 
 #### Layer 2: Domain Client (`proxmox/{domain}/`)
 
@@ -176,7 +195,7 @@ If `State.Set` fails (e.g., due to a type mismatch between the model struct and 
 Datasources differ from resources in their error handling for not-found scenarios:
 
 | Scenario         | Resource Behavior                                      | Datasource Behavior                                                            |
-|------------------|--------------------------------------------------------|--------------------------------------------------------------------------------|
+| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------ |
 | Target not found | `resp.State.RemoveResource(ctx)` (triggers recreation) | `resp.Diagnostics.AddError("[Resource] Not Found", ...)` (configuration error) |
 | Read source      | `req.State.Get(ctx, &state)`                           | `req.Config.Get(ctx, &config)`                                                 |
 | Configure type   | `config.Resource`                                      | `config.DataSource`                                                            |
@@ -199,21 +218,21 @@ For list datasources that return collections (e.g., `proxmox_backup_jobs`), an e
 
 Use standard Go error inspection:
 
-| Need                 | Method                                                       |
-|----------------------|--------------------------------------------------------------|
-| Check for sentinel   | `errors.Is(err, api.ErrResourceDoesNotExist)`                |
-| Extract HTTP status  | `errors.As(err, &httpError)` then inspect `httpError.Code`   |
-| Add context          | `fmt.Errorf("context: %w", err)`                             |
+| Need                | Method                                                     |
+| ------------------- | ---------------------------------------------------------- |
+| Check for sentinel  | `errors.Is(err, api.ErrResourceDoesNotExist)`              |
+| Extract HTTP status | `errors.As(err, &httpError)` then inspect `httpError.Code` |
+| Add context         | `fmt.Errorf("context: %w", err)`                           |
 
 ### Retry Policies
 
 Retry logic is centralized in the `proxmox/retry/` package, which provides three operation constructors:
 
-| Constructor            | Use Case                                              | Attempts  | Backoff     | Method   |
-|------------------------|-------------------------------------------------------|-----------|-------------|----------|
-| `NewTaskOperation`     | Async UPID-based tasks (create, clone, delete, start) | 3         | Exponential | `DoTask` |
-| `NewAPICallOperation`  | Synchronous blocking API calls (e.g. PUT /config)     | 3         | Exponential | `Do`     |
-| `NewPollOperation`     | Wait-for-condition loops (status, config unlock)      | Unlimited | Fixed (1s)  | `DoPoll` |
+| Constructor           | Use Case                                              | Attempts  | Backoff     | Method   |
+| --------------------- | ----------------------------------------------------- | --------- | ----------- | -------- |
+| `NewTaskOperation`    | Async UPID-based tasks (create, clone, delete, start) | 3         | Exponential | `DoTask` |
+| `NewAPICallOperation` | Synchronous blocking API calls (e.g. PUT /config)     | 3         | Exponential | `Do`     |
+| `NewPollOperation`    | Wait-for-condition loops (status, config unlock)      | Unlimited | Fixed (1s)  | `DoPoll` |
 
 Key behaviors of `DoTask`:
 
@@ -223,10 +242,10 @@ Key behaviors of `DoTask`:
 
 Common retry predicates:
 
-| Predicate                    | Matches                                           |
-|------------------------------|---------------------------------------------------|
-| `IsTransientAPIError`        | HTTP 5xx, "got no worker upid", "got timeout"     |
-| `ErrorContains(substr)`      | Error message contains substring                  |
+| Predicate               | Matches                                       |
+| ----------------------- | --------------------------------------------- |
+| `IsTransientAPIError`   | HTTP 5xx, "got no worker upid", "got timeout" |
+| `ErrorContains(substr)` | Error message contains substring              |
 
 Do not retry on:
 
@@ -267,6 +286,8 @@ Do not retry on:
 - Saving `plan` directly to state after Create (`resp.State.Set(ctx, &plan)`) — always read back from the API. See [Read-Back After Create and Update](#read-back-after-create-and-update).
 - Using bare `resp.State.Set()` without wrapping in `resp.Diagnostics.Append()` — silently discards state serialization errors. See [State Set Error Propagation](#state-set-error-propagation).
 - Calling `resp.State.RemoveResource(ctx)` in a datasource Read — datasources must error on not-found, not remove state. See [Datasource Error Handling](#datasource-error-handling).
+- Auditing summary format by grepping `AddError(` only — `TaskResult.AddDiags` / `AddDiagsAsWarnings` carry summaries too. See [Task Result Diagnostics](#task-result-diagnostics).
+- Making the not-found string matching case-insensitive, or adding a pattern without checking which case the emitter produces. See [Layer 1](#layer-1-http-client-proxmoxapi).
 
 ## References
 

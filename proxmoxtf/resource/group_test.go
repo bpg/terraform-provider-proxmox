@@ -67,3 +67,29 @@ func TestGroupSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentGroupACLRoleID:    schema.TypeString,
 	})
 }
+
+// TestGroupACLDeprecationWarning verifies the deprecated `acl` block warns only when it is
+// actually set in config, not on every group that omits it.
+func TestGroupACLDeprecationWarning(t *testing.T) {
+	t.Parallel()
+
+	s := Group().Schema
+
+	if hasACLDeprecationWarning(s, map[string]any{
+		mkResourceVirtualEnvironmentGroupID: "test-group",
+	}) {
+		t.Error("unexpected acl deprecation warning when no acl block is configured")
+	}
+
+	if !hasACLDeprecationWarning(s, map[string]any{
+		mkResourceVirtualEnvironmentGroupID: "test-group",
+		mkResourceVirtualEnvironmentGroupACL: []any{
+			map[string]any{
+				mkResourceVirtualEnvironmentGroupACLPath:   "/",
+				mkResourceVirtualEnvironmentGroupACLRoleID: "Administrator",
+			},
+		},
+	}) {
+		t.Error("expected acl deprecation warning when an acl block is configured")
+	}
+}

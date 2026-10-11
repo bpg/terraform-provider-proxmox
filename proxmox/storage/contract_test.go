@@ -786,7 +786,7 @@ func newStorageGetContractServer() *httptest.Server {
 func newStorageClientForTest(t *testing.T, endpoint string) *Client {
 	t.Helper()
 
-	conn, err := api.NewConnection(endpoint, true, "1.2")
+	conn, err := api.NewConnection(endpoint, true, "1.2", nil)
 	if err != nil {
 		t.Fatalf("NewConnection returned error: %v", err)
 	}

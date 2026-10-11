@@ -48,6 +48,30 @@ The `client_key` is sent to Proxmox and stored securely, but it's never returned
 - You must maintain the client key in your Terraform configuration or use a variable
 - The client key will be marked as sensitive in Terraform state
 
+#### Write-Only Client Key
+
+Because the client key is never read back, persisting it in state serves no drift-detection purpose. To keep the
+secret out of state entirely, use the write-only `client_key_wo` attribute instead of `client_key`. It requires
+Terraform 1.11+ (or OpenTofu 1.10+) and is mutually exclusive with `client_key`.
+
+Since write-only values are invisible to Terraform's diff, changing `client_key_wo` alone has no effect. Pair it
+with `client_key_wo_version` and increment that counter to push a rotated secret to Proxmox.
+
+```hcl
+ephemeral "vault_kv_secret_v2" "sso" {
+  mount = "example"
+  name  = "proxmox/sso"
+}
+
+resource "proxmox_virtual_environment_realm_openid" "entra" {
+  realm                 = "sso"
+  issuer_url            = "https://login.microsoftonline.com/<tenant>/v2.0"
+  client_id             = var.oidc_client_id
+  client_key_wo         = ephemeral.vault_kv_secret_v2.sso.data["client_secret"]
+  client_key_wo_version = 1
+}
+```
+
 ### Username Claim
 
 The `username_claim` attribute is **fixed after creation** — it cannot be changed once the realm is created. Changing it requires destroying and recreating the realm. Common values:

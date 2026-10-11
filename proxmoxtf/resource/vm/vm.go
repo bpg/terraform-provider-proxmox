@@ -44,39 +44,40 @@ import (
 )
 
 const (
-	dvRebootAfterCreation = false
-	dvRebootAfterUpdate   = true
-	dvOnBoot              = true
-	dvACPI                = true
-	dvAgentEnabled        = false
-	dvAgentTimeout        = "15m"
-	dvAgentTrim           = false
-	dvAgentType           = "virtio"
-	dvAMDSEVType          = "std"
-	dvAMDSEVAllowSMT      = true
-	dvAMDSEVKernelHashes  = false
-	dvAMDSEVNoDebug       = false
-	dvAMDSEVNoKeySharing  = false
-	dvAudioDeviceDevice   = "intel-hda"
-	dvAudioDeviceDriver   = "spice"
-	dvAudioDeviceEnabled  = true
-	dvBIOS                = "seabios"
-	dvCDROMEnabled        = false
-	dvCDROMFileID         = ""
-	dvCDROMInterface      = "ide3"
-	dvCloneDatastoreID    = ""
-	dvCloneNodeName       = ""
-	dvCloneFull           = true
-	dvCloneRetries        = 1
-	dvCPUArchitecture     = ""
-	dvCPUCores            = 1
-	dvCPUHotplugged       = 0
-	dvCPULimit            = float64(0)
-	dvCPUNUMA             = false
-	dvCPUSockets          = 1
-	dvCPUType             = "qemu64"
-	dvCPUAffinity         = ""
-	dvDescription         = ""
+	dvRebootAfterCreation    = false
+	dvRebootAfterUpdate      = true
+	dvOnBoot                 = true
+	dvACPI                   = true
+	dvAgentEnabled           = false
+	dvAgentTimeout           = "15m"
+	dvAgentTrim              = false
+	dvAgentType              = "virtio"
+	dvAgentWaitForIPDisabled = false
+	dvAMDSEVType             = "std"
+	dvAMDSEVAllowSMT         = true
+	dvAMDSEVKernelHashes     = false
+	dvAMDSEVNoDebug          = false
+	dvAMDSEVNoKeySharing     = false
+	dvAudioDeviceDevice      = "intel-hda"
+	dvAudioDeviceDriver      = "spice"
+	dvAudioDeviceEnabled     = true
+	dvBIOS                   = "seabios"
+	dvCDROMEnabled           = false
+	dvCDROMFileID            = ""
+	dvCDROMInterface         = "ide3"
+	dvCloneDatastoreID       = ""
+	dvCloneNodeName          = ""
+	dvCloneFull              = true
+	dvCloneRetries           = 1
+	dvCPUArchitecture        = ""
+	dvCPUCores               = 1
+	dvCPUHotplugged          = 0
+	dvCPULimit               = float64(0)
+	dvCPUNUMA                = false
+	dvCPUSockets             = 1
+	dvCPUType                = "qemu64"
+	dvCPUAffinity            = ""
+	dvDescription            = ""
 
 	// dvHotplug is the Proxmox VE default hotplug value.
 	// When hotplug is not explicitly configured, PVE uses "network,disk,usb".
@@ -158,52 +159,53 @@ const (
 	maxResourceVirtualEnvironmentVMNUMADevices  = 8
 	maxResourceVirtualEnvironmentVirtiofsShares = 8
 
-	mkRebootAfterCreation = "reboot"
-	mkRebootAfterUpdate   = "reboot_after_update"
-	mkOnBoot              = "on_boot"
-	mkBootOrder           = "boot_order"
-	mkACPI                = "acpi"
-	mkAgent               = "agent"
-	mkAgentEnabled        = "enabled"
-	mkAgentTimeout        = "timeout"
-	mkAgentTrim           = "trim"
-	mkAgentType           = "type"
-	mkAgentWaitForIP      = "wait_for_ip"
-	mkAgentWaitForIPIPv4  = "ipv4"
-	mkAgentWaitForIPIPv6  = "ipv6"
-	mkAMDSEV              = "amd_sev"
-	mkAMDSEVType          = "type"
-	mkAMDSEVAllowSMT      = "allow_smt"
-	mkAMDSEVKernelHashes  = "kernel_hashes"
-	mkAMDSEVNoDebug       = "no_debug"
-	mkAMDSEVNoKeySharing  = "no_key_sharing"
-	mkAudioDevice         = "audio_device"
-	mkAudioDeviceDevice   = "device"
-	mkAudioDeviceDriver   = "driver"
-	mkAudioDeviceEnabled  = "enabled"
-	mkBIOS                = "bios"
-	mkCDROM               = "cdrom"
-	mkCDROMEnabled        = "enabled"
-	mkCDROMFileID         = "file_id"
-	mkCDROMInterface      = "interface"
-	mkClone               = "clone"
-	mkCloneRetries        = "retries"
-	mkCloneDatastoreID    = "datastore_id"
-	mkCloneNodeName       = "node_name"
-	mkCloneVMID           = "vm_id"
-	mkCloneFull           = "full"
-	mkCPU                 = "cpu"
-	mkCPUArchitecture     = "architecture"
-	mkCPUCores            = "cores"
-	mkCPUFlags            = "flags"
-	mkCPUHotplugged       = "hotplugged"
-	mkCPULimit            = "limit"
-	mkCPUNUMA             = "numa"
-	mkCPUSockets          = "sockets"
-	mkCPUType             = "type"
-	mkCPUUnits            = "units"
-	mkCPUAffinity         = "affinity"
-	mkDescription         = "description"
+	mkRebootAfterCreation    = "reboot"
+	mkRebootAfterUpdate      = "reboot_after_update"
+	mkOnBoot                 = "on_boot"
+	mkBootOrder              = "boot_order"
+	mkACPI                   = "acpi"
+	mkAgent                  = "agent"
+	mkAgentEnabled           = "enabled"
+	mkAgentTimeout           = "timeout"
+	mkAgentTrim              = "trim"
+	mkAgentType              = "type"
+	mkAgentWaitForIP         = "wait_for_ip"
+	mkAgentWaitForIPDisabled = "disabled"
+	mkAgentWaitForIPIPv4     = "ipv4"
+	mkAgentWaitForIPIPv6     = "ipv6"
+	mkAMDSEV                 = "amd_sev"
+	mkAMDSEVType             = "type"
+	mkAMDSEVAllowSMT         = "allow_smt"
+	mkAMDSEVKernelHashes     = "kernel_hashes"
+	mkAMDSEVNoDebug          = "no_debug"
+	mkAMDSEVNoKeySharing     = "no_key_sharing"
+	mkAudioDevice            = "audio_device"
+	mkAudioDeviceDevice      = "device"
+	mkAudioDeviceDriver      = "driver"
+	mkAudioDeviceEnabled     = "enabled"
+	mkBIOS                   = "bios"
+	mkCDROM                  = "cdrom"
+	mkCDROMEnabled           = "enabled"
+	mkCDROMFileID            = "file_id"
+	mkCDROMInterface         = "interface"
+	mkClone                  = "clone"
+	mkCloneRetries           = "retries"
+	mkCloneDatastoreID       = "datastore_id"
+	mkCloneNodeName          = "node_name"
+	mkCloneVMID              = "vm_id"
+	mkCloneFull              = "full"
+	mkCPU                    = "cpu"
+	mkCPUArchitecture        = "architecture"
+	mkCPUCores               = "cores"
+	mkCPUFlags               = "flags"
+	mkCPUHotplugged          = "hotplugged"
+	mkCPULimit               = "limit"
+	mkCPUNUMA                = "numa"
+	mkCPUSockets             = "sockets"
+	mkCPUType                = "type"
+	mkCPUUnits               = "units"
+	mkCPUAffinity            = "affinity"
+	mkDescription            = "description"
 
 	mkNUMA              = "numa"
 	mkNUMADevice        = "device"
@@ -423,6 +425,12 @@ func VM() *schema.Resource {
 						MinItems:    0,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
+								mkAgentWaitForIPDisabled: {
+									Type:        schema.TypeBool,
+									Description: "Disable waiting for the agent to report an IP address; set to true to skip the lookup entirely",
+									Optional:    true,
+									Default:     dvAgentWaitForIPDisabled,
+								},
 								mkAgentWaitForIPIPv4: {
 									Type:        schema.TypeBool,
 									Description: "Wait for at least one IPv4 address (non-loopback, non-link-local)",
@@ -944,7 +952,7 @@ func VM() *schema.Resource {
 								},
 							},
 						},
-						MaxItems: 8,
+						MaxItems: network.MaxNetworkDevices,
 						MinItems: 0,
 					},
 					mkInitializationUserAccount: {
@@ -968,9 +976,12 @@ func VM() *schema.Resource {
 									Optional:    true,
 									Sensitive:   true,
 									Default:     dvInitializationUserAccountPassword,
-									DiffSuppressFunc: func(_, oldVal, _ string, _ *schema.ResourceData) bool {
-										return len(oldVal) > 0 &&
-											strings.ReplaceAll(oldVal, "*", "") == ""
+									DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
+										// PVE never returns the password, so a masked state value with no configured
+										// password stays unmanaged; a configured value against the mask is a real change.
+										masked := len(oldVal) > 0 && strings.ReplaceAll(oldVal, "*", "") == ""
+
+										return masked && newVal == ""
 									},
 								},
 								mkInitializationUserAccountUsername: {
@@ -1756,6 +1767,7 @@ func VM() *schema.Resource {
 		DeleteContext: vmDelete,
 		CustomizeDiff: customdiff.All(
 			customdiff.All(network.CustomizeDiff()...),
+			initializationInterfaceCollisionDiff,
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
@@ -2766,6 +2778,18 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	}
 
 	updateBody.StartOnBoot = &onBoot
+
+	// Apply an explicit boot order to the clone; when empty, preserve the source VM's order.
+	if bootOrder := d.Get(mkBootOrder).([]any); len(bootOrder) > 0 {
+		bootOrderConverted := make([]string, len(bootOrder))
+		for i, device := range bootOrder {
+			bootOrderConverted[i] = device.(string)
+		}
+
+		updateBody.Boot = &vms.CustomBoot{
+			Order: &bootOrderConverted,
+		}
+	}
 
 	updateBody.SMBIOS = vmGetSMBIOS(d)
 
@@ -3801,7 +3825,7 @@ func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []any) (*vms.Custo
 	var storageDevice *vms.CustomStorageDevice
 
 	if efiDisk != nil {
-		datastoreID := strings.SplitN(efiDisk.FileVolume, ":", 2)[0]
+		datastoreID, _, _ := strings.Cut(efiDisk.FileVolume, ":")
 
 		storageDevice = &vms.CustomStorageDevice{
 			FileVolume:  efiDisk.FileVolume,
@@ -3855,7 +3879,7 @@ func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []any) *vms.Custo
 	var storageDevice *vms.CustomStorageDevice
 
 	if tpmState != nil {
-		datastoreID := strings.SplitN(tpmState.FileVolume, ":", 2)[0]
+		datastoreID, _, _ := strings.Cut(tpmState.FileVolume, ":")
 		storageDevice = &vms.CustomStorageDevice{
 			FileVolume:  tpmState.FileVolume,
 			DatastoreID: &datastoreID,
@@ -4039,7 +4063,7 @@ func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 		manufacturer, _ := smbiosBlock[mkSMBIOSManufacturer].(string)
 		product, _ := smbiosBlock[mkSMBIOSProduct].(string)
 		serial, _ := smbiosBlock[mkSMBIOSSerial].(string)
-		sku, _ := smbiosBlock[mkSMBIOS].(string)
+		sku, _ := smbiosBlock[mkSMBIOSSKU].(string)
 		version, _ := smbiosBlock[mkSMBIOSVersion].(string)
 		uid, _ := smbiosBlock[mkSMBIOSUUID].(string)
 
@@ -4218,12 +4242,12 @@ func getStringFromBlock(block map[string]any, key string, defaultValue string) s
 	return defaultValue
 }
 
-func getBoolFromBlock(block map[string]any, key string, defaultValue bool) bool {
+func getBoolFromBlock(block map[string]any, key string) bool {
 	if val, ok := block[key].(bool); ok {
 		return val
 	}
 
-	return defaultValue
+	return false
 }
 
 // hotplugContains checks whether a specific feature is enabled in a hotplug setting string.
@@ -4283,19 +4307,15 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics
 		return diag.FromErr(err)
 	}
 
+	// A miss in the cluster resource list is not proof the VM is gone: on a multi-node cluster the list can lag
+	// behind a VM created moments ago. Fall through to the node config endpoint, which is authoritative.
 	vmNodeName, err := client.Cluster().GetVMNodeName(ctx, vmID)
-	if err != nil {
-		if errors.Is(err, cluster.ErrVMDoesNotExist) {
-			d.SetId("")
-
-			return nil
-		}
-
+	if err != nil && !errors.Is(err, cluster.ErrVMDoesNotExist) {
 		return diag.FromErr(err)
 	}
 
-	if vmNodeName != d.Get(mkNodeName) {
-		err = d.Set(mkNodeName, vmNodeName)
+	if vmNodeName != nil && *vmNodeName != d.Get(mkNodeName).(string) {
+		err = d.Set(mkNodeName, *vmNodeName)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -4417,7 +4437,8 @@ func vmReadCustom(
 			if vmConfig.Agent.Type != nil {
 				agent[mkAgentType] = *vmConfig.Agent.Type
 			} else {
-				agent[mkAgentType] = ""
+				// PVE omits an unset agent type; report the schema default so imported VMs don't diff and stop-start.
+				agent[mkAgentType] = dvAgentType
 			}
 
 			// preserve wait_for_ip from current state if present
@@ -5122,7 +5143,17 @@ func vmReadCustom(
 		}
 
 		if vmConfig.CloudInitPassword != nil {
-			initializationUserAccount[mkInitializationUserAccountPassword] = *vmConfig.CloudInitPassword
+			password := *vmConfig.CloudInitPassword
+
+			// PVE only returns a mask; keep the locally known value so a config change still produces a diff.
+			current, _ := d.Get(
+				fmt.Sprintf("%s.0.%s.0.%s", mkInitialization, mkInitializationUserAccount, mkInitializationUserAccountPassword),
+			).(string)
+			if password == MaskedPassword && current != "" && current != MaskedPassword {
+				password = current
+			}
+
+			initializationUserAccount[mkInitializationUserAccountPassword] = password
 		} else {
 			initializationUserAccount[mkInitializationUserAccountPassword] = ""
 		}
@@ -5419,29 +5450,7 @@ func vmReadCustom(
 		}
 	}
 
-	currentSMBIOS := d.Get(mkSMBIOS).([]any)
-
-	switch {
-	case len(clone) > 0:
-		if len(currentSMBIOS) > 0 {
-			err := d.Set(mkSMBIOS, currentSMBIOS)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	case len(smbios) == 0:
-		err := d.Set(mkSMBIOS, []any{})
-		diags = append(diags, diag.FromErr(err)...)
-	default:
-		if len(currentSMBIOS) > 0 ||
-			smbios[mkSMBIOSFamily] != dvSMBIOSFamily ||
-			smbios[mkSMBIOSManufacturer] != dvSMBIOSManufacturer ||
-			smbios[mkSMBIOSProduct] != dvSMBIOSProduct ||
-			smbios[mkSMBIOSSerial] != dvSMBIOSSerial ||
-			smbios[mkSMBIOSSKU] != dvSMBIOSSKU ||
-			smbios[mkSMBIOSVersion] != dvSMBIOSVersion {
-			err := d.Set(mkSMBIOS, []any{smbios})
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	}
+	diags = append(diags, vmReadSMBIOSState(d, smbios, clone)...)
 
 	// Compare the startup order to the one stored in the state.
 	var startup map[string]any
@@ -5625,6 +5634,46 @@ func vmReadCustom(
 	return diags
 }
 
+// vmReadSMBIOSState stores the SMBIOS settings reported by Proxmox in the state.
+// For a cloned VM the block is only refreshed when it is configured, so values inherited
+// from the template do not show up as a diff when the block is absent.
+func vmReadSMBIOSState(d *schema.ResourceData, smbios map[string]any, clone []any) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	currentSMBIOS := d.Get(mkSMBIOS).([]any)
+
+	switch {
+	case len(clone) > 0 && len(currentSMBIOS) > 0:
+		if len(smbios) == 0 {
+			err := d.Set(mkSMBIOS, []any{})
+			diags = append(diags, diag.FromErr(err)...)
+
+			break
+		}
+
+		err := d.Set(mkSMBIOS, []any{smbios})
+		diags = append(diags, diag.FromErr(err)...)
+	case len(clone) > 0:
+		// the block is not configured on a clone, keep it absent
+	case len(smbios) == 0:
+		err := d.Set(mkSMBIOS, []any{})
+		diags = append(diags, diag.FromErr(err)...)
+	default:
+		if len(currentSMBIOS) > 0 ||
+			smbios[mkSMBIOSFamily] != dvSMBIOSFamily ||
+			smbios[mkSMBIOSManufacturer] != dvSMBIOSManufacturer ||
+			smbios[mkSMBIOSProduct] != dvSMBIOSProduct ||
+			smbios[mkSMBIOSSerial] != dvSMBIOSSerial ||
+			smbios[mkSMBIOSSKU] != dvSMBIOSSKU ||
+			smbios[mkSMBIOSVersion] != dvSMBIOSVersion {
+			err := d.Set(mkSMBIOS, []any{smbios})
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	return diags
+}
+
 func vmReadPrimitiveValues(
 	d *schema.ResourceData,
 	vmConfig *vms.GetResponseData,
@@ -5687,6 +5736,18 @@ func vmReadPrimitiveValues(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentHookScript := d.Get(mkHookScriptFileID).(string)
+
+	if len(clone) == 0 || currentHookScript != dvHookScript {
+		if vmConfig.HookScript != nil {
+			err = d.Set(mkHookScriptFileID, *vmConfig.HookScript)
+		} else {
+			err = d.Set(mkHookScriptFileID, "")
+		}
+
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	currentTags := d.Get(mkTags).([]any)
 
 	err = d.Set(mkOnBoot, vmConfig.StartOnBoot)
@@ -5736,8 +5797,8 @@ func vmReadPrimitiveValues(
 		if vmConfig.KeyboardLayout != nil {
 			err = d.Set(mkKeyboardLayout, *vmConfig.KeyboardLayout)
 		} else {
-			// Default value of "keyboard" is "" according to the API documentation.
-			err = d.Set(mkKeyboardLayout, "")
+			// PVE omits an unset keyboard; report the schema default so imported VMs don't diff and reboot.
+			err = d.Set(mkKeyboardLayout, dvKeyboardLayout)
 		}
 
 		diags = append(diags, diag.FromErr(err)...)
@@ -5840,7 +5901,7 @@ func vmUpdatePool(
 		return nil
 	}
 
-	vmList := (types.CustomCommaSeparatedList)([]string{strconv.Itoa(vmID)})
+	vmList := types.CustomCommaSeparatedList([]string{strconv.Itoa(vmID)})
 
 	tflog.Debug(ctx, fmt.Sprintf("Moving VM %d from pool '%s' to pool '%s'", vmID, oldPool, newPool))
 
@@ -5867,6 +5928,225 @@ func vmUpdatePool(
 	return nil
 }
 
+type vmPreMigrationDeletePlan struct {
+	list []string
+	set  map[string]struct{}
+}
+
+func vmUpdateNodeLocalDevicesBeforeMigration(
+	ctx context.Context,
+	client proxmox.Client,
+	vmAPI *vms.Client,
+	d *schema.ResourceData,
+	vmID int,
+	power *vmPowerTracker,
+) (vmPreMigrationDeletePlan, diag.Diagnostics) {
+	deletePlan := vmPreMigrationNodeLocalDeviceDeletes(d)
+	if len(deletePlan.list) == 0 {
+		return deletePlan, nil
+	}
+
+	migrationState, err := vmGetMigrationState(ctx, client, vmAPI, vmID)
+	if err != nil {
+		return deletePlan, diag.FromErr(err)
+	}
+
+	if migrationState.isRunning && migrationState.isHAManaged {
+		return deletePlan, diag.Errorf(
+			"cannot remove or replace node-local devices before migrating running HA-managed VM %d. "+
+				"Split this into separate applies, or stop/disable HA management for the VM before applying this change",
+			vmID,
+		)
+	}
+
+	// Node-local devices must be removed from the effective VM configuration before migration. For a
+	// running VM, that means taking it offline first; otherwise Proxmox keeps the old device attached
+	// as a pending change and migration can still fail on the source-only hardware dependency.
+	template := d.Get(mkTemplate).(bool)
+
+	powerOffForMigration := vmPowerOffForPendingChanges(ctx, vmAPI, d, template, true, power)
+	if powerOffForMigration.blockedByPolicy {
+		return deletePlan, rebootAfterUpdateDisabledError("remove or replace node-local devices before migration")
+	}
+
+	if powerOffForMigration.diags.HasError() {
+		return deletePlan, powerOffForMigration.diags
+	}
+
+	updateBody := &vms.UpdateRequestBody{
+		Delete: deletePlan.list,
+	}
+
+	if err := vmAPI.UpdateVM(ctx, updateBody); err != nil {
+		return deletePlan, diag.FromErr(err)
+	}
+
+	return deletePlan, nil
+}
+
+type vmMigrationState struct {
+	isRunning    bool
+	isHAManaged  bool
+	haResourceID types.HAResourceID
+}
+
+func vmGetMigrationState(ctx context.Context, client proxmox.Client, vmAPI *vms.Client, vmID int) (vmMigrationState, error) {
+	vmStatus, err := vmAPI.GetVMStatus(ctx)
+	if err != nil {
+		return vmMigrationState{}, fmt.Errorf("failed to get VM %d status: %w", vmID, err)
+	}
+
+	haResourceID := types.HAResourceID{
+		Type: types.HAResourceTypeVM,
+		Name: strconv.Itoa(vmID),
+	}
+
+	isHAManaged, err := client.Cluster().HA().Resources().Exists(ctx, haResourceID)
+	if err != nil {
+		return vmMigrationState{}, fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err)
+	}
+
+	return vmMigrationState{
+		isRunning:    vmStatus.Status == "running",
+		isHAManaged:  isHAManaged,
+		haResourceID: haResourceID,
+	}, nil
+}
+
+func vmPreMigrationNodeLocalDeviceDeletes(d *schema.ResourceData) vmPreMigrationDeletePlan {
+	deletePlan := vmPreMigrationDeletePlan{
+		set: map[string]struct{}{},
+	}
+
+	if d.HasChange(mkHostPCI) {
+		appendPreMigrationDeletes(&deletePlan, vmChangedOrRemovedSlots(d, mkHostPCI, mkHostPCIDevice, "hostpci"))
+	}
+
+	if d.HasChange(mkHostUSB) {
+		appendPreMigrationDeletes(&deletePlan, vmChangedOrRemovedSlots(d, mkHostUSB, "", "usb"))
+	}
+
+	if d.HasChange(mkNUMA) {
+		appendPreMigrationDeletes(&deletePlan, vmChangedOrRemovedSlots(d, mkNUMA, mkNUMADevice, "numa"))
+	}
+
+	return deletePlan
+}
+
+func appendPreMigrationDeletes(deletePlan *vmPreMigrationDeletePlan, devices []string) {
+	for _, device := range devices {
+		if _, exists := deletePlan.set[device]; exists {
+			continue
+		}
+
+		deletePlan.list = append(deletePlan.list, device)
+		deletePlan.set[device] = struct{}{}
+	}
+}
+
+func vmChangedOrRemovedSlots(d *schema.ResourceData, attr, slotKey, fallbackPrefix string) []string {
+	oldValue, newValue := d.GetChange(attr)
+
+	return vmChangedOrRemovedSlotsFromValues(oldValue, newValue, slotKey, fallbackPrefix)
+}
+
+func vmChangedOrRemovedSlotsFromValues(oldValue, newValue any, slotKey, fallbackPrefix string) []string {
+	oldDevices, oldSlots := vmDeviceBlocksBySlot(oldValue, slotKey, fallbackPrefix)
+	newDevices, _ := vmDeviceBlocksBySlot(newValue, slotKey, fallbackPrefix)
+
+	devices := make([]string, 0, len(oldDevices))
+	for _, device := range oldSlots {
+		oldBlock := oldDevices[device]
+
+		newBlock, ok := newDevices[device]
+		if !ok || !cmp.Equal(oldBlock, newBlock) {
+			devices = append(devices, device)
+		}
+	}
+
+	return devices
+}
+
+func vmDeviceBlocksBySlot(value any, slotKey, fallbackPrefix string) (map[string]map[string]any, []string) {
+	list, ok := value.([]any)
+	if !ok {
+		return nil, nil
+	}
+
+	devices := make(map[string]map[string]any, len(list))
+	slots := make([]string, 0, len(list))
+
+	for i, entry := range list {
+		block, ok := entry.(map[string]any)
+		if !ok || block == nil {
+			continue
+		}
+
+		device := fmt.Sprintf("%s%d", fallbackPrefix, i)
+
+		if slotKey != "" {
+			if configuredDevice, ok := block[slotKey].(string); ok && configuredDevice != "" {
+				device = configuredDevice
+			}
+		}
+
+		devices[device] = block
+		slots = append(slots, device)
+	}
+
+	return devices, slots
+}
+
+func vmDeviceSlotSet(slots []string) map[string]struct{} {
+	slotSet := make(map[string]struct{}, len(slots))
+	for _, slot := range slots {
+		slotSet[slot] = struct{}{}
+	}
+
+	return slotSet
+}
+
+func vmPCIDeviceSlotSet(devices vms.CustomPCIDevices) map[string]struct{} {
+	slotSet := make(map[string]struct{}, len(devices))
+	for slot := range devices {
+		slotSet[slot] = struct{}{}
+	}
+
+	return slotSet
+}
+
+func vmSequentialDeviceSlotSet(prefix string, count int) map[string]struct{} {
+	slotSet := make(map[string]struct{}, count)
+	for i := range count {
+		slotSet[fmt.Sprintf("%s%d", prefix, i)] = struct{}{}
+	}
+
+	return slotSet
+}
+
+func vmAppendMissingDeviceDeletes(
+	del []string,
+	prefix string,
+	maxDevices int,
+	configuredDevices map[string]struct{},
+	preMigrationDeletePlan vmPreMigrationDeletePlan,
+) []string {
+	for i := range maxDevices {
+		device := fmt.Sprintf("%s%d", prefix, i)
+		if _, exists := configuredDevices[device]; exists {
+			continue
+		}
+
+		if _, alreadyDeleted := preMigrationDeletePlan.set[device]; alreadyDeleted {
+			continue
+		}
+
+		del = append(del, device)
+	}
+
+	return del
+}
+
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	// reset the default timeout for the update operation
 	ctx = context.WithoutCancel(ctx)
@@ -5880,6 +6160,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	nodeName := d.Get(mkNodeName).(string)
 	rebootRequired := false
+	nodeNameChanged := d.HasChange(mkNodeName)
+	oldNodeName := nodeName
 
 	vmID, e := strconv.Atoi(d.Id())
 	if e != nil {
@@ -5893,22 +6175,34 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(e)
 	}
 
-	// If the node name has changed we need to migrate the VM to the new node before we do anything else.
-	if d.HasChange(mkNodeName) {
+	if nodeNameChanged {
+		oldNodeNameValue, _ := d.GetChange(mkNodeName)
+		oldNodeName = oldNodeNameValue.(string)
+	}
+
+	vmAPI := client.Node(oldNodeName).VM(vmID)
+
+	preMigrationDeletePlan := vmPreMigrationDeletePlan{set: map[string]struct{}{}}
+
+	if nodeNameChanged {
+		var preMigrationDiags diag.Diagnostics
+
+		preMigrationDeletePlan, preMigrationDiags = vmUpdateNodeLocalDevicesBeforeMigration(ctx, client, vmAPI, d, vmID, power)
+		if preMigrationDiags.HasError() {
+			return preMigrationDiags
+		}
+
 		migrateTimeoutSec := d.Get(mkTimeoutMigrate).(int)
 
 		migrateCtx, cancel := context.WithTimeout(ctx, time.Duration(migrateTimeoutSec)*time.Second)
 		defer cancel()
 
-		oldNodeNameValue, _ := d.GetChange(mkNodeName)
-		oldNodeName := oldNodeNameValue.(string)
-
 		if migrateDiags := migrateVM(migrateCtx, client, vmID, oldNodeName, nodeName); migrateDiags.HasError() {
 			return migrateDiags
 		}
-	}
 
-	vmAPI := client.Node(nodeName).VM(vmID)
+		vmAPI = client.Node(nodeName).VM(vmID)
+	}
 
 	updateBody := &vms.UpdateRequestBody{}
 
@@ -6145,7 +6439,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 		oldCPUType := getStringFromBlock(oldCPUBlock, mkCPUType, "")
 		oldCPUArchitecture := getStringFromBlock(oldCPUBlock, mkCPUArchitecture, "")
-		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA, false)
+		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA)
 
 		// Only vcpus (hotplugged) changes are hotpluggable for CPU, and only when
 		// "cpu" is in the VM's hotplug setting. Changing cores or sockets always requires a reboot.
@@ -6419,33 +6713,55 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	// Prepare the new hostpci devices configuration.
 	if d.HasChange(mkHostPCI) {
-		updateBody.PCIDevices = vmGetHostPCIDeviceObjects(d)
-
-		for i := len(updateBody.PCIDevices); i < maxResourceVirtualEnvironmentVMHostPCIDevices; i++ {
-			del = append(del, fmt.Sprintf("hostpci%d", i))
+		pciDevices := vmGetHostPCIDeviceObjects(d)
+		if len(pciDevices) > 0 {
+			updateBody.PCIDevices = pciDevices
 		}
+
+		del = vmAppendMissingDeviceDeletes(
+			del,
+			"hostpci",
+			maxResourceVirtualEnvironmentVMHostPCIDevices,
+			vmPCIDeviceSlotSet(pciDevices),
+			preMigrationDeletePlan,
+		)
 
 		rebootRequired = true
 	}
 
 	// Prepare the new numa devices configuration.
 	if d.HasChange(mkNUMA) {
-		updateBody.NUMADevices = vmGetNumaDeviceObjects(d)
-
-		for i := len(updateBody.NUMADevices); i < maxResourceVirtualEnvironmentVMNUMADevices; i++ {
-			del = append(del, fmt.Sprintf("numa%d", i))
+		numaDevices := vmGetNumaDeviceObjects(d)
+		if len(numaDevices) > 0 {
+			updateBody.NUMADevices = numaDevices
 		}
+
+		_, configuredNUMADevices := vmDeviceBlocksBySlot(d.Get(mkNUMA), mkNUMADevice, "numa")
+		del = vmAppendMissingDeviceDeletes(
+			del,
+			"numa",
+			maxResourceVirtualEnvironmentVMNUMADevices,
+			vmDeviceSlotSet(configuredNUMADevices),
+			preMigrationDeletePlan,
+		)
 
 		rebootRequired = true
 	}
 
 	// Prepare the new usb devices configuration.
 	if d.HasChange(mkHostUSB) {
-		updateBody.USBDevices = vmGetHostUSBDeviceObjects(d)
-
-		for i := len(updateBody.USBDevices); i < maxResourceVirtualEnvironmentVMHostUSBDevices; i++ {
-			del = append(del, fmt.Sprintf("usb%d", i))
+		usbDevices := vmGetHostUSBDeviceObjects(d)
+		if len(usbDevices) > 0 {
+			updateBody.USBDevices = usbDevices
 		}
+
+		del = vmAppendMissingDeviceDeletes(
+			del,
+			"usb",
+			maxResourceVirtualEnvironmentVMHostUSBDevices,
+			vmSequentialDeviceSlotSet("usb", len(usbDevices)),
+			preMigrationDeletePlan,
+		)
 
 		rebootRequired = true
 	}
@@ -6671,9 +6987,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	// Merge non-disk deletions with any disk deletions already queued.
 	updateBody.Delete = append(updateBody.Delete, del...)
 
-	e = vmAPI.UpdateVM(ctx, updateBody)
-	if e != nil {
-		return diag.FromErr(e)
+	// Pre-migration cleanup can handle the only changed fields.
+	if !updateBody.IsEmpty() {
+		e = vmAPI.UpdateVM(ctx, updateBody)
+		if e != nil {
+			return diag.FromErr(e)
+		}
 	}
 
 	// Handle template conversion if the template flag changed to true
@@ -7316,12 +7635,24 @@ func getAgentWaitForIPConfig(d *schema.ResourceData) *vms.WaitForIPConfig {
 
 	waitForIPBlock := waitForIPList[0].(map[string]any)
 
-	config := &vms.WaitForIPConfig{
-		IPv4: getBoolFromBlock(waitForIPBlock, mkAgentWaitForIPIPv4, false),
-		IPv6: getBoolFromBlock(waitForIPBlock, mkAgentWaitForIPIPv6, false),
+	return agentWaitForIPConfigFromBlock(waitForIPBlock)
+}
+
+// agentWaitForIPConfigFromBlock translates a wait_for_ip block into a WaitForIPConfig.
+// disabled=true disables the agent IP wait entirely (Skip); otherwise nil means "wait for any".
+// The switch defaults to false (do not skip) so that state written before the switch existed —
+// where the key reads back as its zero value — keeps querying the agent (see #2928).
+func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
+	if getBoolFromBlock(block, mkAgentWaitForIPDisabled) {
+		return &vms.WaitForIPConfig{Skip: true}
 	}
 
-	// if both are false, return nil for backward compatibility
+	config := &vms.WaitForIPConfig{
+		IPv4: getBoolFromBlock(block, mkAgentWaitForIPIPv4),
+		IPv6: getBoolFromBlock(block, mkAgentWaitForIPIPv6),
+	}
+
+	// if both are false, return nil for backward compatibility (wait for any)
 	if !config.IPv4 && !config.IPv6 {
 		return nil
 	}
@@ -7371,34 +7702,20 @@ func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (strin
 func migrateVM(ctx context.Context, client proxmox.Client, vmID int, sourceNode, targetNode string) diag.Diagnostics {
 	vmAPI := client.Node(sourceNode).VM(vmID)
 
-	// check if VM is running
-	vmStatus, err := vmAPI.GetVMStatus(ctx)
+	migrationState, err := vmGetMigrationState(ctx, client, vmAPI, vmID)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to get VM %d status: %w", vmID, err))
-	}
-
-	isRunning := vmStatus.Status == "running"
-
-	// check if VM is HA-managed
-	haResourceID := types.HAResourceID{
-		Type: types.HAResourceTypeVM,
-		Name: strconv.Itoa(vmID),
-	}
-
-	isHAManaged, err := client.Cluster().HA().Resources().Exists(ctx, haResourceID)
-	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to check HA status for VM %d: %w", vmID, err))
+		return diag.FromErr(err)
 	}
 
 	// for running HA-managed VMs, use HA migration
-	if isRunning && isHAManaged {
-		return diag.FromErr(migrateHAVM(ctx, client, vmID, haResourceID, targetNode))
+	if migrationState.isRunning && migrationState.isHAManaged {
+		return diag.FromErr(migrateHAVM(ctx, client, vmID, migrationState.haResourceID, targetNode))
 	}
 
 	// for stopped HA-managed VMs, temporarily remove from HA to allow standard migration
 	// (Proxmox intercepts standard migrate for HA VMs and only sets a preference)
-	if !isRunning && isHAManaged {
-		return migrateStoppedHAVM(ctx, client, vmID, haResourceID, sourceNode, targetNode)
+	if !migrationState.isRunning && migrationState.isHAManaged {
+		return migrateStoppedHAVM(ctx, client, vmID, migrationState.haResourceID, sourceNode, targetNode)
 	}
 
 	// for non-HA VMs (running or stopped), use standard migration
@@ -7514,14 +7831,8 @@ func readdToHA(
 	haConfig *haresources.HAResourceGetResponseData,
 ) error {
 	createBody := &haresources.HAResourceCreateRequestBody{
-		ID: haResourceID,
-		HAResourceDataBase: haresources.HAResourceDataBase{
-			Comment:     haConfig.Comment,
-			Group:       haConfig.Group,
-			MaxRelocate: haConfig.MaxRelocate,
-			MaxRestart:  haConfig.MaxRestart,
-			State:       haConfig.State,
-		},
+		ID:                 haResourceID,
+		HAResourceDataBase: haConfig.HAResourceDataBase,
 	}
 
 	return haClient.Create(ctx, createBody)

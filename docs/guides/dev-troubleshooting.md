@@ -104,10 +104,12 @@ Inspect the errors and fix them accordingly.
 
 ### Documentation generation
 
-If `make docs` fails or produces unexpected output, ensure you have the correct version of `tfplugindocs`:
+Always regenerate docs with `make docs`. It invokes `tfplugindocs` via `go tool`,
+which uses the version pinned in `go.mod` — so you don't need to install it
+separately. Avoid `go install ...tfplugindocs`, as that pulls the latest release
+and may not match the pinned version:
 
 ```sh
-go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 make docs
 ```
 

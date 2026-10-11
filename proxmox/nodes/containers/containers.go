@@ -82,7 +82,11 @@ func (c *Client) CreateContainerAsync(ctx context.Context, d *CreateRequestBody)
 }
 
 // DeleteContainer deletes a container.
-func (c *Client) DeleteContainer(ctx context.Context) tasks.TaskResult {
+func (c *Client) DeleteContainer(
+	ctx context.Context,
+	purge bool,
+	destroyUnreferencedDisks bool,
+) tasks.TaskResult {
 	op := retry.NewTaskOperation("container delete",
 		retry.WithRetryIf(func(err error) bool {
 			return retry.IsTransientAPIError(err) && !errors.Is(err, api.ErrResourceDoesNotExist)
@@ -90,15 +94,36 @@ func (c *Client) DeleteContainer(ctx context.Context) tasks.TaskResult {
 	)
 
 	return c.Tasks().DoTask(ctx, op,
-		func() (*string, error) { return c.DeleteContainerAsync(ctx) },
+		func() (*string, error) { return c.DeleteContainerAsync(ctx, purge, destroyUnreferencedDisks) },
 	)
 }
 
 // DeleteContainerAsync deletes a container asynchronously.
-func (c *Client) DeleteContainerAsync(ctx context.Context) (*string, error) {
+func (c *Client) DeleteContainerAsync(
+	ctx context.Context,
+	purge bool,
+	destroyUnreferencedDisks bool,
+) (*string, error) {
+	purgeValue := 0
+	if purge {
+		purgeValue = 1
+	}
+
+	destroyUnreferencedDisksValue := 0
+	if destroyUnreferencedDisks {
+		destroyUnreferencedDisksValue = 1
+	}
+
 	resBody := &DeleteResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(""), nil, resBody)
+	// Appended to the expanded path rather than passed through ExpandPath:
+	// that helper joins with a "/", which would yield ".../100/?purge=1".
+	path := fmt.Sprintf(
+		"%s?destroy-unreferenced-disks=%d&purge=%d",
+		c.ExpandPath(""), destroyUnreferencedDisksValue, purgeValue,
+	)
+
+	err := c.DoRequest(ctx, http.MethodDelete, path, nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error deleting container: %w", err)
 	}
@@ -184,8 +209,7 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 
 	op := retry.NewPollOperation("container network interfaces",
 		retry.WithRetryIf(func(err error) bool {
-			var target *api.HTTPError
-			if errors.As(err, &target) {
+			if target, ok := errors.AsType[*api.HTTPError](err); ok {
 				if target.Code == http.StatusBadRequest {
 					return true
 				}
@@ -270,6 +294,33 @@ func (c *Client) checkIPAddresses(
 	}
 
 	return hasIPv4, hasIPv6
+}
+
+// MigrateContainer migrates a container to a different node.
+// The returned TaskResult carries any warnings from the task log.
+func (c *Client) MigrateContainer(ctx context.Context, d *MigrateRequestBody) tasks.TaskResult {
+	taskID, err := c.MigrateContainerAsync(ctx, d)
+	if err != nil {
+		return tasks.TaskFailed(err)
+	}
+
+	return c.Tasks().WaitForTask(ctx, *taskID)
+}
+
+// MigrateContainerAsync migrates a container to a different node asynchronously.
+func (c *Client) MigrateContainerAsync(ctx context.Context, d *MigrateRequestBody) (*string, error) {
+	resBody := &MigrateResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("migrate"), d, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error migrating container: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // RebootContainer reboots a container.

@@ -21,8 +21,13 @@ type tagStyle struct {
 	ColorMap      *string           `json:"color-map,omitempty"`
 }
 type crs struct {
-	HaRebalanceOnStart *types.CustomBool `json:"ha-rebalance-on-start,omitempty"`
-	HA                 *string           `json:"ha,omitempty"`
+	HaRebalanceOnStart          *types.CustomBool  `json:"ha-rebalance-on-start,omitempty"`
+	HA                          *string            `json:"ha,omitempty"`
+	HaAutoRebalance             *types.CustomBool  `json:"ha-auto-rebalance,omitempty"`
+	HaAutoRebalanceHoldDuration *types.CustomInt64 `json:"ha-auto-rebalance-hold-duration,omitempty"`
+	HaAutoRebalanceMargin       *types.CustomInt64 `json:"ha-auto-rebalance-margin,omitempty"`
+	HaAutoRebalanceMethod       *string            `json:"ha-auto-rebalance-method,omitempty"`
+	HaAutoRebalanceThreshold    *types.CustomInt64 `json:"ha-auto-rebalance-threshold,omitempty"`
 }
 type notify struct {
 	HAFencingMode        *string `json:"fencing,omitempty"`

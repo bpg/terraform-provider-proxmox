@@ -62,6 +62,11 @@ type DatastoreFileGetResponseBody struct {
 	Data *DatastoreFileGetResponseData `json:"data,omitempty" url:"data,omitempty"`
 }
 
+// DeleteDatastoreFileResponseBody contains the body from a datastore content delete response.
+type DeleteDatastoreFileResponseBody struct {
+	TaskID *string `json:"data,omitempty"`
+}
+
 // DatastoreFileGetResponseData contains the data from a datastore content get response.
 type DatastoreFileGetResponseData struct {
 	Path       *string `json:"path"           url:"path,omitempty"`

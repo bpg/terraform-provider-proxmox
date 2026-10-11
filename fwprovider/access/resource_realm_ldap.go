@@ -334,7 +334,6 @@ func (r *realmLDAPResource) read(
 	return nil
 }
 
-//nolint:dupl
 func (r *realmLDAPResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,

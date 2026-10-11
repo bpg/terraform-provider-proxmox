@@ -118,6 +118,8 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
 
 **Functional coverage:** acceptance tests must cover all major use cases for the resource — not just one basic scenario. Test each distinct operational mode (e.g., different targeting strategies, list attributes with multiple elements, compound fields, nested objects). PRs with insufficient functional test coverage will be rejected during review. See [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement) for details.
 
+**No faked PVE API as proof:** tests against a mocked or faked Proxmox VE API (`httptest` servers, stub clients, hand-built responses) are not accepted as proof for behavior an acceptance test can exercise. If you don't have a Proxmox VE instance, write the acceptance test anyway and say in the PR that it wasn't run; a maintainer will run it. Fakes are fine only for conditions a live PVE can't produce on demand. See [ADR-006](docs/adr/006-testing-requirements.md#faked-pve-api-tests) for details.
+
 #### Prerequisites
 
 1. A running Proxmox instance (see [Development Proxmox Setup](docs/guides/dev-proxmox-setup.md))
@@ -139,14 +141,29 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
    PROXMOX_VE_ACC_NODE_SSH_ADDRESS="10.0.0.11"
    PROXMOX_VE_ACC_NODE_SSH_PORT="22"
    PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
+
+   # Datastore used for container root filesystems and mount points.
+   # Defaults to "local-lvm"; override it on clusters that use different storage.
+   PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID="local-zfs"
    ```
 
-  Some tests require multi node cluster and a ZFS datastore to run. To include these (otherwise skipped) tests add additional configuration corresponding to the cluster.
+Some tests require multi node cluster, a ZFS datastore and a spare disk to run. To include these (otherwise skipped) tests add additional configuration corresponding to the cluster.
 
-  ```env
-  PROXMOX_VE_ACC_NODE_2_NAME="pve2"
-  PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
-  ```
+```env
+PROXMOX_VE_ACC_NODE_2_NAME="pve2"
+PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
+PROXMOX_VE_ACC_ZFS_DISK="/dev/sdb"  # spare disk for proxmox_node_disk_zfs tests — will be fully wiped
+```
+
+> [!NOTE]
+>
+> **Non-root SSH user — snippets directory permissions.** The `upload_mode = "sftp"` cases in
+> `TestAccResourceFile` write directly over SFTP, which cannot elevate via `sudo` (unlike the default
+> `stream` mode). If `PROXMOX_VE_SSH_USERNAME` is a non-root user (e.g. `terraform`), that user needs
+> direct write access to the snippets directory (`/var/lib/vz/snippets` for the `local` datastore),
+> including the ability to overwrite files created there by root — for example via a default ACL
+> (`setfacl -d -m u:<user>:rwx`). Running acceptance tests as `root` (the default in the example above)
+> avoids this requirement.
 
 #### Running acceptance tests
 
@@ -166,9 +183,9 @@ For example, to run all VM-related tests: `./testacc TestAccResourceVM.*`
 
 > [!NOTE]
 >
-> - Acceptance test coverage is still in development.
-> - Only some resources and data sources are currently tested.
-> - Some tests may require specific Proxmox configuration.
+> - Acceptance tests are required for new or changed functionality (see [Functional coverage](#acceptance-tests) above).
+> - Some older resources still lack acceptance coverage; contributions adding tests for them are welcome.
+> - Some tests require specific Proxmox configuration (storage, networks, cloud images); see the `PROXMOX_VE_ACC_*` variables in `testacc.env`.
 
 ### Manual testing
 
@@ -222,12 +239,12 @@ New resources and data sources **must** be implemented using the Terraform Plugi
 
 See [docs/adr/reference-examples.md](docs/adr/reference-examples.md) for annotated walkthroughs and a new-resource checklist. Quick summary:
 
-| Complexity | Reference | When to use |
-| ---------- | --------- | ----------- |
-| Basic CRUD | SDN VNet (`fwprovider/cluster/sdn/vnet/`) | Start here for any new resource |
-| Many optional fields | Replication (`fwprovider/cluster/replication/`) | Split create/update, `CheckDelete`, `attribute.*PtrFromValue` |
-| Sensitive attributes | Metrics Server (`fwprovider/cluster/metrics/`) | Sensitive fields, bool-to-int conversion |
-| Cross-field validation | ACL (`fwprovider/access/`) | `ConfigValidators`, custom import ID parsing |
+| Complexity             | Reference                                       | When to use                                                   |
+| ---------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| Basic CRUD             | SDN VNet (`fwprovider/cluster/sdn/vnet/`)       | Start here for any new resource                               |
+| Many optional fields   | Replication (`fwprovider/cluster/replication/`) | Split create/update, `CheckDelete`, `attribute.*PtrFromValue` |
+| Sensitive attributes   | Metrics Server (`fwprovider/cluster/metrics/`)  | Sensitive fields, bool-to-int conversion                      |
+| Cross-field validation | ACL (`fwprovider/access/`)                      | `ConfigValidators`, custom import ID parsing                  |
 
 Architecture decisions are documented in [docs/adr/](docs/adr/README.md).
 
@@ -247,10 +264,10 @@ Documentation for **SDK** resources (`proxmoxtf/`) is **manually maintained** �
 
 **Description vs MarkdownDescription:**
 
-| Field                   | Format     | Used for                                      |
-| ----------------------- | ---------- | --------------------------------------------- |
-| `Description`           | Plain text | CLI help, simple tooltips                     |
-| `MarkdownDescription`   | Markdown   | Registry docs, rich formatting                |
+| Field                 | Format     | Used for                       |
+| --------------------- | ---------- | ------------------------------ |
+| `Description`         | Plain text | CLI help, simple tooltips      |
+| `MarkdownDescription` | Markdown   | Registry docs, rich formatting |
 
 - If only one is set, it's used for both purposes.
 - Use `MarkdownDescription` when you need inline code (backticks), links, or HTML (`<br>`).
@@ -378,13 +395,13 @@ Guidelines:
 
 **Proof of work is mandatory for all code changes.** Every PR must include evidence that the change works as expected:
 
-- Test output (unit tests, acceptance tests)
+- Test output (unit tests, acceptance tests); tests against a faked PVE API don't count as proof of API-facing behavior (see [Acceptance tests](#acceptance-tests))
 - Logs, screenshots, or terminal output demonstrating the fix/feature
 - Any other relevant information that demonstrates the change works as expected
 
 > [!WARNING]
 > PRs without proof of work may be rejected. Trivial changes (typo fixes, documentation-only updates that don't affect code behavior) are exempt from this requirement.
-If you use AI assistants, they are expected to generate a proof of work document as a `.dev/*_REPORT.md` file. Review this file and use its contents when completing the PR template.
+> If you use AI assistants, they are expected to generate a proof of work document as a `.dev/*_REPORT.md` file. Review this file and use its contents when completing the PR template.
 
 ### How to submit
 

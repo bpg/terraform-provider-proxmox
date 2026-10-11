@@ -14,10 +14,12 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/google/go-querystring/query"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // testUPID is a valid Proxmox UPID for use in tests.
@@ -65,7 +67,7 @@ func newTestServer(t *testing.T, handler http.Handler) *httptest.Server {
 func newTestClient(t *testing.T, endpoint string) *Client {
 	t.Helper()
 
-	conn, err := api.NewConnection(endpoint, true, "")
+	conn, err := api.NewConnection(endpoint, true, "", nil)
 	require.NoError(t, err)
 
 	creds, err := api.NewCredentials("", "", "", "user@pve!token=test", "", "")
@@ -206,8 +208,58 @@ func TestDeleteContainerWaitsForTask(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 
-	result := client.DeleteContainer(t.Context())
+	result := client.DeleteContainer(t.Context(), true, true)
 	require.NoError(t, result.Err())
+}
+
+func TestDeleteContainerSendsDestroyParams(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                     string
+		purge                    bool
+		destroyUnreferencedDisks bool
+		wantQuery                string
+	}{
+		{"both enabled", true, true, "destroy-unreferenced-disks=1&purge=1"},
+		{"both disabled", false, false, "destroy-unreferenced-disks=0&purge=0"},
+		{"purge only", true, false, "destroy-unreferenced-disks=0&purge=1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var (
+				mu       sync.Mutex
+				gotQuery string
+			)
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("DELETE /api2/json/lxc/100", func(w http.ResponseWriter, r *http.Request) {
+				mu.Lock()
+				gotQuery = r.URL.RawQuery
+				mu.Unlock()
+
+				w.Header().Set("Content-Type", "application/json")
+				writeJSON(w, map[string]any{"data": testUPID})
+			})
+			mux.HandleFunc("GET /api2/json/nodes/", taskCompletedHandler(&requestCaptures{}))
+
+			server := newTestServer(t, mux)
+			defer server.Close()
+
+			client := newTestClient(t, server.URL)
+
+			result := client.DeleteContainer(t.Context(), tt.purge, tt.destroyUnreferencedDisks)
+			require.NoError(t, result.Err())
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			assert.Equal(t, tt.wantQuery, gotQuery)
+		})
+	}
 }
 
 func TestResizeContainerDiskWaitsForTask(t *testing.T) {
@@ -570,4 +622,47 @@ func TestCloneContainerNoRetryOn400(t *testing.T) {
 
 	assert.Equal(t, 1, captures.countPOST("/clone"),
 		"expected exactly 1 POST call (no retry on 400)")
+}
+
+func TestMigrateRequestBodyEncoding(t *testing.T) {
+	t.Parallel()
+
+	restart := types.CustomBool(true)
+	timeout := 180
+
+	tests := []struct {
+		name string
+		body *MigrateRequestBody
+		want map[string]string
+	}{
+		{
+			name: "stopped container omits restart and timeout",
+			body: &MigrateRequestBody{TargetNode: "pve2"},
+			want: map[string]string{"target": "pve2"},
+		},
+		{
+			name: "running container sets restart and shutdown timeout",
+			body: &MigrateRequestBody{
+				TargetNode:      "pve2",
+				RestartMigrate:  &restart,
+				ShutdownTimeout: &timeout,
+			},
+			want: map[string]string{"target": "pve2", "restart": "1", "timeout": "180"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			values, err := query.Values(tt.body)
+			require.NoError(t, err)
+
+			require.Len(t, values, len(tt.want))
+
+			for k, v := range tt.want {
+				require.Equal(t, v, values.Get(k), "parameter %q", k)
+			}
+		})
+	}
 }

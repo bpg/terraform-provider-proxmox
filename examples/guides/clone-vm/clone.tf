@@ -11,6 +11,8 @@ resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
     # The working agent is *required* to retrieve the VM IP addresses.
     # If you are using a different cloud-init configuration, or a different clone source
     # that does not have the qemu-guest-agent installed, you may need to disable the `agent` below and remove the `vm_ipv4_address` output.
+    # Clones inherit the agent setting from the template's Proxmox config: omitting this block does NOT
+    # disable the wait for the agent — set `enabled = false` explicitly to override the template.
     # See https://bpg.sh/docs/resources/virtual_environment_vm#qemu-guest-agent for more details.
     enabled = true
   }

@@ -61,6 +61,16 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 				SSD:        types.CustomBool(true).Pointer(),
 			},
 		},
+		{
+			name: "volume with queues",
+			line: `"local-lvm:vm-2041-disk-0,iothread=1,queues=8,size=8G"`,
+			want: &CustomStorageDevice{
+				FileVolume: "local-lvm:vm-2041-disk-0",
+				IOThread:   types.CustomBool(true).Pointer(),
+				Queues:     new(8),
+				Size:       ds8gig,
+			},
+		},
 	}
 
 	for _, tt := range tests {

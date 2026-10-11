@@ -16,10 +16,13 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -2430,7 +2433,7 @@ func TestAccResourceFirewallRulesIdentityFieldChange(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_firewall_rules" "test_proto" {
 					node_name = "{{.NodeName}}"
-					vm_id     = 9993
+					vm_id     = 9994
 					rule {
 						type    = "in"
 						action  = "ACCEPT"
@@ -2697,4 +2700,352 @@ func TestAccResourceClusterFirewallSecurityGroupReadDeletedGroup(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceFirewallRulesGuestReplaced(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	containerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": containerID,
+	})
+
+	config := func(password, sshComment string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_container" "ct" {
+				node_name    = "{{.NodeName}}"
+				vm_id        = {{.TestContainerID}}
+				started      = false
+				unprivileged = true
+				disk {
+					datastore_id = "{{.ContainerDatastoreID}}"
+					size         = 4
+				}
+				initialization {
+					hostname = "test-fw-guest-replaced"
+					user_account {
+						password = "%s"
+					}
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+
+			resource "proxmox_virtual_environment_firewall_rules" "rules" {
+				node_name    = proxmox_virtual_environment_container.ct.node_name
+				container_id = proxmox_virtual_environment_container.ct.vm_id
+
+				rule {
+					type    = "out"
+					action  = "ACCEPT"
+					dest    = "192.168.0.71,192.168.0.72"
+					dport   = "53"
+					proto   = "udp"
+				}
+				rule {
+					type    = "out"
+					action  = "DROP"
+					dest    = "10.0.0.0/8"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					comment = "%s"
+					dport   = "22"
+					proto   = "tcp"
+				}
+			}`, password, sshComment))
+	}
+
+	checkRulesOnPVE := func(sshComment string) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			ctx := context.Background()
+			fw := te.NodeClient().Container(containerID).Firewall()
+
+			rules, err := fw.ListRules(ctx)
+			if err != nil {
+				return err
+			}
+
+			expected := []string{
+				"out ACCEPT dest=192.168.0.71,192.168.0.72 dport=53 proto=udp comment=",
+				"out DROP dest=10.0.0.0/8 dport= proto= comment=",
+				"in ACCEPT dest= dport=22 proto=tcp comment=" + sshComment,
+			}
+
+			if len(rules) != len(expected) {
+				return fmt.Errorf("expected %d rules on container %d, got %d", len(expected), containerID, len(rules))
+			}
+
+			str := func(p *string) string {
+				if p == nil {
+					return ""
+				}
+
+				return *p
+			}
+
+			for pos, want := range expected {
+				rule, err := fw.GetRule(ctx, pos)
+				if err != nil {
+					return err
+				}
+
+				got := fmt.Sprintf("%s %s dest=%s dport=%s proto=%s comment=%s",
+					rule.Type, rule.Action, str(rule.Dest), str(rule.DPort), str(rule.Proto), str(rule.Comment))
+				if got != want {
+					return fmt.Errorf("rule %d on container %d: expected %q, got %q", pos, containerID, want, got)
+				}
+			}
+
+			return nil
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config("Passw0rd-one", "ssh"),
+				Check:  checkRulesOnPVE("ssh"),
+			},
+			{
+				Config: config("Passw0rd-two", "ssh access"),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_container.ct", plancheck.ResourceActionDestroyBeforeCreate),
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_firewall_rules.rules", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					checkRulesOnPVE("ssh access"),
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.rules", map[string]string{
+						"rule.#":         "3",
+						"rule.2.comment": "^ssh access$",
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceFirewallSelectorChange(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmA := 100000 + rand.Intn(99999)
+	vmB := vmA%199999 + 1
+	ctID := vmB%199999 + 1
+
+	te.AddTemplateVars(map[string]any{
+		"VMA":  vmA,
+		"VMB":  vmB,
+		"CTID": ctID,
+	})
+
+	vmFW := func(id int) firewall.API { return te.NodeClient().VM(id).Firewall() }
+	ctFW := func(id int) firewall.API { return te.NodeClient().Container(id).Firewall() }
+
+	expectRules := func(fw firewall.API, target string, n int) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			rules, err := fw.ListRules(context.Background())
+			if err != nil {
+				return err
+			}
+
+			if len(rules) != n {
+				return fmt.Errorf("expected %d rules on %s, got %d", n, target, len(rules))
+			}
+
+			return nil
+		}
+	}
+
+	expectAlias := func(fw firewall.API, target string, present bool) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			aliases, err := fw.ListAliases(context.Background())
+			if err != nil {
+				return err
+			}
+
+			if found := len(aliases) == 1 && aliases[0].Name == "selector-alias"; found != present || len(aliases) > 1 {
+				return fmt.Errorf("expected alias present=%t on %s, got %d aliases", present, target, len(aliases))
+			}
+
+			return nil
+		}
+	}
+
+	expectIPSet := func(fw firewall.API, target string, present bool) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			ipsets, err := fw.ListIPSets(context.Background())
+			if err != nil {
+				return err
+			}
+
+			if found := len(ipsets) == 1 && ipsets[0].Name == "selector-ipset"; found != present || len(ipsets) > 1 {
+				return fmt.Errorf("expected ipset present=%t on %s, got %d ipsets", present, target, len(ipsets))
+			}
+
+			return nil
+		}
+	}
+
+	rulesConfig := func(selector string, extra ...string) string {
+		return te.RenderConfig(strings.Join(extra, "\n") + `
+			resource "proxmox_virtual_environment_firewall_rules" "rules" {
+				` + selector + `
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					comment = "selector change"
+					dport   = "22"
+					proto   = "tcp"
+				}
+			}`)
+	}
+
+	aliasConfig := func(selector string) string {
+		return te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_alias" "alias" {
+				` + selector + `
+				name = "selector-alias"
+				cidr = "10.0.0.1"
+			}`)
+	}
+
+	ipsetConfig := func(selector string) string {
+		return te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_ipset" "ipset" {
+				` + selector + `
+				name = "selector-ipset"
+				cidr {
+					name = "10.0.0.0/24"
+				}
+			}`)
+	}
+
+	replaced := func(address string) resource.ConfigPlanChecks {
+		return resource.ConfigPlanChecks{
+			PreApply: []plancheck.PlanCheck{
+				plancheck.ExpectResourceAction(address, plancheck.ResourceActionDestroyBeforeCreate),
+			},
+		}
+	}
+
+	onVMA := `node_name = "{{.NodeName}}"
+				vm_id     = {{.VMA}}`
+	onVMB := `node_name = "{{.NodeName}}"
+				vm_id     = {{.VMB}}`
+	onCT := `node_name    = "{{.NodeName}}"
+				container_id = {{.CTID}}`
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"rules vm_id change", []resource.TestStep{
+			{
+				Config: rulesConfig(onVMA),
+				Check:  expectRules(vmFW(vmA), "vm A", 1),
+			},
+			{
+				Config:           rulesConfig(onVMB),
+				ConfigPlanChecks: replaced("proxmox_virtual_environment_firewall_rules.rules"),
+				Check: resource.ComposeTestCheckFunc(
+					expectRules(vmFW(vmA), "vm A", 0),
+					expectRules(vmFW(vmB), "vm B", 1),
+				),
+			},
+		}},
+		{"rules vm to container", []resource.TestStep{
+			{
+				Config: rulesConfig(onVMA),
+				Check:  expectRules(vmFW(vmA), "vm A", 1),
+			},
+			{
+				Config:           rulesConfig(onCT),
+				ConfigPlanChecks: replaced("proxmox_virtual_environment_firewall_rules.rules"),
+				Check: resource.ComposeTestCheckFunc(
+					expectRules(vmFW(vmA), "vm A", 0),
+					expectRules(ctFW(ctID), "container", 1),
+				),
+			},
+		}},
+		{"rules cluster to node", []resource.TestStep{
+			{
+				Config: rulesConfig(""),
+				Check:  expectRules(te.ClusterClient().Firewall(), "cluster", 1),
+			},
+			{
+				Config:           rulesConfig(`node_name = "{{.NodeName}}"`),
+				ConfigPlanChecks: replaced("proxmox_virtual_environment_firewall_rules.rules"),
+				Check: resource.ComposeTestCheckFunc(
+					expectRules(te.ClusterClient().Firewall(), "cluster", 0),
+					expectRules(te.NodeClient().Firewall(), "node", 1),
+				),
+			},
+		}},
+		{"rules node to unknown vm_id", []resource.TestStep{
+			{
+				Config: rulesConfig(`node_name = "{{.NodeName}}"`),
+				Check:  expectRules(te.NodeClient().Firewall(), "node", 1),
+			},
+			{
+				Config: rulesConfig(`node_name = "{{.NodeName}}"
+				vm_id     = terraform_data.vm_id.output`, `
+			resource "terraform_data" "vm_id" {
+				input = {{.VMA}}
+			}`),
+				ConfigPlanChecks: replaced("proxmox_virtual_environment_firewall_rules.rules"),
+				Check: resource.ComposeTestCheckFunc(
+					expectRules(te.NodeClient().Firewall(), "node", 0),
+					expectRules(vmFW(vmA), "vm A", 1),
+				),
+			},
+		}},
+		{"alias vm_id change", []resource.TestStep{
+			{
+				Config: aliasConfig(onVMA),
+				Check:  expectAlias(vmFW(vmA), "vm A", true),
+			},
+			{
+				Config:           aliasConfig(onVMB),
+				ConfigPlanChecks: replaced("proxmox_virtual_environment_firewall_alias.alias"),
+				Check: resource.ComposeTestCheckFunc(
+					expectAlias(vmFW(vmA), "vm A", false),
+					expectAlias(vmFW(vmB), "vm B", true),
+				),
+			},
+		}},
+		{"ipset vm_id change", []resource.TestStep{
+			{
+				Config: ipsetConfig(onVMA),
+				Check:  expectIPSet(vmFW(vmA), "vm A", true),
+			},
+			{
+				Config:           ipsetConfig(onVMB),
+				ConfigPlanChecks: replaced("proxmox_virtual_environment_firewall_ipset.ipset"),
+				Check: resource.ComposeTestCheckFunc(
+					expectIPSet(vmFW(vmA), "vm A", false),
+					expectIPSet(vmFW(vmB), "vm B", true),
+				),
+			},
+		}},
+	}
+
+	// not parallel: the cluster/node case shares targets with the other cluster and node firewall tests
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
 }

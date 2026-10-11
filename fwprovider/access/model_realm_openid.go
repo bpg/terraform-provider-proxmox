@@ -15,25 +15,30 @@ import (
 )
 
 type realmOpenIDModel struct {
-	ID               types.String `tfsdk:"id"`
-	Realm            types.String `tfsdk:"realm"`
-	IssuerURL        types.String `tfsdk:"issuer_url"`
-	ClientID         types.String `tfsdk:"client_id"`
-	ClientKey        types.String `tfsdk:"client_key"`
-	AutoCreate       types.Bool   `tfsdk:"autocreate"`
-	UsernameClaim    types.String `tfsdk:"username_claim"`
-	GroupsClaim      types.String `tfsdk:"groups_claim"`
-	GroupsAutocreate types.Bool   `tfsdk:"groups_autocreate"`
-	GroupsOverwrite  types.Bool   `tfsdk:"groups_overwrite"`
-	Scopes           types.String `tfsdk:"scopes"`
-	Prompt           types.String `tfsdk:"prompt"`
-	ACRValues        types.String `tfsdk:"acr_values"`
-	QueryUserinfo    types.Bool   `tfsdk:"query_userinfo"`
-	Comment          types.String `tfsdk:"comment"`
-	Default          types.Bool   `tfsdk:"default"`
+	ID        types.String `tfsdk:"id"`
+	Realm     types.String `tfsdk:"realm"`
+	IssuerURL types.String `tfsdk:"issuer_url"`
+	ClientID  types.String `tfsdk:"client_id"`
+	ClientKey types.String `tfsdk:"client_key"`
+	// Write-only client secret; never persisted to state. Read via req.Config.
+	ClientKeyWO types.String `tfsdk:"client_key_wo"`
+	// Change-detection trigger for the write-only ClientKeyWO; bump to force a resend.
+	ClientKeyWOVersion types.Int64  `tfsdk:"client_key_wo_version"`
+	AutoCreate         types.Bool   `tfsdk:"autocreate"`
+	UsernameClaim      types.String `tfsdk:"username_claim"`
+	GroupsClaim        types.String `tfsdk:"groups_claim"`
+	GroupsAutocreate   types.Bool   `tfsdk:"groups_autocreate"`
+	GroupsOverwrite    types.Bool   `tfsdk:"groups_overwrite"`
+	Scopes             types.String `tfsdk:"scopes"`
+	Prompt             types.String `tfsdk:"prompt"`
+	ACRValues          types.String `tfsdk:"acr_values"`
+	Audiences          types.String `tfsdk:"audiences"`
+	QueryUserinfo      types.Bool   `tfsdk:"query_userinfo"`
+	Comment            types.String `tfsdk:"comment"`
+	Default            types.Bool   `tfsdk:"default"`
 }
 
-func (m *realmOpenIDModel) toCreateRequest() *access.RealmCreateRequestBody {
+func (m *realmOpenIDModel) toCreateRequest(clientKeyWO types.String) *access.RealmCreateRequestBody {
 	req := &access.RealmCreateRequestBody{
 		Realm:     m.Realm.ValueString(),
 		Type:      "openid",
@@ -41,7 +46,12 @@ func (m *realmOpenIDModel) toCreateRequest() *access.RealmCreateRequestBody {
 		ClientID:  m.ClientID.ValueStringPointer(),
 	}
 
-	if !m.ClientKey.IsNull() {
+	// client_key (state-persisted) and client_key_wo (write-only) are mutually
+	// exclusive (enforced by ConfigValidators); prefer the write-only value.
+	switch {
+	case !clientKeyWO.IsNull():
+		req.ClientKey = clientKeyWO.ValueStringPointer()
+	case !m.ClientKey.IsNull():
 		req.ClientKey = m.ClientKey.ValueStringPointer()
 	}
 
@@ -77,6 +87,10 @@ func (m *realmOpenIDModel) toCreateRequest() *access.RealmCreateRequestBody {
 		req.ACRValues = m.ACRValues.ValueStringPointer()
 	}
 
+	if !m.Audiences.IsNull() {
+		req.Audiences = m.Audiences.ValueStringPointer()
+	}
+
 	if !m.QueryUserinfo.IsNull() {
 		req.QueryUserinfo = proxmoxtypes.CustomBoolPtr(m.QueryUserinfo.ValueBoolPointer())
 	}
@@ -92,7 +106,7 @@ func (m *realmOpenIDModel) toCreateRequest() *access.RealmCreateRequestBody {
 	return req
 }
 
-func (m *realmOpenIDModel) toUpdateRequest(state *realmOpenIDModel) *access.RealmUpdateRequestBody {
+func (m *realmOpenIDModel) toUpdateRequest(state *realmOpenIDModel, clientKeyWO types.String) *access.RealmUpdateRequestBody {
 	req := &access.RealmUpdateRequestBody{}
 	var toDelete []string
 
@@ -105,11 +119,26 @@ func (m *realmOpenIDModel) toUpdateRequest(state *realmOpenIDModel) *access.Real
 		req.ClientID = m.ClientID.ValueStringPointer()
 	}
 
+	// Client key: when supplied via the write-only client_key_wo, resend it on every
+	// update (write-only values are invisible to diffs, so rotation is driven by the
+	// client_key_wo_version bump). Otherwise diff the state-tracked client_key.
+	if !clientKeyWO.IsNull() {
+		req.ClientKey = clientKeyWO.ValueStringPointer()
+	} else {
+		updateStringAttribute(&req.ClientKey, m.ClientKey, state.ClientKey, &toDelete, "client-key")
+
+		// Write-only client_key_wo is never mirrored into state, so the version counter
+		// leaving state is the removal signal.
+		if m.ClientKey.IsNull() && m.ClientKeyWOVersion.IsNull() && !state.ClientKeyWOVersion.IsNull() {
+			toDelete = append(toDelete, "client-key")
+		}
+	}
+
 	// Optional fields: support unsetting using the API's `delete` parameter.
-	updateStringAttribute(&req.ClientKey, m.ClientKey, state.ClientKey, &toDelete, "client-key")
 	updateStringAttribute(&req.Scopes, m.Scopes, state.Scopes, &toDelete, "scopes")
 	updateStringAttribute(&req.Prompt, m.Prompt, state.Prompt, &toDelete, "prompt")
 	updateStringAttribute(&req.ACRValues, m.ACRValues, state.ACRValues, &toDelete, "acr-values")
+	updateStringAttribute(&req.Audiences, m.Audiences, state.Audiences, &toDelete, "audiences")
 	updateStringAttribute(&req.GroupsClaim, m.GroupsClaim, state.GroupsClaim, &toDelete, "groups-claim")
 	updateStringAttribute(&req.Comment, m.Comment, state.Comment, &toDelete, "comment")
 	updateStringAttribute(&req.UsernameClaim, m.UsernameClaim, state.UsernameClaim, &toDelete, "username-claim")
@@ -166,13 +195,16 @@ func (m *realmOpenIDModel) fromAPIResponse(data *access.RealmGetResponseData, di
 	m.IssuerURL = types.StringPointerValue(data.IssuerURL)
 	m.ClientID = types.StringPointerValue(data.ClientID)
 
-	// Note: client_key is never returned by the API, preserve from state
+	// client_key is deliberately not mirrored from the API response (which does return
+	// it): when the key is supplied via the write-only client_key_wo it must stay null
+	// in state, so preserve whatever state already holds.
 
 	// Set optional string fields
 	m.UsernameClaim = types.StringPointerValue(data.UsernameClaim)
 	m.GroupsClaim = types.StringPointerValue(data.GroupsClaim)
 	m.Prompt = types.StringPointerValue(data.Prompt)
 	m.ACRValues = types.StringPointerValue(data.ACRValues)
+	m.Audiences = types.StringPointerValue(data.Audiences)
 	m.Comment = types.StringPointerValue(data.Comment)
 
 	m.Scopes = types.StringPointerValue(data.Scopes)
@@ -183,4 +215,9 @@ func (m *realmOpenIDModel) fromAPIResponse(data *access.RealmGetResponseData, di
 	m.GroupsOverwrite = types.BoolPointerValue(data.GroupsOverwrite.PointerBool())
 	m.QueryUserinfo = types.BoolPointerValue(data.QueryUserinfo.PointerBool())
 	m.Default = types.BoolPointerValue(data.Default.PointerBool())
+
+	// PVE drops `default` from every other realm when one becomes the default; absent means false.
+	if m.Default.IsNull() {
+		m.Default = types.BoolValue(false)
+	}
 }

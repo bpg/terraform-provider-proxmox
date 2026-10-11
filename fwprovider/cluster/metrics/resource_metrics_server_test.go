@@ -12,9 +12,14 @@
 package metrics_test
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
@@ -245,6 +250,36 @@ func TestAccResourceMetricsServer(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		}},
+		{"influx_token survives create and refresh (regression)", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token" {
+					name         = "acc_influxdb_token"
+					server       = "192.168.3.2"
+					port         = 18091
+					type         = "influxdb"
+					influx_token = "supersecrettoken"
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_metrics_server.acc_influxdb_token", "id", "acc_influxdb_token"),
+					resource.TestCheckResourceAttrSet("proxmox_metrics_server.acc_influxdb_token", "influx_token"),
+				),
+			},
+			// No-op refresh: influx_token must survive the round-trip through Read.
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token" {
+					name         = "acc_influxdb_token"
+					server       = "192.168.3.2"
+					port         = 18091
+					type         = "influxdb"
+					influx_token = "supersecrettoken"
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("proxmox_metrics_server.acc_influxdb_token", "influx_token"),
+				),
+			},
+		}},
 		{"create opentelemetry metrics server & test datasource", []resource.TestStep{
 			{
 				// Skip this test until we have a way to test opentelemetry servers (i.e. setting up local otel collector)
@@ -282,6 +317,153 @@ func TestAccResourceMetricsServer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+// checkMetricsTokenFile asserts presence (or absence) of the metrics server token file
+// in /etc/pve/priv/metricserver/ on the PVE node.
+func checkMetricsTokenFile(te *test.Environment, name string, wantExists bool) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		out := te.ExecuteNodeCommands([]string{
+			fmt.Sprintf("cat /etc/pve/priv/metricserver/%s.pw 2>/dev/null || echo MISSING", name),
+		})
+
+		exists := !strings.Contains(out, "MISSING")
+		if exists != wantExists {
+			return fmt.Errorf("token file for %q: exists=%t, want %t", name, exists, wantExists)
+		}
+
+		return nil
+	}
+}
+
+func TestAccResourceMetricsServerWriteOnly(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"influx_token_wo keeps the secret out of state", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token_wo" {
+					name                    = "acc_influxdb_token_wo"
+					server                  = "192.168.3.2"
+					port                    = 18092
+					type                    = "influxdb"
+					influx_token_wo         = "supersecrettoken"
+					influx_token_wo_version = 1
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo", "id", "acc_influxdb_token_wo"),
+					resource.TestCheckResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo", "influx_token_wo_version", "1"),
+					// The write-only secret must never be persisted, and the legacy
+					// influx_token mirror must stay unset when influx_token_wo is used.
+					resource.TestCheckNoResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo", "influx_token_wo"),
+					resource.TestCheckNoResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo", "influx_token"),
+				),
+			},
+		}},
+		{"influx_token_wo_version triggers rotation", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token_wo_rotate" {
+					name                    = "acc_influxdb_token_wo_rotate"
+					server                  = "192.168.3.2"
+					port                    = 18093
+					type                    = "influxdb"
+					influx_token_wo         = "supersecrettoken"
+					influx_token_wo_version = 1
+				  }`),
+				Check: resource.TestCheckResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo_rotate", "influx_token_wo_version", "1"),
+			},
+			// Rotate the token by bumping the version counter.
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token_wo_rotate" {
+					name                    = "acc_influxdb_token_wo_rotate"
+					server                  = "192.168.3.2"
+					port                    = 18093
+					type                    = "influxdb"
+					influx_token_wo         = "rotatedsecrettoken"
+					influx_token_wo_version = 2
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo_rotate", "influx_token_wo_version", "2"),
+					resource.TestCheckNoResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo_rotate", "influx_token"),
+				),
+			},
+		}},
+		{"removing influx_token_wo deletes the token from PVE", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token_wo_remove" {
+					name                    = "acc_influxdb_token_wo_remove"
+					server                  = "192.168.3.2"
+					port                    = 18096
+					type                    = "influxdb"
+					influx_token_wo         = "supersecrettoken"
+					influx_token_wo_version = 1
+				  }`),
+				// GET never returns the token; the root-only priv file is the only observable.
+				Check: checkMetricsTokenFile(te, "acc_influxdb_token_wo_remove", true),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token_wo_remove" {
+					name   = "acc_influxdb_token_wo_remove"
+					server = "192.168.3.2"
+					port   = 18096
+					type   = "influxdb"
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("proxmox_metrics_server.acc_influxdb_token_wo_remove", "influx_token_wo_version"),
+					checkMetricsTokenFile(te, "acc_influxdb_token_wo_remove", false),
+				),
+			},
+		}},
+		{"influx_token_wo_version requires influx_token_wo", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token_wo_novalue" {
+					name                    = "acc_influxdb_token_wo_novalue"
+					server                  = "192.168.3.2"
+					port                    = 18094
+					type                    = "influxdb"
+					influx_token_wo_version = 1
+				  }`),
+				ExpectError: regexp.MustCompile(`Attribute "influx_token_wo" must be specified`),
+			},
+		}},
+		{"influx_token and influx_token_wo are mutually exclusive", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_metrics_server" "acc_influxdb_token_conflict" {
+					name            = "acc_influxdb_token_conflict"
+					server          = "192.168.3.2"
+					port            = 18095
+					type            = "influxdb"
+					influx_token    = "plaintext-token"
+					influx_token_wo = "writeonly-token"
+				  }`),
+				ExpectError: regexp.MustCompile(`These attributes cannot be configured together`),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+					tfversion.SkipBelow(tfversion.Version1_11_0),
+				},
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
@@ -23,8 +24,8 @@ type CustomNUMADevice struct {
 	Policy        *string   `json:"policy,omitempty"    url:"policy,omitempty"`
 }
 
-// CustomNUMADevices handles QEMU NUMA device parameters.
-type CustomNUMADevices []CustomNUMADevice
+// CustomNUMADevices handles QEMU NUMA device parameters by slot.
+type CustomNUMADevices map[int]CustomNUMADevice
 
 // EncodeValues converts a CustomNUMADevice struct to a URL value.
 func (r *CustomNUMADevice) EncodeValues(key string, v *url.Values) error {
@@ -49,11 +50,19 @@ func (r *CustomNUMADevice) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomNUMADevices array to multiple URL values.
+// EncodeValues converts a CustomNUMADevices map to multiple URL values.
 func (r CustomNUMADevices) EncodeValues(key string, v *url.Values) error {
-	for i, d := range r {
-		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
-			return fmt.Errorf("failed to encode NUMA device %d: %w", i, err)
+	slots := make([]int, 0, len(r))
+	for slot := range r {
+		slots = append(slots, slot)
+	}
+
+	sort.Ints(slots)
+
+	for _, slot := range slots {
+		device := r[slot]
+		if err := device.EncodeValues(fmt.Sprintf("%s%d", key, slot), v); err != nil {
+			return fmt.Errorf("failed to encode NUMA device %d: %w", slot, err)
 		}
 	}
 

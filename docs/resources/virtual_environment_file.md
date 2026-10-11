@@ -144,7 +144,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     - `vztmpl` (allowed extensions: `.tar.gz`, `.tar.xz`, `tar.zst`)
 - `datastore_id` - (Required) The datastore id.
 - `file_mode` - The file mode in octal format, e.g. `0700` or `600`. Note that the prefixes `0o` and `0x` is not supported! Setting this attribute is also only allowed for `root@pam` authenticated user.
-- `node_name` - (Required) The node name.
+- `node_name` - (Required) The preferred node name. If this node has been removed from the cluster, the provider automatically uses an online node with access to the same active, enabled shared datastore. The datastore must support the file's content type.
 - `overwrite` - (Optional) Whether to overwrite an existing file (defaults to
     `true`).
 - `source_file` - (Optional) The source file (conflicts with `source_raw`),

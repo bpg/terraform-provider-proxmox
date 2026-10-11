@@ -21,6 +21,7 @@ func TestVMSchema(t *testing.T) {
 		mkDiskFileFormat,
 		mkDiskFileID,
 		mkDiskImportFrom,
+		mkDiskQueues,
 		mkDiskSize,
 	})
 
@@ -36,6 +37,7 @@ func TestVMSchema(t *testing.T) {
 		mkDiskFileFormat:      schema.TypeString,
 		mkDiskFileID:          schema.TypeString,
 		mkDiskImportFrom:      schema.TypeString,
+		mkDiskQueues:          schema.TypeInt,
 		mkDiskSize:            schema.TypeInt,
 	})
 

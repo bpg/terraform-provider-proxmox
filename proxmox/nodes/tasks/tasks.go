@@ -162,8 +162,7 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 	status, err := retrylib.NewWithData[*GetTaskStatusResponseData](
 		retrylib.Context(ctx),
 		retrylib.RetryIf(func(err error) bool {
-			var target *api.HTTPError
-			if errors.As(err, &target) {
+			if target, ok := errors.AsType[*api.HTTPError](err); ok {
 				if target.Code == http.StatusBadRequest {
 					// this is a special case to account for eventual consistency
 					// when creating a task -- the task may not be available via status API

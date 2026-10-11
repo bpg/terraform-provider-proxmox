@@ -10,7 +10,7 @@ description: |-
 
 ## Download a public cloud image from URL
 
-Example of how to create a CentOS 8 VM from a "generic cloud" `qcow2` image. CentOS 8 images are available at [cloud.centos.org](https://cloud.centos.org/centos/8-stream/x86_64/images/):
+Example of how to create a CentOS Stream 9 VM from a "generic cloud" `qcow2` image. CentOS Stream images are available at [cloud.centos.org](https://cloud.centos.org/centos/9-stream/x86_64/images/):
 
 ```terraform
 resource "proxmox_virtual_environment_vm" "centos_vm" {
@@ -42,7 +42,7 @@ resource "proxmox_virtual_environment_download_file" "centos_cloud_image" {
   content_type = "import"
   datastore_id = "local"
   node_name    = "pve"
-  url          = "https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-latest.x86_64.qcow2"
+  url          = "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2"
 }
 ```
 

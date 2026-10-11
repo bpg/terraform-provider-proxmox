@@ -52,6 +52,8 @@ resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server" {
 
 ### Optional
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `disable` (Boolean) Set this to `true` to disable this metric server. Defaults to `false`.
 - `graphite_path` (String) Root graphite path (ex: `proxmox.mycluster.mykey`).
 - `graphite_proto` (String) Protocol to send graphite data. Choice is between `udp` | `tcp`. If not set, PVE default is `udp`.
@@ -60,7 +62,9 @@ resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server" {
 - `influx_db_proto` (String) Protocol for InfluxDB. Choice is between `udp` | `http` | `https`. If not set, PVE default is `udp`.
 - `influx_max_body_size` (Number) InfluxDB max-body-size in bytes. Requests are batched up to this size. If not set, PVE default is `25000000`.
 - `influx_organization` (String) The InfluxDB organization. Only necessary when using the http v2 api. Has no meaning when using v2 compatibility api.
-- `influx_token` (String, Sensitive) The InfluxDB access token. Only necessary when using the http v2 api. If the v2 compatibility api is used, use `user:password` instead.
+- `influx_token` (String, Sensitive) The InfluxDB access token. Only necessary when using the http v2 api. If the v2 compatibility api is used, use `user:password` instead. Cannot be used together with `influx_token_wo`.
+- `influx_token_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The InfluxDB access token (write-only). Prefer this over `influx_token` to avoid storing the secret in Terraform state. Cannot be used together with `influx_token`.
+- `influx_token_wo_version` (Number) Increment this counter to rotate `influx_token_wo` without changing other fields.
 - `influx_verify` (Boolean) Set to `false` to disable certificate verification for https endpoints. If not set, PVE default is `true`.
 - `mtu` (Number) MTU (maximum transmission unit) for metrics transmission over UDP. If not set, PVE default is `1500` (allowed `512` - `65536`).
 - `opentelemetry_compression` (String) OpenTelemetry compression algorithm for requests. Choice is between `none` | `gzip`. If not set, PVE default is `gzip`.

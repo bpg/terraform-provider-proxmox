@@ -8,6 +8,7 @@ type CIFSStorageMutableFields struct {
 
 	Backups DataStoreWithBackups `json:"-" url:"backups,omitempty"`
 
+	Options       *string `json:"options,omitempty"       url:"options,omitempty"`
 	Preallocation *string `json:"preallocation,omitempty" url:"preallocation,omitempty"`
 }
 

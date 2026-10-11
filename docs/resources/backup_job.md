@@ -37,18 +37,21 @@ resource "proxmox_backup_job" "daily_backup" {
 
 - `all` (Boolean) Whether to back up all known guests on the node.
 - `bwlimit` (Number) I/O bandwidth limit in KiB/s.
+- `comment` (String) Description of the backup job, shown in the Proxmox VE web UI.
 - `compress` (String) The compression algorithm (0, 1, gzip, lzo, or zstd).
 - `enabled` (Boolean) Whether the backup job is enabled.
+- `exclude` (List of String) A list of guest VM/CT IDs to exclude from the backup.
 - `exclude_path` (List of String) A list of paths to exclude from the backup.
 - `fleecing` (Attributes) Fleecing configuration for the backup job. (see [below for nested schema](#nestedatt--fleecing))
 - `ionice` (Number) I/O priority (0-8).
 - `lockwait` (Number) Maximum wait time in minutes for the global lock.
-- `mailnotification` (String) Email notification setting (always or failure).
+- `mailnotification` (String) Email notification setting (`always` or `failure`). Deprecated by Proxmox VE in favour of the notification system: it is only honoured when `mailto` is set (notification mode `auto`) or the job uses the `legacy-sendmail` notification mode. Otherwise notifications are routed through the PVE notification system and this setting is ignored.
 - `mailto` (List of String) A list of email addresses to send notifications to.
 - `maxfiles` (Number) Deprecated: use prune_backups instead. Maximum number of backup files per guest.
 - `mode` (String) The backup mode (snapshot, suspend, or stop).
 - `node` (String) The cluster node name to limit the backup job to.
 - `notes_template` (String) Template for notes attached to the backup.
+- `notification_mode` (String) Notification mode (`auto`, `legacy-sendmail` or `notification-system`). With `auto` (the Proxmox VE default), an email is sent if `mailto` is set, otherwise the notification system is used. `legacy-sendmail` always uses `mailto` and `mailnotification`; `notification-system` always uses the PVE notification system and ignores them.
 - `pbs_change_detection_mode` (String) PBS change detection mode (legacy, data, or metadata).
 - `performance` (Attributes) Performance-related settings for the backup job. (see [below for nested schema](#nestedatt--performance))
 - `pigz` (Number) Number of pigz threads (0 disables, 1 uses single-threaded gzip).

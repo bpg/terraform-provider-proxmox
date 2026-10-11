@@ -24,7 +24,6 @@ resource "tls_private_key" "proxmox_virtual_environment_certificate" {
 }
 
 resource "tls_self_signed_cert" "proxmox_virtual_environment_certificate" {
-  key_algorithm   = tls_private_key.proxmox_virtual_environment_certificate.algorithm
   private_key_pem = tls_private_key.proxmox_virtual_environment_certificate.private_key_pem
 
   subject {
@@ -47,6 +46,7 @@ resource "tls_self_signed_cert" "proxmox_virtual_environment_certificate" {
 - `certificate` - (Required) The PEM encoded certificate.
 - `certificate_chain` - (Optional) The PEM encoded certificate chain.
 - `node_name` - (Required) A node name.
+- `overwrite` - (Optional) Whether to overwrite an existing certificate (defaults to `false`).
 - `private_key` - (Required) The PEM encoded private key.
 
 ## Attribute Reference

@@ -100,11 +100,13 @@ type GetResponseBody struct {
 type GetResponseData struct {
 	ID                     string                          `json:"id"`
 	Type                   *string                         `json:"type,omitempty"`
+	Comment                *string                         `json:"comment,omitempty"`
 	Enabled                *types.CustomBool               `json:"enabled,omitempty"`
 	Schedule               string                          `json:"schedule"`
 	Storage                string                          `json:"storage"`
 	Node                   *string                         `json:"node,omitempty"`
 	VMID                   *string                         `json:"vmid,omitempty"`
+	Exclude                *string                         `json:"exclude,omitempty"`
 	All                    *types.CustomBool               `json:"all,omitempty"`
 	Mode                   *string                         `json:"mode,omitempty"`
 	Compress               *string                         `json:"compress,omitempty"`
@@ -112,6 +114,7 @@ type GetResponseData struct {
 	MaxFiles               *int                            `json:"maxfiles,omitempty"`
 	MailTo                 *string                         `json:"mailto,omitempty"`
 	MailNotification       *string                         `json:"mailnotification,omitempty"`
+	NotificationMode       *string                         `json:"notification-mode,omitempty"`
 	BwLimit                *int                            `json:"bwlimit,omitempty"`
 	IONice                 *int                            `json:"ionice,omitempty"`
 	Pigz                   *int                            `json:"pigz,omitempty"`
@@ -136,8 +139,10 @@ type GetResponseData struct {
 // RequestBodyCommon contains common fields for backup job create and update requests.
 type RequestBodyCommon struct {
 	Enabled                *types.CustomBool  `json:"enabled,omitempty"                   url:"enabled,omitempty,int"`
+	Comment                *string            `json:"comment,omitempty"                   url:"comment,omitempty"`
 	Node                   *string            `json:"node,omitempty"                      url:"node,omitempty"`
 	VMID                   *string            `json:"vmid,omitempty"                      url:"vmid,omitempty"`
+	Exclude                *string            `json:"exclude,omitempty"                   url:"exclude,omitempty"`
 	All                    *types.CustomBool  `json:"all,omitempty"                       url:"all,omitempty,int"`
 	Mode                   *string            `json:"mode,omitempty"                      url:"mode,omitempty"`
 	Compress               *string            `json:"compress,omitempty"                  url:"compress,omitempty"`
@@ -145,6 +150,7 @@ type RequestBodyCommon struct {
 	MaxFiles               *int               `json:"maxfiles,omitempty"                  url:"maxfiles,omitempty"`
 	MailTo                 *string            `json:"mailto,omitempty"                    url:"mailto,omitempty"`
 	MailNotification       *string            `json:"mailnotification,omitempty"          url:"mailnotification,omitempty"`
+	NotificationMode       *string            `json:"notification-mode,omitempty"         url:"notification-mode,omitempty"`
 	BwLimit                *int               `json:"bwlimit,omitempty"                   url:"bwlimit,omitempty"`
 	IONice                 *int               `json:"ionice,omitempty"                    url:"ionice,omitempty"`
 	Pigz                   *int               `json:"pigz,omitempty"                      url:"pigz,omitempty"`

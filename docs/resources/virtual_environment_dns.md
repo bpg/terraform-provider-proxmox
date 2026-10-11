@@ -31,7 +31,7 @@ data "proxmox_virtual_environment_dns" "first_node_dns_configuration" {
 
 - `domain` - (Required) The DNS search domain.
 - `node_name` - (Required) A node name.
-- `servers` - (Optional) The DNS servers.
+- `servers` - (Optional) The DNS servers (maximum of 3).
 
 ## Attribute Reference
 

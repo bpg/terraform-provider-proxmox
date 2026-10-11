@@ -13,6 +13,8 @@ import (
 	"maps"
 	"net/url"
 	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -34,6 +36,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -46,6 +49,7 @@ type Environment struct {
 	Node2Name      string
 	DatastoreID    string
 	ZfsDatastoreID string
+	ZfsDisk        string
 
 	AccProviders          map[string]func() (tfprotov6.ProviderServer, error)
 	once                  sync.Once
@@ -60,7 +64,14 @@ type RenderConfigOption interface {
 }
 
 type renderConfig struct {
-	providerConfig string
+	endpoint   string
+	auth       string
+	apiHeaders string
+}
+
+// render assembles the provider configuration block from the applied options.
+func (r *renderConfig) render() string {
+	return fmt.Sprintf("provider \"proxmox\" {\n%s%s%s\n%s\n}", r.endpoint, r.auth, r.apiHeaders, r.ssh())
 }
 
 // returns the ssh configuration section of the provider config.
@@ -110,12 +121,10 @@ func (o *rootUserConfigOption) apply(rc *renderConfig) error {
 		return fmt.Errorf("PROXMOX_VE_USERNAME and PROXMOX_VE_PASSWORD must be set")
 	}
 
-	rootUser := fmt.Sprintf("\tusername = \"%s\"\n\tpassword = \"%s\"\n\tapi_token = \"\"",
+	rc.auth = fmt.Sprintf("\tusername = \"%s\"\n\tpassword = \"%s\"\n\tapi_token = \"\"",
 		utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"),
 		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
 	)
-
-	rc.providerConfig = fmt.Sprintf("provider \"proxmox\" {\n%s\n%s\n}", rootUser, rc.ssh())
 
 	return nil
 }
@@ -132,10 +141,50 @@ func (o *apiTokenConfigOption) apply(rc *renderConfig) error {
 		return fmt.Errorf("PROXMOX_VE_API_TOKEN must be set")
 	}
 
-	apiToken := fmt.Sprintf("\tapi_token = \"%s\"\n\tusername = \"\"\n\tpassword = \"\"",
+	rc.auth = fmt.Sprintf("\tapi_token = \"%s\"\n\tusername = \"\"\n\tpassword = \"\"",
 		utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN"))
 
-	rc.providerConfig = fmt.Sprintf("provider \"proxmox\" {\n%s\n%s\n}", apiToken, rc.ssh())
+	return nil
+}
+
+// WithAPIHeaders returns a configuration option that adds custom HTTP headers to the API requests.
+func WithAPIHeaders(headers map[string]string) RenderConfigOption {
+	return &apiHeadersConfigOption{headers: headers}
+}
+
+type apiHeadersConfigOption struct {
+	headers map[string]string
+}
+
+func (o *apiHeadersConfigOption) apply(rc *renderConfig) error {
+	var sb strings.Builder
+
+	sb.WriteString("\n\tapi_headers = {\n")
+
+	for _, name := range slices.Sorted(maps.Keys(o.headers)) {
+		fmt.Fprintf(&sb, "\t\t%q = %q\n", name, o.headers[name])
+	}
+
+	sb.WriteString("\t}")
+
+	rc.apiHeaders = sb.String()
+
+	return nil
+}
+
+// WithInsecureEndpoint returns a configuration option that points the provider at the given API endpoint instead
+// of PROXMOX_VE_ENDPOINT and disables TLS verification, so an in-test TLS proxy with a self-signed certificate can
+// front the real node.
+func WithInsecureEndpoint(endpoint string) RenderConfigOption {
+	return &insecureEndpointConfigOption{endpoint: endpoint}
+}
+
+type insecureEndpointConfigOption struct {
+	endpoint string
+}
+
+func (o *insecureEndpointConfigOption) apply(rc *renderConfig) error {
+	rc.endpoint = fmt.Sprintf("\tendpoint = %q\n\tinsecure = true\n", o.endpoint)
 
 	return nil
 }
@@ -154,6 +203,7 @@ func InitEnvironment(t *testing.T) *Environment {
 	const datastoreID = "local"
 
 	zfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_ZFS_DATASTORE_ID")
+	zfsDisk := utils.GetAnyStringEnv("PROXMOX_VE_ACC_ZFS_DISK")
 
 	cloudImagesServer := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CLOUD_IMAGES_SERVER")
 	if cloudImagesServer == "" {
@@ -165,6 +215,11 @@ func InitEnvironment(t *testing.T) *Environment {
 		containerImagesServer = "http://download.proxmox.com"
 	}
 
+	containerDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID")
+	if containerDatastoreID == "" {
+		containerDatastoreID = "local-lvm"
+	}
+
 	return &Environment{
 		t: t,
 		templateVars: map[string]any{
@@ -173,13 +228,16 @@ func InitEnvironment(t *testing.T) *Environment {
 			"DatastoreID":           datastoreID,
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
+			"ContainerDatastoreID":  containerDatastoreID,
 			"TestName":              sanitizeTemplateName(t.Name()),
 			"ZfsDatastoreID":        zfsDatastoreID,
+			"ZfsDisk":               zfsDisk,
 		},
 		NodeName:              nodeName,
 		Node2Name:             node2Name,
 		DatastoreID:           datastoreID,
 		ZfsDatastoreID:        zfsDatastoreID,
+		ZfsDisk:               zfsDisk,
 		CloudImagesServer:     cloudImagesServer,
 		ContainerImagesServer: containerImagesServer,
 
@@ -211,14 +269,15 @@ func (e *Environment) AddTemplateVars(vars map[string]any) {
 
 // RenderConfig renders the given configuration with for the current test environment using template engine.
 func (e *Environment) RenderConfig(cfg string, opt ...RenderConfigOption) string {
-	if len(opt) == 0 {
-		opt = append(opt, WithAPIToken())
-	}
-
 	rc := &renderConfig{}
 	for _, o := range opt {
 		err := o.apply(rc)
 		require.NoError(e.t, err, "configuration error")
+	}
+
+	// default to API token authentication when no authentication option was given
+	if rc.auth == "" {
+		require.NoError(e.t, WithAPIToken().apply(rc), "configuration error")
 	}
 
 	tmpl, err := template.New("config").Parse(cfg)
@@ -229,7 +288,7 @@ func (e *Environment) RenderConfig(cfg string, opt ...RenderConfigOption) string
 	err = tmpl.Execute(&buf, e.templateVars)
 	require.NoError(e.t, err)
 
-	return rc.providerConfig + "\n" + buf.String()
+	return rc.render() + "\n" + buf.String()
 }
 
 // Client returns a new API client for the test environment.
@@ -253,7 +312,7 @@ func (e *Environment) Client() api.Client {
 					panic(err)
 				}
 
-				conn, err := api.NewConnection(endpoint, true, "")
+				conn, err := api.NewConnection(endpoint, true, "", nil)
 				if err != nil {
 					panic(err)
 				}
@@ -283,6 +342,97 @@ func (e *Environment) NodeStorageClient() *storage.Client {
 	return &storage.Client{Client: e.NodeClient(), StorageName: e.DatastoreID}
 }
 
+// SSHClient returns an SSH client for the test node using the provider's SSH environment variables,
+// falling back to the API user credentials when PROXMOX_VE_SSH_USERNAME / PROXMOX_VE_SSH_PASSWORD are unset.
+func (e *Environment) SSHClient() ssh.Client {
+	e.t.Helper()
+
+	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
+	if sshUsername == "" {
+		sshUsername = strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	}
+
+	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
+	if sshPassword == "" {
+		sshPassword = utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+	}
+
+	client, err := ssh.NewClient(
+		sshUsername,
+		sshPassword,
+		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT"),
+		utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK"),
+		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT_FORWARDING"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME"),
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD"),
+		staticNodeResolver{node: e.nodeSSHTarget()},
+	)
+	require.NoError(e.t, err)
+
+	return client
+}
+
+// staticNodeResolver resolves any node name to a fixed SSH address/port.
+type staticNodeResolver struct {
+	node ssh.ProxmoxNode
+}
+
+func (r staticNodeResolver) Resolve(context.Context, string) (ssh.ProxmoxNode, error) {
+	return r.node, nil
+}
+
+// nodeSSHTarget returns the SSH address and port of the test node.
+func (e *Environment) nodeSSHTarget() ssh.ProxmoxNode {
+	e.t.Helper()
+
+	address := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NODE_SSH_ADDRESS")
+	if address == "" {
+		u, err := url.Parse(utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT"))
+		require.NoError(e.t, err)
+
+		address = u.Hostname()
+	}
+
+	port := int32(22)
+
+	if p := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NODE_SSH_PORT"); p != "" {
+		v, err := strconv.ParseInt(p, 10, 32)
+		require.NoError(e.t, err)
+
+		port = int32(v)
+	}
+
+	return ssh.ProxmoxNode{Address: address, Port: port}
+}
+
+// ExecuteNodeCommands runs shell commands on the test node over SSH as the root API user
+// (PROXMOX_VE_USERNAME / PROXMOX_VE_PASSWORD) and returns the combined output. Connecting as
+// root avoids the restricted sudoers allowlist of the provider's SSH user, so privileged
+// commands such as `pct exec` work without sudo.
+func (e *Environment) ExecuteNodeCommands(commands []string) string {
+	e.t.Helper()
+
+	// Strip the realm from "root@pam" to get the SSH login name.
+	username, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")
+
+	client, err := ssh.NewClient(
+		username,
+		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
+		false, "", false,
+		"",
+		"", "", "",
+		staticNodeResolver{node: e.nodeSSHTarget()},
+	)
+	require.NoError(e.t, err)
+
+	out, err := client.ExecuteNodeCommands(e.t.Context(), e.NodeName, commands)
+	require.NoError(e.t, err)
+
+	return string(out)
+}
+
 // DownloadCloudImage downloads a cloud image with a unique filename for use in VM tests.
 // The image is automatically cleaned up after the test completes.
 // Returns the file ID in format "local:iso/filename".
@@ -302,7 +452,7 @@ func (e *Environment) DownloadCloudImage() string {
 
 	e.t.Cleanup(func() {
 		// Best effort cleanup - the file may already be deleted by Proxmox
-		err = e.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName))
+		err = e.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName)).Err()
 		if err != nil {
 			e.t.Logf("cleanup: failed to delete cloud image %s: %v", imageFileName, err)
 		}

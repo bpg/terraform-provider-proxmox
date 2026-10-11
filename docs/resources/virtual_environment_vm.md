@@ -138,10 +138,11 @@ output "ubuntu_vm_public_key" {
         - `isa` - ISA Serial Port.
         - `virtio` - VirtIO (paravirtualized).
     - `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the VM starts.
+        - `disabled` - (Optional) Whether to disable waiting for the agent to report an IP address (defaults to `false`). Set to `true` to skip the IP lookup entirely, so the provider does not wait for the agent during `refresh` and at the end of `apply`. Useful when the guest agent is slow to start, not yet installed, or not running, to avoid blocking those operations. When disabled, `ipv4_addresses`, `ipv6_addresses`, and `network_interface_names` are left empty.
         - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
         - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
 
-        When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false`, the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
+        When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false` (and `disabled` is `false`), the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
 - `amd_sev` - (Optional) Secure Encrypted Virtualization (SEV) features by AMD CPUs.
     - `type` - (Optional) Enable standard SEV with `std` or enable experimental SEV-ES with the `es` option or enable experimental SEV-SNP with the `snp` option (defaults to `std`).
     - `allow_smt` - (Optional) Sets policy bit to allow Simultaneous Multi Threading (SMT)
@@ -172,8 +173,8 @@ output "ubuntu_vm_public_key" {
     - `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as
         in the physical drive). Use `none` to leave the CD-ROM drive empty.
     - `interface` - (Optional) A hardware interface to connect CD-ROM drive to (defaults to `ide3`).
-      "Must be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. " +
-      "Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces.
+      Must be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface.
+      Note that the `q35` machine type only supports `ide0` and `ide2` of the IDE interfaces.
 - `clone` - (Optional) The cloning configuration.
     - `datastore_id` - (Optional) The identifier for the target datastore.
     - `node_name` - (Optional) The name of the source node (leave blank, if
@@ -215,7 +216,7 @@ output "ubuntu_vm_public_key" {
         to `0`).
     - `limit` - (Optional) Limit of CPU usage, `0...128` (supports
         fractional values, e.g. `63.5`). (defaults to `0` -- no limit).
-    - `numa` - (Boolean) Enable/disable NUMA. (default to `false`)
+    - `numa` - (Optional) Enable/disable NUMA (defaults to `false`).
     - `sockets` - (Optional) The number of CPU sockets (defaults to `1`).
     - `type` - (Optional) The emulated CPU type, it's recommended to
         use `x86-64-v2-AES` (defaults to `qemu64`).
@@ -291,7 +292,7 @@ output "ubuntu_vm_public_key" {
     - `datastore_id` - (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
     - `path_in_datastore` - (Optional) The in-datastore path to the disk image.
-        ***Experimental.***Use to attach another VM's disks,
+        ***Experimental.*** Use to attach another VM's disks,
         or (as root only) host's filesystem paths (`datastore_id` empty string).
         See "*Example: Attached disks*".
     - `discard` - (Optional) Whether to pass discard/trim requests to the
@@ -317,6 +318,10 @@ output "ubuntu_vm_public_key" {
         the second, etc.
     - `iothread` - (Optional) Whether to use iothreads for this disk (defaults
         to `false`).
+    - `queues` - (Optional) The number of I/O queues for this disk, `2` or
+        greater. Only supported for SCSI disks, and applied by Proxmox only
+        when `scsi_hardware` is set to `virtio-scsi-single`. A change requires
+        a VM power cycle (or reboot via the Proxmox API) to take effect.
     - `replicate` - (Optional) Whether the drive should be considered for replication jobs (defaults to `true`).
     - `serial` - (Optional) The serial number of the disk, up to 20 bytes long.
     - `size` - (Optional) The disk size in gigabytes (defaults to `8`).
@@ -335,7 +340,7 @@ output "ubuntu_vm_public_key" {
         defaults to `false`). Note that SSD emulation is not supported on VirtIO
         Block drives.
 - `efi_disk` - (Optional) The efi disk device (required if `bios` is set
-    to `ovmf`)
+    to `ovmf`). See [Example: UEFI boot](#example-uefi-boot).
     - `datastore_id` (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
     - `file_format` (Optional) The file format (defaults to `raw`).
@@ -343,10 +348,11 @@ output "ubuntu_vm_public_key" {
         recommended, and required for Secure Boot. For backwards compatibility
         use `2m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
         to `2m`).
-    - `pre_enrolled_keys` (Optional) Use am EFI vars template with
+    - `pre_enrolled_keys` (Optional) Use an EFI vars template with
         distribution-specific and Microsoft Standard keys enrolled, if used with
-        EFI type=`4m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
-        to `false`).
+        EFI type=`4m`. For VMs with cpu.architecture=`aarch64` this requires
+        `pve-edk2-firmware-aarch64` newer than `4.2025.05-2` on the host and is
+        ignored otherwise (defaults to `false`).
 - `tpm_state` - (Optional) The TPM state device. The VM must be stopped before
     adding, removing, or moving a TPM state device; the provider automatically
     handles the shutdown/start cycle. Changing `version` requires recreating the
@@ -392,6 +398,9 @@ output "ubuntu_vm_public_key" {
         image to. Must be one of `ide0..3`, `sata0..5`, `scsi0..30`. Will be
         detected if the setting is missing but a cloud-init image is present,
         otherwise defaults to `ide2`.
+        Must not be the same as the `interface` of any `disk` block, the plan
+        fails if it is. If the setting is missing, `ide2` is used on create
+        (unless cloning) and checked against the `disk` interfaces too.
     - `file_format` - (Optional) The file format.
         - `qcow2` - QEMU Disk Image v2.
         - `raw` - Raw Disk Image.
@@ -403,7 +412,7 @@ output "ubuntu_vm_public_key" {
             `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers.
     - `ip_config` - (Optional) The IP configuration (one block per network
-        device).
+        device, up to 32 blocks).
         - `ipv4` - (Optional) The IPv4 configuration.
             - `address` - (Optional) The IPv4 address in CIDR notation
                 (e.g. 192.168.2.2/24). Alternatively, set this to `dhcp` for
@@ -538,8 +547,8 @@ output "ubuntu_vm_public_key" {
     instead of being applied automatically. Changes that are applied
     successfully but still need a later manual reboot emit a warning instead
     (defaults to `true`).
-- `rng` - (Optional) The random number generator configuration. Can only be set by `root@pam.`
-    - `source` - The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
+- `rng` - (Optional) The random number generator configuration. Can only be set by `root@pam`.
+    - `source` - (Required) The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
     - `max_bytes` - (Optional) Maximum bytes of entropy allowed to get injected into the guest every `period` milliseconds (defaults to `1024`). Prefer a lower value when using `/dev/random` as source.
     - `period` - (Optional) Every `period` milliseconds the entropy-injection quota is reset, allowing the guest to retrieve another `max_bytes` of entropy (defaults to `1000`).
 - `serial_device` - (Optional) A serial device (multiple blocks supported).
@@ -565,8 +574,8 @@ output "ubuntu_vm_public_key" {
 - `started` - (Optional) Whether to start the virtual machine (defaults
     to `true`).
 - `startup` - (Optional) Defines startup and shutdown behavior of the VM.
-    - `order` - (Required) A non-negative number defining the general startup
-        order.
+    - `order` - (Optional) A non-negative number defining the general startup
+        order (defaults to `-1`, meaning no specific order).
     - `up_delay` - (Optional) A non-negative number defining the delay in
         seconds before the next VM is started.
     - `down_delay` - (Optional) A non-negative number defining the delay in
@@ -685,7 +694,12 @@ install and *start* it using cloud-init, e.g. using custom `user_data_file_id`
 file.
 
 This provider requires `agent.enabled = true` to populate `ipv4_addresses`,
-`ipv6_addresses` and `network_interface_names` output attributes.
+`ipv6_addresses` and `network_interface_names` output attributes. Note that the
+provider honors the agent flag from the VM's *actual* Proxmox configuration,
+not only from the Terraform configuration: a cloned VM inherits the `agent`
+setting from the template, so omitting the `agent` block on the clone does not
+disable the agent wait (up to 15 minutes by default). Set
+`agent { enabled = false }` explicitly on the clone to override the template.
 
 Setting `agent.enabled = true` without running `qemu-guest-agent` in the VM will
 also result in long timeouts when using the provider, both when creating VMs,
@@ -869,6 +883,41 @@ resource "proxmox_virtual_environment_vm" "test_vm" {
   ...
 }
 ```
+
+## Example: UEFI boot
+
+Set `bios = "ovmf"` and add an `efi_disk` block. The EFI disk stores the UEFI
+variables (boot entries, Secure Boot state). Without it, Proxmox VE starts the
+VM with a temporary variables file and those settings are lost on every stop
+and start.
+
+```hcl
+resource "proxmox_virtual_environment_vm" "uefi_vm" {
+  name      = "terraform-provider-proxmox-uefi-vm"
+  node_name = "first-node"
+
+  bios = "ovmf"
+
+  efi_disk {
+    datastore_id      = "local-lvm"
+    type              = "4m"
+    pre_enrolled_keys = true # Secure Boot keys; set to false for unsigned kernels
+  }
+
+  disk {
+    datastore_id = "local-lvm"
+    interface    = "scsi0"
+    size         = 20
+  }
+
+  # ...
+}
+```
+
+~> **arm64 hosts** always boot VMs through UEFI (AAVMF); SeaBIOS is not
+available there. The provider still defaults `bios` to `seabios`, so set
+`bios = "ovmf"` explicitly together with `cpu.architecture = "aarch64"`.
+`efi_disk.type` is ignored on `aarch64`.
 
 ## Pool Management
 

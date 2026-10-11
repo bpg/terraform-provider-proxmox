@@ -49,7 +49,12 @@ resource "proxmox_cluster_options" "options" {
 - `bandwidth_limit_move` (Number) Move I/O bandwidth limit in KiB/s.
 - `bandwidth_limit_restore` (Number) Restore I/O bandwidth limit in KiB/s.
 - `console` (String) Select the default Console viewer. Must be `applet` | `vv`| `html5` | `xtermjs`. You can either use the builtin java applet (VNC; deprecated and maps to html5), an external virt-viewer compatible application (SPICE), an HTML5 based vnc viewer (noVNC), or an HTML5 based console client (xtermjs). If the selected viewer is not available (e.g. SPICE not activated for the VM), the fallback is noVNC.
-- `crs_ha` (String) Cluster resource scheduling setting for HA. Must be `static` | `basic` (default is `basic`).
+- `crs_ha` (String) Cluster resource scheduling setting for HA. Must be `static` | `basic` | `dynamic` (default is `basic`). `dynamic` requires Proxmox VE 9.2+.
+- `crs_ha_auto_rebalance` (Boolean) Whether to use CRS for balancing HA resources automatically depending on the current node imbalance. Requires Proxmox VE 9.2+.
+- `crs_ha_auto_rebalance_hold_duration` (Number) The number of HA rounds for which the cluster node imbalance threshold must be exceeded before triggering an automatic resource balancing migration (default is `3`). Requires Proxmox VE 9.2+.
+- `crs_ha_auto_rebalance_margin` (Number) The minimum relative improvement in cluster node imbalance, in percent, to commit to a resource balancing migration. Must be between `0` and `100` (default is `10`). Requires Proxmox VE 9.2+.
+- `crs_ha_auto_rebalance_method` (String) The method to use for the scoring of balancing migrations. Must be `bruteforce` | `topsis` (default is `bruteforce`). Requires Proxmox VE 9.2+.
+- `crs_ha_auto_rebalance_threshold` (Number) The cluster node imbalance, in percent, which will trigger the automatic resource balancing system if exceeded. Must be between `0` and `100` (default is `30`). Requires Proxmox VE 9.2+.
 - `crs_ha_rebalance_on_start` (Boolean) Cluster resource scheduling setting for HA rebalance on start.
 - `description` (String) Datacenter description. Shown in the web-interface datacenter notes panel. This is saved as comment inside the configuration file.
 - `email_from` (String) email address to send notification from (default is root@$hostname).

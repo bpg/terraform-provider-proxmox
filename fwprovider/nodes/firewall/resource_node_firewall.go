@@ -296,7 +296,7 @@ func (r *nodeFirewallOptionsResource) Create(
 		return
 	}
 
-	resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 	resp.Diagnostics.Append(diags...)
 }
 

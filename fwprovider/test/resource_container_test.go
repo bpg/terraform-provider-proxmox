@@ -15,7 +15,9 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -24,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
+	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -66,11 +69,11 @@ func TestAccResourceContainer(t *testing.T) {
 						limit = 1.5
 					}
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local"
 					}
@@ -138,12 +141,12 @@ func TestAccResourceContainer(t *testing.T) {
 						limit = 2
 					}
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 						mount_options = ["discard"]
 					}
 					mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local"
 					}
@@ -191,12 +194,12 @@ func TestAccResourceContainer(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 						mount_options = []
 					}
 					mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local"
 					}
@@ -259,7 +262,7 @@ func TestAccResourceContainerMountOptions(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 						mount_options = ["lazytime"]
 					}
@@ -309,7 +312,7 @@ func TestAccResourceContainerMountOptions(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 						mount_options = ["lazytime", "noatime"]
 					}
@@ -378,7 +381,7 @@ func TestAccResourceContainerDiskResize(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -425,7 +428,7 @@ func TestAccResourceContainerDiskResize(t *testing.T) {
 					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 6
 					}
 					initialization {
@@ -491,11 +494,11 @@ func TestAccResourceContainerClone(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				mount_point {
-					volume = "local-lvm"
+					volume = "{{.ContainerDatastoreID}}"
 					size   = "4G"
 					path   = "mnt/local"
 				}
@@ -584,7 +587,7 @@ func TestAccResourceContainerCloneFullFlag(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -643,7 +646,7 @@ func TestAccResourceContainerCloneFullFlag(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -705,7 +708,7 @@ func TestAccResourceContainerCloneMountPoint(t *testing.T) {
 			vm_id     = {{.TestContainerID}}
 			template  = true
 			disk {
-				datastore_id = "local-lvm"
+				datastore_id = "{{.ContainerDatastoreID}}"
 				size         = 4
 			}
 			initialization {
@@ -734,7 +737,7 @@ func TestAccResourceContainerCloneMountPoint(t *testing.T) {
 			}
 
 			mount_point {
-				volume = "local-lvm"
+				volume = "{{.ContainerDatastoreID}}"
 				size   = "4G"
 				path   = "/mnt/data"
 			}
@@ -796,7 +799,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -829,7 +832,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -863,7 +866,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -897,7 +900,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -935,7 +938,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -976,7 +979,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1044,7 +1047,7 @@ func TestAccResourceContainerHostname(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1076,7 +1079,7 @@ func TestAccResourceContainerHostname(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1137,11 +1140,11 @@ func TestAccResourceContainerMountPoint(t *testing.T) {
 					vm_id = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local1"
 				    }
@@ -1172,17 +1175,17 @@ func TestAccResourceContainerMountPoint(t *testing.T) {
 					vm_id = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local1"
 				    }
 					// add a new mount point
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "mnt/local2"
 				    }
@@ -1236,7 +1239,7 @@ func TestAccResourceContainerMountPointBindMount(t *testing.T) {
 					vm_id     = {{ .TestContainerID }}
 					started   = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					mount_point {
@@ -1315,7 +1318,7 @@ func TestAccResourceContainerIpv4Ipv6(t *testing.T) {
 					unprivileged = true
 					started   = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1348,7 +1351,7 @@ func TestAccResourceContainerIpv4Ipv6(t *testing.T) {
 				unprivileged = true
 				started   = false
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -1400,7 +1403,7 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1449,7 +1452,7 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1499,7 +1502,7 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -1570,11 +1573,11 @@ func TestAccResourceContainerMountExistingVolumeWithSize(t *testing.T) {
 					vm_id     = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "/mnt/data"
 				    }
@@ -1624,16 +1627,16 @@ func TestAccResourceContainerMountExistingVolumeWithSize(t *testing.T) {
 					vm_id     = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "/mnt/data"
 				    }
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "2G"
 						path   = "/mnt/data2"
 				    }
@@ -1714,11 +1717,11 @@ func TestAccResourceContainerMountPointVolumeReference(t *testing.T) {
 					vm_id     = {{ .TestContainerID1 }}
 				  	started   = false
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 				    mount_point {
-						volume = "local-lvm"
+						volume = "{{.ContainerDatastoreID}}"
 						size   = "4G"
 						path   = "/mnt/data"
 				    }
@@ -1745,7 +1748,7 @@ func TestAccResourceContainerMountPointVolumeReference(t *testing.T) {
 				  	started    = false
 					depends_on = [proxmox_virtual_environment_container.source]
 				    disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					# reference the path_in_datastore from source container (computed attribute for cross-resource refs)
@@ -1838,7 +1841,7 @@ func TestAccResourceContainerCloneStartOnBoot(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -1905,7 +1908,7 @@ func TestAccResourceContainerCloneStartOnBoot(t *testing.T) {
 				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -1991,7 +1994,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 					unprivileged = true
 					started = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					idmap {
@@ -2062,7 +2065,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 					unprivileged = true
 					started = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					idmap {
@@ -2120,7 +2123,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 					unprivileged = true
 					started = false
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2159,6 +2162,256 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerIDMapFirstBoot verifies that a configured idmap is active on the
+// container's first boot after create, not only after an out-of-band reboot (issue #2895).
+// It inspects the running container's /proc/self/uid_map and /proc/self/gid_map via the node,
+// since the API config read-back passes regardless of whether the map is actually applied.
+func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name      = "{{.NodeName}}"
+					vm_id          = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged   = true
+					started        = true
+					disk {
+						datastore_id = "{{.ContainerDatastoreID}}"
+						size         = 4
+					}
+					idmap {
+						type         = "uid"
+						container_id = 0
+						host_id      = 100000
+						size         = 1000
+					}
+					idmap {
+						type         = "uid"
+						container_id = 1000
+						host_id      = 101000
+						size         = 64536
+					}
+					idmap {
+						type         = "gid"
+						container_id = 0
+						host_id      = 100000
+						size         = 1000
+					}
+					idmap {
+						type         = "gid"
+						container_id = 1000
+						host_id      = 101000
+						size         = 64536
+					}
+					initialization {
+						hostname = "test-idmap-boot"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/uid_map"),
+					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/gid_map"),
+					assertContainerStartedWithoutReboot(te, accTestContainerID),
+				),
+			},
+		},
+	})
+}
+
+// assertContainerIDMapActive reads the given map file inside the running container and requires the configured
+// second range "1000 101000 64536" to be present. Under the default unprivileged mapping (a single
+// "0 100000 65536" line) that row cannot appear, so this fails when the idmap is not active. The map stays within
+// root's default subuid/subgid range (100000+65536) so the container can actually start on a stock host.
+func assertContainerIDMapActive(te *Environment, containerID int, mapFile string) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		out := te.ExecuteNodeCommands([]string{
+			fmt.Sprintf("/usr/sbin/pct exec %d -- cat %s", containerID, mapFile),
+		})
+
+		for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+			if f := strings.Fields(line); len(f) == 3 && f[0] == "1000" && f[1] == "101000" && f[2] == "64536" {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("%s inside running container should contain the configured mapping (1000 101000 64536), got:\n%s", mapFile, out)
+	}
+}
+
+// assertContainerStartedWithoutReboot requires a vzstart task and no vzreboot task in the node task list for the
+// container. A reboot right after a cold start hangs on guests whose PID 1 cannot handle the halt signal yet. The
+// vzstart check is the positive control: PVE hides other users' tasks from a caller without Sys.Audit, so an empty
+// listing must fail rather than pass.
+func assertContainerStartedWithoutReboot(te *Environment, containerID int) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		var resBody struct {
+			Data []struct {
+				Type string `json:"type"`
+			} `json:"data,omitempty"`
+		}
+
+		nodeClient := te.NodeClient()
+		path := nodeClient.ExpandPath(fmt.Sprintf("tasks?vmid=%d", containerID))
+
+		if err := nodeClient.DoRequest(context.Background(), http.MethodGet, path, nil, &resBody); err != nil {
+			return fmt.Errorf("listing tasks for container %d: %w", containerID, err)
+		}
+
+		counts := map[string]int{}
+		for _, task := range resBody.Data {
+			counts[task.Type]++
+		}
+
+		if counts["vzstart"] == 0 {
+			return fmt.Errorf("expected a vzstart task for container %d in the task list, got %v", containerID, counts)
+		}
+
+		if counts["vzreboot"] > 0 {
+			return fmt.Errorf("expected no vzreboot task for container %d, found %d", containerID, counts["vzreboot"])
+		}
+
+		return nil
+	}
+}
+
+func TestAccResourceContainerIDMapChangeOnStart(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	containerConfig := func(started bool, idmap string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name      = "{{.NodeName}}"
+				vm_id          = {{.TestContainerID}}
+				timeout_delete = {{ .TimeoutDelete }}
+				unprivileged   = true
+				started        = %t
+				disk {
+					datastore_id = "{{.ContainerDatastoreID}}"
+					size         = 4
+				}
+				%s
+				initialization {
+					hostname = "test-idmap-change"
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}`, started, idmap), WithRootUser())
+	}
+
+	singleRangeIDMap := `
+				idmap {
+					type         = "uid"
+					container_id = 0
+					host_id      = 100000
+					size         = 65536
+				}
+				idmap {
+					type         = "gid"
+					container_id = 0
+					host_id      = 100000
+					size         = 65536
+				}`
+
+	splitRangeIDMap := `
+				idmap {
+					type         = "uid"
+					container_id = 0
+					host_id      = 100000
+					size         = 1000
+				}
+				idmap {
+					type         = "uid"
+					container_id = 1000
+					host_id      = 101000
+					size         = 64536
+				}
+				idmap {
+					type         = "gid"
+					container_id = 0
+					host_id      = 100000
+					size         = 1000
+				}
+				idmap {
+					type         = "gid"
+					container_id = 1000
+					host_id      = 101000
+					size         = 64536
+				}`
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig(false, singleRangeIDMap),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"started": "false",
+					}),
+				),
+			},
+			{
+				// Changing the idmap and starting the container in one apply must be a single cold start with the
+				// new mapping, not a start followed by a reboot.
+				Config: containerConfig(true, splitRangeIDMap),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"started": "true",
+					}),
+					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/uid_map"),
+					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/gid_map"),
+					assertContainerStartedWithoutReboot(te, accTestContainerID),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerEntrypoint(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
@@ -2182,7 +2435,7 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2224,7 +2477,7 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2268,7 +2521,7 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2330,7 +2583,7 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2380,7 +2633,7 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 						units = 512
 					}
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2432,7 +2685,7 @@ func TestAccResourceContainerHostManaged(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2477,7 +2730,7 @@ func TestAccResourceContainerHostManaged(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 4
 					}
 					initialization {
@@ -2549,7 +2802,7 @@ func TestAccResourceContainerDiskOptionsAtCreate(t *testing.T) {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						size         = 8
 						acl          = true
 						quota        = true
@@ -2629,7 +2882,7 @@ func TestAccResourceContainerDiskACLOnlyAtCreate(t *testing.T) {
 					vm_id        = {{.TestContainerID}}
 					unprivileged = true
 					disk {
-						datastore_id = "local-lvm"
+						datastore_id = "{{.ContainerDatastoreID}}"
 						acl          = true
 					}
 					initialization {
@@ -2692,7 +2945,7 @@ func TestAccResourceContainerFeaturesRefresh(t *testing.T) {
 			vm_id        = {{.TestContainerID}}
 			unprivileged = true
 			disk {
-				datastore_id = "local-lvm"
+				datastore_id = "{{.ContainerDatastoreID}}"
 				size         = 4
 			}
 			features {
@@ -2774,7 +3027,7 @@ func TestAccResourceContainerFeaturesToggleOff(t *testing.T) {
 				vm_id        = {{.TestContainerID}}
 				unprivileged = true
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				features {
@@ -2864,7 +3117,7 @@ func TestAccResourceContainerStartOnBootRefresh(t *testing.T) {
 			unprivileged  = true
 			start_on_boot = false
 			disk {
-				datastore_id = "local-lvm"
+				datastore_id = "{{.ContainerDatastoreID}}"
 				size         = 4
 			}
 			initialization {
@@ -2940,7 +3193,7 @@ func TestAccResourceContainerStartedToggle(t *testing.T) {
 				unprivileged = true
 				started      = %t
 				disk {
-					datastore_id = "local-lvm"
+					datastore_id = "{{.ContainerDatastoreID}}"
 					size         = 4
 				}
 				initialization {
@@ -3005,6 +3258,144 @@ func TestAccResourceContainerStartedToggle(t *testing.T) {
 	})
 }
 
+// Regression test for #2893: omitting the `disk { ... }` block must not panic create.
+//
+//nolint:paralleltest
+func TestAccResourceContainerNoDiskBlock(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					initialization {
+						hostname = "test-no-disk-block"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"disk.#":           "1",
+						"disk.0.size":      "4",
+						"disk.0.acl":       "false",
+						"disk.0.quota":     "false",
+						"disk.0.replicate": "false",
+					}),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+// Regression test for #2893: removing an explicit `disk { ... }` block must not panic
+// containerUpdate. Step 1's `datastore_id = "local"` matches the DefaultFunc so removal
+// does not trigger ForceNew and takes the update path.
+//
+//nolint:paralleltest
+func TestAccResourceContainerRemoveDiskBlock(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					disk {
+						datastore_id  = "local"
+						size          = 4
+						mount_options = ["discard"]
+					}
+					initialization {
+						hostname = "test-remove-disk"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"disk.0.mount_options.#": "1",
+					"disk.0.mount_options.0": "discard",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					initialization {
+						hostname = "test-remove-disk"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
 func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
 	t.Helper()
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
@@ -3017,7 +3408,268 @@ func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileNa
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName))
+		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName)).Err()
 		require.NoError(t, e)
+	})
+}
+
+func TestAccResourceContainerDestroyOptions(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	containerConfig := func(destroyOptions string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name    = "{{.NodeName}}"
+				vm_id        = {{.TestContainerID}}
+				started      = false
+				unprivileged = true
+				%s
+				disk {
+					datastore_id = "{{.ContainerDatastoreID}}"
+					size         = 4
+				}
+				initialization {
+					hostname = "test-destroy-options"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}`, destroyOptions))
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig(""),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"purge_on_destroy":                     "true",
+					"delete_unreferenced_disks_on_destroy": "false",
+				}),
+			},
+			{
+				ResourceName:  accTestContainerName,
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, accTestContainerID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+					if attrs["purge_on_destroy"] != "true" {
+						return fmt.Errorf("expected purge_on_destroy=true after import, got %q", attrs["purge_on_destroy"])
+					}
+
+					if attrs["delete_unreferenced_disks_on_destroy"] != "false" {
+						return fmt.Errorf(
+							"expected delete_unreferenced_disks_on_destroy=false after import, got %q",
+							attrs["delete_unreferenced_disks_on_destroy"],
+						)
+					}
+
+					return nil
+				},
+			},
+			{
+				Config: containerConfig(`
+				purge_on_destroy                     = false
+				delete_unreferenced_disks_on_destroy = true`),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"purge_on_destroy":                     "false",
+					"delete_unreferenced_disks_on_destroy": "true",
+				}),
+			},
+			{
+				Config: containerConfig(`
+				purge_on_destroy                     = true
+				delete_unreferenced_disks_on_destroy = false`),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"purge_on_destroy":                     "true",
+					"delete_unreferenced_disks_on_destroy": "false",
+				}),
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerImportTimeoutDefaults(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	containerConfig := te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			started      = false
+			unprivileged = true
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-import-timeout"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig,
+			},
+			{
+				// Forget the container without destroying it, so the next step can import it into the same
+				// working directory and the final destroy runs from the imported state.
+				Config: te.RenderConfig(`
+				removed {
+					from = proxmox_virtual_environment_container.test_container
+					lifecycle {
+						destroy = false
+					}
+				}`),
+			},
+			{
+				Config:             containerConfig,
+				ResourceName:       accTestContainerName,
+				ImportState:        true,
+				ImportStatePersist: true,
+				ImportStateId:      fmt.Sprintf("%s/%d", te.NodeName, accTestContainerID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					wantDefaults := map[string]string{
+						"timeout_create":  "1800",
+						"timeout_clone":   "1800",
+						"timeout_update":  "1800",
+						"timeout_delete":  "60",
+						"timeout_migrate": "1800",
+						"migrate":         "false",
+					}
+
+					attrs := states[0].Attributes
+					for key, want := range wantDefaults {
+						if got := attrs[key]; got != want {
+							return fmt.Errorf("expected %s=%s after import, got %q", key, want, got)
+						}
+					}
+
+					return nil
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerDestroyPurgesHAResource(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	haClient := te.ClusterClient().HA().Resources()
+	haResourceID := proxmoxtypes.HAResourceID{
+		Type: proxmoxtypes.HAResourceTypeContainer,
+		Name: strconv.Itoa(accTestContainerID),
+	}
+
+	t.Cleanup(func() {
+		// Only needed when destroy failed before PVE purged the HA entry.
+		_ = haClient.Delete(context.Background(), haResourceID)
+	})
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		CheckDestroy: func(*terraform.State) error {
+			exists, err := haClient.Exists(context.Background(), haResourceID)
+			if err != nil {
+				return fmt.Errorf("checking HA resource %s: %w", haResourceID.String(), err)
+			}
+
+			if exists {
+				return fmt.Errorf("HA resource %s still exists after destroy, purge was not applied", haResourceID.String())
+			}
+
+			return nil
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					started      = false
+					unprivileged = true
+					disk {
+						datastore_id = "{{.ContainerDatastoreID}}"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-destroy-ha"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"purge_on_destroy": "true",
+					}),
+					func(*terraform.State) error {
+						err := haClient.Create(t.Context(), &haresources.HAResourceCreateRequestBody{
+							HAResourceDataBase: haresources.HAResourceDataBase{
+								State: proxmoxtypes.HAResourceStateDisabled,
+							},
+							ID: haResourceID,
+						})
+						if err != nil {
+							return fmt.Errorf("adding container to HA: %w", err)
+						}
+
+						exists, err := haClient.Exists(t.Context(), haResourceID)
+						if err != nil {
+							return fmt.Errorf("checking HA resource %s: %w", haResourceID.String(), err)
+						}
+
+						if !exists {
+							return fmt.Errorf("HA resource %s was not created", haResourceID.String())
+						}
+
+						return nil
+					},
+				),
+			},
+		},
 	})
 }

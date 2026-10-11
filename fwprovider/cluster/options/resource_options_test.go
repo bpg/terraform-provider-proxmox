@@ -42,6 +42,17 @@ func TestAccResourceClusterOptions(t *testing.T) {
 					ImportState:       true,
 					ImportStateVerify: true,
 				},
+				// Update to the dynamic CRS scheduler; requires PVE 9.2+ (pve-ha-manager 5.2+)
+				{
+					Config: testAccResourceClusterOptionsCrsDynamicConfig(),
+					Check:  testAccResourceClusterOptionsCrsDynamicCheck(),
+				},
+				// ImportState testing with dynamic CRS options
+				{
+					ResourceName:      accTestClusterOptionsName,
+					ImportState:       true,
+					ImportStateVerify: true,
+				},
 				// Update testing
 				{
 					Config: testAccResourceClusterOptionsUpdatedConfig(),
@@ -124,6 +135,33 @@ func testAccResourceClusterOptionsCreatedCheck() resource.TestCheckFunc {
 	)
 }
 
+func testAccResourceClusterOptionsCrsDynamicConfig() string {
+	return `
+  resource "proxmox_cluster_options" "test_options" {
+    crs_ha                              = "dynamic"
+    crs_ha_rebalance_on_start           = true
+    crs_ha_auto_rebalance               = true
+    crs_ha_auto_rebalance_hold_duration = 5
+    crs_ha_auto_rebalance_margin        = 15
+    crs_ha_auto_rebalance_method        = "topsis"
+    crs_ha_auto_rebalance_threshold     = 40
+  }
+	`
+}
+
+func testAccResourceClusterOptionsCrsDynamicCheck() resource.TestCheckFunc {
+	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "id", "cluster"),
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "crs_ha", "dynamic"),
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "crs_ha_rebalance_on_start", "true"),
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance", "true"),
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance_hold_duration", "5"),
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance_margin", "15"),
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance_method", "topsis"),
+		resource.TestCheckResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance_threshold", "40"),
+	)
+}
+
 func testAccResourceClusterOptionsUpdatedConfig() string {
 	return `
   resource "proxmox_cluster_options" "test_options" {
@@ -172,6 +210,12 @@ func testAccResourceClusterOptionsUpdatedCheck() resource.TestCheckFunc {
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "bandwidth_limit_restore"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "console"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "crs_ha"),
+		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "crs_ha_rebalance_on_start"),
+		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance"),
+		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance_hold_duration"),
+		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance_margin"),
+		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance_method"),
+		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "crs_ha_auto_rebalance_threshold"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "ha_shutdown_policy"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "http_proxy"),
 		resource.TestCheckNoResourceAttr(accTestClusterOptionsName, "keyboard"),

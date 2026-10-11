@@ -12,9 +12,13 @@
 package backup_test
 
 import (
+	"context"
+	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
@@ -38,6 +42,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					all      = true
 					mode     = "snapshot"
 					compress = "zstd"
+					comment  = "managed by terraform"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "id", "acc-test-bj"),
@@ -46,6 +51,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "all", "true"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "mode", "snapshot"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "compress", "zstd"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test", "comment", "managed by terraform"),
 				),
 			},
 			{
@@ -58,6 +64,7 @@ func TestAccResourceBackupJob(t *testing.T) {
 					mode     = "stop"
 					compress = "lzo"
 					enabled  = false
+					comment  = "updated by terraform: a colon is stored encoded"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "id", "acc-test-bj"),
@@ -65,13 +72,33 @@ func TestAccResourceBackupJob(t *testing.T) {
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "mode", "stop"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "compress", "lzo"),
 					resource.TestCheckResourceAttr("proxmox_backup_job.test", "enabled", "false"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test", "comment",
+						"updated by terraform: a colon is stored encoded"),
 				),
 			},
 			{
+				// Runs while `comment` is still set, so the import round-trips a value -- and one
+				// holding a colon, which PVE URL-encodes in jobs.cfg but returns decoded.
 				ResourceName:      "proxmox_backup_job.test",
 				ImportStateId:     "acc-test-bj",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				// Dropping the attribute must clear it on the server, not leave it stale.
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test" {
+					id       = "acc-test-bj"
+					schedule = "*-*-* 03:00"
+					storage  = "local"
+					all      = true
+					mode     = "stop"
+					compress = "lzo"
+					enabled  = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("proxmox_backup_job.test", "comment"),
+				),
 			},
 		}},
 		{"create with minimal attributes", []resource.TestStep{
@@ -251,6 +278,52 @@ func TestAccResourceBackupJob(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		}},
+		{"backup with notification mode", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_nm" {
+					id                = "acc-test-nm"
+					schedule          = "*-*-* 12:00"
+					storage           = "local"
+					all               = true
+					notification_mode = "notification-system"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_nm", "notification_mode", "notification-system"),
+					checkNotificationModeOnPVE(te, "acc-test-nm", "notification-system"),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_nm" {
+					id                = "acc-test-nm"
+					schedule          = "*-*-* 12:00"
+					storage           = "local"
+					all               = true
+					notification_mode = "legacy-sendmail"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_nm", "notification_mode", "legacy-sendmail"),
+					checkNotificationModeOnPVE(te, "acc-test-nm", "legacy-sendmail"),
+				),
+			},
+			{
+				ResourceName:      "proxmox_backup_job.test_nm",
+				ImportStateId:     "acc-test-nm",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_nm" {
+					id       = "acc-test-nm"
+					schedule = "*-*-* 12:00"
+					storage  = "local"
+					all      = true
+				}`),
+				Check: checkNotificationModeOnPVE(te, "acc-test-nm", ""),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
@@ -261,6 +334,97 @@ func TestAccResourceBackupJob(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestAccResourceBackupJobInvalidNotificationMode(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test" {
+					id                = "acc-test-bj-nm"
+					schedule          = "*-*-* 02:00"
+					storage           = "local"
+					all               = true
+					notification_mode = "bogus"
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile("notification_mode"),
+			},
+		},
+	})
+}
+
+func TestAccResourceBackupJobExclude(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_exclude" {
+					id       = "acc-test-excl"
+					schedule = "*-*-* 08:00"
+					storage  = "local"
+					all      = true
+					exclude  = ["100", "101"]
+					mode     = "snapshot"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "id", "acc-test-excl"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "all", "true"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.#", "2"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.0", "100"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.1", "101"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "mode", "snapshot"),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_exclude" {
+					id       = "acc-test-excl"
+					schedule = "*-*-* 08:00"
+					storage  = "local"
+					all      = true
+					exclude  = ["200"]
+					mode     = "stop"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.#", "1"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.0", "200"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "mode", "stop"),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_exclude" {
+					id       = "acc-test-excl"
+					schedule = "*-*-* 08:00"
+					storage  = "local"
+					all      = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "id", "acc-test-excl"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "all", "true"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude", "exclude.#", "0"),
+				),
+			},
+			{
+				ResourceName:      "proxmox_backup_job.test_exclude",
+				ImportStateId:     "acc-test-excl",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
 }
 
 func TestAccDataSourceBackupJobs(t *testing.T) {
@@ -274,10 +438,12 @@ func TestAccDataSourceBackupJobs(t *testing.T) {
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_backup_job" "test_ds" {
-					id       = "acc-test-ds"
-					schedule = "*-*-* 05:00"
-					storage  = "local"
-					all      = true
+					id                = "acc-test-ds"
+					schedule          = "*-*-* 05:00"
+					storage           = "local"
+					all               = true
+					comment           = "managed by terraform"
+					notification_mode = "notification-system"
 				}
 
 				data "proxmox_backup_jobs" "all" {
@@ -285,8 +451,35 @@ func TestAccDataSourceBackupJobs(t *testing.T) {
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.proxmox_backup_jobs.all", "jobs.#"),
+					// The data source returns every job in the cluster, so pin on `id` too.
+					resource.TestCheckTypeSetElemNestedAttrs("data.proxmox_backup_jobs.all", "jobs.*",
+						map[string]string{
+							"id":                "acc-test-ds",
+							"comment":           "managed by terraform",
+							"notification_mode": "notification-system",
+						}),
 				),
 			},
 		},
 	})
+}
+
+func checkNotificationModeOnPVE(te *test.Environment, id, want string) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		job, err := te.ClusterClient().Backup().Get(context.Background(), id)
+		if err != nil {
+			return err
+		}
+
+		got := ""
+		if job.NotificationMode != nil {
+			got = *job.NotificationMode
+		}
+
+		if got != want {
+			return fmt.Errorf("notification-mode on PVE: got %q, want %q", got, want)
+		}
+
+		return nil
+	}
 }

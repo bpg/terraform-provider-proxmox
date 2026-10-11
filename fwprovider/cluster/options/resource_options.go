@@ -257,14 +257,58 @@ func (r *clusterOptionsResource) Schema(
 				Optional:    true,
 			},
 			"crs_ha": schema.StringAttribute{
-				Description:         "Cluster resource scheduling setting for HA.",
-				MarkdownDescription: "Cluster resource scheduling setting for HA. Must be `static` | `basic` (default is `basic`).",
-				Optional:            true,
-				Computed:            true,
+				Description: "Cluster resource scheduling setting for HA.",
+				MarkdownDescription: "Cluster resource scheduling setting for HA. Must be `static` | `basic` | " +
+					"`dynamic` (default is `basic`). `dynamic` requires Proxmox VE 9.2+.",
+				Optional: true,
+				Computed: true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
 					"static",
 					"basic",
+					"dynamic",
 				}...)},
+			},
+			"crs_ha_auto_rebalance": schema.BoolAttribute{
+				Description: "Whether to use CRS for balancing HA resources automatically depending on" +
+					" the current node imbalance. Requires Proxmox VE 9.2+.",
+				Optional: true,
+			},
+			"crs_ha_auto_rebalance_hold_duration": schema.Int64Attribute{
+				Description: "The number of HA rounds for which the cluster node imbalance threshold must be" +
+					" exceeded before triggering an automatic resource balancing migration (default is `3`)." +
+					" Requires Proxmox VE 9.2+.",
+				Optional: true,
+				Validators: []validator.Int64{
+					int64validator.AtLeast(0),
+				},
+			},
+			"crs_ha_auto_rebalance_margin": schema.Int64Attribute{
+				Description: "The minimum relative improvement in cluster node imbalance, in percent, to commit to" +
+					" a resource balancing migration. Must be between `0` and `100` (default is `10`)." +
+					" Requires Proxmox VE 9.2+.",
+				Optional: true,
+				Validators: []validator.Int64{
+					int64validator.Between(0, 100),
+				},
+			},
+			"crs_ha_auto_rebalance_method": schema.StringAttribute{
+				Description: "The method to use for the scoring of balancing migrations.",
+				MarkdownDescription: "The method to use for the scoring of balancing migrations. Must be" +
+					" `bruteforce` | `topsis` (default is `bruteforce`). Requires Proxmox VE 9.2+.",
+				Optional: true,
+				Validators: []validator.String{stringvalidator.OneOf([]string{
+					"bruteforce",
+					"topsis",
+				}...)},
+			},
+			"crs_ha_auto_rebalance_threshold": schema.Int64Attribute{
+				Description: "The cluster node imbalance, in percent, which will trigger the automatic resource" +
+					" balancing system if exceeded. Must be between `0` and `100` (default is `30`)." +
+					" Requires Proxmox VE 9.2+.",
+				Optional: true,
+				Validators: []validator.Int64{
+					int64validator.Between(0, 100),
+				},
 			},
 			"crs_ha_rebalance_on_start": schema.BoolAttribute{
 				Description: "Cluster resource scheduling setting for HA rebalance on start.",

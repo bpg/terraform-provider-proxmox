@@ -7,9 +7,69 @@
 package nodes
 
 import (
+	"encoding/json"
 	"net/url"
 	"testing"
 )
+
+func TestConfigGetResponseData_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		json    string
+		wantNil bool
+		want    int
+	}{
+		{
+			// PVE serializes startall-onboot-delay as a string when explicitly set.
+			name: "startall-onboot-delay as string",
+			json: `{"startall-onboot-delay":"0"}`,
+			want: 0,
+		},
+		{
+			name: "startall-onboot-delay as non-zero string",
+			json: `{"startall-onboot-delay":"15"}`,
+			want: 15,
+		},
+		{
+			name: "startall-onboot-delay as bare integer",
+			json: `{"startall-onboot-delay":15}`,
+			want: 15,
+		},
+		{
+			name:    "startall-onboot-delay absent",
+			json:    `{}`,
+			wantNil: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var data ConfigGetResponseData
+			if err := json.Unmarshal([]byte(tt.json), &data); err != nil {
+				t.Fatalf("UnmarshalJSON() unexpected error = %v", err)
+			}
+
+			if tt.wantNil {
+				if data.StartAllOnbootDelay != nil {
+					t.Fatalf("StartAllOnbootDelay = %v, want nil", *data.StartAllOnbootDelay)
+				}
+
+				return
+			}
+
+			if data.StartAllOnbootDelay == nil {
+				t.Fatal("StartAllOnbootDelay = nil, want non-nil")
+			}
+
+			if got := int(*data.StartAllOnbootDelay); got != tt.want {
+				t.Errorf("StartAllOnbootDelay = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
 
 func TestACMEConfig_UnmarshalJSON(t *testing.T) {
 	t.Parallel()

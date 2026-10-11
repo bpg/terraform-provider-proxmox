@@ -48,6 +48,7 @@ func Alias() *schema.Resource {
 
 	return &schema.Resource{
 		Schema:        s,
+		CustomizeDiff: selectorCustomizeDiff(),
 		CreateContext: selectFirewallAPI(aliasCreate),
 		ReadContext:   selectFirewallAPI(aliasRead),
 		UpdateContext: selectFirewallAPI(aliasUpdate),

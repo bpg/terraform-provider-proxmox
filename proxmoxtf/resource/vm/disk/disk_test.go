@@ -275,6 +275,17 @@ func TestDiskDevicesEqual(t *testing.T) {
 		DatastoreID: &datastore2,
 	}
 	require.True(t, disk1.Equals(disk2ImportFromNil))
+
+	// Test different queues
+	queues2Changed := 8
+	disk2QueuesChanged := &vms.CustomStorageDevice{
+		AIO:         &aio2,
+		Cache:       &cache2,
+		Size:        size2,
+		DatastoreID: &datastore2,
+		Queues:      &queues2Changed,
+	}
+	require.False(t, disk1.Equals(disk2QueuesChanged))
 }
 
 // TestDiskUpdateSkipsUnchangedDisks tests that the Update function only updates changed disks.
@@ -960,4 +971,85 @@ func TestDiskSpeedSettingsPerDisk(t *testing.T) {
 	require.Nil(t, scsi2.MaxWriteSpeedMbps, "scsi2 should NOT have MaxWriteSpeedMbps (empty speed block)")
 	require.Nil(t, scsi2.BurstableReadSpeedMbps, "scsi2 should NOT have BurstableReadSpeedMbps (empty speed block)")
 	require.Nil(t, scsi2.BurstableWriteSpeedMbps, "scsi2 should NOT have BurstableWriteSpeedMbps (empty speed block)")
+}
+
+// TestDiskQueuesSettings tests that the queues option is mapped for SCSI disks only.
+func TestDiskQueuesSettings(t *testing.T) {
+	t.Parallel()
+
+	diskSchema := Schema()
+	resource := &schema.Resource{Schema: diskSchema}
+
+	diskList := []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        50,
+			mkDiskAIO:         "io_uring",
+			mkDiskBackup:      true,
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskIOThread:    true,
+			mkDiskQueues:      8,
+			mkDiskReplicate:   true,
+			mkDiskSerial:      "",
+			mkDiskSSD:         false,
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        50,
+			mkDiskAIO:         "io_uring",
+			mkDiskBackup:      true,
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskIOThread:    false,
+			mkDiskQueues:      0,
+			mkDiskReplicate:   true,
+			mkDiskSerial:      "",
+			mkDiskSSD:         false,
+			mkDiskSpeed:       []any{},
+		},
+	}
+
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
+		MkDisk: diskList,
+	})
+
+	diskDevices, err := GetDiskDeviceObjects(resourceData, resource, diskList)
+	require.NoError(t, err)
+	require.Len(t, diskDevices, 2)
+
+	scsi0 := diskDevices["scsi0"]
+	require.NotNil(t, scsi0)
+	require.NotNil(t, scsi0.Queues, "scsi0 should have Queues")
+	require.Equal(t, 8, *scsi0.Queues)
+
+	// queues=0 means "not set" and must not be sent to the API
+	scsi1 := diskDevices["scsi1"]
+	require.NotNil(t, scsi1)
+	require.Nil(t, scsi1.Queues, "scsi1 should NOT have Queues (queues=0)")
+
+	// queues on a non-SCSI disk must be rejected
+	virtioDiskList := []any{
+		map[string]any{
+			mkDiskInterface:   "virtio0",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        50,
+			mkDiskAIO:         "io_uring",
+			mkDiskBackup:      true,
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskIOThread:    false,
+			mkDiskQueues:      4,
+			mkDiskReplicate:   true,
+			mkDiskSerial:      "",
+			mkDiskSSD:         false,
+			mkDiskSpeed:       []any{},
+		},
+	}
+
+	_, err = GetDiskDeviceObjects(resourceData, resource, virtioDiskList)
+	require.ErrorContains(t, err, "queues are only supported for SCSI disks")
 }

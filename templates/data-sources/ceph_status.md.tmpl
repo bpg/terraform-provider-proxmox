@@ -1,0 +1,28 @@
+---
+layout: page
+title: {{.Name}}
+parent: Data Sources
+subcategory: Virtual Environment
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}}: {{.Name}}
+
+~> **Experimental.** Schema and behavior may change in future releases. Pin the provider version if stability matters.
+
+{{ .Description | trimspace }}
+
+When `node_name` is set, the data source queries `/nodes/{node}/ceph/status`
+(the node-local view). When `node_name` is omitted, it queries
+`/cluster/ceph/status` (the cluster-wide view). Both endpoints return the
+same payload shape; only the failure modes differ when Ceph is misconfigured
+on a specific node.
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ codefile "terraform" .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}

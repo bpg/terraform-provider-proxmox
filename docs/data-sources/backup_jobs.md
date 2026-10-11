@@ -31,14 +31,17 @@ data "proxmox_backup_jobs" "all" {}
 Read-Only:
 
 - `all` (Boolean) Indicates whether all VMs and CTs are backed up.
+- `comment` (String) Description of the backup job, shown in the Proxmox VE web UI.
 - `compress` (String) Compression algorithm used for the backup.
 - `enabled` (Boolean) Indicates whether the backup job is enabled.
+- `exclude` (List of String) List of guest VM/CT IDs excluded from the backup.
 - `id` (String) Unique identifier of the backup job.
-- `mailnotification` (String) When to send email notifications (always or failure).
+- `mailnotification` (String) When to send email notifications (`always` or `failure`). Ignored by Proxmox VE unless `mailto` is set or the job uses the `legacy-sendmail` notification mode.
 - `mailto` (List of String) List of email addresses for notifications.
 - `mode` (String) Backup mode (e.g. snapshot, suspend, stop).
 - `node` (String) Node on which the backup job runs.
 - `notes_template` (String) Template for backup notes.
+- `notification_mode` (String) Notification mode of the job (`auto`, `legacy-sendmail` or `notification-system`).
 - `pool` (String) Pool whose members are backed up.
 - `protected` (Boolean) Indicates whether backups created by this job are protected from pruning.
 - `prune_backups` (Map of String) Retention options as a map of keep policies (e.g. keep-last = "3", keep-weekly = "2").

@@ -18,6 +18,7 @@ import (
 // CIFSStorageModel maps the Terraform schema for CIFS storage.
 type CIFSStorageModel struct {
 	modelBase
+	modelDirOptions
 
 	Server                 types.String `tfsdk:"server"`
 	Username               types.String `tfsdk:"username"`
@@ -25,6 +26,7 @@ type CIFSStorageModel struct {
 	Share                  types.String `tfsdk:"share"`
 	Domain                 types.String `tfsdk:"domain"`
 	SubDirectory           types.String `tfsdk:"subdirectory"`
+	Options                types.String `tfsdk:"options"`
 	Preallocation          types.String `tfsdk:"preallocation"`
 	SnapshotsAsVolumeChain types.Bool   `tfsdk:"snapshot_as_volume_chain"`
 	Backups                *BackupModel `tfsdk:"backups"`
@@ -48,8 +50,11 @@ func (m *CIFSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) 
 	request.Share = m.Share.ValueStringPointer()
 	request.Domain = m.Domain.ValueStringPointer()
 	request.Subdirectory = m.SubDirectory.ValueStringPointer()
+	request.Options = m.Options.ValueStringPointer()
 	request.Preallocation = m.Preallocation.ValueStringPointer()
 	request.SnapshotsAsVolumeChain = proxmoxtypes.CustomBool(m.SnapshotsAsVolumeChain.ValueBool())
+	request.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
+	request.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
@@ -70,7 +75,10 @@ func (m *CIFSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) 
 		return nil, err
 	}
 
+	request.Options = m.Options.ValueStringPointer()
 	request.Preallocation = m.Preallocation.ValueStringPointer()
+	request.CreateBasePath = proxmoxtypes.CustomBoolPtr(m.CreateBasePath.ValueBoolPointer())
+	request.CreateSubdirs = proxmoxtypes.CustomBoolPtr(m.CreateSubdirs.ValueBoolPointer())
 
 	if m.Backups != nil {
 		backups, err := m.Backups.toAPI()
@@ -89,6 +97,8 @@ func (m *CIFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datas
 		return err
 	}
 
+	m.populateFromAPI(datastore)
+
 	if datastore.Server != nil {
 		m.Server = types.StringValue(*datastore.Server)
 	}
@@ -103,6 +113,10 @@ func (m *CIFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datas
 
 	if datastore.Domain != nil {
 		m.Domain = types.StringValue(*datastore.Domain)
+	}
+
+	if datastore.Options != nil {
+		m.Options = types.StringValue(*datastore.Options)
 	}
 
 	if datastore.SubDirectory != nil {

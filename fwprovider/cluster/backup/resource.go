@@ -90,6 +90,10 @@ func (r *backupJobResource) ConfigValidators(_ context.Context) []resource.Confi
 			path.MatchRoot("vmid"),
 			path.MatchRoot("pool"),
 		),
+		resourcevalidator.Conflicting(
+			path.MatchRoot("vmid"),
+			path.MatchRoot("exclude"),
+		),
 	}
 }
 
@@ -130,6 +134,11 @@ func (r *backupJobResource) Schema(
 			},
 			"vmid": schema.ListAttribute{
 				Description: "A list of guest VM/CT IDs to include in the backup job.",
+				Optional:    true,
+				ElementType: types.StringType,
+			},
+			"exclude": schema.ListAttribute{
+				Description: "A list of guest VM/CT IDs to exclude from the backup.",
 				Optional:    true,
 				ElementType: types.StringType,
 			},
@@ -177,14 +186,25 @@ func (r *backupJobResource) Schema(
 				ElementType: types.StringType,
 			},
 			"mailnotification": schema.StringAttribute{
-				Description: "Email notification setting (always or failure).",
-				Optional:    true,
-				Computed:    true,
+				Description: "Email notification setting (`always` or `failure`). Deprecated by Proxmox VE in favour of the notification system: " +
+					"it is only honoured when `mailto` is set (notification mode `auto`) or the job uses the `legacy-sendmail` notification mode. " +
+					"Otherwise notifications are routed through the PVE notification system and this setting is ignored.",
+				Optional: true,
+				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("always", "failure"),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"notification_mode": schema.StringAttribute{
+				Description: "Notification mode (`auto`, `legacy-sendmail` or `notification-system`). With `auto` (the Proxmox VE default), " +
+					"an email is sent if `mailto` is set, otherwise the notification system is used. `legacy-sendmail` always uses " +
+					"`mailto` and `mailnotification`; `notification-system` always uses the PVE notification system and ignores them.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf("auto", "legacy-sendmail", "notification-system"),
 				},
 			},
 			"bwlimit": schema.Int64Attribute{
@@ -230,6 +250,15 @@ func (r *backupJobResource) Schema(
 				Computed:    true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"comment": schema.StringAttribute{
+				Description: "Description of the backup job, shown in the Proxmox VE web UI.",
+				Optional:    true,
+				Validators: []validator.String{
+					// PVE accepts `comment=` but never writes an empty value to jobs.cfg, so
+					// an empty string reads back as null. 512 is the API's maxLength.
+					stringvalidator.LengthBetween(1, 512),
 				},
 			},
 			"notes_template": schema.StringAttribute{

@@ -111,6 +111,11 @@ func (d *backupJobsDataSource) Schema(
 							Computed:    true,
 							ElementType: types.StringType,
 						},
+						"exclude": schema.ListAttribute{
+							Description: "List of guest VM/CT IDs excluded from the backup.",
+							Computed:    true,
+							ElementType: types.StringType,
+						},
 						"all": schema.BoolAttribute{
 							Description: "Indicates whether all VMs and CTs are backed up.",
 							Computed:    true,
@@ -129,7 +134,16 @@ func (d *backupJobsDataSource) Schema(
 							ElementType: types.StringType,
 						},
 						"mailnotification": schema.StringAttribute{
-							Description: "When to send email notifications (always or failure).",
+							Description: "When to send email notifications (`always` or `failure`). " +
+								"Ignored by Proxmox VE unless `mailto` is set or the job uses the `legacy-sendmail` notification mode.",
+							Computed: true,
+						},
+						"notification_mode": schema.StringAttribute{
+							Description: "Notification mode of the job (`auto`, `legacy-sendmail` or `notification-system`).",
+							Computed:    true,
+						},
+						"comment": schema.StringAttribute{
+							Description: "Description of the backup job, shown in the Proxmox VE web UI.",
 							Computed:    true,
 						},
 						"notes_template": schema.StringAttribute{

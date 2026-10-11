@@ -33,7 +33,7 @@ func (r *CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
 
 	var values []string
 	if r.HostDevice != nil {
-		values = append(values, fmt.Sprintf("host=%s", *(r.HostDevice)))
+		values = append(values, fmt.Sprintf("host=%s", *r.HostDevice))
 	}
 
 	if r.Mapping != nil {

@@ -17,6 +17,7 @@ import (
 	"math/rand"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,6 +27,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -105,6 +108,61 @@ func TestAccResourceVM(t *testing.T) {
 			ExpectError: regexp.MustCompile(`invalid value for name \(must be a valid DNS name\)`),
 			PlanOnly:    true,
 		}}},
+		{"initialization interface collides with disk", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "pve"
+
+					disk {
+						interface = "scsi0"
+						size      = 8
+					}
+
+					initialization {
+						interface = "scsi0"
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`initialization.0.interface "scsi0" collides with disk.0.interface`),
+				PlanOnly:    true,
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "pve"
+
+					disk {
+						interface = "ide2"
+						size      = 8
+					}
+
+					initialization {
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`initialization.0.interface "ide2" collides with disk.0.interface`),
+				PlanOnly:    true,
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "pve"
+
+					clone {
+						vm_id = 100
+					}
+
+					disk {
+						interface = "ide2"
+						size      = 8
+					}
+
+					initialization {
+					}
+				}`),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+			},
+		}},
 		{"protection", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -787,10 +845,97 @@ func TestAccResourceVMImport(t *testing.T) {
 	}
 }
 
+// TestAccResourceVMImportEffectiveDefaults verifies that importing an externally-created VM
+// reads back the provider's effective defaults for fields whose schema default is non-empty
+// (keyboard_layout, agent.type), instead of "". A "" read-back diffs against the defaulted
+// config and, on apply, reboots / stop-starts the VM (issue #2902, continuation of #932).
+func TestAccResourceVMImportEffectiveDefaults(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+
+	// Create a bare VM directly via the API (not via the provider) so PVE has agent enabled
+	// without an explicit type and no keyboard set — the state an externally-created VM has.
+	ctx := context.Background()
+	createResult := te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{
+		VMID:  vmID,
+		Agent: &vms.CustomAgent{Enabled: types.CustomBool(true).Pointer()},
+	})
+	require.NoError(t, createResult.Err(), "failed to create bare VM %d", vmID)
+
+	t.Cleanup(func() {
+		_ = te.NodeClient().VM(vmID).DeleteVM(context.Background(), true, true).Err()
+	})
+
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_defaults" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+
+						agent {
+							enabled = true
+						}
+					}`),
+				ResourceName:  "proxmox_virtual_environment_vm.vm_defaults",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, vmID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+
+					if got := attrs["keyboard_layout"]; got != "en-us" {
+						return fmt.Errorf("keyboard_layout = %q, want %q (effective default)", got, "en-us")
+					}
+
+					if got := attrs["agent.0.type"]; got != "virtio" {
+						return fmt.Errorf("agent.0.type = %q, want %q (effective default)", got, "virtio")
+					}
+
+					return nil
+				},
+			},
+		},
+	})
+}
+
 func TestAccResourceVMInitialization(t *testing.T) {
 	te := InitEnvironment(t)
 	imageFileID := te.DownloadCloudImage()
 	te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+	// PVE only ever returns a mask for cipassword, so the proof that a password reached PVE is the value in the VM
+	// config file: plaintext after a create, a crypt hash after a config update. Verify with perl on the node.
+	assertCloudInitPassword := func(resourceName, password string) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			rs, ok := s.RootModule().Resources[resourceName]
+			if !ok {
+				return fmt.Errorf("resource %s not found in state", resourceName)
+			}
+
+			vmID := rs.Primary.Attributes["vm_id"]
+			out := te.ExecuteNodeCommands([]string{fmt.Sprintf(
+				`/usr/bin/perl -e 'my ($h) = map { /^cipassword:\s*(\S+)/ ? $1 : () } `+
+					"`cat /etc/pve/qemu-server/%s.conf`"+
+					`; print((defined $h && ($h eq %[2]q || crypt(%[2]q, $h) eq $h)) ? "match" : "mismatch: $h"), "\n"'`,
+				vmID, password,
+			)})
+
+			if strings.TrimSpace(out) != "match" {
+				return fmt.Errorf("cipassword hash of VM %s does not verify against the configured password: %s", vmID, out)
+			}
+
+			return nil
+		}
+	}
 
 	tests := []struct {
 		name string
@@ -926,9 +1071,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				}`),
 			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit4", map[string]string{
 				"initialization.0.user_account.0.username": "ubuntu",
-				// override by PVE, set when reading back from the API
-				// have to escape the asterisks because of regex match
-				"initialization.0.user_account.0.password": `\*\*\*\*\*\*\*\*\*\*`,
+				"initialization.0.user_account.0.password": "^password$",
 			}),
 		}, {
 			Config: te.RenderConfig(`
@@ -948,8 +1091,48 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				}`),
 			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit4", map[string]string{
 				"initialization.0.user_account.0.username": "ubuntu",
-				"initialization.0.user_account.0.password": `\*\*\*\*\*\*\*\*\*\*`,
+				"initialization.0.user_account.0.password": "^password$",
 			}),
+		}}},
+		{"native cloud-init: password update is applied in place", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_password" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						user_account {
+							username = "ubuntu"
+							password = "password1"
+						}
+					}
+				}`),
+			Check: assertCloudInitPassword("proxmox_virtual_environment_vm.test_vm_cloudinit_password", "password1"),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_password" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						user_account {
+							username = "ubuntu"
+							password = "password2"
+						}
+					}
+				}`),
+			ConfigPlanChecks: resource.ConfigPlanChecks{
+				PreApply: []plancheck.PlanCheck{
+					plancheck.ExpectResourceAction(
+						"proxmox_virtual_environment_vm.test_vm_cloudinit_password",
+						plancheck.ResourceActionUpdate,
+					),
+				},
+			},
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit_password", map[string]string{
+					"initialization.0.user_account.0.password": "^password2$",
+				}),
+				assertCloudInitPassword("proxmox_virtual_environment_vm.test_vm_cloudinit_password", "password2"),
+			),
 		}}},
 		{"native cloud-init: username update should not cause replacement", []resource.TestStep{{
 			Config: te.RenderConfig(`
@@ -1163,6 +1346,43 @@ func TestAccResourceVMInitialization(t *testing.T) {
 	}
 }
 
+func TestAccResourceVMInitializationMaxIPConfigs(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_ip_configs" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						dynamic "ip_config" {
+							for_each = range(32)
+							content {
+								ipv4 {
+									address = "dhcp"
+								}
+							}
+						}
+					}
+					dynamic "network_device" {
+						for_each = range(32)
+						content {
+							bridge = "vmbr0"
+						}
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_ip_configs", map[string]string{
+				"initialization.0.ip_config.#": "32",
+				"network_device.#":             "32",
+			}),
+		}},
+	})
+}
+
 func TestAccResourceVMNetwork(t *testing.T) {
 	te := InitEnvironment(t)
 	imageFileID := te.DownloadCloudImage()
@@ -1295,6 +1515,73 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_ipv4", map[string]string{
 					"ipv4_addresses.#":           "2",
 					"agent.0.wait_for_ip.0.ipv4": "true",
+				}),
+			),
+		}}},
+		{"disable agent IP wait", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_file" "cloud_config" {
+				content_type = "snippets"
+				datastore_id = "local"
+				node_name = "{{.NodeName}}"
+				overwrite = true
+				source_raw {
+					data = <<-EOF
+					#cloud-config
+					runcmd:
+					  - apt update
+					  - apt install -y qemu-guest-agent
+					  - systemctl enable qemu-guest-agent
+					  - systemctl start qemu-guest-agent
+					EOF
+					file_name = "{{.TestName}}-disable-wait-cloud-config.yaml"
+				}
+			}
+
+			resource "proxmox_virtual_environment_vm" "test_vm_no_wait" {
+				node_name = "{{.NodeName}}"
+				started   = true
+				stop_on_destroy = true
+				agent {
+					enabled = true
+					wait_for_ip {
+						disabled = true
+					}
+				}
+				cpu {
+					cores = 2
+				}
+				memory {
+					dedicated = 2048
+				}
+				disk {
+					datastore_id = "local-lvm"
+					file_id      = "{{.ImageFileID}}"
+					interface    = "virtio0"
+					iothread     = true
+					discard      = "on"
+					size         = 20
+				}
+				initialization {
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+					user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+				}
+				network_device {
+					bridge = "vmbr0"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				// wait_for_ip.disabled = true: the provider skips the agent IP lookup, so the
+				// address attributes stay empty even though the guest agent is running.
+				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_no_wait", map[string]string{
+					"agent.0.wait_for_ip.0.disabled": "true",
+					"ipv4_addresses.#":               "0",
+					"ipv6_addresses.#":               "0",
+					"network_interface_names.#":      "0",
 				}),
 			),
 		}}},
@@ -1531,6 +1818,37 @@ func TestAccResourceVMClone(t *testing.T) {
 					"network_device.0.bridge": "vmbr0",
 				}),
 			),
+		}}},
+		{"clone persists boot_order on first apply", []resource.TestStep{{
+			// Template auto-derives boot order ["scsi0", "net0"]; the clone overrides it to
+			// just ["scsi0"]. Without applying boot_order on the clone create path, state
+			// retains the inherited order, producing a non-empty plan after the first apply.
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name  = "{{.NodeName}}"
+					started    = false
+					boot_order = ["scsi0"]
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
+				"boot_order.#": "1",
+				"boot_order.0": "scsi0",
+			}),
 		}}},
 		{"clone cpu.architecture as root", []resource.TestStep{{
 			Config: te.RenderConfig(`
@@ -2055,6 +2373,67 @@ func TestAccResourceVMUpdateWhileStopped(t *testing.T) {
 
 						return nil
 					},
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
+	te := InitEnvironment(t)
+
+	hostPCIID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_VM_MIGRATE_HOSTPCI_ID")
+	if te.Node2Name == "" || hostPCIID == "" {
+		t.Skip("PROXMOX_VE_ACC_NODE_2_NAME and PROXMOX_VE_ACC_VM_MIGRATE_HOSTPCI_ID must be set")
+	}
+
+	te.AddTemplateVars(map[string]any{
+		"HostPCIID": hostPCIID,
+	})
+
+	resourceName := "proxmox_virtual_environment_vm.test_migrate_hostpci"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_migrate_hostpci" {
+					node_name       = "{{.NodeName}}"
+					started         = true
+					stop_on_destroy = true
+					migrate         = true
+					name            = "test-migrate-hostpci"
+
+					hostpci {
+						device = "hostpci0"
+						id     = "{{.HostPCIID}}"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "node_name", te.NodeName),
+					resource.TestCheckResourceAttr(resourceName, "hostpci.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "hostpci.0.device", "hostpci0"),
+					resource.TestCheckResourceAttr(resourceName, "hostpci.0.id", hostPCIID),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_migrate_hostpci" {
+					node_name       = "{{.Node2Name}}"
+					started         = true
+					stop_on_destroy = true
+					migrate         = true
+					name            = "test-migrate-hostpci"
+				}`, WithRootUser()),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "node_name", te.Node2Name),
+					resource.TestCheckResourceAttr(resourceName, "hostpci.#", "0"),
 				),
 			},
 		},

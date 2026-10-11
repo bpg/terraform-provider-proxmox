@@ -53,9 +53,12 @@ resource "proxmox_virtual_environment_storage_cifs" "example" {
 
 - `backups` (Block, Optional) Configure backup retention settings for the storage type. (see [below for nested schema](#nestedblock--backups))
 - `content` (Set of String) The content types that can be stored on this storage. Valid values: `backup` (VM backups), `images` (VM disk images), `import` (VM disk images for import), `iso` (ISO images), `rootdir` (container root directories), `snippets` (cloud-init, hook scripts, etc.), `vztmpl` (container templates).
+- `create_base_path` (Boolean) Create the base directory if it doesn't exist.
+- `create_subdirs` (Boolean) Populate the directory with the default structure.
 - `disable` (Boolean) Whether the storage is disabled.
 - `domain` (String) The SMB/CIFS domain.
 - `nodes` (Set of String) A list of nodes where this storage is available.
+- `options` (String) The mount options for the SMB/CIFS share (see 'man mount.cifs').
 - `preallocation` (String) The preallocation mode for raw and qcow2 images.
 - `snapshot_as_volume_chain` (Boolean) Enable support for creating snapshots through volume backing-chains.
 - `subdirectory` (String) A subdirectory to mount within the share.

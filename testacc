@@ -12,7 +12,7 @@ set -u
 BASE_PKG="github.com/bpg/terraform-provider-proxmox"
 DEFAULT_TIMEOUT="30m"
 KNOWN_TIERS="light medium heavy"
-KNOWN_RESOURCES="access acme apt backup container datastores file firewall ha hardwaremapping metrics misc network options pool replication sdn storage vm"
+KNOWN_RESOURCES="access acme apt backup ceph container datastores file firewall ha hardwaremapping metrics misc network options pool replication sdn storage vm"
 
 show_help() {
     cat <<'EOF'
