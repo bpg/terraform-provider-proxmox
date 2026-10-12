@@ -1383,6 +1383,72 @@ func TestAccResourceVMInitializationMaxIPConfigs(t *testing.T) {
 	})
 }
 
+// TestAccResourceVMInitializationRemoveIPConfig verifies that removing a network device together with its
+// ip_config block also removes the ipconfigN setting from the VM, so there is no perpetual plan diff.
+func TestAccResourceVMInitializationRemoveIPConfig(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_remove_ip_config" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_remove_ip_config", map[string]string{
+					"initialization.0.ip_config.#": "2",
+					"network_device.#":             "2",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_remove_ip_config" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_remove_ip_config", map[string]string{
+					"initialization.0.ip_config.#": "1",
+					"network_device.#":             "1",
+				}),
+			},
+		},
+	})
+}
+
 func TestAccResourceVMNetwork(t *testing.T) {
 	te := InitEnvironment(t)
 	imageFileID := te.DownloadCloudImage()
