@@ -2685,6 +2685,17 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 
 		updateBody.CloudInitConfig = vmGetCloudInitConfig(d)
+
+		// The cloud-init file ids are ForceNew, so a clone is the only place where a value inherited from
+		// the template can be cleared. See vmCloneCicustomDeletes for what an explicit clear removes.
+		if updateBody.CloudInitConfig != nil {
+			del = vmCloneCicustomDeletes(
+				del,
+				vmConfig.CloudInitFiles,
+				updateBody.CloudInitConfig.Files,
+				vmCloudInitFilesExplicitlyCleared(d.GetRawConfig()),
+			)
+		}
 	}
 
 	if len(hostPCI) > 0 {
