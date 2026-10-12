@@ -1548,35 +1548,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 			}
 		}
 
-		initializationUserAccount := initializationBlock[mkInitializationUserAccount].([]any)
-
-		if len(initializationUserAccount) > 0 && initializationUserAccount[0] != nil {
-			initializationUserAccountBlock := initializationUserAccount[0].(map[string]any)
-			keys := initializationUserAccountBlock[mkInitializationUserAccountKeys].([]any)
-
-			if len(keys) > 0 {
-				initializationUserAccountKeys := make(
-					containers.CustomSSHKeys,
-					len(keys),
-				)
-
-				for ki, kv := range keys {
-					initializationUserAccountKeys[ki] = kv.(string)
-				}
-
-				updateBody.SSHKeys = &initializationUserAccountKeys
-			} else {
-				updateBody.Delete = append(updateBody.Delete, "ssh-public-keys")
-			}
-
-			initializationUserAccountPassword := initializationUserAccountBlock[mkInitializationUserAccountPassword].(string)
-
-			if initializationUserAccountPassword != dvInitializationUserAccountPassword {
-				updateBody.Password = &initializationUserAccountPassword
-			} else {
-				updateBody.Delete = append(updateBody.Delete, "password")
-			}
-		}
+		// user_account (ssh-public-keys, password) is intentionally not sent here: PVE only accepts
+		// these on container create, and rejects them, and their deletion, on
+		// `PUT /nodes/{node}/lxc/{vmid}/config` which is used after cloning.
 	}
 
 	memory := d.Get(mkMemory).([]any)
