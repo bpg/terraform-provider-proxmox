@@ -648,3 +648,54 @@ func TestVMCloudInitPasswordDiffSuppress(t *testing.T) {
 		})
 	}
 }
+
+func TestVMAppendRemovedIPConfigDeletes(t *testing.T) {
+	t.Parallel()
+
+	ipConfig := func(address string) map[string]any {
+		return map[string]any{
+			mkInitializationIPConfigIPv4: []any{
+				map[string]any{mkInitializationIPConfigIPv4Address: address},
+			},
+		}
+	}
+
+	initialization := func(ipConfigs ...any) []any {
+		return []any{map[string]any{mkInitializationIPConfig: ipConfigs}}
+	}
+
+	tests := []struct {
+		name     string
+		old      []any
+		new      []any
+		del      []string
+		plan     vmPreMigrationDeletePlan
+		expected []string
+	}{
+		{"one of two removed", initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")), initialization(ipConfig("dhcp")), nil, vmPreMigrationDeletePlan{}, []string{"ipconfig1"}},
+		{"all removed, block kept", initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")), initialization(), nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0", "ipconfig1"}},
+		{"initialization block removed", initialization(ipConfig("dhcp")), []any{}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0"}},
+		{"count unchanged", initialization(ipConfig("dhcp")), initialization(ipConfig("10.0.0.2/24")), nil, vmPreMigrationDeletePlan{}, nil},
+		{"count grows", initialization(ipConfig("dhcp")), initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")), nil, vmPreMigrationDeletePlan{}, nil},
+		{"nothing before", []any{}, initialization(ipConfig("dhcp")), nil, vmPreMigrationDeletePlan{}, nil},
+		{"keeps existing deletes", initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")), initialization(ipConfig("dhcp")), []string{"usb0"}, vmPreMigrationDeletePlan{}, []string{"usb0", "ipconfig1"}},
+		{
+			"skips already planned delete",
+			initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")),
+			initialization(ipConfig("dhcp")),
+			nil,
+			vmPreMigrationDeletePlan{set: map[string]struct{}{"ipconfig1": {}}},
+			nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual := vmAppendRemovedIPConfigDeletes(tt.del, tt.old, tt.new, tt.plan)
+
+			require.Equal(t, tt.expected, actual)
+		})
+	}
+}
