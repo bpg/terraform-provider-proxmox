@@ -43,3 +43,48 @@ func TestSecurityGroupSchema(t *testing.T) {
 
 	test.AssertNestedSchemaExistence(t, s, firewall.MkRule)
 }
+
+// TestSecurityGroupNameValidation tests that security group names with uppercase letters are rejected.
+func TestSecurityGroupNameValidation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		value   any
+		wantErr string
+	}{
+		{"lowercase", "mytestfilter", ""},
+		{"lowercase with digits and dash", "web-servers-01", ""},
+		{"capital letters", "MyTestFilter", `use "mytestfilter" instead`},
+		{"single capital letter", "webServers", `use "webservers" instead`},
+		{"not a string", 42, "to be string"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, errs := validateSecurityGroupName(tt.value, mkSecurityGroupName)
+
+			if tt.wantErr == "" {
+				require.Empty(t, errs)
+
+				return
+			}
+
+			require.Len(t, errs, 1)
+			require.ErrorContains(t, errs[0], tt.wantErr)
+		})
+	}
+}
+
+// TestSecurityGroupNameSchemaRejectsUppercase tests that the name attribute is wired to the validator.
+func TestSecurityGroupNameSchemaRejectsUppercase(t *testing.T) {
+	t.Parallel()
+
+	nameSchema := SecurityGroup().Schema[mkSecurityGroupName]
+	require.NotNil(t, nameSchema.ValidateDiagFunc)
+
+	require.False(t, nameSchema.ValidateDiagFunc("mytestfilter", nil).HasError())
+	require.True(t, nameSchema.ValidateDiagFunc("MyTestFilter", nil).HasError())
+}
