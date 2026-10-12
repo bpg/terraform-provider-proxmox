@@ -557,6 +557,75 @@ func TestAccResourceContainerClone(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerCloneUserAccount verifies that cloning a container with
+// `initialization.user_account` configured does not fail. PVE only accepts `ssh-public-keys`
+// and `password` when a container is created, not on the post-clone config update.
+func TestAccResourceContainerCloneUserAccount(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDClone := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":        imageFileName,
+		"TestContainerID":      accTestContainerID,
+		"TestContainerIDClone": accTestContainerIDClone,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				template  = true
+				disk {
+					datastore_id = "{{.ContainerDatastoreID}}"
+					size         = 4
+				}
+				initialization {
+					hostname = "test"
+					user_account {
+						keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderKeyForTestingOnly000000000 test"]
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+			resource "proxmox_virtual_environment_container" "test_container_clone" {
+				depends_on = [proxmox_virtual_environment_container.test_container]
+				node_name  = "{{.NodeName}}"
+				vm_id      = {{.TestContainerIDClone}}
+
+				clone {
+					vm_id = proxmox_virtual_environment_container.test_container.id
+				}
+
+				initialization {
+					hostname = "test-clone"
+					user_account {
+						keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderKeyForTestingOnly000000000 test"]
+					}
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"proxmox_virtual_environment_container.test_container_clone", "initialization.0.hostname", "test-clone"),
+				),
+			},
+		},
+	})
+}
+
 // TestAccResourceContainerCloneFullFlag tests the `full` flag in the clone block.
 // It verifies that full=true creates a full clone, and that full=false (linked clone)
 // is correctly sent to the API (which rejects it when storage doesn't support COW).
