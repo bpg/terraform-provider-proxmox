@@ -1383,6 +1383,58 @@ func TestAccResourceVMInitializationMaxIPConfigs(t *testing.T) {
 	})
 }
 
+// TestAccResourceVMCloneClearUserDataFileID verifies that a clone can clear the template's
+// user_data_file_id by setting it to an empty string.
+func TestAccResourceVMCloneClearUserDataFileID(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "user_config" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					overwrite    = true
+					source_raw {
+						data = <<-EOF
+						#cloud-config
+						hostname: clear-user-data
+						EOF
+						file_name = "{{.TestName}}-clear-user-data.yaml"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "test_vm_template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+
+					initialization {
+						datastore_id      = "local-lvm"
+						user_data_file_id = proxmox_virtual_environment_file.user_config.id
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "test_vm_clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					clone {
+						vm_id = proxmox_virtual_environment_vm.test_vm_template.id
+					}
+
+					initialization {
+						datastore_id      = "local-lvm"
+						user_data_file_id = ""
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_clone", map[string]string{
+				"initialization.0.user_data_file_id": "",
+			}),
+		}},
+	})
+}
+
 func TestAccResourceVMNetwork(t *testing.T) {
 	te := InitEnvironment(t)
 	imageFileID := te.DownloadCloudImage()
