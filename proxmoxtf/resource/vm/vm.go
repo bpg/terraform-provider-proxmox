@@ -6147,6 +6147,48 @@ func vmAppendMissingDeviceDeletes(
 	return del
 }
 
+// vmCloudInitIPConfigCount returns the number of ip_config blocks in the given initialization value.
+func vmCloudInitIPConfigCount(initialization any) int {
+	blocks, ok := initialization.([]any)
+	if !ok || len(blocks) == 0 || blocks[0] == nil {
+		return 0
+	}
+
+	block, ok := blocks[0].(map[string]any)
+	if !ok {
+		return 0
+	}
+
+	ipConfigs, _ := block[mkInitializationIPConfig].([]any)
+
+	return len(ipConfigs)
+}
+
+// vmAppendRemovedIPConfigDeletes appends "ipconfigN" deletes for the cloud-init IP configs that are
+// present in the old initialization value but no longer in the new one. The cloud-init encoder only
+// emits the configured entries, so without this the removed ones stay on the VM.
+func vmAppendRemovedIPConfigDeletes(
+	del []string,
+	oldInitialization any,
+	newInitialization any,
+	preMigrationDeletePlan vmPreMigrationDeletePlan,
+) []string {
+	oldCount := vmCloudInitIPConfigCount(oldInitialization)
+	newCount := vmCloudInitIPConfigCount(newInitialization)
+
+	if oldCount <= newCount {
+		return del
+	}
+
+	return vmAppendMissingDeviceDeletes(
+		del,
+		"ipconfig",
+		oldCount,
+		vmSequentialDeviceSlotSet("ipconfig", newCount),
+		preMigrationDeletePlan,
+	)
+}
+
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	// reset the default timeout for the update operation
 	ctx = context.WithoutCancel(ctx)
@@ -6621,6 +6663,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		cloudInitConfig := vmGetCloudInitConfig(d)
 
 		updateBody.CloudInitConfig = cloudInitConfig
+
+		oldInitialization, newInitialization := d.GetChange(mkInitialization)
+		del = vmAppendRemovedIPConfigDeletes(del, oldInitialization, newInitialization, preMigrationDeletePlan)
 
 		initialization := d.Get(mkInitialization).([]any)
 
