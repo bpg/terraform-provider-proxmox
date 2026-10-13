@@ -2,50 +2,40 @@ name: Manage Stale Items
 
 on:
   schedule:
-    - cron: 00 00 * * *
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
 
 jobs:
   stale:
-    runs-on: ubuntu-26.04
-    permissions:
-      issues: write
-      pull-requests: write
+    runs-on: ubuntu-latest
     steps:
-      - name: Generate Short Lived OAuth App Token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        id: app-token
+      - name: Mark and close stale issues and pull requests
+        uses: actions/stale@v10
         with:
-          app-id: "${{ secrets.BOT_APP_ID }}"
-          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
-          owner: "${{ github.repository_owner }}"
-          repositories: "${{ github.event.repository.name }}"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Stale Issues and Pull Requests
-        uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11
-        with:
-          repo-token: "${{ steps.app-token.outputs.token }}"
-          days-before-stale: 180
-          days-before-close: 30
-          exempt-issue-labels: "lifecycle:acknowledged, lifecycle:needs-repro, status:in-progress, status:blocked, priority:P0, priority:P1"
-          exempt-pr-labels: "status:in-progress, status:blocked"
+          days-before-stale: 60
+          days-before-close: 7
+
+          stale-issue-label: stale
+          stale-pr-label: stale
+
+          stale-issue-message: >
+            This issue has been marked stale due to inactivity. It will be closed
+            in 7 days unless there is a new comment or the stale label is removed.
+          stale-pr-message: >
+            This pull request has been marked stale due to inactivity. It will be
+            closed in 7 days unless there is a new comment or the stale label is removed.
+
+          close-issue-message: >
+            Closing this issue because it remained stale without activity.
+          close-pr-message: >
+            Closing this pull request because it remained stale without activity.
+
           remove-stale-when-updated: true
           delete-branch: false
-          stale-issue-label: stale
-          stale-issue-message: >
-            Marking this issue as stale due to inactivity in the past 180 days.
-            This helps us focus on the active issues. If this issue is
-            reproducible with the [latest](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
-            version of the provider, please comment. If this issue receives no
-            comments in the next 30 days it will automatically be closed.
-            If this issue was automatically closed and you feel this issue
-            should be reopened, we encourage creating a new issue linking back
-            to this one for added context. Thank you!
-          stale-pr-label: stale
-          stale-pr-message: >
-            Marking this pull request as stale due to inactivity in the past
-            180 days. This helps us focus on the active pull requests. If this
-            pull request receives no comments in the next 30 days it will 
-            automatically be closed.
-            If this pull request was automatically closed and you feel this
-            pull request should be reopened, we encourage creating a new pull
-            request linking back to this one for added context. Thank you!
