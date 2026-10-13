@@ -28,6 +28,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/acme"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/backup"
 	cephstatus "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ceph/status"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/cpumodel"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
@@ -639,6 +640,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		cephpool.NewCephPoolResource,
 		clonedvm.NewResource,
 		clonedvm.NewShortResource,
+		cpumodel.NewResource,
 		diskzfs.NewZFSPoolResource,
 		ha.NewHAGroupResource,
 		ha.NewHAGroupShortResource, // proxmox_hagroup
