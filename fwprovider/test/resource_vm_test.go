@@ -2440,6 +2440,56 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 	})
 }
 
+// TestAccResourceVMDestroyAfterNodeDrift checks that delete finds a VM moved since the last persisted refresh:
+// plan-only steps don't save state and the post-test destroy runs with -refresh=false.
+func TestAccResourceVMDestroyAfterNodeDrift(t *testing.T) {
+	te := InitEnvironment(t)
+
+	if te.Node2Name == "" {
+		t.Skip("PROXMOX_VE_ACC_NODE_2_NAME must be set")
+	}
+
+	vmID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID": vmID,
+	})
+
+	config := te.RenderConfig(`
+	resource "proxmox_virtual_environment_vm" "test_destroy_drift" {
+		node_name = "{{.NodeName}}"
+		vm_id     = {{.TestVMID}}
+		name      = "test-destroy-drift"
+		started   = false
+
+		lifecycle {
+			ignore_changes = [node_name]
+		}
+	}`)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				// Plan-only steps don't persist state, so the implicit destroy still sees the original node.
+				PreConfig: func() {
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+					defer cancel()
+
+					err := te.NodeClient().VM(vmID).MigrateVM(ctx, &vms.MigrateRequestBody{TargetNode: te.Node2Name}).Err()
+					require.NoError(t, err, "out-of-band migration to %s must succeed", te.Node2Name)
+				},
+				Config:             config,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
+
 func stopVM(te *Environment, vmID string) error {
 	id, err := strconv.Atoi(vmID)
 	if err != nil {

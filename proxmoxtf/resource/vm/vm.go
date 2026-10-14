@@ -7474,6 +7474,17 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		return diag.FromErr(err)
 	}
 
+	// Delete can run without a refresh — after a failed apply, or with -refresh=false — so the node in
+	// state may be stale. Resolve it as the read does, or the delete hits a node the VM has left.
+	vmNodeName, nodeErr := client.Cluster().GetVMNodeName(ctx, vmID)
+	if nodeErr != nil && !errors.Is(nodeErr, cluster.ErrVMDoesNotExist) {
+		return diag.FromErr(nodeErr)
+	}
+
+	if vmNodeName != nil {
+		nodeName = *vmNodeName
+	}
+
 	vmAPI := client.Node(nodeName).VM(vmID)
 
 	// Stop or shut down the virtual machine before deleting it.
