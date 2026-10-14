@@ -6164,29 +6164,26 @@ func vmCloudInitIPConfigCount(initialization any) int {
 	return len(ipConfigs)
 }
 
-// vmAppendRemovedIPConfigDeletes appends "ipconfigN" deletes for the cloud-init IP configs that are
-// present in the old initialization value but no longer in the new one. The cloud-init encoder only
-// emits the configured entries, so without this the removed ones stay on the VM.
+// vmAppendRemovedIPConfigDeletes appends "ipconfigN" deletes for every cloud-init IP config index of the old
+// initialization value that the new configuration no longer emits. The cloud-init encoder only emits entries that
+// have content, so without this an entry that was removed or emptied stays on the VM.
 func vmAppendRemovedIPConfigDeletes(
 	del []string,
 	oldInitialization any,
-	newInitialization any,
+	newIPConfigs []vms.CustomCloudInitIPConfig,
 	preMigrationDeletePlan vmPreMigrationDeletePlan,
 ) []string {
 	oldCount := vmCloudInitIPConfigCount(oldInitialization)
-	newCount := vmCloudInitIPConfigCount(newInitialization)
 
-	if oldCount <= newCount {
-		return del
+	keep := map[string]struct{}{}
+
+	for i, c := range newIPConfigs {
+		if c.IPv4 != nil || c.IPv6 != nil || c.GatewayIPv4 != nil || c.GatewayIPv6 != nil {
+			keep[fmt.Sprintf("ipconfig%d", i)] = struct{}{}
+		}
 	}
 
-	return vmAppendMissingDeviceDeletes(
-		del,
-		"ipconfig",
-		oldCount,
-		vmSequentialDeviceSlotSet("ipconfig", newCount),
-		preMigrationDeletePlan,
-	)
+	return vmAppendMissingDeviceDeletes(del, "ipconfig", oldCount, keep, preMigrationDeletePlan)
 }
 
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -6664,8 +6661,14 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 		updateBody.CloudInitConfig = cloudInitConfig
 
-		oldInitialization, newInitialization := d.GetChange(mkInitialization)
-		del = vmAppendRemovedIPConfigDeletes(del, oldInitialization, newInitialization, preMigrationDeletePlan)
+		oldInitialization, _ := d.GetChange(mkInitialization)
+
+		var newIPConfigs []vms.CustomCloudInitIPConfig
+		if cloudInitConfig != nil {
+			newIPConfigs = cloudInitConfig.IPConfig
+		}
+
+		del = vmAppendRemovedIPConfigDeletes(del, oldInitialization, newIPConfigs, preMigrationDeletePlan)
 
 		initialization := d.Get(mkInitialization).([]any)
 
