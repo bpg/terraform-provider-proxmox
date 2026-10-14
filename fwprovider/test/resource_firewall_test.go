@@ -1604,6 +1604,26 @@ func TestAccResourceFirewallOptionsImport(t *testing.T) {
 	}
 }
 
+// TestAccResourceFirewallSecurityGroupUppercaseName verifies that a security group name with uppercase
+// letters is rejected at plan time. PVE lowercases the name, which used to break the follow-up rule calls.
+func TestAccResourceFirewallSecurityGroupUppercaseName(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "test" {
+					name = "MyTestFilter"
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`must be lowercase`),
+			},
+		},
+	})
+}
+
 // TestAccResourceFirewallRulesWithSecurityGroups tests inserting, prepending,
 // and removing rules around security group references to verify bug #2575 is fixed.
 // the bug caused security group references to be corrupted when rules were inserted
