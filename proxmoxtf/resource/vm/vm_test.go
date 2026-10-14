@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
@@ -664,25 +665,40 @@ func TestVMAppendRemovedIPConfigDeletes(t *testing.T) {
 		return []any{map[string]any{mkInitializationIPConfig: ipConfigs}}
 	}
 
+	// emitted mimics the entries produced by vmGetCloudInitConfig: empty entries have no content.
+	addr := func(address string) vms.CustomCloudInitIPConfig {
+		return vms.CustomCloudInitIPConfig{IPv4: &address}
+	}
+	empty := vms.CustomCloudInitIPConfig{}
+	gateway := func(gw string) vms.CustomCloudInitIPConfig {
+		return vms.CustomCloudInitIPConfig{GatewayIPv6: &gw}
+	}
+
+	two := initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24"))
+
 	tests := []struct {
 		name     string
 		old      []any
-		new      []any
+		new      []vms.CustomCloudInitIPConfig
 		del      []string
 		plan     vmPreMigrationDeletePlan
 		expected []string
 	}{
-		{"one of two removed", initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")), initialization(ipConfig("dhcp")), nil, vmPreMigrationDeletePlan{}, []string{"ipconfig1"}},
-		{"all removed, block kept", initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")), initialization(), nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0", "ipconfig1"}},
-		{"initialization block removed", initialization(ipConfig("dhcp")), []any{}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0"}},
-		{"count unchanged", initialization(ipConfig("dhcp")), initialization(ipConfig("10.0.0.2/24")), nil, vmPreMigrationDeletePlan{}, nil},
-		{"count grows", initialization(ipConfig("dhcp")), initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")), nil, vmPreMigrationDeletePlan{}, nil},
-		{"nothing before", []any{}, initialization(ipConfig("dhcp")), nil, vmPreMigrationDeletePlan{}, nil},
-		{"keeps existing deletes", initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")), initialization(ipConfig("dhcp")), []string{"usb0"}, vmPreMigrationDeletePlan{}, []string{"usb0", "ipconfig1"}},
+		{"removed from the end", two, []vms.CustomCloudInitIPConfig{addr("dhcp")}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig1"}},
+		{"removed from the middle", initialization(ipConfig("a"), ipConfig("b"), ipConfig("c")), []vms.CustomCloudInitIPConfig{addr("a"), addr("c")}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig2"}},
+		{"first emptied, list not shortened", two, []vms.CustomCloudInitIPConfig{empty, addr("10.0.0.2/24")}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0"}},
+		{"last emptied, list not shortened", two, []vms.CustomCloudInitIPConfig{addr("dhcp"), empty}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig1"}},
+		{"gateway only entry is kept", two, []vms.CustomCloudInitIPConfig{gateway("fe80::1"), addr("dhcp")}, nil, vmPreMigrationDeletePlan{}, nil},
+		{"all removed, block kept", two, nil, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0", "ipconfig1"}},
+		{"initialization block removed", initialization(ipConfig("dhcp")), nil, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0"}},
+		{"unchanged", initialization(ipConfig("dhcp")), []vms.CustomCloudInitIPConfig{addr("10.0.0.2/24")}, nil, vmPreMigrationDeletePlan{}, nil},
+		{"list grows", initialization(ipConfig("dhcp")), []vms.CustomCloudInitIPConfig{addr("dhcp"), addr("10.0.0.2/24")}, nil, vmPreMigrationDeletePlan{}, nil},
+		{"nothing before", []any{}, []vms.CustomCloudInitIPConfig{addr("dhcp")}, nil, vmPreMigrationDeletePlan{}, nil},
+		{"keeps existing deletes", two, []vms.CustomCloudInitIPConfig{addr("dhcp")}, []string{"usb0"}, vmPreMigrationDeletePlan{}, []string{"usb0", "ipconfig1"}},
 		{
 			"skips already planned delete",
-			initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24")),
-			initialization(ipConfig("dhcp")),
+			two,
+			[]vms.CustomCloudInitIPConfig{addr("dhcp")},
 			nil,
 			vmPreMigrationDeletePlan{set: map[string]struct{}{"ipconfig1": {}}},
 			nil,
