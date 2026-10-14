@@ -1383,8 +1383,10 @@ func TestAccResourceVMInitializationMaxIPConfigs(t *testing.T) {
 	})
 }
 
-// TestAccResourceVMInitializationRemoveIPConfig verifies that removing a network device together with its
-// ip_config block also removes the ipconfigN setting from the VM, so there is no perpetual plan diff.
+// TestAccResourceVMInitializationRemoveIPConfig verifies that removed or emptied ip_config entries are also
+// removed from the VM, so there is no perpetual plan diff. The test framework fails a step if the plan after
+// apply is not empty. It covers removal from the middle, emptying an entry without shortening the list, and
+// removal from the end (together with its network device).
 func TestAccResourceVMInitializationRemoveIPConfig(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -1401,12 +1403,52 @@ func TestAccResourceVMInitializationRemoveIPConfig(t *testing.T) {
 						datastore_id = "local-lvm"
 						ip_config {
 							ipv4 {
-								address = "dhcp"
+								address = "10.0.0.10/24"
 							}
 						}
 						ip_config {
 							ipv4 {
-								address = "dhcp"
+								address = "10.0.0.11/24"
+							}
+						}
+						ip_config {
+							ipv4 {
+								address = "10.0.0.12/24"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_remove_ip_config", map[string]string{
+					"initialization.0.ip_config.#": "3",
+					"network_device.#":             "3",
+				}),
+			},
+			// remove the middle entry
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_remove_ip_config" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {
+							ipv4 {
+								address = "10.0.0.10/24"
+							}
+						}
+						ip_config {
+							ipv4 {
+								address = "10.0.0.12/24"
 							}
 						}
 					}
@@ -1422,6 +1464,35 @@ func TestAccResourceVMInitializationRemoveIPConfig(t *testing.T) {
 					"network_device.#":             "2",
 				}),
 			},
+			// empty the first entry without shortening the list
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_remove_ip_config" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {}
+						ip_config {
+							ipv4 {
+								address = "10.0.0.12/24"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_remove_ip_config", map[string]string{
+					"initialization.0.ip_config.#": "2",
+					"network_device.#":             "2",
+				}),
+			},
+			// shorten the list again
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm_remove_ip_config" {
@@ -1432,7 +1503,7 @@ func TestAccResourceVMInitializationRemoveIPConfig(t *testing.T) {
 						datastore_id = "local-lvm"
 						ip_config {
 							ipv4 {
-								address = "dhcp"
+								address = "10.0.0.12/24"
 							}
 						}
 					}
