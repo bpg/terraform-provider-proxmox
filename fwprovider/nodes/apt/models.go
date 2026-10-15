@@ -242,27 +242,11 @@ func (srp *modelStandardRepo) importFromAPI(_ context.Context, data *api.GetResp
 		}
 	}
 
-	// Set the index and remember the file that defines the repository…
-	definingFilePath := srp.setIndex(data, proxmoxVersion)
-	// … and then the file path when the index is valid…
-	if !srp.Index.IsNull() {
-		// …by iterating through all repository files…
-		for _, repoFile := range data.Files {
-			// …and get the repository when the file path matches a well-known path.
-			if srp.Handle.IsSupportedFilePath(repoFile.Path, proxmoxVersion) {
-				srp.FilePath = types.StringValue(repoFile.Path)
-			}
-		}
-
-		// Fall back to the file that actually contains the repository if no well-known path matched, e.g. when Proxmox VE
-		// added the repository to a different source list file.
-		if srp.FilePath.IsUnknown() && definingFilePath != "" {
-			srp.FilePath = types.StringValue(definingFilePath)
-		}
-	}
-
-	// The file path is computed, so it must never be left unknown after the API data has been imported.
-	if srp.FilePath.IsUnknown() {
+	// Set the index and use the file that holds the repository as the file path, so both always refer to the same file…
+	if definingFilePath := srp.setIndex(data, proxmoxVersion); definingFilePath != "" {
+		srp.FilePath = types.StringValue(definingFilePath)
+	} else if srp.FilePath.IsUnknown() {
+		// …and never leave the computed file path unknown when the repository was not found.
 		srp.FilePath = types.StringNull()
 	}
 }
