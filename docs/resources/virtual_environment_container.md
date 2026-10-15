@@ -243,7 +243,9 @@ The `mount_point.volume` attribute accepts three forms:
               to `dhcp` for DHCPv6, or `auto` for SLAAC.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
                 when `dhcp` or `auto` are used as the address).
-    - `user_account` - (Optional) The user account configuration.
+    - `user_account` - (Optional) The user account configuration. It only applies when the
+        container is created, not when it is cloned: a cloned container keeps the SSH keys and
+        root password of its source container, and a warning is shown if this block is set.
         - `keys` - (Optional) The SSH keys for the root account.
         - `password` - (Optional) The password for the root account.
 - `memory` - (Optional) The memory configuration.
