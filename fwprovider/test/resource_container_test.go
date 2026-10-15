@@ -590,7 +590,7 @@ func TestAccResourceContainerCloneUserAccount(t *testing.T) {
 				initialization {
 					hostname = "test"
 					user_account {
-						keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderKeyForTestingOnly000000000 test"]
+						keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGqBd4Zt0epWwHwL7z6UU8FZOAOLJb8ycaHWRkEDkhrN testkey"]
 					}
 				}
 				network_interface {
@@ -613,7 +613,7 @@ func TestAccResourceContainerCloneUserAccount(t *testing.T) {
 				initialization {
 					hostname = "test-clone"
 					user_account {
-						keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderKeyForTestingOnly000000000 test"]
+						keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGqBd4Zt0epWwHwL7z6UU8FZOAOLJb8ycaHWRkEDkhrN testkey"]
 					}
 				}
 			}`, WithRootUser()),
