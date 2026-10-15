@@ -45,7 +45,7 @@ func TestStandardRepoImportFromAPIFilePath(t *testing.T) {
 			wantIndex:    types.Int64Value(0),
 		},
 		{
-			name:    "PVE 8 with a repository in proxmox.sources falls back to the defining file",
+			name:    "PVE 8 with a repository in proxmox.sources uses the defining file",
 			version: pve8,
 			handle:  "no-subscription",
 			data: `{"files":[{"path":"/etc/apt/sources.list.d/proxmox.sources","file-type":"sources",
@@ -55,7 +55,21 @@ func TestStandardRepoImportFromAPIFilePath(t *testing.T) {
 			wantIndex:    types.Int64Value(0),
 		},
 		{
-			name:    "unexpected path falls back to the defining file",
+			name:    "repository in a custom file while proxmox.sources also exists",
+			version: pve9,
+			handle:  "no-subscription",
+			data: `{"files":[
+				{"path":"/etc/apt/sources.list.d/proxmox.sources","file-type":"sources",
+				"repositories":[{"Components":["pve-enterprise"],"Types":["deb"],"Suites":["trixie"],"URIs":["http://x"]}]},
+				{"path":"/etc/apt/sources.list.d/custom.sources","file-type":"sources",
+				"repositories":[{"Components":["main"],"Types":["deb"],"Suites":["trixie"],"URIs":["http://y"]},
+				{"Components":["pve-no-subscription"],"Types":["deb"],"Suites":["trixie"],"URIs":["http://x"]}]}],
+				"standard-repos":[{"handle":"no-subscription","Name":"No-Subscription","status":1}]}`,
+			wantFilePath: types.StringValue("/etc/apt/sources.list.d/custom.sources"),
+			wantIndex:    types.Int64Value(1),
+		},
+		{
+			name:    "unexpected path uses the defining file",
 			version: pve9,
 			handle:  "no-subscription",
 			data: `{"files":[{"path":"/etc/apt/sources.list.d/pve-no-subscription.sources","file-type":"sources",
