@@ -439,6 +439,9 @@ output "ubuntu_vm_public_key" {
         all vendor data passed to the VM via cloud-init.
     - `meta_data_file_id` - (Optional) The identifier for a file containing
         all meta data passed to the VM via cloud-init.
+    - When cloning, setting any of the four `*_data_file_id` attributes above to `""` clears
+        the custom cloud-init files inherited from the template, as long as none of them is set
+        to a value.
     - `upgrade` - (Optional) Whether to do an automatic package upgrade after
         the first boot (defaults to `true`).
         Setting this is only allowed for `root@pam` authenticated user.
