@@ -1391,6 +1391,18 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 
 	d.SetId(strconv.Itoa(vmID))
 
+	if len(initialization) > 0 && initialization[0] != nil {
+		initializationBlock := initialization[0].(map[string]any)
+
+		if userAccount, ok := initializationBlock[mkInitializationUserAccount].([]any); ok && len(userAccount) > 0 {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  "user_account is ignored for cloned containers",
+				Detail:   "SSH keys and the root password are inherited from the source container.",
+			})
+		}
+	}
+
 	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
