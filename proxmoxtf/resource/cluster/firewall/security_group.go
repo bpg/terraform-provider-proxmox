@@ -9,10 +9,12 @@ package firewall
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	proxmoxapi "github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
@@ -27,14 +29,33 @@ const (
 	mkSecurityGroupComment = "comment"
 )
 
+// validateSecurityGroupName rejects names with uppercase letters. PVE lowercases security group names on
+// creation, so a mixed-case name would make the follow-up rule calls fail with a "no such security group" error.
+func validateSecurityGroupName(i any, k string) ([]string, []error) {
+	v, ok := i.(string)
+	if !ok {
+		return nil, []error{fmt.Errorf("expected type of %q to be string", k)}
+	}
+
+	if v != strings.ToLower(v) {
+		return nil, []error{fmt.Errorf(
+			"%q must be lowercase, got %q: PVE lowercases security group names, use %q instead",
+			k, v, strings.ToLower(v),
+		)}
+	}
+
+	return nil, nil
+}
+
 // SecurityGroup returns a resource to manage security groups.
 func SecurityGroup() *schema.Resource {
 	s := map[string]*schema.Schema{
 		mkSecurityGroupName: {
-			Type:        schema.TypeString,
-			Description: "Security group name",
-			Required:    true,
-			ForceNew:    false,
+			Type:             schema.TypeString,
+			Description:      "Security group name. Must be lowercase, because PVE lowercases security group names.",
+			Required:         true,
+			ForceNew:         false,
+			ValidateDiagFunc: validation.ToDiagFunc(validateSecurityGroupName),
 		},
 		mkSecurityGroupComment: {
 			Type:        schema.TypeString,

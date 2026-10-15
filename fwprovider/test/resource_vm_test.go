@@ -1383,6 +1383,143 @@ func TestAccResourceVMInitializationMaxIPConfigs(t *testing.T) {
 	})
 }
 
+// TestAccResourceVMInitializationRemoveIPConfig verifies that removed or emptied ip_config entries are also
+// removed from the VM, so there is no perpetual plan diff. The test framework fails a step if the plan after
+// apply is not empty. It covers removal from the middle, emptying an entry without shortening the list, and
+// removal from the end (together with its network device).
+func TestAccResourceVMInitializationRemoveIPConfig(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_remove_ip_config" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {
+							ipv4 {
+								address = "10.0.0.10/24"
+							}
+						}
+						ip_config {
+							ipv4 {
+								address = "10.0.0.11/24"
+							}
+						}
+						ip_config {
+							ipv4 {
+								address = "10.0.0.12/24"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_remove_ip_config", map[string]string{
+					"initialization.0.ip_config.#": "3",
+					"network_device.#":             "3",
+				}),
+			},
+			// remove the middle entry
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_remove_ip_config" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {
+							ipv4 {
+								address = "10.0.0.10/24"
+							}
+						}
+						ip_config {
+							ipv4 {
+								address = "10.0.0.12/24"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_remove_ip_config", map[string]string{
+					"initialization.0.ip_config.#": "2",
+					"network_device.#":             "2",
+				}),
+			},
+			// empty the first entry without shortening the list
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_remove_ip_config" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {}
+						ip_config {
+							ipv4 {
+								address = "10.0.0.12/24"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_remove_ip_config", map[string]string{
+					"initialization.0.ip_config.#": "2",
+					"network_device.#":             "2",
+				}),
+			},
+			// shorten the list again
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_remove_ip_config" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					initialization {
+						datastore_id = "local-lvm"
+						ip_config {
+							ipv4 {
+								address = "10.0.0.12/24"
+							}
+						}
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_remove_ip_config", map[string]string{
+					"initialization.0.ip_config.#": "1",
+					"network_device.#":             "1",
+				}),
+			},
+		},
+	})
+}
+
 // TestAccResourceVMCloneClearUserDataFileID verifies that a clone can clear the template's
 // user_data_file_id by setting it to an empty string.
 func TestAccResourceVMCloneClearUserDataFileID(t *testing.T) {
@@ -2487,6 +2624,56 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "node_name", te.Node2Name),
 					resource.TestCheckResourceAttr(resourceName, "hostpci.#", "0"),
 				),
+			},
+		},
+	})
+}
+
+// TestAccResourceVMDestroyAfterNodeDrift checks that delete finds a VM moved since the last persisted refresh:
+// plan-only steps don't save state and the post-test destroy runs with -refresh=false.
+func TestAccResourceVMDestroyAfterNodeDrift(t *testing.T) {
+	te := InitEnvironment(t)
+
+	if te.Node2Name == "" {
+		t.Skip("PROXMOX_VE_ACC_NODE_2_NAME must be set")
+	}
+
+	vmID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID": vmID,
+	})
+
+	config := te.RenderConfig(`
+	resource "proxmox_virtual_environment_vm" "test_destroy_drift" {
+		node_name = "{{.NodeName}}"
+		vm_id     = {{.TestVMID}}
+		name      = "test-destroy-drift"
+		started   = false
+
+		lifecycle {
+			ignore_changes = [node_name]
+		}
+	}`)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				// Plan-only steps don't persist state, so the implicit destroy still sees the original node.
+				PreConfig: func() {
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+					defer cancel()
+
+					err := te.NodeClient().VM(vmID).MigrateVM(ctx, &vms.MigrateRequestBody{TargetNode: te.Node2Name}).Err()
+					require.NoError(t, err, "out-of-band migration to %s must succeed", te.Node2Name)
+				},
+				Config:             config,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
 			},
 		},
 	})

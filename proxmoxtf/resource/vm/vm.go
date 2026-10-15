@@ -6158,6 +6158,45 @@ func vmAppendMissingDeviceDeletes(
 	return del
 }
 
+// vmCloudInitIPConfigCount returns the number of ip_config blocks in the given initialization value.
+func vmCloudInitIPConfigCount(initialization any) int {
+	blocks, ok := initialization.([]any)
+	if !ok || len(blocks) == 0 || blocks[0] == nil {
+		return 0
+	}
+
+	block, ok := blocks[0].(map[string]any)
+	if !ok {
+		return 0
+	}
+
+	ipConfigs, _ := block[mkInitializationIPConfig].([]any)
+
+	return len(ipConfigs)
+}
+
+// vmAppendRemovedIPConfigDeletes appends "ipconfigN" deletes for every cloud-init IP config index of the old
+// initialization value that the new configuration no longer emits. The cloud-init encoder only emits entries that
+// have content, so without this an entry that was removed or emptied stays on the VM.
+func vmAppendRemovedIPConfigDeletes(
+	del []string,
+	oldInitialization any,
+	newIPConfigs []vms.CustomCloudInitIPConfig,
+	preMigrationDeletePlan vmPreMigrationDeletePlan,
+) []string {
+	oldCount := vmCloudInitIPConfigCount(oldInitialization)
+
+	keep := map[string]struct{}{}
+
+	for i, c := range newIPConfigs {
+		if c.IPv4 != nil || c.IPv6 != nil || c.GatewayIPv4 != nil || c.GatewayIPv6 != nil {
+			keep[fmt.Sprintf("ipconfig%d", i)] = struct{}{}
+		}
+	}
+
+	return vmAppendMissingDeviceDeletes(del, "ipconfig", oldCount, keep, preMigrationDeletePlan)
+}
+
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	// reset the default timeout for the update operation
 	ctx = context.WithoutCancel(ctx)
@@ -6632,6 +6671,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		cloudInitConfig := vmGetCloudInitConfig(d)
 
 		updateBody.CloudInitConfig = cloudInitConfig
+
+		oldInitialization, _ := d.GetChange(mkInitialization)
+
+		var newIPConfigs []vms.CustomCloudInitIPConfig
+		if cloudInitConfig != nil {
+			newIPConfigs = cloudInitConfig.IPConfig
+		}
+
+		del = vmAppendRemovedIPConfigDeletes(del, oldInitialization, newIPConfigs, preMigrationDeletePlan)
 
 		initialization := d.Get(mkInitialization).([]any)
 
@@ -7483,6 +7531,17 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	vmID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// Delete can run without a refresh — after a failed apply, or with -refresh=false — so the node in
+	// state may be stale. Resolve it as the read does, or the delete hits a node the VM has left.
+	vmNodeName, nodeErr := client.Cluster().GetVMNodeName(ctx, vmID)
+	if nodeErr != nil && !errors.Is(nodeErr, cluster.ErrVMDoesNotExist) {
+		return diag.FromErr(nodeErr)
+	}
+
+	if vmNodeName != nil {
+		nodeName = *vmNodeName
 	}
 
 	vmAPI := client.Node(nodeName).VM(vmID)

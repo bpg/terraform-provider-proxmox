@@ -5,9 +5,9 @@ go 1.26.0
 tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
 require (
-	github.com/Microsoft/go-winio v0.6.3
+	github.com/Microsoft/go-winio v0.6.4
 	github.com/avast/retry-go/v5 v5.0.0
-	github.com/brianvoe/gofakeit/v7 v7.17.1
+	github.com/brianvoe/gofakeit/v7 v7.18.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-querystring v1.2.0
 	github.com/google/uuid v1.6.0
