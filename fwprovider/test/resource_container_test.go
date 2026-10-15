@@ -2660,6 +2660,73 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerCPULimitWithoutCores covers a container whose configuration sets cpulimit but not cores.
+// PVE then fills cpus in the status response from cpulimit and returns it as a string, which the read must accept.
+// The provider always sends cores, so the test removes it through the API.
+func TestAccResourceContainerCPULimitWithoutCores(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := te.RenderConfig(`
+	resource "proxmox_virtual_environment_container" "test_container" {
+		node_name    = "{{.NodeName}}"
+		vm_id        = {{.TestContainerID}}
+		started      = false
+		unprivileged = true
+		cpu {
+			limit = 2
+		}
+		disk {
+			datastore_id = "{{.ContainerDatastoreID}}"
+			size         = 4
+		}
+		initialization {
+			hostname = "test-cpulimit-without-cores"
+		}
+		operating_system {
+			template_file_id = "local:vztmpl/{{.ImageFileName}}"
+			type             = "alpine"
+		}
+	}`)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"cpu.0.cores": "1",
+					"cpu.0.limit": "2",
+				}),
+			},
+			{
+				PreConfig: func() {
+					ct := te.NodeClient().Container(accTestContainerID)
+
+					err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{Delete: []string{"cores"}})
+					require.NoError(t, err, "failed to remove cores")
+
+					status, err := ct.GetContainerStatus(t.Context())
+					require.NoError(t, err, "failed to get container status")
+					require.NotNil(t, status.CPUCount)
+					require.InDelta(t, 2, float64(*status.CPUCount), 1e-9)
+				},
+				// The refresh must read the container. The read reports a missing cores as 1, so the plan is empty.
+				Config:   config,
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // TestAccResourceContainerHostManaged covers create-with-true and the true→false toggle on update.
 // The toggle step is the regression check: it only converges if the provider sends `host-managed=0`.
 // Requires Proxmox VE 9.0+.
