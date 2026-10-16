@@ -133,6 +133,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/cluster_options.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_cluster_options.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/custom_cpu_model.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_download_file.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/download_file.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/hagroup.md ./docs/resources/
