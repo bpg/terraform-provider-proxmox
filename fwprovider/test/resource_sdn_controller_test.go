@@ -373,3 +373,220 @@ func TestAccResourceSDNControllerEVPN(t *testing.T) {
 		})
 	}
 }
+
+func TestAccResourceSDNControllerBGP(t *testing.T) {
+	// Cannot run in parallel due to SDN applier functionality affecting global state
+
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"Create and read controller", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":      "ctrlB",
+					"node":    te.NodeName,
+					"peers.#": "1",
+					"peers.0": "10.0.0.1",
+					"asn":     "65000",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_bgp.controller_bgp", []string{
+					"ebgp",
+					"ebgp_multihop",
+					"loopback",
+					"bgp_multipath_as_path_relax",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":      "ctrlB",
+					"node":    te.NodeName,
+					"peers.#": "1",
+					"peers.0": "10.0.0.1",
+					"asn":     "65000",
+				}),
+			),
+			ResourceName:      "proxmox_sdn_controller_bgp.controller_bgp",
+			ImportStateId:     "ctrlB",
+			ImportState:       true,
+			ImportStateVerify: true,
+		}}},
+		{"Update peers", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1", "10.0.0.2"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":      "ctrlB",
+					"node":    te.NodeName,
+					"peers.#": "2",
+					"peers.0": "10.0.0.1",
+					"peers.1": "10.0.0.2",
+					"asn":     "65000",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.3"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":      "ctrlB",
+					"node":    te.NodeName,
+					"peers.#": "1",
+					"peers.0": "10.0.0.3",
+					"asn":     "65000",
+				}),
+			),
+		}}},
+		{"Add and remove optional fields", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  ebgp = true
+				  ebgp_multihop = 3
+				  loopback = "dummy0"
+				  bgp_multipath_as_path_relax = true
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":                          "ctrlB",
+					"node":                        te.NodeName,
+					"peers.#":                     "1",
+					"peers.0":                     "10.0.0.1",
+					"asn":                         "65000",
+					"ebgp":                        "true",
+					"ebgp_multihop":               "3",
+					"loopback":                    "dummy0",
+					"bgp_multipath_as_path_relax": "true",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":      "ctrlB",
+					"node":    te.NodeName,
+					"peers.#": "1",
+					"peers.0": "10.0.0.1",
+					"asn":     "65000",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_bgp.controller_bgp", []string{
+					"ebgp",
+					"ebgp_multihop",
+					"loopback",
+					"bgp_multipath_as_path_relax",
+				}),
+			),
+		}}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}

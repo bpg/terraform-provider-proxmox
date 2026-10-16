@@ -8,6 +8,7 @@ package types
 
 import (
 	"encoding/json"
+	"net/url"
 	"strconv"
 	"testing"
 )
@@ -130,5 +131,153 @@ func TestCustomInt_UnmarshalJSON_NullPointer(t *testing.T) {
 
 	if len(body.Data) != 1 || body.Data[0].Count != nil {
 		t.Fatalf("expected nil count pointer when JSON is null")
+	}
+}
+
+func TestCustomInt64Option_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		json    string
+		want    int64
+		wantErr bool
+	}{
+		{"integer", "2", 2, false},
+		{"quoted integer", "\"2\"", 2, false},
+		{"deleted marker", "\"deleted\"", 0, false},
+		{"invalid string", "\"abc\"", 0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var v CustomInt64Option
+
+			err := v.UnmarshalJSON([]byte(tt.json))
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("error=%v, wantErr=%v", err, tt.wantErr)
+			}
+
+			if !tt.wantErr && int64(v) != tt.want {
+				t.Fatalf("got=%d, want=%d", int64(v), tt.want)
+			}
+		})
+	}
+}
+
+func TestCustomInt64Option_UnmarshalJSON_InStruct(t *testing.T) {
+	t.Parallel()
+
+	var body struct {
+		MultiHop *CustomInt64Option `json:"ebgp-multihop"`
+	}
+
+	payload := []byte(`{"ebgp-multihop":"deleted"}`)
+	if err := json.Unmarshal(payload, &body); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if body.MultiHop == nil || int64(*body.MultiHop) != 0 {
+		t.Fatalf("expected non-nil pointer with value 0 for the deleted marker")
+	}
+}
+
+func TestCustomBoolOption_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		json    string
+		want    CustomBoolOption
+		deleted bool
+		wantErr bool
+	}{
+		{"true literal", "true", 1, false, false},
+		{"false literal", "false", 0, false, false},
+		{"1", "1", 1, false, false},
+		{"0", "0", 0, false, false},
+		{"deleted marker", `"deleted"`, customBoolOptionDeleted, true, false},
+		{"invalid string", `"abc"`, 0, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var v CustomBoolOption
+
+			err := v.UnmarshalJSON([]byte(tt.json))
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("error=%v, wantErr=%v", err, tt.wantErr)
+			}
+
+			if v != tt.want {
+				t.Fatalf("got=%d, want=%d", v, tt.want)
+			}
+
+			if deleted := v.PointerBool() == nil; deleted != tt.deleted {
+				t.Fatalf("deleted=%v, want=%v", deleted, tt.deleted)
+			}
+		})
+	}
+}
+
+func TestCustomBoolOption_MarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value CustomBoolOption
+		want  string
+	}{
+		{"true", 1, "1"},
+		{"false", 0, "0"},
+		{"deleted", customBoolOptionDeleted, `"deleted"`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := json.Marshal(tt.value)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if string(got) != tt.want {
+				t.Fatalf("got=%s, want=%s", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCustomBoolOption_EncodeValues(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		value  CustomBoolOption
+		exists bool
+		want   string
+	}{
+		{"true", 1, true, "1"},
+		{"false", 0, true, "0"},
+		{"deleted omitted", customBoolOptionDeleted, false, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			values := url.Values{}
+			if err := tt.value.EncodeValues("ebgp", &values); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			got := values.Get("ebgp")
+			if got != tt.want {
+				t.Fatalf("got=%q, want=%q", got, tt.want)
+			}
+		})
 	}
 }

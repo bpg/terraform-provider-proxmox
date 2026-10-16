@@ -178,3 +178,23 @@ func BoolValueFromCustomBoolPtr(p *proxmoxtypes.CustomBool) types.Bool {
 
 	return p.ToValue()
 }
+
+// CustomBoolOptionPtrFromValue returns a *proxmoxtypes.CustomBoolOption from a
+// types.Bool, returning nil for null or unknown values.
+func CustomBoolOptionPtrFromValue(v types.Bool) *proxmoxtypes.CustomBoolOption {
+	if v.IsNull() || v.IsUnknown() {
+		return nil
+	}
+
+	return proxmoxtypes.CustomBoolOptionPtr(v.ValueBoolPointer())
+}
+
+// BoolValueFromCustomBoolOptionPtr returns a types.Bool from a
+// *proxmoxtypes.CustomBoolOption, returning false for nil or deleted markers.
+func BoolValueFromCustomBoolOptionPtr(p *proxmoxtypes.CustomBoolOption) types.Bool {
+	if pb := p.PointerBool(); pb != nil {
+		return types.BoolValue(*pb)
+	}
+
+	return types.BoolValue(false)
+}
