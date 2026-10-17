@@ -268,6 +268,8 @@ func TestIsLockTimeout(t *testing.T) {
 		{"config lock", errors.New("can't lock file '/var/lock/qemu-server/lock-100.conf' - got timeout"), true},
 		{"other timeout", errors.New("VM 100 qmp command 'query-status' failed - got timeout"), false},
 		{"other lock error", errors.New("can't lock file '/run/lock/x' - Permission denied"), false},
+		{"shared storage lock", errors.New("cfs-lock 'storage-nfs' error: got lock request timeout"), true},
+		{"cluster lock held too long", errors.New("cfs-lock 'storage-nfs' error: 'storage-nfs'-locked command timed out - aborting"), false},
 	}
 
 	for _, tt := range tests {

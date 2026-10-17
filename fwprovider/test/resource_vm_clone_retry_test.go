@@ -19,6 +19,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 func TestAccResourceVMCloneRetryOnStorageLock(t *testing.T) {
@@ -30,7 +32,7 @@ func TestAccResourceVMCloneRetryOnStorageLock(t *testing.T) {
 		template  = true
 
 		disk {
-			datastore_id = "local-lvm"
+			datastore_id = "{{.DatastoreID}}"
 			interface    = "scsi0"
 			size         = 1
 		}
@@ -79,51 +81,76 @@ func TestAccResourceVMCloneRetryOnStorageLock(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			te := InitEnvironment(t)
+	// Non-shared storage is locked with lock_file, shared storage with a cluster-wide cfs_lock. Each lock is held longer
+	// than PVE's 10s lock timeout, so the first clone task fails on it and only a retried task can succeed.
+	storages := []struct {
+		name        string
+		datastoreID string
+		holdLock    string
+	}{
+		{
+			name:        "local storage",
+			datastoreID: "local-lvm",
+			holdLock:    "flock /var/lock/pve-manager/pve-storage-local-lvm sleep 15",
+		},
+		{
+			name:        "shared storage",
+			datastoreID: utils.GetAnyStringEnv("PROXMOX_VE_ACC_NFS_DATASTORE_ID"),
+			holdLock: fmt.Sprintf("perl -MPVE::Cluster -e 'PVE::Cluster::cfs_lock_storage(q(%s), 10, sub { sleep 15 })'",
+				utils.GetAnyStringEnv("PROXMOX_VE_ACC_NFS_DATASTORE_ID")),
+		},
+	}
 
-			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: te.AccProviders,
-				Steps: []resource.TestStep{
-					{
-						Config: te.RenderConfig(template),
-					},
-					{
-						// Hold the storage lock longer than PVE's 10s lock timeout, so the first clone task fails
-						// on it and only a retried task can succeed.
-						PreConfig: func() {
-							te.ExecuteNodeCommands([]string{
-								"(nohup flock /var/lock/pve-manager/pve-storage-local-lvm sleep 15 >/dev/null 2>&1 </dev/null &)",
-								"sleep 1",
-							})
+	for _, st := range storages {
+		for _, tt := range tests {
+			t.Run(st.name+" "+tt.name, func(t *testing.T) {
+				if st.datastoreID == "" {
+					t.Skip("NFS storage is not available")
+				}
+
+				te := InitEnvironment(t)
+				te.AddTemplateVars(map[string]any{"DatastoreID": st.datastoreID})
+
+				resource.Test(t, resource.TestCase{
+					ProtoV6ProviderFactories: te.AccProviders,
+					Steps: []resource.TestStep{
+						{
+							Config: te.RenderConfig(template),
 						},
-						Config: te.RenderConfig(template + tt.clone),
-						Check: func(s *terraform.State) error {
-							rs, ok := s.RootModule().Resources[tt.resource]
-							if !ok {
-								return fmt.Errorf("resource %s not found", tt.resource)
-							}
+						{
+							PreConfig: func() {
+								te.ExecuteNodeCommands([]string{
+									"(nohup " + st.holdLock + " >/dev/null 2>&1 </dev/null &)",
+									"sleep 1",
+								})
+							},
+							Config: te.RenderConfig(template + tt.clone),
+							Check: func(s *terraform.State) error {
+								rs, ok := s.RootModule().Resources[tt.resource]
+								if !ok {
+									return fmt.Errorf("resource %s not found", tt.resource)
+								}
 
-							vmID, err := strconv.Atoi(rs.Primary.Attributes[tt.vmIDAttr])
-							if err != nil {
-								return fmt.Errorf("failed to parse VM ID: %w", err)
-							}
+								vmID, err := strconv.Atoi(rs.Primary.Attributes[tt.vmIDAttr])
+								if err != nil {
+									return fmt.Errorf("failed to parse VM ID: %w", err)
+								}
 
-							vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
-							if err != nil {
-								return fmt.Errorf("failed to get VM %d config: %w", vmID, err)
-							}
+								vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+								if err != nil {
+									return fmt.Errorf("failed to get VM %d config: %w", vmID, err)
+								}
 
-							if vmConfig.StorageDevices["scsi0"] == nil {
-								return fmt.Errorf("cloned VM %d has no scsi0 disk", vmID)
-							}
+								if vmConfig.StorageDevices["scsi0"] == nil {
+									return fmt.Errorf("cloned VM %d has no scsi0 disk", vmID)
+								}
 
-							return nil
+								return nil
+							},
 						},
 					},
-				},
+				})
 			})
-		})
+		}
 	}
 }

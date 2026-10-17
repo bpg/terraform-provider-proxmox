@@ -77,14 +77,18 @@ func IsTransientAPIError(err error) bool {
 		strings.Contains(err.Error(), "got timeout")
 }
 
-// IsLockTimeout reports whether err is a PVE lock_file timeout. PVE gives up on the lock before running the locked code,
-// so a task that failed this way did no work and can be dispatched again.
+// IsLockTimeout reports whether err is a PVE timeout waiting for a lock: lock_file for local files and non-shared
+// storage, cfs_lock for shared storage. PVE gives up before running the locked code, so the task can be dispatched
+// again. cfs_lock's "locked command timed out" is not matched: the locked code already ran for two minutes.
 func IsLockTimeout(err error) bool {
 	if err == nil {
 		return false
 	}
 
-	return strings.Contains(err.Error(), "can't lock file") && strings.Contains(err.Error(), "got timeout")
+	msg := err.Error()
+
+	return (strings.Contains(msg, "can't lock file") && strings.Contains(msg, "got timeout")) ||
+		(strings.Contains(msg, "cfs-lock") && strings.Contains(msg, "got lock request timeout"))
 }
 
 // ErrorContains returns a predicate that checks if the error message contains substr.
