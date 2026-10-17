@@ -131,8 +131,7 @@ func (o *rootUserConfigOption) apply(rc *renderConfig) error {
 }
 
 // WithRootTicket returns a configuration option that makes the provider run node-scoped API calls
-// with a root@pam ticket minted over SSH. The provider connects over SSH as root with the root API
-// user's password (PROXMOX_VE_USERNAME / PROXMOX_VE_PASSWORD), like ExecuteNodeCommands.
+// with a root@pam ticket minted over SSH as root.
 func WithRootTicket() RenderConfigOption {
 	return &rootTicketConfigOption{}
 }
@@ -140,14 +139,20 @@ func WithRootTicket() RenderConfigOption {
 type rootTicketConfigOption struct{}
 
 func (o *rootTicketConfigOption) apply(rc *renderConfig) error {
-	username, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")
-	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+	rootPassword := rootSSHPassword()
 
-	if username != "root" || password == "" {
-		return fmt.Errorf("PROXMOX_VE_USERNAME must be root@pam and PROXMOX_VE_PASSWORD must be set")
+	// Only root can mint a ticket.
+	if sshUser := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME"); sshUser != "" && sshUser != "root" && rootPassword == "" {
+		return fmt.Errorf("root ticket requires SSH as root: set PROXMOX_VE_SSH_USERNAME=root with an SSH agent or " +
+			"private key, or PROXMOX_VE_USERNAME=root@pam and PROXMOX_VE_PASSWORD")
 	}
 
-	rc.sshAuth = fmt.Sprintf("\n\t\tusername    = %q\n\t\tpassword    = %q\n\t\troot_ticket = true", username, password)
+	rc.sshAuth = "\n\t\tusername    = \"root\""
+	if rootPassword != "" {
+		rc.sshAuth += fmt.Sprintf("\n\t\tpassword    = %q", rootPassword)
+	}
+
+	rc.sshAuth += "\n\t\troot_ticket = true"
 
 	return nil
 }
@@ -380,9 +385,32 @@ func (e *Environment) SSHClient() ssh.Client {
 		sshPassword = utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
 	}
 
+	return e.newNodeSSHClient(sshUsername, sshPassword)
+}
+
+// rootSSHPassword returns the root password from the API credentials when the API user is root, otherwise from the SSH
+// credentials when the SSH user is root or unset. The password of any other user is never sent to root.
+func rootSSHPassword() string {
+	if apiUser, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@"); apiUser == "root" {
+		if password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"); password != "" {
+			return password
+		}
+	}
+
+	if sshUser := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME"); sshUser == "" || sshUser == "root" {
+		return utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
+	}
+
+	return ""
+}
+
+// newNodeSSHClient returns an SSH client for the test node, trying the SSH agent and private key before the password.
+func (e *Environment) newNodeSSHClient(username, password string) ssh.Client {
+	e.t.Helper()
+
 	client, err := ssh.NewClient(
-		sshUsername,
-		sshPassword,
+		username,
+		password,
 		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT"),
 		utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK"),
 		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT_FORWARDING"),
@@ -430,25 +458,13 @@ func (e *Environment) nodeSSHTarget() ssh.ProxmoxNode {
 	return ssh.ProxmoxNode{Address: address, Port: port}
 }
 
-// ExecuteNodeCommands runs shell commands on the test node over SSH as the root API user
-// (PROXMOX_VE_USERNAME / PROXMOX_VE_PASSWORD) and returns the combined output. Connecting as
-// root avoids the restricted sudoers allowlist of the provider's SSH user, so privileged
+// ExecuteNodeCommands runs shell commands on the test node over SSH as root and returns the combined output.
+// Connecting as root avoids the restricted sudoers allowlist of the provider's SSH user, so privileged
 // commands such as `pct exec` work without sudo.
 func (e *Environment) ExecuteNodeCommands(commands []string) string {
 	e.t.Helper()
 
-	// Strip the realm from "root@pam" to get the SSH login name.
-	username, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")
-
-	client, err := ssh.NewClient(
-		username,
-		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
-		false, "", false,
-		"",
-		"", "", "",
-		staticNodeResolver{node: e.nodeSSHTarget()},
-	)
-	require.NoError(e.t, err)
+	client := e.newNodeSSHClient("root", rootSSHPassword())
 
 	out, err := client.ExecuteNodeCommands(e.t.Context(), e.NodeName, commands)
 	require.NoError(e.t, err)
