@@ -261,7 +261,7 @@ func TestAccResourceVM(t *testing.T) {
 					cpu {
 						architecture = "x86_64"
 					}
-				}`, WithRootUser()),
+				}`, WithRootPAMAuth()),
 				Destroy: false,
 			},
 		}},
@@ -446,7 +446,7 @@ func TestAccResourceVM(t *testing.T) {
 					rng {
 						source = "/dev/urandom"
 					}
-				}`, WithRootUser()),
+				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
 						"rng.0.source":    "/dev/urandom",
@@ -465,7 +465,7 @@ func TestAccResourceVM(t *testing.T) {
 							max_bytes = 2048
 							period = 500
 						}
-					}`, WithRootUser()),
+					}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
 						"rng.0.source":    "/dev/urandom",
@@ -484,7 +484,7 @@ func TestAccResourceVM(t *testing.T) {
 							max_bytes = 512
 							period = 200
 						}
-					}`, WithRootUser()),
+					}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
 						"rng.0.source":    "/dev/random",
@@ -504,7 +504,7 @@ func TestAccResourceVM(t *testing.T) {
 							node = "{{.NodeName}}"
 							path = "/mnt"
 						}]
-					}`, WithRootUser()),
+					}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_hardware_mapping_dir.test", map[string]string{
 						"name":       dirName,
@@ -526,7 +526,7 @@ func TestAccResourceVM(t *testing.T) {
 							expose_acl = false
 							expose_xattr = false
 						}
-					}`, WithRootUser()),
+					}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
 						"virtiofs.0.mapping":      dirName,
@@ -2055,7 +2055,7 @@ func TestAccResourceVMClone(t *testing.T) {
 					clone {
 						vm_id = proxmox_virtual_environment_vm.template.vm_id
 					}
-				}`, WithRootUser()),
+				}`, WithRootPAMAuth()),
 		}}},
 		{"clone machine type", []resource.TestStep{{
 			Config: te.RenderConfig(`
@@ -2598,7 +2598,7 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 						device = "hostpci0"
 						id     = "{{.HostPCIID}}"
 					}
-				}`, WithRootUser()),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "node_name", te.NodeName),
 					resource.TestCheckResourceAttr(resourceName, "hostpci.#", "1"),
@@ -2614,7 +2614,7 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 					stop_on_destroy = true
 					migrate         = true
 					name            = "test-migrate-hostpci"
-				}`, WithRootUser()),
+				}`, WithRootPAMAuth()),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionUpdate),

@@ -81,7 +81,7 @@ func TestAccResourceACMECertificate(t *testing.T) {
 						account   = "{{.Account}}"
 						force     = true
 						{{.DomainsConfig}}
-					}`, test.WithRootUser()),
+					}`, test.WithRootPassword()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_acme_certificate.test_cert", map[string]string{
 						"node_name": te.NodeName,
@@ -141,7 +141,7 @@ func TestAccResourceACMECertificate_Import(t *testing.T) {
 						account   = "{{.Account}}"
 						force     = true
 						{{.DomainsConfig}}
-					}`, test.WithRootUser()),
+					}`, test.WithRootPassword()),
 			},
 			{
 				ResourceName:      "proxmox_acme_certificate.test_cert_import",
