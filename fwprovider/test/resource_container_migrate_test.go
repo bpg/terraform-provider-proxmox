@@ -1110,7 +1110,7 @@ func TestAccResourceContainerMigrateWithIDMap(t *testing.T) {
 			network_interface {
 				name = "vmbr0"
 			}
-		}`, node, idmap))
+		}`, node, idmap), WithRootPAMAuth())
 	}
 
 	idmaps := `

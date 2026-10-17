@@ -446,7 +446,7 @@ func TestAccResourceVM(t *testing.T) {
 					rng {
 						source = "/dev/urandom"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
 						"rng.0.source":    "/dev/urandom",
@@ -465,7 +465,7 @@ func TestAccResourceVM(t *testing.T) {
 							max_bytes = 2048
 							period = 500
 						}
-					}`),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
 						"rng.0.source":    "/dev/urandom",
@@ -484,7 +484,7 @@ func TestAccResourceVM(t *testing.T) {
 							max_bytes = 512
 							period = 200
 						}
-					}`),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
 						"rng.0.source":    "/dev/random",
@@ -504,7 +504,7 @@ func TestAccResourceVM(t *testing.T) {
 							node = "{{.NodeName}}"
 							path = "/mnt"
 						}]
-					}`),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_hardware_mapping_dir.test", map[string]string{
 						"name":       dirName,
@@ -526,7 +526,7 @@ func TestAccResourceVM(t *testing.T) {
 							expose_acl = false
 							expose_xattr = false
 						}
-					}`),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
 						"virtiofs.0.mapping":      dirName,

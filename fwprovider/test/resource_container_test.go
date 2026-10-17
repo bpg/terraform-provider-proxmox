@@ -281,7 +281,7 @@ func TestAccResourceContainerMountOptions(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"disk.0.mount_options.#": "1",
@@ -331,7 +331,7 @@ func TestAccResourceContainerMountOptions(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"disk.0.mount_options.#": "2",
@@ -399,7 +399,7 @@ func TestAccResourceContainerDiskResize(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"disk.0.size": "4",
@@ -446,7 +446,7 @@ func TestAccResourceContainerDiskResize(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"disk.0.size": "6",
@@ -616,7 +616,7 @@ func TestAccResourceContainerCloneUserAccount(t *testing.T) {
 						keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGqBd4Zt0epWwHwL7z6UU8FZOAOLJb8ycaHWRkEDkhrN testkey"]
 					}
 				}
-			}`),
+			}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"proxmox_virtual_environment_container.test_container_clone", "initialization.0.hostname", "test-clone"),
@@ -689,7 +689,7 @@ func TestAccResourceContainerCloneFullFlag(t *testing.T) {
 				initialization {
 					hostname = "test-full-clone"
 				}
-			}`),
+			}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_container.test_full_clone", map[string]string{
 						"clone.0.full": "true",
@@ -748,7 +748,7 @@ func TestAccResourceContainerCloneFullFlag(t *testing.T) {
 				initialization {
 					hostname = "test-linked-clone"
 				}
-			}`),
+			}`, WithRootPAMAuth()),
 				ExpectError: regexp.MustCompile(`(?s)Linked\s+clone feature .* is not available`),
 			},
 		},
@@ -814,7 +814,7 @@ func TestAccResourceContainerCloneMountPoint(t *testing.T) {
 			initialization {
 				hostname = "test-clone"
 			}
-		}`)
+		}`, WithRootPAMAuth())
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
@@ -886,7 +886,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname": "test-dns-issue",
@@ -920,7 +920,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname": "test-dns-issue",
@@ -954,7 +954,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname": "test-dns-create",
@@ -992,7 +992,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname": "test-dns-create",
@@ -1029,7 +1029,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 					template_file_id = "local:vztmpl/{{.ImageFileName}}"
 					type             = "alpine"
 				}
-			}`),
+			}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname":        "test-dns-update",
@@ -1070,7 +1070,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname": "test-dns-update",
@@ -1134,7 +1134,7 @@ func TestAccResourceContainerHostname(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname": "test-hostname-1",
@@ -1166,7 +1166,7 @@ func TestAccResourceContainerHostname(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname": "test-hostname-2",
@@ -1494,7 +1494,7 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 						FOO = "bar"
 						BAZ = "qux"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname": "test-env-vars",
@@ -1543,7 +1543,7 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 						FOO = "updated"
 						NEW_VAR = "new_value"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"environment_variables.FOO":     "updated",
@@ -1589,7 +1589,7 @@ func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"environment_variables.%": "0",
@@ -1841,7 +1841,7 @@ func TestAccResourceContainerMountPointVolumeReference(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 				    }
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_container.source", map[string]string{
 						"mount_point.#": "1",
@@ -2093,7 +2093,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"idmap.#":              "2",
@@ -2170,7 +2170,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"idmap.#":              "3",
@@ -2210,7 +2210,7 @@ func TestAccResourceContainerIDMap(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"idmap.#": "0",
@@ -2302,7 +2302,7 @@ func TestAccResourceContainerIDMapFirstBoot(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/uid_map"),
 					assertContainerIDMapActive(te, accTestContainerID, "/proc/self/gid_map"),
@@ -2410,7 +2410,7 @@ func TestAccResourceContainerIDMapChangeOnStart(t *testing.T) {
 					template_file_id = "local:vztmpl/{{.ImageFileName}}"
 					type             = "alpine"
 				}
-			}`, started, idmap))
+			}`, started, idmap), WithRootPAMAuth())
 	}
 
 	singleRangeIDMap := `
@@ -2522,7 +2522,7 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.entrypoint": "",
@@ -2565,7 +2565,7 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.entrypoint": "/sbin/init",
@@ -2608,7 +2608,7 @@ func TestAccResourceContainerEntrypoint(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.entrypoint": "",
@@ -2670,7 +2670,7 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					func(*terraform.State) error {
 						ct := te.NodeClient().Container(accTestContainerID)
@@ -2720,7 +2720,7 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: ResourceAttributes(accTestContainerName, map[string]string{
 					"cpu.0.units": "512",
 				}),
@@ -2841,7 +2841,7 @@ func TestAccResourceContainerHostManaged(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"network_interface.0.host_managed": "true",
@@ -2886,7 +2886,7 @@ func TestAccResourceContainerHostManaged(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"network_interface.0.host_managed": "false",
@@ -2959,7 +2959,7 @@ func TestAccResourceContainerDiskOptionsAtCreate(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"disk.0.acl":       "true",
@@ -3036,7 +3036,7 @@ func TestAccResourceContainerDiskACLOnlyAtCreate(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"disk.0.acl":  "true",
@@ -3102,7 +3102,7 @@ func TestAccResourceContainerFeaturesRefresh(t *testing.T) {
 				template_file_id = "local:vztmpl/{{.ImageFileName}}"
 				type             = "alpine"
 			}
-		}`)
+		}`, WithRootPAMAuth())
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
@@ -3271,7 +3271,7 @@ func TestAccResourceContainerStartOnBootRefresh(t *testing.T) {
 				template_file_id = "local:vztmpl/{{.ImageFileName}}"
 				type             = "alpine"
 			}
-		}`)
+		}`, WithRootPAMAuth())
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
@@ -3347,7 +3347,7 @@ func TestAccResourceContainerStartedToggle(t *testing.T) {
 					template_file_id = "local:vztmpl/{{.ImageFileName}}"
 					type             = "alpine"
 				}
-			}`, started))
+			}`, started), WithRootPAMAuth())
 	}
 
 	expectStatus := func(want string) func(*terraform.State) error {
@@ -3434,7 +3434,7 @@ func TestAccResourceContainerNoDiskBlock(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"disk.#":           "1",
@@ -3497,7 +3497,7 @@ func TestAccResourceContainerRemoveDiskBlock(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				Check: ResourceAttributes(accTestContainerName, map[string]string{
 					"disk.0.mount_options.#": "1",
 					"disk.0.mount_options.0": "discard",
@@ -3525,7 +3525,7 @@ func TestAccResourceContainerRemoveDiskBlock(t *testing.T) {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
 						type             = "alpine"
 					}
-				}`),
+				}`, WithRootPAMAuth()),
 				ExpectNonEmptyPlan: true,
 			},
 		},

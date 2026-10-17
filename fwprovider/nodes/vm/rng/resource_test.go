@@ -48,7 +48,7 @@ func TestAccResourceVM2RNG(t *testing.T) {
 				rng = {
 					source = "/dev/urandom"
 				}
-			}`),
+			}`, test.WithRootPAMAuth()),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					"rng.source": "/dev/urandom",
@@ -69,7 +69,7 @@ func TestAccResourceVM2RNG(t *testing.T) {
 						source = "/dev/urandom"
 						max_bytes = 1024
 					}
-				}`),
+				}`, test.WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"rng.source":    "/dev/urandom",
@@ -89,7 +89,7 @@ func TestAccResourceVM2RNG(t *testing.T) {
 						source = "/dev/random"
 						period = 1000
 					}
-				}`),
+				}`, test.WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 						"rng.source": "/dev/random",
@@ -116,7 +116,7 @@ func TestAccResourceVM2RNG(t *testing.T) {
 					source    = "/dev/urandom"
 					max_bytes = 0
 				}
-			}`),
+			}`, test.WithRootPAMAuth()),
 			Check: test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 				"rng.source":    "/dev/urandom",
 				"rng.max_bytes": "0",
@@ -133,7 +133,7 @@ func TestAccResourceVM2RNG(t *testing.T) {
 					rng = {
 						source = "/dev/urandom"
 					}
-				}`),
+				}`, test.WithRootPAMAuth()),
 				Check: test.ResourceAttributes("proxmox_vm.test_vm", map[string]string{
 					"rng.source": "/dev/urandom",
 				}),
@@ -143,7 +143,7 @@ func TestAccResourceVM2RNG(t *testing.T) {
 				resource "proxmox_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-rng"
-				}`),
+				}`, test.WithRootPAMAuth()),
 				Check: test.NoResourceAttributesSet("proxmox_vm.test_vm", []string{
 					"rng.source",
 					"rng.max_bytes",
