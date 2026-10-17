@@ -18,6 +18,7 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
 
 ## Installation steps
 
+### Option1 -  Using virt-manager
 1. Install virt-manager:
 
    ```sh
@@ -51,6 +52,111 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
    ```
 
    You can also access the web console at `https://192.168.122.43:8006`.
+
+### Option 2 - Using virsh and an unattended installation
+
+   The Proxmox VE ISO can be installed unattended. The installation is fully automatic, which lets you spin up a Proxmox VM effortlessly and saves you from clicking through the installer each time.
+
+   The installer is driven by an `answer.toml` file. See the [Proxmox automated installation documentation](https://pve.proxmox.com/wiki/Automated_Installation#Assistant_Tool) for details.
+
+
+   **Steps:**
+
+   1. Install `virsh` (the CLI to manage VMs), virtinst and `proxmox-auto-install-assistant`:
+
+      ```shell
+      sudo apt update
+      sudo apt install libvirt-clients libvirt-daemon-system virtinst
+      # proxmox-auto-install-assistant is not in the standard Debian/Ubuntu repositories. Check the proxmox documentation for you distribution
+
+      sudo apt install proxmox-auto-install-assistant
+      ```
+
+   2. Download the latest Proxmox VE ISO from https://www.proxmox.com/en/downloads.
+   3. Create a different network than the default one. As you will need a NATed network without DHCP.
+      ```text
+      # proxmox-test-network.xml
+      <network>
+         <name>proxmox-test-network</name>
+         <bridge name="prmx-test" stp="on" delay="0"/>
+         <forward mode='nat'>
+            <nat/>
+         </forward>
+         <ip address="192.168.126.1" netmask="255.255.255.0">
+         </ip>
+      </network>
+      ```
+      Create and activate the network
+      ```shell
+      virsh net-define proxmox-test-network.xml
+      virsh start proxmox-test-network
+      ```
+   3. Create the ISO with the `answer.toml` file:
+
+      ```shell
+      proxmox-auto-install-assistant prepare-iso /path/to/proxmox-ve_x.y-z.iso --fetch-from iso --answer-file answer-pve.toml --output /path/where/to/store/the/generated/proxmox-with-answer-file.iso
+      ```
+
+
+      Example of an `answer-pve.toml` file:
+
+      ```toml
+      [global]
+      keyboard = "en-us"
+      country = "fr"
+      fqdn = "pve.example.local"
+      mailto = "admin@example.local"
+      timezone = "Europe/Paris"
+      root_password = "APassYouRemember"
+      root_ssh_keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1........ user@pve"]
+
+      [network]
+      source = "from-answer"
+      cidr = "192.168.126.43/24"
+      dns = "192.168.126.1"
+      gateway = "192.168.126.1"
+      filter.ID_NET_NAME_PATH = "enp1s0"
+
+      [disk-setup]
+      filesystem = "ext4"
+      disk_list = ["vda"]
+      ```
+
+   4. Run the `virt-install` command to create the Proxmox VM:
+
+      ```shell
+      virt-install \
+      --name pve \
+      --memory 8192 \
+      --vcpus 4 \
+      --cpu host-passthrough \
+      --os-variant debian13 \
+      --disk path=/path/where/to/store/the/vm/disk/pve.cow2,size=30,bus=virtio,format=qcow2 \
+      --cdrom /path/where/stored/the/generated/proxmox-with-answer-file.iso \
+      # You may choose another network if you have one defined
+      --network network=proxmox-test-network,model=virtio \ 
+      --graphics vnc,listen=127.0.0.1 \
+      --noautoconsole
+
+      # Check the status of the VM with
+      watch -n 3 virsh list
+      ```
+       **The VM shuts down once the installation is complete, so you need to start it again with `virsh`.**
+   
+
+   5. Start the VM:
+
+   ```shell
+   virsh start pve
+   ```
+
+   6. (Optional) Verify connectivity from your host:
+
+   ```shell
+   ssh root@192.168.126.43
+   ```
+
+   You can also access the web console at `https://192.168.126.43:8006`.
 
 ## Proxmox configuration
 
