@@ -11,6 +11,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/subnets"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 // Client is a client for accessing the Proxmox SDN VNETs API.
@@ -39,4 +40,9 @@ func (c *Client) Subnets() *subnets.Client {
 	return &subnets.Client{
 		Client: c,
 	}
+}
+
+// Firewall returns a client for managing this SDN VNet's firewall rules.
+func (c *Client) Firewall() firewall.Rule {
+	return &firewall.Client{Client: c}
 }
