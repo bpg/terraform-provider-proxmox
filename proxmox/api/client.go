@@ -20,6 +20,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/avast/retry-go/v5"
 	"github.com/google/go-querystring/query"
@@ -92,6 +93,9 @@ func NewConnection(endpoint string, insecure bool, minTLS string, extraHeaders m
 
 	var transport http.RoundTripper = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
+		// pveproxy closes a keep-alive connection after 5 s idle. Dropping ours sooner keeps a request from being written
+		// to a connection the server is closing, which fails with a bare EOF that Go does not retry for a PUT or POST.
+		IdleConnTimeout: 3 * time.Second,
 		TLSClientConfig: &tls.Config{
 			// deepcode ignore InsecureTLSConfig: the min TLS version is configurable
 			MinVersion:         version,
