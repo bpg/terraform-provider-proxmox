@@ -7337,7 +7337,12 @@ func vmPlanDiskLocationAndSizeChanges(
 		}
 
 		if *oldDisk.DatastoreID != *diskNewEntries[oldIface].DatastoreID {
-			if oldDisk.IsOwnedBy(vmID) {
+			owned, err := vmAPI.OwnsDisk(ctx, oldDisk)
+			if err != nil {
+				return nil, diag.FromErr(err)
+			}
+
+			if owned {
 				deleteOriginalDisk := types.CustomBool(true)
 
 				changes.moveBodies = append(
@@ -7365,7 +7370,12 @@ func vmPlanDiskLocationAndSizeChanges(
 		if oldDisk.Size != nil && diskNewEntries[oldIface].Size != nil &&
 			*oldDisk.Size != *diskNewEntries[oldIface].Size {
 			if *oldDisk.Size < *diskNewEntries[oldIface].Size {
-				if oldDisk.IsOwnedBy(vmID) {
+				owned, err := vmAPI.OwnsDisk(ctx, oldDisk)
+				if err != nil {
+					return nil, diag.FromErr(err)
+				}
+
+				if owned {
 					changes.resizeBodies = append(
 						changes.resizeBodies,
 						&vms.ResizeDiskRequestBody{
@@ -7403,7 +7413,12 @@ func vmPlanDiskLocationAndSizeChanges(
 				currentDisk := vmConfig.StorageDevices[newIface]
 				if currentDisk != nil && currentDisk.Size != nil && newDisk.Size != nil {
 					if currentDisk.Size.InMegabytes() < newDisk.Size.InMegabytes() {
-						if currentDisk.IsOwnedBy(vmID) {
+						owned, err := vmAPI.OwnsDisk(ctx, currentDisk)
+						if err != nil {
+							return nil, diag.FromErr(err)
+						}
+
+						if owned {
 							changes.resizeBodies = append(
 								changes.resizeBodies,
 								&vms.ResizeDiskRequestBody{
