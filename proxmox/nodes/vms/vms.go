@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 	"github.com/bpg/terraform-provider-proxmox/utils/ip"
@@ -137,6 +138,35 @@ func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDi
 
 		return resBody.TaskID, nil
 	})
+}
+
+// OwnsDisk reports whether the disk's volume belongs to this VM. Volume names that don't follow the
+// vm-<id>- convention (LINSTOR, linked clones on directory storage) are checked against the owner PVE
+// reports for them in the storage content list.
+func (c *Client) OwnsDisk(ctx context.Context, disk *CustomStorageDevice) (bool, error) {
+	if disk.IsOwnedBy(c.VMID) {
+		return true, nil
+	}
+
+	datastoreID, _, found := strings.Cut(disk.FileVolume, ":")
+	if !found || disk.PathInDatastore() == nil {
+		return false, nil
+	}
+
+	storageClient := &storage.Client{Client: c.Client, StorageName: datastoreID}
+
+	images, err := storageClient.ListVMImages(ctx, c.VMID)
+	if err != nil {
+		return false, fmt.Errorf("failed to check the owner of volume %s: %w", disk.FileVolume, err)
+	}
+
+	for _, image := range images {
+		if image.VolumeID == disk.FileVolume && image.VMID != nil && *image.VMID == c.VMID {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // GetVM retrieves a virtual machine.

@@ -33,6 +33,7 @@ func ValidContentTypes() []string {
 // DatastoreFileListRequestBody contains the request parameters for listing datastore files.
 type DatastoreFileListRequestBody struct {
 	ContentType *string `json:"content,omitempty" url:"content,omitempty"`
+	VMID        *int    `json:"vmid,omitempty"    url:"vmid,omitempty"`
 }
 
 // DatastoreFileListResponseBody contains the body from a datastore content list response.
