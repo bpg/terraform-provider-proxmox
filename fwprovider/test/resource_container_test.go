@@ -557,6 +557,75 @@ func TestAccResourceContainerClone(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerCloneUserAccount verifies that cloning a container with
+// `initialization.user_account` configured does not fail. PVE only accepts `ssh-public-keys`
+// and `password` when a container is created, not on the post-clone config update.
+func TestAccResourceContainerCloneUserAccount(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDClone := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":        imageFileName,
+		"TestContainerID":      accTestContainerID,
+		"TestContainerIDClone": accTestContainerIDClone,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				template  = true
+				disk {
+					datastore_id = "{{.ContainerDatastoreID}}"
+					size         = 4
+				}
+				initialization {
+					hostname = "test"
+					user_account {
+						keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGqBd4Zt0epWwHwL7z6UU8FZOAOLJb8ycaHWRkEDkhrN testkey"]
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+			resource "proxmox_virtual_environment_container" "test_container_clone" {
+				depends_on = [proxmox_virtual_environment_container.test_container]
+				node_name  = "{{.NodeName}}"
+				vm_id      = {{.TestContainerIDClone}}
+
+				clone {
+					vm_id = proxmox_virtual_environment_container.test_container.id
+				}
+
+				initialization {
+					hostname = "test-clone"
+					user_account {
+						keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGqBd4Zt0epWwHwL7z6UU8FZOAOLJb8ycaHWRkEDkhrN testkey"]
+					}
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"proxmox_virtual_environment_container.test_container_clone", "initialization.0.hostname", "test-clone"),
+				),
+			},
+		},
+	})
+}
+
 // TestAccResourceContainerCloneFullFlag tests the `full` flag in the clone block.
 // It verifies that full=true creates a full clone, and that full=false (linked clone)
 // is correctly sent to the API (which rejects it when storage doesn't support COW).
@@ -2655,6 +2724,73 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 				Check: ResourceAttributes(accTestContainerName, map[string]string{
 					"cpu.0.units": "512",
 				}),
+			},
+		},
+	})
+}
+
+// TestAccResourceContainerCPULimitWithoutCores covers a container whose configuration sets cpulimit but not cores.
+// PVE then fills cpus in the status response from cpulimit and returns it as a string, which the read must accept.
+// The provider always sends cores, so the test removes it through the API.
+func TestAccResourceContainerCPULimitWithoutCores(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := te.RenderConfig(`
+	resource "proxmox_virtual_environment_container" "test_container" {
+		node_name    = "{{.NodeName}}"
+		vm_id        = {{.TestContainerID}}
+		started      = false
+		unprivileged = true
+		cpu {
+			limit = 2
+		}
+		disk {
+			datastore_id = "{{.ContainerDatastoreID}}"
+			size         = 4
+		}
+		initialization {
+			hostname = "test-cpulimit-without-cores"
+		}
+		operating_system {
+			template_file_id = "local:vztmpl/{{.ImageFileName}}"
+			type             = "alpine"
+		}
+	}`)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"cpu.0.cores": "1",
+					"cpu.0.limit": "2",
+				}),
+			},
+			{
+				PreConfig: func() {
+					ct := te.NodeClient().Container(accTestContainerID)
+
+					err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{Delete: []string{"cores"}})
+					require.NoError(t, err, "failed to remove cores")
+
+					status, err := ct.GetContainerStatus(t.Context())
+					require.NoError(t, err, "failed to get container status")
+					require.NotNil(t, status.CPUCount)
+					require.InDelta(t, 2, float64(*status.CPUCount), 1e-9)
+				},
+				// The refresh must read the container. The read reports a missing cores as 1, so the plan is empty.
+				Config:   config,
+				PlanOnly: true,
 			},
 		},
 	})

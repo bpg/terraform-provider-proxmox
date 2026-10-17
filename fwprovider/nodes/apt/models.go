@@ -242,22 +242,18 @@ func (srp *modelStandardRepo) importFromAPI(_ context.Context, data *api.GetResp
 		}
 	}
 
-	// Set the index…
-	srp.setIndex(data, proxmoxVersion)
-	// … and then the file path when the index is valid…
-	if !srp.Index.IsNull() {
-		// …by iterating through all repository files…
-		for _, repoFile := range data.Files {
-			// …and get the repository when the file path matches.
-			if srp.Handle.IsSupportedFilePath(repoFile.Path, proxmoxVersion) {
-				srp.FilePath = types.StringValue(repoFile.Path)
-			}
-		}
+	// Set the index and use the file that holds the repository as the file path, so both always refer to the same file…
+	if definingFilePath := srp.setIndex(data, proxmoxVersion); definingFilePath != "" {
+		srp.FilePath = types.StringValue(definingFilePath)
+	} else if srp.FilePath.IsUnknown() {
+		// …and never leave the computed file path unknown when the repository was not found.
+		srp.FilePath = types.StringNull()
 	}
 }
 
-// setIndex sets the index of the APT standard repository derived from the defining source list file.
-func (srp *modelStandardRepo) setIndex(data *api.GetResponseData, proxmoxVersion *version.ProxmoxVersion) {
+// setIndex sets the index of the APT standard repository derived from the defining source list file and returns the
+// path of that file, or an empty string if the repository was not found.
+func (srp *modelStandardRepo) setIndex(data *api.GetResponseData, proxmoxVersion *version.ProxmoxVersion) string {
 	for _, file := range data.Files {
 		for idx, repo := range file.Repositories {
 			if slices.Contains(repo.Components, srp.Handle.ComponentName(proxmoxVersion)) {
@@ -265,7 +261,7 @@ func (srp *modelStandardRepo) setIndex(data *api.GetResponseData, proxmoxVersion
 				if !srp.Handle.IsCephHandle() {
 					srp.Index = types.Int64Value(int64(idx))
 
-					return
+					return file.Path
 				}
 
 				// …and find the index for Ceph repositories based on the version name within the list of URIs.
@@ -273,7 +269,7 @@ func (srp *modelStandardRepo) setIndex(data *api.GetResponseData, proxmoxVersion
 					if strings.Contains(uri, srp.Handle.CephVersionName().String()) {
 						srp.Index = types.Int64Value(int64(idx))
 
-						return
+						return file.Path
 					}
 				}
 			}
@@ -281,6 +277,8 @@ func (srp *modelStandardRepo) setIndex(data *api.GetResponseData, proxmoxVersion
 	}
 
 	srp.Index = types.Int64Null()
+
+	return ""
 }
 
 // getProxmoxVersion retrieves the Proxmox VE version from the API client, falling back to the minimum supported version

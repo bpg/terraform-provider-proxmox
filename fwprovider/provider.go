@@ -28,6 +28,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/acme"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/backup"
 	cephstatus "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ceph/status"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/cpumodel"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
@@ -105,6 +106,7 @@ type proxmoxProviderModel struct {
 		Socks5Server    types.String `tfsdk:"socks5_server"`
 		Socks5Username  types.String `tfsdk:"socks5_username"`
 		Socks5Password  types.String `tfsdk:"socks5_password"`
+		RootTicket      types.Bool   `tfsdk:"root_ticket"`
 
 		NodeAddressSource types.String `tfsdk:"node_address_source"`
 
@@ -246,6 +248,14 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 								"Defaults to the value of the `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable.",
 							Optional:  true,
 							Sensitive: true,
+						},
+						"root_ticket": schema.BoolAttribute{
+							Description: "Whether to run API calls under `/nodes/{node}/` with a `root@pam` ticket minted on that " +
+								"node over SSH, so an API token can perform `root@pam`-only operations. Those calls then run " +
+								"as `root@pam`, bypassing the token's permissions. Requires an SSH connection as `root`. " +
+								"Defaults to the value of the `PROXMOX_VE_SSH_ROOT_TICKET` environment variable, " +
+								"or `false` if not set.",
+							Optional: true,
 						},
 						"socks5_password": schema.StringAttribute{
 							Description: "The password for the SOCKS5 proxy server. " +
@@ -492,6 +502,7 @@ func (p *proxmoxProvider) Configure(
 	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
 	sshSocks5Username := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME")
 	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
+	sshRootTicket := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_ROOT_TICKET")
 	nodeOverrides := map[string]ssh.ProxmoxNode{}
 
 	//nolint: nestif
@@ -530,6 +541,10 @@ func (p *proxmoxProvider) Configure(
 
 		if !cfg.SSH[0].Socks5Password.IsNull() {
 			sshSocks5Password = cfg.SSH[0].Socks5Password.ValueString()
+		}
+
+		if !cfg.SSH[0].RootTicket.IsNull() {
+			sshRootTicket = cfg.SSH[0].RootTicket.ValueBool()
 		}
 
 		for _, n := range cfg.SSH[0].Nodes {
@@ -589,6 +604,20 @@ func (p *proxmoxProvider) Configure(
 		return
 	}
 
+	// The node resolver keeps the unwrapped client on purpose: resolving a node address is itself a
+	// call under /nodes/{node}/, which would mint a ticket, which would resolve the node again.
+	if sshRootTicket {
+		apiClient, err = api.NewRootTicketClient(apiClient, sshClient)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to create Proxmox VE root@pam ticket client",
+				err.Error(),
+			)
+
+			return
+		}
+	}
+
 	// Intentionally use 'PROXMOX_VE_TMPDIR' with 'TMP' instead of 'TEMP', to match os.TempDir's use of $TMPDIR
 	tmpDirOverride := utils.GetAnyStringEnv("PROXMOX_VE_TMPDIR", "PM_VE_TMPDIR")
 
@@ -639,6 +668,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		cephpool.NewCephPoolResource,
 		clonedvm.NewResource,
 		clonedvm.NewShortResource,
+		cpumodel.NewResource,
 		diskzfs.NewZFSPoolResource,
 		ha.NewHAGroupResource,
 		ha.NewHAGroupShortResource, // proxmox_hagroup
