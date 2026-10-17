@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.117.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.116.1...v0.117.0) (2026-10-17)
+
+
+### Features
+
+* **provider:** run root@pam-only API calls with a ticket minted over SSH ([#3181](https://github.com/bpg/terraform-provider-proxmox/issues/3181)) ([6fba7a8](https://github.com/bpg/terraform-provider-proxmox/commit/6fba7a83255ac097cd8d80c65edfbe09fefe5685))
+* **vm:** add custom CPU model resource ([#3167](https://github.com/bpg/terraform-provider-proxmox/issues/3167)) ([a16e9ad](https://github.com/bpg/terraform-provider-proxmox/commit/a16e9ad23eec816a858841b66c780e5d960968cb))
+
+
+### Bug Fixes
+
+* **apt:** never leave standard repository file_path unknown after create ([#3165](https://github.com/bpg/terraform-provider-proxmox/issues/3165)) ([4bded29](https://github.com/bpg/terraform-provider-proxmox/commit/4bded2972403a553eaaa3f65b40625275b02d1e2))
+* **core:** expire idle API connections before pveproxy closes them ([#3192](https://github.com/bpg/terraform-provider-proxmox/issues/3192)) ([e563e70](https://github.com/bpg/terraform-provider-proxmox/commit/e563e704e7fc5584e20fe1ff8467479b0e3d9567))
+* **core:** only retry failed tasks on lock timeouts ([#3186](https://github.com/bpg/terraform-provider-proxmox/issues/3186)) ([b8c08a3](https://github.com/bpg/terraform-provider-proxmox/commit/b8c08a3563c8c8d353cb3e9103b1d757c33c79d7))
+* **lxc:** don't send user_account to the post-clone config update ([#3161](https://github.com/bpg/terraform-provider-proxmox/issues/3161)) ([a953d6e](https://github.com/bpg/terraform-provider-proxmox/commit/a953d6e9b1d7b64ebd0193ef05b56a8b818891f6))
+* **provider:** mask credentials in debug HTTP logs ([#3180](https://github.com/bpg/terraform-provider-proxmox/issues/3180)) ([b78f56b](https://github.com/bpg/terraform-provider-proxmox/commit/b78f56b89995804730c2540d62bb1fc5320dcd4d))
+* **test:** let node commands and root ticket tests use an SSH key ([#3185](https://github.com/bpg/terraform-provider-proxmox/issues/3185)) ([671a6c6](https://github.com/bpg/terraform-provider-proxmox/commit/671a6c6dc5ec99ac6eeb4cc65876644114457911))
+* **test:** use a root ticket when no root password is set ([#3187](https://github.com/bpg/terraform-provider-proxmox/issues/3187)) ([1ed09b4](https://github.com/bpg/terraform-provider-proxmox/commit/1ed09b4a698d2273802f5cf4297851a9b85c23f0))
+* **vm:** allow resizing and moving disks with non-standard volume names ([#3184](https://github.com/bpg/terraform-provider-proxmox/issues/3184)) ([83ce719](https://github.com/bpg/terraform-provider-proxmox/commit/83ce7197f0c3f940601740b68d335d7b81574897))
+* **vm:** clear template cloud-init custom files on clone ([#3163](https://github.com/bpg/terraform-provider-proxmox/issues/3163)) ([b0f2af6](https://github.com/bpg/terraform-provider-proxmox/commit/b0f2af6d55ed926fe48d4166ac489acb5d5608c4))
+
+
+### Miscellaneous
+
+* **deps:** update golangci/golangci-lint (v2.14.0 → v2.15.0) ([#3188](https://github.com/bpg/terraform-provider-proxmox/issues/3188)) ([6b26cfb](https://github.com/bpg/terraform-provider-proxmox/commit/6b26cfbc79a24bf8cf3622d17fd6189fa994e5e7))
+* **devcontainer:** fix dev overrides and log path ([#3160](https://github.com/bpg/terraform-provider-proxmox/issues/3160)) ([7948a88](https://github.com/bpg/terraform-provider-proxmox/commit/7948a881c7838fba59542ed5b82016dc50828386))
+
 ## [0.116.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.116.0...v0.116.1) (2026-10-15)
 
 
