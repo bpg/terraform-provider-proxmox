@@ -160,8 +160,8 @@ Some tests need root beyond the API token:
 - **SSH as `root`**: node commands (e.g. `pct exec`) and `root_ticket` tests. The SSH agent or key above works if it is
   authorized for `root`; otherwise the root password below is used.
 - **API login as `root@pam`**: operations PVE restricts to a logged-in `root@pam` (e.g. container bind mounts); an API
-  token alone never qualifies. `root_ticket` tests get a ticket over the root SSH login above. Tests using
-  `WithRootUser()` still log in with a password for now (#3133) and fail without:
+  token alone never qualifies. These tests log in with the root password when set, otherwise use a ticket minted over
+  the root SSH login above. A few (ACME, password-login logging) need the password and skip without it:
 
   ```env
   PROXMOX_VE_USERNAME="root@pam"

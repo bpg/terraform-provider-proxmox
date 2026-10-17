@@ -9,6 +9,7 @@ package test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"net/url"
@@ -110,22 +111,50 @@ func (r *renderConfig) ssh() string {
   	}`, nodeName, nodeAddress, nodePort, r.sshAuth)
 }
 
-// WithRootUser returns a configuration option that sets the root user in the provider configuration.
-func WithRootUser() RenderConfigOption {
-	return &rootUserConfigOption{}
+// errSkipTest makes RenderConfig skip a test whose option the environment's credentials can't satisfy.
+var errSkipTest = errors.New("skipping test")
+
+// WithRootPAMAuth logs in as root@pam: with the root password if set, else a root ticket (node-scoped calls only).
+func WithRootPAMAuth() RenderConfigOption {
+	return &rootPAMAuthConfigOption{}
 }
 
-type rootUserConfigOption struct{}
+type rootPAMAuthConfigOption struct{}
 
-func (o *rootUserConfigOption) apply(rc *renderConfig) error {
-	if utils.GetAnyStringEnv("PROXMOX_VE_USERNAME") == "" || utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD") == "" {
-		return fmt.Errorf("PROXMOX_VE_USERNAME and PROXMOX_VE_PASSWORD must be set")
+func (o *rootPAMAuthConfigOption) apply(rc *renderConfig) error {
+	if rootPAMPassword() != "" {
+		return WithRootPassword().apply(rc)
 	}
 
-	rc.auth = fmt.Sprintf("\tusername = \"%s\"\n\tpassword = \"%s\"\n\tapi_token = \"\"",
-		utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"),
-		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
-	)
+	sshUser := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
+	hasSSHCredentials := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT") ||
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY", "PROXMOX_VE_SSH_PASSWORD") != ""
+
+	if (sshUser != "" && sshUser != "root") || !hasSSHCredentials {
+		return fmt.Errorf("%w: needs PROXMOX_VE_USERNAME=root@pam and PROXMOX_VE_PASSWORD, or SSH as root", errSkipTest)
+	}
+
+	if err := WithAPIToken().apply(rc); err != nil {
+		return err
+	}
+
+	return WithRootTicket().apply(rc)
+}
+
+// WithRootPassword logs in with the root password, for password-login tests and root-only calls outside /nodes/.
+func WithRootPassword() RenderConfigOption {
+	return &rootPasswordConfigOption{}
+}
+
+type rootPasswordConfigOption struct{}
+
+func (o *rootPasswordConfigOption) apply(rc *renderConfig) error {
+	password := rootPAMPassword()
+	if password == "" {
+		return fmt.Errorf("%w: needs PROXMOX_VE_USERNAME=root@pam and PROXMOX_VE_PASSWORD", errSkipTest)
+	}
+
+	rc.auth = fmt.Sprintf("\tusername = \"root@pam\"\n\tpassword = \"%s\"\n\tapi_token = \"\"", password)
 
 	return nil
 }
@@ -300,6 +329,10 @@ func (e *Environment) RenderConfig(cfg string, opt ...RenderConfigOption) string
 	rc := &renderConfig{}
 	for _, o := range opt {
 		err := o.apply(rc)
+		if errors.Is(err, errSkipTest) {
+			e.t.Skip(err.Error())
+		}
+
 		require.NoError(e.t, err, "configuration error")
 	}
 
@@ -386,6 +419,15 @@ func (e *Environment) SSHClient() ssh.Client {
 	}
 
 	return e.newNodeSSHClient(sshUsername, sshPassword)
+}
+
+// rootPAMPassword returns the API password when the API user is root@pam, so no other user's login stands in for root.
+func rootPAMPassword() string {
+	if utils.GetAnyStringEnv("PROXMOX_VE_USERNAME") != "root@pam" {
+		return ""
+	}
+
+	return utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
 }
 
 // rootSSHPassword returns the root password from the API credentials when the API user is root, otherwise from the SSH
