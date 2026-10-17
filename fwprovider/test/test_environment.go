@@ -122,7 +122,7 @@ func WithRootPAMAuth() RenderConfigOption {
 type rootPAMAuthConfigOption struct{}
 
 func (o *rootPAMAuthConfigOption) apply(rc *renderConfig) error {
-	if utils.GetAnyStringEnv("PROXMOX_VE_USERNAME") != "" && utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD") != "" {
+	if rootPAMPassword() != "" {
 		return WithRootPassword().apply(rc)
 	}
 
@@ -131,7 +131,7 @@ func (o *rootPAMAuthConfigOption) apply(rc *renderConfig) error {
 		utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY", "PROXMOX_VE_SSH_PASSWORD") != ""
 
 	if (sshUser != "" && sshUser != "root") || !hasSSHCredentials {
-		return fmt.Errorf("%w: needs PROXMOX_VE_USERNAME / PROXMOX_VE_PASSWORD, or SSH as root", errSkipTest)
+		return fmt.Errorf("%w: needs PROXMOX_VE_USERNAME=root@pam and PROXMOX_VE_PASSWORD, or SSH as root", errSkipTest)
 	}
 
 	if err := WithAPIToken().apply(rc); err != nil {
@@ -149,14 +149,12 @@ func WithRootPassword() RenderConfigOption {
 type rootPasswordConfigOption struct{}
 
 func (o *rootPasswordConfigOption) apply(rc *renderConfig) error {
-	if utils.GetAnyStringEnv("PROXMOX_VE_USERNAME") == "" || utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD") == "" {
-		return fmt.Errorf("%w: needs PROXMOX_VE_USERNAME and PROXMOX_VE_PASSWORD", errSkipTest)
+	password := rootPAMPassword()
+	if password == "" {
+		return fmt.Errorf("%w: needs PROXMOX_VE_USERNAME=root@pam and PROXMOX_VE_PASSWORD", errSkipTest)
 	}
 
-	rc.auth = fmt.Sprintf("\tusername = \"%s\"\n\tpassword = \"%s\"\n\tapi_token = \"\"",
-		utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"),
-		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
-	)
+	rc.auth = fmt.Sprintf("\tusername = \"root@pam\"\n\tpassword = \"%s\"\n\tapi_token = \"\"", password)
 
 	return nil
 }
@@ -421,6 +419,15 @@ func (e *Environment) SSHClient() ssh.Client {
 	}
 
 	return e.newNodeSSHClient(sshUsername, sshPassword)
+}
+
+// rootPAMPassword returns the API password when the API user is root@pam, so no other user's login stands in for root.
+func rootPAMPassword() string {
+	if utils.GetAnyStringEnv("PROXMOX_VE_USERNAME") != "root@pam" {
+		return ""
+	}
+
+	return utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
 }
 
 // rootSSHPassword returns the root password from the API credentials when the API user is root, otherwise from the SSH

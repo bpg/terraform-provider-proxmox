@@ -36,10 +36,6 @@ func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
 	te := InitEnvironment(t)
-	dirName := fmt.Sprintf("dir_%s", gofakeit.LetterN(8))
-	te.AddTemplateVars(map[string]interface{}{
-		"DirName": dirName,
-	})
 
 	tests := []struct {
 		name string
@@ -241,30 +237,6 @@ func TestAccResourceVM(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
-		{"set cpu.architecture as non root is not supported", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_cpu_arch" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					cpu {
-						architecture = "x86_64"
-					}
-				}`, WithAPIToken()),
-				ExpectError: regexp.MustCompile(`can only be set by the root account`),
-			},
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "template" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					cpu {
-						architecture = "x86_64"
-					}
-				}`, WithRootPAMAuth()),
-				Destroy: false,
-			},
-		}},
 		{"update memory block", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -432,108 +404,6 @@ func TestAccResourceVM(t *testing.T) {
 						"watchdog.0.enabled": "false",
 						"watchdog.0.model":   "ib700",
 						"watchdog.0.action":  "reset",
-					}),
-				),
-			},
-		}},
-		{"update rng block", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_vm" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					
-					rng {
-						source = "/dev/urandom"
-					}
-				}`, WithRootPAMAuth()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-						"rng.0.source":    "/dev/urandom",
-						"rng.0.max_bytes": "1024",
-						"rng.0.period":    "1000",
-					}),
-				),
-			}, {
-				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_vm" "test_vm" {
-						node_name = "{{.NodeName}}"
-						started   = false
-				
-						rng {
-							source = "/dev/urandom"
-							max_bytes = 2048
-							period = 500
-						}
-					}`, WithRootPAMAuth()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-						"rng.0.source":    "/dev/urandom",
-						"rng.0.max_bytes": "2048",
-						"rng.0.period":    "500",
-					}),
-				),
-			}, {
-				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_vm" "test_vm" {
-						node_name = "{{.NodeName}}"
-						started   = false
-				
-						rng {
-							source = "/dev/random"
-							max_bytes = 512
-							period = 200
-						}
-					}`, WithRootPAMAuth()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-						"rng.0.source":    "/dev/random",
-						"rng.0.max_bytes": "512",
-						"rng.0.period":    "200",
-					}),
-				),
-			},
-		}},
-		{"create virtiofs block", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
-						name      = "{{.DirName}}"
-
-						map = [{
-							node = "{{.NodeName}}"
-							path = "/mnt"
-						}]
-					}`, WithRootPAMAuth()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_hardware_mapping_dir.test", map[string]string{
-						"name":       dirName,
-						"map.0.node": te.NodeName,
-						"map.0.path": "/mnt",
-					}),
-				),
-			},
-			{
-				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_vm" "test_vm" {
-						node_name = "{{.NodeName}}"
-						started   = false
-
-						virtiofs {
-							mapping = "{{.DirName}}"
-							cache = "always"
-							direct_io = true
-							expose_acl = false
-							expose_xattr = false
-						}
-					}`, WithRootPAMAuth()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-						"virtiofs.0.mapping":      dirName,
-						"virtiofs.0.cache":        "always",
-						"virtiofs.0.direct_io":    "true",
-						"virtiofs.0.expose_acl":   "false",
-						"virtiofs.0.expose_xattr": "false",
 					}),
 				),
 			},
@@ -756,6 +626,179 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.step,
+			})
+		})
+	}
+}
+
+// TestAccResourceVMRootOnlyAttributes covers attributes PVE lets only root@pam set. They live apart from
+// TestAccResourceVM because RenderConfig skips the whole test when root credentials are missing.
+func TestAccResourceVMRootOnlyAttributes(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+	dirName := fmt.Sprintf("dir_%s", gofakeit.LetterN(8))
+	te.AddTemplateVars(map[string]interface{}{
+		"DirName": dirName,
+	})
+
+	tests := []struct {
+		name string
+		step []resource.TestStep
+	}{
+		{"set cpu.architecture as non root is not supported", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cpu_arch" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					cpu {
+						architecture = "x86_64"
+					}
+				}`, WithAPIToken()),
+				ExpectError: regexp.MustCompile(`can only be set by the root account`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					cpu {
+						architecture = "x86_64"
+					}
+				}`, WithRootPAMAuth()),
+				Destroy: false,
+			},
+		}},
+		{"update rng block", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					rng {
+						source = "/dev/urandom"
+					}
+				}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"rng.0.source":    "/dev/urandom",
+						"rng.0.max_bytes": "1024",
+						"rng.0.period":    "1000",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+				
+						rng {
+							source = "/dev/urandom"
+							max_bytes = 2048
+							period = 500
+						}
+					}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"rng.0.source":    "/dev/urandom",
+						"rng.0.max_bytes": "2048",
+						"rng.0.period":    "500",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+				
+						rng {
+							source = "/dev/random"
+							max_bytes = 512
+							period = 200
+						}
+					}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"rng.0.source":    "/dev/random",
+						"rng.0.max_bytes": "512",
+						"rng.0.period":    "200",
+					}),
+				),
+			},
+		}},
+		{"create virtiofs block", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+						name      = "{{.DirName}}"
+
+						map = [{
+							node = "{{.NodeName}}"
+							path = "/mnt"
+						}]
+					}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_hardware_mapping_dir.test", map[string]string{
+						"name":       dirName,
+						"map.0.node": te.NodeName,
+						"map.0.path": "/mnt",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+
+						virtiofs {
+							mapping = "{{.DirName}}"
+							cache = "always"
+							direct_io = true
+							expose_acl = false
+							expose_xattr = false
+						}
+					}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"virtiofs.0.mapping":      dirName,
+						"virtiofs.0.cache":        "always",
+						"virtiofs.0.direct_io":    "true",
+						"virtiofs.0.expose_acl":   "false",
+						"virtiofs.0.expose_xattr": "false",
+					}),
+				),
+			},
+		}},
+		{"clone cpu.architecture", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					cpu {
+						architecture = "x86_64"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+				}`, WithRootPAMAuth()),
+		}}},
 	}
 
 	for _, tt := range tests {
@@ -2038,24 +2081,6 @@ func TestAccResourceVMClone(t *testing.T) {
 				"boot_order.#": "1",
 				"boot_order.0": "scsi0",
 			}),
-		}}},
-		{"clone cpu.architecture as root", []resource.TestStep{{
-			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "template" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					template  = true
-					cpu {
-						architecture = "x86_64"
-					}
-				}
-				resource "proxmox_virtual_environment_vm" "clone" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					clone {
-						vm_id = proxmox_virtual_environment_vm.template.vm_id
-					}
-				}`, WithRootPAMAuth()),
 		}}},
 		{"clone machine type", []resource.TestStep{{
 			Config: te.RenderConfig(`

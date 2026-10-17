@@ -34,7 +34,7 @@ func TestAccProviderDebugLogMasksCredentials(t *testing.T) {
 	te := InitEnvironment(t)
 
 	token := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
-	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+	password := rootPAMPassword()
 
 	_, tokenSecret, _ := strings.Cut(token, "=")
 	require.NotEmpty(t, tokenSecret, "PROXMOX_VE_API_TOKEN must be set")
