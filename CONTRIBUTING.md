@@ -155,6 +155,18 @@ PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
 PROXMOX_VE_ACC_ZFS_DISK="/dev/sdb"  # spare disk for proxmox_node_disk_zfs tests — will be fully wiped
 ```
 
+Some tests need root beyond the API token:
+
+- **SSH as `root`**: node commands (e.g. `pct exec`) and `root_ticket` tests. The SSH agent or key above works if it is
+  authorized for `root`; otherwise the root password below is used.
+- **API login as `root@pam`**: operations PVE restricts to a logged-in `root@pam` (e.g. container bind mounts); an API
+  token never qualifies. These tests fail without:
+
+  ```env
+  PROXMOX_VE_USERNAME="root@pam"
+  PROXMOX_VE_PASSWORD="<root password>"
+  ```
+
 > [!NOTE]
 >
 > **Non-root SSH user — snippets directory permissions.** The `upload_mode = "sftp"` cases in
