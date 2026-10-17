@@ -42,7 +42,7 @@ func TestAccDatasourceACMEAccount(t *testing.T) {
 						depends_on = [proxmox_acme_account.test_account]
 						name = "{{.AccountName}}"
 					}
-				`, test.WithRootUser()),
+				`, test.WithRootPassword()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("data.proxmox_acme_account.test", map[string]string{
 						"name": accountName,

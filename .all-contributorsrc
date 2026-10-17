@@ -1999,6 +1999,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ag2014",
+      "name": "@lex",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6313014?v=4",
+      "profile": "https://github.com/ag2014",
+      "contributions": [
+        "tool",
+        "maintenance"
+      ]
     }
   ],
   "contributorsPerLine": 7,
