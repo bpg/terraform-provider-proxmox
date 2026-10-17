@@ -67,10 +67,22 @@ func (c *Client) ListDatastoreFiles(
 	ctx context.Context,
 	contentType *string,
 ) ([]*DatastoreFileListResponseData, error) {
+	return c.listContent(ctx, &DatastoreFileListRequestBody{ContentType: contentType})
+}
+
+// ListVMImages retrieves the disk images in a datastore that PVE reports as owned by the given VM.
+func (c *Client) ListVMImages(ctx context.Context, vmID int) ([]*DatastoreFileListResponseData, error) {
+	return c.listContent(ctx, &DatastoreFileListRequestBody{
+		ContentType: new(ContentTypeImages),
+		VMID:        &vmID,
+	})
+}
+
+func (c *Client) listContent(
+	ctx context.Context,
+	reqBody *DatastoreFileListRequestBody,
+) ([]*DatastoreFileListResponseData, error) {
 	resBody := &DatastoreFileListResponseBody{}
-	reqBody := &DatastoreFileListRequestBody{
-		ContentType: contentType,
-	}
 
 	err := retrygo.New(
 		retrygo.Context(ctx),

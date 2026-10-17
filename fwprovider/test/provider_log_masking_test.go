@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -33,11 +34,10 @@ func TestAccProviderDebugLogMasksCredentials(t *testing.T) {
 	te := InitEnvironment(t)
 
 	token := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
-	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+	password := rootPAMPassword()
 
 	_, tokenSecret, _ := strings.Cut(token, "=")
 	require.NotEmpty(t, tokenSecret, "PROXMOX_VE_API_TOKEN must be set")
-	require.NotEmpty(t, password, "PROXMOX_VE_PASSWORD must be set")
 
 	tests := []struct {
 		name       string
@@ -46,11 +46,15 @@ func TestAccProviderDebugLogMasksCredentials(t *testing.T) {
 		secrets    []string
 	}{
 		{"api token", nil, "Authorization", []string{tokenSecret}},
-		{"password login", []RenderConfigOption{WithRootUser()}, "Cookie", []string{password}},
+		{"password login", []RenderConfigOption{WithRootPassword()}, "Cookie", []string{password}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if slices.Contains(tt.secrets, "") {
+				t.Skip("credential not set")
+			}
+
 			logPath := filepath.Join(t.TempDir(), "provider.log")
 
 			t.Setenv("TF_LOG", "DEBUG")

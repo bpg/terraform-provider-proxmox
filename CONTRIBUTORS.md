@@ -281,6 +281,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/gilrim"><img src="https://avatars.githubusercontent.com/u/434698?v=4?s=100" width="100px;" alt="gilrim"/><br /><sub><b>gilrim</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=gilrim" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/githrdw"><img src="https://avatars.githubusercontent.com/u/1455140?v=4?s=100" width="100px;" alt="githrdw"/><br /><sub><b>githrdw</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=githrdw" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Ishita-Singh-12"><img src="https://avatars.githubusercontent.com/u/188230810?v=4?s=100" width="100px;" alt="Ishita Singh"/><br /><sub><b>Ishita Singh</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Ishita-Singh-12" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ag2014"><img src="https://avatars.githubusercontent.com/u/6313014?v=4?s=100" width="100px;" alt="@lex"/><br /><sub><b>@lex</b></sub></a><br /><a href="#tool-ag2014" title="Tools">🔧</a> <a href="#maintenance-ag2014" title="Maintenance">🚧</a></td>
     </tr>
   </tbody>
   <tfoot>

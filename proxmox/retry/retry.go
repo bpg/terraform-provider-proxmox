@@ -24,7 +24,17 @@ type Operation struct {
 	lastErrorOnly  bool
 	useBackoff     bool
 	isAlreadyDone  func(error) bool
+	retryTaskIf    func(error) bool
 	untilSucceeded bool
+}
+
+// retryableTaskError marks a task failure that DoTask may dispatch again.
+type retryableTaskError struct {
+	error
+}
+
+func (e retryableTaskError) Unwrap() error {
+	return e.error
 }
 
 // Option configures an Operation.
@@ -67,6 +77,20 @@ func IsTransientAPIError(err error) bool {
 		strings.Contains(err.Error(), "got timeout")
 }
 
+// IsLockTimeout reports whether err is a PVE timeout waiting for a lock: lock_file for local files and non-shared
+// storage, cfs_lock for shared storage. PVE gives up before running the locked code, so the task can be dispatched
+// again. cfs_lock's "locked command timed out" is not matched: the locked code already ran for two minutes.
+func IsLockTimeout(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	msg := err.Error()
+
+	return (strings.Contains(msg, "can't lock file") && strings.Contains(msg, "got timeout")) ||
+		(strings.Contains(msg, "cfs-lock") && strings.Contains(msg, "got lock request timeout"))
+}
+
 // ErrorContains returns a predicate that checks if the error message contains substr.
 func ErrorContains(substr string) func(error) bool {
 	return func(err error) bool {
@@ -80,8 +104,8 @@ func ErrorContains(substr string) func(error) bool {
 
 // NewTaskOperation creates an Operation for async UPID-based task operations
 // (create, clone, delete, start). Defaults: exponential backoff,
-// retry logging, LastErrorOnly(false), WaitForTask errors are unrecoverable,
-// 3 attempts.
+// retry logging, LastErrorOnly(false), WaitForTask errors are unrecoverable
+// except lock timeouts, 3 attempts.
 func NewTaskOperation(name string, opts ...Option) *Operation {
 	o := &Operation{
 		name:          name,
@@ -90,6 +114,7 @@ func NewTaskOperation(name string, opts ...Option) *Operation {
 		logOnRetry:    true,
 		lastErrorOnly: false,
 		useBackoff:    true,
+		retryTaskIf:   IsLockTimeout,
 	}
 
 	for _, opt := range opts {
@@ -101,7 +126,8 @@ func NewTaskOperation(name string, opts ...Option) *Operation {
 
 // DoTask executes an async task operation with retry. The dispatchFn is retried
 // according to the operation's retry configuration. Errors from waitFn are
-// wrapped in retry.Unrecoverable to prevent re-dispatch after a wait failure.
+// unrecoverable to prevent re-dispatch after a wait failure, unless they match
+// the operation's task retry predicate (lock timeouts for task operations).
 // The isAlreadyDone check (if configured) is only applied on retry attempts.
 func (o *Operation) DoTask(
 	ctx context.Context,
@@ -121,9 +147,18 @@ func (o *Operation) DoTask(
 		retryOpts = append(retryOpts, retrylib.DelayType(retrylib.BackOffDelay))
 	}
 
-	if o.retryIf != nil {
-		retryOpts = append(retryOpts, retrylib.RetryIf(o.retryIf))
-	}
+	// A custom RetryIf replaces retry-go's IsRecoverable check, so it has to be repeated here.
+	retryOpts = append(retryOpts, retrylib.RetryIf(func(err error) bool {
+		if !retrylib.IsRecoverable(err) {
+			return false
+		}
+
+		if taskErr, ok := errors.AsType[retryableTaskError](err); ok {
+			return taskErr.error != nil
+		}
+
+		return o.retryIf == nil || o.retryIf(err)
+	}))
 
 	retryOpts = append(retryOpts, retrylib.OnRetry(func(n uint, err error) {
 		retrying = true
@@ -154,6 +189,10 @@ func (o *Operation) DoTask(
 		}
 
 		if err := waitFn(ctx, *taskID); err != nil {
+			if o.retryTaskIf != nil && o.retryTaskIf(err) {
+				return retryableTaskError{err}
+			}
+
 			return retrylib.Unrecoverable(err)
 		}
 

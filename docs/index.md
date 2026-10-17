@@ -227,7 +227,32 @@ You may see errors like
 `error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or
 `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` or
 `Permission check failed (user != root@pam)` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
-The workaround is to use password authentication for those operations.
+Use password authentication for those operations, or let the provider mint a `root@pam` ticket over SSH, as described below.
+
+### Operations restricted to `root@pam`
+
+Affected operations include container bind mounts, feature flags on privileged containers, USB and PCI passthrough without a resource mapping, virtiofs directories, serial ports pointing at real devices, the VM CPU architecture, and `force`/`migration_network` on a migration.
+
+If the provider has SSH access to the nodes as `root`, it can mint a short-lived `root@pam` ticket on the node and use it for those calls, instead of a root password in the configuration:
+
+```hcl
+provider "proxmox" {
+  endpoint  = var.virtual_environment_endpoint
+  api_token = "root@pam!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+  ssh {
+    agent       = true
+    username    = "root"
+    root_ticket = true
+  }
+}
+```
+
+The setting is off by default. While it is on:
+
+- Every call under `/nodes/{node}/` runs and is logged as `root@pam`, so the token's permissions no longer limit those calls. Calls outside it, such as `/cluster` and `/access`, keep using the configured credentials.
+- The SSH user must be `root`, otherwise the provider refuses to start: minting needs a root shell, and `sudo` on `perl` is root-equivalent, like the `qm` and `pvesm` grants [SSH User](#ssh-user) warns about.
+- Tickets are minted per node, cached for an hour, and never logged.
 
 -> You can also configure additional Proxmox users and roles using [`virtual_environment_user`](https://bpg.sh/docs/resources/virtual_environment_user) and [`virtual_environment_role`](https://bpg.sh/docs/resources/virtual_environment_role) resources of the provider.
 
@@ -589,17 +614,18 @@ All provider arguments can be configured via environment variables. This is the 
 
 **SSH Connection (optional — only if [SSH is required](#when-is-ssh-required)):**
 
-| Environment Variable              | Description                    |
-| --------------------------------- | ------------------------------ |
-| `PROXMOX_VE_SSH_USERNAME`         | SSH username                   |
-| `PROXMOX_VE_SSH_PASSWORD`         | SSH password                   |
-| `PROXMOX_VE_SSH_PRIVATE_KEY`      | SSH private key (PEM format)   |
-| `PROXMOX_VE_SSH_AGENT`            | Use SSH agent (`true`/`false`) |
-| `PROXMOX_VE_SSH_AUTH_SOCK`        | SSH agent socket path          |
-| `PROXMOX_VE_SSH_AGENT_FORWARDING` | Enable SSH agent forwarding    |
-| `PROXMOX_VE_SSH_SOCKS5_SERVER`    | SOCKS5 proxy server address    |
-| `PROXMOX_VE_SSH_SOCKS5_USERNAME`  | SOCKS5 proxy username          |
-| `PROXMOX_VE_SSH_SOCKS5_PASSWORD`  | SOCKS5 proxy password          |
+| Environment Variable              | Description                                                                       |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `PROXMOX_VE_SSH_USERNAME`         | SSH username                                                                      |
+| `PROXMOX_VE_SSH_PASSWORD`         | SSH password                                                                      |
+| `PROXMOX_VE_SSH_PRIVATE_KEY`      | SSH private key (PEM format)                                                      |
+| `PROXMOX_VE_SSH_AGENT`            | Use SSH agent (`true`/`false`)                                                    |
+| `PROXMOX_VE_SSH_AUTH_SOCK`        | SSH agent socket path                                                             |
+| `PROXMOX_VE_SSH_AGENT_FORWARDING` | Enable SSH agent forwarding                                                       |
+| `PROXMOX_VE_SSH_SOCKS5_SERVER`    | SOCKS5 proxy server address                                                       |
+| `PROXMOX_VE_SSH_SOCKS5_USERNAME`  | SOCKS5 proxy username                                                             |
+| `PROXMOX_VE_SSH_SOCKS5_PASSWORD`  | SOCKS5 proxy password                                                             |
+| `PROXMOX_VE_SSH_ROOT_TICKET`      | Run `root@pam`-only API operations with a ticket minted over SSH (`true`/`false`) |
 
 ## Argument Reference
 
@@ -630,6 +656,7 @@ In addition to [generic provider arguments](https://developer.hashicorp.com/terr
   - `socks5_server` - (Optional) The address of the SOCKS5 proxy server to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_SERVER`.
   - `socks5_username` - (Optional) The username to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_USERNAME`.
   - `socks5_password` - (Optional) The password to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_PASSWORD`.
+  - `root_ticket` - (Optional) Whether to run API calls under `/nodes/{node}/` with a `root@pam` ticket minted on that node over SSH, so an API token can perform the operations Proxmox VE restricts to a logged-in `root@pam` user — see [Operations restricted to `root@pam`](#operations-restricted-to-rootpam). Requires an SSH connection as `root`. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_ROOT_TICKET`.
   - `node_address_source` - (Optional) The method used to resolve node IP addresses for SSH connections. Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. DNS resolution prefers IPv4 but falls back to IPv6 if no IPv4 addresses are available. Useful in multi-subnet environments where the API may return an inaccessible IP (e.g., a Ceph network address). Defaults to `api`.
   - `node` - (Optional) The node configuration for the SSH connection. Can be specified multiple times to provide configuration for multiple nodes.
     - `name` - (Required) The name of the node.

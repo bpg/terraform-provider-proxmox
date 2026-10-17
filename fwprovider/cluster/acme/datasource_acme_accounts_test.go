@@ -53,7 +53,7 @@ func TestAccDatasourceACMEAccounts(t *testing.T) {
 							proxmox_acme_account.test_account2
 						]
 					}
-				`, test.WithRootUser()),
+				`, test.WithRootPassword()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.proxmox_acme_accounts.test", "accounts.#"),
 				),
