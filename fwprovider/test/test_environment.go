@@ -67,6 +67,7 @@ type renderConfig struct {
 	endpoint   string
 	auth       string
 	apiHeaders string
+	sshAuth    string
 }
 
 // render assembles the provider configuration block from the applied options.
@@ -105,8 +106,8 @@ func (r *renderConfig) ssh() string {
 			name    = "%s"
 			address = "%s"
 			port    = %s
-		}
-  	}`, nodeName, nodeAddress, nodePort)
+		}%s
+  	}`, nodeName, nodeAddress, nodePort, r.sshAuth)
 }
 
 // WithRootUser returns a configuration option that sets the root user in the provider configuration.
@@ -125,6 +126,28 @@ func (o *rootUserConfigOption) apply(rc *renderConfig) error {
 		utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"),
 		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
 	)
+
+	return nil
+}
+
+// WithRootTicket returns a configuration option that makes the provider run node-scoped API calls
+// with a root@pam ticket minted over SSH. The provider connects over SSH as root with the root API
+// user's password (PROXMOX_VE_USERNAME / PROXMOX_VE_PASSWORD), like ExecuteNodeCommands.
+func WithRootTicket() RenderConfigOption {
+	return &rootTicketConfigOption{}
+}
+
+type rootTicketConfigOption struct{}
+
+func (o *rootTicketConfigOption) apply(rc *renderConfig) error {
+	username, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")
+	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+
+	if username != "root" || password == "" {
+		return fmt.Errorf("PROXMOX_VE_USERNAME must be root@pam and PROXMOX_VE_PASSWORD must be set")
+	}
+
+	rc.sshAuth = fmt.Sprintf("\n\t\tusername    = %q\n\t\tpassword    = %q\n\t\troot_ticket = true", username, password)
 
 	return nil
 }

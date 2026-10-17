@@ -162,6 +162,31 @@ func NewClient(creds Credentials, conn *Connection) (Client, error) {
 	}, nil
 }
 
+// NewRootTicketClient returns a client that authenticates calls under /nodes/{node}/ with a
+// root@pam ticket minted on that node over SSH, and everything else with c's credentials.
+//
+// The SSH node resolver must keep the unwrapped client: resolving a node address is itself a call
+// under /nodes/{node}/ and would recurse.
+func NewRootTicketClient(c Client, executor NodeCommandExecutor) (Client, error) {
+	inner, ok := c.(*client)
+	if !ok {
+		return nil, errors.New("the root@pam ticket client can only wrap the default API client")
+	}
+
+	if executor.Username() != rootShellUsername {
+		return nil, fmt.Errorf(
+			"minting a root@pam ticket requires an SSH connection as %q, but the SSH user is %q; "+
+				"set the `username` field of the `ssh` block",
+			rootShellUsername, executor.Username(),
+		)
+	}
+
+	return &client{
+		conn: inner.conn,
+		auth: newRootTicketAuthenticator(inner.auth, executor),
+	}, nil
+}
+
 // DoRequest performs a HTTP request against a JSON API endpoint.
 func (c *client) DoRequest(
 	ctx context.Context,

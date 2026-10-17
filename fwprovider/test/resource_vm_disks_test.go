@@ -2757,3 +2757,95 @@ func TestAccResourceVMEFIDiskStorageMigration(t *testing.T) {
 		},
 	})
 }
+
+func TestAccResourceVMDiskLinkedCloneResizeAndMove(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+
+	checkCloneDisk := func(wantSize int64, wantVolume *regexp.Regexp) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_linked_clone"]
+			if !ok {
+				return fmt.Errorf("resource not found")
+			}
+
+			vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+			if err != nil {
+				return fmt.Errorf("failed to parse vm_id: %w", err)
+			}
+
+			vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to get VM config: %w", err)
+			}
+
+			disk := vmConfig.StorageDevices["scsi0"]
+			if disk == nil || disk.Size == nil {
+				return fmt.Errorf("scsi0 not found in VM %d config", vmID)
+			}
+
+			if got := disk.Size.InGigabytes(); got != wantSize {
+				return fmt.Errorf("scsi0 size is %dG, want %dG", got, wantSize)
+			}
+
+			if !wantVolume.MatchString(disk.FileVolume) {
+				return fmt.Errorf("scsi0 volume %q does not match %q", disk.FileVolume, wantVolume)
+			}
+
+			return nil
+		}
+	}
+
+	config := func(datastoreID string, size int) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_vm" "test_linked_clone_template" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			template  = true
+			name      = "test-linked-clone-template"
+
+			disk {
+				datastore_id = "local"
+				file_format  = "qcow2"
+				interface    = "scsi0"
+				size         = 1
+			}
+		}
+
+		resource "proxmox_virtual_environment_vm" "test_linked_clone" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			name      = "test-linked-clone"
+
+			clone {
+				vm_id = proxmox_virtual_environment_vm.test_linked_clone_template.vm_id
+				full  = false
+			}
+
+			disk {
+				datastore_id = %q
+				interface    = "scsi0"
+				size         = %d
+			}
+		}`, datastoreID, size))
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config("local", 1),
+				Check:  checkCloneDisk(1, regexp.MustCompile(`^local:\d+/base-\d+-disk-0\.qcow2/\d+/vm-\d+-disk-0\.qcow2$`)),
+			},
+			{
+				Config: config("local", 2),
+				Check:  checkCloneDisk(2, regexp.MustCompile(`^local:\d+/base-\d+-disk-0\.qcow2/\d+/vm-\d+-disk-0\.qcow2$`)),
+			},
+			{
+				Config: config("local-lvm", 2),
+				Check:  checkCloneDisk(2, regexp.MustCompile(`^local-lvm:vm-\d+-disk-0$`)),
+			},
+		},
+	})
+}
