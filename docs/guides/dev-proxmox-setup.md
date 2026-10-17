@@ -72,8 +72,25 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
       sudo apt install proxmox-auto-install-assistant
       ```
 
-
    2. Download the latest Proxmox VE ISO from https://www.proxmox.com/en/downloads.
+   3. Create a different network than the default one. As you will need a NATed network without DHCP.
+      ```text
+      # proxmox-test-network.xml
+      <network>
+         <name>proxmox-test-network</name>
+         <bridge name="prmx-test" stp="on" delay="0"/>
+         <forward mode='nat'>
+            <nat/>
+         </forward>
+         <ip address="192.168.126.1" netmask="255.255.255.0">
+         </ip>
+      </network>
+      ```
+      Create and activate the network
+      ```shell
+      virsh net-define proxmox-test-network.xml
+      virsh start proxmox-test-network
+      ```
    3. Create the ISO with the `answer.toml` file:
 
       ```shell
@@ -95,9 +112,9 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
 
       [network]
       source = "from-answer"
-      cidr = "192.168.122.43/24"
-      dns = "192.168.122.1"
-      gateway = "192.168.122.1"
+      cidr = "192.168.126.43/24"
+      dns = "192.168.126.1"
+      gateway = "192.168.126.1"
       filter.ID_NET_NAME_PATH = "enp1s0"
 
       [disk-setup]
@@ -117,12 +134,15 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
       --disk path=/path/where/to/store/the/vm/disk/pve.cow2,size=30,bus=virtio,format=qcow2 \
       --cdrom /path/where/stored/the/generated/proxmox-with-answer-file.iso \
       # You may choose another network if you have one defined
-      --network network=default,model=virtio \ 
+      --network network=proxmox-test-network,model=virtio \ 
       --graphics vnc,listen=127.0.0.1 \
       --noautoconsole
-      ```
 
+      # Check the status of the VM with
+      watch -n 3 virsh list
+      ```
        **The VM shuts down once the installation is complete, so you need to start it again with `virsh`.**
+   
 
    5. Start the VM:
 
@@ -133,10 +153,10 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
    6. (Optional) Verify connectivity from your host:
 
    ```shell
-   ssh root@192.168.122.43
+   ssh root@192.168.126.43
    ```
 
-   You can also access the web console at `https://192.168.122.43:8006`.
+   You can also access the web console at `https://192.168.126.43:8006`.
 
 ## Proxmox configuration
 
