@@ -236,16 +236,22 @@ Retry logic is centralized in the `proxmox/retry/` package, which provides three
 
 Key behaviors of `DoTask`:
 
-- `dispatchFn` is retried; `waitFn` errors are wrapped in `Unrecoverable` (no re-dispatch after wait failure)
+- `dispatchFn` is retried according to `WithRetryIf`
+- A failed task (`waitFn` error) is not re-dispatched, since it may have done partial work. The exception is a
+  lock timeout (`IsLockTimeout`): PVE gave up waiting for the lock before running the task, so it is re-dispatched
+  regardless of `WithRetryIf`
+- retry-go v5 honors `Unrecoverable` only in its default `RetryIf`, so `DoTask` checks `IsRecoverable` itself in
+  the custom predicate. Any new code that combines `RetryIf` with `Unrecoverable` must do the same
 - `nil` taskID with `nil` error means "already done" (e.g., "already running") — skips the wait
 - `WithAlreadyDoneCheck` is only applied on retry attempts, not the first attempt
 
 Common retry predicates:
 
-| Predicate               | Matches                                       |
-| ----------------------- | --------------------------------------------- |
-| `IsTransientAPIError`   | HTTP 5xx, "got no worker upid", "got timeout" |
-| `ErrorContains(substr)` | Error message contains substring              |
+| Predicate               | Matches                                        |
+| ----------------------- | ---------------------------------------------- |
+| `IsTransientAPIError`   | HTTP 5xx, "got no worker upid", "got timeout"  |
+| `ErrorContains(substr)` | Error message contains substring               |
+| `IsLockTimeout`         | PVE `lock_file` / `cfs_lock` lock wait timeout |
 
 Do not retry on:
 
