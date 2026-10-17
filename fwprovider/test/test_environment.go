@@ -139,10 +139,7 @@ func WithRootTicket() RenderConfigOption {
 type rootTicketConfigOption struct{}
 
 func (o *rootTicketConfigOption) apply(rc *renderConfig) error {
-	var rootPassword string
-	if apiUser, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@"); apiUser == "root" {
-		rootPassword = utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
-	}
+	rootPassword := rootSSHPassword()
 
 	// Only root can mint a ticket.
 	if sshUser := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME"); sshUser != "" && sshUser != "root" && rootPassword == "" {
@@ -391,6 +388,22 @@ func (e *Environment) SSHClient() ssh.Client {
 	return e.newNodeSSHClient(sshUsername, sshPassword)
 }
 
+// rootSSHPassword returns the root password from the API credentials when the API user is root, otherwise from the SSH
+// credentials when the SSH user is root or unset. The password of any other user is never sent to root.
+func rootSSHPassword() string {
+	if apiUser, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@"); apiUser == "root" {
+		if password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"); password != "" {
+			return password
+		}
+	}
+
+	if sshUser := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME"); sshUser == "" || sshUser == "root" {
+		return utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
+	}
+
+	return ""
+}
+
 // newNodeSSHClient returns an SSH client for the test node, trying the SSH agent and private key before the password.
 func (e *Environment) newNodeSSHClient(username, password string) ssh.Client {
 	e.t.Helper()
@@ -451,12 +464,7 @@ func (e *Environment) nodeSSHTarget() ssh.ProxmoxNode {
 func (e *Environment) ExecuteNodeCommands(commands []string) string {
 	e.t.Helper()
 
-	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
-	if sshUser := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME"); password == "" && (sshUser == "" || sshUser == "root") {
-		password = utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
-	}
-
-	client := e.newNodeSSHClient("root", password)
+	client := e.newNodeSSHClient("root", rootSSHPassword())
 
 	out, err := client.ExecuteNodeCommands(e.t.Context(), e.NodeName, commands)
 	require.NoError(e.t, err)
