@@ -67,7 +67,7 @@ type renderConfig struct {
 	endpoint   string
 	auth       string
 	apiHeaders string
-	rootTicket bool
+	sshAuth    string
 }
 
 // render assembles the provider configuration block from the applied options.
@@ -99,11 +99,6 @@ func (r *renderConfig) ssh() string {
 		nodePort = "22"
 	}
 
-	rootTicket := ""
-	if r.rootTicket {
-		rootTicket = "\n\t\troot_ticket = true"
-	}
-
 	// one indent level
 	return fmt.Sprintf(`
 	ssh {
@@ -112,7 +107,7 @@ func (r *renderConfig) ssh() string {
 			address = "%s"
 			port    = %s
 		}%s
-  	}`, nodeName, nodeAddress, nodePort, rootTicket)
+  	}`, nodeName, nodeAddress, nodePort, r.sshAuth)
 }
 
 // WithRootUser returns a configuration option that sets the root user in the provider configuration.
@@ -136,7 +131,8 @@ func (o *rootUserConfigOption) apply(rc *renderConfig) error {
 }
 
 // WithRootTicket returns a configuration option that makes the provider run node-scoped API calls
-// with a root@pam ticket minted over SSH. Requires SSH access to the node as root.
+// with a root@pam ticket minted over SSH. The provider connects over SSH as root with the root API
+// user's password (PROXMOX_VE_USERNAME / PROXMOX_VE_PASSWORD), like ExecuteNodeCommands.
 func WithRootTicket() RenderConfigOption {
 	return &rootTicketConfigOption{}
 }
@@ -144,11 +140,14 @@ func WithRootTicket() RenderConfigOption {
 type rootTicketConfigOption struct{}
 
 func (o *rootTicketConfigOption) apply(rc *renderConfig) error {
-	if utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME") != "root" {
-		return fmt.Errorf("PROXMOX_VE_SSH_USERNAME must be set to 'root'")
+	username, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")
+	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+
+	if username != "root" || password == "" {
+		return fmt.Errorf("PROXMOX_VE_USERNAME must be root@pam and PROXMOX_VE_PASSWORD must be set")
 	}
 
-	rc.rootTicket = true
+	rc.sshAuth = fmt.Sprintf("\n\t\tusername    = %q\n\t\tpassword    = %q\n\t\troot_ticket = true", username, password)
 
 	return nil
 }

@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	// PVE tickets are valid for 2 hours.
+	// Half of PVE's 2h ticket lifetime: a ticket handed out just before the cache expires is still valid for an hour,
+	// so requests and task polling that started with it never hit an expired ticket mid-operation.
 	rootTicketTTL = time.Hour
 
 	// q() does not interpolate, so q(root\@pam) would mint a ticket for the user "root\@pam".
