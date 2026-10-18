@@ -18,7 +18,8 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
 
 ## Installation steps
 
-### Option1 -  Using virt-manager
+### Option 1 - Using virt-manager
+
 1. Install virt-manager:
 
    ```sh
@@ -55,108 +56,91 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
 
 ### Option 2 - Using virsh and an unattended installation
 
-   The Proxmox VE ISO can be installed unattended. The installation is fully automatic, which lets you spin up a Proxmox VM effortlessly and saves you from clicking through the installer each time.
+The Proxmox VE ISO can be installed unattended with an `answer.toml` file (see the [Proxmox automated installation documentation](https://pve.proxmox.com/wiki/Automated_Installation#Assistant_Tool)), which saves you from clicking through the installer each time. This option assumes that KVM and libvirt are already installed and working on your machine.
 
-   The installer is driven by an `answer.toml` file. See the [Proxmox automated installation documentation](https://pve.proxmox.com/wiki/Automated_Installation#Assistant_Tool) for details.
+1. Allow your user to manage VMs without `sudo`, and make `virsh` and `virt-install` use the system connection:
 
+   ```sh
+   sudo usermod -aG libvirt,kvm "$USER"
+   # log out and back in (or run: newgrp libvirt)
 
-   **Steps:**
-
-   1. Install `virsh` (the CLI to manage VMs), virtinst and `proxmox-auto-install-assistant`:
-
-      ```shell
-      sudo apt update
-      sudo apt install libvirt-clients libvirt-daemon-system virtinst
-      # proxmox-auto-install-assistant is not in the standard Debian/Ubuntu repositories. Check the proxmox documentation for you distribution
-
-      sudo apt install proxmox-auto-install-assistant
-      ```
-
-   2. Download the latest Proxmox VE ISO from https://www.proxmox.com/en/downloads.
-   3. Create a different network than the default one. As you will need a NATed network without DHCP.
-      ```text
-      # proxmox-test-network.xml
-      <network>
-         <name>proxmox-test-network</name>
-         <bridge name="prmx-test" stp="on" delay="0"/>
-         <forward mode='nat'>
-            <nat/>
-         </forward>
-         <ip address="192.168.126.1" netmask="255.255.255.0">
-         </ip>
-      </network>
-      ```
-      Create and activate the network
-      ```shell
-      virsh net-define proxmox-test-network.xml
-      virsh start proxmox-test-network
-      ```
-   3. Create the ISO with the `answer.toml` file:
-
-      ```shell
-      proxmox-auto-install-assistant prepare-iso /path/to/proxmox-ve_x.y-z.iso --fetch-from iso --answer-file answer-pve.toml --output /path/where/to/store/the/generated/proxmox-with-answer-file.iso
-      ```
-
-
-      Example of an `answer-pve.toml` file:
-
-      ```toml
-      [global]
-      keyboard = "en-us"
-      country = "fr"
-      fqdn = "pve.example.local"
-      mailto = "admin@example.local"
-      timezone = "Europe/Paris"
-      root_password = "APassYouRemember"
-      root_ssh_keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1........ user@pve"]
-
-      [network]
-      source = "from-answer"
-      cidr = "192.168.126.43/24"
-      dns = "192.168.126.1"
-      gateway = "192.168.126.1"
-      filter.ID_NET_NAME_PATH = "enp1s0"
-
-      [disk-setup]
-      filesystem = "ext4"
-      disk_list = ["vda"]
-      ```
-
-   4. Run the `virt-install` command to create the Proxmox VM:
-
-      ```shell
-      virt-install \
-      --name pve \
-      --memory 8192 \
-      --vcpus 4 \
-      --cpu host-passthrough \
-      --os-variant debian13 \
-      --disk path=/path/where/to/store/the/vm/disk/pve.cow2,size=30,bus=virtio,format=qcow2 \
-      --cdrom /path/where/stored/the/generated/proxmox-with-answer-file.iso \
-      # You may choose another network if you have one defined
-      --network network=proxmox-test-network,model=virtio \ 
-      --graphics vnc,listen=127.0.0.1 \
-      --noautoconsole
-
-      # Check the status of the VM with
-      watch -n 3 virsh list
-      ```
-       **The VM shuts down once the installation is complete, so you need to start it again with `virsh`.**
-   
-
-   5. Start the VM:
-
-   ```shell
-   virsh start pve
+   echo 'export LIBVIRT_DEFAULT_URI=qemu:///system' >> ~/.bashrc
+   export LIBVIRT_DEFAULT_URI=qemu:///system
    ```
 
-   6. (Optional) Verify connectivity from your host:
+2. Install the tools. `proxmox-auto-install-assistant` is not in the standard Debian/Ubuntu repositories, so add the Proxmox repository temporarily:
 
-   ```shell
-   ssh root@192.168.126.43
+   ```sh
+   sudo apt update
+   sudo apt install libvirt-clients virtinst xorriso
+
+   # Proxmox VE 9 repository, for a Debian 13 (trixie) host
+   sudo wget https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg \
+     -O /usr/share/keyrings/proxmox-archive-keyring.gpg
+
+   sudo tee /etc/apt/sources.list.d/pve-temp.sources <<'EOF'
+   Types: deb
+   URIs: http://download.proxmox.com/debian/pve
+   Suites: trixie
+   Components: pve-no-subscription
+   Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+   EOF
+
+   sudo apt update
+   sudo apt install proxmox-auto-install-assistant
+
+   # remove the repository so that `apt upgrade` does not pull Proxmox packages
+   sudo rm /etc/apt/sources.list.d/pve-temp.sources
+   sudo apt update
    ```
 
-   You can also access the web console at `https://192.168.126.43:8006`.
+   **Note:** on Ubuntu 24.04, use the `bookworm` suite instead of `trixie`, and the key <https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg>.
+
+3. Download the latest Proxmox VE ISO from <https://www.proxmox.com/en/downloads>.
+
+4. Create an `answer.toml` file. The network must use DHCP: the script reserves a fixed address for the VM, so this works on any libvirt network.
+
+   ```toml
+   [global]
+   keyboard = "en-us"
+   country = "fr"
+   fqdn = "pve.example.local"
+   mailto = "admin@example.local"
+   timezone = "Europe/Paris"
+   root-password = "APassYouRemember"
+   root-ssh-keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1........ user@pve"]
+
+   [network]
+   source = "from-dhcp"
+
+   [disk-setup]
+   filesystem = "ext4"
+   disk-list = ["vda"]
+   ```
+
+   **Important:** keep the default hostname `pve` (the first part of `fqdn`) — the example configurations expect a node named `pve`. If you use a different hostname, update your `terraform.tfvars` accordingly.
+
+5. Create the VM with the [unattended script](./unattended-script.md). It builds the ISO from your `answer.toml`, creates the VM, waits for the installation to finish and makes sure the VM is running:
+
+   ```sh
+   ./run.sh /path/to/proxmox-ve_9.2-1.iso answer.toml
+   ```
+
+   The VM gets a fixed IP address ending in `.43` in the subnet of the libvirt `default` network, which is `192.168.122.43` unless libvirt picked another subnet. The script prints the address when it ends. The defaults (VM name, memory, CPUs, disk size...) can be overridden with environment variables, see the script documentation.
+
+6. (Optional) Verify connectivity from your host:
+
+   ```sh
+   ssh root@192.168.122.43
+   ```
+
+   You can also access the web console at `https://192.168.122.43:8006`. Use the address printed by the script if your subnet is not `192.168.122.0/24`.
+
+7. (Optional) Remove the VM and everything that was created for it:
+
+   ```sh
+   ./run.sh --destroy
+   ```
 
 ## Proxmox configuration
 
