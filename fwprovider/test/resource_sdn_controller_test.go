@@ -12,6 +12,7 @@
 package test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -551,6 +552,63 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 				  node = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1"]
+				  ebgp = true
+				  ebgp_multihop = 3
+				  loopback = "dummy0"
+				  bgp_multipath_as_path_relax = true
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			ResourceName:      "proxmox_sdn_controller_bgp.controller_bgp",
+			ImportStateId:     "ctrlB",
+			ImportState:       true,
+			ImportStateVerify: true,
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node = "{{.NodeName}}"
+				  asn  = 65001
+				  peers = ["10.0.0.1"]
+				  ebgp = true
+				  ebgp_multihop = 3
+				  loopback = "dummy0"
+				  bgp_multipath_as_path_relax = true
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"asn":           "65001",
+					"ebgp":          "true",
+					"ebgp_multihop": "3",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
 				  depends_on = [
 				    proxmox_sdn_applier.finalizer
 				  ]
@@ -578,6 +636,19 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 					"bgp_multipath_as_path_relax",
 				}),
 			),
+		}}},
+		{"Reject ebgp_multihop without ebgp", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  ebgp_multihop = 3
+				}
+			`),
+			PlanOnly:    true,
+			ExpectError: regexp.MustCompile(`(?s)requires\s+"ebgp"\s+set\s+to\s+true`),
 		}}},
 	}
 

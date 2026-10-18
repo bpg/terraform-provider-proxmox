@@ -264,6 +264,7 @@ func TestEBGPMultiHopRequiresEBGP(t *testing.T) {
 	assert.True(t, ebgpMultiHopRequiresEBGP(types.BoolNull(), types.Int64Value(2)))
 	assert.True(t, ebgpMultiHopRequiresEBGP(types.BoolValue(false), types.Int64Value(2)))
 	assert.False(t, ebgpMultiHopRequiresEBGP(types.BoolValue(true), types.Int64Value(2)))
+	assert.False(t, ebgpMultiHopRequiresEBGP(types.BoolUnknown(), types.Int64Value(2)))
 }
 
 func sorted(values []string) []string {

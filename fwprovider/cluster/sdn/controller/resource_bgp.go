@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -206,9 +207,10 @@ func multiHopFromAPI(v *proxmoxtypes.CustomInt64Option) types.Int64 {
 }
 
 // ebgpMultiHopRequiresEBGP returns true when ebgp_multihop is set but ebgp is
-// not enabled: PVE ignores ebgp-multihop unless ebgp is true.
+// not enabled: PVE ignores ebgp-multihop unless ebgp is true. Unknown values are
+// not rejected, they are checked again once known.
 func ebgpMultiHopRequiresEBGP(ebgp types.Bool, ebgpMultiHop types.Int64) bool {
-	return attribute.IsDefined(ebgpMultiHop) && (!attribute.IsDefined(ebgp) || !ebgp.ValueBool())
+	return attribute.IsDefined(ebgpMultiHop) && !ebgp.IsUnknown() && !ebgp.ValueBool()
 }
 
 type bgpEBGPMultiHopValidator struct{}
@@ -331,6 +333,9 @@ func (r *BGPResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			"loopback": schema.StringAttribute{
 				Description: "Name of the loopback/dummy interface that provides the Router-IP.",
 				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"bgp_multipath_as_path_relax": schema.BoolAttribute{
 				Description: "Whether different AS paths of equal length are considered for multipath computation.",
