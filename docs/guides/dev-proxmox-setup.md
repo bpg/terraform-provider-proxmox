@@ -120,7 +120,7 @@ The Proxmox VE ISO can be installed unattended with an `answer.toml` file (see t
 
    **Important:** keep the default hostname `pve` (the first part of `fqdn`) — the example configurations expect a node named `pve`. If you use a different hostname, update your `terraform.tfvars` accordingly.
 
-5. Create the VM with the [unattended script](./unattended-script.md). It builds the ISO from your `answer.toml`, creates the VM, waits for the installation to finish and makes sure the VM is running:
+5. Create the VM with the [unattended script](./dev-proxmox-unattend-script.md). It builds the ISO from your `answer.toml`, creates the VM, waits for the installation to finish and makes sure the VM is running:
 
    ```sh
    ./run.sh /path/to/proxmox-ve_9.2-1.iso answer.toml

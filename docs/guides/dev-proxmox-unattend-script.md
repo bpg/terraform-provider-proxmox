@@ -1,6 +1,14 @@
+---
+layout: page
+page_title: "Unattended Proxmox VE VM Script"
+subcategory: Guides
+description: |-
+  A script that creates the Proxmox VE development VM with an unattended installation.
+---
+
 # Unattended Proxmox VE VM script
 
-This script automates the whole [Option 2](./README.md#option-2---using-virsh-and-an-unattended-installation) workflow. It creates a Proxmox VE VM on a local libvirt/KVM host, without any interaction:
+This script automates the whole [Option 2](./dev-proxmox-setup.md#option-2---using-virsh-and-an-unattended-installation) workflow. It creates a Proxmox VE VM on a local libvirt/KVM host, without any interaction:
 
 1. Creates the storage pool if it does not exist yet, and starts the libvirt network if needed
 2. Reserves a fixed IP address for the VM (DHCP reservation, in the subnet of the libvirt network)
