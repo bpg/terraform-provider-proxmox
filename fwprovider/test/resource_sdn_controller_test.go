@@ -388,7 +388,7 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1"]
 				  depends_on = [
@@ -405,11 +405,11 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
-					"id":      "ctrlB",
-					"node":    te.NodeName,
-					"peers.#": "1",
-					"peers.0": "10.0.0.1",
-					"asn":     "65000",
+					"id":        "ctrlB",
+					"node_name": te.NodeName,
+					"peers.#":   "1",
+					"peers.0":   "10.0.0.1",
+					"asn":       "65000",
 				}),
 				NoResourceAttributesSet("proxmox_sdn_controller_bgp.controller_bgp", []string{
 					"ebgp",
@@ -422,7 +422,7 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1"]
 				  depends_on = [
@@ -439,11 +439,11 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
-					"id":      "ctrlB",
-					"node":    te.NodeName,
-					"peers.#": "1",
-					"peers.0": "10.0.0.1",
-					"asn":     "65000",
+					"id":        "ctrlB",
+					"node_name": te.NodeName,
+					"peers.#":   "1",
+					"peers.0":   "10.0.0.1",
+					"asn":       "65000",
 				}),
 			),
 			ResourceName:      "proxmox_sdn_controller_bgp.controller_bgp",
@@ -455,7 +455,7 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1", "10.0.0.2"]
 				  depends_on = [
@@ -472,19 +472,19 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
-					"id":      "ctrlB",
-					"node":    te.NodeName,
-					"peers.#": "2",
-					"peers.0": "10.0.0.1",
-					"peers.1": "10.0.0.2",
-					"asn":     "65000",
+					"id":        "ctrlB",
+					"node_name": te.NodeName,
+					"peers.#":   "2",
+					"peers.0":   "10.0.0.1",
+					"peers.1":   "10.0.0.2",
+					"asn":       "65000",
 				}),
 			),
 		}, {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.3"]
 				  depends_on = [
@@ -501,11 +501,11 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
-					"id":      "ctrlB",
-					"node":    te.NodeName,
-					"peers.#": "1",
-					"peers.0": "10.0.0.3",
-					"asn":     "65000",
+					"id":        "ctrlB",
+					"node_name": te.NodeName,
+					"peers.#":   "1",
+					"peers.0":   "10.0.0.3",
+					"asn":       "65000",
 				}),
 			),
 		}}},
@@ -513,7 +513,7 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1"]
 				  ebgp = true
@@ -535,7 +535,7 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
 					"id":                          "ctrlB",
-					"node":                        te.NodeName,
+					"node_name":                   te.NodeName,
 					"peers.#":                     "1",
 					"peers.0":                     "10.0.0.1",
 					"asn":                         "65000",
@@ -549,7 +549,7 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1"]
 				  ebgp = true
@@ -576,7 +576,7 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65001
 				  peers = ["10.0.0.1"]
 				  ebgp = true
@@ -606,7 +606,7 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1"]
 				  depends_on = [
@@ -623,11 +623,11 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
-					"id":      "ctrlB",
-					"node":    te.NodeName,
-					"peers.#": "1",
-					"peers.0": "10.0.0.1",
-					"asn":     "65000",
+					"id":        "ctrlB",
+					"node_name": te.NodeName,
+					"peers.#":   "1",
+					"peers.0":   "10.0.0.1",
+					"asn":       "65000",
 				}),
 				NoResourceAttributesSet("proxmox_sdn_controller_bgp.controller_bgp", []string{
 					"ebgp",
@@ -641,7 +641,7 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1"]
 				  ebgp_multihop = 3

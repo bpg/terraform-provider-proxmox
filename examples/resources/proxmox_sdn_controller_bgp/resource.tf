@@ -1,9 +1,9 @@
 # SDN Controller (BGP) - Example configuration for a BGP controller on a single node
 resource "proxmox_sdn_controller_bgp" "example_controller_bgp" {
-  id    = "bgp1"
-  node  = "pve"
-  asn   = 65000
-  peers = ["10.0.0.1", "10.0.0.2"]
+  id        = "bgp1"
+  node_name = "pve"
+  asn       = 65000
+  peers     = ["10.0.0.1", "10.0.0.2"]
 
   ebgp                        = true
   ebgp_multihop               = 3

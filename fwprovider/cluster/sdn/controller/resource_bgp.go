@@ -36,7 +36,7 @@ type bgpModel struct {
 	genericModel
 
 	ASNumber       types.Int64     `tfsdk:"asn"`
-	NodeName       types.String    `tfsdk:"node"`
+	NodeName       types.String    `tfsdk:"node_name"`
 	Peers          stringset.Value `tfsdk:"peers"`
 	EBGP           types.Bool      `tfsdk:"ebgp"`
 	EBGPMultiHop   types.Int64     `tfsdk:"ebgp_multihop"`
@@ -306,7 +306,7 @@ func (r *BGPResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 					int64validator.Between(0, 4294967295),
 				},
 			},
-			"node": schema.StringAttribute{
+			"node_name": schema.StringAttribute{
 				Description: "Name of the node this BGP controller is bound to. Required by the BGP controller plugin.",
 				Required:    true,
 			},

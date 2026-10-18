@@ -4,10 +4,10 @@ data "proxmox_sdn_controller_bgp" "example" {
 
 output "data_proxmox_sdn_controller_bgp" {
   value = {
-    id    = data.proxmox_sdn_controller_bgp.example.id
-    node  = data.proxmox_sdn_controller_bgp.example.node
-    asn   = data.proxmox_sdn_controller_bgp.example.asn
-    peers = data.proxmox_sdn_controller_bgp.example.peers
-    ebgp  = data.proxmox_sdn_controller_bgp.example.ebgp
+    id        = data.proxmox_sdn_controller_bgp.example.id
+    node_name = data.proxmox_sdn_controller_bgp.example.node_name
+    asn       = data.proxmox_sdn_controller_bgp.example.asn
+    peers     = data.proxmox_sdn_controller_bgp.example.peers
+    ebgp      = data.proxmox_sdn_controller_bgp.example.ebgp
   }
 }

@@ -47,7 +47,7 @@ func (d *BGPControllerDataSource) Schema(_ context.Context, _ datasource.SchemaR
 				Description: "Autonomous System Number of the local BGP router.",
 				Computed:    true,
 			},
-			"node": schema.StringAttribute{
+			"node_name": schema.StringAttribute{
 				Description: "Name of the node this BGP controller is bound to.",
 				Computed:    true,
 			},

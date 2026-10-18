@@ -16,10 +16,10 @@ The BGP controller configures the Free Range Routing (frr) BGP router of a singl
 ```terraform
 # SDN Controller (BGP) - Example configuration for a BGP controller on a single node
 resource "proxmox_sdn_controller_bgp" "example_controller_bgp" {
-  id    = "bgp1"
-  node  = "pve"
-  asn   = 65000
-  peers = ["10.0.0.1", "10.0.0.2"]
+  id        = "bgp1"
+  node_name = "pve"
+  asn       = 65000
+  peers     = ["10.0.0.1", "10.0.0.2"]
 
   ebgp                        = true
   ebgp_multihop               = 3
@@ -47,7 +47,7 @@ resource "proxmox_sdn_applier" "finalizer" {
 
 - `asn` (Number) Autonomous System Number of the local BGP router.
 - `id` (String) The SDN controller object identifier.
-- `node` (String) Name of the node this BGP controller is bound to. Required by the BGP controller plugin.
+- `node_name` (String) Name of the node this BGP controller is bound to. Required by the BGP controller plugin.
 - `peers` (Set of String) Set of BGP peer IP addresses for the BGP controller.
 
 ### Optional

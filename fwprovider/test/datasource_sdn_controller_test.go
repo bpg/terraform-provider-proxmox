@@ -121,7 +121,7 @@ func TestAccDatasourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1"]
 				  ebgp = true
@@ -147,7 +147,7 @@ func TestAccDatasourceSDNControllerBGP(t *testing.T) {
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("data.proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
 					"id":                          "ctrlB",
-					"node":                        te.NodeName,
+					"node_name":                   te.NodeName,
 					"peers.#":                     "1",
 					"peers.0":                     "10.0.0.1",
 					"asn":                         "65000",
@@ -162,7 +162,7 @@ func TestAccDatasourceSDNControllerBGP(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
 				  id   = "ctrlB"
-				  node = "{{.NodeName}}"
+				  node_name = "{{.NodeName}}"
 				  asn  = 65000
 				  peers = ["10.0.0.1"]
 				  depends_on = [
@@ -184,7 +184,7 @@ func TestAccDatasourceSDNControllerBGP(t *testing.T) {
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("data.proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
 					"id":                          "ctrlB",
-					"node":                        te.NodeName,
+					"node_name":                   te.NodeName,
 					"peers.#":                     "1",
 					"peers.0":                     "10.0.0.1",
 					"asn":                         "65000",
