@@ -284,6 +284,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ag2014"><img src="https://avatars.githubusercontent.com/u/6313014?v=4?s=100" width="100px;" alt="@lex"/><br /><sub><b>@lex</b></sub></a><br /><a href="#tool-ag2014" title="Tools">🔧</a> <a href="#maintenance-ag2014" title="Maintenance">🚧</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Aureliolo"><img src="https://avatars.githubusercontent.com/u/19254254?v=4?s=100" width="100px;" alt="Aurelio Amoroso"/><br /><sub><b>Aurelio Amoroso</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Aureliolo" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="http://rulx.dev"><img src="https://avatars.githubusercontent.com/u/8262648?v=4?s=100" width="100px;" alt="Rulx Philome Alexis"/><br /><sub><b>Rulx Philome Alexis</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=rpalexis" title="Documentation">📖</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
