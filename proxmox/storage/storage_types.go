@@ -52,7 +52,9 @@ type DatastoreGetResponseData struct {
 	Namespace              *string                         `json:"namespace,omitempty"                url:"namespace,omitempty"`
 	Fingerprint            *string                         `json:"fingerprint,omitempty"              url:"fingerprint,omitempty"`
 	EncryptionKey          *string                         `json:"keyring,omitempty"                  url:"keyring,omitempty"`
-	ZFSPool                *string                         `json:"pool,omitempty"                     url:"pool,omitempty"`
+	Pool                   *string                         `json:"pool,omitempty"                     url:"pool,omitempty"`
+	DataPool               *string                         `json:"data-pool,omitempty"                url:"data-pool,omitempty"`
+	KRBD                   *types.CustomBool               `json:"krbd,omitempty"                     url:"krbd,omitempty,int"`
 	ThinProvision          *types.CustomBool               `json:"sparse,omitempty"                   url:"sparse,omitempty,int"`
 	Blocksize              *string                         `json:"blocksize,omitempty"                url:"blocksize,omitempty"`
 	VolumeGroup            *string                         `json:"vgname,omitempty"                   url:"vgname,omitempty"`
