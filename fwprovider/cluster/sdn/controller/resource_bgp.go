@@ -159,10 +159,10 @@ func (m *bgpModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *controll
 		data.Nodes = &node
 	}
 
-	data.EBGP = proxmoxtypes.CustomBoolPtr(m.EBGP.ValueBoolPointer())
+	data.EBGP = attribute.CustomBoolPtrFromValue(m.EBGP)
 	data.EBPGMultiHop = proxmoxtypes.CustomInt64OptionPtr(attribute.Int64PtrFromValue(m.EBGPMultiHop))
 	data.Loopback = attribute.StringPtrFromValue(m.Loopback)
-	data.BgpMultiPathAsRelax = proxmoxtypes.CustomBoolPtr(m.MultiPathRelax.ValueBoolPointer())
+	data.BgpMultiPathAsRelax = attribute.CustomBoolPtrFromValue(m.MultiPathRelax)
 
 	var peers []string
 	diags.Append(m.Peers.ElementsAs(ctx, &peers, false)...)
@@ -300,15 +300,11 @@ func (r *BGPResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Description: "Name of the node this BGP controller is bound to. Required by the BGP controller plugin.",
 				Required:    true,
 			},
-			"peers": schema.SetAttribute{
-				CustomType: stringset.Type{
-					SetType: types.SetType{
-						ElemType: types.StringType,
-					},
-				},
-				Description: "Set of BGP peer IP addresses for the BGP controller.",
-				Required:    true,
-			},
+			"peers": stringset.ResourceAttribute(
+				"Set of BGP peer IP addresses for the BGP controller.",
+				"",
+				stringset.WithRequired(),
+			),
 			"ebgp": schema.BoolAttribute{
 				Description: "Whether eBGP is used (remote-as external) instead of iBGP.",
 				Optional:    true,
