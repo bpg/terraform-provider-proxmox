@@ -32,17 +32,17 @@ type vxlanModel struct {
 func (m *vxlanModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPI(name, data, diags)
 
-	m.Peers = stringset.NewValueString(data.Peers, diags, stringset.WithSeparator(","))
+	m.Peers = stringset.NewValueCommaSeparatedList(data.Peers, diags)
 
-	if data.Pending != nil {
-		m.Peers = stringset.NewValueString(data.Pending.Peers, diags, stringset.WithSeparator(","))
+	if data.Pending != nil && data.Pending.Peers != nil {
+		m.Peers = stringset.NewValueCommaSeparatedList(data.Pending.Peers, diags)
 	}
 }
 
 func (m *vxlanModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone {
 	data := m.genericModel.toAPI(ctx, diags)
 
-	data.Peers = m.Peers.ValueStringPointer(ctx, diags, stringset.WithSeparator(","))
+	data.Peers = m.Peers.ValueCommaSeparatedList(ctx, diags)
 
 	return data
 }
@@ -77,6 +77,7 @@ func (r *VXLANResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 					"This can be external nodes reachable at this IP address. All nodes in the cluster need to be "+
 					"mentioned here",
 				stringset.WithRequired(),
+				stringset.WithIPAddresses(),
 			),
 		}),
 	}

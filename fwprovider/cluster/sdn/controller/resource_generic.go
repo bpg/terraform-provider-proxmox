@@ -22,7 +22,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
@@ -63,18 +62,6 @@ func (m *genericModel) handleDeletedStringValue(value *string) types.String {
 	}
 
 	return attribute.StringValueFromPtr(value)
-}
-
-func (m *genericModel) handleDeletedStringSetValue(value []string, diags *diag.Diagnostics) stringset.Value {
-	if value == nil {
-		return stringset.NullValue()
-	}
-
-	if len(value) == 1 && value[0] == "deleted" {
-		return stringset.NullValue()
-	}
-
-	return stringset.NewValueList(value, diags)
 }
 
 func checkDeletedFields(_, _ *genericModel) []string {

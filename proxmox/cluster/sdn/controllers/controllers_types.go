@@ -25,7 +25,7 @@ type Controller struct {
 
 	// BGP and EVPN.
 	ASNumber *int64                          `json:"asn,omitempty"   url:"asn,omitempty"`
-	Peers    *types.CustomCommaSeparatedList `json:"peers,omitempty" url:"peers,omitempty"`
+	Peers    *types.CustomCommaSeparatedList `json:"peers,omitempty" url:"peers,omitempty,comma"`
 
 	// BGP.
 	BgpMultiPathAsRelax *types.CustomBool        `json:"bgp-multipath-as-path-relax,omitempty" url:"bgp-multipath-as-path-relax,omitempty,int"`
