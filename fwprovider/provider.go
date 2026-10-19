@@ -727,6 +727,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnfabricnode.NewOpenFabricShortResource,
 		sdnfabricnode.NewOSPFResource,
 		sdnfabricnode.NewOSPFShortResource,
+		sdncontroller.NewBGPResource,  // proxmox_sdn_controller_bgp
 		sdncontroller.NewEVPNResource, // proxmox_sdn_controller_evpn
 		storage.NewCIFSStorageResource,
 		storage.NewCIFSStorageShortResource,
@@ -818,6 +819,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		sdnfabricnode.NewOpenFabricShortDataSource,
 		sdnfabricnode.NewOSPFDataSource,
 		sdnfabricnode.NewOSPFShortDataSource,
+		sdncontroller.NewBGPControllerDataSource,  // proxmox_sdn_controller_bgp
 		sdncontroller.NewEVPNControllerDataSource, // proxmox_sdn_controller_evpn
 		vm.NewDataSource,
 		vm.NewShortDataSource,

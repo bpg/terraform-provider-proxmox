@@ -34,6 +34,41 @@ type CustomInt int
 // CustomInt64 allows a JSON int64 value to also be a string.
 type CustomInt64 int64
 
+// CustomInt64Option is an optional int64 that tolerates the PVE "deleted" marker returned in the pending block after
+// an optional attribute is removed. The marker parses to zero, so only use it for fields where zero is not a valid
+// value (enforce that with a validator) and read zero back as unset.
+type CustomInt64Option int64
+
+// CustomInt64OptionPtr creates a pointer to a CustomInt64Option.
+func CustomInt64OptionPtr(v *int64) *CustomInt64Option {
+	if v == nil {
+		return nil
+	}
+
+	return new(CustomInt64Option(*v))
+}
+
+// UnmarshalJSON converts a JSON value to a CustomInt64Option, mapping the
+// PVE "deleted" marker to the zero value instead of failing.
+func (r *CustomInt64Option) UnmarshalJSON(b []byte) error {
+	if string(b) == `"deleted"` {
+		*r = 0
+
+		return nil
+	}
+
+	var v CustomInt64
+
+	err := v.UnmarshalJSON(b)
+	if err != nil {
+		return err
+	}
+
+	*r = CustomInt64Option(v)
+
+	return nil
+}
+
 // CustomLineBreakSeparatedList allows a multiline JSON string to also be a string array.
 type CustomLineBreakSeparatedList []string
 
