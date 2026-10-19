@@ -1,0 +1,34 @@
+---
+layout: page
+title: {{.Name}}
+parent: Resources
+subcategory: Virtual Environment
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}}: {{.Name}}
+
+~> **Experimental.** Schema and behavior may change in future releases. Pin the provider version if stability matters.
+
+{{ .Description | trimspace }}
+
+Creation finishes once Proxmox VE has started the daemon, without waiting for it to join the Ceph cluster.
+
+~> Destroying an MDS stops it even while it serves a CephFS, as the Proxmox VE web UI does. A standby MDS takes over if there is one; otherwise the filesystem is unavailable until another MDS starts.
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ codefile "terraform" .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}
+{{- if .HasImport }}
+
+## Import
+
+Import is supported using the following syntax:
+
+{{ codefile "shell" .ImportFile }}
+{{- end }}
