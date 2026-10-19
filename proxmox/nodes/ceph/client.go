@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/ceph/mds"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/ceph/pool"
 )
 
@@ -21,6 +22,11 @@ type Client struct {
 // ExpandPath expands a relative path to a full node Ceph API path.
 func (c *Client) ExpandPath(path string) string {
 	return c.Client.ExpandPath(fmt.Sprintf("ceph/%s", path))
+}
+
+// MDS returns a client for managing Ceph metadata servers.
+func (c *Client) MDS() *mds.Client {
+	return &mds.Client{Client: c}
 }
 
 // Pool returns a client for managing Ceph pools.

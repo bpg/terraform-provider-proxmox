@@ -68,3 +68,36 @@ func TestDoTask_ResultFromLastAttempt(t *testing.T) {
 		})
 	}
 }
+
+func TestDoTask_AlreadyDoneTaskOnRetry(t *testing.T) {
+	t.Parallel()
+
+	errTransient := errors.New("got timeout")
+	errReferenced := errors.New("MDS 'test' already referenced in ceph config, abort!")
+
+	op := retry.NewTaskOperation("test",
+		retry.WithBaseDelay(time.Millisecond),
+		retry.WithRetryIf(func(err error) bool { return errors.Is(err, errTransient) }),
+		retry.WithAlreadyDoneCheck(func(err error) bool { return errors.Is(err, errReferenced) }),
+	)
+
+	dispatches := 0
+	taskID := "UPID:test"
+
+	result := doTask(context.Background(), op,
+		func() (*string, error) {
+			dispatches++
+			if dispatches == 1 {
+				return nil, errTransient
+			}
+
+			return &taskID, nil
+		},
+		// The retry's task fails only because the first dispatch went through
+		func(context.Context, string) TaskResult { return TaskFailed(errReferenced) },
+	)
+
+	require.Equal(t, 2, dispatches)
+	require.NoError(t, result.Err())
+	require.False(t, result.HasWarnings())
+}

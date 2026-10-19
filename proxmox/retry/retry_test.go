@@ -162,6 +162,67 @@ func TestDoTask_AlreadyDoneIgnoredOnFirstAttempt(t *testing.T) {
 	assert.Contains(t, err.Error(), "already exists")
 }
 
+func TestDoTask_AlreadyDoneTaskOnRetry(t *testing.T) {
+	t.Parallel()
+
+	op := NewTaskOperation("test-op",
+		WithBaseDelay(1*time.Millisecond),
+		WithRetryIf(IsTransientAPIError),
+		WithAlreadyDoneCheck(ErrorContains("already referenced")),
+	)
+
+	dispatched := 0
+
+	err := op.DoTask(t.Context(),
+		func() (*string, error) {
+			dispatched++
+			if dispatched == 1 {
+				return nil, &api.HTTPError{Code: http.StatusInternalServerError}
+			}
+
+			id := "UPID:test:1234"
+
+			return &id, nil
+		},
+		// Second attempt's task finds the section the first attempt's task wrote
+		func(_ context.Context, _ string) error {
+			return errors.New("MDS 'test' already referenced in ceph config, abort!")
+		},
+	)
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, dispatched)
+}
+
+func TestDoTask_AlreadyDoneTaskIgnoredOnFirstAttempt(t *testing.T) {
+	t.Parallel()
+
+	op := NewTaskOperation("test-op",
+		WithBaseDelay(1*time.Millisecond),
+		WithRetryIf(IsTransientAPIError),
+		WithAlreadyDoneCheck(ErrorContains("already referenced")),
+	)
+
+	dispatched := 0
+
+	err := op.DoTask(t.Context(),
+		func() (*string, error) {
+			dispatched++
+			id := "UPID:test:1234"
+
+			return &id, nil
+		},
+		func(_ context.Context, _ string) error {
+			return errors.New("MDS 'test' already referenced in ceph config, abort!")
+		},
+	)
+
+	// The first attempt's task failing this way is a real error, not suppressed
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already referenced")
+	assert.Equal(t, 1, dispatched)
+}
+
 func TestDoTask_NilTaskIDSkipsWait(t *testing.T) {
 	t.Parallel()
 
