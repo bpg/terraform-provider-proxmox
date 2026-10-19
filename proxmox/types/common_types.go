@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -35,11 +34,9 @@ type CustomInt int
 // CustomInt64 allows a JSON int64 value to also be a string.
 type CustomInt64 int64
 
-// CustomInt64Option is an optional int64 configuration value that tolerates the
-// PVE "deleted" marker, which PVE returns as a JSON string in the pending block
-// of an object after an optional attribute has been removed. The marker parses
-// to zero, and readers must treat zero as "unset" (the SDN controller options
-// using this type do not accept zero as a valid value).
+// CustomInt64Option is an optional int64 that tolerates the PVE "deleted" marker returned in the pending block after
+// an optional attribute is removed. The marker parses to zero, so only use it for fields where zero is not a valid
+// value (enforce that with a validator) and read zero back as unset.
 type CustomInt64Option int64
 
 // CustomInt64OptionPtr creates a pointer to a CustomInt64Option.
@@ -107,94 +104,6 @@ func (r CustomBool) MarshalJSON() ([]byte, error) {
 func (r *CustomBool) UnmarshalJSON(b []byte) error {
 	s := string(b)
 	*r = s == "1" || s == "true"
-
-	return nil
-}
-
-// CustomBoolOption is a tri-state optional boolean configuration value that
-// tolerates the PVE "deleted" marker, which PVE returns as a JSON string in
-// the pending block of an object after an optional attribute has been removed.
-// The plain CustomBool would map the marker to false with a non-nil pointer,
-// which is indistinguishable from an explicit false in pending changes.
-// Values: 1 = true, 0 = false, deleted = removed in pending changes.
-type CustomBoolOption int8
-
-const customBoolOptionDeleted CustomBoolOption = -1
-
-// CustomBoolOptionPtr creates a pointer to a CustomBoolOption.
-func CustomBoolOptionPtr(v *bool) *CustomBoolOption {
-	if v == nil {
-		return nil
-	}
-
-	return new(boolToOption(*v))
-}
-
-func boolToOption(v bool) CustomBoolOption {
-	if v {
-		return 1
-	}
-
-	return 0
-}
-
-// PointerBool returns a pointer to a boolean, or nil for the deleted marker.
-func (r *CustomBoolOption) PointerBool() *bool {
-	if r == nil || *r == customBoolOptionDeleted {
-		return nil
-	}
-
-	return new(bool(*r != 0))
-}
-
-// MarshalJSON converts a CustomBoolOption to a JSON value, keeping the
-// deleted marker round-trippable.
-func (r CustomBoolOption) MarshalJSON() ([]byte, error) {
-	if r == customBoolOptionDeleted {
-		return []byte(`"deleted"`), nil
-	}
-
-	if r != 0 {
-		return []byte("1"), nil
-	}
-
-	return []byte("0"), nil
-}
-
-// UnmarshalJSON converts a JSON value to a CustomBoolOption, mapping the
-// PVE "deleted" marker to the dedicated deleted state so it stays
-// distinguishable from an explicit false.
-func (r *CustomBoolOption) UnmarshalJSON(b []byte) error {
-	if string(b) == `"deleted"` {
-		*r = customBoolOptionDeleted
-
-		return nil
-	}
-
-	var v CustomBool
-
-	err := v.UnmarshalJSON(b)
-	if err != nil {
-		return err
-	}
-
-	*r = boolToOption(bool(v))
-
-	return nil
-}
-
-// EncodeValues encodes the option for URL query strings (go-querystring
-// Encoder interface): true/false as "1"/"0", the deleted marker is omitted.
-func (r CustomBoolOption) EncodeValues(key string, values *url.Values) error {
-	if r == customBoolOptionDeleted {
-		return nil
-	}
-
-	if r != 0 {
-		values.Add(key, "1")
-	} else {
-		values.Add(key, "0")
-	}
 
 	return nil
 }

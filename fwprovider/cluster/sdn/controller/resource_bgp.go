@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -50,8 +51,8 @@ func (m *bgpModel) fromAPI(name string, data *controllers.ControllerData, diags 
 	m.ASNumber = types.Int64PointerValue(data.ASNumber)
 	m.NodeName = m.nodeFromAPI(data.Nodes)
 	m.EBGPMultiHop = multiHopFromAPI(data.EBPGMultiHop)
-	m.EBGP = boolOptionFromAPI(data.EBGP)
-	m.MultiPathRelax = boolOptionFromAPI(data.BgpMultiPathAsRelax)
+	m.EBGP = types.BoolPointerValue(data.EBGP.PointerBool())
+	m.MultiPathRelax = types.BoolPointerValue(data.BgpMultiPathAsRelax.PointerBool())
 	m.Loopback = m.handleDeletedStringValue(data.Loopback)
 
 	if data.Peers != nil {
@@ -76,11 +77,11 @@ func (m *bgpModel) fromAPI(name string, data *controllers.ControllerData, diags 
 		}
 
 		if data.Pending.EBGP != nil {
-			m.EBGP = boolOptionFromAPI(data.Pending.EBGP)
+			m.EBGP = types.BoolPointerValue(data.Pending.EBGP.PointerBool())
 		}
 
 		if data.Pending.BgpMultiPathAsRelax != nil {
-			m.MultiPathRelax = boolOptionFromAPI(data.Pending.BgpMultiPathAsRelax)
+			m.MultiPathRelax = types.BoolPointerValue(data.Pending.BgpMultiPathAsRelax.PointerBool())
 		}
 
 		if data.Pending.Loopback != nil {
@@ -93,17 +94,6 @@ func (m *bgpModel) fromAPI(name string, data *controllers.ControllerData, diags 
 			m.Peers = m.handleDeletedStringSetValue(peers, diags)
 		}
 	}
-}
-
-// boolOptionFromAPI reads an optional boolean property, mapping nil and the
-// PVE "deleted" marker (unmarshalled as nil by CustomBoolOption) to a null
-// Terraform value.
-func boolOptionFromAPI(v *proxmoxtypes.CustomBoolOption) types.Bool {
-	if v == nil {
-		return types.BoolNull()
-	}
-
-	return types.BoolPointerValue(v.PointerBool())
 }
 
 // nodeFromAPI reads the PVE `node` property, which the API layer models as a
@@ -140,8 +130,8 @@ func (m *bgpModel) fromAPIForDatasource(name string, data *controllers.Controlle
 		m.NodeName = types.StringValue("")
 	}
 
-	m.EBGP = attribute.BoolValueFromCustomBoolOptionPtr(data.EBGP)
-	m.MultiPathRelax = attribute.BoolValueFromCustomBoolOptionPtr(data.BgpMultiPathAsRelax)
+	m.EBGP = attribute.BoolValueFromCustomBoolPtr(data.EBGP)
+	m.MultiPathRelax = attribute.BoolValueFromCustomBoolPtr(data.BgpMultiPathAsRelax)
 	m.Loopback = attribute.StringValueFromPtr(data.Loopback)
 
 	if data.EBPGMultiHop != nil {
@@ -169,10 +159,10 @@ func (m *bgpModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *controll
 		data.Nodes = &node
 	}
 
-	data.EBGP = attribute.CustomBoolOptionPtrFromValue(m.EBGP)
+	data.EBGP = proxmoxtypes.CustomBoolPtr(m.EBGP.ValueBoolPointer())
 	data.EBPGMultiHop = proxmoxtypes.CustomInt64OptionPtr(attribute.Int64PtrFromValue(m.EBGPMultiHop))
 	data.Loopback = attribute.StringPtrFromValue(m.Loopback)
-	data.BgpMultiPathAsRelax = attribute.CustomBoolOptionPtrFromValue(m.MultiPathRelax)
+	data.BgpMultiPathAsRelax = proxmoxtypes.CustomBoolPtr(m.MultiPathRelax.ValueBoolPointer())
 
 	var peers []string
 	diags.Append(m.Peers.ElementsAs(ctx, &peers, false)...)
@@ -322,6 +312,8 @@ func (r *BGPResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			"ebgp": schema.BoolAttribute{
 				Description: "Whether eBGP is used (remote-as external) instead of iBGP.",
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"ebgp_multihop": schema.Int64Attribute{
 				Description: "Maximum amount of hops for eBGP peers. Requires ebgp set to true.",
@@ -340,6 +332,8 @@ func (r *BGPResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			"bgp_multipath_as_path_relax": schema.BoolAttribute{
 				Description: "Whether different AS paths of equal length are considered for multipath computation.",
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 		}),
 	}

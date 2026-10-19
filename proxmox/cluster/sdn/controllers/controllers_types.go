@@ -28,8 +28,8 @@ type Controller struct {
 	Peers    *types.CustomCommaSeparatedList `json:"peers,omitempty" url:"peers,omitempty"`
 
 	// BGP.
-	BgpMultiPathAsRelax *types.CustomBoolOption  `json:"bgp-multipath-as-path-relax,omitempty" url:"bgp-multipath-as-path-relax,omitempty"`
-	EBGP                *types.CustomBoolOption  `json:"ebgp,omitempty"                        url:"ebgp,omitempty"`
+	BgpMultiPathAsRelax *types.CustomBool        `json:"bgp-multipath-as-path-relax,omitempty" url:"bgp-multipath-as-path-relax,omitempty,int"`
+	EBGP                *types.CustomBool        `json:"ebgp,omitempty"                        url:"ebgp,omitempty,int"`
 	EBPGMultiHop        *types.CustomInt64Option `json:"ebgp-multihop,omitempty"               url:"ebgp-multihop,omitempty,int"`
 	Loopback            *string                  `json:"loopback,omitempty"                    url:"loopback,omitempty"`
 

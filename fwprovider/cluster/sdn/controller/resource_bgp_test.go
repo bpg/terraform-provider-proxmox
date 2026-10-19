@@ -43,10 +43,10 @@ func TestFromAPI_BGP(t *testing.T) {
 			ASNumber:            new(int64(65000)),
 			Nodes:               new(proxmoxtypes.CustomCommaSeparatedList([]string{"pve-01"})),
 			Peers:               &peers,
-			EBGP:                proxmoxtypes.CustomBoolOptionPtr(new(true)),
+			EBGP:                proxmoxtypes.CustomBoolPtr(new(true)),
 			EBPGMultiHop:        proxmoxtypes.CustomInt64OptionPtr(new(int64(2))),
 			Loopback:            new("lo"),
-			BgpMultiPathAsRelax: proxmoxtypes.CustomBoolOptionPtr(new(true)),
+			BgpMultiPathAsRelax: proxmoxtypes.CustomBoolPtr(new(true)),
 		},
 		Digest: new("digest-1"),
 	}
@@ -85,7 +85,7 @@ func TestFromAPI_BGP_PrefersPending(t *testing.T) {
 			ASNumber:     new(int64(65100)),
 			Nodes:        &pendingDeletedNodes,
 			Peers:        &pendingPeers,
-			EBGP:         proxmoxtypes.CustomBoolOptionPtr(new(true)),
+			EBGP:         proxmoxtypes.CustomBoolPtr(new(true)),
 			EBPGMultiHop: proxmoxtypes.CustomInt64OptionPtr(new(int64(3))),
 			Loopback:     new("deleted"),
 		},
@@ -107,8 +107,8 @@ func TestFromAPI_BGP_PrefersPending(t *testing.T) {
 // TestFromAPI_BGP_PendingDeletedMarkers reproduces the acceptance-test
 // scenario of removing optional BGP attributes: PVE keeps the old values in
 // the running configuration and writes the literal "deleted" string for the
-// removed keys in the pending block. Every removed attribute must refresh to
-// null, and the old running values must not leak through.
+// removed keys in the pending block. Removed attributes must refresh to null
+// (bools to their false default), and the old running values must not leak through.
 func TestFromAPI_BGP_PendingDeletedMarkers(t *testing.T) {
 	t.Parallel()
 
@@ -143,10 +143,10 @@ func TestFromAPI_BGP_PendingDeletedMarkers(t *testing.T) {
 	assert.Equal(t, types.Int64Value(65000), m.ASNumber)
 	assert.Equal(t, types.StringNull(), m.NodeName)
 	assert.Equal(t, stringset.NullValue(), m.Peers)
-	assert.Equal(t, types.BoolNull(), m.EBGP)
+	assert.Equal(t, types.BoolValue(false), m.EBGP)
 	assert.Equal(t, types.Int64Null(), m.EBGPMultiHop)
 	assert.Equal(t, types.StringNull(), m.Loopback)
-	assert.Equal(t, types.BoolNull(), m.MultiPathRelax)
+	assert.Equal(t, types.BoolValue(false), m.MultiPathRelax)
 }
 
 func TestFromAPI_BGP_PendingZeroMultiHopStaysAbsent(t *testing.T) {
@@ -176,7 +176,7 @@ func TestFromAPIForDatasource_BGP(t *testing.T) {
 		Controller: controllers.Controller{
 			ASNumber: new(int64(65000)),
 			Nodes:    new(proxmoxtypes.CustomCommaSeparatedList([]string{"pve-01"})),
-			EBGP:     proxmoxtypes.CustomBoolOptionPtr(new(true)),
+			EBGP:     proxmoxtypes.CustomBoolPtr(new(true)),
 		},
 		Digest: new("digest-1"),
 	}
@@ -225,10 +225,10 @@ func TestToAPI_BGP(t *testing.T) {
 	require.NotNil(t, data.Peers)
 	assert.Equal(t, []string{"10.0.0.1", "10.0.0.2"}, sorted(*data.Peers))
 
-	assert.Equal(t, proxmoxtypes.CustomBoolOption(1), *data.EBGP)
+	assert.Equal(t, proxmoxtypes.CustomBool(true), *data.EBGP)
 	assert.Equal(t, proxmoxtypes.CustomInt64Option(2), *data.EBPGMultiHop)
 	assert.Equal(t, "lo", *data.Loopback)
-	assert.Equal(t, proxmoxtypes.CustomBoolOption(1), *data.BgpMultiPathAsRelax)
+	assert.Equal(t, proxmoxtypes.CustomBool(true), *data.BgpMultiPathAsRelax)
 }
 
 func TestCheckDeletedBGPFields(t *testing.T) {
