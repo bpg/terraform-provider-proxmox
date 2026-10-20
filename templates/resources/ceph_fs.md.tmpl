@@ -1,0 +1,36 @@
+---
+layout: page
+title: {{.Name}}
+parent: Resources
+subcategory: Virtual Environment
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}}: {{.Name}}
+
+~> **Experimental.** Schema and behavior may change in future releases. Pin the provider version if stability matters.
+
+{{ .Description | trimspace }}
+
+Proxmox VE refuses to create a CephFS while no metadata server is in standby. The provider retries that for about a minute, so a metadata server started in the same apply has time to get there.
+
+Proxmox VE always creates the two pools under the cluster's default CRUSH rule and size. Settings in `metadata_pool` and `data_pool` are applied right after creation, so the pools spend a moment on the defaults first.
+
+!> **Destroying a CephFS is manual.** Proxmox VE documents removing a CephFS as a [procedure done by hand](https://pve.proxmox.com/pve-docs/chapter-pveceph.html#_destroy_cephfs), and the web UI has no destroy. While the filesystem exists, destroying this resource fails with those steps: disconnect its clients and disable and remove its storages, unmount them on every node, make sure no metadata server serves it (`ceph fs fail <name>`), then `pveceph fs destroy <name> --remove-pools 1`. Once it's gone, run the destroy again. The same applies when a change to `name`, `node_name` or `pg_num` would replace it.
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ codefile "terraform" .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}
+{{- if .HasImport }}
+
+## Import
+
+Import is supported using the following syntax:
+
+{{ codefile "shell" .ImportFile }}
+{{- end }}
