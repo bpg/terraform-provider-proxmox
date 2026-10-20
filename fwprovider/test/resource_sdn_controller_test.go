@@ -12,6 +12,7 @@
 package test
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -657,6 +658,82 @@ func TestAccResourceSDNControllerBGP(t *testing.T) {
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+func TestAccResourceSDNControllerPeers(t *testing.T) {
+	// Cannot run in parallel due to SDN applier functionality affecting global state
+
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name     string
+		resource string
+		attrs    string
+	}{
+		{"EVPN", "proxmox_sdn_controller_evpn", ``},
+		{"BGP", "proxmox_sdn_controller_bgp", `node_name = "{{.NodeName}}"`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			address := tt.resource + ".controller"
+			config := func(peers string) string {
+				return te.RenderConfig(fmt.Sprintf(`
+					resource "%s" "controller" {
+					  id    = "ctrlP"
+					  asn   = 65000
+					  peers = %s
+					  %s
+					  depends_on = [
+					    proxmox_sdn_applier.finalizer
+					  ]
+					}
+
+					resource "proxmox_sdn_applier" "main" {
+					  depends_on = [
+					    %s
+					  ]
+					}
+					resource "proxmox_sdn_applier" "finalizer" {}
+				`, tt.resource, peers, tt.attrs, address))
+			}
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: config(`["fd00::1", "fd00::2"]`),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr(address, "peers.#", "2"),
+							resource.TestCheckTypeSetElemAttr(address, "peers.*", "fd00::1"),
+							resource.TestCheckTypeSetElemAttr(address, "peers.*", "fd00::2"),
+						),
+					},
+					{
+						ResourceName:      address,
+						ImportStateId:     "ctrlP",
+						ImportState:       true,
+						ImportStateVerify: true,
+					},
+					{
+						Config:      config(`[]`),
+						PlanOnly:    true,
+						ExpectError: regexp.MustCompile(`(?s)must\s+contain\s+at\s+least\s+1\s+elements`),
+					},
+					{
+						Config:      config(`["10.0.0.0/24", "peer.example.com"]`),
+						PlanOnly:    true,
+						ExpectError: regexp.MustCompile(`(?s)must\s+be\s+a\s+valid\s+IPv4\s+or\s+IPv6\s+address`),
+					},
+					{
+						// Post-test destroy uses the last config, which must be valid.
+						Config:   config(`["fd00::1", "fd00::2"]`),
+						PlanOnly: true,
+					},
+				},
 			})
 		})
 	}

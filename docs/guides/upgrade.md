@@ -37,6 +37,27 @@ This guide documents breaking changes across provider versions and the recommend
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
 
+## v0.118.0
+
+### SDN zone `mtu` can be removed
+
+The `mtu` attribute on the SDN zone resources (`proxmox_sdn_zone_simple`, `proxmox_sdn_zone_vlan`, `proxmox_sdn_zone_qinq`, `proxmox_sdn_zone_vxlan`, `proxmox_sdn_zone_evpn` and their `proxmox_virtual_environment_*` aliases) is no longer computed. Removing it from the configuration now removes it from the zone, and the zone goes back to the Proxmox default.
+
+**Before:** Once set, `mtu` could not be removed. If `mtu` was not in the configuration, Terraform kept whatever value the zone had, including values set outside Terraform.
+
+**After:** If `mtu` is not in the configuration, Terraform plans to remove it from the zone (`mtu = 1450 -> null`), and `apply` deletes it. Like any other SDN change, it takes effect after the SDN configuration is applied.
+
+**Action required:** Run `terraform plan` after upgrading. If it shows `mtu` being removed from a zone where you want to keep it, add `mtu` to that zone's configuration.
+
+### SDN `peers` validation tightened
+
+The `peers` attribute on `proxmox_sdn_zone_vxlan`, `proxmox_sdn_controller_evpn` and `proxmox_sdn_controller_bgp` is now validated at plan time:
+
+- `peers = []` is rejected. Before, it was accepted but sent nothing, so Proxmox kept the previous peers.
+- Every entry must be a plain IPv4 or IPv6 address (no CIDR suffix, no hostname). Before, invalid entries were only rejected by Proxmox at apply time.
+
+**Action required:** If you set `peers = []` (for example on an EVPN controller that uses `fabric`), remove the `peers` attribute instead. Replace any entry that is not a plain IP address.
+
 ## v0.109.0
 
 ### `vm` `agent.wait_for_ip.enabled` replaced by `agent.wait_for_ip.disabled`
