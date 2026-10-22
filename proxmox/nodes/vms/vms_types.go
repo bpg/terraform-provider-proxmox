@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 var (
@@ -38,6 +39,8 @@ type WaitForIPConfig struct {
 	Skip bool // Skip the agent IP wait entirely (wait_for_ip.enabled = false)
 	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
 	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+
+	Filter ip.AddressFilter // Which addresses qualify; empty keeps the default exclusions
 }
 
 // CloneRequestBody contains the data for an virtual machine clone request.

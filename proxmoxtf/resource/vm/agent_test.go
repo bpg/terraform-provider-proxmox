@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 // TestVMAgentWaitForIPDisabledSchema verifies the agent.wait_for_ip block exposes a `disabled`
@@ -106,6 +107,11 @@ func TestAgentWaitForIPConfigFromBlock(t *testing.T) {
 			name:  "empty block waits for any (nil)",
 			block: map[string]any{},
 			want:  nil,
+		},
+		{
+			name:  "filter only -> non-nil config without family",
+			block: map[string]any{"cidrs": []any{"10.0.0.0/8"}, "interfaces": []any{}},
+			want:  &vms.WaitForIPConfig{Filter: ip.AddressFilter{CIDRs: []string{"10.0.0.0/8"}}},
 		},
 	}
 

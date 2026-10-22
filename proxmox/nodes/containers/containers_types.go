@@ -17,6 +17,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 var (
@@ -32,6 +33,8 @@ var (
 type WaitForIPConfig struct {
 	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
 	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+
+	Filter ip.AddressFilter // Which addresses qualify; empty keeps the default exclusions
 }
 
 // CloneRequestBody contains the data for an container clone request.
