@@ -506,12 +506,18 @@ func (e *Environment) nodeSSHTarget() ssh.ProxmoxNode {
 func (e *Environment) ExecuteNodeCommands(commands []string) string {
 	e.t.Helper()
 
-	client := e.newNodeSSHClient("root", rootSSHPassword())
-
-	out, err := client.ExecuteNodeCommands(e.t.Context(), e.NodeName, commands)
+	out, err := e.ExecuteNodeCommandsContext(e.t.Context(), commands)
 	require.NoError(e.t, err)
 
-	return string(out)
+	return out
+}
+
+// ExecuteNodeCommandsContext is ExecuteNodeCommands with a caller-supplied context and a returned error, for use
+// from t.Cleanup where the test context is already canceled.
+func (e *Environment) ExecuteNodeCommandsContext(ctx context.Context, commands []string) (string, error) {
+	out, err := e.newNodeSSHClient("root", rootSSHPassword()).ExecuteNodeCommands(ctx, e.NodeName, commands)
+
+	return string(out), err
 }
 
 // DownloadCloudImage downloads a cloud image with a unique filename for use in VM tests.

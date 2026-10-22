@@ -58,6 +58,14 @@ The `peers` attribute on `proxmox_sdn_zone_vxlan`, `proxmox_sdn_controller_evpn`
 
 **Action required:** If you set `peers = []` (for example on an EVPN controller that uses `fabric`), remove the `peers` attribute instead. Replace any entry that is not a plain IP address.
 
+### `file` `file_name` validation tightened
+
+The `file_name` attribute in the `source_file` and `source_raw` blocks of `proxmox_virtual_environment_file` must now be a plain file name. Values containing path separators (`/`, `\`), whitespace, or the special entries `.` and `..` are rejected at plan time. The same rule applies to a file name derived from `source_file.path` when `file_name` is not set.
+
+Proxmox VE itself cannot address a volume whose name contains whitespace: the API upload silently replaces spaces with `_`, and the delete endpoint refuses such a volume ID. So a resource with whitespace in its name could never be destroyed by the provider.
+
+**Action required:** Rename any file with whitespace or path separators in `file_name`. If such a resource already exists in state, remove it with `terraform state rm` and delete the file on the node manually, then re-create it under the new name.
+
 ## v0.109.0
 
 ### `vm` `agent.wait_for_ip.enabled` replaced by `agent.wait_for_ip.disabled`

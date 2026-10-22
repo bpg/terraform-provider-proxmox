@@ -154,6 +154,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     - `file_name` - (Optional) The file name to use instead of the source file
         name. Useful when the source file does not have a valid file extension,
         for example when the source file is a URL referencing a `.qcow2` image.
+        Must be a plain file name without path separators or whitespace.
     - `insecure` - (Optional) Whether to skip the TLS verification step for
         HTTPS sources (defaults to `false`).
     - `min_tls` - (Optional) The minimum required TLS version for HTTPS
@@ -161,7 +162,8 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     - `path` - (Required) A path to a local file or a URL.
 - `source_raw` - (Optional) The raw source (conflicts with `source_file`).
     - `data` - (Required) The raw data.
-    - `file_name` - (Required) The file name.
+    - `file_name` - (Required) The file name. Must be a plain file name without
+        path separators or whitespace.
     - `resize` - (Optional) The number of bytes to resize the file to.
 - `timeout_upload` - (Optional) Timeout for uploading ISO/VSTMPL files in
     seconds (defaults to 1800).
