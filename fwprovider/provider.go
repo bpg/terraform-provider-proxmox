@@ -741,6 +741,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		storage.NewNFSStorageShortResource,
 		storage.NewProxmoxBackupServerStorageResource,
 		storage.NewProxmoxBackupServerStorageShortResource,
+		storage.NewRBDStorageResource,
 		storage.NewZFSPoolStorageResource,
 		storage.NewZFSPoolStorageShortResource,
 		vm.NewResource,
