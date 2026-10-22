@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -35,6 +37,45 @@ func FileFormat() schema.SchemaValidateDiagFunc {
 		"raw",
 		"vmdk",
 	}, false))
+}
+
+// FileName returns a schema validation function for a datastore file name. An empty value is accepted so the
+// validator can be used on optional attributes; see ValidateFileName for the rules.
+func FileName() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i any, k string) ([]string, []error) {
+		v, ok := i.(string)
+		if !ok {
+			return nil, []error{fmt.Errorf("expected type of %s to be string", k)}
+		}
+
+		if v == "" {
+			return nil, nil
+		}
+
+		if err := ValidateFileName(v); err != nil {
+			return nil, []error{fmt.Errorf("%s: %w", k, err)}
+		}
+
+		return nil, nil
+	})
+}
+
+// ValidateFileName checks that v is a single, non-empty path element without directory references or whitespace.
+func ValidateFileName(v string) error {
+	if v == "" || v == "." || v == ".." {
+		return fmt.Errorf("expected a plain file name, got %q", v)
+	}
+
+	if strings.ContainsAny(v, `/\`) {
+		return fmt.Errorf("expected a plain file name without path separators, got %q", v)
+	}
+
+	// PVE cannot route a DELETE for a volume ID that contains whitespace, so such a file could never be destroyed
+	if strings.IndexFunc(v, unicode.IsSpace) >= 0 {
+		return fmt.Errorf("expected a plain file name without whitespace, got %q", v)
+	}
+
+	return nil
 }
 
 // FileID returns a schema validation function for a file identifier.

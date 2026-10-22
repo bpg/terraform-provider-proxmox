@@ -312,14 +312,8 @@ func (c *client) executeCommands(ctx context.Context, sshClient *ssh.Client, com
 
 	script := strings.Join(commands, "; ")
 
-	output, err := sshSession.CombinedOutput(
-		fmt.Sprintf(
-			// explicitly use bash to support shell features like pipes and var assignment
-			"/bin/bash -c '%s'",
-			// shell script escaping for single quotes
-			strings.ReplaceAll(script, `'`, `'"'"'`),
-		),
-	)
+	// explicitly use bash to support shell features like pipes and var assignment
+	output, err := sshSession.CombinedOutput("/bin/bash -c " + ShellQuote(script))
 	if err != nil {
 		return nil, errors.New(string(output))
 	}
@@ -544,9 +538,9 @@ func (c *client) uploadFile(
 
 	sshSession.Stdin = req.File
 
-	script := fmt.Sprintf(`%s%s; try_sudo /usr/bin/tee %s`, sudoEnv, TrySudo, remoteFilePath)
+	script := fmt.Sprintf(`%s%s; try_sudo /usr/bin/tee %s`, sudoEnv, TrySudo, ShellQuote(remoteFilePath))
 	// wrap in bash for shell compatibility (works regardless of user's default shell)
-	cmd := fmt.Sprintf(`/bin/bash -c '%s'`, strings.ReplaceAll(script, `'`, `'"'"'`))
+	cmd := "/bin/bash -c " + ShellQuote(script)
 
 	output, err := sshSession.CombinedOutput(cmd)
 	if err != nil {

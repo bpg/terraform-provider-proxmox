@@ -77,3 +77,39 @@ func TestFileMode(t *testing.T) {
 		})
 	}
 }
+
+func TestFileName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value string
+		valid bool
+	}{
+		{"empty", "", true},
+		{"plain", "cloud-init.yaml", true},
+		{"shell characters", "a;{touch,x}", true},
+		{"space", "my config.yaml", false},
+		{"tab", "my\tconfig.yaml", false},
+		{"forward slash", "sub/dir.yaml", false},
+		{"backslash", `sub\dir.yaml`, false},
+		{"parent traversal", "../escape.yaml", false},
+		{"dot", ".", false},
+		{"dot", "..", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := FileName()
+			res := f(tt.value, nil)
+
+			if tt.valid {
+				require.Empty(t, res, "validate: '%s'", tt.value)
+			} else {
+				require.NotEmpty(t, res, "validate: '%s'", tt.value)
+			}
+		})
+	}
+}

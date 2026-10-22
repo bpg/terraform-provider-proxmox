@@ -161,11 +161,12 @@ func File() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentFileSourceFileChecksum,
 						},
 						mkResourceVirtualEnvironmentFileSourceFileFileName: {
-							Type:        schema.TypeString,
-							Description: "The file name to use instead of the source file name",
-							Optional:    true,
-							ForceNew:    true,
-							Default:     dvResourceVirtualEnvironmentFileSourceFileFileName,
+							Type:             schema.TypeString,
+							Description:      "The file name to use instead of the source file name",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentFileSourceFileFileName,
+							ValidateDiagFunc: validators.FileName(),
 						},
 						mkResourceVirtualEnvironmentFileSourceFileInsecure: {
 							Type:        schema.TypeBool,
@@ -204,10 +205,11 @@ func File() *schema.Resource {
 							ForceNew:    true,
 						},
 						mkResourceVirtualEnvironmentFileSourceRawFileName: {
-							Type:        schema.TypeString,
-							Description: "The file name",
-							Required:    true,
-							ForceNew:    true,
+							Type:             schema.TypeString,
+							Description:      "The file name",
+							Required:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: validators.FileName(),
 						},
 						mkResourceVirtualEnvironmentFileSourceRawResize: {
 							Type:        schema.TypeInt,
@@ -784,6 +786,10 @@ func fileGetSourceFileName(d *schema.ResourceData) (*string, error) {
 		} else {
 			sourceFileFileName = filepath.Base(sourceFilePath)
 		}
+	}
+
+	if err := validators.ValidateFileName(sourceFileFileName); err != nil {
+		return nil, fmt.Errorf("invalid file name: %w", err)
 	}
 
 	return &sourceFileFileName, nil
