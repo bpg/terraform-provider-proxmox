@@ -706,6 +706,8 @@ func applyDisks(
 				return nil
 			}
 
+			device.DatastoreID = cfg.DatastoreID.ValueStringPointer()
+
 			if cfg.SizeGB.IsUnknown() || cfg.SizeGB.IsNull() || cfg.SizeGB.ValueInt64() == 0 {
 				diags.AddError("Missing size_gb", fmt.Sprintf("Disk %q requires size_gb when file is not provided", slot))
 				return nil

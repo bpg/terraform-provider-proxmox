@@ -564,6 +564,29 @@ func TestAccResourceClonedVM(t *testing.T) {
 						checkDiskSlot(te, resName, "scsi1", true),
 					),
 				},
+				{
+					Config: te.RenderConfig(baseConfig + `
+					resource "proxmox_cloned_vm" "disk_test" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-disk"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						disk = {
+							virtio0 = {
+								datastore_id = "local-lvm"
+								import_from  = "local-lvm:vm-${proxmox_virtual_environment_vm.template_vm.vm_id}-disk-0"
+							}
+						}
+					}
+					`),
+					Check: resource.ComposeTestCheckFunc(
+						checkDiskSlot(te, resName, "virtio0", true),
+					),
+				},
 			},
 		})
 	})
