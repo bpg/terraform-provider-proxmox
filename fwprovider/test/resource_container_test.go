@@ -1450,6 +1450,81 @@ func TestAccResourceContainerIpv4Ipv6(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerWaitForIPFilter(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	// DHCP isn't reliable in every test environment, so this relies on the link-local IPv6 address
+	// the kernel always assigns to eth0. Default waiting rejects it; an explicit fe80::/10 opts in.
+	containerConfig := func(waitForIP string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{.TestContainerID}}
+			unprivileged = true
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-wait-filter"
+				ip_config {
+					ipv4 {
+						address = "dhcp"
+					}
+				}
+			}
+			network_interface {
+				name = "eth0"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+			wait_for_ip {
+				` + waitForIP + `
+			}
+		}`)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: containerConfig(`
+				ipv4  = true
+				cidrs = ["fe80::/10"]`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`ipv4 = true requires at least one IPv4 entry in cidrs`),
+			},
+			{
+				Config: containerConfig(`
+				ipv6       = true
+				interfaces = ["eth0"]
+				cidrs      = ["fe80::/10"]`),
+				Check: ResourceAttributesSet(accTestContainerName, []string{"ipv6.eth0"}),
+			},
+			{
+				// Same running container (wait_for_ip changes are provider-local), so empty maps prove the filter gated.
+				Config: containerConfig(`
+				cidrs = ["192.0.2.0/24"]`),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{
+					"ipv4.%": "0",
+					"ipv6.%": "0",
+				}),
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)

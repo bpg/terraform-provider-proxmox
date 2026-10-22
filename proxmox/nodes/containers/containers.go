@@ -14,10 +14,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
-	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 var errContainerAlreadyRunning = errors.New("container is already running")
@@ -219,7 +220,15 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 		}),
 	)
 
-	var ifaces []GetNetworkInterfacesData
+	cfg := WaitForIPConfig{}
+	if waitForIPConfig != nil {
+		cfg = *waitForIPConfig
+	}
+
+	var (
+		ifaces   []GetNetworkInterfacesData
+		rejected []string
+	)
 
 	err := op.DoPoll(ctxWithTimeout, func() error {
 		var err error
@@ -229,28 +238,20 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 			return err
 		}
 
-		hasIPv4, hasIPv6 := c.checkIPAddresses(ifaces)
+		byName := map[string][]string{}
 
-		if waitForIPConfig == nil {
-			if !hasIPv4 && !hasIPv6 {
-				return errNoIPsYet
+		for _, iface := range ifaces {
+			if iface.IPAddresses != nil {
+				for _, addr := range *iface.IPAddresses {
+					byName[iface.Name] = append(byName[iface.Name], addr.Address)
+				}
 			}
-
-			return nil
 		}
 
-		requiredIPv4 := waitForIPConfig.IPv4
-		requiredIPv6 := waitForIPConfig.IPv6
+		match := cfg.Filter.Match(byName)
+		rejected = match.Rejected
 
-		if !requiredIPv4 && !requiredIPv6 {
-			if !hasIPv4 && !hasIPv6 {
-				return errNoIPsYet
-			}
-
-			return nil
-		}
-
-		if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
+		if !match.Satisfied(cfg.IPv4, cfg.IPv6) {
 			return errNoIPsYet
 		}
 
@@ -258,7 +259,9 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	})
 
 	if errors.Is(err, context.DeadlineExceeded) {
-		return nil, errors.New("timeout while waiting for container IP addresses")
+		tflog.Debug(ctx, "container addresses rejected while waiting for IP", map[string]any{"rejected": rejected})
+
+		return nil, fmt.Errorf("timeout while waiting for container IP addresses (rejected: %s)", strings.Join(rejected, "; "))
 	}
 
 	if err != nil {
@@ -266,34 +269,6 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	}
 
 	return ifaces, nil
-}
-
-// checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
-func (c *Client) checkIPAddresses(
-	ifaces []GetNetworkInterfacesData,
-) (bool, bool) {
-	hasIPv4 := false
-	hasIPv6 := false
-
-	for _, iface := range ifaces {
-		if iface.Name == "lo" || iface.IPAddresses == nil || len(*iface.IPAddresses) == 0 {
-			continue
-		}
-
-		for _, ipAddr := range *iface.IPAddresses {
-			if !ip.IsValidGlobalUnicast(ipAddr.Address) {
-				continue
-			}
-
-			if ip.IsIPv4(ipAddr.Address) {
-				hasIPv4 = true
-			} else if ip.IsIPv6(ipAddr.Address) {
-				hasIPv6 = true
-			}
-		}
-	}
-
-	return hasIPv4, hasIPv6
 }
 
 // MigrateContainer migrates a container to a different node.

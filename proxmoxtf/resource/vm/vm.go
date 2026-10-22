@@ -424,7 +424,7 @@ func VM() *schema.Resource {
 						MaxItems:    1,
 						MinItems:    0,
 						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
+							Schema: validators.AddWaitForIPFilterSchema(map[string]*schema.Schema{
 								mkAgentWaitForIPDisabled: {
 									Type:        schema.TypeBool,
 									Description: "Disable waiting for the agent to report an IP address; set to true to skip the lookup entirely",
@@ -443,7 +443,7 @@ func VM() *schema.Resource {
 									Optional:    true,
 									Default:     false,
 								},
-							},
+							}),
 						},
 					},
 				},
@@ -1768,6 +1768,7 @@ func VM() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			customdiff.All(network.CustomizeDiff()...),
 			initializationInterfaceCollisionDiff,
+			validators.WaitForIPFilterDiff(mkAgent+".0."+mkAgentWaitForIP),
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
@@ -7733,12 +7734,13 @@ func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
 	}
 
 	config := &vms.WaitForIPConfig{
-		IPv4: getBoolFromBlock(block, mkAgentWaitForIPIPv4),
-		IPv6: getBoolFromBlock(block, mkAgentWaitForIPIPv6),
+		IPv4:   getBoolFromBlock(block, mkAgentWaitForIPIPv4),
+		IPv6:   getBoolFromBlock(block, mkAgentWaitForIPIPv6),
+		Filter: validators.WaitForIPFilterFromBlock(block),
 	}
 
-	// if both are false, return nil for backward compatibility (wait for any)
-	if !config.IPv4 && !config.IPv6 {
+	// nothing configured: return nil for backward compatibility (wait for any)
+	if !config.IPv4 && !config.IPv6 && len(config.Filter.CIDRs) == 0 && len(config.Filter.Interfaces) == 0 {
 		return nil
 	}
 

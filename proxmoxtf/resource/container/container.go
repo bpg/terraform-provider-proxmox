@@ -1168,7 +1168,7 @@ func Container() *schema.Resource {
 				MaxItems:    1,
 				MinItems:    0,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
+					Schema: validators.AddWaitForIPFilterSchema(map[string]*schema.Schema{
 						mkWaitForIPIPv4: {
 							Type:        schema.TypeBool,
 							Description: "Wait for at least one IPv4 address (non-loopback, non-link-local)",
@@ -1181,7 +1181,7 @@ func Container() *schema.Resource {
 							Optional:    true,
 							Default:     false,
 						},
-					},
+					}),
 				},
 			},
 			mkUnprivileged: {
@@ -1204,6 +1204,7 @@ func Container() *schema.Resource {
 		UpdateContext: containerUpdate,
 		DeleteContext: containerDelete,
 		CustomizeDiff: customdiff.All(
+			validators.WaitForIPFilterDiff(mkWaitForIP),
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
@@ -4414,8 +4415,10 @@ func getContainerWaitForIPConfig(d *schema.ResourceData) *containers.WaitForIPCo
 		config.IPv6 = ipv6
 	}
 
-	// if both are false, return nil for backward compatibility
-	if !config.IPv4 && !config.IPv6 {
+	config.Filter = validators.WaitForIPFilterFromBlock(waitForIPBlock)
+
+	// nothing configured: return nil for backward compatibility
+	if !config.IPv4 && !config.IPv6 && len(config.Filter.CIDRs) == 0 && len(config.Filter.Interfaces) == 0 {
 		return nil
 	}
 
