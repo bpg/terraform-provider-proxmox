@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.118.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.117.0...v0.118.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sdn:** remove zone MTU when unset and require valid peer IPs ([#3206](https://github.com/bpg/terraform-provider-proxmox/issues/3206))
+
+### Features
+
+* **sdn:** add proxmox_sdn_controller_bgp resource and data source ([#3183](https://github.com/bpg/terraform-provider-proxmox/issues/3183)) ([6e038f0](https://github.com/bpg/terraform-provider-proxmox/commit/6e038f08253b65c1afffc63693b4510f212e952f))
+
+
+### Bug Fixes
+
+* **sdn:** remove zone MTU when unset and require valid peer IPs ([#3206](https://github.com/bpg/terraform-provider-proxmox/issues/3206)) ([6aced98](https://github.com/bpg/terraform-provider-proxmox/commit/6aced9843c0145c3229e06c72a701d3da0c2dbac))
+* **ssh:** quote config-derived values in remote shell commands ([1b97423](https://github.com/bpg/terraform-provider-proxmox/commit/1b974232f4ac180fa909acb0ec0a968f7dc6b00c))
+
+
+### Miscellaneous
+
+* **ci:** anchor lychee exclude_path patterns ([#3202](https://github.com/bpg/terraform-provider-proxmox/issues/3202)) ([c128faf](https://github.com/bpg/terraform-provider-proxmox/commit/c128faf28422355f3ca3327310f00e4a6c76dfd5))
+* **docs:** add unattended install option for the proxmox test vm ([#3182](https://github.com/bpg/terraform-provider-proxmox/issues/3182)) ([3e4a0f1](https://github.com/bpg/terraform-provider-proxmox/commit/3e4a0f1c28817a68a16e17b25d4c22fa1b0e4be0))
+
 ## [0.117.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.116.1...v0.117.0) (2026-10-17)
 
 
