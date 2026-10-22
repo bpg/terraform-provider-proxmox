@@ -713,11 +713,10 @@ func VM() *schema.Resource {
 						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 16)),
 					},
 					mkCPUType: {
-						Type:             schema.TypeString,
-						Description:      "The emulated CPU type",
-						Optional:         true,
-						Default:          dvCPUType,
-						ValidateDiagFunc: CPUTypeValidator(),
+						Type:        schema.TypeString,
+						Description: "The emulated CPU type",
+						Optional:    true,
+						Default:     dvCPUType,
 					},
 					mkCPUUnits: {
 						Type:        schema.TypeInt,
