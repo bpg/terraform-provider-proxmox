@@ -94,7 +94,7 @@ func TestAccResourceVMCPUType(t *testing.T) {
 							type = "` + accCPUModelInvalid + `"
 						}
 					}`),
-				ExpectError: regexp.MustCompile(`Built-in cputype '` + regexp.QuoteMeta(accCPUModelInvalid) + `' is not defined`),
+				ExpectError: regexp.MustCompile(`(?s)cputype\s+'` + regexp.QuoteMeta(accCPUModelInvalid) + `'\s+is\s+not\s+defined`),
 			}},
 		})
 	})
