@@ -224,54 +224,15 @@ output "ubuntu_vm_public_key" {
     - `sockets` - (Optional) The number of CPU sockets (defaults to `1`).
     - `type` - (Optional) The emulated CPU type, it's recommended to
         use `x86-64-v2-AES` (defaults to `qemu64`).
-        - `486` - Intel 486.
-        - `Broadwell`/`Broadwell-IBRS`/`Broadwell-noTSX`/`Broadwell-noTSX-IBRS` - Intel Core Processor (Broadwell, 2014).
-        - `Cascadelake-Server`/`Cascadelake-Server-noTSX`/`Cascadelake-Server-v2`/`Cascadelake-Server-v4`/`Cascadelake-Server-v5` - Intel Xeon 32xx/42xx/52xx/62xx/82xx/92xx (2019).
-        - `Conroe` - Intel Celeron_4x0 (Conroe/Merom Class Core 2, 2006).
-        - `Cooperlake`/`Cooperlake-v2`
-        - `EPYC`/`EPYC-Genoa`/`EPYC-IBPB`/`EPYC-Milan`/`EPYC-Rome`/`EPYC-Rome-v2`/`EPYC-Rome-v3`/`EPYC-Rome-v4`/`EPYC-v3`/`EPYC-v4`/ -
-            AMD EPYC Processor (2017).
-        - `Haswell`/`Haswell-IBRS`/`Haswell-noTSX`/`Haswell-noTSX-IBRS` - Intel
-            Core Processor (Haswell, 2013).
-        - `Icelake-Client`/`Icelake-Client-noTSX`
-        - `Icelake-Server`/`Icelake-Server-noTSX`/`Icelake-Server-v3`/
-            `Icelake-Server-v4`/`Icelake-Server-v5`/`Icelake-Server-v6`
-        - `IvyBridge`/`IvyBridge-IBRS` - Intel Xeon E3-12xx v2 (Ivy Bridge,
-              2012).
-        - `KnightsMill` - Intel Xeon Phi 72xx (2017).
-        - `Nehalem`/`Nehalem-IBRS` - Intel Core i7 9xx (Nehalem Class Core i7,
-            2008).
-        - `Opteron_G1` - AMD Opteron 240 (Gen 1 Class Opteron, 2004).
-        - `Opteron_G2` - AMD Opteron 22xx (Gen 2 Class Opteron, 2006).
-        - `Opteron_G3` - AMD Opteron 23xx (Gen 3 Class Opteron, 2009).
-        - `Opteron_G4` - AMD Opteron 62xx class CPU (2011).
-        - `Opteron_G5` - AMD Opteron 63xx class CPU (2012).
-        - `Penryn` - Intel Core 2 Duo P9xxx (Penryn Class Core 2, 2007).
-        - `SandyBridge`/`SandyBridge-IBRS` - Intel Xeon E312xx (Sandy Bridge,
-            2011).
-        - `SapphireRapids`
-        - `Skylake-Client`/`Skylake-Client-IBRS`/`Skylake-Client-noTSX-IBRS`/`Skylake-Client-v4` -
-            Intel Core Processor (Skylake, 2015).
-        - `Skylake-Server`/`Skylake-Server-IBRS`/`Skylake-Server-noTSX-IBRS`/`Skylake-Server-v4`/`Skylake-Server-v5` -
-            Intel Xeon Processor (Skylake, 2016).
-        - `Westmere`/`Westmere-IBRS` - Intel Westmere E56xx/L56xx/X56xx (
-            Nehalem-C, 2010).
-        - `athlon` - AMD Athlon.
-        - `core2duo` - Intel Core 2 Duo.
-        - `coreduo` - Intel Core Duo.
-        - `host` - Host pass-through.
-        - `kvm32`/`kvm64` - Common KVM processor (32 & 64 bit variants).
-        - `max` - Maximum amount of features from host CPU.
-        - `pentium` - Intel Pentium (1993).
-        - `pentium2` - Intel Pentium 2 (1997-1999).
-        - `pentium3` - Intel Pentium 3 (1999-2001).
-        - `phenom` - AMD Phenom (2010).
-        - `qemu32`/`qemu64` - QEMU Virtual CPU version 2.5+ (32 & 64 bit
-            variants).
-        - `x86-64-v2`/`x86-64-v2-AES`/`x86-64-v3`/`x86-64-v4`
-            See <https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels>
-        - `custom-<model>` - Custom CPU model. All `custom-<model>` values
-            should be defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
+        Representative models include `host`, `qemu64`, `x86-64-v2-AES`,
+        `EPYC-Genoa`, and `EPYC-Genoa-v2`. Model availability is validated by
+        the target Proxmox VE version, which returns an error for an unknown
+        model. See the
+        [PVE administration guide](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings)
+        for the models a release offers.
+        - `custom-<model>` - Custom CPU model. `custom-<model>` names refer to
+            PVE custom model definitions in
+            `/etc/pve/virtual-guest/cpu-models.conf`.
     - `units` - (Optional) The CPU units. PVE default is `1024` for cgroups v1 and `100` for cgroups v2.
     - `affinity` - (Optional) The CPU cores that are used to run the VM’s vCPU. The
         value is a list of CPU IDs, separated by commas. The CPU IDs are zero-based.
