@@ -12,6 +12,7 @@
 package nodes_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -241,6 +242,50 @@ func TestAccResourceDownloadFileUpstreamNoChange(t *testing.T) {
 						plancheck.ExpectEmptyPlan(),
 					},
 				},
+			},
+		},
+	})
+}
+
+// TestAccResourceDownloadFileNameSetHeadFails tests that a file whose name is
+// set is downloaded even when the URL fails the HEAD request behind Proxmox's
+// query-url-metadata, as only the download itself has to reach it.
+func TestAccResourceDownloadFileNameSetHeadFails(t *testing.T) {
+	fileServer := test.NewTestFileServer(t)
+	if fileServer == nil {
+		t.Skip("PROXMOX_VE_ACC_TEST_FILE_SERVER_IP not set - skipping test")
+	}
+
+	te := test.InitEnvironment(t)
+
+	fileServer.SetContent([]byte("head fails"))
+	fileServer.SetHeadStatus(http.StatusInternalServerError)
+
+	te.AddTemplateVars(map[string]any{
+		"FileURL": fileServer.FileURL(),
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_download_file" "head_fails" {
+						content_type        = "iso"
+						node_name           = "{{.NodeName}}"
+						datastore_id        = "{{.DatastoreID}}"
+						url                 = "{{.FileURL}}"
+						file_name           = "head_fails_test.iso"
+						overwrite           = false
+						overwrite_unmanaged = true
+						verify              = false
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_download_file.head_fails", map[string]string{
+						"file_name": "head_fails_test.iso",
+						"size":      "10",
+					}),
+				),
 			},
 		},
 	})
