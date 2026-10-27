@@ -145,6 +145,14 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
    # Datastore used for container root filesystems and mount points.
    # Defaults to "local-lvm"; override it on clusters that use different storage.
    PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID="local-zfs"
+
+   # CRUSH rule for the Ceph pools the Ceph tests create. Defaults to the cluster's default rule;
+   # set it when that rule's OSDs can't hold the test pools.
+   PROXMOX_VE_ACC_CEPH_CRUSH_RULE="replicated_rule"
+
+   # Device class for the erasure-coded test pools (k=2, m=2, failure domain `osd`, so at least
+   # four OSDs, of this class if set). Defaults to any class.
+   PROXMOX_VE_ACC_CEPH_EC_DEVICE_CLASS="hdd"
    ```
 
 Some tests require multi node cluster, a ZFS datastore and a spare disk to run. To include these (otherwise skipped) tests add additional configuration corresponding to the cluster.

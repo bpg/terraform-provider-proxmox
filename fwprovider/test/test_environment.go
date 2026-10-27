@@ -277,6 +277,11 @@ func InitEnvironment(t *testing.T) *Environment {
 		containerDatastoreID = "local-lvm"
 	}
 
+	// Optional: Ceph pools created by tests use this CRUSH rule instead of the cluster default, and erasure-coded
+	// test pools place their data on this device class.
+	cephCrushRule := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CEPH_CRUSH_RULE")
+	cephECDeviceClass := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CEPH_EC_DEVICE_CLASS")
+
 	return &Environment{
 		t: t,
 		templateVars: map[string]any{
@@ -289,6 +294,8 @@ func InitEnvironment(t *testing.T) *Environment {
 			"TestName":              sanitizeTemplateName(t.Name()),
 			"ZfsDatastoreID":        zfsDatastoreID,
 			"ZfsDisk":               zfsDisk,
+			"CephCrushRule":         cephCrushRule,
+			"CephECDeviceClass":     cephECDeviceClass,
 		},
 		NodeName:              nodeName,
 		Node2Name:             node2Name,
