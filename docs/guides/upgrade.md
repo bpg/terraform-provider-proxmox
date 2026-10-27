@@ -19,7 +19,7 @@ This guide documents breaking changes across provider versions and the recommend
      required_providers {
        proxmox = {
          source  = "bpg/proxmox"
-         version = "~> 0.118.0" # x-release-please-version
+         version = "~> 0.118.1" # x-release-please-version
        }
      }
    }
@@ -36,6 +36,73 @@ This guide documents breaking changes across provider versions and the recommend
 6. Apply when satisfied.
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
+
+## v0.119.0
+
+### `proxmox_ceph_pool` no longer manages storages
+
+The experimental `proxmox_ceph_pool` no longer creates or removes RBD storages: `add_storages` and `remove_storages` are removed. Pools are always created without a storage, and destroying a pool never removes a storage. RBD storages are managed by the new `proxmox_storage_rbd` resource. This also fixes importing a pool, which used to plan an update, or a replacement when `add_storages` was set.
+
+**Before:**
+
+```terraform
+resource "proxmox_ceph_pool" "vm" {
+  node_name    = "pve"
+  name         = "vm"
+  add_storages = true
+}
+```
+
+**After:**
+
+```terraform
+resource "proxmox_ceph_pool" "vm" {
+  node_name = "pve"
+  name      = "vm"
+}
+
+import {
+  to = proxmox_storage_rbd.vm
+  id = "vm" # add_storages named the storage after the pool
+}
+
+resource "proxmox_storage_rbd" "vm" {
+  id      = "vm"
+  pool    = proxmox_ceph_pool.vm.name # for an erasure-coded pool: metadata_pool_name
+  # data_pool = proxmox_ceph_pool.vm.data_pool.name # erasure-coded pools only
+  content = ["images", "rootdir"]
+}
+```
+
+**Action required:** Remove `add_storages` and `remove_storages` from your configuration. A storage that `add_storages` already created keeps working; to manage it, import it as a `proxmox_storage_rbd` as shown above. Destroy storages through their own resources: destroying the pool leaves them in place.
+
+### `proxmox_ceph_pool.remove_ecprofile` removed
+
+The erasure code profile of an erasure-coded pool is removed with the pool if Proxmox generated it (no `erasure_coding.profile` set), and kept if the pool named an existing `profile`.
+
+**Action required:** Remove `remove_ecprofile` from your configuration.
+
+### `proxmox_ceph_pool.erasure_coding` is now an object
+
+`erasure_coding` is an object with `k`, `m`, `failure_domain`, `device_class` and `profile` attributes, instead of Proxmox's `k=<int>,m=<int>,...` string. With `erasure_coding`, Proxmox creates the pools `<name>-data` and `<name>-metadata` rather than a pool named `name`, and the provider now reads both.
+
+**Before:**
+
+```terraform
+erasure_coding = "k=2,m=2,failure-domain=osd"
+```
+
+**After:**
+
+```terraform
+erasure_coding = {
+  k              = 2
+  m              = 2
+  failure_domain = "osd"
+}
+```
+
+**Action required:** Rewrite `erasure_coding` as an object. No existing state holds the string form, because creating an erasure-coded pool always failed before this version.
 
 ## v0.118.0
 
