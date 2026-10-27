@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.118.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.118.0...v0.118.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **docs:** use exact sudoers rules for snippet and idmap commands ([0c4c977](https://github.com/bpg/terraform-provider-proxmox/commit/0c4c97724d4c28b9f1edd6cdf9b7cff3522c4a32))
+* **vm:** accept newer QEMU CPU models in VM cpu.type ([#3212](https://github.com/bpg/terraform-provider-proxmox/issues/3212)) ([80a33c2](https://github.com/bpg/terraform-provider-proxmox/commit/80a33c2759af4ffdf9e3dbc80a12db66108710cb))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (1.27.2 → 1.27.3) ([#3214](https://github.com/bpg/terraform-provider-proxmox/issues/3214)) ([03aa30c](https://github.com/bpg/terraform-provider-proxmox/commit/03aa30c49693e9c4d1298627e4744a314fea2651))
+* **deps:** update image golang (f20d83a → 9048d5e) ([#3222](https://github.com/bpg/terraform-provider-proxmox/issues/3222)) ([c44d78f](https://github.com/bpg/terraform-provider-proxmox/commit/c44d78f3b683a56562fd3c1c7575f61249b6e485))
+* **deps:** update module github.com/pkg/sftp (v1.13.11 → v1.13.12) ([#3215](https://github.com/bpg/terraform-provider-proxmox/issues/3215)) ([7adedee](https://github.com/bpg/terraform-provider-proxmox/commit/7adedee2f7cd80236f71166f9c3753489e6f05b1))
+* **docs:** update terraform tls (4.4.1 → 4.4.2) ([#3220](https://github.com/bpg/terraform-provider-proxmox/issues/3220)) ([47c52ee](https://github.com/bpg/terraform-provider-proxmox/commit/47c52ee6ba7767804c6d6c42910ffb812b0f0976))
+
 ## [0.118.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.117.0...v0.118.0) (2026-10-22)
 
 
