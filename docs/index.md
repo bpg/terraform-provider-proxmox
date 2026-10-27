@@ -460,6 +460,14 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
 
     With these rules, snippet file names must start with a letter, digit or `_` and contain only letters, digits, `_`, `.` and `-`. `sudo` refuses uploads of any other name.
 
+    If you set `file_mode` on `proxmox_virtual_environment_file`, for example to make a hook script executable, also grant `chmod` on the same directory:
+
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/chmod ^0[0-7]{3} /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*$
+    ```
+
+    This rule allows plain permission bits only. `sudo` refuses modes with the setuid, setgid or sticky bit, such as `4755`.
+
   - **LXC `idmap`** on `proxmox_virtual_environment_container` — the provider edits the container configuration file via SSH:
 
     ```text
