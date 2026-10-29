@@ -4409,6 +4409,11 @@ func vmReadCustom(
 	nodeName := d.Get(mkNodeName).(string)
 	clone := d.Get(mkClone).([]any)
 
+	// The importer sets only the ID and node name; vm_id is written at the end of the first read.
+	//nolint:staticcheck
+	_, hasVMID := d.GetOkExists(mkVMID)
+	importing := !hasVMID
+
 	// Compare the agent configuration to the one stored in the state.
 	currentAgent := d.Get(mkAgent).([]any)
 
@@ -4522,7 +4527,7 @@ func vmReadCustom(
 					err := d.Set(mkAMDSEV, []any{amdsev})
 					diags = append(diags, diag.FromErr(err)...)
 				}
-			} else if len(currentAMDSEV) > 0 ||
+			} else if importing || len(currentAMDSEV) > 0 ||
 				amdsev[mkAMDSEVType] != dvAMDSEVType ||
 				amdsev[mkAMDSEVAllowSMT] != dvAMDSEVAllowSMT ||
 				amdsev[mkAMDSEVKernelHashes] != dvAMDSEVKernelHashes ||
@@ -4806,7 +4811,7 @@ func vmReadCustom(
 				err := d.Set(mkEFIDisk, []any{efiDisk})
 				diags = append(diags, diag.FromErr(err)...)
 			}
-		} else if len(currentEfiDisk) > 0 ||
+		} else if importing || len(currentEfiDisk) > 0 ||
 			efiDisk[mkEFIDiskDatastoreID] != dvEFIDiskDatastoreID ||
 			efiDisk[mkEFIDiskType] != dvEFIDiskType ||
 			efiDisk[mkEFIDiskPreEnrolledKeys] != dvEFIDiskPreEnrolledKeys ||
@@ -4835,7 +4840,7 @@ func vmReadCustom(
 				err := d.Set(mkTPMState, []any{tpmState})
 				diags = append(diags, diag.FromErr(err)...)
 			}
-		} else if len(currentTPMState) > 0 ||
+		} else if importing || len(currentTPMState) > 0 ||
 			tpmState[mkTPMStateDatastoreID] != dvTPMStateDatastoreID ||
 			tpmState[mkTPMStateVersion] != dvTPMStateVersion {
 			err := d.Set(mkTPMState, []any{tpmState})

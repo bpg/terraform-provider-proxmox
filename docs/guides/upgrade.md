@@ -37,6 +37,16 @@ This guide documents breaking changes across provider versions and the recommend
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
 
+## v0.120.0
+
+### Imported VMs record a TPM, EFI disk and AMD SEV on default settings
+
+Importing a `proxmox_virtual_environment_vm` now records `tpm_state`, `efi_disk` and `amd_sev` whenever the VM has them. Before, a TPM on `local-lvm` at `v2.0`, an EFI disk on `local-lvm` with the default type and format, or AMD SEV with all default options was left out of state, so declaring it planned a new device, an empty one for the TPM and EFI disk. Devices on other settings were already recorded.
+
+This only affects new imports. A configuration without these blocks now plans to remove the TPM, EFI disk or AMD SEV after an import, the same as for a regular `disk`.
+
+**Action required:** After importing a VM, declare its `tpm_state`, `efi_disk` and `amd_sev` blocks, or generate them with `-generate-config-out`, before applying.
+
 ## v0.119.0
 
 ### `proxmox_ceph_pool` no longer manages storages

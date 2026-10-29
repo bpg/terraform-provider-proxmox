@@ -13,6 +13,7 @@ package test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"regexp"
@@ -1009,6 +1010,113 @@ func TestAccResourceVMImportEffectiveDefaults(t *testing.T) {
 
 					return nil
 				},
+			},
+		},
+	})
+}
+
+func TestAccResourceVMImportDefaultTPMEFIDiskAndAMDSEV(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+
+	// amd-sev is root-only, so create the VM with qm over root SSH.
+	_, err := te.ExecuteNodeCommandsContext(context.Background(), []string{fmt.Sprintf(
+		"qm create %d --bios ovmf --efidisk0 local-lvm:1 --tpmstate0 local-lvm:1,version=v2.0 --amd-sev type=std,allow-smt=1", vmID,
+	)})
+	require.NoError(t, err, "failed to create bare VM %d", vmID)
+
+	t.Cleanup(func() {
+		_ = te.NodeClient().VM(vmID).DeleteVM(context.Background(), true, true).Err()
+	})
+
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_tpm_efi" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+					}`),
+				ResourceName:  "proxmox_virtual_environment_vm.vm_tpm_efi",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, vmID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+
+					want := map[string]string{
+						"tpm_state.#":                  "1",
+						"tpm_state.0.datastore_id":     "local-lvm",
+						"tpm_state.0.version":          "v2.0",
+						"efi_disk.#":                   "1",
+						"efi_disk.0.datastore_id":      "local-lvm",
+						"efi_disk.0.file_format":       "raw",
+						"efi_disk.0.type":              "2m",
+						"efi_disk.0.pre_enrolled_keys": "false",
+						"amd_sev.#":                    "1",
+						"amd_sev.0.type":               "std",
+					}
+
+					var errs []error
+
+					for k, v := range want {
+						if got := attrs[k]; got != v {
+							errs = append(errs, fmt.Errorf("%s = %q, want %q", k, got, v))
+						}
+					}
+
+					return errors.Join(errs...)
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceVMUndeclaredDefaultTPMAndEFIDisk(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_undeclared" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+						started   = false
+						bios      = "ovmf"
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.vm_undeclared", "tpm_state.#", "0"),
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.vm_undeclared", "efi_disk.#", "0"),
+				),
+			},
+			{
+				PreConfig: func() {
+					err := te.NodeClient().VM(vmID).UpdateVM(context.Background(), &vms.UpdateRequestBody{
+						EFIDisk:  &vms.CustomEFIDisk{FileVolume: "local-lvm:1"},
+						TPMState: &vms.CustomTPMState{FileVolume: "local-lvm:1", Version: new("v2.0")},
+					})
+					require.NoError(t, err)
+				},
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_undeclared" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+						started   = false
+						bios      = "ovmf"
+					}`),
+				PlanOnly: true,
 			},
 		},
 	})
