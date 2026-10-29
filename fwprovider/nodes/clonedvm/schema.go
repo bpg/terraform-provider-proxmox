@@ -34,6 +34,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 )
 
 // Schema defines the schema for the cloned VM resource.
@@ -369,6 +370,7 @@ func diskAttribute() schema.Attribute {
 				"serial": schema.StringAttribute{
 					Description: "Disk serial number.",
 					Optional:    true,
+					Validators:  validators.DiskSerial(),
 				},
 				"ssd": schema.BoolAttribute{
 					Description: "Mark disk as SSD.",
@@ -377,6 +379,7 @@ func diskAttribute() schema.Attribute {
 				"import_from": schema.StringAttribute{
 					Description: "Import source volume/file id.",
 					Optional:    true,
+					Validators:  []validator.String{validators.ImportFrom()},
 				},
 				"media": schema.StringAttribute{
 					Description: "Disk media (e.g., disk, cdrom).",
