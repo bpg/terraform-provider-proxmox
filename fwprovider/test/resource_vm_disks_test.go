@@ -25,7 +25,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -2845,6 +2848,91 @@ func TestAccResourceVMDiskLinkedCloneResizeAndMove(t *testing.T) {
 			{
 				Config: config("local-lvm", 2),
 				Check:  checkCloneDisk(2, regexp.MustCompile(`^local-lvm:vm-\d+-disk-0$`)),
+			},
+		},
+	})
+}
+
+type readOnlyTokenConfigOption struct{ token string }
+
+func (o *readOnlyTokenConfigOption) apply(rc *renderConfig) error {
+	rc.auth = fmt.Sprintf("\tapi_token = %q\n\tusername = \"\"\n\tpassword = \"\"", o.token)
+
+	return nil
+}
+
+func TestAccResourceVMDiskFormatReadOnlyToken(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+	ctx := context.Background()
+
+	userID := SafeResourceName("disk-ro") + "@pve"
+	tokenName := "readonly"
+
+	require.NoError(t, te.AccessClient().CreateUser(ctx, &access.UserCreateRequestBody{ID: userID}))
+
+	t.Cleanup(func() {
+		_ = te.AccessClient().DeleteUserToken(context.Background(), userID, tokenName)
+		_ = te.AccessClient().DeleteUser(context.Background(), userID)
+	})
+
+	token, err := te.AccessClient().CreateUserToken(ctx, userID, tokenName, &access.UserTokenCreateRequestBody{
+		PrivSeparate: proxmoxtypes.CustomBool(true).Pointer(),
+	})
+	require.NoError(t, err)
+
+	tokenID := userID + "!" + tokenName
+	require.NoError(t, te.AccessClient().UpdateACL(ctx, &access.ACLUpdateRequestBody{
+		Path:   "/",
+		Roles:  []string{"PVEAuditor"},
+		Tokens: []string{tokenID},
+		Users:  []string{userID},
+	}))
+
+	vmID := 100000 + rand.Intn(99999)
+	te.AddTemplateVars(map[string]any{"VMID": vmID})
+
+	t.Cleanup(func() {
+		_ = te.NodeClient().VM(vmID).DeleteVM(context.Background(), true, true).Err()
+	})
+
+	config := `
+	resource "proxmox_virtual_environment_vm" "test_disk_format" {
+		node_name = "{{.NodeName}}"
+		vm_id     = {{.VMID}}
+		started   = false
+		name      = "test-disk-format-ro-token"
+		bios      = "ovmf"
+
+		efi_disk {
+			datastore_id = "local-lvm"
+		}
+
+		disk {
+			datastore_id = "local-lvm"
+			interface    = "scsi0"
+			size         = 8
+		}
+	}`
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(config),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_format", map[string]string{
+					"disk.0.file_format":     "raw",
+					"efi_disk.0.file_format": "raw",
+				}),
+			},
+			{
+				Config:   te.RenderConfig(config, &readOnlyTokenConfigOption{token: token}),
+				PlanOnly: true,
+			},
+			{
+				Config:   te.RenderConfig(config),
+				PlanOnly: true,
 			},
 		},
 	})

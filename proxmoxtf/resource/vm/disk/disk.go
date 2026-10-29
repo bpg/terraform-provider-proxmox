@@ -424,7 +424,10 @@ func Read(
 		disk[mkDiskPathInDatastore] = pathInDatastore
 
 		if dd.Format == nil {
-			if datastoreID != "" {
+			if f, ok := InferFormatFromVolume(pathInDatastore); ok && datastoreID != "" {
+				// the storage API needs VM.Config.Disk on the owner VM, which a read-only token doesn't have
+				disk[mkDiskFileFormat] = f
+			} else if datastoreID != "" {
 				// disk format may not be returned by config API if it is default for the storage, and that may be different
 				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
 				volume, e := client.Node(nodeName).Storage(datastoreID).GetDatastoreFile(ctx, dd.FileVolume)
@@ -711,4 +714,28 @@ func Update(
 	}
 
 	return rebootRequired, diags
+}
+
+// InferFormatFromVolume derives a disk image's format from its path in the datastore
+// without a storage API call. A file extension names the format; a name with no
+// extension is a block-storage volume, which Proxmox always exposes as raw. The
+// second value is false only when the extension is not a format this provider knows,
+// so the caller can fall back to the storage API.
+func InferFormatFromVolume(pathInDatastore string) (string, bool) {
+	base := pathInDatastore
+	if i := strings.LastIndex(base, "/"); i >= 0 {
+		base = base[i+1:]
+	}
+
+	dot := strings.LastIndex(base, ".")
+	if dot < 0 {
+		return "raw", true
+	}
+
+	switch ext := strings.ToLower(base[dot+1:]); ext {
+	case "raw", "qcow2", "vmdk":
+		return ext, true
+	default:
+		return "", false
+	}
 }
