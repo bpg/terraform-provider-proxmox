@@ -155,7 +155,7 @@ func Schema() map[string]*schema.Schema {
 						Description:      "The drive’s reported serial number",
 						Optional:         true,
 						Default:          "",
-						ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 20)),
+						ValidateDiagFunc: validators.DiskSerial(),
 					},
 					mkDiskSize: {
 						Type:        schema.TypeInt,

@@ -264,8 +264,9 @@ output "ubuntu_vm_public_key" {
         - `raw` - Raw Disk Image.
         - `vmdk` - VMware Disk Image.
     - `file_id` - (Optional) The file ID for a disk image when importing a disk into VM. The ID format is
-          `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`. Can be also taken from
-          `proxmox_virtual_environment_download_file` resource. Prefer `import_from` for uncompressed images.
+          `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`, without whitespace, `,` or `=`.
+          Can be also taken from `proxmox_virtual_environment_download_file` resource. Prefer `import_from` for
+          uncompressed images.
           Use `file_id` when working with compressed cloud images (e.g., `.qcow2.xz`) that were downloaded
           with `content_type = "iso"` and `decompression_algorithm` set. See the
           [Create a VM from a Cloud Image](../guides/cloud-image.md) guide for examples.
@@ -284,7 +285,8 @@ output "ubuntu_vm_public_key" {
         when `scsi_hardware` is set to `virtio-scsi-single`. A change requires
         a VM power cycle (or reboot via the Proxmox API) to take effect.
     - `replicate` - (Optional) Whether the drive should be considered for replication jobs (defaults to `true`).
-    - `serial` - (Optional) The serial number of the disk, up to 20 bytes long.
+    - `serial` - (Optional) The serial number of the disk, up to 20 characters. Letters, digits and
+        `-%_.!~*'()` only.
     - `size` - (Optional) The disk size in gigabytes (defaults to `8`).
     - `speed` - (Optional) The speed limits.
         - `iops_read` - (Optional) The maximum read I/O in operations per second.

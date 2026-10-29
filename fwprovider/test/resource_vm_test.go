@@ -104,6 +104,70 @@ func TestAccResourceVM(t *testing.T) {
 			ExpectError: regexp.MustCompile(`invalid value for name \(must be a valid DNS name\)`),
 			PlanOnly:    true,
 		}}},
+		{"disk serial with characters PVE rejects", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						serial       = "a,discard=on"
+					}
+				}`),
+			ExpectError: regexp.MustCompile(`invalid value for serial \(must contain only`),
+			PlanOnly:    true,
+		}}},
+		{"disk file_id with a comma", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						file_id      = "local:iso/a,b.img"
+					}
+				}`),
+			ExpectError: regexp.MustCompile(`(?s)expected file_id to be a valid file identifier.*got local:iso/a,b.img`),
+			PlanOnly:    true,
+		}}},
+		{"cdrom file_id with an equals sign", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					cdrom {
+						file_id = "local:iso/a=b.iso"
+					}
+				}`),
+			ExpectError: regexp.MustCompile(`(?s)expected file_id to be a valid file identifier.*got local:iso/a=b.iso`),
+			PlanOnly:    true,
+		}}},
+		{"file_id and serial with characters PVE accepts", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					cdrom {
+						file_id = "local:iso/a+b@c~d.iso"
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						serial       = "AB-1_2.x%21~*'()"
+					}
+				}`),
+			PlanOnly:           true,
+			ExpectNonEmptyPlan: true,
+		}}},
 		{"initialization interface collides with disk", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

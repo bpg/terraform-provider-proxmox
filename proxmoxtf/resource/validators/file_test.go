@@ -24,6 +24,10 @@ func TestFileID(t *testing.T) {
 		{"invalid", "invalid", false},
 		{"valid", "local:vztmpl/zen-dns-0.1.tar.zst", true},
 		{"valid when datastore name has dots", "terraform.proxmox.storage.compute.zen:vztmpl/zen-dns-0.1.tar.zst", true},
+		{"valid with characters PVE accepts", "local:iso/a+b@c~d.iso", true},
+		{"comma", "local:iso/a,b.iso", false},
+		{"equals sign", "local:iso/a=b.iso", false},
+		{"whitespace", "local:iso/a b.iso", false},
 	}
 
 	for _, tt := range tests {

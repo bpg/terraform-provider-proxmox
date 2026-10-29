@@ -78,6 +78,20 @@ func ValidateFileName(v string) error {
 	return nil
 }
 
+// PVE cannot parse ',' or '=' in a drive's volume, and cannot delete a volume with whitespace.
+var fileIDRegex = regexp.MustCompile(`^(?i)[a-z\d\-_.]+:([a-z\d\-_]+/)?[^\s,=]+$`)
+
+// DiskSerial returns a schema validation function for a disk serial number, limited to the characters PVE accepts.
+func DiskSerial() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.All(
+		validation.StringLenBetween(0, 20),
+		validation.StringMatch(
+			regexp.MustCompile(`^[-%A-Za-z0-9_.!~*'()]*$`),
+			"must contain only letters, digits and -%_.!~*'()",
+		),
+	))
+}
+
 // FileID returns a schema validation function for a file identifier.
 func FileID() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i any, k string) ([]string, []error) {
@@ -93,12 +107,12 @@ func FileID() schema.SchemaValidateDiagFunc {
 		}
 
 		if v != "" {
-			r := regexp.MustCompile(`^(?i)[a-z\d\-_.]+:([a-z\d\-_]+/)?.+$`)
-			ok := r.MatchString(v)
+			ok := fileIDRegex.MatchString(v)
 
 			if !ok {
 				es = append(es, fmt.Errorf(
-					"expected %s to be a valid file identifier (datastore-name:iso/some-file.img), got %s", k, v,
+					"expected %s to be a valid file identifier (datastore-name:iso/some-file.img) "+
+						"without whitespace, ',' or '=', got %s", k, v,
 				))
 
 				return ws, es

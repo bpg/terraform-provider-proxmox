@@ -104,6 +104,16 @@ erasure_coding = {
 
 **Action required:** Rewrite `erasure_coding` as an object. No existing state holds the string form, because creating an erasure-coded pool always failed before this version.
 
+### File ID and disk `serial` validation tightened
+
+File IDs (`<datastore_id>:<content_type>/<file_name>`) can no longer contain whitespace, `,` or `=`. This applies to `proxmox_virtual_environment_vm` (`disk.file_id`, `disk.import_from`, `cdrom.file_id`, the `initialization` `*_data_file_id` attributes), the `proxmox_virtual_environment_container` template `file_id`, `cdrom.file_id` on `proxmox_vm` and `proxmox_cloned_vm`, and `disk.import_from` on `proxmox_cloned_vm`, which also accepts an absolute path.
+
+Disk `serial` on `proxmox_virtual_environment_vm` and `proxmox_cloned_vm` may only contain letters, digits and `-%_.!~*'()`, up to 20 characters.
+
+Proxmox VE rejects these values anyway, so such a configuration already failed at apply time. A `,` in `serial` could also set other disk options silently. Now the error shows up at plan time.
+
+**Action required:** Rename any file whose name contains whitespace, `,` or `=`, and update the file IDs that point to it. Remove other characters from disk `serial` values.
+
 ## v0.118.0
 
 ### SDN zone `mtu` can be removed
