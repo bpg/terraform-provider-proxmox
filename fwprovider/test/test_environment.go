@@ -57,6 +57,7 @@ type Environment struct {
 	c                     api.Client
 	CloudImagesServer     string
 	ContainerImagesServer string
+	ContainerDatastoreID  string
 }
 
 // RenderConfigOption is a configuration option for rendering the provider configuration.
@@ -304,6 +305,7 @@ func InitEnvironment(t *testing.T) *Environment {
 		ZfsDisk:               zfsDisk,
 		CloudImagesServer:     cloudImagesServer,
 		ContainerImagesServer: containerImagesServer,
+		ContainerDatastoreID:  containerDatastoreID,
 
 		AccProviders: muxProviders(t),
 	}

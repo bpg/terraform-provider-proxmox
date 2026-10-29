@@ -28,7 +28,7 @@ func TestDoTask_ResultFromLastAttempt(t *testing.T) {
 		retryDone bool
 		wantErr   error
 	}{
-		{name: "retry finds the work already done", retryDone: true},
+		{name: "retry after a failed task does not count as done", retryDone: true, wantErr: errGone},
 		{name: "retry dispatch fails", wantErr: errGone},
 	}
 
