@@ -41,6 +41,7 @@ func TestClient_Contract_CreateAndUpdateStorage_RequestKeys(t *testing.T) {
 
 	nodes := types.CustomCommaSeparatedList{nodeName}
 	contentImages := types.CustomCommaSeparatedList{"images"}
+	contentBackup := types.CustomCommaSeparatedList{"backup"}
 
 	disableFalse := types.CustomBool(false)
 	sharedFalse := types.CustomBool(false)
@@ -176,6 +177,63 @@ func TestClient_Contract_CreateAndUpdateStorage_RequestKeys(t *testing.T) {
 				"prune-backups",
 			},
 			updateNoKey: []string{"export", "preallocation", "server", "snapshot-as-volume-chain", "storage", "type"},
+		},
+		{
+			name:      "cephfs",
+			storageID: "cephfs-test",
+			createReq: CephFSStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("cephfs-test"),
+					Type: ptr("cephfs"),
+				},
+				CephFSStorageMutableFields: CephFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentBackup,
+						Disable:      &disableFalse,
+					},
+					Backups: backups,
+					Options: ptr("noatime"),
+				},
+				CephFSStorageImmutableFields: CephFSStorageImmutableFields{
+					FSName: ptr("cephfs"),
+					Subdir: ptr("/templates"),
+					FUSE:   &disableFalse,
+				},
+			},
+			updateReq: CephFSStorageUpdateRequest{
+				CephFSStorageMutableFields: CephFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentBackup,
+						Disable:      &disableFalse,
+					},
+					Backups: backups,
+					Options: ptr("noatime"),
+				},
+			},
+			createKeys: []string{
+				"content",
+				"disable",
+				"fs-name",
+				"fuse",
+				"max-protected-backups",
+				"nodes",
+				"options",
+				"prune-backups",
+				"storage",
+				"subdir",
+				"type",
+			},
+			updateKeys: []string{
+				"content",
+				"disable",
+				"max-protected-backups",
+				"nodes",
+				"options",
+				"prune-backups",
+			},
+			updateNoKey: []string{"fs-name", "fuse", "storage", "subdir", "type"},
 		},
 		{
 			name:      "cifs",
@@ -571,6 +629,33 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 			},
 		},
 		{
+			name: "cephfs",
+			id:   "cephfs-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.FSName == nil || *got.FSName != "cephfs" {
+					return "unexpected fs-name"
+				}
+
+				if got.SubDirectory == nil || *got.SubDirectory != "/templates" {
+					return "unexpected subdir"
+				}
+
+				if got.FUSE == nil || !bool(*got.FUSE) {
+					return "unexpected fuse"
+				}
+
+				if got.Options == nil || *got.Options != "noatime" {
+					return "unexpected options"
+				}
+
+				if got.Shared == nil || !bool(*got.Shared) {
+					return "unexpected shared"
+				}
+
+				return ""
+			},
+		},
+		{
 			name: "cifs",
 			id:   "cifs-get",
 			assertion: func(got *DatastoreGetResponseData) string {
@@ -821,6 +906,13 @@ func newStorageGetContractServer() *httptest.Server {
 			base["server"] = "127.0.0.1"
 			base["export"] = "/export"
 			base["snapshot-as-volume-chain"] = 1
+		case "cephfs-get":
+			base["type"] = "cephfs"
+			base["fs-name"] = "cephfs"
+			base["subdir"] = "/templates"
+			base["fuse"] = 1
+			base["options"] = "noatime"
+			base["shared"] = 1
 		case "cifs-get":
 			base["type"] = "cifs"
 			base["server"] = "127.0.0.1"
