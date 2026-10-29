@@ -316,7 +316,11 @@ func (c *client) executeCommands(ctx context.Context, sshClient *ssh.Client, com
 	// explicitly use bash to support shell features like pipes and var assignment
 	output, err := sshSession.CombinedOutput("/bin/bash -c " + ShellQuote(script))
 	if err != nil {
-		return nil, errors.New(string(output))
+		if out := strings.TrimSpace(string(output)); out != "" {
+			return nil, fmt.Errorf("remote command failed: %w (output: %s)", err, out)
+		}
+
+		return nil, fmt.Errorf("remote command failed: %w", err)
 	}
 
 	return output, nil
