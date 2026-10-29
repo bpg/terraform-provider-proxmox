@@ -26,7 +26,7 @@ type OptionsPutRequestBody struct {
 	PolicyFwd    *string             `json:"policy_forward,omitempty" url:"policy_forward,omitempty"`
 }
 
-// CustomLogRateLimit is a custom type for the log_ratelimit field of the firewall optionss.
+// CustomLogRateLimit is a custom type for the log_ratelimit field of the firewall options.
 type CustomLogRateLimit struct {
 	Enable types.CustomBool `json:"enable,omitempty" url:"enable,omitempty,int"`
 	Burst  *int             `json:"burst,omitempty"  url:"burst,omitempty,int"`
@@ -48,7 +48,7 @@ type OptionsGetResponseData struct {
 	PolicyFwd    *string             `json:"policy_forward" url:"policy_forward"`
 }
 
-// EncodeValues converts a CustomWatchdogDevice struct to a URL vlaue.
+// EncodeValues converts a CustomWatchdogDevice struct to a URL value.
 func (r *CustomLogRateLimit) EncodeValues(key string, v *url.Values) error {
 	var values []string
 

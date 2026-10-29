@@ -742,7 +742,7 @@ in the source (e.g., `size`, `discard`, `cache`, `aio`).
 Otherwise, the schema defaults will take effect and override the source values.
 
 Furthermore, when cloning from one node to a different one, the behavior changes
-depening on the datastores of the source VM. If at least one non-shared
+depending on the datastores of the source VM. If at least one non-shared
 datastore is used, the VM is first cloned to the source node before being
 migrated to the target node. This circumvents a limitation in the Proxmox clone
 API.
