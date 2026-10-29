@@ -4764,6 +4764,9 @@ func vmReadCustom(
 
 		if vmConfig.EFIDisk.Format != nil {
 			efiDisk[mkEFIDiskFileFormat] = *vmConfig.EFIDisk.Format
+		} else if f, ok := disk.InferFormatFromVolume(strings.Join(fileIDParts[1:], ":")); ok {
+			// Same inference as for regular disks: a bare volume name is block storage, raw.
+			efiDisk[mkEFIDiskFileFormat] = f
 		} else {
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
