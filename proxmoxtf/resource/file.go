@@ -107,7 +107,7 @@ func File() *schema.Resource {
 				Type: schema.TypeString,
 				Description: `The file mode in octal format, e.g. "0700" or "600".` +
 					`Note that the prefixes "0o" and "0x" are not supported!` +
-					`Setting this attribute is also only allowed for "root@pam" authenticated user.`,
+					`With a non-root SSH user, the provider sets the mode with "sudo chmod", which needs its own sudoers rule.`,
 				Optional:         true,
 				ValidateDiagFunc: validators.FileMode(),
 				ForceNew:         true,
