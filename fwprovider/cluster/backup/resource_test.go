@@ -483,3 +483,60 @@ func checkNotificationModeOnPVE(te *test.Environment, id, want string) resource.
 		return nil
 	}
 }
+
+func TestAccResourceBackupJobExcludePath(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_exclude_path" {
+					id           = "acc-test-exclp"
+					schedule     = "*-*-* 09:00"
+					storage      = "local"
+					all          = true
+					exclude_path = ["/var/lib/systemd/credential.secret"]
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude_path", "exclude_path.#", "1"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude_path", "exclude_path.0", "/var/lib/systemd/credential.secret"),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_exclude_path" {
+					id           = "acc-test-exclp"
+					schedule     = "*-*-* 09:00"
+					storage      = "local"
+					all          = true
+					exclude_path = ["/tmp", "/var/cache"]
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude_path", "exclude_path.#", "2"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude_path", "exclude_path.0", "/tmp"),
+					resource.TestCheckResourceAttr("proxmox_backup_job.test_exclude_path", "exclude_path.1", "/var/cache"),
+				),
+			},
+			{
+				ResourceName:      "proxmox_backup_job.test_exclude_path",
+				ImportStateId:     "acc-test-exclp",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_exclude_path" {
+					id       = "acc-test-exclp"
+					schedule = "*-*-* 09:00"
+					storage  = "local"
+					all      = true
+				}`),
+				Check: resource.TestCheckNoResourceAttr("proxmox_backup_job.test_exclude_path", "exclude_path.#"),
+			},
+		},
+	})
+}
