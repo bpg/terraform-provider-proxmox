@@ -424,11 +424,8 @@ func Read(
 		disk[mkDiskPathInDatastore] = pathInDatastore
 
 		if dd.Format == nil {
-			if f, ok := InferFormatFromVolume(pathInDatastore); ok {
-				// The volume name says what the format is: an extension names it, and a bare
-				// name means a block-storage image (LVM, LVM-thin, ZFS, RBD), always raw.
-				// Asking the storage API for it would need VM.Config.Disk on the owner
-				// (PVE::Storage::check_volume_access), which a read-only token cannot hold.
+			if f, ok := InferFormatFromVolume(pathInDatastore); ok && datastoreID != "" {
+				// the storage API needs VM.Config.Disk on the owner VM, which a read-only token doesn't have
 				disk[mkDiskFileFormat] = f
 			} else if datastoreID != "" {
 				// disk format may not be returned by config API if it is default for the storage, and that may be different

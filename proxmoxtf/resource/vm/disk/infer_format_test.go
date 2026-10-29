@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package disk
 
 import "testing"
@@ -10,8 +16,9 @@ func TestInferFormatFromVolume(t *testing.T) {
 		want string
 		ok   bool
 	}{
-		{"vm-109-disk-0", "raw", true},                          // LVM-thin / ZFS: no extension
-		{"vm-100-disk-1", "raw", true},                          // EFI disk on block storage
+		{"vm-109-disk-0", "raw", true}, // LVM-thin / ZFS: no extension
+		{"vm-100-disk-1", "raw", true}, // EFI disk on block storage
+		{"vm-9998-pvc-6f1c2a1e-3b4d-4c5e-8f90-1a2b3c4d5e6f", "raw", true},
 		{"109/vm-109-disk-0.qcow2", "qcow2", true},              // dir storage, qcow2
 		{"109/vm-109-disk-0.raw", "raw", true},                  // dir storage, raw
 		{"109/vm-109-disk-0.vmdk", "vmdk", true},                // dir storage, vmdk
