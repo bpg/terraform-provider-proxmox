@@ -141,7 +141,17 @@ func (r *CustomCommaSeparatedList) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON converts a JSON value to a CustomCommaSeparatedList.
+// It accepts both a comma-separated string and a string array, as PVE returns some
+// list properties (e.g. a backup job's exclude-path) as an array.
 func (r *CustomCommaSeparatedList) UnmarshalJSON(b []byte) error {
+	var list []string
+
+	if err := json.Unmarshal(b, &list); err == nil {
+		*r = list
+
+		return nil
+	}
+
 	var s string
 
 	err := json.Unmarshal(b, &s)

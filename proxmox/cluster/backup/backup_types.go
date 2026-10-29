@@ -162,7 +162,7 @@ type RequestBodyCommon struct {
 	RepeatMissed           *types.CustomBool  `json:"repeat-missed,omitempty"             url:"repeat-missed,omitempty,int"`
 	Script                 *string            `json:"script,omitempty"                    url:"script,omitempty"`
 	StdExcludes            *types.CustomBool  `json:"stdexcludes,omitempty"               url:"stdexcludes,omitempty,int"`
-	ExcludePath            *string            `json:"exclude-path,omitempty"              url:"exclude-path,omitempty"`
+	ExcludePath            []string           `json:"exclude-path,omitempty"              url:"exclude-path,omitempty"`
 	Pool                   *string            `json:"pool,omitempty"                      url:"pool,omitempty"`
 	Fleecing               *FleecingConfig    `json:"fleecing,omitempty"                  url:"fleecing,omitempty"`
 	Performance            *PerformanceConfig `json:"performance,omitempty"               url:"performance,omitempty"`
