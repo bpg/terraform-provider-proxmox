@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.119.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.118.1...v0.119.0) (2026-10-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **vm:** reject file ids and disk serials that proxmox can't parse ([#3234](https://github.com/bpg/terraform-provider-proxmox/issues/3234))
+* **ceph:** fix pool import by moving storages to proxmox_storage_rbd ([#3204](https://github.com/bpg/terraform-provider-proxmox/issues/3204))
+
+### Bug Fixes
+
+* **backup:** read exclude-path returned as a json array ([#3225](https://github.com/bpg/terraform-provider-proxmox/issues/3225)) ([aff2785](https://github.com/bpg/terraform-provider-proxmox/commit/aff2785a11a7d29d46880c133b56fa3b1dfe381c))
+* **ceph:** fix pool import by moving storages to proxmox_storage_rbd ([#3204](https://github.com/bpg/terraform-provider-proxmox/issues/3204)) ([41be0a0](https://github.com/bpg/terraform-provider-proxmox/commit/41be0a06a4bc443eb4093b785d28af3895ca83db))
+* **core:** keep the exit status in ssh command errors ([#3231](https://github.com/bpg/terraform-provider-proxmox/issues/3231)) ([900a296](https://github.com/bpg/terraform-provider-proxmox/commit/900a296545e320a0b6cd881830e1b8b454193cc3))
+* **file:** set file mode and check upload size with sudo ssh users ([#3228](https://github.com/bpg/terraform-provider-proxmox/issues/3228)) ([cc3039f](https://github.com/bpg/terraform-provider-proxmox/commit/cc3039f55dbc5791c89de5ae4a8d0dde57f032a9))
+* **file:** skip the URL metadata query when `file_name` is set ([#3227](https://github.com/bpg/terraform-provider-proxmox/issues/3227)) ([0bccbd1](https://github.com/bpg/terraform-provider-proxmox/commit/0bccbd1ebf1ff6d72ba716e02262e7fb6ebf5330))
+* **vm:** reject file ids and disk serials that proxmox can't parse ([#3234](https://github.com/bpg/terraform-provider-proxmox/issues/3234)) ([429e833](https://github.com/bpg/terraform-provider-proxmox/commit/429e8331e98b521d695ab7449af38774f461939f))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (9048d5e → 2920bb1) ([#3232](https://github.com/bpg/terraform-provider-proxmox/issues/3232)) ([93430ca](https://github.com/bpg/terraform-provider-proxmox/commit/93430ca08146ad41de9cb806f28bfce5c183fff8))
+* **deps:** update module golang.org/x/net (v0.61.0 → v0.62.0) ([#3233](https://github.com/bpg/terraform-provider-proxmox/issues/3233)) ([0303c23](https://github.com/bpg/terraform-provider-proxmox/commit/0303c230a03d0e43fa6c0dfc951d7803c992f663))
+
 ## [0.118.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.118.0...v0.118.1) (2026-10-27)
 
 
