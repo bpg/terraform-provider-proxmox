@@ -113,7 +113,7 @@ func (c *Client) Update(ctx context.Context, hmType proxmoxtypes.Type, name stri
 
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(hmType, url.PathEscape(name)), &body, nil)
 	if err != nil {
-		return fmt.Errorf("udating hardware mapping %q: %w", name, err)
+		return fmt.Errorf("updating hardware mapping %q: %w", name, err)
 	}
 
 	return nil
