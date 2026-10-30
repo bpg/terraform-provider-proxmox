@@ -52,17 +52,19 @@ func AddWaitForIPFilterSchema(s map[string]*schema.Schema) map[string]*schema.Sc
 
 // WaitForIPFilterFromBlock reads the address filter from a wait_for_ip block.
 func WaitForIPFilterFromBlock(block map[string]any) ip.AddressFilter {
-	var filter ip.AddressFilter
+	return ip.AddressFilter{
+		CIDRs:      setStrings(block[mkWaitForIPCIDRs]),
+		Interfaces: setStrings(block[mkWaitForIPInterfaces]),
+	}
+}
 
-	if v := waitForIPFilterValues(block[mkWaitForIPCIDRs]); len(v) > 0 {
-		filter.CIDRs = utils.ConvertToStringSlice(v)
+func setStrings(v any) []string {
+	s, ok := v.(*schema.Set)
+	if !ok || s.Len() == 0 {
+		return nil
 	}
 
-	if v := waitForIPFilterValues(block[mkWaitForIPInterfaces]); len(v) > 0 {
-		filter.Interfaces = utils.ConvertToStringSlice(v)
-	}
-
-	return filter
+	return utils.ConvertToStringSlice(s.List())
 }
 
 // validateWaitForIPCIDR parses with netip like the matcher does; validation.IsCIDR (net.ParseCIDR) also accepts
@@ -80,17 +82,6 @@ func validateWaitForIPCIDR(i any, k string) ([]string, []error) {
 	return nil, nil
 }
 
-func waitForIPFilterValues(v any) []any {
-	switch v := v.(type) {
-	case *schema.Set:
-		return v.List()
-	case []any:
-		return v
-	default:
-		return nil
-	}
-}
-
 // WaitForIPFilterDiff rejects address filters combined with `disabled = true` and required
 // IP families that no configured CIDR can satisfy. blockPath points at the wait_for_ip list.
 func WaitForIPFilterDiff(blockPath string) schema.CustomizeDiffFunc {
@@ -103,7 +94,7 @@ func WaitForIPFilterDiff(blockPath string) schema.CustomizeDiffFunc {
 		block := list[0].(map[string]any)
 		filter := WaitForIPFilterFromBlock(block)
 
-		if len(filter.CIDRs) == 0 && len(filter.Interfaces) == 0 {
+		if filter.IsEmpty() {
 			return nil
 		}
 

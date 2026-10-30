@@ -109,17 +109,12 @@ func TestAgentWaitForIPConfigFromBlock(t *testing.T) {
 			want:  nil,
 		},
 		{
-			name:  "filter only -> non-nil config without family",
-			block: map[string]any{"cidrs": []any{"10.0.0.0/8"}, "interfaces": []any{}},
-			want:  &vms.WaitForIPConfig{Filter: ip.AddressFilter{CIDRs: []string{"10.0.0.0/8"}}},
-		},
-		{
-			name: "filter as sets, the shape ResourceData returns",
+			name: "filter only -> non-nil config without family",
 			block: map[string]any{
 				"cidrs":      schema.NewSet(schema.HashString, []any{"10.0.0.0/8"}),
-				"interfaces": schema.NewSet(schema.HashString, []any{"eth0"}),
+				"interfaces": schema.NewSet(schema.HashString, []any{}),
 			},
-			want: &vms.WaitForIPConfig{Filter: ip.AddressFilter{CIDRs: []string{"10.0.0.0/8"}, Interfaces: []string{"eth0"}}},
+			want: &vms.WaitForIPConfig{Filter: ip.AddressFilter{CIDRs: []string{"10.0.0.0/8"}}},
 		},
 	}
 

@@ -1171,13 +1171,13 @@ func Container() *schema.Resource {
 					Schema: vmresource.AddWaitForIPFilterSchema(map[string]*schema.Schema{
 						mkWaitForIPIPv4: {
 							Type:        schema.TypeBool,
-							Description: "Wait for at least one qualifying IPv4 address (by default non-loopback, non-link-local)",
+							Description: "Wait for at least one IPv4 address (non-loopback, non-link-local unless allowed by `cidrs`)",
 							Optional:    true,
 							Default:     false,
 						},
 						mkWaitForIPIPv6: {
 							Type:        schema.TypeBool,
-							Description: "Wait for at least one qualifying IPv6 address (by default non-loopback, non-link-local)",
+							Description: "Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`)",
 							Optional:    true,
 							Default:     false,
 						},
@@ -4418,7 +4418,7 @@ func getContainerWaitForIPConfig(d *schema.ResourceData) *containers.WaitForIPCo
 	config.Filter = vmresource.WaitForIPFilterFromBlock(waitForIPBlock)
 
 	// nothing configured: return nil for backward compatibility
-	if !config.IPv4 && !config.IPv6 && len(config.Filter.CIDRs) == 0 && len(config.Filter.Interfaces) == 0 {
+	if !config.IPv4 && !config.IPv6 && config.Filter.IsEmpty() {
 		return nil
 	}
 

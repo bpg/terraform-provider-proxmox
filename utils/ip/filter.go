@@ -23,6 +23,11 @@ type AddressFilter struct {
 	Interfaces []string // interface name must fully match one of these RE2 patterns
 }
 
+// IsEmpty reports whether the filter restricts nothing.
+func (f AddressFilter) IsEmpty() bool {
+	return len(f.CIDRs) == 0 && len(f.Interfaces) == 0
+}
+
 // FilterResult is the outcome of matching a set of interfaces against an AddressFilter.
 type FilterResult struct {
 	HasIPv4  bool
