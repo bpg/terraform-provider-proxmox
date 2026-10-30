@@ -1989,6 +1989,193 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				}),
 			),
 		}}},
+		{"wait for IP with address filter", func() []resource.TestStep {
+			vmConfig := func(agentTimeout, waitForIP string) string {
+				return te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "cloud_config" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name = "{{.NodeName}}"
+					overwrite = true
+					source_raw {
+						data = <<-EOF
+						#cloud-config
+						runcmd:
+						  - apt update
+						  - apt install -y qemu-guest-agent
+						  - systemctl enable qemu-guest-agent
+						  - systemctl start qemu-guest-agent
+						EOF
+						file_name = "{{.TestName}}-wait-filter-cloud-config.yaml"
+					}
+				}
+
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter" {
+					node_name = "{{.NodeName}}"
+					started   = true
+					stop_on_destroy = true
+					reboot_after_update = false
+					agent {
+						enabled = true
+						timeout = "` + agentTimeout + `"
+						wait_for_ip {
+							` + waitForIP + `
+						}
+					}
+					cpu {
+						cores = 2
+					}
+					memory {
+						dedicated = 2048
+					}
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "virtio0"
+						iothread     = true
+						discard      = "on"
+						size         = 20
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+						ip_config {
+							ipv4 {
+								address = "192.0.2.10/24"
+							}
+						}
+						user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`)
+			}
+
+			// The second NIC carries a static global address that default waiting would accept, like docker0 does.
+			return []resource.TestStep{
+				{
+					// Matching interface filter: the wait completes, and outputs stay unfiltered (lo is still listed).
+					Config: vmConfig("15m", `
+							ipv4       = true
+							interfaces = ["e.*"]`),
+					Check: resource.ComposeTestCheckFunc(
+						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
+							"ipv4_addresses.#": "3",
+						}),
+						resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm.test_vm_wait_filter",
+							"agent.0.wait_for_ip.0.interfaces.*", "e.*"),
+					),
+				},
+				{
+					Config: vmConfig("20s", `
+							ipv4  = true
+							cidrs = ["192.0.2.0/24"]`),
+					Check: resource.ComposeTestCheckFunc(
+						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
+							"ipv4_addresses.#": "3",
+						}),
+						resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm.test_vm_wait_filter",
+							"agent.0.wait_for_ip.0.cidrs.*", "192.0.2.0/24"),
+					),
+				},
+				{
+					// reboot_after_update = false keeps the agent up across these agent changes, so empty addresses
+					// prove the filter rejected the second NIC's address.
+					Config: vmConfig("20s", `
+							interfaces = ["lo"]
+							cidrs      = ["192.0.2.0/24"]`),
+					Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
+						"ipv4_addresses.#": "0",
+					}),
+				},
+			}
+		}()},
+		{"wait for IP address filter validation", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							cidrs = ["not-a-cidr"]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`to be a valid CIDR Value`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							cidrs = ["10.0.0.0/08"]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`to be a valid CIDR Value`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							interfaces = ["eth("]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`error parsing regexp`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							ipv6  = true
+							cidrs = ["10.0.0.0/8"]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`ipv6 = true requires at least one IPv6 entry in cidrs`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							disabled   = true
+							interfaces = ["eth0"]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`cannot be combined with disabled = true`),
+			},
+		}},
 		{"network device disconnected", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

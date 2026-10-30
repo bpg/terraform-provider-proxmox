@@ -362,10 +362,14 @@ The `mount_point.volume` attribute accepts three forms:
 - `timeout_update` - (Optional) Timeout for updating a container in seconds (defaults to 1800).
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on the host (defaults to `false`).
 - `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the container starts.
-    - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
-    - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
+    - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local unless allowed by `cidrs`) (defaults to `false`).
+    - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`) (defaults to `false`).
+    - `cidrs` - (Optional) Only addresses inside one of these CIDRs (e.g. `["10.0.0.0/8", "2001:db8::/64"]`) count when waiting. Setting this disables the default loopback/link-local address exclusion; the `lo` interface is still skipped unless `interfaces` is also set. Avoid catch-all CIDRs such as `0.0.0.0/0` or `::/0`: they also match link-local addresses, which can end the wait before the real address is assigned; use `ipv4` or `ipv6` to require a family instead. When `ipv4` or `ipv6` is `true`, at least one CIDR of that family is required.
+    - `interfaces` - (Optional) Only addresses on interfaces whose name fully matches one of these regular expressions (RE2, e.g. `["eth[0-9]+"]`) count when waiting. Setting this disables the default skip of the `lo` interface; loopback/link-local addresses stay excluded unless `cidrs` is also set.
 
     When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false`, the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
+
+    `cidrs` and `interfaces` are combined per address (an address must match both). They only decide when waiting stops; `ipv4` and `ipv6` are not filtered. The wait runs on every refresh (for up to 10 seconds), and if no address qualifies, `ipv4` and `ipv6` are left empty.
 - `vm_id` - (Optional) The container identifier
 - `features` - (Optional) The container feature flags. Changing flags (except nesting) is only allowed for `root@pam` authenticated user.
     - `nesting` - (Optional) Whether the container is nested (defaults to `false`)

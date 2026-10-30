@@ -625,7 +625,15 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 		}),
 	)
 
-	var result *GetQEMUNetworkInterfacesResponseData
+	cfg := WaitForIPConfig{}
+	if waitForIPConfig != nil {
+		cfg = *waitForIPConfig
+	}
+
+	var (
+		result   *GetQEMUNetworkInterfacesResponseData
+		rejected []string
+	)
 
 	err := op.DoPoll(ctxWithTimeout, func() error {
 		data, err := c.GetVMNetworkInterfacesFromAgent(ctxWithTimeout)
@@ -647,32 +655,20 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 			return errNoIPsYet
 		}
 
-		hasIPv4, hasIPv6 := c.checkIPAddresses(*data.Result)
+		ifaces := map[string][]string{}
 
-		if waitForIPConfig == nil {
-			if !hasIPv4 && !hasIPv6 {
-				return errNoIPsYet
+		for _, nic := range *data.Result {
+			if nic.IPAddresses != nil {
+				for _, addr := range *nic.IPAddresses {
+					ifaces[nic.Name] = append(ifaces[nic.Name], addr.Address)
+				}
 			}
-
-			result = data
-
-			return nil
 		}
 
-		requiredIPv4 := waitForIPConfig.IPv4
-		requiredIPv6 := waitForIPConfig.IPv6
+		match := cfg.Filter.Match(ifaces)
+		rejected = match.Rejected
 
-		if !requiredIPv4 && !requiredIPv6 {
-			if !hasIPv4 && !hasIPv6 {
-				return errNoIPsYet
-			}
-
-			result = data
-
-			return nil
-		}
-
-		if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
+		if !match.Satisfied(cfg.IPv4, cfg.IPv6) {
 			return errNoIPsYet
 		}
 
@@ -683,8 +679,8 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 
 	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 		return nil, fmt.Errorf(
-			"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces",
-			c.VMID,
+			"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces%s",
+			c.VMID, ip.RejectedSuffix(rejected),
 		)
 	}
 
@@ -693,38 +689,6 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	}
 
 	return result, nil
-}
-
-// checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
-func (c *Client) checkIPAddresses(
-	nics []GetQEMUNetworkInterfacesResponseResult,
-) (bool, bool) {
-	hasIPv4 := false
-	hasIPv6 := false
-
-	for _, nic := range nics {
-		if nic.Name == "lo" {
-			continue
-		}
-
-		if nic.IPAddresses == nil || len(*nic.IPAddresses) == 0 {
-			continue
-		}
-
-		for _, addr := range *nic.IPAddresses {
-			if !ip.IsValidGlobalUnicast(addr.Address) {
-				continue
-			}
-
-			if ip.IsIPv4(addr.Address) {
-				hasIPv4 = true
-			} else if ip.IsIPv6(addr.Address) {
-				hasIPv6 = true
-			}
-		}
-	}
-
-	return hasIPv4, hasIPv6
 }
 
 // WaitForVMConfigUnlock waits for a virtual machine configuration to become unlocked.

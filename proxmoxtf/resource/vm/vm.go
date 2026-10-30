@@ -424,7 +424,7 @@ func VM() *schema.Resource {
 						MaxItems:    1,
 						MinItems:    0,
 						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
+							Schema: AddWaitForIPFilterSchema(map[string]*schema.Schema{
 								mkAgentWaitForIPDisabled: {
 									Type:        schema.TypeBool,
 									Description: "Disable waiting for the agent to report an IP address; set to true to skip the lookup entirely",
@@ -433,17 +433,17 @@ func VM() *schema.Resource {
 								},
 								mkAgentWaitForIPIPv4: {
 									Type:        schema.TypeBool,
-									Description: "Wait for at least one IPv4 address (non-loopback, non-link-local)",
+									Description: "Wait for at least one IPv4 address (non-loopback, non-link-local unless allowed by `cidrs`)",
 									Optional:    true,
 									Default:     false,
 								},
 								mkAgentWaitForIPIPv6: {
 									Type:        schema.TypeBool,
-									Description: "Wait for at least one IPv6 address (non-loopback, non-link-local)",
+									Description: "Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`)",
 									Optional:    true,
 									Default:     false,
 								},
-							},
+							}),
 						},
 					},
 				},
@@ -1767,6 +1767,7 @@ func VM() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			customdiff.All(network.CustomizeDiff()...),
 			initializationInterfaceCollisionDiff,
+			WaitForIPFilterDiff(mkAgent+".0."+mkAgentWaitForIP),
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
@@ -7731,7 +7732,7 @@ func getAgentWaitForIPConfig(d *schema.ResourceData) *vms.WaitForIPConfig {
 }
 
 // agentWaitForIPConfigFromBlock translates a wait_for_ip block into a WaitForIPConfig.
-// disabled=true disables the agent IP wait entirely (Skip); otherwise nil means "wait for any".
+// disabled=true disables the agent IP wait entirely (Skip); an empty config waits for any address.
 // The switch defaults to false (do not skip) so that state written before the switch existed —
 // where the key reads back as its zero value — keeps querying the agent (see #2928).
 func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
@@ -7739,17 +7740,11 @@ func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
 		return &vms.WaitForIPConfig{Skip: true}
 	}
 
-	config := &vms.WaitForIPConfig{
-		IPv4: getBoolFromBlock(block, mkAgentWaitForIPIPv4),
-		IPv6: getBoolFromBlock(block, mkAgentWaitForIPIPv6),
+	return &vms.WaitForIPConfig{
+		IPv4:   getBoolFromBlock(block, mkAgentWaitForIPIPv4),
+		IPv6:   getBoolFromBlock(block, mkAgentWaitForIPIPv6),
+		Filter: WaitForIPFilterFromBlock(block),
 	}
-
-	// if both are false, return nil for backward compatibility (wait for any)
-	if !config.IPv4 && !config.IPv6 {
-		return nil
-	}
-
-	return config
 }
 
 func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (string, error) {

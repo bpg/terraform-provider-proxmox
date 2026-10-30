@@ -17,6 +17,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 var (
@@ -30,8 +31,10 @@ var (
 
 // WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
 type WaitForIPConfig struct {
-	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
-	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local unless allowed by `cidrs`)
+	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`)
+
+	Filter ip.AddressFilter // Which addresses qualify; empty keeps the default exclusions
 }
 
 // CloneRequestBody contains the data for an container clone request.
