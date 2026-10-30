@@ -84,9 +84,9 @@ func TestAgentWaitForIPConfigFromBlock(t *testing.T) {
 			want:  &vms.WaitForIPConfig{Skip: true},
 		},
 		{
-			name:  "disabled false, no family -> wait for any (nil)",
+			name:  "disabled false, no family -> wait for any",
 			block: map[string]any{mkAgentWaitForIPDisabled: false},
-			want:  nil,
+			want:  &vms.WaitForIPConfig{},
 		},
 		{
 			name:  "disabled false, ipv4 -> wait for ipv4",
@@ -104,12 +104,12 @@ func TestAgentWaitForIPConfigFromBlock(t *testing.T) {
 			want:  &vms.WaitForIPConfig{IPv4: true},
 		},
 		{
-			name:  "empty block waits for any (nil)",
+			name:  "empty block waits for any",
 			block: map[string]any{},
-			want:  nil,
+			want:  &vms.WaitForIPConfig{},
 		},
 		{
-			name: "filter only -> non-nil config without family",
+			name: "filter only -> config without family",
 			block: map[string]any{
 				"cidrs":      schema.NewSet(schema.HashString, []any{"10.0.0.0/8"}),
 				"interfaces": schema.NewSet(schema.HashString, []any{}),

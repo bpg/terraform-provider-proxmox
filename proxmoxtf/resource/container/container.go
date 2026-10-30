@@ -4417,11 +4417,6 @@ func getContainerWaitForIPConfig(d *schema.ResourceData) *containers.WaitForIPCo
 
 	config.Filter = vmresource.WaitForIPFilterFromBlock(waitForIPBlock)
 
-	// nothing configured: return nil for backward compatibility
-	if !config.IPv4 && !config.IPv6 && config.Filter.IsEmpty() {
-		return nil
-	}
-
 	return config
 }
 

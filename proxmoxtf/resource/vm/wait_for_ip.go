@@ -98,12 +98,12 @@ func WaitForIPFilterDiff(blockPath string) schema.CustomizeDiffFunc {
 			return nil
 		}
 
-		if disabled, _ := block["disabled"].(bool); disabled {
+		if disabled, _ := block[mkAgentWaitForIPDisabled].(bool); disabled {
 			return fmt.Errorf("%s: cidrs and interfaces cannot be combined with disabled = true", blockPath)
 		}
 
-		ipv4, _ := block["ipv4"].(bool)
-		ipv6, _ := block["ipv6"].(bool)
+		ipv4, _ := block[mkAgentWaitForIPIPv4].(bool)
+		ipv6, _ := block[mkAgentWaitForIPIPv6].(bool)
 
 		if err := filter.ValidateFamilies(ipv4, ipv6); err != nil {
 			return fmt.Errorf("%s: %w", blockPath, err)

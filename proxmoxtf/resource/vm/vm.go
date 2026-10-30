@@ -7724,7 +7724,7 @@ func getAgentWaitForIPConfig(d *schema.ResourceData) *vms.WaitForIPConfig {
 }
 
 // agentWaitForIPConfigFromBlock translates a wait_for_ip block into a WaitForIPConfig.
-// disabled=true disables the agent IP wait entirely (Skip); otherwise nil means "wait for any".
+// disabled=true disables the agent IP wait entirely (Skip); an empty config waits for any address.
 // The switch defaults to false (do not skip) so that state written before the switch existed —
 // where the key reads back as its zero value — keeps querying the agent (see #2928).
 func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
@@ -7732,18 +7732,11 @@ func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
 		return &vms.WaitForIPConfig{Skip: true}
 	}
 
-	config := &vms.WaitForIPConfig{
+	return &vms.WaitForIPConfig{
 		IPv4:   getBoolFromBlock(block, mkAgentWaitForIPIPv4),
 		IPv6:   getBoolFromBlock(block, mkAgentWaitForIPIPv6),
 		Filter: WaitForIPFilterFromBlock(block),
 	}
-
-	// nothing configured: return nil for backward compatibility (wait for any)
-	if !config.IPv4 && !config.IPv6 && config.Filter.IsEmpty() {
-		return nil
-	}
-
-	return config
 }
 
 func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (string, error) {
