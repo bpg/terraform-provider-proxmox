@@ -113,6 +113,14 @@ func TestAgentWaitForIPConfigFromBlock(t *testing.T) {
 			block: map[string]any{"cidrs": []any{"10.0.0.0/8"}, "interfaces": []any{}},
 			want:  &vms.WaitForIPConfig{Filter: ip.AddressFilter{CIDRs: []string{"10.0.0.0/8"}}},
 		},
+		{
+			name: "filter as sets, the shape ResourceData returns",
+			block: map[string]any{
+				"cidrs":      schema.NewSet(schema.HashString, []any{"10.0.0.0/8"}),
+				"interfaces": schema.NewSet(schema.HashString, []any{"eth0"}),
+			},
+			want: &vms.WaitForIPConfig{Filter: ip.AddressFilter{CIDRs: []string{"10.0.0.0/8"}, Interfaces: []string{"eth0"}}},
+		},
 	}
 
 	for _, tt := range tests {
@@ -121,5 +129,19 @@ func TestAgentWaitForIPConfigFromBlock(t *testing.T) {
 
 			require.Equal(t, tt.want, agentWaitForIPConfigFromBlock(tt.block))
 		})
+	}
+}
+
+func TestValidateWaitForIPCIDR(t *testing.T) {
+	t.Parallel()
+
+	for _, v := range []string{"10.0.0.0/8", "10.0.0.1/8", "fe80::/10", "::ffff:10.0.0.0/104"} {
+		_, errs := validateWaitForIPCIDR(v, "cidrs")
+		require.Empty(t, errs, v)
+	}
+
+	for _, v := range []string{"not-a-cidr", "10.0.0.0/08", "10.0.0.0/33", "10.0.0.0"} {
+		_, errs := validateWaitForIPCIDR(v, "cidrs")
+		require.NotEmpty(t, errs, v)
 	}
 }

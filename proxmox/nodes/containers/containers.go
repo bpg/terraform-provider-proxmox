@@ -14,8 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
@@ -260,8 +258,6 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	})
 
 	if errors.Is(err, context.DeadlineExceeded) {
-		tflog.Debug(ctx, "container addresses rejected while waiting for IP", map[string]any{"rejected": rejected})
-
 		return nil, fmt.Errorf("timeout while waiting for container IP addresses%s", ip.RejectedSuffix(rejected))
 	}
 

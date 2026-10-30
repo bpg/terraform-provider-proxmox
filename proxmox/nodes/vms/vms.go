@@ -678,8 +678,6 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	})
 
 	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-		tflog.Debug(ctx, "agent addresses rejected while waiting for IP", map[string]any{"rejected": rejected})
-
 		return nil, fmt.Errorf(
 			"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces%s",
 			c.VMID, ip.RejectedSuffix(rejected),

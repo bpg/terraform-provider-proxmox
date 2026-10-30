@@ -1516,6 +1516,23 @@ func TestAccResourceContainerWaitForIPFilter(t *testing.T) {
 			},
 			{
 				Config: containerConfig(`
+				ipv6  = true
+				cidrs = ["10.0.0.0/8"]`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`ipv6 = true requires at least one IPv6 entry in cidrs`),
+			},
+			{
+				Config:      containerConfig(`cidrs = ["10.0.0.0/08"]`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`to be a valid CIDR Value`),
+			},
+			{
+				Config:      containerConfig(`interfaces = ["eth("]`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`error parsing regexp`),
+			},
+			{
+				Config: containerConfig(`
 				ipv6       = true
 				interfaces = ["eth0"]
 				cidrs      = ["fe80::/10"]`),
@@ -1523,9 +1540,14 @@ func TestAccResourceContainerWaitForIPFilter(t *testing.T) {
 			},
 			{
 				Config: containerConfig(`
+				ipv4  = true
+				cidrs = ["192.0.2.0/24"]`),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{"ipv4.eth1": "^192.0.2.10$"}),
+			},
+			{
+				Config: containerConfig(`
 				ipv4       = true
-				interfaces = ["eth1"]
-				cidrs      = ["192.0.2.0/24"]`),
+				interfaces = ["eth1"]`),
 				Check: ResourceAttributes(accTestContainerName, map[string]string{"ipv4.eth1": "^192.0.2.10$"}),
 			},
 			{

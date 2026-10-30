@@ -9,6 +9,7 @@ package resource
 import (
 	"context"
 	"fmt"
+	"net/netip"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -27,11 +28,12 @@ func AddWaitForIPFilterSchema(s map[string]*schema.Schema) map[string]*schema.Sc
 	s[mkWaitForIPCIDRs] = &schema.Schema{
 		Type: schema.TypeSet,
 		Description: "Only addresses inside one of these CIDRs count when waiting. Setting this disables the " +
-			"default loopback/link-local address exclusion",
+			"default loopback/link-local address exclusion; the `lo` interface is still skipped unless " +
+			"`interfaces` is also set",
 		Optional: true,
 		Elem: &schema.Schema{
 			Type:             schema.TypeString,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.IsCIDR),
+			ValidateDiagFunc: validation.ToDiagFunc(validateWaitForIPCIDR),
 		},
 	}
 	s[mkWaitForIPInterfaces] = &schema.Schema{
@@ -61,6 +63,21 @@ func WaitForIPFilterFromBlock(block map[string]any) ip.AddressFilter {
 	}
 
 	return filter
+}
+
+// validateWaitForIPCIDR parses with netip like the matcher does; validation.IsCIDR (net.ParseCIDR) also accepts
+// forms such as "10.0.0.0/08" that the matcher would silently drop.
+func validateWaitForIPCIDR(i any, k string) ([]string, []error) {
+	v, ok := i.(string)
+	if !ok {
+		return nil, []error{fmt.Errorf("expected type of %s to be string", k)}
+	}
+
+	if _, err := netip.ParsePrefix(v); err != nil {
+		return nil, []error{fmt.Errorf("expected %s to be a valid CIDR Value, got %v: %w", k, v, err)}
+	}
+
+	return nil, nil
 }
 
 func waitForIPFilterValues(v any) []any {

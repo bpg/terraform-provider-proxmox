@@ -1870,7 +1870,15 @@ func TestAccResourceVMNetwork(t *testing.T) {
 								address = "dhcp"
 							}
 						}
+						ip_config {
+							ipv4 {
+								address = "192.0.2.10/24"
+							}
+						}
 						user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+					}
+					network_device {
+						bridge = "vmbr0"
 					}
 					network_device {
 						bridge = "vmbr0"
@@ -1878,6 +1886,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				}`)
 			}
 
+			// The second NIC carries a static global address that default waiting would accept, like docker0 does.
 			return []resource.TestStep{
 				{
 					// Matching interface filter: the wait completes, and outputs stay unfiltered (lo is still listed).
@@ -1886,24 +1895,33 @@ func TestAccResourceVMNetwork(t *testing.T) {
 							interfaces = ["e.*"]`),
 					Check: resource.ComposeTestCheckFunc(
 						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
-							"ipv4_addresses.#": "2",
+							"ipv4_addresses.#": "3",
 						}),
 						resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm.test_vm_wait_filter",
 							"agent.0.wait_for_ip.0.interfaces.*", "e.*"),
 					),
 				},
 				{
-					// Agent is up (previous step) and the VM isn't rebooted, so empty addresses prove the filter gated.
 					Config: vmConfig("20s", `
 							ipv4  = true
 							cidrs = ["192.0.2.0/24"]`),
 					Check: resource.ComposeTestCheckFunc(
 						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
-							"ipv4_addresses.#": "0",
+							"ipv4_addresses.#": "3",
 						}),
 						resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm.test_vm_wait_filter",
 							"agent.0.wait_for_ip.0.cidrs.*", "192.0.2.0/24"),
 					),
+				},
+				{
+					// reboot_after_update = false keeps the agent up across these agent changes, so empty addresses
+					// prove the filter rejected the second NIC's address.
+					Config: vmConfig("20s", `
+							interfaces = ["lo"]
+							cidrs      = ["192.0.2.0/24"]`),
+					Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
+						"ipv4_addresses.#": "0",
+					}),
 				},
 			}
 		}()},
@@ -1917,6 +1935,21 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						enabled = true
 						wait_for_ip {
 							cidrs = ["not-a-cidr"]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`to be a valid CIDR Value`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							cidrs = ["10.0.0.0/08"]
 						}
 					}
 				}`),
