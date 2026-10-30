@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"net/netip"
 	"regexp"
+	"slices"
+	"strings"
 )
 
 // AddressFilter selects which agent-reported addresses count when waiting for an IP.
@@ -34,7 +36,7 @@ func (f AddressFilter) Match(ifaces map[string][]string) FilterResult {
 
 	for _, c := range f.CIDRs {
 		if p, err := netip.ParsePrefix(c); err == nil {
-			prefixes = append(prefixes, p.Masked())
+			prefixes = append(prefixes, unmapPrefix(p).Masked())
 		}
 	}
 
@@ -71,7 +73,18 @@ func (f AddressFilter) Match(ifaces map[string][]string) FilterResult {
 		}
 	}
 
+	slices.Sort(res.Rejected)
+
 	return res
+}
+
+// RejectedSuffix formats rejected addresses for a timeout error, or returns "" when there are none.
+func RejectedSuffix(rejected []string) string {
+	if len(rejected) == 0 {
+		return ""
+	}
+
+	return " (rejected: " + strings.Join(rejected, "; ") + ")"
 }
 
 func (f AddressFilter) reject(name string, addr netip.Addr, prefixes []netip.Prefix, patterns []*regexp.Regexp) string {
@@ -118,7 +131,7 @@ func (f AddressFilter) ValidateFamilies(ipv4, ipv6 bool) error {
 			return nil //nolint:nilerr // inconclusive, not invalid: element validation reports bad CIDRs
 		}
 
-		if p.Addr().Unmap().Is4() {
+		if unmapPrefix(p).Addr().Is4() {
 			has4 = true
 		} else {
 			has6 = true
@@ -154,4 +167,14 @@ func containsAny(addr netip.Addr, prefixes []netip.Prefix) bool {
 	}
 
 	return false
+}
+
+// unmapPrefix turns an IPv4-mapped IPv6 prefix (::ffff:a.b.c.d/n, n >= 96) into its IPv4 form, matching
+// the unmapped addresses Match compares against.
+func unmapPrefix(p netip.Prefix) netip.Prefix {
+	if !p.Addr().Is4In6() || p.Bits() < 96 {
+		return p
+	}
+
+	return netip.PrefixFrom(p.Addr().Unmap(), p.Bits()-96)
 }

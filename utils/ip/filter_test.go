@@ -42,6 +42,7 @@ func TestAddressFilterMatch(t *testing.T) {
 		{"AND: right iface, wrong cidr", AddressFilter{Interfaces: []string{"eth0"}, CIDRs: []string{"10.0.0.0/8"}}, map[string][]string{"eth0": {"192.168.1.5"}, "eth1": {"10.0.0.5"}}, false, false, false},
 		{"split families across ifaces", AddressFilter{Interfaces: []string{"eth1", "eth2"}, CIDRs: []string{"10.0.0.0/8", "2008::/64"}}, map[string][]string{"eth1": {"10.0.0.5"}, "eth2": {"2008::5"}}, true, true, true},
 		{"both families on one iface", AddressFilter{Interfaces: []string{"eth1", "eth2"}, CIDRs: []string{"10.0.0.0/8", "2008::/64"}}, map[string][]string{"eth1": {"10.0.0.5", "2008::5"}}, true, true, true},
+		{"IPv4-mapped cidr matches IPv4", AddressFilter{CIDRs: []string{"::ffff:10.0.0.0/104"}}, map[string][]string{"eth0": {"10.1.2.3"}}, true, false, true},
 		{"required family missing", AddressFilter{CIDRs: []string{"10.0.0.0/8", "2008::/64"}}, map[string][]string{"eth1": {"10.0.0.5"}}, true, true, false},
 	}
 
@@ -60,6 +61,21 @@ func TestAddressFilterRejectedReasons(t *testing.T) {
 	res := AddressFilter{Interfaces: []string{"eth0"}}.Match(map[string][]string{"docker0": {"172.17.0.1"}})
 
 	assert.Equal(t, []string{"docker0 172.17.0.1: interface not matched"}, res.Rejected)
+
+	res = AddressFilter{}.Match(map[string][]string{"lo": {"127.0.0.1"}, "eth0": {"fe80::1"}, "eth1": {"169.254.1.1"}})
+
+	assert.Equal(t, []string{
+		"eth0 fe80::1: not a global unicast address",
+		"eth1 169.254.1.1: not a global unicast address",
+		"lo 127.0.0.1: loopback interface",
+	}, res.Rejected)
+}
+
+func TestRejectedSuffix(t *testing.T) {
+	t.Parallel()
+
+	assert.Empty(t, RejectedSuffix(nil))
+	assert.Equal(t, " (rejected: a; b)", RejectedSuffix([]string{"a", "b"}))
 }
 
 func TestAddressFilterValidateFamilies(t *testing.T) {
@@ -71,4 +87,5 @@ func TestAddressFilterValidateFamilies(t *testing.T) {
 	require.Error(t, v4.ValidateFamilies(false, true))
 	require.NoError(t, AddressFilter{}.ValidateFamilies(true, true))
 	require.NoError(t, AddressFilter{CIDRs: []string{"unknown", "10.0.0.0/8"}}.ValidateFamilies(false, true))
+	require.NoError(t, AddressFilter{CIDRs: []string{"::ffff:10.0.0.0/104"}}.ValidateFamilies(true, false))
 }

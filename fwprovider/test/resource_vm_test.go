@@ -1884,20 +1884,26 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					Config: vmConfig("15m", `
 							ipv4       = true
 							interfaces = ["e.*"]`),
-					Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
-						"ipv4_addresses.#":                   "2",
-						"agent.0.wait_for_ip.0.interfaces.0": "e.*",
-					}),
+					Check: resource.ComposeTestCheckFunc(
+						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
+							"ipv4_addresses.#": "2",
+						}),
+						resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm.test_vm_wait_filter",
+							"agent.0.wait_for_ip.0.interfaces.*", "e.*"),
+					),
 				},
 				{
 					// Agent is up (previous step) and the VM isn't rebooted, so empty addresses prove the filter gated.
 					Config: vmConfig("20s", `
 							ipv4  = true
 							cidrs = ["192.0.2.0/24"]`),
-					Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
-						"ipv4_addresses.#":              "0",
-						"agent.0.wait_for_ip.0.cidrs.0": "192.0.2.0/24",
-					}),
+					Check: resource.ComposeTestCheckFunc(
+						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
+							"ipv4_addresses.#": "0",
+						}),
+						resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm.test_vm_wait_filter",
+							"agent.0.wait_for_ip.0.cidrs.*", "192.0.2.0/24"),
+					),
 				},
 			}
 		}()},

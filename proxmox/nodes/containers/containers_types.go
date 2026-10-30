@@ -31,8 +31,8 @@ var (
 
 // WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
 type WaitForIPConfig struct {
-	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
-	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+	IPv4 bool // Wait for at least one qualifying IPv4 address (by default non-loopback, non-link-local)
+	IPv6 bool // Wait for at least one qualifying IPv6 address (by default non-loopback, non-link-local)
 
 	Filter ip.AddressFilter // Which addresses qualify; empty keeps the default exclusions
 }

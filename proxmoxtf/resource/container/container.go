@@ -1168,16 +1168,16 @@ func Container() *schema.Resource {
 				MaxItems:    1,
 				MinItems:    0,
 				Elem: &schema.Resource{
-					Schema: validators.AddWaitForIPFilterSchema(map[string]*schema.Schema{
+					Schema: vmresource.AddWaitForIPFilterSchema(map[string]*schema.Schema{
 						mkWaitForIPIPv4: {
 							Type:        schema.TypeBool,
-							Description: "Wait for at least one IPv4 address (non-loopback, non-link-local)",
+							Description: "Wait for at least one qualifying IPv4 address (by default non-loopback, non-link-local)",
 							Optional:    true,
 							Default:     false,
 						},
 						mkWaitForIPIPv6: {
 							Type:        schema.TypeBool,
-							Description: "Wait for at least one IPv6 address (non-loopback, non-link-local)",
+							Description: "Wait for at least one qualifying IPv6 address (by default non-loopback, non-link-local)",
 							Optional:    true,
 							Default:     false,
 						},
@@ -1204,7 +1204,7 @@ func Container() *schema.Resource {
 		UpdateContext: containerUpdate,
 		DeleteContext: containerDelete,
 		CustomizeDiff: customdiff.All(
-			validators.WaitForIPFilterDiff(mkWaitForIP),
+			vmresource.WaitForIPFilterDiff(mkWaitForIP),
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
@@ -4415,7 +4415,7 @@ func getContainerWaitForIPConfig(d *schema.ResourceData) *containers.WaitForIPCo
 		config.IPv6 = ipv6
 	}
 
-	config.Filter = validators.WaitForIPFilterFromBlock(waitForIPBlock)
+	config.Filter = vmresource.WaitForIPFilterFromBlock(waitForIPBlock)
 
 	// nothing configured: return nil for backward compatibility
 	if !config.IPv4 && !config.IPv6 && len(config.Filter.CIDRs) == 0 && len(config.Filter.Interfaces) == 0 {

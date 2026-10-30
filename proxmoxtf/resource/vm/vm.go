@@ -424,7 +424,7 @@ func VM() *schema.Resource {
 						MaxItems:    1,
 						MinItems:    0,
 						Elem: &schema.Resource{
-							Schema: validators.AddWaitForIPFilterSchema(map[string]*schema.Schema{
+							Schema: AddWaitForIPFilterSchema(map[string]*schema.Schema{
 								mkAgentWaitForIPDisabled: {
 									Type:        schema.TypeBool,
 									Description: "Disable waiting for the agent to report an IP address; set to true to skip the lookup entirely",
@@ -433,13 +433,13 @@ func VM() *schema.Resource {
 								},
 								mkAgentWaitForIPIPv4: {
 									Type:        schema.TypeBool,
-									Description: "Wait for at least one IPv4 address (non-loopback, non-link-local)",
+									Description: "Wait for at least one qualifying IPv4 address (by default non-loopback, non-link-local)",
 									Optional:    true,
 									Default:     false,
 								},
 								mkAgentWaitForIPIPv6: {
 									Type:        schema.TypeBool,
-									Description: "Wait for at least one IPv6 address (non-loopback, non-link-local)",
+									Description: "Wait for at least one qualifying IPv6 address (by default non-loopback, non-link-local)",
 									Optional:    true,
 									Default:     false,
 								},
@@ -1767,7 +1767,7 @@ func VM() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			customdiff.All(network.CustomizeDiff()...),
 			initializationInterfaceCollisionDiff,
-			validators.WaitForIPFilterDiff(mkAgent+".0."+mkAgentWaitForIP),
+			WaitForIPFilterDiff(mkAgent+".0."+mkAgentWaitForIP),
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
@@ -7735,7 +7735,7 @@ func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
 	config := &vms.WaitForIPConfig{
 		IPv4:   getBoolFromBlock(block, mkAgentWaitForIPIPv4),
 		IPv6:   getBoolFromBlock(block, mkAgentWaitForIPIPv6),
-		Filter: validators.WaitForIPFilterFromBlock(block),
+		Filter: WaitForIPFilterFromBlock(block),
 	}
 
 	// nothing configured: return nil for backward compatibility (wait for any)

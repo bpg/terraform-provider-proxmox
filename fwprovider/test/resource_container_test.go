@@ -1464,6 +1464,7 @@ func TestAccResourceContainerWaitForIPFilter(t *testing.T) {
 
 	// DHCP isn't reliable in every test environment, so this relies on the link-local IPv6 address
 	// the kernel always assigns to eth0. Default waiting rejects it; an explicit fe80::/10 opts in.
+	// eth1 carries a static global address that default waiting would accept, like docker0 does.
 	containerConfig := func(waitForIP string) string {
 		return te.RenderConfig(`
 		resource "proxmox_virtual_environment_container" "test_container" {
@@ -1481,9 +1482,17 @@ func TestAccResourceContainerWaitForIPFilter(t *testing.T) {
 						address = "dhcp"
 					}
 				}
+				ip_config {
+					ipv4 {
+						address = "192.0.2.10/24"
+					}
+				}
 			}
 			network_interface {
 				name = "eth0"
+			}
+			network_interface {
+				name = "eth1"
 			}
 			operating_system {
 				template_file_id = "local:vztmpl/{{.ImageFileName}}"
@@ -1513,9 +1522,18 @@ func TestAccResourceContainerWaitForIPFilter(t *testing.T) {
 				Check: ResourceAttributesSet(accTestContainerName, []string{"ipv6.eth0"}),
 			},
 			{
-				// Same running container (wait_for_ip changes are provider-local), so empty maps prove the filter gated.
 				Config: containerConfig(`
-				cidrs = ["192.0.2.0/24"]`),
+				ipv4       = true
+				interfaces = ["eth1"]
+				cidrs      = ["192.0.2.0/24"]`),
+				Check: ResourceAttributes(accTestContainerName, map[string]string{"ipv4.eth1": "^192.0.2.10$"}),
+			},
+			{
+				// Same running container (wait_for_ip changes are provider-local), so empty maps prove the filter
+				// rejected eth1's global address.
+				Config: containerConfig(`
+				interfaces = ["eth0"]
+				cidrs      = ["192.0.2.0/24"]`),
 				Check: ResourceAttributes(accTestContainerName, map[string]string{
 					"ipv4.%": "0",
 					"ipv6.%": "0",

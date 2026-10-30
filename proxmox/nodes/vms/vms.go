@@ -22,6 +22,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 // CloneVM clones a virtual machine.
@@ -680,8 +681,8 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 		tflog.Debug(ctx, "agent addresses rejected while waiting for IP", map[string]any{"rejected": rejected})
 
 		return nil, fmt.Errorf(
-			"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces (rejected: %s)",
-			c.VMID, strings.Join(rejected, "; "),
+			"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces%s",
+			c.VMID, ip.RejectedSuffix(rejected),
 		)
 	}
 

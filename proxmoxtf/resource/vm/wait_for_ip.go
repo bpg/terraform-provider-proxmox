@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package validators
+package resource
 
 import (
 	"context"
@@ -25,9 +25,9 @@ const (
 // AddWaitForIPFilterSchema adds the `cidrs` and `interfaces` address filter attributes to a wait_for_ip block schema.
 func AddWaitForIPFilterSchema(s map[string]*schema.Schema) map[string]*schema.Schema {
 	s[mkWaitForIPCIDRs] = &schema.Schema{
-		Type: schema.TypeList,
+		Type: schema.TypeSet,
 		Description: "Only addresses inside one of these CIDRs count when waiting. Setting this disables the " +
-			"default loopback/link-local exclusion",
+			"default loopback/link-local address exclusion",
 		Optional: true,
 		Elem: &schema.Schema{
 			Type:             schema.TypeString,
@@ -35,7 +35,7 @@ func AddWaitForIPFilterSchema(s map[string]*schema.Schema) map[string]*schema.Sc
 		},
 	}
 	s[mkWaitForIPInterfaces] = &schema.Schema{
-		Type: schema.TypeList,
+		Type: schema.TypeSet,
 		Description: "Only addresses on interfaces whose name fully matches one of these regular expressions count " +
 			"when waiting. Setting this disables the default skip of the `lo` interface",
 		Optional: true,
@@ -52,15 +52,26 @@ func AddWaitForIPFilterSchema(s map[string]*schema.Schema) map[string]*schema.Sc
 func WaitForIPFilterFromBlock(block map[string]any) ip.AddressFilter {
 	var filter ip.AddressFilter
 
-	if v, _ := block[mkWaitForIPCIDRs].([]any); len(v) > 0 {
+	if v := waitForIPFilterValues(block[mkWaitForIPCIDRs]); len(v) > 0 {
 		filter.CIDRs = utils.ConvertToStringSlice(v)
 	}
 
-	if v, _ := block[mkWaitForIPInterfaces].([]any); len(v) > 0 {
+	if v := waitForIPFilterValues(block[mkWaitForIPInterfaces]); len(v) > 0 {
 		filter.Interfaces = utils.ConvertToStringSlice(v)
 	}
 
 	return filter
+}
+
+func waitForIPFilterValues(v any) []any {
+	switch v := v.(type) {
+	case *schema.Set:
+		return v.List()
+	case []any:
+		return v
+	default:
+		return nil
+	}
 }
 
 // WaitForIPFilterDiff rejects address filters combined with `disabled = true` and required
