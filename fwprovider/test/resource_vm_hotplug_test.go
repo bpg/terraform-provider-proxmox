@@ -1080,6 +1080,150 @@ func TestAccResourceVMHotplug(t *testing.T) {
 		})
 	})
 
+	t.Run("provider-only agent changes skip reboot", func(t *testing.T) {
+		te := InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+		var capturedUptime int
+
+		vmUptime := func(s *terraform.State) (int, error) {
+			rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_hotplug"]
+			if !ok {
+				return 0, fmt.Errorf("resource not found")
+			}
+
+			vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+			if err != nil {
+				return 0, fmt.Errorf("failed to parse vm_id: %w", err)
+			}
+
+			status, err := te.NodeClient().VM(vmID).GetVMStatus(context.Background())
+			if err != nil {
+				return 0, fmt.Errorf("failed to get VM status: %w", err)
+			}
+
+			if status.Uptime == nil {
+				return 0, fmt.Errorf("VM uptime is nil")
+			}
+
+			return *status.Uptime, nil
+		}
+
+		config := func(agent string) string {
+			return te.RenderConfig(`
+			resource "proxmox_virtual_environment_vm" "test_hotplug" {
+				node_name           = "{{.NodeName}}"
+				started             = true
+				stop_on_destroy     = true
+				reboot_after_update = true
+				name                = "test-agent-no-reboot"
+
+				agent {
+					enabled = false
+					` + agent + `
+				}
+				cpu {
+					cores = 2
+				}
+				memory {
+					dedicated = 2048
+				}
+				disk {
+					datastore_id = "local-lvm"
+					file_id      = "{{.ImageFileID}}"
+					interface    = "scsi0"
+					size         = 20
+				}
+				initialization {
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+				network_device {
+					bridge = "vmbr0"
+				}
+			}`)
+		}
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: config(`
+					timeout = "1m"
+					wait_for_ip {
+						ipv4 = true
+					}`),
+					Check: func(s *terraform.State) error {
+						time.Sleep(5 * time.Second)
+
+						uptime, err := vmUptime(s)
+						if err != nil {
+							return err
+						}
+
+						if uptime < 3 {
+							return fmt.Errorf("VM uptime too low, expected >= 3 seconds, got %d", uptime)
+						}
+
+						capturedUptime = uptime
+
+						return nil
+					},
+				},
+				{
+					Config: config(`
+					timeout = "2m"
+					wait_for_ip {
+						ipv6 = true
+					}`),
+					Check: func(s *terraform.State) error {
+						uptime, err := vmUptime(s)
+						if err != nil {
+							return err
+						}
+
+						if uptime < capturedUptime {
+							return fmt.Errorf("VM was rebooted: uptime before=%d, after=%d (expected no reboot)", capturedUptime, uptime)
+						}
+
+						capturedUptime = uptime
+
+						return nil
+					},
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_hotplug", plancheck.ResourceActionUpdate),
+						},
+					},
+				},
+				{
+					// trim is stored by PVE, so it still requires a reboot
+					Config: config(`
+					timeout = "2m"
+					trim    = true
+					wait_for_ip {
+						ipv6 = true
+					}`),
+					Check: func(s *terraform.State) error {
+						uptime, err := vmUptime(s)
+						if err != nil {
+							return err
+						}
+
+						if uptime >= capturedUptime {
+							return fmt.Errorf("VM was NOT rebooted: uptime before=%d, after=%d (expected reboot)", capturedUptime, uptime)
+						}
+
+						return nil
+					},
+				},
+			},
+		})
+	})
+
 	t.Run("change disk properties on running VM", func(t *testing.T) {
 		te := InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
