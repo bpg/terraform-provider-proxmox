@@ -47,6 +47,14 @@ This only affects new imports. A configuration without these blocks now plans to
 
 **Action required:** After importing a VM, declare its `tpm_state`, `efi_disk` and `amd_sev` blocks, or generate them with `-generate-config-out`, before applying.
 
+### Imported VMs record a CD-ROM on any interface
+
+Importing a `proxmox_virtual_environment_vm` now records a `cdrom` block for the CD-ROM drive on whichever interface Proxmox reports it, for example `ide2`, the GUI default. Before, only a CD-ROM on `ide3` was recorded, so declaring an existing drive planned a new one. Cloud-init drives are not reported as `cdrom`.
+
+This only affects new imports. A configuration without a `cdrom` block now plans a `cdrom` change after an import.
+
+**Action required:** After importing a VM, declare its `cdrom` block, or generate it with `-generate-config-out`, before applying.
+
 ## v0.119.0
 
 ### `proxmox_ceph_pool` no longer manages storages

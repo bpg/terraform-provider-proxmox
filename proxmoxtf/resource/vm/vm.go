@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -1955,6 +1956,20 @@ func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, default
 	}
 
 	return defaultValue, nil
+}
+
+// findExistingCDROM returns the first (sorted) interface holding a non-cloud-init CD-ROM, or "" if there is none.
+func findExistingCDROM(vmConfig *vms.GetResponseData, vmID int) string {
+	devs := vmConfig.StorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
+		return device.Media != nil && *device.Media == "cdrom" && !device.IsCloudInitDrive(vmID)
+	})
+
+	ifaces := slices.Sorted(maps.Keys(devs))
+	if len(ifaces) == 0 {
+		return ""
+	}
+
+	return ifaces[0]
 }
 
 // Return a pointer to the storage device configuration based on a name. The device name is assumed to be a
@@ -4593,6 +4608,10 @@ func vmReadCustom(
 	if len(currentCDROM) > 0 && currentCDROM[0] != nil {
 		currentBlock := currentCDROM[0].(map[string]any)
 		currentInterface = currentBlock[mkCDROMInterface].(string)
+	} else if importing {
+		if iface := findExistingCDROM(vmConfig, vmID); iface != "" {
+			currentInterface = iface
+		}
 	}
 
 	cdromIDEDevice := getStorageDevice(vmConfig, currentInterface)

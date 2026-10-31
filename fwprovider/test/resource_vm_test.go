@@ -1079,6 +1079,62 @@ func TestAccResourceVMImportDefaultTPMEFIDiskAndAMDSEV(t *testing.T) {
 	})
 }
 
+func TestAccResourceVMImportCDROMOnIDE2(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+
+	_, err := te.ExecuteNodeCommandsContext(context.Background(), []string{fmt.Sprintf(
+		"qm create %d --ide0 local-lvm:cloudinit --ide2 none,media=cdrom", vmID,
+	)})
+	require.NoError(t, err, "failed to create bare VM %d", vmID)
+
+	t.Cleanup(func() {
+		_ = te.NodeClient().VM(vmID).DeleteVM(context.Background(), true, true).Err()
+	})
+
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_cdrom" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+					}`),
+				ResourceName:  "proxmox_virtual_environment_vm.vm_cdrom",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, vmID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+
+					want := map[string]string{
+						"cdrom.#":           "1",
+						"cdrom.0.interface": "ide2",
+						"cdrom.0.file_id":   "none",
+					}
+
+					var errs []error
+
+					for k, v := range want {
+						if got := attrs[k]; got != v {
+							errs = append(errs, fmt.Errorf("%s = %q, want %q", k, got, v))
+						}
+					}
+
+					return errors.Join(errs...)
+				},
+			},
+		},
+	})
+}
+
 func TestAccResourceVMUndeclaredDefaultTPMAndEFIDisk(t *testing.T) {
 	te := InitEnvironment(t)
 
