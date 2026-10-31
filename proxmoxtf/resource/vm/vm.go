@@ -6348,8 +6348,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		rebootRequired = true
 	}
 
-	// Prepare the new agent configuration.
-	if d.HasChange(mkAgent) {
+	// Only these keys are stored by PVE; timeout and wait_for_ip are provider-side and must not trigger a reboot.
+	if d.HasChanges(
+		mkAgent+".0."+mkAgentEnabled,
+		mkAgent+".0."+mkAgentTrim,
+		mkAgent+".0."+mkAgentType,
+	) {
 		agentBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
