@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.120.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.119.0...v0.120.0) (2026-10-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* **vm:** record cd-rom on any interface on import ([#3247](https://github.com/bpg/terraform-provider-proxmox/issues/3247))
+* **vm:** record default tpm_state, efi_disk and amd_sev on import ([#3241](https://github.com/bpg/terraform-provider-proxmox/issues/3241))
+
+### Features
+
+* **vm,lxc:** add cidrs and interfaces address filter to wait_for_ip ([#3213](https://github.com/bpg/terraform-provider-proxmox/issues/3213)) ([fc2655c](https://github.com/bpg/terraform-provider-proxmox/commit/fc2655cb166f15ac676d983739018748f8c3ee3f))
+
+
+### Bug Fixes
+
+* **vm:** don't reboot on provider-only agent changes ([#3246](https://github.com/bpg/terraform-provider-proxmox/issues/3246)) ([f44c2bf](https://github.com/bpg/terraform-provider-proxmox/commit/f44c2bf2460cb33811c63beba7935c33b9bc2a37))
+* **vm:** infer disk format from volume name, skip storage API ([#3235](https://github.com/bpg/terraform-provider-proxmox/issues/3235)) ([346ff79](https://github.com/bpg/terraform-provider-proxmox/commit/346ff799521a42a3b322f99ae6356d37c8bb42ac))
+* **vm:** record cd-rom on any interface on import ([#3247](https://github.com/bpg/terraform-provider-proxmox/issues/3247)) ([0486fe9](https://github.com/bpg/terraform-provider-proxmox/commit/0486fe947ad104db8baad04dbdbc911e5a9cd9c6))
+* **vm:** record default tpm_state, efi_disk and amd_sev on import ([#3241](https://github.com/bpg/terraform-provider-proxmox/issues/3241)) ([bc5f269](https://github.com/bpg/terraform-provider-proxmox/commit/bc5f2694edae7fc8bfbd5fa561f3bc4457ec6ef6))
+
+
+### Miscellaneous
+
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.18.0 → v7.18.1) ([#3248](https://github.com/bpg/terraform-provider-proxmox/issues/3248)) ([b90025b](https://github.com/bpg/terraform-provider-proxmox/commit/b90025b206ece133c662fbb12ba981dc1376e313))
+* **doc:** fix typos in VM docs, mapping error message and comments ([#3238](https://github.com/bpg/terraform-provider-proxmox/issues/3238)) ([efc4bd9](https://github.com/bpg/terraform-provider-proxmox/commit/efc4bd9c0954ce7d061d1c27c1ef7fc445210007))
+
 ## [0.119.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.118.1...v0.119.0) (2026-10-29)
 
 
