@@ -80,7 +80,11 @@ func (c *Client) ConvertToTemplate(ctx context.Context) tasks.TaskResult {
 // CreateVM creates a virtual machine.
 func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) tasks.TaskResult {
 	op := retry.NewTaskOperation("VM create",
-		retry.WithRetryIf(retry.IsTransientAPIError),
+		// PVE writes the new VM's config with "lock: create" before it forks the worker and keeps it when the fork
+		// fails, so a retry would only find that config and take "already exists" for success.
+		retry.WithRetryIf(func(err error) bool {
+			return retry.IsTransientAPIError(err) && !strings.Contains(err.Error(), "got no worker upid")
+		}),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 

@@ -258,6 +258,8 @@ Do not retry on:
 - 4xx client errors (except specific known-transient messages)
 - `ErrResourceDoesNotExist` (unless polling for creation)
 - Authentication failures (401, 403)
+- "got no worker upid" on a VM create: PVE has already written the new VM's config with `lock: create`, so the retry
+  only finds that config
 
 > **Delete predicate trap:** `ErrResourceDoesNotExist` can arrive via HTTP 500 (not just 404) because `proxmox/api/client.go` uses `errors.Join(ErrResourceDoesNotExist, httpError)` for 500 responses containing "does not exist". This means `IsTransientAPIError` alone will match these errors (it checks for 5xx). Delete operations must use a combined predicate:
 >
