@@ -28,7 +28,8 @@ func TestAccResourceVMDiskFileIDNotShellInterpreted(t *testing.T) {
 		nodeExecRootCleanup(te, "rm -f "+marker)
 	})
 
-	te.AddTemplateVars(map[string]any{"FileID": imageFileID + "; touch " + marker})
+	// file_id rejects whitespace, so ${IFS} splits the words; $$ escapes HCL interpolation
+	te.AddTemplateVars(map[string]any{"FileID": imageFileID + ";touch$${IFS}" + marker})
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.AccProviders,
