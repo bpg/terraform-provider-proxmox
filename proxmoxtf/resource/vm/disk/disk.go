@@ -635,6 +635,15 @@ func Update(
 	rebootRequired := false
 
 	if d.HasChange(MkDisk) {
+		// Compare against the prior state, not the PVE config: both sides are built the same way, so an unchanged
+		// disk is skipped and options the provider doesn't model are kept.
+		oldList, _ := d.GetChange(MkDisk)
+
+		oldDisks, err := GetDiskDeviceObjects(d, nil, oldList.([]any))
+		if err != nil {
+			oldDisks = vms.CustomStorageDevices{}
+		}
+
 		for iface, disk := range planDisks {
 			var tmp *vms.CustomStorageDevice
 
@@ -651,8 +660,7 @@ func Update(
 					tmp = disk
 				}
 			case currentDisks[iface] != nil:
-				// Check if the disk has actually changed before updating
-				if currentDisks[iface].Equals(disk) {
+				if oldDisks[iface].Equals(disk) {
 					// Disk hasn't changed, skip update
 					continue
 				}

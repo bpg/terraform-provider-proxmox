@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -292,93 +293,43 @@ func TestDiskDevicesEqual(t *testing.T) {
 func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	t.Parallel()
 
-	// Mock resource data
-	diskSchema := Schema()
+	disk := func(iface string, size int, importFrom string) map[string]any {
+		m := map[string]any{mkDiskInterface: iface, mkDiskDatastoreID: "local", mkDiskSize: size}
+		if importFrom != "" {
+			m[mkDiskImportFrom] = importFrom
+		}
 
-	var err error
+		return m
+	}
 
-	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
-		MkDisk: []any{
-			map[string]any{
-				mkDiskInterface:   "scsi0",
-				mkDiskDatastoreID: "local",
-				mkDiskSize:        10,
-				mkDiskImportFrom:  "local:iso/disk.qcow2",
-				mkDiskSpeed:       []any{},
-			},
-			map[string]any{
-				mkDiskInterface:   "scsi1",
-				mkDiskDatastoreID: "local",
-				mkDiskSize:        20,
-				mkDiskSpeed:       []any{},
-			},
-		},
+	// GetChange reads prior state against the planned diff, so build both the way Terraform does on an update.
+	prior := schema.TestResourceDataRaw(t, Schema(), map[string]any{
+		MkDisk: []any{disk("scsi0", 10, "local:iso/disk.qcow2"), disk("scsi1", 5, "")},
 	})
+	prior.SetId("100")
+	state := prior.State()
 
-	// Mark that the disk configuration has changed (terraform detected a change)
-	resourceData.MarkNewResource()
+	sm := schema.InternalMap(Schema())
 
-	// Create current disks (what Proxmox currently has)
-	importFrom := "local:iso/disk.qcow2"
-	datastoreID := "local"
+	diff, err := sm.Diff(context.Background(), state, terraform.NewResourceConfigRaw(map[string]any{
+		MkDisk: []any{disk("scsi0", 10, "local:iso/disk.qcow2"), disk("scsi1", 20, "")},
+	}), nil, nil, true)
+	require.NoError(t, err)
+
+	d, err := sm.Data(state, diff)
+	require.NoError(t, err)
+
+	planDisks, err := GetDiskDeviceObjects(d, nil, nil)
+	require.NoError(t, err)
+
 	currentDisks := vms.CustomStorageDevices{
-		"scsi0": &vms.CustomStorageDevice{
-			Size:        types.DiskSizeFromGigabytes(10),
-			DatastoreID: &datastoreID,
-			ImportFrom:  &importFrom,
-		},
-		"scsi1": &vms.CustomStorageDevice{
-			Size:        types.DiskSizeFromGigabytes(5), // This is different (current=5, plan=20)
-			DatastoreID: &datastoreID,
-		},
+		"scsi0": &vms.CustomStorageDevice{FileVolume: "local:100/vm-100-disk-0.qcow2", Size: types.DiskSizeFromGigabytes(10)},
+		"scsi1": &vms.CustomStorageDevice{FileVolume: "local:100/vm-100-disk-1.qcow2", Size: types.DiskSizeFromGigabytes(5)},
 	}
 
-	// Create plan disks (what terraform wants)
-	planDisks := vms.CustomStorageDevices{
-		"scsi0": &vms.CustomStorageDevice{
-			Size:        types.DiskSizeFromGigabytes(10), // Same as current
-			DatastoreID: &datastoreID,
-			ImportFrom:  &importFrom,
-		},
-		"scsi1": &vms.CustomStorageDevice{
-			Size:        types.DiskSizeFromGigabytes(20), // Different from current (5 -> 20)
-			DatastoreID: &datastoreID,
-		},
-	}
-
-	// Mock update body to capture what gets sent to the API
 	updateBody := &vms.UpdateRequestBody{}
 
-	// Mock client (not used in this test, but required by function signature)
-	var client proxmox.Client = nil
-
-	ctx := context.Background()
-	vmID := 100
-	nodeName := "test-node"
-
-	// Force HasChange to return true by setting old and new values
-	err = resourceData.Set(MkDisk, []any{
-		map[string]any{
-			mkDiskInterface:   "scsi1",
-			mkDiskDatastoreID: "local",
-			mkDiskSize:        5, // Old size
-			mkDiskSpeed:       []any{},
-		},
-	})
-	require.NoError(t, err)
-
-	err = resourceData.Set(MkDisk, []any{
-		map[string]any{
-			mkDiskInterface:   "scsi1",
-			mkDiskDatastoreID: "local",
-			mkDiskSize:        20, // New size
-			mkDiskSpeed:       []any{},
-		},
-	})
-	require.NoError(t, err)
-
-	// Call the Update function
-	_, diags := Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
+	_, diags := Update(context.Background(), nil, "test-node", 100, d, planDisks, currentDisks, updateBody)
 	require.False(t, diags.HasError())
 
 	// The update body should only contain scsi1, not scsi0

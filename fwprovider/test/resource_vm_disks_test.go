@@ -1731,6 +1731,89 @@ func vmIDFromState(s *terraform.State, name string) (int, error) {
 	return vmID, nil
 }
 
+func TestAccResourceVMDiskUpdateKeepsUnchangedDisks(t *testing.T) {
+	tests := []struct {
+		name      string
+		changed   string
+		unchanged string
+	}{
+		{"change scsi0, keep scsi1", "scsi0", "scsi1"},
+		{"change scsi1, keep scsi0", "scsi1", "scsi0"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			te := InitEnvironment(t)
+
+			vmID := 100000 + rand.Intn(99999)
+			te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+			config := func(changeDisk bool) string {
+				return te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_virtual_environment_vm" "test_disk_keep" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+					started   = false
+					name      = "test-disk-update-keeps-unchanged"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						iothread     = %t
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 1
+						iothread     = %t
+					}
+				}`, changeDisk && tt.changed == "scsi0", changeDisk && tt.changed == "scsi1"))
+			}
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: config(false),
+					},
+					{
+						// shared=1 isn't modeled by the provider, so it survives only if the disk isn't re-sent
+						PreConfig: func() {
+							te.ExecuteNodeCommands([]string{fmt.Sprintf(
+								`qm set %[1]d --%[2]s "$(qm config %[1]d | sed -n 's/^%[2]s: //p'),shared=1"`,
+								vmID, tt.unchanged,
+							)})
+						},
+						Config: config(true),
+						ConfigPlanChecks: resource.ConfigPlanChecks{
+							PreApply: []plancheck.PlanCheck{
+								plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_disk_keep", plancheck.ResourceActionUpdate),
+							},
+						},
+						Check: func(*terraform.State) error {
+							raw, err := fetchRawStorageDevices(context.Background(), te, vmID)
+							if err != nil {
+								return err
+							}
+
+							if !strings.Contains(raw[tt.changed], "iothread=1") {
+								return fmt.Errorf("%s wasn't updated: %q", tt.changed, raw[tt.changed])
+							}
+
+							if !strings.Contains(raw[tt.unchanged], "shared=1") {
+								return fmt.Errorf("%s was re-sent and lost shared=1: %q", tt.unchanged, raw[tt.unchanged])
+							}
+
+							return nil
+						},
+					},
+				},
+			})
+		})
+	}
+}
+
 // fetchRawStorageDevices issues a low-level GET against
 // /nodes/{node}/qemu/{vmid}/config and returns the raw scsi*/virtio*/sata*/ide*
 // strings as PVE persists them, bypassing the provider's CustomStorageDevices
