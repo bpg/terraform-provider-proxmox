@@ -2320,10 +2320,6 @@ func TestAccResourceVMDiskRemoval(t *testing.T) {
 	})
 }
 
-// TestAccResourceVMDiskRemovedOutsideTerraform covers a disk removed outside of Terraform from a
-// VM whose disks are ignored (`lifecycle { ignore_changes = [disk] }`). Read used to keep an empty
-// slot for it in state -- stored as a disk block without an interface -- which every later read
-// kept and every later update rejected with "Defined disk interface not supported. Interface was ,".
 func TestAccResourceVMDiskRemovedOutsideTerraform(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -2369,8 +2365,7 @@ func TestAccResourceVMDiskRemovedOutsideTerraform(t *testing.T) {
 				}),
 			},
 			{
-				// Step 2: remove scsi1 outside of Terraform and refresh: state must hold only scsi0,
-				// not an empty disk block in place of scsi1
+				// Step 2: remove scsi1 outside of Terraform and refresh
 				PreConfig: func() {
 					body := &vms.UpdateRequestBody{}
 					body.AppendDelete("scsi1")
@@ -2403,10 +2398,6 @@ func TestAccResourceVMDiskRemovedOutsideTerraform(t *testing.T) {
 	})
 }
 
-// TestAccResourceVMDiskMiddleRemovedOutsideTerraform covers the middle of three disks removed outside of
-// Terraform, without `ignore_changes`. Applying the same configuration must re-create it on a new
-// volume: path_in_datastore is computed, so the plan carries the prior state's value for that list
-// position, which then belongs to the next disk -- reusing it attached scsi2's volume as scsi1 too.
 func TestAccResourceVMDiskMiddleRemovedOutsideTerraform(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -2519,38 +2510,53 @@ func TestAccResourceVMDiskMiddleRemovedOutsideTerraform(t *testing.T) {
 	})
 }
 
-// TestAccResourceVMDiskInterfaceChangeKeepsVolume covers changing a disk's interface without setting
-// path_in_datastore: the disk keeps its volume under the new interface. The plan carries the volume
-// from the prior state at the same list position, and nothing else uses it once the old interface is
-// removed, so it must not be swapped for a new, empty one.
-func TestAccResourceVMDiskInterfaceChangeKeepsVolume(t *testing.T) {
+func TestAccResourceVMDiskInsertedKeepsOtherVolumes(t *testing.T) {
 	te := InitEnvironment(t)
 
 	vmID := 100000 + rand.Intn(99999)
 	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
 
-	config := func(secondInterface string) string {
-		return te.RenderConfig(fmt.Sprintf(`
-		resource "proxmox_virtual_environment_vm" "test_disk_interface_change" {
+	const before = `
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi0"
+		size         = 1
+	}
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi1"
+		size         = 2
+	}`
+
+	const after = `
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi0"
+		size         = 1
+	}
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi2"
+		size         = 3
+	}
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi1"
+		size         = 2
+	}`
+
+	config := func(disks string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_vm" "test_disk_inserted" {
 			node_name = "{{.NodeName}}"
 			vm_id     = {{.TestVMID}}
 			started   = false
-			name      = "test-disk-interface-change"
-
-			disk {
-				datastore_id = "local-lvm"
-				interface    = "scsi0"
-				size         = 1
-			}
-			disk {
-				datastore_id = "local-lvm"
-				interface    = %q
-				size         = 2
-			}
-		}`, secondInterface))
+			name      = "test-disk-inserted"
+			` + disks + `
+		}`)
 	}
 
-	var volume string
+	var scsi1Volume string
 
 	vmDisks := func() vms.CustomStorageDevices {
 		vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
@@ -2563,50 +2569,44 @@ func TestAccResourceVMDiskInterfaceChangeKeepsVolume(t *testing.T) {
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
-				// Step 1: create the VM and remember the second disk's volume
-				Config: config("scsi1"),
+				Config: config(before),
 				Check: func(*terraform.State) error {
 					disk := vmDisks()["scsi1"]
 					if disk == nil {
 						return fmt.Errorf("scsi1 is missing from the VM")
 					}
 
-					volume = disk.FileVolume
+					scsi1Volume = disk.FileVolume
 
 					return nil
 				},
 			},
 			{
-				// Step 2: move the second disk to another interface; it keeps its volume
-				Config: config("sata1"),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_interface_change", map[string]string{
-						"disk.#":           "2",
-						"disk.1.interface": "sata1",
-						"disk.1.size":      "2",
-					}),
-					func(*terraform.State) error {
-						disks := vmDisks()
+				Config: config(after),
+				Check: func(*terraform.State) error {
+					disks := vmDisks()
 
-						if disks["scsi1"] != nil {
-							return fmt.Errorf("scsi1 is still on the VM")
-						}
+					if disks["scsi1"] == nil || disks["scsi2"] == nil {
+						return fmt.Errorf("scsi1 or scsi2 is missing from the VM")
+					}
 
-						if disks["sata1"] == nil {
-							return fmt.Errorf("sata1 is missing from the VM")
-						}
+					if disks["scsi1"].FileVolume != scsi1Volume {
+						return fmt.Errorf("scsi1 moved from %s to %s", scsi1Volume, disks["scsi1"].FileVolume)
+					}
 
-						if disks["sata1"].FileVolume != volume {
-							return fmt.Errorf("sata1 is on %s, expected the moved volume %s", disks["sata1"].FileVolume, volume)
-						}
+					if disks["scsi2"].FileVolume == scsi1Volume {
+						return fmt.Errorf("scsi1 and scsi2 share volume %s", scsi1Volume)
+					}
 
-						return nil
-					},
-				),
+					if disks["scsi2"].Size.InGigabytes() != 3 {
+						return fmt.Errorf("scsi2 is %s, expected 3G", disks["scsi2"].Size)
+					}
+
+					return nil
+				},
 			},
 			{
-				// Step 3: re-apply, nothing to change
-				Config: config("sata1"),
+				Config: config(after),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectEmptyPlan(),
@@ -2615,6 +2615,114 @@ func TestAccResourceVMDiskInterfaceChangeKeepsVolume(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceVMDiskInterfaceChangeKeepsVolume(t *testing.T) {
+	tests := []struct {
+		name            string
+		secondDatastore func(te *Environment) string
+	}{
+		{"same datastore", func(*Environment) string { return "local-lvm" }},
+		{"second disk on another datastore", func(te *Environment) string { return te.ZfsDatastoreID }},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			te := InitEnvironment(t)
+
+			secondDatastore := tt.secondDatastore(te)
+			if secondDatastore == "" {
+				t.Skip("skipping: PROXMOX_VE_ACC_ZFS_DATASTORE_ID is not set")
+			}
+
+			vmID := 100000 + rand.Intn(99999)
+			te.AddTemplateVars(map[string]any{"TestVMID": vmID, "SecondDatastore": secondDatastore})
+
+			config := func(secondInterface string) string {
+				return te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_virtual_environment_vm" "test_disk_interface_change" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+					started   = false
+					name      = "test-disk-interface-change"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+					}
+					disk {
+						datastore_id = "{{.SecondDatastore}}"
+						interface    = %q
+						size         = 2
+					}
+				}`, secondInterface))
+			}
+
+			var volume string
+
+			vmDisks := func() vms.CustomStorageDevices {
+				vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+				require.NoError(t, err)
+
+				return vmConfig.StorageDevices
+			}
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: config("scsi1"),
+						Check: func(*terraform.State) error {
+							disk := vmDisks()["scsi1"]
+							if disk == nil {
+								return fmt.Errorf("scsi1 is missing from the VM")
+							}
+
+							volume = disk.FileVolume
+
+							return nil
+						},
+					},
+					{
+						Config: config("sata1"),
+						Check: resource.ComposeTestCheckFunc(
+							ResourceAttributes("proxmox_virtual_environment_vm.test_disk_interface_change", map[string]string{
+								"disk.#":           "2",
+								"disk.1.interface": "sata1",
+								"disk.1.size":      "2",
+							}),
+							func(*terraform.State) error {
+								disks := vmDisks()
+
+								if disks["scsi1"] != nil {
+									return fmt.Errorf("scsi1 is still on the VM")
+								}
+
+								if disks["sata1"] == nil {
+									return fmt.Errorf("sata1 is missing from the VM")
+								}
+
+								if disks["sata1"].FileVolume != volume {
+									return fmt.Errorf("sata1 is on %s, expected the moved volume %s", disks["sata1"].FileVolume, volume)
+								}
+
+								return nil
+							},
+						),
+					},
+					{
+						Config: config("sata1"),
+						ConfigPlanChecks: resource.ConfigPlanChecks{
+							PreApply: []plancheck.PlanCheck{
+								plancheck.ExpectEmptyPlan(),
+							},
+						},
+					},
+				},
+			})
+		})
+	}
 }
 
 // TestAccResourceVMDiskCDROMNotInDiskBlock verifies that CDROM devices (media=cdrom)

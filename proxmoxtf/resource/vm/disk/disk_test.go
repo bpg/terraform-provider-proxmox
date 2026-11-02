@@ -1006,9 +1006,6 @@ func TestDiskQueuesSettings(t *testing.T) {
 	require.ErrorContains(t, err, "queues are only supported for SCSI disks")
 }
 
-// TestGetDiskDeviceObjectsSkipsNilEntries covers state written by Read before it stopped leaving empty
-// slots for disks PVE no longer reports: a nil entry describes no device and is skipped, while a disk
-// block without an interface is still an error.
 func TestGetDiskDeviceObjectsSkipsNilEntries(t *testing.T) {
 	t.Parallel()
 
@@ -1042,8 +1039,6 @@ func TestGetDiskDeviceObjectsSkipsNilEntries(t *testing.T) {
 	require.Error(t, err)
 }
 
-// TestPathInDatastoreConfigured covers telling a configured path_in_datastore from one the plan carries
-// over from state.
 func TestPathInDatastoreConfigured(t *testing.T) {
 	t.Parallel()
 
@@ -1071,9 +1066,6 @@ func TestPathInDatastoreConfigured(t *testing.T) {
 	require.False(t, pathInDatastoreConfigured(cty.NullVal(cty.Object(map[string]cty.Type{MkDisk: cty.List(diskType)})), "scsi0"))
 }
 
-// TestDiskReadDropsDisksPVENoLongerReports covers Read with a state disk that PVE no longer reports:
-// one removed outside of Terraform, and the empty-interface block older reads left for one. Neither
-// may come back as an entry in state.
 func TestDiskReadDropsDisksPVENoLongerReports(t *testing.T) {
 	t.Parallel()
 
@@ -1127,9 +1119,7 @@ func TestDiskReadDropsDisksPVENoLongerReports(t *testing.T) {
 	}
 }
 
-// TestVolumeKeptByAnotherDisk covers whether a disk the VM does not have yet may take the volume its
-// plan carries from the prior state.
-func TestVolumeKeptByAnotherDisk(t *testing.T) {
+func TestVolumeMovesWithDisk(t *testing.T) {
 	t.Parallel()
 
 	device := func(volume string) *vms.CustomStorageDevice {
@@ -1145,20 +1135,28 @@ func TestVolumeKeptByAnotherDisk(t *testing.T) {
 		want    bool
 	}{
 		{
-			name:    "middle disk removed outside of Terraform: the next disk keeps the volume",
+			name:    "middle disk removed outside of Terraform",
 			iface:   "scsi1",
 			disk:    device("local:vm-100-disk-2"),
 			plan:    vms.CustomStorageDevices{"scsi0": device(""), "scsi1": device(""), "scsi2": device("")},
 			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi2": device("local:vm-100-disk-2")},
-			want:    true,
+			want:    false,
 		},
 		{
-			name:    "interface changed: the volume leaves with the old interface",
+			name:    "interface changed",
 			iface:   "sata1",
 			disk:    device("local:vm-100-disk-1"),
 			plan:    vms.CustomStorageDevices{"scsi0": device(""), "sata1": device("")},
 			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi1": device("local:vm-100-disk-1")},
-			want:    false,
+			want:    true,
+		},
+		{
+			name:    "interface changed, same volume name on another datastore",
+			iface:   "sata1",
+			disk:    device("tank:vm-100-disk-0"),
+			plan:    vms.CustomStorageDevices{"scsi0": device(""), "sata1": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("local-lvm:vm-100-disk-0"), "scsi1": device("tank:vm-100-disk-0")},
+			want:    true,
 		},
 		{
 			name:    "the disk holding the volume leaves the configuration in the same update",
@@ -1166,15 +1164,15 @@ func TestVolumeKeptByAnotherDisk(t *testing.T) {
 			disk:    device("local:vm-100-disk-2"),
 			plan:    vms.CustomStorageDevices{"scsi0": device(""), "scsi1": device("")},
 			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi2": device("local:vm-100-disk-2")},
-			want:    false,
+			want:    true,
 		},
 		{
-			name:    "disk inserted into the configuration: the disk now behind it keeps the volume",
+			name:    "disk inserted into the configuration",
 			iface:   "scsi3",
 			disk:    device("local:vm-100-disk-1"),
 			plan:    vms.CustomStorageDevices{"scsi0": device(""), "scsi3": device(""), "scsi1": device("")},
 			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi1": device("local:vm-100-disk-1")},
-			want:    true,
+			want:    false,
 		},
 		{
 			name:    "inherited path on another datastore than the disk holding it",
@@ -1182,15 +1180,15 @@ func TestVolumeKeptByAnotherDisk(t *testing.T) {
 			disk:    device("lvm-b:vm-100-disk-2"),
 			plan:    vms.CustomStorageDevices{"scsi0": device(""), "scsi1": device(""), "scsi2": device("")},
 			current: vms.CustomStorageDevices{"scsi0": device("lvm-a:vm-100-disk-0"), "scsi2": device("lvm-a:vm-100-disk-2")},
-			want:    true,
+			want:    false,
 		},
 		{
-			name:    "two interfaces changed at once: each volume moves with its disk",
+			name:    "two interfaces changed at once",
 			iface:   "sata2",
 			disk:    device("local:vm-100-disk-2"),
 			plan:    vms.CustomStorageDevices{"scsi0": device(""), "sata1": device(""), "sata2": device("")},
 			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi1": device("local:vm-100-disk-1"), "scsi2": device("local:vm-100-disk-2")},
-			want:    false,
+			want:    true,
 		},
 		{
 			name:    "new disk with nothing inherited",
@@ -1221,12 +1219,11 @@ func TestVolumeKeptByAnotherDisk(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			require.Equal(t, tt.want, volumeKeptByAnotherDisk(tt.iface, tt.disk, tt.plan, tt.current))
+			require.Equal(t, tt.want, volumeMovesWithDisk(tt.iface, tt.disk, tt.plan, tt.current))
 		})
 	}
 }
 
-// TestWithNewVolume covers asking PVE for a new volume in place of the planned one.
 func TestWithNewVolume(t *testing.T) {
 	t.Parallel()
 
