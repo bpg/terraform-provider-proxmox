@@ -15,6 +15,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -169,9 +170,14 @@ func GetDiskDeviceObjects(
 	diskDeviceObjects := vms.CustomStorageDevices{}
 
 	for _, diskEntry := range diskDevices {
+		// A nil entry is an empty slot that Read used to leave for a disk PVE no longer reports.
+		block, ok := diskEntry.(map[string]any)
+		if !ok || block == nil {
+			continue
+		}
+
 		diskDevice := &vms.CustomStorageDevice{}
 
-		block := diskEntry.(map[string]any)
 		datastoreID, _ := block[mkDiskDatastoreID].(string)
 		pathInDatastore := ""
 
@@ -211,7 +217,7 @@ func GetDiskDeviceObjects(
 				diskDevice.FileVolume = pathInDatastore
 			}
 		} else {
-			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+			diskDevice.FileVolume = newVolume(datastoreID, int64(size))
 		}
 
 		diskDevice.AIO = &aio
@@ -606,7 +612,18 @@ func Read(
 				}
 			}
 
-			disks := utils.ListResourcesAttributeValue(currentDiskList, mkDiskInterface)
+			// Keep the order from state, but only for the disks PVE still reports. A state interface
+			// with nothing behind it (a disk removed outside of Terraform, or an empty interface left
+			// by an older read) would otherwise become an empty slot, which is stored as a disk block
+			// without an interface: kept by every later read, rejected by every update.
+			disks := slices.DeleteFunc(
+				utils.ListResourcesAttributeValue(currentDiskList, mkDiskInterface),
+				func(iface string) bool {
+					_, exists := diskMap[iface]
+
+					return !exists
+				},
+			)
 			diskList = utils.OrderedListFromMapByKeyValues(diskMap, disks)
 		} else {
 			diskList = utils.OrderedListFromMap(diskMap)
@@ -617,6 +634,99 @@ func Read(
 	}
 
 	return diags
+}
+
+// volumeKeptByAnotherDisk reports whether the volume planned for iface, a disk the VM does not have
+// yet, stays attached to another of the VM's disks after this update.
+//
+// path_in_datastore is computed, so when the configuration leaves it out the plan carries the prior
+// state's value for the same list position. After an interface change the value is the disk's own
+// volume; its old interface leaves the VM in this update, so the volume moves with the disk. After a
+// disk was removed outside of Terraform, or one was inserted into the configuration, the value is the
+// next disk's volume, and that disk keeps it: attaching it to iface as well would put one volume on two
+// interfaces. State records positions, not disk identity, so a volume whose holder leaves the VM in the
+// same update is assumed to be moving.
+//
+// Volumes are compared by their path in the datastore: a path inherited onto a different datastore can
+// never be the intended volume either.
+func volumeKeptByAnotherDisk(
+	iface string,
+	disk *vms.CustomStorageDevice,
+	planDisks vms.CustomStorageDevices,
+	currentDisks vms.CustomStorageDevices,
+) bool {
+	if disk == nil {
+		return false
+	}
+
+	planned := disk.PathInDatastore()
+	if planned == nil {
+		return false
+	}
+
+	for other, current := range currentDisks {
+		if other == iface || current == nil || planDisks[other] == nil {
+			continue
+		}
+
+		if path := current.PathInDatastore(); path != nil && *path == *planned {
+			return true
+		}
+	}
+
+	return false
+}
+
+// withNewVolume returns a copy of disk that asks PVE to allocate a new volume of the disk's size
+// instead of attaching the planned one. A disk without a datastore or size is returned unchanged.
+func withNewVolume(disk *vms.CustomStorageDevice) *vms.CustomStorageDevice {
+	if disk.DatastoreID == nil || *disk.DatastoreID == "" || disk.Size == nil {
+		return disk
+	}
+
+	newDisk := *disk
+	newDisk.FileVolume = newVolume(*disk.DatastoreID, disk.Size.InGigabytes())
+
+	return &newDisk
+}
+
+// newVolume is the volume a disk asks PVE to allocate: `<datastore>:<size in GB>`.
+func newVolume(datastoreID string, sizeGB int64) string {
+	return fmt.Sprintf("%s:%d", datastoreID, sizeGB)
+}
+
+// pathInDatastoreConfigured reports whether the configuration sets path_in_datastore for the disk on
+// iface. An unknown value counts as set.
+func pathInDatastoreConfigured(config cty.Value, iface string) bool {
+	if config.IsNull() || !config.IsKnown() || !config.Type().IsObjectType() || !config.Type().HasAttribute(MkDisk) {
+		return false
+	}
+
+	disks := config.GetAttr(MkDisk)
+	if disks.IsNull() || !disks.IsKnown() {
+		return false
+	}
+
+	for _, block := range disks.AsValueSlice() {
+		if block.IsNull() || !block.IsKnown() || !block.Type().HasAttribute(mkDiskInterface) {
+			continue
+		}
+
+		diskInterface, _ := block.GetAttr(mkDiskInterface).Unmark()
+		if !diskInterface.IsKnown() || diskInterface.IsNull() || diskInterface.AsString() != iface {
+			continue
+		}
+
+		if !block.Type().HasAttribute(mkDiskPathInDatastore) {
+			return false
+		}
+
+		path, _ := block.GetAttr(mkDiskPathInDatastore).Unmark()
+
+		return !path.IsNull()
+	}
+
+	return false
 }
 
 // Update updates the disk configuration of a VM.
@@ -644,6 +754,8 @@ func Update(
 			oldDisks = vms.CustomStorageDevices{}
 		}
 
+		config := d.GetRawConfig()
+
 		for iface, disk := range planDisks {
 			var tmp *vms.CustomStorageDevice
 
@@ -658,6 +770,10 @@ func Update(
 				} else {
 					// otherwise this is a blank disk that can be added directly via update API
 					tmp = disk
+
+					if !pathInDatastoreConfigured(config, iface) && volumeKeptByAnotherDisk(iface, disk, planDisks, currentDisks) {
+						tmp = withNewVolume(disk)
+					}
 				}
 			case currentDisks[iface] != nil:
 				if oldDisks[iface].Equals(disk) {
