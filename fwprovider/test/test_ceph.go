@@ -26,13 +26,13 @@ func (e *Environment) CreateCephMDS() string {
 	e.t.Helper()
 
 	name := SafeResourceName("ceph-fs-mds")
-	path := e.nodePath("ceph/mds/" + url.PathEscape(name))
+	mdsClient := e.NodeClient().Ceph().MDS()
 
 	e.t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 
-		if err := e.runTask(ctx, http.MethodDelete, path, nil); err != nil {
+		if err := mdsClient.Delete(ctx, name).Err(); err != nil {
 			e.t.Errorf("removing test MDS %q: %v", name, err)
 		}
 	})
@@ -40,7 +40,7 @@ func (e *Environment) CreateCephMDS() string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	require.NoError(e.t, e.runTask(ctx, http.MethodPost, path, nil), "creating test MDS %q", name)
+	require.NoError(e.t, mdsClient.Create(ctx, name).Err(), "creating test MDS %q", name)
 
 	type mdsEntry struct {
 		Name  string `json:"name"`
@@ -100,22 +100,6 @@ func (e *Environment) RemoveCephFS(ctx context.Context, name string) error {
 	}
 
 	return nil
-}
-
-// runTask sends a request that starts a Proxmox task and waits for the task.
-func (e *Environment) runTask(ctx context.Context, method, path string, body any) error {
-	resp := &struct {
-		Data *string `json:"data"`
-	}{}
-	if err := e.Client().DoRequest(ctx, method, path, body, resp); err != nil {
-		return err
-	}
-
-	if resp.Data == nil {
-		return fmt.Errorf("%s %s: no task ID in the response", method, path)
-	}
-
-	return e.NodeClient().Tasks().WaitForTask(ctx, *resp.Data).Err()
 }
 
 func (e *Environment) nodePath(path string) string {

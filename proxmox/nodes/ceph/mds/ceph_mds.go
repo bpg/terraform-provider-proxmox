@@ -21,7 +21,8 @@ import (
 
 // confLock serializes MDS creation and removal. Before pve-manager 9.2.25 (the fix for Proxmox bug 8195), both
 // rewrite the cluster-wide ceph.conf without a lock, so two concurrent tasks can drop each other's [mds.<id>]
-// section. It can go once older releases are no longer supported. Global variable by design.
+// section. The lock only covers this process, so separate provider processes (e.g. test packages running in
+// parallel) can still race. It can go once older releases are no longer supported. Global variable by design.
 //
 //nolint:gochecknoglobals
 var confLock sync.Mutex
