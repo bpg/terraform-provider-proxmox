@@ -168,7 +168,7 @@ func TestDoTask_AlreadyDoneTaskOnRetry(t *testing.T) {
 	op := NewTaskOperation("test-op",
 		WithBaseDelay(1*time.Millisecond),
 		WithRetryIf(IsTransientAPIError),
-		WithAlreadyDoneCheck(ErrorContains("already referenced")),
+		WithAlreadyDoneTaskCheck(ErrorContains("already referenced")),
 	)
 
 	dispatched := 0
@@ -184,7 +184,6 @@ func TestDoTask_AlreadyDoneTaskOnRetry(t *testing.T) {
 
 			return &id, nil
 		},
-		// Second attempt's task finds the section the first attempt's task wrote
 		func(_ context.Context, _ string) error {
 			return errors.New("MDS 'test' already referenced in ceph config, abort!")
 		},
@@ -200,7 +199,7 @@ func TestDoTask_AlreadyDoneTaskIgnoredOnFirstAttempt(t *testing.T) {
 	op := NewTaskOperation("test-op",
 		WithBaseDelay(1*time.Millisecond),
 		WithRetryIf(IsTransientAPIError),
-		WithAlreadyDoneCheck(ErrorContains("already referenced")),
+		WithAlreadyDoneTaskCheck(ErrorContains("already referenced")),
 	)
 
 	dispatched := 0
@@ -217,10 +216,73 @@ func TestDoTask_AlreadyDoneTaskIgnoredOnFirstAttempt(t *testing.T) {
 		},
 	)
 
-	// The first attempt's task failing this way is a real error, not suppressed
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "already referenced")
 	assert.Equal(t, 1, dispatched)
+}
+
+func TestDoTask_AlreadyDoneCheckIgnoresTaskFailure(t *testing.T) {
+	t.Parallel()
+
+	op := NewTaskOperation("test-op",
+		WithBaseDelay(1*time.Millisecond),
+		WithRetryIf(IsTransientAPIError),
+		WithAlreadyDoneCheck(ErrorContains("already exists")),
+	)
+
+	dispatched := 0
+
+	err := op.DoTask(t.Context(),
+		func() (*string, error) {
+			dispatched++
+			if dispatched == 1 {
+				return nil, &api.HTTPError{Code: http.StatusInternalServerError}
+			}
+
+			id := "UPID:test:1234"
+
+			return &id, nil
+		},
+		func(_ context.Context, _ string) error {
+			return errors.New("volume 'local-lvm:vm-100-cloudinit' already exists")
+		},
+	)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already exists")
+	assert.Equal(t, 2, dispatched)
+}
+
+func TestDoTask_AlreadyDoneTaskIgnoredAfterLockTimeout(t *testing.T) {
+	t.Parallel()
+
+	op := NewTaskOperation("test-op",
+		WithBaseDelay(1*time.Millisecond),
+		WithRetryIf(IsTransientAPIError),
+		WithAlreadyDoneTaskCheck(ErrorContains("already referenced")),
+	)
+
+	waited := 0
+
+	err := op.DoTask(t.Context(),
+		func() (*string, error) {
+			id := "UPID:test:1234"
+
+			return &id, nil
+		},
+		func(_ context.Context, _ string) error {
+			waited++
+			if waited == 1 {
+				return errors.New("can't lock file '/var/lock/qemu-server/lock-100.conf' - got timeout")
+			}
+
+			return errors.New("MDS 'test' already referenced in ceph config, abort!")
+		},
+	)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already referenced")
+	assert.Equal(t, 2, waited)
 }
 
 func TestDoTask_NilTaskIDSkipsWait(t *testing.T) {

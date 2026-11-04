@@ -78,7 +78,7 @@ func TestDoTask_AlreadyDoneTaskOnRetry(t *testing.T) {
 	op := retry.NewTaskOperation("test",
 		retry.WithBaseDelay(time.Millisecond),
 		retry.WithRetryIf(func(err error) bool { return errors.Is(err, errTransient) }),
-		retry.WithAlreadyDoneCheck(func(err error) bool { return errors.Is(err, errReferenced) }),
+		retry.WithAlreadyDoneTaskCheck(func(err error) bool { return errors.Is(err, errReferenced) }),
 	)
 
 	dispatches := 0
@@ -93,7 +93,6 @@ func TestDoTask_AlreadyDoneTaskOnRetry(t *testing.T) {
 
 			return &taskID, nil
 		},
-		// The retry's task fails only because the first dispatch went through
 		func(context.Context, string) TaskResult { return TaskFailed(errReferenced) },
 	)
 

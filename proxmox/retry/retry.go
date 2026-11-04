@@ -24,6 +24,7 @@ type Operation struct {
 	lastErrorOnly  bool
 	useBackoff     bool
 	isAlreadyDone  func(error) bool
+	isTaskDone     func(error) bool
 	retryTaskIf    func(error) bool
 	untilSucceeded bool
 }
@@ -57,10 +58,17 @@ func WithRetryIf(fn func(error) bool) Option {
 
 // WithAlreadyDoneCheck sets a predicate that detects when a retry attempt finds
 // evidence that the first attempt already succeeded (e.g. "already exists").
-// Only checked on retry attempts, not the first attempt. For task operations it
-// is checked against both the dispatch error and the failure of the retry's task.
+// Only checked on retry attempts, not the first attempt.
 func WithAlreadyDoneCheck(fn func(error) bool) Option {
 	return func(o *Operation) { o.isAlreadyDone = fn }
+}
+
+// WithAlreadyDoneTaskCheck sets a predicate that detects when a retry's task failed because
+// an earlier dispatch that returned an error had gone through anyway, for APIs that only check
+// for existing state inside the task. It is only checked after a failed dispatch, so the
+// predicate must identify the object itself; a generic "already exists" also matches storage errors.
+func WithAlreadyDoneTaskCheck(fn func(error) bool) Option {
+	return func(o *Operation) { o.isTaskDone = fn }
 }
 
 // IsTransientAPIError returns true for HTTP 5xx, "got no worker upid",
@@ -129,14 +137,15 @@ func NewTaskOperation(name string, opts ...Option) *Operation {
 // according to the operation's retry configuration. Errors from waitFn are
 // unrecoverable to prevent re-dispatch after a wait failure, unless they match
 // the operation's task retry predicate (lock timeouts for task operations).
-// The isAlreadyDone check (if configured) is only applied on retry attempts, to
-// dispatch errors and to wait errors alike.
+// The isAlreadyDone check (if configured) is only applied on retry attempts, and the
+// isTaskDone check only to the task of a retry that follows a failed dispatch.
 func (o *Operation) DoTask(
 	ctx context.Context,
 	dispatchFn func() (*string, error),
 	waitFn func(ctx context.Context, taskID string) error,
 ) error {
 	retrying := false
+	dispatchFailed := false
 
 	retryOpts := []retrylib.Option{
 		retrylib.Context(ctx),
@@ -175,7 +184,11 @@ func (o *Operation) DoTask(
 
 	//nolint:wrapcheck // errors from dispatchFn/waitFn pass through intentionally
 	return retrylib.New(retryOpts...).Do(func() error {
+		afterDispatchError := dispatchFailed
+
 		taskID, err := dispatchFn()
+
+		dispatchFailed = err != nil
 		if err != nil {
 			if retrying && o.isAlreadyDone != nil && o.isAlreadyDone(err) {
 				return nil
@@ -191,8 +204,7 @@ func (o *Operation) DoTask(
 		}
 
 		if err := waitFn(ctx, *taskID); err != nil {
-			// Some APIs check for existing state inside the task, so a re-dispatch fails there instead.
-			if retrying && o.isAlreadyDone != nil && o.isAlreadyDone(err) {
+			if afterDispatchError && o.isTaskDone != nil && o.isTaskDone(err) {
 				return nil
 			}
 

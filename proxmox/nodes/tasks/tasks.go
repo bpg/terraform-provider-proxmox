@@ -128,9 +128,9 @@ func (w withIgnoreStatus) apply(opts *taskWaitOptions) {
 // DoTask dispatches an async PVE task with retry and waits for its result.
 // On dispatch failure, the returned TaskResult wraps the dispatch error.
 // On success or task failure, the TaskResult comes from WaitForTask. When the task
-// was already done (retry's isAlreadyDone predicate matched a retry's dispatch error
-// or task failure) or the dispatch returned no task ID (e.g. VM already running),
-// a zero-value TaskOK() is returned.
+// was already done (a retry's dispatch error matched WithAlreadyDoneCheck, or its task
+// failure matched WithAlreadyDoneTaskCheck) or the dispatch returned no task ID (e.g. VM
+// already running), a zero-value TaskOK() is returned.
 func (c *Client) DoTask(
 	ctx context.Context,
 	op *retry.Operation,
@@ -163,7 +163,7 @@ func doTask(
 
 	switch {
 	case err == nil && result.Err() != nil:
-		// The retry's task failed only because an earlier attempt had already done the work.
+		// WithAlreadyDoneTaskCheck matched the retry's task failure
 		return TaskOK()
 	case err != nil && result.Err() == nil:
 		return TaskFailed(err)

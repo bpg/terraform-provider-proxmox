@@ -69,7 +69,7 @@ func (c *Client) Create(ctx context.Context, name string) tasks.TaskResult {
 	// Proxmox checks for an existing section inside the task, so a retry after a create that went through fails there.
 	op := retry.NewTaskOperation("Ceph MDS create",
 		retry.WithRetryIf(retry.IsTransientAPIError),
-		retry.WithAlreadyDoneCheck(retry.ErrorContains("already referenced in ceph config")),
+		retry.WithAlreadyDoneTaskCheck(retry.ErrorContains(fmt.Sprintf("MDS '%s' already referenced in ceph config", name))),
 	)
 
 	return c.Tasks().DoTask(ctx, op, func() (*string, error) {
