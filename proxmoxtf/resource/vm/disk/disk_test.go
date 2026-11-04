@@ -12,6 +12,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/require"
@@ -1003,4 +1004,243 @@ func TestDiskQueuesSettings(t *testing.T) {
 
 	_, err = GetDiskDeviceObjects(resourceData, resource, virtioDiskList)
 	require.ErrorContains(t, err, "queues are only supported for SCSI disks")
+}
+
+func TestGetDiskDeviceObjectsSkipsNilEntries(t *testing.T) {
+	t.Parallel()
+
+	diskSchema := Schema()
+	resource := &schema.Resource{Schema: diskSchema}
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{})
+
+	disk := func(iface string) map[string]any {
+		return map[string]any{
+			mkDiskInterface:   iface,
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        32,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		}
+	}
+
+	devices, err := GetDiskDeviceObjects(resourceData, resource, []any{nil, disk("scsi0")})
+	require.NoError(t, err)
+	require.Len(t, devices, 1)
+	require.Contains(t, devices, "scsi0")
+
+	_, err = GetDiskDeviceObjects(resourceData, resource, []any{disk(""), disk("scsi0")})
+	require.Error(t, err)
+}
+
+func TestPathInDatastoreConfigured(t *testing.T) {
+	t.Parallel()
+
+	diskType := cty.Object(map[string]cty.Type{
+		mkDiskInterface:       cty.String,
+		mkDiskPathInDatastore: cty.String,
+	})
+	config := func(disks ...cty.Value) cty.Value {
+		return cty.ObjectVal(map[string]cty.Value{MkDisk: cty.ListVal(disks)})
+	}
+	disk := func(iface string, path cty.Value) cty.Value {
+		return cty.ObjectVal(map[string]cty.Value{mkDiskInterface: cty.StringVal(iface), mkDiskPathInDatastore: path})
+	}
+
+	cfg := config(
+		disk("scsi0", cty.NullVal(cty.String)),
+		disk("scsi1", cty.StringVal("vm-100-disk-1")),
+		disk("scsi2", cty.UnknownVal(cty.String)),
+	)
+
+	require.False(t, pathInDatastoreConfigured(cfg, "scsi0"), "path left out")
+	require.True(t, pathInDatastoreConfigured(cfg, "scsi1"), "path set")
+	require.True(t, pathInDatastoreConfigured(cfg, "scsi2"), "unknown path counts as set")
+	require.False(t, pathInDatastoreConfigured(cfg, "scsi3"), "interface not in config")
+	require.False(t, pathInDatastoreConfigured(cty.NullVal(cty.Object(map[string]cty.Type{MkDisk: cty.List(diskType)})), "scsi0"))
+}
+
+func TestDiskReadDropsDisksPVENoLongerReports(t *testing.T) {
+	t.Parallel()
+
+	qcow2Format := "qcow2"
+	diskDeviceObjects := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			FileVolume: "local:50",
+			Size:       types.DiskSizeFromGigabytes(50),
+			Format:     &qcow2Format,
+		},
+	}
+
+	tests := []struct {
+		name       string
+		stateIface string
+	}{
+		{name: "disk removed outside of Terraform", stateIface: "scsi1"},
+		{name: "empty interface left by an older read", stateIface: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			resourceData := schema.TestResourceDataRaw(t, Schema(), map[string]any{
+				MkDisk: []any{
+					map[string]any{
+						mkDiskInterface:   "scsi0",
+						mkDiskDatastoreID: "local",
+						mkDiskSize:        50,
+						mkDiskSpeed:       []any{},
+					},
+					map[string]any{
+						mkDiskInterface:   tt.stateIface,
+						mkDiskDatastoreID: dvDiskDatastoreID,
+						mkDiskSize:        dvDiskSize,
+						mkDiskSpeed:       []any{},
+					},
+				},
+			})
+
+			var client proxmox.Client
+
+			diags := Read(context.Background(), resourceData, diskDeviceObjects, 100, client, "test-node", false)
+			require.Empty(t, diags)
+
+			diskList := resourceData.Get(MkDisk).([]any)
+			require.Len(t, diskList, 1)
+			require.Equal(t, "scsi0", diskList[0].(map[string]any)[mkDiskInterface])
+		})
+	}
+}
+
+func TestVolumeMovesWithDisk(t *testing.T) {
+	t.Parallel()
+
+	device := func(volume string) *vms.CustomStorageDevice {
+		return &vms.CustomStorageDevice{FileVolume: volume}
+	}
+
+	tests := []struct {
+		name    string
+		iface   string
+		disk    *vms.CustomStorageDevice
+		plan    vms.CustomStorageDevices
+		current vms.CustomStorageDevices
+		want    bool
+	}{
+		{
+			name:    "middle disk removed outside of Terraform",
+			iface:   "scsi1",
+			disk:    device("local:vm-100-disk-2"),
+			plan:    vms.CustomStorageDevices{"scsi0": device(""), "scsi1": device(""), "scsi2": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi2": device("local:vm-100-disk-2")},
+			want:    false,
+		},
+		{
+			name:    "interface changed",
+			iface:   "sata1",
+			disk:    device("local:vm-100-disk-1"),
+			plan:    vms.CustomStorageDevices{"scsi0": device(""), "sata1": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi1": device("local:vm-100-disk-1")},
+			want:    true,
+		},
+		{
+			name:    "interface changed, same volume name on another datastore",
+			iface:   "sata1",
+			disk:    device("tank:vm-100-disk-0"),
+			plan:    vms.CustomStorageDevices{"scsi0": device(""), "sata1": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("local-lvm:vm-100-disk-0"), "scsi1": device("tank:vm-100-disk-0")},
+			want:    true,
+		},
+		{
+			name:    "the disk holding the volume leaves the configuration in the same update",
+			iface:   "scsi1",
+			disk:    device("local:vm-100-disk-2"),
+			plan:    vms.CustomStorageDevices{"scsi0": device(""), "scsi1": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi2": device("local:vm-100-disk-2")},
+			want:    true,
+		},
+		{
+			name:    "disk inserted into the configuration",
+			iface:   "scsi3",
+			disk:    device("local:vm-100-disk-1"),
+			plan:    vms.CustomStorageDevices{"scsi0": device(""), "scsi3": device(""), "scsi1": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi1": device("local:vm-100-disk-1")},
+			want:    false,
+		},
+		{
+			name:    "inherited path on another datastore than the disk holding it",
+			iface:   "scsi1",
+			disk:    device("lvm-b:vm-100-disk-2"),
+			plan:    vms.CustomStorageDevices{"scsi0": device(""), "scsi1": device(""), "scsi2": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("lvm-a:vm-100-disk-0"), "scsi2": device("lvm-a:vm-100-disk-2")},
+			want:    false,
+		},
+		{
+			name:    "two interfaces changed at once",
+			iface:   "sata2",
+			disk:    device("local:vm-100-disk-2"),
+			plan:    vms.CustomStorageDevices{"scsi0": device(""), "sata1": device(""), "sata2": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0"), "scsi1": device("local:vm-100-disk-1"), "scsi2": device("local:vm-100-disk-2")},
+			want:    true,
+		},
+		{
+			name:    "new disk with nothing inherited",
+			iface:   "scsi1",
+			disk:    device("local:4"),
+			plan:    vms.CustomStorageDevices{"scsi0": device(""), "scsi1": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("local:vm-100-disk-0")},
+			want:    false,
+		},
+		{
+			name:    "no planned volume",
+			iface:   "scsi1",
+			disk:    device(""),
+			plan:    vms.CustomStorageDevices{"scsi1": device("")},
+			current: vms.CustomStorageDevices{"scsi0": device("")},
+			want:    false,
+		},
+		{
+			name:    "nil disk",
+			iface:   "scsi1",
+			plan:    vms.CustomStorageDevices{},
+			current: vms.CustomStorageDevices{},
+			want:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, tt.want, volumeMovesWithDisk(tt.iface, tt.disk, tt.plan, tt.current))
+		})
+	}
+}
+
+func TestWithNewVolume(t *testing.T) {
+	t.Parallel()
+
+	datastoreID := "local-lvm"
+	disk := &vms.CustomStorageDevice{
+		FileVolume:  "local-lvm:vm-100-disk-2",
+		DatastoreID: &datastoreID,
+		Size:        types.DiskSizeFromGigabytes(2),
+	}
+
+	newDisk := withNewVolume(disk)
+	require.Equal(t, "local-lvm:2", newDisk.FileVolume)
+	require.Equal(t, "local-lvm:vm-100-disk-2", disk.FileVolume, "the planned disk is not modified")
+
+	noDatastore := &vms.CustomStorageDevice{FileVolume: "/dev/sdb", Size: types.DiskSizeFromGigabytes(2)}
+	require.Same(t, noDatastore, withNewVolume(noDatastore))
+
+	noSize := &vms.CustomStorageDevice{FileVolume: "local-lvm:vm-100-disk-2", DatastoreID: &datastoreID}
+	require.Same(t, noSize, withNewVolume(noSize))
 }

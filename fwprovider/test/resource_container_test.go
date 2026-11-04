@@ -1565,6 +1565,104 @@ func TestAccResourceContainerWaitForIPFilter(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerWaitForIPTimeout(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	containerConfig := func(started bool, hostname string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			unprivileged = true
+			started      = %t
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "%s"
+			}
+			network_interface {
+				name = "eth0"
+			}
+			network_interface {
+				name = "eth1"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+			wait_for_ip {
+				cidrs   = ["192.0.2.0/24"]
+				timeout = "2m"
+			}
+		}`, started, hostname))
+	}
+
+	// eth1 gets its address well after the container starts, past the old fixed 10s wait
+	var lateAddress chan error
+
+	addAddressLate := func() {
+		lateAddress = make(chan error, 1)
+
+		go func() {
+			_, err := te.ExecuteNodeCommandsContext(context.Background(), []string{fmt.Sprintf(
+				"for i in $(seq 1 300); do pct status %[1]d | grep -q running && break; sleep 1; done; sleep 20; "+
+					"pct exec %[1]d -- ip link set eth1 up && pct exec %[1]d -- ip addr add 192.0.2.10/24 dev eth1",
+				accTestContainerID,
+			)})
+			lateAddress <- err
+		}()
+	}
+
+	addressAdded := func(*terraform.State) error {
+		return <-lateAddress
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				PreConfig: addAddressLate,
+				Config:    containerConfig(true, "test-wait-timeout"),
+				Check: resource.ComposeTestCheckFunc(
+					addressAdded,
+					ResourceAttributes(accTestContainerName, map[string]string{"ipv4.eth1": "^192.0.2.10$"}),
+				),
+			},
+			{
+				Config: containerConfig(false, "test-wait-timeout"),
+			},
+			{
+				PreConfig: addAddressLate,
+				Config:    containerConfig(true, "test-wait-timeout"),
+				Check: resource.ComposeTestCheckFunc(
+					addressAdded,
+					ResourceAttributes(accTestContainerName, map[string]string{"ipv4.eth1": "^192.0.2.10$"}),
+				),
+			},
+			{
+				// hostname changes need a reboot, which drops the address again
+				PreConfig: addAddressLate,
+				Config:    containerConfig(true, "test-wait-timeout-reboot"),
+				Check: resource.ComposeTestCheckFunc(
+					addressAdded,
+					ResourceAttributes(accTestContainerName, map[string]string{"ipv4.eth1": "^192.0.2.10$"}),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerEnvironmentVariables(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)

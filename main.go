@@ -128,6 +128,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/apt_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_apt_standard_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/apt_standard_repository.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/ceph_fs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/ceph_mds.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/ceph_pool.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/node_disk_zfs.md ./docs/resources/
@@ -202,6 +203,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_nfs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_pbs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_zfspool.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/storage_cephfs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_cifs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_directory.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_lvm.md ./docs/resources/

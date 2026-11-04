@@ -19,7 +19,7 @@ This guide documents breaking changes across provider versions and the recommend
      required_providers {
        proxmox = {
          source  = "bpg/proxmox"
-         version = "~> 0.119.0" # x-release-please-version
+         version = "~> 0.120.0" # x-release-please-version
        }
      }
    }
@@ -36,6 +36,16 @@ This guide documents breaking changes across provider versions and the recommend
 6. Apply when satisfied.
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
+
+## v0.121.0
+
+### Container `wait_for_ip` waits after start
+
+When `wait_for_ip` is set on a `proxmox_virtual_environment_container`, creating it, and any update that starts or reboots it, now waits for the configured address for up to the new `wait_for_ip.timeout` (default `5m`). Before, only refresh waited, for up to 10 seconds. Refresh is unchanged, and no plan changes.
+
+If the `wait_for_ip` condition is never met, for example `ipv4 = true` on a container without IPv4, those applies now take up to `timeout` longer and end with a warning.
+
+**Action required:** None for containers that get their address. Otherwise, fix the `wait_for_ip` condition, lower `wait_for_ip.timeout`, or remove the block.
 
 ## v0.120.0
 

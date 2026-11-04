@@ -449,16 +449,7 @@ func (r *cephPoolResource) Update(ctx context.Context, req resource.UpdateReques
 			continue
 		}
 
-		// Ceph resets min_size when size changes, and Proxmox compares min_size with the values it read before
-		// applying size, so an unchanged min_size would be skipped and lost. Apply size on its own first.
-		if planBody.Size != nil && !reflect.DeepEqual(planBody.Size, stateBody.Size) {
-			result := client.Update(ctx, name, &poolapi.UpdateRequestBody{Size: planBody.Size})
-			if result.AddDiags(&resp.Diagnostics, fmt.Sprintf("Unable to Update Ceph pool %q", name)) {
-				return
-			}
-		}
-
-		result := client.Update(ctx, name, planBody)
+		result := client.UpdateSizeFirst(ctx, name, planBody, stateBody.Size)
 		if result.AddDiags(&resp.Diagnostics, fmt.Sprintf("Unable to Update Ceph pool %q", name)) {
 			return
 		}
