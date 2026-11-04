@@ -15,9 +15,9 @@ Manages a CephFS on the Proxmox VE cluster's own Ceph cluster. Proxmox VE create
 
 Proxmox VE refuses to create a CephFS while no metadata server is in standby. The provider retries that for about a minute, so a metadata server started in the same apply has time to get there.
 
-Proxmox VE always creates the two pools under the cluster's default CRUSH rule and size. Settings in `metadata_pool` and `data_pool` are applied right after creation, so the pools spend a moment on the defaults first.
+Proxmox VE always creates the two pools under the cluster's default CRUSH rule and size. Settings in `metadata_pool` and `data_pool` are applied right after creation, so the pools spend a moment on the defaults first. If applying them fails, for example on a misspelled CRUSH rule, the filesystem is kept in state but marked tainted; fix the configuration and run `terraform untaint` on it rather than letting Terraform replace it.
 
-!> **Destroying a CephFS is manual.** Proxmox VE documents removing a CephFS as a [procedure done by hand](https://pve.proxmox.com/pve-docs/chapter-pveceph.html#_destroy_cephfs), and the web UI has no destroy. While the filesystem exists, destroying this resource fails with those steps: disconnect its clients and disable and remove its storages, unmount them on every node, make sure no metadata server serves it (`ceph fs fail <name>`), then `pveceph fs destroy <name> --remove-pools 1`. Once it's gone, run the destroy again. The same applies when a change to `name`, `node_name` or `pg_num` would replace it.
+!> **Destroying a CephFS is manual.** Proxmox VE documents removing a CephFS as a [procedure done by hand](https://pve.proxmox.com/pve-docs/chapter-pveceph.html#_destroy_cephfs), and the web UI has no destroy. While the filesystem exists, destroying this resource fails with those steps: disconnect its clients and disable and remove its storages, unmount them on every node, make sure no metadata server serves it (`ceph fs fail <name>`), then `pveceph fs destroy <name> --remove-pools 1`. Once it's gone, run the destroy again. The same applies when a change to `name` or `pg_num` would replace it.
 
 ## Example Usage
 

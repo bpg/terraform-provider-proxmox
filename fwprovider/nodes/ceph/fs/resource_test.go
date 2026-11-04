@@ -129,12 +129,12 @@ func TestAccResourceCephFS(t *testing.T) {
 						plancheck.ExpectResourceAction("proxmox_ceph_fs.test", plancheck.ResourceActionReplace),
 					},
 				},
-				ExpectError: regexp.MustCompile(`(?s)Unable to Delete CephFS.*manual procedure`),
+				ExpectError: regexp.MustCompile(`(?s)Unable\s+to\s+Delete\s+CephFS.*manual\s+procedure`),
 			},
 			{
 				// Removed from the configuration while it still exists: the resource won't destroy it.
 				Config:      te.RenderConfig(""),
-				ExpectError: regexp.MustCompile(`(?s)Unable to Delete CephFS.*manual procedure.*pveceph fs destroy`),
+				ExpectError: regexp.MustCompile(`(?s)Unable\s+to\s+Delete\s+CephFS.*manual\s+procedure.*pveceph\s+fs\s+destroy`),
 			},
 		}},
 		{"pool blocks left out, then set", defaultsName, []resource.TestStep{
