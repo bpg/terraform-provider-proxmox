@@ -107,6 +107,7 @@ const (
 	dvTimeoutUpdate                     = 1800
 	dvTimeoutDelete                     = 60
 	dvTimeoutMigrate                    = 1800
+	dvWaitForIPTimeout                  = "5m"
 	dvUnprivileged                      = false
 
 	maxNetworkInterfaces  = 10
@@ -222,11 +223,12 @@ const (
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
 
-	mkIPv4          = "ipv4"
-	mkIPv6          = "ipv6"
-	mkWaitForIP     = "wait_for_ip"
-	mkWaitForIPIPv4 = "ipv4"
-	mkWaitForIPIPv6 = "ipv6"
+	mkIPv4             = "ipv4"
+	mkIPv6             = "ipv6"
+	mkWaitForIP        = "wait_for_ip"
+	mkWaitForIPIPv4    = "ipv4"
+	mkWaitForIPIPv6    = "ipv6"
+	mkWaitForIPTimeout = "timeout"
 )
 
 // Container returns a resource that manages a container.
@@ -1180,6 +1182,12 @@ func Container() *schema.Resource {
 							Description: "Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`)",
 							Optional:    true,
 							Default:     false,
+						},
+						mkWaitForIPTimeout: {
+							Type:             schema.TypeString,
+							Description:      "How long to wait for an address after the provider starts or reboots the container (defaults to `5m`)",
+							Optional:         true,
+							ValidateDiagFunc: vmresource.TimeoutValidator(),
 						},
 					}),
 				},
@@ -2349,6 +2357,8 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 	if diags.HasError() {
 		return diags
 	}
+
+	diags = append(diags, containerWaitForIPAfterStart(ctx, d, containerAPI)...)
 
 	return append(diags, containerRead(ctx, d, m)...)
 }
@@ -4257,6 +4267,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 			}
 
 			updateDiags = append(updateDiags, startDiags...)
+			updateDiags = append(updateDiags, containerWaitForIPAfterStart(ctx, d, containerAPI)...)
 
 			rebootRequired = false
 		}
@@ -4301,6 +4312,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 		}
 
 		updateDiags = append(updateDiags, rebootDiags...)
+		updateDiags = append(updateDiags, containerWaitForIPAfterStart(ctx, d, containerAPI)...)
 	}
 
 	return append(updateDiags, containerRead(ctx, d, m)...)
@@ -4418,6 +4430,40 @@ func getContainerWaitForIPConfig(d *schema.ResourceData) *containers.WaitForIPCo
 	config.Filter = vmresource.WaitForIPFilterFromBlock(waitForIPBlock)
 
 	return config
+}
+
+// containerWaitForIPAfterStart holds the apply until the configured `wait_for_ip` condition is met. Refresh keeps its
+// short wait, so a condition that never comes true only slows down applies that start the container.
+func containerWaitForIPAfterStart(
+	ctx context.Context,
+	d *schema.ResourceData,
+	containerAPI *containers.Client,
+) diag.Diagnostics {
+	waitForIPConfig := getContainerWaitForIPConfig(d)
+	if waitForIPConfig == nil || len(d.Get(mkNetworkInterface).([]any)) == 0 {
+		return nil
+	}
+
+	// no schema default, so configs written before the attribute existed don't plan a diff
+	timeout, _ := d.Get(mkWaitForIP + ".0." + mkWaitForIPTimeout).(string)
+	if timeout == "" {
+		timeout = dvWaitForIPTimeout
+	}
+
+	duration, err := time.ParseDuration(timeout)
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("failed to parse %s.%s: %w", mkWaitForIP, mkWaitForIPTimeout, err))
+	}
+
+	if _, err := containerAPI.WaitForContainerNetworkInterfaces(ctx, duration, waitForIPConfig); err != nil {
+		return diag.Diagnostics{{
+			Severity: diag.Warning,
+			Summary:  "Container IP address not available",
+			Detail:   err.Error(),
+		}}
+	}
+
+	return nil
 }
 
 func parseImportIDWithNodeName(id string) (string, string, error) {
