@@ -3069,6 +3069,74 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 	})
 }
 
+// TestAccResourceVMHostUSBBeyondUSB3 checks that usb4 and higher are read back, imported, and removed
+// (issue #3009).
+func TestAccResourceVMHostUSBBeyondUSB3(t *testing.T) {
+	te := InitEnvironment(t)
+
+	testVMID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID": testVMID,
+	})
+
+	resourceName := "proxmox_virtual_environment_vm.test_usb"
+
+	usbConfig := func(count int) string {
+		var blocks strings.Builder
+
+		for i := range count {
+			fmt.Fprintf(&blocks, `
+					usb {
+						host = "1234:%04d"
+					}`, i+1)
+		}
+
+		return te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_usb" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+					started   = false
+					machine   = "q35"
+					`+blocks.String()+`
+				}`, WithRootPAMAuth())
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: usbConfig(6),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "usb.#", "6"),
+					resource.TestCheckResourceAttr(resourceName, "usb.4.host", "1234:0005"),
+					resource.TestCheckResourceAttr(resourceName, "usb.5.host", "1234:0006"),
+				),
+			},
+			{
+				Config:   usbConfig(6),
+				PlanOnly: true,
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, testVMID),
+			},
+			{
+				Config: usbConfig(4),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "usb.#", "4"),
+				),
+			},
+			{
+				Config:   usbConfig(4),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // TestAccResourceVMDestroyAfterNodeDrift checks that delete finds a VM moved since the last persisted refresh:
 // plan-only steps don't save state and the post-test destroy runs with -refresh=false.
 func TestAccResourceVMDestroyAfterNodeDrift(t *testing.T) {
