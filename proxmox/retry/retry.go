@@ -73,8 +73,12 @@ func IsTransientAPIError(err error) bool {
 		return httpErr.Code >= http.StatusInternalServerError
 	}
 
-	return strings.Contains(err.Error(), "got no worker upid") ||
-		strings.Contains(err.Error(), "got timeout")
+	return IsNoWorkerUPID(err) || strings.Contains(err.Error(), "got timeout")
+}
+
+// IsNoWorkerUPID reports whether err is PVE's "got no worker upid": the API call ran, but its task failed to start.
+func IsNoWorkerUPID(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "got no worker upid")
 }
 
 // IsLockTimeout reports whether err is a PVE timeout waiting for a lock: lock_file for local files and non-shared

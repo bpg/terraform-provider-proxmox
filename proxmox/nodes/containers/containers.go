@@ -22,18 +22,33 @@ import (
 
 var errContainerAlreadyRunning = errors.New("container is already running")
 
+// PVE writes the new CT's config with "lock: create" before it forks the worker and keeps it when the fork fails, so a
+// retry after "got no worker upid" would only find that config and take "already exists" for success.
+func retryCreateIf(err error) bool {
+	return retry.IsTransientAPIError(err) && !retry.IsNoWorkerUPID(err)
+}
+
 // CloneContainer clones a container.
 // The returned TaskResult carries any warnings from the task log.
 func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) tasks.TaskResult {
 	op := retry.NewTaskOperation("container clone",
 		retry.WithBaseDelay(10*time.Second),
-		retry.WithRetryIf(retry.IsTransientAPIError),
+		retry.WithRetryIf(retryCreateIf),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return c.Tasks().DoTask(ctx, op,
+	res := c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CloneContainerAsync(ctx, d) },
 	)
+	if retry.IsNoWorkerUPID(res.Err()) {
+		return tasks.TaskFailed(fmt.Errorf(
+			"%w\nPVE left CT %d with a locked, empty config and CT %d locked; to clean up, run as root on the node: "+
+				"pct unlock %d && pct unlock %d && pct destroy %d",
+			res.Err(), d.VMIDNew, c.VMID, c.VMID, d.VMIDNew, d.VMIDNew,
+		))
+	}
+
+	return res
 }
 
 // CloneContainerAsync clones a container asynchronously.
@@ -56,13 +71,21 @@ func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (
 // The returned TaskResult carries any warnings from the task log.
 func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) tasks.TaskResult {
 	op := retry.NewTaskOperation("container create",
-		retry.WithRetryIf(retry.IsTransientAPIError),
+		retry.WithRetryIf(retryCreateIf),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return c.Tasks().DoTask(ctx, op,
+	res := c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CreateContainerAsync(ctx, d) },
 	)
+	if retry.IsNoWorkerUPID(res.Err()) && d.VMID != nil {
+		return tasks.TaskFailed(fmt.Errorf(
+			"%w\nPVE left CT %d with a locked, empty config; to remove it, run as root on the node: pct unlock %d && pct destroy %d",
+			res.Err(), *d.VMID, *d.VMID, *d.VMID,
+		))
+	}
+
+	return res
 }
 
 // CreateContainerAsync creates a container asynchronously.
