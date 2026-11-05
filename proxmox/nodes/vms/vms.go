@@ -80,13 +80,25 @@ func (c *Client) ConvertToTemplate(ctx context.Context) tasks.TaskResult {
 // CreateVM creates a virtual machine.
 func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) tasks.TaskResult {
 	op := retry.NewTaskOperation("VM create",
-		retry.WithRetryIf(retry.IsTransientAPIError),
+		// PVE writes the new VM's config with "lock: create" before it forks the worker and keeps it when the fork
+		// fails, so a retry would only find that config and take "already exists" for success.
+		retry.WithRetryIf(func(err error) bool {
+			return retry.IsTransientAPIError(err) && !retry.IsNoWorkerUPID(err)
+		}),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return c.Tasks().DoTask(ctx, op,
+	res := c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CreateVMAsync(ctx, d) },
 	)
+	if retry.IsNoWorkerUPID(res.Err()) {
+		return tasks.TaskFailed(fmt.Errorf(
+			"%w\nPVE left VM %d with a locked, empty config; to remove it, run as root on the node: qm unlock %d && qm destroy %d",
+			res.Err(), d.VMID, d.VMID, d.VMID,
+		))
+	}
+
+	return res
 }
 
 // CreateVMAsync creates a virtual machine asynchronously.
