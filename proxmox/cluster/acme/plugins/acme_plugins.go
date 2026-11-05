@@ -8,10 +8,12 @@ package plugins
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -42,6 +44,10 @@ func (c *Client) Get(ctx context.Context, id string) (*ACMEPluginsGetResponseDat
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(url.PathEscape(id)), nil, resBody)
 	if err != nil {
+		if isPluginNotDefinedErr(err) {
+			err = errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
 		return nil, fmt.Errorf("error reading ACME plugin: %w", err)
 	}
 
@@ -50,6 +56,18 @@ func (c *Client) Get(ctx context.Context, id string) (*ACMEPluginsGetResponseDat
 	}
 
 	return resBody.Data, nil
+}
+
+// isPluginNotDefinedErr matches the "ACME plugin '<id>' not defined" message that
+// PVE returns (via HTTP 500) when reading a plugin that does not exist.
+func isPluginNotDefinedErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	msg := err.Error()
+
+	return strings.Contains(msg, "ACME plugin '") && strings.Contains(msg, "' not defined")
 }
 
 // Create creates a new ACME plugin.

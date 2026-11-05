@@ -8,6 +8,7 @@ package acme
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -22,6 +23,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/plugins"
 )
 
@@ -238,6 +240,12 @@ func (r *acmePluginResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	plugin, err := r.client.Get(ctx, id)
 	if err != nil {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			resp.State.RemoveResource(ctx)
+
+			return
+		}
+
 		resp.Diagnostics.AddError(
 			"Unable to read ACME plugin",
 			err.Error(),
