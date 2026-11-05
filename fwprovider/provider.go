@@ -47,6 +47,7 @@ import (
 	cephfs "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/ceph/fs"
 	cephpool "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/ceph/pool"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/clonedvm"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/cloudinitbootstrap"
 	nodeconfig "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	diskzfs "github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/disks/zfs"
@@ -668,6 +669,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		backup.NewResource,
 		cephfs.NewCephFSResource,
 		cephpool.NewCephPoolResource,
+		cloudinitbootstrap.NewResource,
 		clonedvm.NewResource,
 		clonedvm.NewShortResource,
 		cpumodel.NewResource,

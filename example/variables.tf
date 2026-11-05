@@ -45,6 +45,12 @@ variable "virtual_environment_storage" {
   default     = "local-lvm"
 }
 
+variable "ubuntu_24_04_cloud_img_url" {
+  description = "The URL for the Ubuntu 24.04 LTS cloud image"
+  type        = string
+  default     = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+}
+
 variable "latest_debian_12_bookworm_qcow2_img_url" {
   description = "The URL for the latest Debian 12 Bookworm qcow2 image"
   type        = string

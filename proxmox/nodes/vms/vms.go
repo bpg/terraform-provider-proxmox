@@ -213,6 +213,26 @@ func (c *Client) GetVMNetworkInterfacesFromAgent(ctx context.Context) (*GetQEMUN
 	return resBody.Data, nil
 }
 
+// GetFileFromAgent reads a file inside the guest using the QEMU agent.
+func (c *Client) GetFileFromAgent(ctx context.Context, path string) (string, error) {
+	resBody := &GetAgentFileReadResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("agent/file-read"), &GetAgentFileReadRequestBody{File: path}, resBody)
+	if err != nil {
+		return "", fmt.Errorf("error reading %s from VM %d via agent: %w", path, c.VMID, err)
+	}
+
+	if resBody.Data == nil {
+		return "", api.ErrNoDataObjectInResponse
+	}
+
+	if resBody.Data.Truncated != nil && bool(*resBody.Data.Truncated) {
+		return "", fmt.Errorf("%s on VM %d is too large to read via agent", path, c.VMID)
+	}
+
+	return resBody.Data.Content, nil
+}
+
 // GetVMStatus retrieves the status for a virtual machine.
 func (c *Client) GetVMStatus(ctx context.Context) (*GetStatusResponseData, error) {
 	resBody := &GetStatusResponseBody{}
