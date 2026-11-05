@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.121.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.120.0...v0.121.0) (2026-11-05)
+
+
+### Features
+
+* **ceph:** add proxmox_ceph_fs and proxmox_storage_cephfs ([#3209](https://github.com/bpg/terraform-provider-proxmox/issues/3209)) ([5c51404](https://github.com/bpg/terraform-provider-proxmox/commit/5c51404222d74d411b880b864fe550b083486e63))
+* **lxc:** wait for `wait_for_ip` address after container start ([#3255](https://github.com/bpg/terraform-provider-proxmox/issues/3255)) ([5cff49a](https://github.com/bpg/terraform-provider-proxmox/commit/5cff49a7d104211a74d035e5807646a7529148dd))
+
+
+### Bug Fixes
+
+* **vm,lxc:** don't retry a create that failed with `got no worker upid` ([#3257](https://github.com/bpg/terraform-provider-proxmox/issues/3257)) ([1f3c6cb](https://github.com/bpg/terraform-provider-proxmox/commit/1f3c6cbb4e8566d98963cd9d4a72fc3a4178841a))
+
 ## [0.120.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.119.0...v0.120.0) (2026-11-02)
 
 
