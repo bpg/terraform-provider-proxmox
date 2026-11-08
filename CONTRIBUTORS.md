@@ -291,6 +291,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/rsegers"><img src="https://avatars.githubusercontent.com/u/3670848?v=4?s=100" width="100px;" alt="rsegers"/><br /><sub><b>rsegers</b></sub></a><br /><a href="#financial-rsegers" title="Financial">💵</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/sarankumar1325"><img src="https://avatars.githubusercontent.com/u/120080287?v=4?s=100" width="100px;" alt="sarankumar"/><br /><sub><b>sarankumar</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=sarankumar1325" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/lucas-rbarros"><img src="https://avatars.githubusercontent.com/u/70347936?v=4?s=100" width="100px;" alt="Lucas Barros"/><br /><sub><b>Lucas Barros</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=lbarrosby" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/pigam"><img src="https://avatars.githubusercontent.com/u/38874936?v=4?s=100" width="100px;" alt="Pierre Gambarotto"/><br /><sub><b>Pierre Gambarotto</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=pigam" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
