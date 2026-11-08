@@ -550,8 +550,11 @@ output "ubuntu_vm_public_key" {
         order (defaults to `-1`, meaning no specific order).
     - `up_delay` - (Optional) A non-negative number defining the delay in
         seconds before the next VM is started.
-    - `down_delay` - (Optional) A non-negative number defining the delay in
-        seconds before the next VM is shut down.
+    - `down_delay` - (Optional) A non-negative number defining the shutdown
+        timeout in seconds. When the node stops all guests (e.g. on host
+        shutdown), Proxmox VE waits this long for the VM to shut down before
+        stopping it. When unset, the node's bulk stop timeout is used
+        (180 seconds by default).
 - `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults
     to `true`).
 - `tags` - (Optional) A list of tags of the VM. This is only meta information (
