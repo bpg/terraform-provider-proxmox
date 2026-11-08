@@ -100,3 +100,36 @@ func assertDevice(t *testing.T, dev *CustomStorageDevice) {
 	assert.Equal(t, "8G", dev.Size.String())
 	assert.True(t, bool(*dev.SSD))
 }
+
+func TestUnmarshalGetResponseDataUSBDevices(t *testing.T) {
+	t.Parallel()
+
+	jsonData := `{
+		"usb0": "host=1234:0001",
+		"usb3": "mapping=test-usb-3,usb3=1",
+		"usb4": "host=1234:0005,usb3=0",
+		"usb13": "mapping=test-usb-13",
+		"usbfoo": "ignored"
+	}`
+
+	var data GetResponseData
+
+	err := json.Unmarshal([]byte(jsonData), &data)
+	require.NoError(t, err)
+
+	require.Len(t, data.USBDevices, 4)
+
+	require.NotNil(t, data.USBDevices["usb0"])
+	assert.Equal(t, "1234:0001", *data.USBDevices["usb0"].HostDevice)
+
+	require.NotNil(t, data.USBDevices["usb3"])
+	assert.Equal(t, "test-usb-3", *data.USBDevices["usb3"].Mapping)
+	assert.True(t, bool(*data.USBDevices["usb3"].USB3))
+
+	require.NotNil(t, data.USBDevices["usb4"])
+	assert.Equal(t, "1234:0005", *data.USBDevices["usb4"].HostDevice)
+	assert.False(t, bool(*data.USBDevices["usb4"].USB3))
+
+	require.NotNil(t, data.USBDevices["usb13"])
+	assert.Equal(t, "test-usb-13", *data.USBDevices["usb13"].Mapping)
+}

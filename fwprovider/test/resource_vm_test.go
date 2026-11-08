@@ -3069,6 +3069,96 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 	})
 }
 
+// TestAccResourceVMHostUSBBeyondUSB3 checks that usb4 and higher are read back, imported, and removed
+// (issue #3009).
+func TestAccResourceVMHostUSBBeyondUSB3(t *testing.T) {
+	te := InitEnvironment(t)
+
+	testVMID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID":    testVMID,
+		"MappingName": SafeResourceName("usb-map"),
+	})
+
+	resourceName := "proxmox_virtual_environment_vm.test_usb"
+
+	blocks := []string{
+		`host = "1234:0001"`,
+		`host = "1234:0002"`,
+		`host = "1234:0003"`,
+		`host = "1234:0004"`,
+		`mapping = proxmox_hardware_mapping_usb.test.name
+						usb3    = true`,
+		`host = "1234:0006"
+						usb3 = true`,
+	}
+
+	usbConfig := func(count int) string {
+		var usb strings.Builder
+
+		for _, block := range blocks[:count] {
+			fmt.Fprintf(&usb, `
+					usb {
+						%s
+					}`, block)
+		}
+
+		return te.RenderConfig(`
+				resource "proxmox_hardware_mapping_usb" "test" {
+					name = "{{.MappingName}}"
+					map  = [{
+						id   = "1234:0005"
+						node = "{{.NodeName}}"
+					}]
+				}
+
+				resource "proxmox_virtual_environment_vm" "test_usb" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+					started   = false
+					machine   = "q35"
+					`+usb.String()+`
+				}`, WithRootPAMAuth())
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: usbConfig(6),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "usb.#", "6"),
+					resource.TestCheckResourceAttrPair(resourceName, "usb.4.mapping", "proxmox_hardware_mapping_usb.test", "name"),
+					resource.TestCheckResourceAttr(resourceName, "usb.4.usb3", "true"),
+					resource.TestCheckResourceAttr(resourceName, "usb.5.host", "1234:0006"),
+					resource.TestCheckResourceAttr(resourceName, "usb.5.usb3", "true"),
+				),
+			},
+			{
+				Config:   usbConfig(6),
+				PlanOnly: true,
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, testVMID),
+			},
+			{
+				Config: usbConfig(4),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "usb.#", "4"),
+				),
+			},
+			{
+				Config:   usbConfig(4),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 // TestAccResourceVMDestroyAfterNodeDrift checks that delete finds a VM moved since the last persisted refresh:
 // plan-only steps don't save state and the post-test destroy runs with -refresh=false.
 func TestAccResourceVMDestroyAfterNodeDrift(t *testing.T) {

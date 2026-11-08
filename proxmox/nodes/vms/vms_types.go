@@ -32,6 +32,8 @@ var (
 	regexNetworkDevice = regexp.MustCompile(`^net\d+$`)
 	// regexIPConfig is a regex pattern for matching cloud-init IP config names.
 	regexIPConfig = regexp.MustCompile(`^ipconfig\d+$`)
+	// regexUSBDevice is a regex pattern for matching USB device names.
+	regexUSBDevice = regexp.MustCompile(`^usb\d+$`)
 )
 
 // WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
@@ -280,10 +282,7 @@ type GetResponseData struct {
 	Template             *types.CustomBool               `json:"template,omitempty"`
 	TimeDriftFixEnabled  *types.CustomBool               `json:"tdf,omitempty"`
 	TPMState             *CustomTPMState                 `json:"tpmstate0,omitempty"`
-	USBDevice0           *CustomUSBDevice                `json:"usb0,omitempty"`
-	USBDevice1           *CustomUSBDevice                `json:"usb1,omitempty"`
-	USBDevice2           *CustomUSBDevice                `json:"usb2,omitempty"`
-	USBDevice3           *CustomUSBDevice                `json:"usb3,omitempty"`
+	USBDevices           CustomUSBDeviceMap              `json:"-"`
 	VGADevice            *CustomVGADevice                `json:"vga,omitempty"`
 	VirtualCPUCount      *int64                          `json:"vcpus,omitempty"`
 	VMGenerationID       *string                         `json:"vmgenid,omitempty"`
@@ -444,6 +443,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 	data.VirtiofsShares = make(CustomVirtiofsShares)
 	data.NetworkDevices = make(CustomNetworkDeviceMap)
 	data.IPConfigs = make(CustomCloudInitIPConfigMap)
+	data.USBDevices = make(CustomUSBDeviceMap)
 
 	for key, value := range byAttr {
 		for _, prefix := range StorageInterfaces {
@@ -493,6 +493,15 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 			}
 
 			data.IPConfigs[key] = &ipConfig
+		}
+
+		if regexUSBDevice.MatchString(key) {
+			var device CustomUSBDevice
+			if err := json.Unmarshal([]byte(`"`+value.(string)+`"`), &device); err != nil {
+				return fmt.Errorf("failed to unmarshal %s: %w", key, err)
+			}
+
+			data.USBDevices[key] = &device
 		}
 	}
 

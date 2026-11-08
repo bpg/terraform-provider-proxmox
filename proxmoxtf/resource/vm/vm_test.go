@@ -350,6 +350,8 @@ func TestVMSchema(t *testing.T) {
 	})
 	test.AssertListMaxItems(t, initializationSchema, mkInitializationIPConfig, network.MaxNetworkDevices)
 
+	test.AssertListMaxItems(t, s, mkHostUSB, maxResourceVirtualEnvironmentVMHostUSBDevices)
+
 	hostPCISchema := test.AssertNestedSchemaExistence(t, s, mkHostPCI)
 
 	test.AssertOptionalArguments(t, hostPCISchema, []string{

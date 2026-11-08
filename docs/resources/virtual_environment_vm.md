@@ -353,7 +353,9 @@ output "ubuntu_vm_public_key" {
     hotplug list, disk resizes on a running VM are applied live without a
     reboot. When `disk` is excluded, the provider will reboot the VM after
     resize (controlled by `reboot_after_update`).
-- `usb` - (Optional) A host USB device mapping (multiple blocks supported).
+- `usb` - (Optional) A host USB device mapping (multiple blocks supported, up to 14).
+    Proxmox VE only starts a VM with `usb5` and up on machine type >= 7.1 with
+    an `l26` or Windows > 7 `operating_system`.
     - `host` - (Optional) The Host USB device or port or the value `spice`. Use either this or `mapping`.
     - `mapping` - (Optional) The cluster-wide resource mapping name of the device, for example "usbdevice". Use either this or `host`.
     - `usb3` - (Optional) Makes the USB device a USB3 device for the VM
