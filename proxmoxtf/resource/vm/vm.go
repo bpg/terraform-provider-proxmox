@@ -1132,6 +1132,7 @@ func VM() *schema.Resource {
 					},
 				},
 			},
+			MaxItems: maxResourceVirtualEnvironmentVMHostUSBDevices,
 		},
 		mkHotplug: {
 			Type: schema.TypeString,

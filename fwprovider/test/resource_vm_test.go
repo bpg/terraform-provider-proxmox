@@ -3077,28 +3077,48 @@ func TestAccResourceVMHostUSBBeyondUSB3(t *testing.T) {
 	testVMID := 100000 + rand.Intn(99999)
 
 	te.AddTemplateVars(map[string]any{
-		"TestVMID": testVMID,
+		"TestVMID":    testVMID,
+		"MappingName": SafeResourceName("usb-map"),
 	})
 
 	resourceName := "proxmox_virtual_environment_vm.test_usb"
 
-	usbConfig := func(count int) string {
-		var blocks strings.Builder
+	blocks := []string{
+		`host = "1234:0001"`,
+		`host = "1234:0002"`,
+		`host = "1234:0003"`,
+		`host = "1234:0004"`,
+		`mapping = proxmox_hardware_mapping_usb.test.name
+						usb3    = true`,
+		`host = "1234:0006"
+						usb3 = true`,
+	}
 
-		for i := range count {
-			fmt.Fprintf(&blocks, `
+	usbConfig := func(count int) string {
+		var usb strings.Builder
+
+		for _, block := range blocks[:count] {
+			fmt.Fprintf(&usb, `
 					usb {
-						host = "1234:%04d"
-					}`, i+1)
+						%s
+					}`, block)
 		}
 
 		return te.RenderConfig(`
+				resource "proxmox_hardware_mapping_usb" "test" {
+					name = "{{.MappingName}}"
+					map  = [{
+						id   = "1234:0005"
+						node = "{{.NodeName}}"
+					}]
+				}
+
 				resource "proxmox_virtual_environment_vm" "test_usb" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestVMID}}
 					started   = false
 					machine   = "q35"
-					`+blocks.String()+`
+					`+usb.String()+`
 				}`, WithRootPAMAuth())
 	}
 
@@ -3109,8 +3129,10 @@ func TestAccResourceVMHostUSBBeyondUSB3(t *testing.T) {
 				Config: usbConfig(6),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "usb.#", "6"),
-					resource.TestCheckResourceAttr(resourceName, "usb.4.host", "1234:0005"),
+					resource.TestCheckResourceAttrPair(resourceName, "usb.4.mapping", "proxmox_hardware_mapping_usb.test", "name"),
+					resource.TestCheckResourceAttr(resourceName, "usb.4.usb3", "true"),
 					resource.TestCheckResourceAttr(resourceName, "usb.5.host", "1234:0006"),
+					resource.TestCheckResourceAttr(resourceName, "usb.5.usb3", "true"),
 				),
 			},
 			{
