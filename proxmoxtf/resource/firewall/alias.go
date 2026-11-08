@@ -8,6 +8,8 @@ package firewall
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -53,7 +55,67 @@ func Alias() *schema.Resource {
 		ReadContext:   selectFirewallAPI(aliasRead),
 		UpdateContext: selectFirewallAPI(aliasUpdate),
 		DeleteContext: selectFirewallAPI(aliasDelete),
+		Importer: &schema.ResourceImporter{
+			StateContext: aliasImport,
+		},
 	}
+}
+
+// aliasImport imports aliases.
+func aliasImport(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
+	id := d.Id()
+
+	var name string
+
+	switch {
+	case strings.HasPrefix(id, "cluster/"):
+		name = strings.TrimPrefix(id, "cluster/")
+	case strings.HasPrefix(id, "vm/"), strings.HasPrefix(id, "container/"):
+		parts := strings.SplitN(id, "/", 4)
+		if len(parts) != 4 || parts[1] == "" {
+			return nil, fmt.Errorf("invalid %s import ID format: %s (expected: %s/<node_name>/<%s_id>/<alias_name>)",
+				parts[0], id, parts[0], parts[0])
+		}
+
+		guestID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid %s import ID: %s ID must be a number in %s: %w", parts[0], parts[0], id, err)
+		}
+
+		err = d.Set(mkSelectorNodeName, parts[1])
+		if err != nil {
+			return nil, fmt.Errorf("failed setting node name during import: %w", err)
+		}
+
+		idKey := mkSelectorVMID
+		if parts[0] == "container" {
+			idKey = mkSelectorContainerID
+		}
+
+		err = d.Set(idKey, guestID)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting %s ID during import: %w", parts[0], err)
+		}
+
+		name = parts[3]
+	default:
+		return nil, fmt.Errorf("invalid import ID: %s "+
+			"(expected: 'cluster/<alias_name>', 'vm/<node_name>/<vm_id>/<alias_name>', "+
+			"or 'container/<node_name>/<container_id>/<alias_name>')", id)
+	}
+
+	if name == "" {
+		return nil, fmt.Errorf("invalid import ID: %s (alias name is empty)", id)
+	}
+
+	d.SetId(name)
+
+	err := d.Set(mkAliasName, name)
+	if err != nil {
+		return nil, fmt.Errorf("failed setting alias name during import: %w", err)
+	}
+
+	return []*schema.ResourceData{d}, nil
 }
 
 func aliasCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
