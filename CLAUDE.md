@@ -100,15 +100,17 @@ doesn't cover). Config lives in `.prettierrc` / `.prettierignore` and `.markdown
 ### Acceptance Test Script (`./testacc`)
 
 ```bash
-./testacc TestAccResourceVM           # Run single test
+./testacc TestAccResourceVM           # Run one test (exact name, not the family)
 ./testacc "TestAccResource.*"         # Run tests matching pattern
+./testacc "^TestAccResourceVM"        # Run every test whose name starts with it
+./testacc "TestA|TestB"               # Run several tests (any go test -run regex works)
 ./testacc --tier light                # Light tests only (~30s)
 ./testacc --tier medium               # Medium tests only (~3 min)
 ./testacc --tier heavy                # Heavy tests only (~15 min)
 ./testacc --tier light,medium         # Combine tiers
 ./testacc --tier all                  # All tiers with smart parallelism (~15 min)
-./testacc --resource vm               # All VM-related tests
-./testacc --resource sdn              # All SDN tests
+./testacc --resource vm               # Tests in files tagged //testacc:resource=vm
+./testacc --resource sdn              # Tests in files tagged //testacc:resource=sdn
 ./testacc --no-proxy TestName         # Run without mitmproxy
 ./testacc TestName -- -count 2        # Pass flags through to go test
 ```
