@@ -2072,6 +2072,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "pigam",
+      "name": "Pierre Gambarotto",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38874936?v=4",
+      "profile": "https://github.com/pigam",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
