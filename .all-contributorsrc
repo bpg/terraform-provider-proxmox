@@ -2063,6 +2063,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "lbarrosby",
+      "name": "Lucas Barros",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70347936?v=4",
+      "profile": "https://www.linkedin.com/in/lucas-rbarros",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
