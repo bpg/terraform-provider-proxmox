@@ -37,6 +37,21 @@ This guide documents breaking changes across provider versions and the recommend
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
 
+## v0.122.0
+
+### `proxmox_acl` no longer adopts an existing ACL
+
+Creating a `proxmox_acl` (or `proxmox_virtual_environment_acl`) for a path, role and user, group or token that already has an ACL entry now fails with `Unable to Create ACL`, saying the ACL already exists. Before, the create succeeded and silently took over the existing entry, so a later `destroy` removed an ACL that Terraform never created. ACLs already in state are not affected.
+
+**Action required:** If an apply fails because the ACL already exists, import the ACL with the ID shown in the error (`{path}?{group|user@realm|user@realm!token}?{role}`), for example:
+
+```terraform
+import {
+  to = proxmox_acl.auditor
+  id = "/?acltest@pve?PVEAuditor"
+}
+```
+
 ## v0.121.0
 
 ### Container `wait_for_ip` waits after start

@@ -289,7 +289,7 @@ func TestAccAclExisting(t *testing.T) {
 					path    = "/"
 					role_id = "PVEAuditor"
 				}`),
-				ExpectError: regexp.MustCompile(`ACL already exists`),
+				ExpectError: regexp.MustCompile(`(?s)Unable to Create ACL.*already\s+exists`),
 			},
 			{
 				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
