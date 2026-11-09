@@ -553,8 +553,9 @@ output "ubuntu_vm_public_key" {
     - `down_delay` - (Optional) A non-negative number defining the shutdown
         timeout in seconds. When the node stops all guests (e.g. on host
         shutdown), Proxmox VE waits this long for the VM to shut down before
-        stopping it. When unset, the node's bulk stop timeout is used
-        (180 seconds by default).
+        stopping it. It is also the default timeout for a shutdown of this
+        VM that doesn't set one. When unset, the node's bulk stop timeout is
+        used (180 seconds by default).
 - `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults
     to `true`).
 - `tags` - (Optional) A list of tags of the VM. This is only meta information (
