@@ -50,14 +50,14 @@ Examples:
   ./testacc "TestAccDatasource.*"              # Pattern match
   ./testacc "^TestAccResourceContainer"        # Every test whose name starts with it
   ./testacc "TestAccA|TestAccB"                # Several tests
-  ./testacc "TestAccResourceVM/clone"          # Subtests of one test
+  ./testacc "^TestAccResourceVM$/multiline"    # Subtests of one test
   ./testacc --no-proxy TestAccDatasourceFile   # Without proxy
   ./testacc TestAccDatasourceFile -- -count 2  # Extra go test flags
 
 Notes:
-  - Plain test names use exact matching (^TestName$)
-  - Names with regular expression characters (* . + ? | ^ $ ( ) [ ]) or a /
-    are passed to go test -run unchanged
+  - Plain test names (letters, digits, _) use exact matching (^TestName$)
+  - Names with any other character (e.g. * . | ^ $ /) are patterns and are
+    passed to go test -run unchanged
   - The script automatically finds the packages containing the tests, and
     falls back to all packages when a pattern can't be resolved to names
   - --resource X runs only the TestAcc* functions defined in files tagged
@@ -448,7 +448,7 @@ RUN_ARG=""
 IS_PATTERN=0
 if [ -n "$TEST_NAME" ]; then
     case "$TEST_NAME" in
-        *[*.+?\|^\$\(\)\[\]/]*)
+        *[!A-Za-z0-9_]*)
             RUN_ARG="-run ${TEST_NAME}"
             IS_PATTERN=1
             printf 'Running tests matching pattern: %s\n' "$TEST_NAME" >&2
