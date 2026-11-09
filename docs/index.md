@@ -34,7 +34,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.111.1"
+      version = "~> 0.121.0" # x-release-please-version
     }
   }
 }
@@ -55,6 +55,15 @@ provider "proxmox" {
 **With SSH access (only if needed for snippets or certain file uploads):**
 
 ```hcl
+terraform {
+  required_providers {
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = "~> 0.121.0" # x-release-please-version
+    }
+  }
+}
+
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
   username = "root@pam"
