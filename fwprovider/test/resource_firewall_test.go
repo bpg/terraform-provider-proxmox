@@ -1323,6 +1323,108 @@ func TestAccResourceFirewallIPSetImport(t *testing.T) {
 	}
 }
 
+func TestAccResourceFirewallAliasImport(t *testing.T) {
+	te := InitEnvironment(t)
+
+	testVMID := 100000 + rand.Intn(99999)
+	testContainerID := testVMID%199999 + 1
+	clusterAlias := fmt.Sprintf("acc-import-%d", rand.Intn(99999))
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID":        testVMID,
+		"TestContainerID": testContainerID,
+		"ClusterAlias":    clusterAlias,
+	})
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"cluster alias import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_alias" "cluster_alias" {
+					name    = "{{.ClusterAlias}}"
+					cidr    = "192.168.0.0/24"
+					comment = "Local IPv4"
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_firewall_alias.cluster_alias", map[string]string{
+					"name":    clusterAlias,
+					"cidr":    "192.168.0.0/24",
+					"comment": "Local IPv4",
+				}),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_alias.cluster_alias",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     "cluster/" + clusterAlias,
+			},
+			{
+				ResourceName:  "proxmox_virtual_environment_firewall_alias.cluster_alias",
+				ImportState:   true,
+				ImportStateId: clusterAlias,
+				ExpectError:   regexp.MustCompile(`invalid import ID: ` + clusterAlias),
+			},
+		}},
+		{"vm alias import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_alias" "vm_alias" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+
+					name = "local_network"
+					cidr = "192.168.0.0/24"
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_firewall_alias.vm_alias", map[string]string{
+					"node_name": te.NodeName,
+					"vm_id":     fmt.Sprintf("%d", testVMID),
+					"name":      "local_network",
+				}),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_alias.vm_alias",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("vm/%s/%d/local_network", te.NodeName, testVMID),
+			},
+		}},
+		{"container alias import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_alias" "container_alias" {
+					node_name    = "{{.NodeName}}"
+					container_id = {{.TestContainerID}}
+
+					name = "local_network"
+					cidr = "192.168.0.0/24"
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_firewall_alias.container_alias", map[string]string{
+					"node_name":    te.NodeName,
+					"container_id": fmt.Sprintf("%d", testContainerID),
+					"name":         "local_network",
+				}),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_alias.container_alias",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("container/%s/%d/local_network", te.NodeName, testContainerID),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
 // deleteFirewallRuleManually simulates manual deletion of a firewall rule.
 func deleteFirewallRuleManually(te *Environment, nodeName string, vmID int, rulePosition int) error {
 	ctx := context.Background()
