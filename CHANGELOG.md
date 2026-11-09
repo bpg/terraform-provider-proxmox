@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.121.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.120.0...v0.121.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **access:** fail to create an acl that already exists ([#3268](https://github.com/bpg/terraform-provider-proxmox/issues/3268))
+
+### Features
+
+* **ceph:** add proxmox_ceph_fs and proxmox_storage_cephfs ([#3209](https://github.com/bpg/terraform-provider-proxmox/issues/3209)) ([5c51404](https://github.com/bpg/terraform-provider-proxmox/commit/5c51404222d74d411b880b864fe550b083486e63))
+* **lxc:** wait for `wait_for_ip` address after container start ([#3255](https://github.com/bpg/terraform-provider-proxmox/issues/3255)) ([5cff49a](https://github.com/bpg/terraform-provider-proxmox/commit/5cff49a7d104211a74d035e5807646a7529148dd))
+
+
+### Bug Fixes
+
+* **access:** fail to create an acl that already exists ([#3268](https://github.com/bpg/terraform-provider-proxmox/issues/3268)) ([8f28653](https://github.com/bpg/terraform-provider-proxmox/commit/8f2865316da0860a4fdfc34ab50fce29f9136b6c))
+* **acme:** remove dns plugin from state when deleted outside terraform ([#3259](https://github.com/bpg/terraform-provider-proxmox/issues/3259)) ([d152d21](https://github.com/bpg/terraform-provider-proxmox/commit/d152d21980c2437908071f4c69a5d4a71f4b9b99))
+* **vm,lxc:** don't retry a create that failed with `got no worker upid` ([#3257](https://github.com/bpg/terraform-provider-proxmox/issues/3257)) ([1f3c6cb](https://github.com/bpg/terraform-provider-proxmox/commit/1f3c6cbb4e8566d98963cd9d4a72fc3a4178841a))
+* **vm:** don't touch inherited hookscript on clone ([#3084](https://github.com/bpg/terraform-provider-proxmox/issues/3084)) ([8bd7bc4](https://github.com/bpg/terraform-provider-proxmox/commit/8bd7bc4b994babe576f4f1585805eb356dc47007))
+* **vm:** read back usb4 and higher host USB devices ([#3258](https://github.com/bpg/terraform-provider-proxmox/issues/3258)) ([78c2e33](https://github.com/bpg/terraform-provider-proxmox/commit/78c2e336ef0131afe9367ea6cc1a25088381c0ff))
+
+
+### Miscellaneous
+
+* **ci:** update actions/add-to-project digest (5afcf98 → f2c1f1f) ([#3265](https://github.com/bpg/terraform-provider-proxmox/issues/3265)) ([231b5c2](https://github.com/bpg/terraform-provider-proxmox/commit/231b5c2f5b318872b138300a185317e61fe54e82))
+* **deps:** update image golang (2920bb1 → e519d3b) ([#3261](https://github.com/bpg/terraform-provider-proxmox/issues/3261)) ([7d2120b](https://github.com/bpg/terraform-provider-proxmox/commit/7d2120bbfa4abe2de3f6bdb57772d4f65e31676b))
+* **deps:** update module github.com/avast/retry-go/v5 (v5.0.0 → v5.1.1) ([#3262](https://github.com/bpg/terraform-provider-proxmox/issues/3262)) ([5da2888](https://github.com/bpg/terraform-provider-proxmox/commit/5da2888790d57febee42b18efda03f3e54005966))
+* **docs:** add example and import usage to linux_bond ([#3272](https://github.com/bpg/terraform-provider-proxmox/issues/3272)) ([34d5077](https://github.com/bpg/terraform-provider-proxmox/commit/34d507771bd97af9260ebda71301c2ce52195294))
+* **docs:** describe startup down_delay as a shutdown timeout ([#3271](https://github.com/bpg/terraform-provider-proxmox/issues/3271)) ([38f0445](https://github.com/bpg/terraform-provider-proxmox/commit/38f04451743935a66b626c240e3f05edb80ae802))
+* **docs:** move acl upgrade note to v0.121.0 ([#3274](https://github.com/bpg/terraform-provider-proxmox/issues/3274)) ([3e39be5](https://github.com/bpg/terraform-provider-proxmox/commit/3e39be5dec10be491c71f10044b1d22ddc2bb78b))
+* **test:** accept go test -run patterns in testacc ([#3270](https://github.com/bpg/terraform-provider-proxmox/issues/3270)) ([c71600b](https://github.com/bpg/terraform-provider-proxmox/commit/c71600bb4d64001793c9346c8dfbe75271652e6a))
+
 ## [0.120.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.119.0...v0.120.0) (2026-11-02)
 
 
