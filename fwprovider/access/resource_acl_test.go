@@ -249,6 +249,76 @@ func TestAccAclToken(t *testing.T) {
 	})
 }
 
+func TestAccAclExisting(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	userID := fmt.Sprintf("testacl%s@pve", gofakeit.LetterN(8))
+	te.AddTemplateVars(map[string]any{
+		"UserID": userID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		CheckDestroy:             nil,
+		PreCheck: func() {
+			ctx := context.Background()
+
+			err := te.AccessClient().CreateUser(ctx, &access.UserCreateRequestBody{
+				ID:       userID,
+				Password: gofakeit.Password(true, true, true, true, false, 8),
+			})
+			require.NoError(t, err)
+
+			t.Cleanup(func() {
+				err := te.AccessClient().DeleteUser(context.Background(), userID)
+				require.NoError(t, err)
+			})
+
+			// ACL created outside of Terraform.
+			err = te.AccessClient().UpdateACL(ctx, &access.ACLUpdateRequestBody{
+				Path:  "/",
+				Roles: []string{"PVEAuditor"},
+				Users: []string{userID},
+			})
+			require.NoError(t, err)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
+					user_id = "{{.UserID}}"
+					path    = "/"
+					role_id = "PVEAuditor"
+				}`),
+				ExpectError: regexp.MustCompile(`(?s)Unable to Create ACL.*already\s+exists`),
+			},
+			{
+				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
+					user_id = "{{.UserID}}"
+					path    = "/"
+					role_id = "PVEAuditor"
+				}`),
+				ResourceName:       "proxmox_acl.test",
+				ImportState:        true,
+				ImportStateId:      "/?" + userID + "?PVEAuditor",
+				ImportStatePersist: true,
+			},
+			{
+				Config: te.RenderConfig(`resource "proxmox_acl" "test" {
+					user_id = "{{.UserID}}"
+					path    = "/"
+					role_id = "PVEAuditor"
+				}`),
+				Check: test.ResourceAttributes("proxmox_acl.test", map[string]string{
+					"path":      "/",
+					"role_id":   "PVEAuditor",
+					"user_id":   userID,
+					"propagate": "true",
+				}),
+			},
+		},
+	})
+}
+
 func TestAccAclValidators(t *testing.T) {
 	te := test.InitEnvironment(t)
 
