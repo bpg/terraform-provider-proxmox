@@ -37,7 +37,7 @@ This guide documents breaking changes across provider versions and the recommend
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
 
-## v0.122.0
+## v0.121.0
 
 ### `proxmox_acl` no longer adopts an existing ACL
 
@@ -51,8 +51,6 @@ import {
   id = "/?acltest@pve?PVEAuditor"
 }
 ```
-
-## v0.121.0
 
 ### Container `wait_for_ip` waits after start
 
