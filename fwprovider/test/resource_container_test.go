@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -3271,6 +3272,74 @@ func TestAccResourceContainerDiskACLOnlyAtCreate(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerDiskReplicateAtCreate verifies that the rootfs `replicate` value is applied on create:
+// `replicate = false` is sent as `replicate=0`, and the default matches the PVE default of replicating.
+func TestAccResourceContainerDiskReplicateAtCreate(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName": imageFileName,
+	})
+
+	tests := []struct {
+		name      string
+		replicate string
+		expected  bool
+	}{
+		{"explicit false", "replicate = false", false},
+		{"default", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			containerID := 100000 + rand.Intn(99999)
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: te.RenderConfig(fmt.Sprintf(`
+						resource "proxmox_virtual_environment_container" "test_container" {
+							node_name    = "{{.NodeName}}"
+							vm_id        = %d
+							unprivileged = true
+							started      = false
+							disk {
+								datastore_id = "{{.ContainerDatastoreID}}"
+								%s
+							}
+							initialization {
+								hostname = "test-disk-replicate"
+							}
+							operating_system {
+								template_file_id = "local:vztmpl/{{.ImageFileName}}"
+								type             = "alpine"
+							}
+						}`, containerID, tt.replicate)),
+						Check: resource.ComposeTestCheckFunc(
+							ResourceAttributes(accTestContainerName, map[string]string{
+								"disk.0.replicate": strconv.FormatBool(tt.expected),
+							}),
+							func(*terraform.State) error {
+								ctInfo, err := te.NodeClient().Container(containerID).GetContainer(t.Context())
+								require.NoError(t, err, "failed to get container")
+								require.NotNil(t, ctInfo.RootFS, "rootfs should not be nil")
+
+								require.Equal(t, tt.expected, bool(ptr.Or(ctInfo.RootFS.Replicate, true)),
+									"rootfs replicate on the API after create")
+
+								return nil
+							},
+						),
+					},
+				},
+			})
+		})
+	}
+}
+
 // TestAccResourceContainerFeaturesRefresh verifies that `containerRead` refreshes the
 // `features` block from the API. Without the fix for issue #2850, an out-of-band change
 // (e.g. `pct set <vmid> -features nesting=1`) is invisible to `terraform refresh` because
@@ -3654,7 +3723,7 @@ func TestAccResourceContainerNoDiskBlock(t *testing.T) {
 						"disk.0.size":      "4",
 						"disk.0.acl":       "false",
 						"disk.0.quota":     "false",
-						"disk.0.replicate": "false",
+						"disk.0.replicate": "true",
 					}),
 				),
 				ExpectNonEmptyPlan: true,

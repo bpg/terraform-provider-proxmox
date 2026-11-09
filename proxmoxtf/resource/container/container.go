@@ -66,7 +66,7 @@ const (
 	dvDiskACL                           = false
 	dvDiskDatastoreID                   = "local"
 	dvDiskQuota                         = false
-	dvDiskReplicate                     = false
+	dvDiskReplicate                     = true
 	dvDiskSize                          = 4
 	dvFeaturesNesting                   = false
 	dvFeaturesKeyControl                = false
@@ -2083,7 +2083,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		len(diskMountOptions) > 0 ||
 		bool(diskACL) ||
 		bool(diskQuota) ||
-		bool(diskReplicate)) {
+		!bool(diskReplicate)) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
@@ -2100,9 +2100,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 			rootFS.Quota = &diskQuota
 		}
 
-		if diskReplicate {
-			rootFS.Replicate = &diskReplicate
-		}
+		rootFS.Replicate = &diskReplicate
 	}
 
 	networkInterface := d.Get(mkNetworkInterface).([]any)
@@ -2844,7 +2842,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if containerConfig.RootFS != nil {
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
 		disk[mkDiskACL] = containerConfig.RootFS.ACL
-		disk[mkDiskReplicate] = containerConfig.RootFS.Replicate
+		disk[mkDiskReplicate] = bool(ptr.Or(containerConfig.RootFS.Replicate, true))
 		disk[mkDiskQuota] = containerConfig.RootFS.Quota
 		disk[mkDiskDatastoreID] = volumeParts[0]
 		disk[mkDiskPathInDatastore] = containerConfig.RootFS.Volume
@@ -2858,6 +2856,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	} else {
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkDiskDatastoreID] = "local"
+		disk[mkDiskReplicate] = dvDiskReplicate
 		disk[mkDiskSize] = dvDiskSize
 		disk[mkDiskMountOptions] = []string{}
 		disk[mkDiskPathInDatastore] = ""
