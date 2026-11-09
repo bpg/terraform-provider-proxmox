@@ -37,6 +37,16 @@ This guide documents breaking changes across provider versions and the recommend
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
 
+## v0.122.0
+
+### Container rootfs `replicate` defaults to `true`
+
+The `disk.replicate` attribute of `proxmox_virtual_environment_container` now defaults to `true`, as documented and as Proxmox VE does, and `replicate = false` is applied on create. Before, the provider default was `false` but was never sent on create, so new containers were replicated while the state showed `false`, and `replicate = false` only took effect after a later change to the `disk` block.
+
+After upgrading, a container that does not set `replicate` and whose rootfs has `replicate=0` in Proxmox VE (for example after a `disk` change with the old default) plans an update to `replicate = true`. Other containers show no change.
+
+**Action required:** To keep the rootfs out of replication jobs, set `replicate = false` in the `disk` block before applying.
+
 ## v0.121.0
 
 ### `proxmox_acl` no longer adopts an existing ACL
