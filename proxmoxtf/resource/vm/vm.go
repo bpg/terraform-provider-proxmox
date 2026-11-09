@@ -1501,10 +1501,12 @@ func VM() *schema.Resource {
 						Default:     dvStartupUpDelay,
 					},
 					mkStartupDownDelay: {
-						Type:        schema.TypeInt,
-						Description: "A non-negative number defining the delay in seconds before the next VM is shut down",
-						Optional:    true,
-						Default:     dvStartupDownDelay,
+						Type: schema.TypeInt,
+						Description: "A non-negative number defining the shutdown timeout in seconds. When the node stops all guests " +
+							"(e.g. on host shutdown), Proxmox VE waits this long for the VM to shut down " +
+							"before stopping it. It is also the default timeout for a shutdown of this VM that doesn't set one",
+						Optional: true,
+						Default:  dvStartupDownDelay,
 					},
 				},
 			},

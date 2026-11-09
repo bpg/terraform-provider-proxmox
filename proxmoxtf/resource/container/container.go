@@ -1076,10 +1076,12 @@ func Container() *schema.Resource {
 							Default:     dvStartupUpDelay,
 						},
 						mkStartupDownDelay: {
-							Type:        schema.TypeInt,
-							Description: "A non-negative number defining the delay in seconds before the next container is shut down",
-							Optional:    true,
-							Default:     dvStartupDownDelay,
+							Type: schema.TypeInt,
+							Description: "A non-negative number defining the shutdown timeout in seconds. When the node stops all guests " +
+								"(e.g. on host shutdown), Proxmox VE waits this long for the container to shut down " +
+								"before stopping it",
+							Optional: true,
+							Default:  dvStartupDownDelay,
 						},
 					},
 				},
