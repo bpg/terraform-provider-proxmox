@@ -27,7 +27,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-func TestIDGenerator_Sequence(t *testing.T) {
+func TestAccIDGenerator_Sequence(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -119,7 +119,7 @@ func TestIDGenerator_Sequence(t *testing.T) {
 	wg.Wait()
 }
 
-func TestIDGenerator_Random(t *testing.T) {
+func TestAccIDGenerator_Random(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -160,7 +160,7 @@ func TestIDGenerator_Random(t *testing.T) {
 	}
 }
 
-func TestProviderAuth(t *testing.T) {
+func TestAccProviderAuth(t *testing.T) {
 	if utils.GetAnyStringEnv("TF_ACC") == "" {
 		t.Skip("Acceptance tests are disabled")
 	}
