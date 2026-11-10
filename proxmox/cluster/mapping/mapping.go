@@ -8,9 +8,11 @@ package mapping
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
@@ -68,6 +70,10 @@ func (c *Client) Get(ctx context.Context, hmType proxmoxtypes.Type, name string)
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(hmType, url.PathEscape(name)), nil, resBody)
 	if err != nil {
+		if isMappingNotFoundErr(err, name) {
+			err = errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
 		return nil, fmt.Errorf("reading hardware mapping %q: %w", name, err)
 	}
 
@@ -117,4 +123,15 @@ func (c *Client) Update(ctx context.Context, hmType proxmoxtypes.Type, name stri
 	}
 
 	return nil
+}
+
+// isMappingNotFoundErr matches the "mapping '<name>' not found" message that PVE returns (via HTTP 500)
+// when reading a directory, PCI or USB mapping that does not exist.
+func isMappingNotFoundErr(err error, name string) bool {
+	var httpErr *api.HTTPError
+	if !errors.As(err, &httpErr) {
+		return false
+	}
+
+	return strings.Contains(httpErr.Message, fmt.Sprintf("mapping '%s' not found", name))
 }
