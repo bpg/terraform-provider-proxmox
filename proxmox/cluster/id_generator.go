@@ -99,7 +99,8 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 	id, err := retry.NewWithData[*int](
 		retry.OnRetry(func(_ uint, err error) {
 			if strings.Contains(err.Error(), "already exists") && newID != nil {
-				newID, err = g.client.GetNextID(ctx, nil)
+				// skip ahead: nextid reserves nothing, so lowest free may already be handed out
+				newID, err = g.nextFreeIDAfter(ctx, *newID)
 			}
 
 			errs = append(errs, err)
@@ -144,6 +145,28 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 	}
 
 	return *id, nil
+}
+
+// nextFreeIDAfter returns the lowest unused ID above after.
+func (g IDGenerator) nextFreeIDAfter(ctx context.Context, after int) (*int, error) {
+	resources, err := g.client.GetClusterResourcesVM(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	used := make(map[int]struct{}, len(resources))
+	for _, r := range resources {
+		used[r.VMID] = struct{}{}
+	}
+
+	id := after + 1
+	for {
+		if _, ok := used[id]; !ok {
+			return &id, nil
+		}
+
+		id++
+	}
 }
 
 func nextSequentialID(seqFName string) (*int, error) {
