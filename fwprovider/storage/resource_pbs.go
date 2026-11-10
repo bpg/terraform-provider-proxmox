@@ -184,9 +184,7 @@ func (r *pbsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			Computed:    true,
 			Sensitive:   true,
 			PlanModifiers: []planmodifier.String{
-				// Keep the prior value on in-place updates. fromAPI never sets this
-				// field (the API does not return the key material on read), so without
-				// UseStateForUnknown the planned value stays unknown after apply (#3277).
+				// PVE returns the key only on create, so keep the prior value on update.
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
