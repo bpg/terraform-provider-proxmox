@@ -8,6 +8,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.4
 	github.com/avast/retry-go/v5 v5.1.1
 	github.com/brianvoe/gofakeit/v7 v7.18.1
+	github.com/diskfs/go-diskfs v1.9.4
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-querystring v1.2.0
 	github.com/google/uuid v1.6.0
@@ -43,6 +44,7 @@ require (
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.10.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
+	github.com/djherbis/times v1.6.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/hashicorp/cli v1.1.7 // indirect
