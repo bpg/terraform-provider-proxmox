@@ -12,10 +12,13 @@
 package subnet_test
 
 import (
+	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
@@ -938,6 +941,149 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				),
 			},
 		}},
+		{"dhcp dns server outside the subnet with dnsmasq dhcp", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_sdn_zone_simple" "dns_outside_zone" {
+					id    = "dnsoutz"
+					nodes = ["{{.NodeName}}"]
+					dhcp  = "dnsmasq"
+					ipam  = "pve"
+				}
+
+				resource "proxmox_sdn_vnet" "dns_outside_vnet" {
+					id     = "dnsoutv"
+					zone   = proxmox_sdn_zone_simple.dns_outside_zone.id
+					depends_on = [
+						proxmox_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_sdn_subnet" "dns_outside_subnet" {
+					cidr            = "10.100.0.0/20"
+					vnet            = proxmox_sdn_vnet.dns_outside_vnet.id
+					gateway         = "10.100.0.1"
+					snat            = true
+					dhcp_dns_server = "9.9.9.9"
+					dhcp_range = {
+						start_address = "10.100.0.10"
+						end_address   = "10.100.15.250"
+					}
+					depends_on = [
+						proxmox_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_sdn_applier" "dns_outside_applier" {
+					depends_on = [
+						proxmox_sdn_zone_simple.dns_outside_zone,
+						proxmox_sdn_vnet.dns_outside_vnet,
+						proxmox_sdn_subnet.dns_outside_subnet
+					]
+				}
+
+				resource "proxmox_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_sdn_subnet.dns_outside_subnet", map[string]string{
+						"cidr":            "10.100.0.0/20",
+						"gateway":         "10.100.0.1",
+						"dhcp_dns_server": "9\\.9\\.9\\.9",
+					}),
+					checkSubnetDHCPDNSServer(te, "dnsoutv", "dnsoutz-10.100.0.0-20", "9.9.9.9"),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_sdn_zone_simple" "dns_outside_zone" {
+					id    = "dnsoutz"
+					nodes = ["{{.NodeName}}"]
+					dhcp  = "dnsmasq"
+					ipam  = "pve"
+				}
+
+				resource "proxmox_sdn_vnet" "dns_outside_vnet" {
+					id     = "dnsoutv"
+					zone   = proxmox_sdn_zone_simple.dns_outside_zone.id
+					depends_on = [
+						proxmox_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_sdn_subnet" "dns_outside_subnet" {
+					cidr            = "10.100.0.0/20"
+					vnet            = proxmox_sdn_vnet.dns_outside_vnet.id
+					gateway         = "10.100.0.1"
+					snat            = true
+					dhcp_dns_server = "1.1.1.1"
+					dhcp_range = {
+						start_address = "10.100.0.10"
+						end_address   = "10.100.15.250"
+					}
+					depends_on = [
+						proxmox_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_sdn_applier" "dns_outside_applier" {
+					depends_on = [
+						proxmox_sdn_zone_simple.dns_outside_zone,
+						proxmox_sdn_vnet.dns_outside_vnet,
+						proxmox_sdn_subnet.dns_outside_subnet
+					]
+				}
+
+				resource "proxmox_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_sdn_subnet.dns_outside_subnet", map[string]string{
+						"cidr":            "10.100.0.0/20",
+						"gateway":         "10.100.0.1",
+						"dhcp_dns_server": "1\\.1\\.1\\.1",
+					}),
+					checkSubnetDHCPDNSServer(te, "dnsoutv", "dnsoutz-10.100.0.0-20", "1.1.1.1"),
+				),
+			},
+			{
+				ResourceName:      "proxmox_sdn_subnet.dns_outside_subnet",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     "dnsoutv/dnsoutz-10.100.0.0-20",
+			},
+		}},
+		{"dhcp dns server outside the subnet minimal", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_sdn_zone_simple" "dns_minimal_zone" {
+				id    = "dnsminz"
+				nodes = ["{{.NodeName}}"]
+			}
+
+			resource "proxmox_sdn_vnet" "dns_minimal_vnet" {
+				id     = "dnsminv"
+				zone   = proxmox_sdn_zone_simple.dns_minimal_zone.id
+				depends_on = [
+					proxmox_sdn_applier.finalizer
+				]
+			}
+
+			resource "proxmox_sdn_subnet" "dns_minimal_subnet" {
+				cidr            = "10.60.0.0/24"
+				vnet            = proxmox_sdn_vnet.dns_minimal_vnet.id
+				dhcp_dns_server = "192.168.1.53"
+				depends_on = [
+					proxmox_sdn_applier.finalizer
+				]
+			}
+
+			resource "proxmox_sdn_applier" "dns_minimal_applier" {
+				depends_on = [
+					proxmox_sdn_zone_simple.dns_minimal_zone,
+					proxmox_sdn_vnet.dns_minimal_vnet,
+					proxmox_sdn_subnet.dns_minimal_subnet
+				]
+			}
+
+			resource "proxmox_sdn_applier" "finalizer" {}`),
+			Check: checkSubnetDHCPDNSServer(te, "dnsminv", "dnsminz-10.60.0.0-24", "192.168.1.53"),
+		}}},
 	}
 
 	for _, tt := range tests {
@@ -947,6 +1093,21 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				Steps:                    tt.steps,
 			})
 		})
+	}
+}
+
+func checkSubnetDHCPDNSServer(te *test.Environment, vnetID, subnetID, expected string) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		subnet, err := te.ClusterClient().SDNVnets(vnetID).Subnets().GetSubnet(context.Background(), subnetID)
+		if err != nil {
+			return fmt.Errorf("failed to read subnet %s: %w", subnetID, err)
+		}
+
+		if subnet.DHCPDNSServer == nil || *subnet.DHCPDNSServer != expected {
+			return fmt.Errorf("expected dhcp-dns-server %q on %s, got %v", expected, subnetID, subnet.DHCPDNSServer)
+		}
+
+		return nil
 	}
 }
 
@@ -1021,26 +1182,6 @@ func TestAccResourceSDNSubnetValidation(t *testing.T) {
 				}
 			}`,
 			"End address 192.168.1.20 must be within the subnet 10.50.0.0/24",
-		},
-		{
-			"dhcp dns server outside subnet",
-			`
-			resource "proxmox_sdn_zone_simple" "dhcp_dns_zone" {
-				id    = "dhcpdnsz"
-				nodes = ["{{.NodeName}}"]
-			}
-
-			resource "proxmox_sdn_vnet" "dhcp_dns_vnet" {
-				id     = "dhcpdnsv"
-				zone   = proxmox_sdn_zone_simple.dhcp_dns_zone.id
-			}
-
-			resource "proxmox_sdn_subnet" "dhcp_dns_subnet" {
-				cidr            = "10.60.0.0/24"
-				vnet            = proxmox_sdn_vnet.dhcp_dns_vnet.id
-				dhcp_dns_server = "192.168.1.53"
-			}`,
-			"192.168.1.53 must be within the subnet 10.60.0.0/24",
 		},
 		{
 			"dhcp range start after end",
