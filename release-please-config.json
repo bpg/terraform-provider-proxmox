@@ -21,7 +21,8 @@
                 "examples/guides/cloud-init/custom/provider.tf",
                 "examples/guides/cloud-init/native/provider.tf",
                 "examples/guides/vm-lifecycle/provider.tf",
-                "docs/guides/upgrade.md"
+                "docs/guides/upgrade.md",
+                "docs/index.md"
             ],
             "changelog-sections": [
                 {
