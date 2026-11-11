@@ -257,6 +257,17 @@ The `mount_point.volume` attribute accepts three forms:
 - `mount_point` - (Optional) An additional volume mount or host bind mount
     (multiple blocks supported). Use this for data volumes, shared
     directories, or attaching pre-existing PVE volumes.
+
+    -> Mount points are positional: the first block is `mp0` in Proxmox VE, the
+    second `mp1`, and so on. Appending a block, removing the last block, or
+    reconfiguring an existing one is applied in place, and a running container
+    is restarted. Removing or inserting a block before existing ones recreates
+    the container, as does changing the `size` of an existing mount point or
+    pointing its `volume` at a different datastore or host path. Changing
+    `volume` from one volume ID to another on the same datastore is not
+    detected. A removed volume mount stays on the datastore as an unused
+    volume; bind and device mounts are just dropped.
+
     - `acl` (Optional) Explicitly enable or disable ACL support.
     - `backup` (Optional) Whether to include the mount point in backups (only
         used for volume mount points, defaults to `false`).
