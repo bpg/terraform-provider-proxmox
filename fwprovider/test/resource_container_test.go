@@ -3120,7 +3120,6 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 
 // TestAccResourceContainerCPULimitWithoutCores covers a container whose configuration sets cpulimit but not cores.
 // PVE then fills cpus in the status response from cpulimit and returns it as a string, which the read must accept.
-// The provider always sends cores, so the test removes it through the API.
 func TestAccResourceContainerCPULimitWithoutCores(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
@@ -3160,29 +3159,237 @@ func TestAccResourceContainerCPULimitWithoutCores(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: config,
-				Check: ResourceAttributes(accTestContainerName, map[string]string{
-					"cpu.0.cores": "1",
-					"cpu.0.limit": "2",
-				}),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"cpu.0.cores": "^0$",
+						"cpu.0.limit": "^2$",
+					}),
+					checkContainerCores(te, accTestContainerID, 0),
+					func(*terraform.State) error {
+						status, err := te.NodeClient().Container(accTestContainerID).GetContainerStatus(t.Context())
+						require.NoError(t, err, "failed to get container status")
+						require.NotNil(t, status.CPUCount)
+						require.InDelta(t, 2, float64(*status.CPUCount), 1e-9)
+
+						return nil
+					},
+				),
 			},
 			{
-				PreConfig: func() {
-					ct := te.NodeClient().Container(accTestContainerID)
-
-					err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{Delete: []string{"cores"}})
-					require.NoError(t, err, "failed to remove cores")
-
-					status, err := ct.GetContainerStatus(t.Context())
-					require.NoError(t, err, "failed to get container status")
-					require.NotNil(t, status.CPUCount)
-					require.InDelta(t, 2, float64(*status.CPUCount), 1e-9)
-				},
-				// The refresh must read the container. The read reports a missing cores as 1, so the plan is empty.
+				// The refresh must read the container, and a missing cores reads back as 0, so the plan is empty.
 				Config:   config,
 				PlanOnly: true,
 			},
 		},
 	})
+}
+
+// TestAccResourceContainerCPUCores covers a container without cores, which Proxmox VE lets use every host CPU. A cores
+// left out of the configuration is never sent and keeps its current value; cores = 0 removes it.
+func TestAccResourceContainerCPUCores(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	// config renders the container with the given cpu block, or none.
+	config := func(cpu string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			started      = false
+			unprivileged = true
+			%s
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-cpu-cores"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`, cpu))
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config(`cpu { limit = 2 }`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{"cpu.0.cores": "^0$", "cpu.0.limit": "^2$"}),
+					checkContainerCores(te, accTestContainerID, 0),
+				),
+			},
+			{
+				// A change to another CPU setting must not add cores.
+				Config: config(`cpu { limit = 3 }`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{"cpu.0.cores": "^0$", "cpu.0.limit": "^3$"}),
+					checkContainerCores(te, accTestContainerID, 0),
+				),
+			},
+			{
+				Config: config("cpu {\ncores = 2\nlimit = 3\n}"),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{"cpu.0.cores": "^2$"}),
+					checkContainerCores(te, accTestContainerID, 2),
+				),
+			},
+			{
+				// Left out, cores keeps its current value.
+				Config: config(`cpu { limit = 3 }`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
+				Check: checkContainerCores(te, accTestContainerID, 2),
+			},
+			{
+				// Removing the whole block resets limit, as before, and keeps cores.
+				Config: config(""),
+				Check:  checkContainerCores(te, accTestContainerID, 2),
+			},
+			{
+				Config: config("cpu {\ncores = 0\nlimit = 3\n}"),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{"cpu.0.cores": "^0$"}),
+					checkContainerCores(te, accTestContainerID, 0),
+				),
+			},
+			{
+				// An import records a missing cores as 0, matching the configuration.
+				ResourceName:  accTestContainerName,
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, accTestContainerID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					if got := states[0].Attributes["cpu.0.cores"]; got != "0" {
+						return fmt.Errorf("expected imported cpu.0.cores 0, got %q", got)
+					}
+
+					return nil
+				},
+			},
+		},
+	})
+}
+
+// TestAccResourceContainerCloneCPUCores covers cores on clones: a clone that leaves cores out keeps the template's,
+// even when it sets other CPU settings, and cores = 0 removes it.
+func TestAccResourceContainerCloneCPUCores(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDKeep := 100000 + rand.Intn(99999)
+	accTestContainerIDUnset := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":        imageFileName,
+		"TestContainerID":      accTestContainerID,
+		"TestContainerIDKeep":  accTestContainerIDKeep,
+		"TestContainerIDUnset": accTestContainerIDUnset,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name    = "{{.NodeName}}"
+					vm_id        = {{.TestContainerID}}
+					template     = true
+					unprivileged = true
+					cpu {
+						cores = 2
+					}
+					disk {
+						datastore_id = "{{.ContainerDatastoreID}}"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-clone-cpu-cores"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}
+
+				resource "proxmox_virtual_environment_container" "clone_keep" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerIDKeep}}
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_container.test_container.vm_id
+					}
+					cpu {
+						limit = 1
+					}
+				}
+
+				resource "proxmox_virtual_environment_container" "clone_unset" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerIDUnset}}
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_container.test_container.vm_id
+					}
+					cpu {
+						cores = 0
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.clone_keep", map[string]string{
+						"cpu.0.cores": "^2$",
+						"cpu.0.limit": "^1$",
+					}),
+					ResourceAttributes("proxmox_virtual_environment_container.clone_unset", map[string]string{
+						"cpu.0.cores": "^0$",
+					}),
+					checkContainerCores(te, accTestContainerIDKeep, 2),
+					checkContainerCores(te, accTestContainerIDUnset, 0),
+				),
+			},
+		},
+	})
+}
+
+// checkContainerCores checks the container's cores in Proxmox VE; 0 means it isn't set.
+func checkContainerCores(te *Environment, vmID int, want int) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		ct, err := te.NodeClient().Container(vmID).GetContainer(context.Background())
+		if err != nil {
+			return fmt.Errorf("reading container %d: %w", vmID, err)
+		}
+
+		got := ptr.Or(ct.CPUCores, 0)
+		if got != want {
+			return fmt.Errorf("container %d: expected cores %d (0 = unset), got %d", vmID, want, got)
+		}
+
+		return nil
+	}
 }
 
 // TestAccResourceContainerHostManaged covers create-with-true and the true→false toggle on update.

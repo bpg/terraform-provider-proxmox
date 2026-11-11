@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -58,7 +59,7 @@ const (
 	dvInitializationUserAccountPassword = ""
 	dvInitializationEntrypoint          = ""
 	dvCPUArchitecture                   = "amd64"
-	dvCPUCores                          = 1
+	dvCPUCores                          = 0
 	dvCPULimit                          = float64(0)
 	dvCPUUnits                          = 0
 	dvDescription                       = ""
@@ -349,11 +350,12 @@ func Container() *schema.Resource {
 							ValidateDiagFunc: CPUArchitectureValidator(),
 						},
 						mkCPUCores: {
-							Type:             schema.TypeInt,
-							Description:      "The number of CPU cores",
+							Type: schema.TypeInt,
+							Description: "The number of CPU cores. When unset, the container can use all host CPUs; " +
+								"0 removes a value set before",
 							Optional:         true,
-							Default:          dvCPUCores,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 128)),
+							Computed:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 128)),
 						},
 						mkCPULimit: {
 							Type:        schema.TypeFloat,
@@ -1307,6 +1309,22 @@ func containerCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	return containerCreateCustom(ctx, d, m)
 }
 
+// setCPUCores sends a positive cores, and removes cores when the configuration sets 0. Cores is computed, so a value
+// left out of the configuration, or a removed cpu block, also reads as 0 or keeps the state's value; neither may
+// remove it.
+func setCPUCores(d *schema.ResourceData, body *containers.UpdateRequestBody, cores int) {
+	if cores > 0 {
+		body.CPUCores = &cores
+
+		return
+	}
+
+	v, diags := d.GetRawConfigAt(cty.GetAttrPath(mkCPU).IndexInt(0).GetAttr(mkCPUCores))
+	if !diags.HasError() && v.IsKnown() && !v.IsNull() && v.Equals(cty.Zero).True() {
+		body.Delete = append(body.Delete, "cores")
+	}
+}
+
 func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	cloneTimeoutSec := d.Get(mkTimeoutClone).(int)
 
@@ -1455,7 +1473,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
 
 		updateBody.CPUArchitecture = &cpuArchitecture
-		updateBody.CPUCores = &cpuCores
+
+		setCPUCores(d, updateBody, cpuCores)
 
 		if cpuLimit > 0 {
 			updateBody.CPULimit = &cpuLimit
@@ -2224,7 +2243,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
-		CPUCores:             &cpuCores,
 		CPULimit:             &cpuLimit,
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
@@ -2243,6 +2261,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		TTY:                  &consoleTTYCount,
 		Unprivileged:         &unprivileged,
 		VMID:                 &vmID,
+	}
+
+	if cpuCores > 0 {
+		createBody.CPUCores = &cpuCores
 	}
 
 	if cpuUnits > 0 {
@@ -2898,8 +2920,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if containerConfig.CPUCores != nil {
 		cpu[mkCPUCores] = *containerConfig.CPUCores
 	} else {
-		// Default value of "cores" is "1" according to the API documentation.
-		cpu[mkCPUCores] = 1
+		// Without cores, Proxmox lets the container use all host CPUs.
+		cpu[mkCPUCores] = 0
 	}
 
 	if containerConfig.CPULimit != nil {
@@ -2923,8 +2945,9 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentCPU) > 0 ||
+		// Not cores: it's computed, so a configuration without the block keeps it. Containers created before
+		// cores became computed have cores = 1 and would otherwise plan to remove the block on every run.
 		cpu[mkCPUArchitecture] != dvCPUArchitecture ||
-		cpu[mkCPUCores] != dvCPUCores ||
 		cpu[mkCPULimit] != dvCPULimit ||
 		cpu[mkCPUUnits] != dvCPUUnits {
 		err := d.Set(mkCPU, []any{cpu})
@@ -3773,7 +3796,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
 
 		updateBody.CPUArchitecture = &cpuArchitecture
-		updateBody.CPUCores = &cpuCores
+
+		setCPUCores(d, &updateBody, cpuCores)
 
 		if cpuLimit > 0 {
 			updateBody.CPULimit = &cpuLimit

@@ -47,6 +47,14 @@ After upgrading, a container that does not set `replicate` and whose rootfs has 
 
 **Action required:** To keep the rootfs out of replication jobs, set `replicate = false` in the `disk` block before applying.
 
+### Container `cpu.cores` can be left unset
+
+The `cpu.cores` attribute of `proxmox_virtual_environment_container` no longer defaults to `1`. Without `cores`, Proxmox VE lets a container use all host CPUs, and `cpu.limit` can cap their use. The provider now sends `cores` only when it is set, records a missing `cores` as `0`, and keeps the current value when `cores` is left out of the configuration. Set `cores = 0` to remove it. Before, `cores = 1` was sent on create, clone and every change to the `cpu` block, so the next CPU change pinned a container that had no `cores` to one core.
+
+Existing containers keep their `cores`, and their plans show no change. A new container created without `cores`, or a clone that leaves it out, no longer gets one core: a new container can use all host CPUs, and a clone keeps the source's `cores`.
+
+**Action required:** To keep new containers on one core, set `cores = 1` in their `cpu` block.
+
 ## v0.121.0
 
 ### `proxmox_acl` no longer adopts an existing ACL

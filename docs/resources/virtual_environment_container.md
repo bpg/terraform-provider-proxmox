@@ -199,7 +199,9 @@ The `mount_point.volume` attribute accepts three forms:
         - `arm64` - ARM (64-bit).
         - `armhf` - ARM (32 bit).
         - `i386` - x86 (32 bit).
-    - `cores` - (Optional) The number of CPU cores (defaults to `1`).
+    - `cores` - (Optional) The number of CPU cores (between `1` and `128`). When unset,
+        Proxmox lets the container use all host CPUs, and `limit` can cap their use. Leaving it out
+        keeps the current value; set `0` to remove it.
     - `limit` - (Optional) Limit of CPU usage. Value `0` indicates no limit (defaults to `0`).
     - `units` - (Optional) The CPU units (between `1` and `500000`). When unset,
         Proxmox applies its own default.
