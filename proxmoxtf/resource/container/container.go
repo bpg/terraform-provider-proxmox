@@ -2483,9 +2483,9 @@ func mountPointVolumeDiffSuppress(_, oldVal, newVal string, _ *schema.ResourceDa
 }
 
 // containerMountPointForceNew flags mount point changes that require recreating the container.
-// Adding, removing and reconfiguring mount points is applied in place by containerUpdate, so only
+// Appending, removing trailing and reconfiguring mount points is applied in place by containerUpdate, so only
 // mount points present on both sides of the diff are considered: repointing an existing mount
-// point to a different volume, or changing its size, cannot be done in place.
+// point to a different volume, changing its size, or shifting it to another index cannot be done in place.
 //
 // The replacement is flagged on the specific nested attribute rather than on the mkMountPoint
 // block: a block-level ForceNew only propagates to the list count, which is unchanged when an
@@ -2519,6 +2519,14 @@ func containerMountPointForceNew(_ context.Context, d *schema.ResourceDiff, _ an
 
 		if !mountPointSizeEqual(oldSize, newSize) {
 			return forceNewMountPointAttr(d, i, mkMountPointSize)
+		}
+
+		oldPath, _ := oldMountPoint[mkMountPointPath].(string)
+		newPath, _ := newMountPoint[mkMountPointPath].(string)
+
+		// mount_point.N maps to mpN: an add or remove that shifts a surviving block would remount its volume elsewhere
+		if len(oldList) != len(newList) && strings.TrimPrefix(oldPath, "/") != strings.TrimPrefix(newPath, "/") {
+			return forceNewMountPointAttr(d, i, mkMountPointPath)
 		}
 	}
 

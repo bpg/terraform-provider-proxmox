@@ -514,6 +514,66 @@ func TestContainerMountPointForceNew(t *testing.T) {
 			},
 			expectRequiresNew: false,
 		},
+		{
+			name: "removing the last of three mount points is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/b"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-3", mkMountPointPath: "/mnt/c"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/a"},
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/b"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "removing a middle mount point forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/b"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-3", mkMountPointPath: "/mnt/c"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/a"},
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/c"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "removing the first of two mount points forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/b"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/b"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "inserting a mount point before an existing one forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/c"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/a"},
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/b"},
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/c"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "changing the path of an existing mount point is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/b"},
+			},
+			expectRequiresNew: false,
+		},
 	}
 
 	for _, tt := range tests {
