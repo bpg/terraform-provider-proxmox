@@ -224,20 +224,6 @@ func Schema() map[string]*schema.Schema {
 						Type:        schema.TypeList,
 						Description: "The speed limits",
 						Optional:    true,
-						DefaultFunc: func() (any, error) {
-							return []any{
-								map[string]any{
-									mkDiskIopsRead:            0,
-									mkDiskIopsWrite:           0,
-									mkDiskIopsReadBurstable:   0,
-									mkDiskIopsWriteBurstable:  0,
-									mkDiskSpeedRead:           0,
-									mkDiskSpeedReadBurstable:  0,
-									mkDiskSpeedWrite:          0,
-									mkDiskSpeedWriteBurstable: 0,
-								},
-							}, nil
-						},
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								mkDiskIopsRead: {

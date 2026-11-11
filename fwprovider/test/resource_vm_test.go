@@ -335,6 +335,47 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		// The agent, cdrom and watchdog blocks have no schema default; the provider
+		// falls back to its own defaults when they are left out. Leaving all three
+		// out must create, update and refresh cleanly, and never put them in state.
+		{"update VM without agent, cdrom or watchdog blocks", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_no_optional_blocks" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					memory {
+						dedicated = 1024
+					}
+				}`),
+				Check: NoResourceAttributesSet("proxmox_virtual_environment_vm.test_no_optional_blocks", []string{
+					"agent.#", "cdrom.#", "watchdog.#",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_no_optional_blocks" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					memory {
+						dedicated = 2048
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_no_optional_blocks", map[string]string{
+						"memory.0.dedicated": "2048",
+					}),
+					NoResourceAttributesSet("proxmox_virtual_environment_vm.test_no_optional_blocks", []string{
+						"agent.#", "cdrom.#", "watchdog.#",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		{"create vga block", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

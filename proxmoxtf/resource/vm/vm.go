@@ -381,16 +381,6 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The QEMU agent configuration",
 			Optional:    true,
-			DefaultFunc: func() (any, error) {
-				return []any{
-					map[string]any{
-						mkAgentEnabled: dvAgentEnabled,
-						mkAgentTimeout: dvAgentTimeout,
-						mkAgentTrim:    dvAgentTrim,
-						mkAgentType:    dvAgentType,
-					},
-				}, nil
-			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkAgentEnabled: {
@@ -551,14 +541,6 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The CDROM drive",
 			Optional:    true,
-			DefaultFunc: func() (any, error) {
-				return []any{
-					map[string]any{
-						mkCDROMFileID:    dvCDROMFileID,
-						mkCDROMInterface: dvCDROMInterface,
-					},
-				}, nil
-			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkCDROMEnabled: {
@@ -1712,15 +1694,6 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The watchdog configuration",
 			Optional:    true,
-			DefaultFunc: func() (any, error) {
-				return []any{
-					map[string]any{
-						mkWatchdogAction:  dvWatchdogAction,
-						mkWatchdogEnabled: false,
-						mkWatchdogModel:   dvWatchdogModel,
-					},
-				}, nil
-			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkWatchdogAction: {
@@ -3064,13 +3037,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 
 	acpi := types.CustomBool(d.Get(mkACPI).(bool))
 
-	agentBlock, err := structure.GetSchemaBlock(
-		resource,
-		d,
-		[]string{mkAgent},
-		0,
-		true,
-	)
+	agentBlock, err := getBlockOrDefault(resource, d, mkAgent)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3340,13 +3307,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 
 	var watchdogObject *vms.CustomWatchdogDevice
 
-	watchdogBlock, err := structure.GetSchemaBlock(
-		resource,
-		d,
-		[]string{mkWatchdog},
-		0,
-		true,
-	)
+	watchdogBlock, err := getBlockOrDefault(resource, d, mkWatchdog)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -6376,13 +6337,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		mkAgent+".0."+mkAgentTrim,
 		mkAgent+".0."+mkAgentType,
 	) {
-		agentBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{mkAgent},
-			0,
-			true,
-		)
+		agentBlock, err := getBlockOrDefault(resource, d, mkAgent)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -6446,13 +6401,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	// Prepare the new CD-ROM configuration.
 
 	if d.HasChange(mkCDROM) {
-		cdromBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{mkCDROM},
-			0,
-			true,
-		)
+		cdromBlock, err := getBlockOrDefault(resource, d, mkCDROM)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -7048,13 +6997,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	// Prepare the new watchdog configuration.
 	if d.HasChange(mkWatchdog) {
-		watchdogBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{mkWatchdog},
-			0,
-			true,
-		)
+		watchdogBlock, err := getBlockOrDefault(resource, d, mkWatchdog)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -7701,13 +7644,7 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 func getAgentTimeout(d *schema.ResourceData) (time.Duration, error) {
 	resource := VM()
 
-	agentBlock, err := structure.GetSchemaBlock(
-		resource,
-		d,
-		[]string{mkAgent},
-		0,
-		true,
-	)
+	agentBlock, err := getBlockOrDefault(resource, d, mkAgent)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get agent block: %w", err)
 	}
@@ -7725,13 +7662,7 @@ func getAgentTimeout(d *schema.ResourceData) (time.Duration, error) {
 func getAgentWaitForIPConfig(d *schema.ResourceData) *vms.WaitForIPConfig {
 	resource := VM()
 
-	agentBlock, err := structure.GetSchemaBlock(
-		resource,
-		d,
-		[]string{mkAgent},
-		0,
-		true,
-	)
+	agentBlock, err := getBlockOrDefault(resource, d, mkAgent)
 	if err != nil {
 		return nil
 	}
@@ -8048,4 +7979,71 @@ func waitForVMOnNode(ctx context.Context, client proxmox.Client, vmID int, targe
 	}
 
 	return fmt.Errorf("VM %d did not migrate to node %s within timeout (last seen on %s)", vmID, targetNode, lastNodeStr)
+}
+
+// Defaults the provider assumes for the agent, cdrom and watchdog blocks when
+// they are absent from configuration.
+//
+// These used to be DefaultFuncs on the block schemas. Terraform never applies
+// a DefaultFunc to a block, so they only ever mattered through
+// getBlockOrDefault below -- but Pulumi's Terraform bridge does apply them,
+// which gave every Pulumi-managed VM a block in its inputs that the read never
+// reports back, and so a permanent diff. Keeping them out of the schema makes
+// both tools see the same thing.
+func agentBlockDefault() []any {
+	return []any{
+		map[string]any{
+			mkAgentEnabled: dvAgentEnabled,
+			mkAgentTimeout: dvAgentTimeout,
+			mkAgentTrim:    dvAgentTrim,
+			mkAgentType:    dvAgentType,
+		},
+	}
+}
+
+func cdromBlockDefault() []any {
+	return []any{
+		map[string]any{
+			mkCDROMFileID:    dvCDROMFileID,
+			mkCDROMInterface: dvCDROMInterface,
+		},
+	}
+}
+
+func watchdogBlockDefault() []any {
+	return []any{
+		map[string]any{
+			mkWatchdogAction:  dvWatchdogAction,
+			mkWatchdogEnabled: false,
+			mkWatchdogModel:   dvWatchdogModel,
+		},
+	}
+}
+
+// getBlockOrDefault returns the first element of the block at key, or the
+// block's default when configuration leaves it out.
+func getBlockOrDefault(r *schema.Resource, d *schema.ResourceData, key string) (map[string]any, error) {
+	block, err := structure.GetSchemaBlock(r, d, []string{key}, 0, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(block) > 0 {
+		return block, nil
+	}
+
+	var def []any
+
+	switch key {
+	case mkAgent:
+		def = agentBlockDefault()
+	case mkCDROM:
+		def = cdromBlockDefault()
+	case mkWatchdog:
+		def = watchdogBlockDefault()
+	default:
+		return block, nil
+	}
+
+	return def[0].(map[string]any), nil
 }
