@@ -3120,7 +3120,6 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 
 // TestAccResourceContainerCPULimitWithoutCores covers a container whose configuration sets cpulimit but not cores.
 // PVE then fills cpus in the status response from cpulimit and returns it as a string, which the read must accept.
-// The provider always sends cores, so the test removes it through the API.
 func TestAccResourceContainerCPULimitWithoutCores(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
@@ -3161,25 +3160,175 @@ func TestAccResourceContainerCPULimitWithoutCores(t *testing.T) {
 			{
 				Config: config,
 				Check: ResourceAttributes(accTestContainerName, map[string]string{
-					"cpu.0.cores": "1",
-					"cpu.0.limit": "2",
+					"cpu.0.cores": "^0$",
+					"cpu.0.limit": "^2$",
 				}),
 			},
 			{
 				PreConfig: func() {
 					ct := te.NodeClient().Container(accTestContainerID)
 
-					err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{Delete: []string{"cores"}})
-					require.NoError(t, err, "failed to remove cores")
-
 					status, err := ct.GetContainerStatus(t.Context())
 					require.NoError(t, err, "failed to get container status")
 					require.NotNil(t, status.CPUCount)
 					require.InDelta(t, 2, float64(*status.CPUCount), 1e-9)
 				},
-				// The refresh must read the container. The read reports a missing cores as 1, so the plan is empty.
+				// The refresh must read the container.
 				Config:   config,
 				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerCPUCoresUnset(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := func(cpu string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			started      = false
+			unprivileged = true
+			` + cpu + `
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-cpu-cores-unset"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`)
+	}
+
+	ct := te.NodeClient().Container(accTestContainerID)
+
+	checkCores := func(want *int) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			cfg, err := ct.GetContainer(t.Context())
+			if err != nil {
+				return fmt.Errorf("failed to get container: %w", err)
+			}
+
+			switch {
+			case want == nil && cfg.CPUCores != nil:
+				return fmt.Errorf("expected no cores in the container config, got %d", *cfg.CPUCores)
+			case want != nil && cfg.CPUCores == nil:
+				return fmt.Errorf("expected cores %d in the container config, got none", *want)
+			case want != nil && *cfg.CPUCores != *want:
+				return fmt.Errorf("expected cores %d in the container config, got %d", *want, *cfg.CPUCores)
+			}
+
+			return nil
+		}
+	}
+
+	setCores := func(cores int) func() {
+		return func() {
+			err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{CPUCores: &cores})
+			require.NoError(t, err, "failed to set cores")
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config(`cpu {
+					limit = 2
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCores(nil),
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"cpu.0.cores": "^0$",
+						"cpu.0.limit": "^2$",
+					}),
+				),
+			},
+			{
+				Config: config(`cpu {
+					limit = 3
+				}`),
+				Check: checkCores(nil),
+			},
+			{
+				ResourceName:  accTestContainerName,
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, accTestContainerID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+					if attrs["cpu.0.cores"] != "0" || attrs["cpu.0.limit"] != "3" {
+						return fmt.Errorf("expected cores=0 limit=3 after import, got cores=%q limit=%q",
+							attrs["cpu.0.cores"], attrs["cpu.0.limit"])
+					}
+
+					return nil
+				},
+			},
+			{
+				Config: config(`cpu {
+					cores = 2
+					limit = 3
+				}`),
+				Check: checkCores(new(2)),
+			},
+			{
+				Config: config(`cpu {
+					limit = 3
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCores(new(2)),
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"cpu.0.cores": "^2$",
+					}),
+				),
+			},
+			{
+				Config: config(`cpu {
+					cores = 256
+					limit = 3
+				}`),
+				Check: checkCores(new(256)),
+			},
+			{
+				Config: config(`cpu {
+					cores = 0
+					limit = 3
+				}`),
+				Check: checkCores(nil),
+			},
+			{
+				Config: config(""),
+				Check:  checkCores(nil),
+			},
+			{
+				// containers created before cores became optional have cores=1 and no cpu block
+				PreConfig: setCores(1),
+				Config:    config(""),
+				PlanOnly:  true,
+			},
+			{
+				PreConfig: setCores(4),
+				Config:    config(""),
+				Check:     checkCores(nil),
 			},
 		},
 	})

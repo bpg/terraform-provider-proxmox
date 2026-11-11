@@ -47,6 +47,23 @@ After upgrading, a container that does not set `replicate` and whose rootfs has 
 
 **Action required:** To keep the rootfs out of replication jobs, set `replicate = false` in the `disk` block before applying.
 
+### Container `cpu.cores` no longer defaults to `1`
+
+The `cpu.cores` attribute of `proxmox_virtual_environment_container` no longer defaults to `1`. A container created without `cores` now has no `cores` setting in Proxmox VE and can use all host cores, which is the Proxmox VE default. Before, the provider always sent `cores`, as `1` when it was not configured, so a container limited by `cpu.limit` alone could not be described, and any change to its `cpu` block pinned it to one core.
+
+Existing containers keep their current `cores` value and show no change after upgrading. Removing `cores` from the configuration no longer resets it to `1`: the container keeps its current value. Set `cores = 0` to remove the setting from an existing container. The upper bound is now `8192`, as in Proxmox VE.
+
+**Action required:** To keep new containers on a single core, set it explicitly:
+
+```terraform
+resource "proxmox_virtual_environment_container" "example" {
+  # ...
+  cpu {
+    cores = 1
+  }
+}
+```
+
 ## v0.121.0
 
 ### `proxmox_acl` no longer adopts an existing ACL

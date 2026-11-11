@@ -58,7 +58,7 @@ const (
 	dvInitializationUserAccountPassword = ""
 	dvInitializationEntrypoint          = ""
 	dvCPUArchitecture                   = "amd64"
-	dvCPUCores                          = 1
+	dvCPUCores                          = 0
 	dvCPULimit                          = float64(0)
 	dvCPUUnits                          = 0
 	dvDescription                       = ""
@@ -352,8 +352,8 @@ func Container() *schema.Resource {
 							Type:             schema.TypeInt,
 							Description:      "The number of CPU cores",
 							Optional:         true,
-							Default:          dvCPUCores,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 128)),
+							Computed:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 8192)),
 						},
 						mkCPULimit: {
 							Type:        schema.TypeFloat,
@@ -1455,7 +1455,12 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
 
 		updateBody.CPUArchitecture = &cpuArchitecture
-		updateBody.CPUCores = &cpuCores
+
+		if cpuCores > 0 {
+			updateBody.CPUCores = &cpuCores
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "cores")
+		}
 
 		if cpuLimit > 0 {
 			updateBody.CPULimit = &cpuLimit
@@ -2224,7 +2229,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
-		CPUCores:             &cpuCores,
 		CPULimit:             &cpuLimit,
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
@@ -2243,6 +2247,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		TTY:                  &consoleTTYCount,
 		Unprivileged:         &unprivileged,
 		VMID:                 &vmID,
+	}
+
+	if cpuCores > 0 {
+		createBody.CPUCores = &cpuCores
 	}
 
 	if cpuUnits > 0 {
@@ -2898,8 +2906,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if containerConfig.CPUCores != nil {
 		cpu[mkCPUCores] = *containerConfig.CPUCores
 	} else {
-		// Default value of "cores" is "1" according to the API documentation.
-		cpu[mkCPUCores] = 1
+		cpu[mkCPUCores] = 0
 	}
 
 	if containerConfig.CPULimit != nil {
@@ -2924,7 +2931,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 	} else if len(currentCPU) > 0 ||
 		cpu[mkCPUArchitecture] != dvCPUArchitecture ||
-		cpu[mkCPUCores] != dvCPUCores ||
+		// containers created before cores became optional have cores=1 and no cpu block
+		(cpu[mkCPUCores] != dvCPUCores && cpu[mkCPUCores] != 1) ||
 		cpu[mkCPULimit] != dvCPULimit ||
 		cpu[mkCPUUnits] != dvCPUUnits {
 		err := d.Set(mkCPU, []any{cpu})
@@ -3773,7 +3781,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
 
 		updateBody.CPUArchitecture = &cpuArchitecture
-		updateBody.CPUCores = &cpuCores
+
+		if cpuCores > 0 {
+			updateBody.CPUCores = &cpuCores
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "cores")
+		}
 
 		if cpuLimit > 0 {
 			updateBody.CPULimit = &cpuLimit
