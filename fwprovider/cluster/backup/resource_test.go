@@ -577,6 +577,38 @@ func TestAccResourceBackupJobDeletedOutside(t *testing.T) {
 				},
 				Check: resource.TestCheckResourceAttr("proxmox_backup_job.test_gone", "id", "acc-test-bjgone"),
 			},
+			{
+				Config: config,
+				Check: func(*terraform.State) error {
+					return te.ClusterClient().Backup().Delete(context.Background(), "acc-test-bjgone")
+				},
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceBackupJobImportNonExistent(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_missing" {
+					id       = "acc-test-bjmissing"
+					schedule = "*-*-* 04:00"
+					storage  = "local"
+					all      = true
+				}`),
+				ResourceName:  "proxmox_backup_job.test_missing",
+				ImportState:   true,
+				ImportStateId: "acc-test-bjmissing",
+				ExpectError:   regexp.MustCompile(`Backup Job Not Found`),
+			},
 		},
 	})
 }
