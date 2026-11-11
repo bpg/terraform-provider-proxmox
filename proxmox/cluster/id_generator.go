@@ -159,13 +159,20 @@ func (g IDGenerator) nextFreeIDAfter(ctx context.Context, after int) (*int, erro
 		used[r.VMID] = struct{}{}
 	}
 
-	id := after + 1
-	for {
-		if _, ok := used[id]; !ok {
-			return &id, nil
+	for id := after + 1; ; id++ {
+		if _, ok := used[id]; ok {
+			continue
 		}
 
-		id++
+		// resources omits guests the caller can't audit, nextid checks them all
+		free, err := g.client.GetNextID(ctx, &id)
+		if err == nil {
+			return free, nil
+		}
+
+		if !strings.Contains(err.Error(), "already exists") {
+			return nil, err
+		}
 	}
 }
 
