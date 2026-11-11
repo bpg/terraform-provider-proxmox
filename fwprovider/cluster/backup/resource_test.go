@@ -18,7 +18,9 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
@@ -536,6 +538,76 @@ func TestAccResourceBackupJobExcludePath(t *testing.T) {
 					all      = true
 				}`),
 				Check: resource.TestCheckNoResourceAttr("proxmox_backup_job.test_exclude_path", "exclude_path.#"),
+			},
+		},
+	})
+}
+
+// TestAccResourceBackupJobDeletedOutside checks that a backup job removed outside Terraform is
+// dropped from state and planned for creation, instead of failing the refresh.
+func TestAccResourceBackupJobDeletedOutside(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	config := te.RenderConfig(`
+	resource "proxmox_backup_job" "test_gone" {
+		id       = "acc-test-bjgone"
+		schedule = "*-*-* 04:00"
+		storage  = "local"
+		all      = true
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				PreConfig: func() {
+					err := te.ClusterClient().Backup().Delete(context.Background(), "acc-test-bjgone")
+					require.NoError(t, err)
+				},
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_backup_job.test_gone", plancheck.ResourceActionCreate),
+					},
+				},
+				Check: resource.TestCheckResourceAttr("proxmox_backup_job.test_gone", "id", "acc-test-bjgone"),
+			},
+			{
+				Config: config,
+				Check: func(*terraform.State) error {
+					return te.ClusterClient().Backup().Delete(context.Background(), "acc-test-bjgone")
+				},
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceBackupJobImportNonExistent(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_backup_job" "test_missing" {
+					id       = "acc-test-bjmissing"
+					schedule = "*-*-* 04:00"
+					storage  = "local"
+					all      = true
+				}`),
+				ResourceName:  "proxmox_backup_job.test_missing",
+				ImportState:   true,
+				ImportStateId: "acc-test-bjmissing",
+				ExpectError:   regexp.MustCompile(`Backup Job Not Found`),
 			},
 		},
 	})
