@@ -64,6 +64,12 @@ resource "proxmox_virtual_environment_container" "example" {
 }
 ```
 
+### Container `cpu.units` not in the configuration is removed
+
+A container that does not set `cpu.units` but has `cpuunits` in Proxmox VE, for example one created with a provider version before v0.102.0 (which always sent `1024`), planned the removal of its `cpu` block on every run, and the apply changed nothing. The apply now removes `cpuunits` from the container, so Proxmox VE uses its own default (`100` on cgroup2) and the next plan is empty.
+
+**Action required:** To keep the current weight, set it explicitly, for example `units = 1024` in the `cpu` block, before applying.
+
 ## v0.121.0
 
 ### `proxmox_acl` no longer adopts an existing ACL

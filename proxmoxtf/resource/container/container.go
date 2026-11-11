@@ -1470,6 +1470,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 
 		if cpuUnits > 0 {
 			updateBody.CPUUnits = &cpuUnits
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "cpuunits")
 		}
 	}
 
@@ -3796,6 +3798,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 
 		if cpuUnits > 0 {
 			updateBody.CPUUnits = &cpuUnits
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "cpuunits")
 		}
 
 		bodyDirty = true

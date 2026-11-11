@@ -3334,6 +3334,69 @@ func TestAccResourceContainerCPUCoresUnset(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerCPUUnitsSetOutsideConfig(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := te.RenderConfig(`
+	resource "proxmox_virtual_environment_container" "test_container" {
+		node_name    = "{{.NodeName}}"
+		vm_id        = {{.TestContainerID}}
+		started      = false
+		unprivileged = true
+		disk {
+			datastore_id = "{{.ContainerDatastoreID}}"
+			size         = 4
+		}
+		initialization {
+			hostname = "test-cpu-units-outside"
+		}
+		operating_system {
+			template_file_id = "local:vztmpl/{{.ImageFileName}}"
+			type             = "alpine"
+		}
+	}`)
+
+	ct := te.NodeClient().Container(accTestContainerID)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				// containers created while units defaulted to 1024 have cpuunits=1024 and no cpu block
+				PreConfig: func() {
+					err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{CPUUnits: new(1024)})
+					require.NoError(t, err, "failed to set cpuunits")
+				},
+				Config: config,
+				Check: func(*terraform.State) error {
+					cfg, err := ct.GetContainer(t.Context())
+					if err != nil {
+						return fmt.Errorf("failed to get container: %w", err)
+					}
+
+					if cfg.CPUUnits != nil {
+						return fmt.Errorf("expected no cpuunits in the container config, got %d", *cfg.CPUUnits)
+					}
+
+					return nil
+				},
+			},
+		},
+	})
+}
+
 // TestAccResourceContainerHostManaged covers create-with-true and the true→false toggle on update.
 // The toggle step is the regression check: it only converges if the provider sends `host-managed=0`.
 // Requires Proxmox VE 9.0+.
