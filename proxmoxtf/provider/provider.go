@@ -147,6 +147,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
 	sshSocks5Username := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME")
 	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
+	sshRootTicket := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_ROOT_TICKET")
 
 	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
 		switch {
@@ -198,6 +199,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 		sshConf[mkProviderSSHSocks5Password] = sshSocks5Password
 	}
 
+	if _, ok := sshConf[mkProviderSSHRootTicket]; !ok {
+		sshConf[mkProviderSSHRootTicket] = sshRootTicket
+	}
+
 	nodeOverrides := map[string]ssh.ProxmoxNode{}
 
 	if ns, ok := sshConf[mkProviderSSHNode]; ok {
@@ -245,6 +250,15 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 	)
 	if err != nil {
 		return nil, diag.Errorf("error creating SSH client: %s", err)
+	}
+
+	// The node resolver keeps the unwrapped client on purpose: resolving a node address is itself a
+	// call under /nodes/{node}/, which would mint a ticket, which would resolve the node again.
+	if sshConf[mkProviderSSHRootTicket].(bool) {
+		apiClient, err = api.NewRootTicketClient(apiClient, sshClient)
+		if err != nil {
+			return nil, diag.Errorf("error creating root@pam ticket client: %s", err)
+		}
 	}
 
 	// Intentionally use 'PROXMOX_VE_TMPDIR' with 'TMP' instead of 'TEMP', to match os.TempDir's use of $TMPDIR

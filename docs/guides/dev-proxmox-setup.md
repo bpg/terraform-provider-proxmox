@@ -18,6 +18,8 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
 
 ## Installation steps
 
+### Option 1 - Using virt-manager
+
 1. Install virt-manager:
 
    ```sh
@@ -51,6 +53,94 @@ To test provider changes, you need access to a real Proxmox cluster. This guide 
    ```
 
    You can also access the web console at `https://192.168.122.43:8006`.
+
+### Option 2 - Using virsh and an unattended installation
+
+The Proxmox VE ISO can be installed unattended with an `answer.toml` file (see the [Proxmox automated installation documentation](https://pve.proxmox.com/wiki/Automated_Installation#Assistant_Tool)), which saves you from clicking through the installer each time. This option assumes that KVM and libvirt are already installed and working on your machine.
+
+1. Allow your user to manage VMs without `sudo`, and make `virsh` and `virt-install` use the system connection:
+
+   ```sh
+   sudo usermod -aG libvirt,kvm "$USER"
+   # log out and back in (or run: newgrp libvirt)
+
+   echo 'export LIBVIRT_DEFAULT_URI=qemu:///system' >> ~/.bashrc
+   export LIBVIRT_DEFAULT_URI=qemu:///system
+   ```
+
+2. Install the tools. `proxmox-auto-install-assistant` is not in the standard Debian/Ubuntu repositories, so add the Proxmox repository temporarily:
+
+   ```sh
+   sudo apt update
+   sudo apt install libvirt-clients virtinst xorriso
+
+   # Proxmox VE 9 repository, for a Debian 13 (trixie) host
+   sudo wget https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg \
+     -O /usr/share/keyrings/proxmox-archive-keyring.gpg
+
+   sudo tee /etc/apt/sources.list.d/pve-temp.sources <<'EOF'
+   Types: deb
+   URIs: http://download.proxmox.com/debian/pve
+   Suites: trixie
+   Components: pve-no-subscription
+   Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+   EOF
+
+   sudo apt update
+   sudo apt install proxmox-auto-install-assistant
+
+   # remove the repository so that `apt upgrade` does not pull Proxmox packages
+   sudo rm /etc/apt/sources.list.d/pve-temp.sources
+   sudo apt update
+   ```
+
+   **Note:** on Ubuntu 24.04, use the `bookworm` suite instead of `trixie`, and the key <https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg>.
+
+3. Download the latest Proxmox VE ISO from <https://www.proxmox.com/en/downloads>.
+
+4. Create an `answer.toml` file. The network must use DHCP: the script reserves a fixed address for the VM, so this works on any libvirt network.
+
+   ```toml
+   [global]
+   keyboard = "en-us"
+   country = "fr"
+   fqdn = "pve.example.local"
+   mailto = "admin@example.local"
+   timezone = "Europe/Paris"
+   root-password = "APassYouRemember"
+   root-ssh-keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1........ user@pve"]
+
+   [network]
+   source = "from-dhcp"
+
+   [disk-setup]
+   filesystem = "ext4"
+   disk-list = ["vda"]
+   ```
+
+   **Important:** keep the default hostname `pve` (the first part of `fqdn`) — the example configurations expect a node named `pve`. If you use a different hostname, update your `terraform.tfvars` accordingly.
+
+5. Create the VM with the [unattended script](./dev-proxmox-unattend-script.md). It builds the ISO from your `answer.toml`, creates the VM, waits for the installation to finish and makes sure the VM is running:
+
+   ```sh
+   ./run.sh /path/to/proxmox-ve_9.2-1.iso answer.toml
+   ```
+
+   The VM gets a fixed IP address ending in `.43` in the subnet of the libvirt `default` network, which is `192.168.122.43` unless libvirt picked another subnet. The script prints the address when it ends. The defaults (VM name, memory, CPUs, disk size...) can be overridden with environment variables, see the script documentation.
+
+6. (Optional) Verify connectivity from your host:
+
+   ```sh
+   ssh root@192.168.122.43
+   ```
+
+   You can also access the web console at `https://192.168.122.43:8006`. Use the address printed by the script if your subnet is not `192.168.122.0/24`.
+
+7. (Optional) Remove the VM and everything that was created for it:
+
+   ```sh
+   ./run.sh --destroy
+   ```
 
 ## Proxmox configuration
 

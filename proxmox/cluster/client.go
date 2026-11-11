@@ -13,6 +13,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/backup"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ceph"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/cpumodels"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
@@ -67,6 +68,11 @@ func (c *Client) Backup() *backup.Client {
 // Ceph returns a client for managing the cluster's Ceph resources.
 func (c *Client) Ceph() *ceph.Client {
 	return &ceph.Client{Client: c}
+}
+
+// CustomCPUModels returns a client for managing the cluster's custom CPU models.
+func (c *Client) CustomCPUModels() *cpumodels.Client {
+	return &cpumodels.Client{Client: c}
 }
 
 // Metrics returns a client for managing the cluster's metrics features.

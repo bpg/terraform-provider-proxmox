@@ -46,7 +46,8 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
 
 ## Argument Reference
 
-- `name` - (Required) Security group name.
+- `name` - (Required) Security group name. Must be lowercase, because PVE lowercases
+  security group names.
 - `comment` - (Optional) Security group comment.
 - `rule` - (Optional) Firewall rule block (multiple blocks supported).
     - `action` - (Required) Rule action (`ACCEPT`, `DROP`, `REJECT`).

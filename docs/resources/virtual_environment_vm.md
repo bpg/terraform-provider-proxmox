@@ -139,10 +139,14 @@ output "ubuntu_vm_public_key" {
         - `virtio` - VirtIO (paravirtualized).
     - `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the VM starts.
         - `disabled` - (Optional) Whether to disable waiting for the agent to report an IP address (defaults to `false`). Set to `true` to skip the IP lookup entirely, so the provider does not wait for the agent during `refresh` and at the end of `apply`. Useful when the guest agent is slow to start, not yet installed, or not running, to avoid blocking those operations. When disabled, `ipv4_addresses`, `ipv6_addresses`, and `network_interface_names` are left empty.
-        - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
-        - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
+        - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local unless allowed by `cidrs`) (defaults to `false`).
+        - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`) (defaults to `false`).
+        - `cidrs` - (Optional) Only addresses inside one of these CIDRs (e.g. `["10.0.0.0/8", "2001:db8::/64"]`) count when waiting. Setting this disables the default loopback/link-local address exclusion; the `lo` interface is still skipped unless `interfaces` is also set. Avoid catch-all CIDRs such as `0.0.0.0/0` or `::/0`: they also match link-local addresses, which can end the wait before the real address is assigned; use `ipv4` or `ipv6` to require a family instead. When `ipv4` or `ipv6` is `true`, at least one CIDR of that family is required.
+        - `interfaces` - (Optional) Only addresses on interfaces whose name fully matches one of these regular expressions (RE2, e.g. `["eth[0-9]+", "ens.*"]`) count when waiting. Setting this disables the default skip of the `lo` interface; loopback/link-local addresses stay excluded unless `cidrs` is also set.
 
         When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false` (and `disabled` is `false`), the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
+
+        `cidrs` and `interfaces` are combined per address (an address must match both), and they cannot be used with `disabled = true`. They are useful to ignore addresses such as Docker's `docker0` bridge, which would otherwise end the wait early. They only decide when waiting stops: `ipv4_addresses`, `ipv6_addresses` and `network_interface_names` still list every address the agent reports. The wait also runs on every refresh, so a filter that never matches makes refresh wait for the full agent `timeout` and then leaves those attributes and `mac_addresses` empty. On timeout, the warning reported by refresh lists each rejected address and the reason.
 - `amd_sev` - (Optional) Secure Encrypted Virtualization (SEV) features by AMD CPUs.
     - `type` - (Optional) Enable standard SEV with `std` or enable experimental SEV-ES with the `es` option or enable experimental SEV-SNP with the `snp` option (defaults to `std`).
     - `allow_smt` - (Optional) Sets policy bit to allow Simultaneous Multi Threading (SMT)
@@ -220,54 +224,15 @@ output "ubuntu_vm_public_key" {
     - `sockets` - (Optional) The number of CPU sockets (defaults to `1`).
     - `type` - (Optional) The emulated CPU type, it's recommended to
         use `x86-64-v2-AES` (defaults to `qemu64`).
-        - `486` - Intel 486.
-        - `Broadwell`/`Broadwell-IBRS`/`Broadwell-noTSX`/`Broadwell-noTSX-IBRS` - Intel Core Processor (Broadwell, 2014).
-        - `Cascadelake-Server`/`Cascadelake-Server-noTSX`/`Cascadelake-Server-v2`/`Cascadelake-Server-v4`/`Cascadelake-Server-v5` - Intel Xeon 32xx/42xx/52xx/62xx/82xx/92xx (2019).
-        - `Conroe` - Intel Celeron_4x0 (Conroe/Merom Class Core 2, 2006).
-        - `Cooperlake`/`Cooperlake-v2`
-        - `EPYC`/`EPYC-Genoa`/`EPYC-IBPB`/`EPYC-Milan`/`EPYC-Rome`/`EPYC-Rome-v2`/`EPYC-Rome-v3`/`EPYC-Rome-v4`/`EPYC-v3`/`EPYC-v4`/ -
-            AMD EPYC Processor (2017).
-        - `Haswell`/`Haswell-IBRS`/`Haswell-noTSX`/`Haswell-noTSX-IBRS` - Intel
-            Core Processor (Haswell, 2013).
-        - `Icelake-Client`/`Icelake-Client-noTSX`
-        - `Icelake-Server`/`Icelake-Server-noTSX`/`Icelake-Server-v3`/
-            `Icelake-Server-v4`/`Icelake-Server-v5`/`Icelake-Server-v6`
-        - `IvyBridge`/`IvyBridge-IBRS` - Intel Xeon E3-12xx v2 (Ivy Bridge,
-              2012).
-        - `KnightsMill` - Intel Xeon Phi 72xx (2017).
-        - `Nehalem`/`Nehalem-IBRS` - Intel Core i7 9xx (Nehalem Class Core i7,
-            2008).
-        - `Opteron_G1` - AMD Opteron 240 (Gen 1 Class Opteron, 2004).
-        - `Opteron_G2` - AMD Opteron 22xx (Gen 2 Class Opteron, 2006).
-        - `Opteron_G3` - AMD Opteron 23xx (Gen 3 Class Opteron, 2009).
-        - `Opteron_G4` - AMD Opteron 62xx class CPU (2011).
-        - `Opteron_G5` - AMD Opteron 63xx class CPU (2012).
-        - `Penryn` - Intel Core 2 Duo P9xxx (Penryn Class Core 2, 2007).
-        - `SandyBridge`/`SandyBridge-IBRS` - Intel Xeon E312xx (Sandy Bridge,
-            2011).
-        - `SapphireRapids`
-        - `Skylake-Client`/`Skylake-Client-IBRS`/`Skylake-Client-noTSX-IBRS`/`Skylake-Client-v4` -
-            Intel Core Processor (Skylake, 2015).
-        - `Skylake-Server`/`Skylake-Server-IBRS`/`Skylake-Server-noTSX-IBRS`/`Skylake-Server-v4`/`Skylake-Server-v5` -
-            Intel Xeon Processor (Skylake, 2016).
-        - `Westmere`/`Westmere-IBRS` - Intel Westmere E56xx/L56xx/X56xx (
-            Nehalem-C, 2010).
-        - `athlon` - AMD Athlon.
-        - `core2duo` - Intel Core 2 Duo.
-        - `coreduo` - Intel Core Duo.
-        - `host` - Host pass-through.
-        - `kvm32`/`kvm64` - Common KVM processor (32 & 64 bit variants).
-        - `max` - Maximum amount of features from host CPU.
-        - `pentium` - Intel Pentium (1993).
-        - `pentium2` - Intel Pentium 2 (1997-1999).
-        - `pentium3` - Intel Pentium 3 (1999-2001).
-        - `phenom` - AMD Phenom (2010).
-        - `qemu32`/`qemu64` - QEMU Virtual CPU version 2.5+ (32 & 64 bit
-            variants).
-        - `x86-64-v2`/`x86-64-v2-AES`/`x86-64-v3`/`x86-64-v4`
-            See <https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels>
-        - `custom-<model>` - Custom CPU model. All `custom-<model>` values
-            should be defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
+        Representative models include `host`, `qemu64`, `x86-64-v2-AES`,
+        `EPYC-Genoa`, and `EPYC-Genoa-v2`. Model availability is validated by
+        the target Proxmox VE version, which returns an error for an unknown
+        model. See the
+        [PVE administration guide](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings)
+        for the models a release offers.
+        - `custom-<model>` - Custom CPU model. `custom-<model>` names refer to
+            PVE custom model definitions in
+            `/etc/pve/virtual-guest/cpu-models.conf`.
     - `units` - (Optional) The CPU units. PVE default is `1024` for cgroups v1 and `100` for cgroups v2.
     - `affinity` - (Optional) The CPU cores that are used to run the VM’s vCPU. The
         value is a list of CPU IDs, separated by commas. The CPU IDs are zero-based.
@@ -303,8 +268,9 @@ output "ubuntu_vm_public_key" {
         - `raw` - Raw Disk Image.
         - `vmdk` - VMware Disk Image.
     - `file_id` - (Optional) The file ID for a disk image when importing a disk into VM. The ID format is
-          `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`. Can be also taken from
-          `proxmox_virtual_environment_download_file` resource. Prefer `import_from` for uncompressed images.
+          `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`, without whitespace, `,` or `=`.
+          Can be also taken from `proxmox_virtual_environment_download_file` resource. Prefer `import_from` for
+          uncompressed images.
           Use `file_id` when working with compressed cloud images (e.g., `.qcow2.xz`) that were downloaded
           with `content_type = "iso"` and `decompression_algorithm` set. See the
           [Create a VM from a Cloud Image](../guides/cloud-image.md) guide for examples.
@@ -323,7 +289,8 @@ output "ubuntu_vm_public_key" {
         when `scsi_hardware` is set to `virtio-scsi-single`. A change requires
         a VM power cycle (or reboot via the Proxmox API) to take effect.
     - `replicate` - (Optional) Whether the drive should be considered for replication jobs (defaults to `true`).
-    - `serial` - (Optional) The serial number of the disk, up to 20 bytes long.
+    - `serial` - (Optional) The serial number of the disk, up to 20 characters. Letters, digits and
+        `-%_.!~*'()` only.
     - `size` - (Optional) The disk size in gigabytes (defaults to `8`).
     - `speed` - (Optional) The speed limits.
         - `iops_read` - (Optional) The maximum read I/O in operations per second.
@@ -340,7 +307,7 @@ output "ubuntu_vm_public_key" {
         defaults to `false`). Note that SSD emulation is not supported on VirtIO
         Block drives.
 - `efi_disk` - (Optional) The efi disk device (required if `bios` is set
-    to `ovmf`)
+    to `ovmf`). See [Example: UEFI boot](#example-uefi-boot).
     - `datastore_id` (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
     - `file_format` (Optional) The file format (defaults to `raw`).
@@ -348,10 +315,11 @@ output "ubuntu_vm_public_key" {
         recommended, and required for Secure Boot. For backwards compatibility
         use `2m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
         to `2m`).
-    - `pre_enrolled_keys` (Optional) Use am EFI vars template with
+    - `pre_enrolled_keys` (Optional) Use an EFI vars template with
         distribution-specific and Microsoft Standard keys enrolled, if used with
-        EFI type=`4m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
-        to `false`).
+        EFI type=`4m`. For VMs with cpu.architecture=`aarch64` this requires
+        `pve-edk2-firmware-aarch64` newer than `4.2025.05-2` on the host and is
+        ignored otherwise (defaults to `false`).
 - `tpm_state` - (Optional) The TPM state device. The VM must be stopped before
     adding, removing, or moving a TPM state device; the provider automatically
     handles the shutdown/start cycle. Changing `version` requires recreating the
@@ -385,7 +353,9 @@ output "ubuntu_vm_public_key" {
     hotplug list, disk resizes on a running VM are applied live without a
     reboot. When `disk` is excluded, the provider will reboot the VM after
     resize (controlled by `reboot_after_update`).
-- `usb` - (Optional) A host USB device mapping (multiple blocks supported).
+- `usb` - (Optional) A host USB device mapping (multiple blocks supported, up to 14).
+    Proxmox VE only starts a VM with `usb5` and up on machine type >= 7.1 with
+    an `l26` or Windows > 7 `operating_system`.
     - `host` - (Optional) The Host USB device or port or the value `spice`. Use either this or `mapping`.
     - `mapping` - (Optional) The cluster-wide resource mapping name of the device, for example "usbdevice". Use either this or `host`.
     - `usb3` - (Optional) Makes the USB device a USB3 device for the VM
@@ -397,6 +367,9 @@ output "ubuntu_vm_public_key" {
         image to. Must be one of `ide0..3`, `sata0..5`, `scsi0..30`. Will be
         detected if the setting is missing but a cloud-init image is present,
         otherwise defaults to `ide2`.
+        Must not be the same as the `interface` of any `disk` block, the plan
+        fails if it is. If the setting is missing, `ide2` is used on create
+        (unless cloning) and checked against the `disk` interfaces too.
     - `file_format` - (Optional) The file format.
         - `qcow2` - QEMU Disk Image v2.
         - `raw` - Raw Disk Image.
@@ -435,6 +408,9 @@ output "ubuntu_vm_public_key" {
         all vendor data passed to the VM via cloud-init.
     - `meta_data_file_id` - (Optional) The identifier for a file containing
         all meta data passed to the VM via cloud-init.
+    - When cloning, setting any of the four `*_data_file_id` attributes above to `""` clears
+        the custom cloud-init files inherited from the template, as long as none of them is set
+        to a value.
     - `upgrade` - (Optional) Whether to do an automatic package upgrade after
         the first boot (defaults to `true`).
         Setting this is only allowed for `root@pam` authenticated user.
@@ -574,8 +550,12 @@ output "ubuntu_vm_public_key" {
         order (defaults to `-1`, meaning no specific order).
     - `up_delay` - (Optional) A non-negative number defining the delay in
         seconds before the next VM is started.
-    - `down_delay` - (Optional) A non-negative number defining the delay in
-        seconds before the next VM is shut down.
+    - `down_delay` - (Optional) A non-negative number defining the shutdown
+        timeout in seconds. When the node stops all guests (e.g. on host
+        shutdown), Proxmox VE waits this long for the VM to shut down before
+        stopping it. It is also the default timeout for a shutdown of this
+        VM that doesn't set one. When unset, the node's bulk stop timeout is
+        used (180 seconds by default).
 - `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults
     to `true`).
 - `tags` - (Optional) A list of tags of the VM. This is only meta information (
@@ -633,7 +613,7 @@ output "ubuntu_vm_public_key" {
     - `expose_acl` - (Optional) Enable POSIX ACLs, implies xattr support
     - `expose_xattr` - (Optional) Enable support for extended attributes
 - `vm_id` - (Optional) The VM identifier.
-- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute).
+- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute). When cloning a VM, the hookscript is inherited from the template unless this attribute is explicitly set. Note that setting or changing a hookscript requires a direct `root@pam` password session; API tokens (including one issued for `root@pam`) are rejected by Proxmox with "only root can set 'hookscript' config".
 - `watchdog` - (Optional) The watchdog configuration. Once enabled (by a guest action), the watchdog must be periodically polled by an agent inside the guest or else the watchdog will reset the guest (or execute the respective action specified).
     - `enabled` - (Optional) Whether the watchdog is enabled (defaults to `false`).
     - `model` - (Optional) The watchdog type to emulate (defaults to `i6300esb`).
@@ -772,7 +752,7 @@ in the source (e.g., `size`, `discard`, `cache`, `aio`).
 Otherwise, the schema defaults will take effect and override the source values.
 
 Furthermore, when cloning from one node to a different one, the behavior changes
-depening on the datastores of the source VM. If at least one non-shared
+depending on the datastores of the source VM. If at least one non-shared
 datastore is used, the VM is first cloned to the source node before being
 migrated to the target node. This circumvents a limitation in the Proxmox clone
 API.
@@ -879,6 +859,41 @@ resource "proxmox_virtual_environment_vm" "test_vm" {
   ...
 }
 ```
+
+## Example: UEFI boot
+
+Set `bios = "ovmf"` and add an `efi_disk` block. The EFI disk stores the UEFI
+variables (boot entries, Secure Boot state). Without it, Proxmox VE starts the
+VM with a temporary variables file and those settings are lost on every stop
+and start.
+
+```hcl
+resource "proxmox_virtual_environment_vm" "uefi_vm" {
+  name      = "terraform-provider-proxmox-uefi-vm"
+  node_name = "first-node"
+
+  bios = "ovmf"
+
+  efi_disk {
+    datastore_id      = "local-lvm"
+    type              = "4m"
+    pre_enrolled_keys = true # Secure Boot keys; set to false for unsigned kernels
+  }
+
+  disk {
+    datastore_id = "local-lvm"
+    interface    = "scsi0"
+    size         = 20
+  }
+
+  # ...
+}
+```
+
+~> **arm64 hosts** always boot VMs through UEFI (AAVMF); SeaBIOS is not
+available there. The provider still defaults `bios` to `seabios`, so set
+`bios = "ovmf"` explicitly together with `cpu.architecture = "aarch64"`.
+`efi_disk.type` is ignored on `aarch64`.
 
 ## Pool Management
 

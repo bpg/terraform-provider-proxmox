@@ -90,9 +90,10 @@ func Schema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkDiskInterface: {
-						Type:        schema.TypeString,
-						Description: "The disk interface",
-						Required:    true,
+						Type:             schema.TypeString,
+						Description:      "The disk interface",
+						Required:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
 					},
 					mkDiskDatastoreID: {
 						Type:        schema.TypeString,
@@ -155,7 +156,7 @@ func Schema() map[string]*schema.Schema {
 						Description:      "The drive’s reported serial number",
 						Optional:         true,
 						Default:          "",
-						ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 20)),
+						ValidateDiagFunc: validators.DiskSerial(),
 					},
 					mkDiskSize: {
 						Type:        schema.TypeInt,

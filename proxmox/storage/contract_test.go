@@ -41,9 +41,11 @@ func TestClient_Contract_CreateAndUpdateStorage_RequestKeys(t *testing.T) {
 
 	nodes := types.CustomCommaSeparatedList{nodeName}
 	contentImages := types.CustomCommaSeparatedList{"images"}
+	contentBackup := types.CustomCommaSeparatedList{"backup"}
 
 	disableFalse := types.CustomBool(false)
 	sharedFalse := types.CustomBool(false)
+	krbdFalse := types.CustomBool(false)
 
 	keepDaily := 7
 	maxProtected := types.CustomInt64(5)
@@ -175,6 +177,63 @@ func TestClient_Contract_CreateAndUpdateStorage_RequestKeys(t *testing.T) {
 				"prune-backups",
 			},
 			updateNoKey: []string{"export", "preallocation", "server", "snapshot-as-volume-chain", "storage", "type"},
+		},
+		{
+			name:      "cephfs",
+			storageID: "cephfs-test",
+			createReq: CephFSStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("cephfs-test"),
+					Type: ptr("cephfs"),
+				},
+				CephFSStorageMutableFields: CephFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentBackup,
+						Disable:      &disableFalse,
+					},
+					Backups: backups,
+					Options: ptr("noatime"),
+				},
+				CephFSStorageImmutableFields: CephFSStorageImmutableFields{
+					FSName: ptr("cephfs"),
+					Subdir: ptr("/templates"),
+					FUSE:   &disableFalse,
+				},
+			},
+			updateReq: CephFSStorageUpdateRequest{
+				CephFSStorageMutableFields: CephFSStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentBackup,
+						Disable:      &disableFalse,
+					},
+					Backups: backups,
+					Options: ptr("noatime"),
+				},
+			},
+			createKeys: []string{
+				"content",
+				"disable",
+				"fs-name",
+				"fuse",
+				"max-protected-backups",
+				"nodes",
+				"options",
+				"prune-backups",
+				"storage",
+				"subdir",
+				"type",
+			},
+			updateKeys: []string{
+				"content",
+				"disable",
+				"max-protected-backups",
+				"nodes",
+				"options",
+				"prune-backups",
+			},
+			updateNoKey: []string{"fs-name", "fuse", "storage", "subdir", "type"},
 		},
 		{
 			name:      "cifs",
@@ -449,6 +508,57 @@ func TestClient_Contract_CreateAndUpdateStorage_RequestKeys(t *testing.T) {
 			},
 			updateNoKey: []string{"pool", "storage", "type"},
 		},
+		{
+			name:      "rbd",
+			storageID: "rbd-test",
+			createReq: RBDStorageCreateRequest{
+				DataStoreCommonImmutableFields: DataStoreCommonImmutableFields{
+					ID:   ptr("rbd-test"),
+					Type: ptr("rbd"),
+				},
+				RBDStorageMutableFields: RBDStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					KRBD: &krbdFalse,
+				},
+				RBDStorageImmutableFields: RBDStorageImmutableFields{
+					Pool:      ptr("vm-metadata"),
+					DataPool:  ptr("vm-data"),
+					Namespace: ptr("tenant"),
+				},
+			},
+			updateReq: RBDStorageUpdateRequest{
+				RBDStorageMutableFields: RBDStorageMutableFields{
+					DataStoreCommonMutableFields: DataStoreCommonMutableFields{
+						Nodes:        &nodes,
+						ContentTypes: &contentImages,
+						Disable:      &disableFalse,
+					},
+					KRBD: &krbdFalse,
+				},
+			},
+			createKeys: []string{
+				"content",
+				"data-pool",
+				"disable",
+				"krbd",
+				"namespace",
+				"nodes",
+				"pool",
+				"storage",
+				"type",
+			},
+			updateKeys: []string{
+				"content",
+				"disable",
+				"krbd",
+				"nodes",
+			},
+			updateNoKey: []string{"data-pool", "namespace", "pool", "storage", "type"},
+		},
 	}
 
 	for _, tc := range cases {
@@ -513,6 +623,33 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 
 				if got.SnapshotsAsVolumeChain == nil || !bool(*got.SnapshotsAsVolumeChain) {
 					return "unexpected snapshot-as-volume-chain"
+				}
+
+				return ""
+			},
+		},
+		{
+			name: "cephfs",
+			id:   "cephfs-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.FSName == nil || *got.FSName != "cephfs" {
+					return "unexpected fs-name"
+				}
+
+				if got.SubDirectory == nil || *got.SubDirectory != "/templates" {
+					return "unexpected subdir"
+				}
+
+				if got.FUSE == nil || !bool(*got.FUSE) {
+					return "unexpected fuse"
+				}
+
+				if got.Options == nil || *got.Options != "noatime" {
+					return "unexpected options"
+				}
+
+				if got.Shared == nil || !bool(*got.Shared) {
+					return "unexpected shared"
 				}
 
 				return ""
@@ -590,7 +727,7 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 			name: "zfspool",
 			id:   "zfs-get",
 			assertion: func(got *DatastoreGetResponseData) string {
-				if got.ZFSPool == nil || *got.ZFSPool != "rpool/data" {
+				if got.Pool == nil || *got.Pool != "rpool/data" {
 					return "unexpected pool"
 				}
 
@@ -600,6 +737,33 @@ func TestClient_Contract_GetDatastore_ResponseDecoding(t *testing.T) {
 
 				if got.ThinProvision == nil || !bool(*got.ThinProvision) {
 					return "unexpected sparse"
+				}
+
+				return ""
+			},
+		},
+		{
+			name: "rbd",
+			id:   "rbd-get",
+			assertion: func(got *DatastoreGetResponseData) string {
+				if got.Pool == nil || *got.Pool != "vm-metadata" {
+					return "unexpected pool"
+				}
+
+				if got.DataPool == nil || *got.DataPool != "vm-data" {
+					return "unexpected data-pool"
+				}
+
+				if got.Namespace == nil || *got.Namespace != "tenant" {
+					return "unexpected namespace"
+				}
+
+				if got.KRBD == nil || !bool(*got.KRBD) {
+					return "unexpected krbd"
+				}
+
+				if got.Shared == nil || !bool(*got.Shared) {
+					return "unexpected shared"
 				}
 
 				return ""
@@ -742,6 +906,13 @@ func newStorageGetContractServer() *httptest.Server {
 			base["server"] = "127.0.0.1"
 			base["export"] = "/export"
 			base["snapshot-as-volume-chain"] = 1
+		case "cephfs-get":
+			base["type"] = "cephfs"
+			base["fs-name"] = "cephfs"
+			base["subdir"] = "/templates"
+			base["fuse"] = 1
+			base["options"] = "noatime"
+			base["shared"] = 1
 		case "cifs-get":
 			base["type"] = "cifs"
 			base["server"] = "127.0.0.1"
@@ -765,6 +936,14 @@ func newStorageGetContractServer() *httptest.Server {
 			base["pool"] = "rpool/data"
 			base["sparse"] = 1
 			base["blocksize"] = "64k"
+		case "rbd-get":
+			base["type"] = "rbd"
+			base["content"] = "rootdir,images"
+			base["shared"] = 1
+			base["pool"] = "vm-metadata"
+			base["data-pool"] = "vm-data"
+			base["namespace"] = "tenant"
+			base["krbd"] = 1
 		default:
 			w.WriteHeader(http.StatusNotFound)
 			return

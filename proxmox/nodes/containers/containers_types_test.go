@@ -159,6 +159,35 @@ func TestGetResponseData_UnmarshalJSON_WithIDMaps(t *testing.T) {
 	require.Len(t, data.LXCConfig.Raw, 2)
 }
 
+func TestGetStatusResponseBody_UnmarshalJSON_CPUs(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		json string
+		want float64
+	}{
+		// PVE copies cores into cpus as a number.
+		{"number from cores", `{"data": {"status": "stopped", "cpus": 2}}`, 2},
+		// Without cores, PVE copies cpulimit into cpus as a string.
+		{"string from cpulimit", `{"data": {"status": "stopped", "cpus": "2"}}`, 2},
+		{"fractional string from cpulimit", `{"data": {"status": "stopped", "cpus": "0.5"}}`, 0.5},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var body GetStatusResponseBody
+			require.NoError(t, json.Unmarshal([]byte(tt.json), &body))
+			require.NotNil(t, body.Data)
+			require.NotNil(t, body.Data.CPUCount)
+			assert.InDelta(t, tt.want, float64(*body.Data.CPUCount), 1e-9)
+			assert.Equal(t, "stopped", body.Data.Status)
+		})
+	}
+}
+
 func TestCustomNetworkInterface_HostManaged(t *testing.T) {
 	t.Parallel()
 

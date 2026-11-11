@@ -36,7 +36,7 @@ func TestAccDatasourceFiles(t *testing.T) {
 
 	t.Cleanup(func() {
 		e := te.NodeStorageClient().DeleteDatastoreFile(
-			context.Background(), fmt.Sprintf("snippets/%s", fileName))
+			context.Background(), fmt.Sprintf("snippets/%s", fileName)).Err()
 		require.NoError(t, e)
 	})
 
@@ -80,7 +80,7 @@ func TestAccDatasourceFilesNoFilter(t *testing.T) {
 
 	t.Cleanup(func() {
 		e := te.NodeStorageClient().DeleteDatastoreFile(
-			context.Background(), fmt.Sprintf("snippets/%s", fileName))
+			context.Background(), fmt.Sprintf("snippets/%s", fileName)).Err()
 		require.NoError(t, e)
 	})
 
@@ -117,7 +117,7 @@ func TestAccDatasourceFilesNameRegexMatch(t *testing.T) {
 
 	t.Cleanup(func() {
 		e := te.NodeStorageClient().DeleteDatastoreFile(
-			context.Background(), fmt.Sprintf("snippets/%s", fileName))
+			context.Background(), fmt.Sprintf("snippets/%s", fileName)).Err()
 		require.NoError(t, e)
 	})
 

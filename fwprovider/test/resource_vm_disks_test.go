@@ -25,7 +25,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -1728,6 +1732,89 @@ func vmIDFromState(s *terraform.State, name string) (int, error) {
 	return vmID, nil
 }
 
+func TestAccResourceVMDiskUpdateKeepsUnchangedDisks(t *testing.T) {
+	tests := []struct {
+		name      string
+		changed   string
+		unchanged string
+	}{
+		{"change scsi0, keep scsi1", "scsi0", "scsi1"},
+		{"change scsi1, keep scsi0", "scsi1", "scsi0"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			te := InitEnvironment(t)
+
+			vmID := 100000 + rand.Intn(99999)
+			te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+			config := func(changeDisk bool) string {
+				return te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_virtual_environment_vm" "test_disk_keep" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+					started   = false
+					name      = "test-disk-update-keeps-unchanged"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						iothread     = %t
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 1
+						iothread     = %t
+					}
+				}`, changeDisk && tt.changed == "scsi0", changeDisk && tt.changed == "scsi1"))
+			}
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: config(false),
+					},
+					{
+						// shared=1 isn't modeled by the provider, so it survives only if the disk isn't re-sent
+						PreConfig: func() {
+							te.ExecuteNodeCommands([]string{fmt.Sprintf(
+								`qm set %[1]d --%[2]s "$(qm config %[1]d | sed -n 's/^%[2]s: //p'),shared=1"`,
+								vmID, tt.unchanged,
+							)})
+						},
+						Config: config(true),
+						ConfigPlanChecks: resource.ConfigPlanChecks{
+							PreApply: []plancheck.PlanCheck{
+								plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_disk_keep", plancheck.ResourceActionUpdate),
+							},
+						},
+						Check: func(*terraform.State) error {
+							raw, err := fetchRawStorageDevices(context.Background(), te, vmID)
+							if err != nil {
+								return err
+							}
+
+							if !strings.Contains(raw[tt.changed], "iothread=1") {
+								return fmt.Errorf("%s wasn't updated: %q", tt.changed, raw[tt.changed])
+							}
+
+							if !strings.Contains(raw[tt.unchanged], "shared=1") {
+								return fmt.Errorf("%s was re-sent and lost shared=1: %q", tt.unchanged, raw[tt.unchanged])
+							}
+
+							return nil
+						},
+					},
+				},
+			})
+		})
+	}
+}
+
 // fetchRawStorageDevices issues a low-level GET against
 // /nodes/{node}/qemu/{vmid}/config and returns the raw scsi*/virtio*/sata*/ide*
 // strings as PVE persists them, bypassing the provider's CustomStorageDevices
@@ -2231,6 +2318,411 @@ func TestAccResourceVMDiskRemoval(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceVMDiskRemovedOutsideTerraform(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	config := func(description string) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_vm" "test_disk_removed_outside" {
+			node_name   = "{{.NodeName}}"
+			vm_id       = {{.TestVMID}}
+			started     = false
+			name        = "test-disk-removed-outside"
+			description = %q
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "scsi0"
+				size         = 1
+			}
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "scsi1"
+				size         = 1
+			}
+
+			lifecycle {
+				ignore_changes = [disk]
+			}
+		}`, description))
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: create the VM with two disks
+				Config: config("step 1"),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removed_outside", map[string]string{
+					"disk.#":           "2",
+					"disk.0.interface": "scsi0",
+					"disk.1.interface": "scsi1",
+				}),
+			},
+			{
+				// Step 2: remove scsi1 outside of Terraform and refresh
+				PreConfig: func() {
+					body := &vms.UpdateRequestBody{}
+					body.AppendDelete("scsi1")
+					require.NoError(t, te.NodeClient().VM(vmID).UpdateVM(context.Background(), body))
+				},
+				RefreshState: true,
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removed_outside", map[string]string{
+					"disk.#":           "1",
+					"disk.0.interface": "scsi0",
+				}),
+			},
+			{
+				// Step 3: an unrelated in-place update succeeds
+				Config: config("step 3"),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removed_outside", map[string]string{
+					"description": "step 3",
+					"disk.#":      "1",
+				}),
+			},
+			{
+				// Step 4: re-apply, nothing to change
+				Config: config("step 3"),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceVMDiskMiddleRemovedOutsideTerraform(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	config := te.RenderConfig(`
+	resource "proxmox_virtual_environment_vm" "test_disk_middle_removed" {
+		node_name = "{{.NodeName}}"
+		vm_id     = {{.TestVMID}}
+		started   = false
+		name      = "test-disk-middle-removed"
+
+		disk {
+			datastore_id = "local-lvm"
+			interface    = "scsi0"
+			size         = 1
+		}
+		disk {
+			datastore_id = "local-lvm"
+			interface    = "scsi1"
+			size         = 2
+		}
+		disk {
+			datastore_id = "local-lvm"
+			interface    = "scsi2"
+			size         = 3
+		}
+	}`)
+
+	var scsi2Volume string
+
+	vmDisks := func() vms.CustomStorageDevices {
+		vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+		require.NoError(t, err)
+
+		return vmConfig.StorageDevices
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				// Step 1: create the VM with three disks and remember scsi2's volume
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_middle_removed", map[string]string{
+						"disk.#": "3",
+					}),
+					func(*terraform.State) error {
+						disk := vmDisks()["scsi2"]
+						if disk == nil {
+							return fmt.Errorf("scsi2 is missing from the VM")
+						}
+
+						scsi2Volume = disk.FileVolume
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 2: remove scsi1 outside of Terraform, then apply the same configuration
+				PreConfig: func() {
+					body := &vms.UpdateRequestBody{}
+					body.AppendDelete("scsi1")
+					require.NoError(t, te.NodeClient().VM(vmID).UpdateVM(context.Background(), body))
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_middle_removed", map[string]string{
+						"disk.#":           "3",
+						"disk.0.interface": "scsi0",
+						"disk.1.interface": "scsi1",
+						"disk.1.size":      "2",
+						"disk.2.interface": "scsi2",
+						"disk.2.size":      "3",
+					}),
+					func(*terraform.State) error {
+						disks := vmDisks()
+
+						for _, iface := range []string{"scsi0", "scsi1", "scsi2"} {
+							if disks[iface] == nil {
+								return fmt.Errorf("%s is missing from the VM", iface)
+							}
+						}
+
+						if disks["scsi2"].FileVolume != scsi2Volume {
+							return fmt.Errorf("scsi2 moved from %s to %s", scsi2Volume, disks["scsi2"].FileVolume)
+						}
+
+						if disks["scsi1"].FileVolume == disks["scsi2"].FileVolume {
+							return fmt.Errorf("scsi1 and scsi2 share volume %s", disks["scsi1"].FileVolume)
+						}
+
+						return nil
+					},
+				),
+			},
+			{
+				// Step 3: re-apply, nothing to change
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceVMDiskInsertedKeepsOtherVolumes(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	const before = `
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi0"
+		size         = 1
+	}
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi1"
+		size         = 2
+	}`
+
+	const after = `
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi0"
+		size         = 1
+	}
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi2"
+		size         = 3
+	}
+	disk {
+		datastore_id = "local-lvm"
+		interface    = "scsi1"
+		size         = 2
+	}`
+
+	config := func(disks string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_vm" "test_disk_inserted" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{.TestVMID}}
+			started   = false
+			name      = "test-disk-inserted"
+			` + disks + `
+		}`)
+	}
+
+	var scsi1Volume string
+
+	vmDisks := func() vms.CustomStorageDevices {
+		vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+		require.NoError(t, err)
+
+		return vmConfig.StorageDevices
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config(before),
+				Check: func(*terraform.State) error {
+					disk := vmDisks()["scsi1"]
+					if disk == nil {
+						return fmt.Errorf("scsi1 is missing from the VM")
+					}
+
+					scsi1Volume = disk.FileVolume
+
+					return nil
+				},
+			},
+			{
+				Config: config(after),
+				Check: func(*terraform.State) error {
+					disks := vmDisks()
+
+					if disks["scsi1"] == nil || disks["scsi2"] == nil {
+						return fmt.Errorf("scsi1 or scsi2 is missing from the VM")
+					}
+
+					if disks["scsi1"].FileVolume != scsi1Volume {
+						return fmt.Errorf("scsi1 moved from %s to %s", scsi1Volume, disks["scsi1"].FileVolume)
+					}
+
+					if disks["scsi2"].FileVolume == scsi1Volume {
+						return fmt.Errorf("scsi1 and scsi2 share volume %s", scsi1Volume)
+					}
+
+					if disks["scsi2"].Size.InGigabytes() != 3 {
+						return fmt.Errorf("scsi2 is %s, expected 3G", disks["scsi2"].Size)
+					}
+
+					return nil
+				},
+			},
+			{
+				Config: config(after),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceVMDiskInterfaceChangeKeepsVolume(t *testing.T) {
+	tests := []struct {
+		name            string
+		secondDatastore func(te *Environment) string
+	}{
+		{"same datastore", func(*Environment) string { return "local-lvm" }},
+		{"second disk on another datastore", func(te *Environment) string { return te.ZfsDatastoreID }},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			te := InitEnvironment(t)
+
+			secondDatastore := tt.secondDatastore(te)
+			if secondDatastore == "" {
+				t.Skip("skipping: PROXMOX_VE_ACC_ZFS_DATASTORE_ID is not set")
+			}
+
+			vmID := 100000 + rand.Intn(99999)
+			te.AddTemplateVars(map[string]any{"TestVMID": vmID, "SecondDatastore": secondDatastore})
+
+			config := func(secondInterface string) string {
+				return te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_virtual_environment_vm" "test_disk_interface_change" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+					started   = false
+					name      = "test-disk-interface-change"
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+					}
+					disk {
+						datastore_id = "{{.SecondDatastore}}"
+						interface    = %q
+						size         = 2
+					}
+				}`, secondInterface))
+			}
+
+			var volume string
+
+			vmDisks := func() vms.CustomStorageDevices {
+				vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+				require.NoError(t, err)
+
+				return vmConfig.StorageDevices
+			}
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: config("scsi1"),
+						Check: func(*terraform.State) error {
+							disk := vmDisks()["scsi1"]
+							if disk == nil {
+								return fmt.Errorf("scsi1 is missing from the VM")
+							}
+
+							volume = disk.FileVolume
+
+							return nil
+						},
+					},
+					{
+						Config: config("sata1"),
+						Check: resource.ComposeTestCheckFunc(
+							ResourceAttributes("proxmox_virtual_environment_vm.test_disk_interface_change", map[string]string{
+								"disk.#":           "2",
+								"disk.1.interface": "sata1",
+								"disk.1.size":      "2",
+							}),
+							func(*terraform.State) error {
+								disks := vmDisks()
+
+								if disks["scsi1"] != nil {
+									return fmt.Errorf("scsi1 is still on the VM")
+								}
+
+								if disks["sata1"] == nil {
+									return fmt.Errorf("sata1 is missing from the VM")
+								}
+
+								if disks["sata1"].FileVolume != volume {
+									return fmt.Errorf("sata1 is on %s, expected the moved volume %s", disks["sata1"].FileVolume, volume)
+								}
+
+								return nil
+							},
+						),
+					},
+					{
+						Config: config("sata1"),
+						ConfigPlanChecks: resource.ConfigPlanChecks{
+							PreApply: []plancheck.PlanCheck{
+								plancheck.ExpectEmptyPlan(),
+							},
+						},
+					},
+				},
+			})
+		})
+	}
 }
 
 // TestAccResourceVMDiskCDROMNotInDiskBlock verifies that CDROM devices (media=cdrom)
@@ -2753,6 +3245,183 @@ func TestAccResourceVMEFIDiskStorageMigration(t *testing.T) {
 						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_efi_disk_move", plancheck.ResourceActionUpdate),
 					},
 				},
+			},
+		},
+	})
+}
+
+func TestAccResourceVMDiskLinkedCloneResizeAndMove(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+
+	checkCloneDisk := func(wantSize int64, wantVolume *regexp.Regexp) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.test_linked_clone"]
+			if !ok {
+				return fmt.Errorf("resource not found")
+			}
+
+			vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+			if err != nil {
+				return fmt.Errorf("failed to parse vm_id: %w", err)
+			}
+
+			vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to get VM config: %w", err)
+			}
+
+			disk := vmConfig.StorageDevices["scsi0"]
+			if disk == nil || disk.Size == nil {
+				return fmt.Errorf("scsi0 not found in VM %d config", vmID)
+			}
+
+			if got := disk.Size.InGigabytes(); got != wantSize {
+				return fmt.Errorf("scsi0 size is %dG, want %dG", got, wantSize)
+			}
+
+			if !wantVolume.MatchString(disk.FileVolume) {
+				return fmt.Errorf("scsi0 volume %q does not match %q", disk.FileVolume, wantVolume)
+			}
+
+			return nil
+		}
+	}
+
+	config := func(datastoreID string, size int) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_vm" "test_linked_clone_template" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			template  = true
+			name      = "test-linked-clone-template"
+
+			disk {
+				datastore_id = "local"
+				file_format  = "qcow2"
+				interface    = "scsi0"
+				size         = 1
+			}
+		}
+
+		resource "proxmox_virtual_environment_vm" "test_linked_clone" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			name      = "test-linked-clone"
+
+			clone {
+				vm_id = proxmox_virtual_environment_vm.test_linked_clone_template.vm_id
+				full  = false
+			}
+
+			disk {
+				datastore_id = %q
+				interface    = "scsi0"
+				size         = %d
+			}
+		}`, datastoreID, size))
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config("local", 1),
+				Check:  checkCloneDisk(1, regexp.MustCompile(`^local:\d+/base-\d+-disk-0\.qcow2/\d+/vm-\d+-disk-0\.qcow2$`)),
+			},
+			{
+				Config: config("local", 2),
+				Check:  checkCloneDisk(2, regexp.MustCompile(`^local:\d+/base-\d+-disk-0\.qcow2/\d+/vm-\d+-disk-0\.qcow2$`)),
+			},
+			{
+				Config: config("local-lvm", 2),
+				Check:  checkCloneDisk(2, regexp.MustCompile(`^local-lvm:vm-\d+-disk-0$`)),
+			},
+		},
+	})
+}
+
+type readOnlyTokenConfigOption struct{ token string }
+
+func (o *readOnlyTokenConfigOption) apply(rc *renderConfig) error {
+	rc.auth = fmt.Sprintf("\tapi_token = %q\n\tusername = \"\"\n\tpassword = \"\"", o.token)
+
+	return nil
+}
+
+func TestAccResourceVMDiskFormatReadOnlyToken(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+	ctx := context.Background()
+
+	userID := SafeResourceName("disk-ro") + "@pve"
+	tokenName := "readonly"
+
+	require.NoError(t, te.AccessClient().CreateUser(ctx, &access.UserCreateRequestBody{ID: userID}))
+
+	t.Cleanup(func() {
+		_ = te.AccessClient().DeleteUserToken(context.Background(), userID, tokenName)
+		_ = te.AccessClient().DeleteUser(context.Background(), userID)
+	})
+
+	token, err := te.AccessClient().CreateUserToken(ctx, userID, tokenName, &access.UserTokenCreateRequestBody{
+		PrivSeparate: proxmoxtypes.CustomBool(true).Pointer(),
+	})
+	require.NoError(t, err)
+
+	tokenID := userID + "!" + tokenName
+	require.NoError(t, te.AccessClient().UpdateACL(ctx, &access.ACLUpdateRequestBody{
+		Path:   "/",
+		Roles:  []string{"PVEAuditor"},
+		Tokens: []string{tokenID},
+		Users:  []string{userID},
+	}))
+
+	vmID := 100000 + rand.Intn(99999)
+	te.AddTemplateVars(map[string]any{"VMID": vmID})
+
+	t.Cleanup(func() {
+		_ = te.NodeClient().VM(vmID).DeleteVM(context.Background(), true, true).Err()
+	})
+
+	config := `
+	resource "proxmox_virtual_environment_vm" "test_disk_format" {
+		node_name = "{{.NodeName}}"
+		vm_id     = {{.VMID}}
+		started   = false
+		name      = "test-disk-format-ro-token"
+		bios      = "ovmf"
+
+		efi_disk {
+			datastore_id = "local-lvm"
+		}
+
+		disk {
+			datastore_id = "local-lvm"
+			interface    = "scsi0"
+			size         = 8
+		}
+	}`
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(config),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_format", map[string]string{
+					"disk.0.file_format":     "raw",
+					"efi_disk.0.file_format": "raw",
+				}),
+			},
+			{
+				Config:   te.RenderConfig(config, &readOnlyTokenConfigOption{token: token}),
+				PlanOnly: true,
+			},
+			{
+				Config:   te.RenderConfig(config),
+				PlanOnly: true,
 			},
 		},
 	})

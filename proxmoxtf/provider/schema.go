@@ -39,6 +39,7 @@ const (
 	mkProviderSSHSocks5Username    = "socks5_username"
 	mkProviderSSHSocks5Password    = "socks5_password"
 	mkProviderSSHNodeAddressSource = "node_address_source"
+	mkProviderSSHRootTicket        = "root_ticket"
 
 	mkProviderSSHNode        = "node"
 	mkProviderSSHNodeName    = "name"
@@ -239,6 +240,20 @@ func createSchema() map[string]*schema.Schema {
 							nil,
 						),
 						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHRootTicket: {
+						Type:     schema.TypeBool,
+						Optional: true,
+						Description: "Whether to run API calls under `/nodes/{node}/` with a `root@pam` ticket minted on that " +
+							"node over SSH, so an API token can perform `root@pam`-only operations. Those calls then run " +
+							"as `root@pam`, bypassing the token's permissions. Requires an SSH connection as `root`. " +
+							"Defaults to the value of the `PROXMOX_VE_SSH_ROOT_TICKET` environment variable, " +
+							"or `false` if not set.",
+						DefaultFunc: func() (any, error) {
+							v := os.Getenv("PROXMOX_VE_SSH_ROOT_TICKET")
+
+							return v == "true" || v == "1", nil
+						},
 					},
 					mkProviderSSHNodeAddressSource: {
 						Type:     schema.TypeString,

@@ -187,9 +187,49 @@ func TestDoTask_NilTaskIDSkipsWait(t *testing.T) {
 func TestDoTask_WaitErrorIsUnrecoverable(t *testing.T) {
 	t.Parallel()
 
+	tests := []struct {
+		name    string
+		waitErr error
+	}{
+		{"not matching retryIf", errors.New("task failed with exit code: ERROR")},
+		{"matching retryIf", errors.New("task failed with exit code: VM 100 qmp command 'query-status' failed - got timeout")},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			op := NewTaskOperation("test-op",
+				WithBaseDelay(1*time.Millisecond),
+				WithRetryIf(IsTransientAPIError),
+			)
+
+			dispatched := 0
+
+			err := op.DoTask(t.Context(),
+				func() (*string, error) {
+					dispatched++
+					id := "UPID:test:1234"
+
+					return &id, nil
+				},
+				func(_ context.Context, _ string) error {
+					return tt.waitErr
+				},
+			)
+
+			require.Error(t, err)
+			assert.Equal(t, 1, dispatched)
+		})
+	}
+}
+
+func TestDoTask_RetryOnLockTimeoutTaskFailure(t *testing.T) {
+	t.Parallel()
+
 	op := NewTaskOperation("test-op",
 		WithBaseDelay(1*time.Millisecond),
-		WithRetryIf(IsTransientAPIError),
+		WithRetryIf(ErrorContains("got no worker upid")),
 	)
 
 	dispatched := 0
@@ -202,13 +242,42 @@ func TestDoTask_WaitErrorIsUnrecoverable(t *testing.T) {
 			return &id, nil
 		},
 		func(_ context.Context, _ string) error {
-			return fmt.Errorf("task failed with exit code: ERROR")
+			if dispatched == 1 {
+				return errors.New("task failed with exit code: clone failed: " +
+					"can't lock file '/var/lock/pve-manager/pve-storage-local-lvm' - got timeout")
+			}
+
+			return nil
 		},
 	)
 
-	require.Error(t, err)
-	// Dispatch should only happen once — waitFn error is unrecoverable
-	assert.Equal(t, 1, dispatched)
+	require.NoError(t, err)
+	assert.Equal(t, 2, dispatched)
+}
+
+func TestIsLockTimeout(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"nil", nil, false},
+		{"storage lock", errors.New("can't lock file '/var/lock/pve-manager/pve-storage-local-zfs' - got timeout"), true},
+		{"config lock", errors.New("can't lock file '/var/lock/qemu-server/lock-100.conf' - got timeout"), true},
+		{"other timeout", errors.New("VM 100 qmp command 'query-status' failed - got timeout"), false},
+		{"other lock error", errors.New("can't lock file '/run/lock/x' - Permission denied"), false},
+		{"shared storage lock", errors.New("cfs-lock 'storage-nfs' error: got lock request timeout"), true},
+		{"cluster lock held too long", errors.New("cfs-lock 'storage-nfs' error: 'storage-nfs'-locked command timed out - aborting"), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tt.want, IsLockTimeout(tt.err))
+		})
+	}
 }
 
 func TestDoTask_NoRetryOnNonTransient(t *testing.T) {

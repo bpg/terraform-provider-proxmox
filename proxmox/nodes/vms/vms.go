@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/retry"
 	"github.com/bpg/terraform-provider-proxmox/utils/ip"
@@ -79,13 +80,25 @@ func (c *Client) ConvertToTemplate(ctx context.Context) tasks.TaskResult {
 // CreateVM creates a virtual machine.
 func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) tasks.TaskResult {
 	op := retry.NewTaskOperation("VM create",
-		retry.WithRetryIf(retry.IsTransientAPIError),
+		// PVE writes the new VM's config with "lock: create" before it forks the worker and keeps it when the fork
+		// fails, so a retry would only find that config and take "already exists" for success.
+		retry.WithRetryIf(func(err error) bool {
+			return retry.IsTransientAPIError(err) && !retry.IsNoWorkerUPID(err)
+		}),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return c.Tasks().DoTask(ctx, op,
+	res := c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CreateVMAsync(ctx, d) },
 	)
+	if retry.IsNoWorkerUPID(res.Err()) {
+		return tasks.TaskFailed(fmt.Errorf(
+			"%w\nPVE left VM %d with a locked, empty config; to remove it, run as root on the node: qm unlock %d && qm destroy %d",
+			res.Err(), d.VMID, d.VMID, d.VMID,
+		))
+	}
+
+	return res
 }
 
 // CreateVMAsync creates a virtual machine asynchronously.
@@ -137,6 +150,35 @@ func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDi
 
 		return resBody.TaskID, nil
 	})
+}
+
+// OwnsDisk reports whether the disk's volume belongs to this VM. Volume names that don't follow the
+// vm-<id>- convention (LINSTOR, linked clones on directory storage) are checked against the owner PVE
+// reports for them in the storage content list.
+func (c *Client) OwnsDisk(ctx context.Context, disk *CustomStorageDevice) (bool, error) {
+	if disk.IsOwnedBy(c.VMID) {
+		return true, nil
+	}
+
+	datastoreID, _, found := strings.Cut(disk.FileVolume, ":")
+	if !found || disk.PathInDatastore() == nil {
+		return false, nil
+	}
+
+	storageClient := &storage.Client{Client: c.Client, StorageName: datastoreID}
+
+	images, err := storageClient.ListVMImages(ctx, c.VMID)
+	if err != nil {
+		return false, fmt.Errorf("failed to check the owner of volume %s: %w", disk.FileVolume, err)
+	}
+
+	for _, image := range images {
+		if image.VolumeID == disk.FileVolume && image.VMID != nil && *image.VMID == c.VMID {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // GetVM retrieves a virtual machine.
@@ -595,13 +637,20 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 		}),
 	)
 
-	var result *GetQEMUNetworkInterfacesResponseData
+	cfg := WaitForIPConfig{}
+	if waitForIPConfig != nil {
+		cfg = *waitForIPConfig
+	}
+
+	var (
+		result   *GetQEMUNetworkInterfacesResponseData
+		rejected []string
+	)
 
 	err := op.DoPoll(ctxWithTimeout, func() error {
 		data, err := c.GetVMNetworkInterfacesFromAgent(ctxWithTimeout)
 		if err != nil {
-			var httpError *api.HTTPError
-			if errors.As(err, &httpError) {
+			if httpError, ok := errors.AsType[*api.HTTPError](err); ok {
 				if httpError.Code == http.StatusForbidden {
 					return err
 				}
@@ -618,32 +667,20 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 			return errNoIPsYet
 		}
 
-		hasIPv4, hasIPv6 := c.checkIPAddresses(*data.Result)
+		ifaces := map[string][]string{}
 
-		if waitForIPConfig == nil {
-			if !hasIPv4 && !hasIPv6 {
-				return errNoIPsYet
+		for _, nic := range *data.Result {
+			if nic.IPAddresses != nil {
+				for _, addr := range *nic.IPAddresses {
+					ifaces[nic.Name] = append(ifaces[nic.Name], addr.Address)
+				}
 			}
-
-			result = data
-
-			return nil
 		}
 
-		requiredIPv4 := waitForIPConfig.IPv4
-		requiredIPv6 := waitForIPConfig.IPv6
+		match := cfg.Filter.Match(ifaces)
+		rejected = match.Rejected
 
-		if !requiredIPv4 && !requiredIPv6 {
-			if !hasIPv4 && !hasIPv6 {
-				return errNoIPsYet
-			}
-
-			result = data
-
-			return nil
-		}
-
-		if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
+		if !match.Satisfied(cfg.IPv4, cfg.IPv6) {
 			return errNoIPsYet
 		}
 
@@ -654,8 +691,8 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 
 	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 		return nil, fmt.Errorf(
-			"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces",
-			c.VMID,
+			"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces%s",
+			c.VMID, ip.RejectedSuffix(rejected),
 		)
 	}
 
@@ -664,38 +701,6 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	}
 
 	return result, nil
-}
-
-// checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
-func (c *Client) checkIPAddresses(
-	nics []GetQEMUNetworkInterfacesResponseResult,
-) (bool, bool) {
-	hasIPv4 := false
-	hasIPv6 := false
-
-	for _, nic := range nics {
-		if nic.Name == "lo" {
-			continue
-		}
-
-		if nic.IPAddresses == nil || len(*nic.IPAddresses) == 0 {
-			continue
-		}
-
-		for _, addr := range *nic.IPAddresses {
-			if !ip.IsValidGlobalUnicast(addr.Address) {
-				continue
-			}
-
-			if ip.IsIPv4(addr.Address) {
-				hasIPv4 = true
-			} else if ip.IsIPv6(addr.Address) {
-				hasIPv6 = true
-			}
-		}
-	}
-
-	return hasIPv4, hasIPv6
 }
 
 // WaitForVMConfigUnlock waits for a virtual machine configuration to become unlocked.

@@ -9,6 +9,7 @@ package test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"net/url"
@@ -64,13 +65,15 @@ type RenderConfigOption interface {
 }
 
 type renderConfig struct {
+	endpoint   string
 	auth       string
 	apiHeaders string
+	sshAuth    string
 }
 
 // render assembles the provider configuration block from the applied options.
 func (r *renderConfig) render() string {
-	return fmt.Sprintf("provider \"proxmox\" {\n%s%s\n%s\n}", r.auth, r.apiHeaders, r.ssh())
+	return fmt.Sprintf("provider \"proxmox\" {\n%s%s%s\n%s\n}", r.endpoint, r.auth, r.apiHeaders, r.ssh())
 }
 
 // returns the ssh configuration section of the provider config.
@@ -104,26 +107,81 @@ func (r *renderConfig) ssh() string {
 			name    = "%s"
 			address = "%s"
 			port    = %s
-		}
-  	}`, nodeName, nodeAddress, nodePort)
+		}%s
+  	}`, nodeName, nodeAddress, nodePort, r.sshAuth)
 }
 
-// WithRootUser returns a configuration option that sets the root user in the provider configuration.
-func WithRootUser() RenderConfigOption {
-	return &rootUserConfigOption{}
+// errSkipTest makes RenderConfig skip a test whose option the environment's credentials can't satisfy.
+var errSkipTest = errors.New("skipping test")
+
+// WithRootPAMAuth logs in as root@pam: with the root password if set, else a root ticket (node-scoped calls only).
+func WithRootPAMAuth() RenderConfigOption {
+	return &rootPAMAuthConfigOption{}
 }
 
-type rootUserConfigOption struct{}
+type rootPAMAuthConfigOption struct{}
 
-func (o *rootUserConfigOption) apply(rc *renderConfig) error {
-	if utils.GetAnyStringEnv("PROXMOX_VE_USERNAME") == "" || utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD") == "" {
-		return fmt.Errorf("PROXMOX_VE_USERNAME and PROXMOX_VE_PASSWORD must be set")
+func (o *rootPAMAuthConfigOption) apply(rc *renderConfig) error {
+	if rootPAMPassword() != "" {
+		return WithRootPassword().apply(rc)
 	}
 
-	rc.auth = fmt.Sprintf("\tusername = \"%s\"\n\tpassword = \"%s\"\n\tapi_token = \"\"",
-		utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"),
-		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
-	)
+	sshUser := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
+	hasSSHCredentials := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT") ||
+		utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY", "PROXMOX_VE_SSH_PASSWORD") != ""
+
+	if (sshUser != "" && sshUser != "root") || !hasSSHCredentials {
+		return fmt.Errorf("%w: needs PROXMOX_VE_USERNAME=root@pam and PROXMOX_VE_PASSWORD, or SSH as root", errSkipTest)
+	}
+
+	if err := WithAPIToken().apply(rc); err != nil {
+		return err
+	}
+
+	return WithRootTicket().apply(rc)
+}
+
+// WithRootPassword logs in with the root password, for password-login tests and root-only calls outside /nodes/.
+func WithRootPassword() RenderConfigOption {
+	return &rootPasswordConfigOption{}
+}
+
+type rootPasswordConfigOption struct{}
+
+func (o *rootPasswordConfigOption) apply(rc *renderConfig) error {
+	password := rootPAMPassword()
+	if password == "" {
+		return fmt.Errorf("%w: needs PROXMOX_VE_USERNAME=root@pam and PROXMOX_VE_PASSWORD", errSkipTest)
+	}
+
+	rc.auth = fmt.Sprintf("\tusername = \"root@pam\"\n\tpassword = \"%s\"\n\tapi_token = \"\"", password)
+
+	return nil
+}
+
+// WithRootTicket returns a configuration option that makes the provider run node-scoped API calls
+// with a root@pam ticket minted over SSH as root.
+func WithRootTicket() RenderConfigOption {
+	return &rootTicketConfigOption{}
+}
+
+type rootTicketConfigOption struct{}
+
+func (o *rootTicketConfigOption) apply(rc *renderConfig) error {
+	rootPassword := rootSSHPassword()
+
+	// Only root can mint a ticket.
+	if sshUser := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME"); sshUser != "" && sshUser != "root" && rootPassword == "" {
+		return fmt.Errorf("root ticket requires SSH as root: set PROXMOX_VE_SSH_USERNAME=root with an SSH agent or " +
+			"private key, or PROXMOX_VE_USERNAME=root@pam and PROXMOX_VE_PASSWORD")
+	}
+
+	rc.sshAuth = "\n\t\tusername    = \"root\""
+	if rootPassword != "" {
+		rc.sshAuth += fmt.Sprintf("\n\t\tpassword    = %q", rootPassword)
+	}
+
+	rc.sshAuth += "\n\t\troot_ticket = true"
 
 	return nil
 }
@@ -171,6 +229,23 @@ func (o *apiHeadersConfigOption) apply(rc *renderConfig) error {
 	return nil
 }
 
+// WithInsecureEndpoint returns a configuration option that points the provider at the given API endpoint instead
+// of PROXMOX_VE_ENDPOINT and disables TLS verification, so an in-test TLS proxy with a self-signed certificate can
+// front the real node.
+func WithInsecureEndpoint(endpoint string) RenderConfigOption {
+	return &insecureEndpointConfigOption{endpoint: endpoint}
+}
+
+type insecureEndpointConfigOption struct {
+	endpoint string
+}
+
+func (o *insecureEndpointConfigOption) apply(rc *renderConfig) error {
+	rc.endpoint = fmt.Sprintf("\tendpoint = %q\n\tinsecure = true\n", o.endpoint)
+
+	return nil
+}
+
 // InitEnvironment initializes a new test environment for acceptance tests.
 func InitEnvironment(t *testing.T) *Environment {
 	t.Helper()
@@ -197,6 +272,16 @@ func InitEnvironment(t *testing.T) *Environment {
 		containerImagesServer = "http://download.proxmox.com"
 	}
 
+	containerDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID")
+	if containerDatastoreID == "" {
+		containerDatastoreID = "local-lvm"
+	}
+
+	// Optional: Ceph pools created by tests use this CRUSH rule instead of the cluster default, and erasure-coded
+	// test pools place their data on this device class.
+	cephCrushRule := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CEPH_CRUSH_RULE")
+	cephECDeviceClass := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CEPH_EC_DEVICE_CLASS")
+
 	return &Environment{
 		t: t,
 		templateVars: map[string]any{
@@ -205,9 +290,12 @@ func InitEnvironment(t *testing.T) *Environment {
 			"DatastoreID":           datastoreID,
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
+			"ContainerDatastoreID":  containerDatastoreID,
 			"TestName":              sanitizeTemplateName(t.Name()),
 			"ZfsDatastoreID":        zfsDatastoreID,
 			"ZfsDisk":               zfsDisk,
+			"CephCrushRule":         cephCrushRule,
+			"CephECDeviceClass":     cephECDeviceClass,
 		},
 		NodeName:              nodeName,
 		Node2Name:             node2Name,
@@ -248,6 +336,10 @@ func (e *Environment) RenderConfig(cfg string, opt ...RenderConfigOption) string
 	rc := &renderConfig{}
 	for _, o := range opt {
 		err := o.apply(rc)
+		if errors.Is(err, errSkipTest) {
+			e.t.Skip(err.Error())
+		}
+
 		require.NoError(e.t, err, "configuration error")
 	}
 
@@ -333,9 +425,41 @@ func (e *Environment) SSHClient() ssh.Client {
 		sshPassword = utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
 	}
 
+	return e.newNodeSSHClient(sshUsername, sshPassword)
+}
+
+// rootPAMPassword returns the API password when the API user is root@pam, so no other user's login stands in for root.
+func rootPAMPassword() string {
+	if utils.GetAnyStringEnv("PROXMOX_VE_USERNAME") != "root@pam" {
+		return ""
+	}
+
+	return utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+}
+
+// rootSSHPassword returns the root password from the API credentials when the API user is root, otherwise from the SSH
+// credentials when the SSH user is root or unset. The password of any other user is never sent to root.
+func rootSSHPassword() string {
+	if apiUser, _, _ := strings.Cut(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@"); apiUser == "root" {
+		if password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"); password != "" {
+			return password
+		}
+	}
+
+	if sshUser := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME"); sshUser == "" || sshUser == "root" {
+		return utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
+	}
+
+	return ""
+}
+
+// newNodeSSHClient returns an SSH client for the test node, trying the SSH agent and private key before the password.
+func (e *Environment) newNodeSSHClient(username, password string) ssh.Client {
+	e.t.Helper()
+
 	client, err := ssh.NewClient(
-		sshUsername,
-		sshPassword,
+		username,
+		password,
 		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT"),
 		utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK"),
 		utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT_FORWARDING"),
@@ -383,30 +507,24 @@ func (e *Environment) nodeSSHTarget() ssh.ProxmoxNode {
 	return ssh.ProxmoxNode{Address: address, Port: port}
 }
 
-// ExecuteNodeCommands runs shell commands on the test node over SSH as the root API user
-// (PROXMOX_VE_USERNAME / PROXMOX_VE_PASSWORD) and returns the combined output. Connecting as
-// root avoids the restricted sudoers allowlist of the provider's SSH user, so privileged
+// ExecuteNodeCommands runs shell commands on the test node over SSH as root and returns the combined output.
+// Connecting as root avoids the restricted sudoers allowlist of the provider's SSH user, so privileged
 // commands such as `pct exec` work without sudo.
 func (e *Environment) ExecuteNodeCommands(commands []string) string {
 	e.t.Helper()
 
-	// Strip the realm from "root@pam" to get the SSH login name.
-	username := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
-
-	client, err := ssh.NewClient(
-		username,
-		utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD"),
-		false, "", false,
-		"",
-		"", "", "",
-		staticNodeResolver{node: e.nodeSSHTarget()},
-	)
+	out, err := e.ExecuteNodeCommandsContext(e.t.Context(), commands)
 	require.NoError(e.t, err)
 
-	out, err := client.ExecuteNodeCommands(e.t.Context(), e.NodeName, commands)
-	require.NoError(e.t, err)
+	return out
+}
 
-	return string(out)
+// ExecuteNodeCommandsContext is ExecuteNodeCommands with a caller-supplied context and a returned error, for use
+// from t.Cleanup where the test context is already canceled.
+func (e *Environment) ExecuteNodeCommandsContext(ctx context.Context, commands []string) (string, error) {
+	out, err := e.newNodeSSHClient("root", rootSSHPassword()).ExecuteNodeCommands(ctx, e.NodeName, commands)
+
+	return string(out), err
 }
 
 // DownloadCloudImage downloads a cloud image with a unique filename for use in VM tests.
@@ -428,7 +546,7 @@ func (e *Environment) DownloadCloudImage() string {
 
 	e.t.Cleanup(func() {
 		// Best effort cleanup - the file may already be deleted by Proxmox
-		err = e.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName))
+		err = e.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("iso/%s", imageFileName)).Err()
 		if err != nil {
 			e.t.Logf("cleanup: failed to delete cloud image %s: %v", imageFileName, err)
 		}

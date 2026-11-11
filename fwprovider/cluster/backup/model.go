@@ -27,6 +27,7 @@ type backupJobModel struct {
 	Schedule               types.String `tfsdk:"schedule"`
 	Storage                types.String `tfsdk:"storage"`
 	Enabled                types.Bool   `tfsdk:"enabled"`
+	Comment                types.String `tfsdk:"comment"`
 	Node                   types.String `tfsdk:"node"`
 	VMIDs                  types.List   `tfsdk:"vmid"`
 	Exclude                types.List   `tfsdk:"exclude"`
@@ -37,6 +38,7 @@ type backupJobModel struct {
 	MaxFiles               types.Int64  `tfsdk:"maxfiles"`
 	MailTo                 types.List   `tfsdk:"mailto"`
 	MailNotification       types.String `tfsdk:"mailnotification"`
+	NotificationMode       types.String `tfsdk:"notification_mode"`
 	BwLimit                types.Int64  `tfsdk:"bwlimit"`
 	IONice                 types.Int64  `tfsdk:"ionice"`
 	Pigz                   types.Int64  `tfsdk:"pigz"`
@@ -162,6 +164,7 @@ func (m *backupJobModel) toAPIUpdate(
 	attribute.CheckDelete(m.MaxFiles, state.MaxFiles, &toDelete, "maxfiles")
 	attribute.CheckDelete(m.MailTo, state.MailTo, &toDelete, "mailto")
 	attribute.CheckDelete(m.MailNotification, state.MailNotification, &toDelete, "mailnotification")
+	attribute.CheckDelete(m.NotificationMode, state.NotificationMode, &toDelete, "notification-mode")
 	attribute.CheckDelete(m.BwLimit, state.BwLimit, &toDelete, "bwlimit")
 	attribute.CheckDelete(m.IONice, state.IONice, &toDelete, "ionice")
 	attribute.CheckDelete(m.Pigz, state.Pigz, &toDelete, "pigz")
@@ -183,6 +186,7 @@ func (m *backupJobModel) toAPIUpdate(
 	attribute.CheckDelete(m.StopWait, state.StopWait, &toDelete, "stopwait")
 	attribute.CheckDelete(m.TmpDir, state.TmpDir, &toDelete, "tmpdir")
 	attribute.CheckDelete(m.Enabled, state.Enabled, &toDelete, "enabled")
+	attribute.CheckDelete(m.Comment, state.Comment, &toDelete, "comment")
 	attribute.CheckDelete(m.All, state.All, &toDelete, "all")
 
 	if len(toDelete) > 0 {
@@ -198,6 +202,7 @@ func (m *backupJobModel) fillCommonFields(
 	diags *diag.Diagnostics,
 ) {
 	common.Enabled = attribute.CustomBoolPtrFromValue(m.Enabled)
+	common.Comment = attribute.StringPtrFromValue(m.Comment)
 	common.Node = attribute.StringPtrFromValue(m.Node)
 	common.All = attribute.CustomBoolPtrFromValue(m.All)
 	common.Mode = attribute.StringPtrFromValue(m.Mode)
@@ -218,6 +223,7 @@ func (m *backupJobModel) fillCommonFields(
 	}
 
 	common.MailNotification = attribute.StringPtrFromValue(m.MailNotification)
+	common.NotificationMode = attribute.StringPtrFromValue(m.NotificationMode)
 	common.BwLimit = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.BwLimit))
 	common.IONice = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.IONice))
 	common.Pigz = int64PtrToIntPtr(attribute.Int64PtrFromValue(m.Pigz))
@@ -285,7 +291,7 @@ func (m *backupJobModel) fillCommonFields(
 		}
 	}
 
-	// ExcludePath: convert types.List to comma-separated string
+	// ExcludePath: PVE takes an array, sent as repeated form keys
 	if !m.ExcludePath.IsNull() && !m.ExcludePath.IsUnknown() {
 		var paths []string
 
@@ -293,8 +299,7 @@ func (m *backupJobModel) fillCommonFields(
 		diags.Append(d...)
 
 		if !d.HasError() && len(paths) > 0 {
-			excludeStr := strings.Join(paths, ",")
-			common.ExcludePath = &excludeStr
+			common.ExcludePath = paths
 		}
 	}
 
@@ -398,7 +403,9 @@ func (m *backupJobModel) fromAPI(
 		m.MailTo = types.ListNull(types.StringType)
 	}
 
+	m.Comment = types.StringPointerValue(data.Comment)
 	m.MailNotification = types.StringPointerValue(data.MailNotification)
+	m.NotificationMode = types.StringPointerValue(data.NotificationMode)
 	m.BwLimit = types.Int64PointerValue(intPtrToInt64Ptr(data.BwLimit))
 	m.IONice = types.Int64PointerValue(intPtrToInt64Ptr(data.IONice))
 	m.Pigz = types.Int64PointerValue(intPtrToInt64Ptr(data.Pigz))
@@ -501,6 +508,8 @@ type backupJobDatasourceModel struct {
 	Compress         types.String `tfsdk:"compress"`
 	MailTo           types.List   `tfsdk:"mailto"`
 	MailNotification types.String `tfsdk:"mailnotification"`
+	NotificationMode types.String `tfsdk:"notification_mode"`
+	Comment          types.String `tfsdk:"comment"`
 	NotesTemplate    types.String `tfsdk:"notes_template"`
 	Pool             types.String `tfsdk:"pool"`
 	PruneBackups     types.Map    `tfsdk:"prune_backups"`
@@ -532,6 +541,8 @@ func (m *backupJobDatasourceModel) fromAPI(data *backup.GetResponseData) {
 	}
 
 	m.MailNotification = types.StringPointerValue(data.MailNotification)
+	m.NotificationMode = types.StringPointerValue(data.NotificationMode)
+	m.Comment = types.StringPointerValue(data.Comment)
 	m.NotesTemplate = types.StringPointerValue(data.NotesTemplate)
 	m.Pool = types.StringPointerValue(data.Pool)
 	m.Protected = types.BoolPointerValue(data.Protected.PointerBool())

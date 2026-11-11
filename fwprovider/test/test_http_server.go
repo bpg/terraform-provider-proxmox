@@ -28,6 +28,7 @@ type testFile struct {
 	content      []byte
 	reportedSize int64 // if > 0, overrides Content-Length
 	filename     string
+	headStatus   int // if != 0, HEAD requests get only this status
 }
 
 // TestFileServer is a controllable HTTP server for testing file downloads.
@@ -130,6 +131,12 @@ func (s *TestFileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	content := file.content
 	reportedSize := file.reportedSize
 	filename := file.filename
+	headStatus := file.headStatus
+
+	if r.Method == http.MethodHead && headStatus != 0 {
+		w.WriteHeader(headStatus)
+		return
+	}
 
 	// determine the size to report in Content-Length
 	size := int64(len(content))
@@ -214,6 +221,17 @@ func (s *TestFileServer) SetFilename(name string) {
 
 	if f, ok := s.files["/file"]; ok {
 		f.filename = name
+	}
+}
+
+// SetHeadStatus makes HEAD requests for the default file at /file fail with the given status,
+// while GET requests still serve it.
+func (s *TestFileServer) SetHeadStatus(status int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if f, ok := s.files["/file"]; ok {
+		f.headStatus = status
 	}
 }
 

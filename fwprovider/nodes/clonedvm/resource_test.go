@@ -14,6 +14,7 @@ package clonedvm_test
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -806,4 +807,52 @@ func slotIndex(slot string, prefix string) (int, bool) {
 	}
 
 	return idx, true
+}
+
+func TestAccResourceClonedVMDiskValidation(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	tests := []struct {
+		name        string
+		disk        string
+		expectError *regexp.Regexp
+	}{
+		{"import_from with an absolute path", `import_from = "/mnt/images/a+b.qcow2"`, nil},
+		{"serial with characters PVE rejects", `serial = "a,discard=on"`, regexp.MustCompile(`(?s)serial.*must contain`)},
+		{"import_from with a comma", `import_from = "local:import/a,b.qcow2"`, regexp.MustCompile(`(?s)import_from.*without\s+whitespace.*got:\s+local:import/a,b.qcow2`)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{{
+					Config: te.RenderConfig(fmt.Sprintf(`
+					resource "proxmox_cloned_vm" "validation" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-validation"
+						started   = false
+
+						clone = {
+							source_vm_id = 100
+						}
+
+						disk = {
+							virtio0 = {
+								datastore_id = "local-lvm"
+								%s
+							}
+						}
+					}`, tt.disk)),
+					ExpectError:        tt.expectError,
+					PlanOnly:           true,
+					ExpectNonEmptyPlan: tt.expectError == nil,
+				}},
+			})
+		})
+	}
 }

@@ -137,9 +137,26 @@ func (r *aclResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
+	acls, err := r.client.Access().GetACL(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Create ACL %q", plan.generateID().ValueString()), apiCallFailed+err.Error())
+		return
+	}
+
+	if plan.findIn(acls) != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to Create ACL %q", plan.generateID().ValueString()),
+			fmt.Sprintf("An ACL granting role %q on path %q to %q already exists. "+
+				"Import it with the ID %q to manage it with Terraform.",
+				plan.RoleID, plan.Path, plan.entityID(), plan.generateID().ValueString()),
+		)
+
+		return
+	}
+
 	body := plan.intoUpdateBody()
 
-	err := r.client.Access().UpdateACL(ctx, body)
+	err = r.client.Access().UpdateACL(ctx, body)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create ACL", apiCallFailed+err.Error())
 		return
@@ -165,33 +182,7 @@ func (r *aclResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 		return
 	}
 
-	for _, acl := range acls {
-		switch acl.Type {
-		case "group":
-			if acl.UserOrGroupID != state.GroupID.ValueString() {
-				continue
-			}
-		case "token":
-			if acl.UserOrGroupID != state.TokenID.ValueString() {
-				continue
-			}
-		case "user":
-			if acl.UserOrGroupID != state.UserID.ValueString() {
-				continue
-			}
-		default:
-			// ignore unknown values
-			continue
-		}
-
-		if acl.Path != state.Path {
-			continue
-		}
-
-		if acl.RoleID != state.RoleID {
-			continue
-		}
-
+	if acl := state.findIn(acls); acl != nil {
 		state.Propagate = ptr.Or(acl.Propagate.PointerBool(), true)
 
 		resp.Diagnostics.Append(resp.State.Set(ctx, state)...)

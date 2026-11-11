@@ -4,12 +4,14 @@
 	"name": "Default Linux Universal",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"dockerFile": "Dockerfile",
-    
+
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 		"ghcr.io/devcontainers/features/terraform:1": {}
 	},
-
+	"remoteEnv": {
+		"TF_LOG_PATH": "/root/terraform.log"
+	},
 	"mounts": [
         // Zsh commands history persistence
         {
@@ -67,12 +69,11 @@
             ]
         }
     },
-	
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	"remoteUser": "root",
 
     "postAttachCommand": ["bash", "./.devcontainer/post-attach.sh"],
-		
+
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "make build"
+	"postCreateCommand": "go install ."
 }

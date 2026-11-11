@@ -20,8 +20,8 @@ type ticketAuthenticator struct {
 // NewTicketAuthenticator returns a new ticket authenticator.
 func NewTicketAuthenticator(creds TicketCredentials) (Authenticator, error) {
 	ard := &AuthenticationResponseData{}
-	ard.Ticket = &(creds.AuthTicket)
-	ard.CSRFPreventionToken = &(creds.CSRFPreventionToken)
+	ard.Ticket = &creds.AuthTicket
+	ard.CSRFPreventionToken = &creds.CSRFPreventionToken
 
 	authTicketSplits := strings.Split(creds.AuthTicket, ":")
 

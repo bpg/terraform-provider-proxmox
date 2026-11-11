@@ -143,8 +143,8 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     - `import` (allowed extensions: `.raw`, `.qcow2`, `.vmdk`)
     - `vztmpl` (allowed extensions: `.tar.gz`, `.tar.xz`, `tar.zst`)
 - `datastore_id` - (Required) The datastore id.
-- `file_mode` - The file mode in octal format, e.g. `0700` or `600`. Note that the prefixes `0o` and `0x` is not supported! Setting this attribute is also only allowed for `root@pam` authenticated user.
-- `node_name` - (Required) The node name.
+- `file_mode` - The file mode in octal format, e.g. `0700` or `600`. Note that the prefixes `0o` and `0x` is not supported! With a non-root SSH user, the provider sets the mode with `sudo chmod`, which needs its own sudoers rule (see [SSH User](../index.md#ssh-user)).
+- `node_name` - (Required) The preferred node name. If this node has been removed from the cluster, the provider automatically uses an online node with access to the same active, enabled shared datastore. The datastore must support the file's content type.
 - `overwrite` - (Optional) Whether to overwrite an existing file (defaults to
     `true`).
 - `source_file` - (Optional) The source file (conflicts with `source_raw`),
@@ -154,6 +154,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     - `file_name` - (Optional) The file name to use instead of the source file
         name. Useful when the source file does not have a valid file extension,
         for example when the source file is a URL referencing a `.qcow2` image.
+        Must be a plain file name without path separators or whitespace.
     - `insecure` - (Optional) Whether to skip the TLS verification step for
         HTTPS sources (defaults to `false`).
     - `min_tls` - (Optional) The minimum required TLS version for HTTPS
@@ -161,7 +162,8 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     - `path` - (Required) A path to a local file or a URL.
 - `source_raw` - (Optional) The raw source (conflicts with `source_file`).
     - `data` - (Required) The raw data.
-    - `file_name` - (Required) The file name.
+    - `file_name` - (Required) The file name. Must be a plain file name without
+        path separators or whitespace.
     - `resize` - (Optional) The number of bytes to resize the file to.
 - `timeout_upload` - (Optional) Timeout for uploading ISO/VSTMPL files in
     seconds (defaults to 1800).

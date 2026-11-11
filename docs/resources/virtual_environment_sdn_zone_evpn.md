@@ -57,7 +57,7 @@ resource "proxmox_virtual_environment_sdn_zone_evpn" "example" {
 - `exit_nodes` (Set of String) List of exit nodes for EVPN.
 - `exit_nodes_local_routing` (Boolean) Enable local routing for EVPN exit nodes.
 - `ipam` (String) IP Address Management system.
-- `mtu` (Number) MTU value for the zone. There is no support to reset this value back to PVE default once set due to API limitation.
+- `mtu` (Number) MTU value for the zone.
 - `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `primary_exit_node` (String) Primary exit node for EVPN.
 - `reverse_dns` (String) Reverse DNS API server address.

@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -125,4 +126,16 @@ func TestClientDoRequest(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewConnectionExpiresIdleConnectionsBeforePveproxy(t *testing.T) {
+	t.Parallel()
+
+	conn, err := NewConnection("https://pve.example.com", true, "", nil)
+	require.NoError(t, err)
+
+	transport, ok := conn.httpClient.Transport.(*http.Transport)
+	require.True(t, ok)
+	require.Positive(t, transport.IdleConnTimeout)
+	require.Less(t, transport.IdleConnTimeout, 5*time.Second)
 }

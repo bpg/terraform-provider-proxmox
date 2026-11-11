@@ -53,9 +53,9 @@ resource "proxmox_virtual_environment_firewall_rules" "inbound" {
 
 ## Argument Reference
 
-- `node_name` - (Optional) Node name. Leave empty for cluster level rules.
-- `vm_id` - (Optional) VM ID. Leave empty for node/cluster level rules.
-- `container_id` - (Optional) Container ID. Leave empty for node/cluster level rules.
+- `node_name` - (Optional) Node name. Leave empty for cluster level rules. Changing it forces replacement of node/cluster level rules; for VM/container level rules it can change in place (e.g. after a migration).
+- `vm_id` - (Optional) VM ID. Leave empty for node/cluster level rules. Changing this value forces replacement.
+- `container_id` - (Optional) Container ID. Leave empty for node/cluster level rules. Changing this value forces replacement.
 - `rule` - (Optional) Firewall rule block (multiple blocks supported).
     The provider supports two types of the `rule` blocks:
     - A rule definition block, which includes the following arguments:
@@ -110,36 +110,44 @@ resource "proxmox_virtual_environment_firewall_rules" "inbound" {
 ## Import
 
 ### Cluster Rules
+
 Use the import ID: `cluster`
 
 **Example:**
+
 ```bash
 terraform import proxmox_virtual_environment_firewall_rules.cluster_rules cluster
 ```
 
 ### Node Rules
+
 Use the import ID format: `node/<node_name>`
 Example uses node name `pve`.
 
 **Example:**
+
 ```bash
 terraform import proxmox_virtual_environment_firewall_rules.node_rules node/pve
 ```
 
 ### VM Rules
+
 Use the import ID format: `vm/<node_name>/<vm_id>`
 Example uses node name `pve` and VM ID `100`.
 
 **Example:**
+
 ```bash
 terraform import proxmox_virtual_environment_firewall_rules.vm_rules vm/pve/100
 ```
 
 ### Container Rules
+
 Use the import ID format: `container/<node_name>/<container_id>`
 Example uses node name `pve` and container ID `100`.
 
 **Example:**
+
 ```bash
 terraform import proxmox_virtual_environment_firewall_rules.container_rules container/pve/100
 ```

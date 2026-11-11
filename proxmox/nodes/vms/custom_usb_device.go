@@ -25,6 +25,9 @@ type CustomUSBDevice struct {
 // CustomUSBDevices handles QEMU USB device parameters.
 type CustomUSBDevices []CustomUSBDevice
 
+// CustomUSBDeviceMap handles QEMU USB device parameters, keyed by the device name (usb0, usb1, ...).
+type CustomUSBDeviceMap map[string]*CustomUSBDevice
+
 // EncodeValues converts a CustomUSBDevice struct to a URL value.
 func (r *CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
 	if r.HostDevice == nil && r.Mapping == nil {
@@ -33,7 +36,7 @@ func (r *CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
 
 	var values []string
 	if r.HostDevice != nil {
-		values = append(values, fmt.Sprintf("host=%s", *(r.HostDevice)))
+		values = append(values, fmt.Sprintf("host=%s", *r.HostDevice))
 	}
 
 	if r.Mapping != nil {

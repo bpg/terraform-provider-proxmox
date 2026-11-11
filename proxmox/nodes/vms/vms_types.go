@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 var (
@@ -31,13 +32,17 @@ var (
 	regexNetworkDevice = regexp.MustCompile(`^net\d+$`)
 	// regexIPConfig is a regex pattern for matching cloud-init IP config names.
 	regexIPConfig = regexp.MustCompile(`^ipconfig\d+$`)
+	// regexUSBDevice is a regex pattern for matching USB device names.
+	regexUSBDevice = regexp.MustCompile(`^usb\d+$`)
 )
 
 // WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
 type WaitForIPConfig struct {
 	Skip bool // Skip the agent IP wait entirely (wait_for_ip.enabled = false)
-	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
-	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local unless allowed by `cidrs`)
+	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`)
+
+	Filter ip.AddressFilter // Which addresses qualify; empty keeps the default exclusions
 }
 
 // CloneRequestBody contains the data for an virtual machine clone request.
@@ -277,10 +282,7 @@ type GetResponseData struct {
 	Template             *types.CustomBool               `json:"template,omitempty"`
 	TimeDriftFixEnabled  *types.CustomBool               `json:"tdf,omitempty"`
 	TPMState             *CustomTPMState                 `json:"tpmstate0,omitempty"`
-	USBDevice0           *CustomUSBDevice                `json:"usb0,omitempty"`
-	USBDevice1           *CustomUSBDevice                `json:"usb1,omitempty"`
-	USBDevice2           *CustomUSBDevice                `json:"usb2,omitempty"`
-	USBDevice3           *CustomUSBDevice                `json:"usb3,omitempty"`
+	USBDevices           CustomUSBDeviceMap              `json:"-"`
 	VGADevice            *CustomVGADevice                `json:"vga,omitempty"`
 	VirtualCPUCount      *int64                          `json:"vcpus,omitempty"`
 	VMGenerationID       *string                         `json:"vmgenid,omitempty"`
@@ -441,6 +443,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 	data.VirtiofsShares = make(CustomVirtiofsShares)
 	data.NetworkDevices = make(CustomNetworkDeviceMap)
 	data.IPConfigs = make(CustomCloudInitIPConfigMap)
+	data.USBDevices = make(CustomUSBDeviceMap)
 
 	for key, value := range byAttr {
 		for _, prefix := range StorageInterfaces {
@@ -491,6 +494,15 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 
 			data.IPConfigs[key] = &ipConfig
 		}
+
+		if regexUSBDevice.MatchString(key) {
+			var device CustomUSBDevice
+			if err := json.Unmarshal([]byte(`"`+value.(string)+`"`), &device); err != nil {
+				return fmt.Errorf("failed to unmarshal %s: %w", key, err)
+			}
+
+			data.USBDevices[key] = &device
+		}
 	}
 
 	*d = GetResponseData(data)
@@ -510,7 +522,7 @@ func (b *UpdateRequestBody) ToDelete(fieldName string) error {
 
 	if field, ok := reflect.TypeFor[UpdateRequestBody]().FieldByName(fieldName); ok {
 		fieldTag := field.Tag.Get("url")
-		name := strings.Split(fieldTag, ",")[0]
+		name, _, _ := strings.Cut(fieldTag, ",")
 		b.Delete = append(b.Delete, name)
 	} else {
 		return fmt.Errorf("field %s not found in struct %s", fieldName, reflect.TypeFor[*UpdateRequestBody]().Name())

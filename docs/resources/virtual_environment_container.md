@@ -243,13 +243,17 @@ The `mount_point.volume` attribute accepts three forms:
               to `dhcp` for DHCPv6, or `auto` for SLAAC.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
                 when `dhcp` or `auto` are used as the address).
-    - `user_account` - (Optional) The user account configuration.
+    - `user_account` - (Optional) The user account configuration. It only applies when the
+        container is created, not when it is cloned: a cloned container keeps the SSH keys and
+        root password of its source container, and a warning is shown if this block is set.
         - `keys` - (Optional) The SSH keys for the root account.
         - `password` - (Optional) The password for the root account.
 - `memory` - (Optional) The memory configuration.
     - `dedicated` - (Optional) The dedicated memory in megabytes (defaults
         to `512`).
     - `swap` - (Optional) The swap size in megabytes (defaults to `0`).
+- `migrate` - (Optional) Migrate the container on node change instead of
+    re-creating it (defaults to `false`).
 - `mount_point` - (Optional) An additional volume mount or host bind mount
     (multiple blocks supported). Use this for data volumes, shared
     directories, or attaching pre-existing PVE volumes.
@@ -337,10 +341,22 @@ The `mount_point.volume` attribute accepts three forms:
         order (defaults to `-1`, meaning no specific order).
     - `up_delay` - (Optional) A non-negative number defining the delay in
         seconds before the next container is started.
-    - `down_delay` - (Optional) A non-negative number defining the delay in
-        seconds before the next container is shut down.
+    - `down_delay` - (Optional) A non-negative number defining the shutdown
+        timeout in seconds. When the node stops all guests (e.g. on host
+        shutdown), Proxmox VE waits this long for the container to shut down before
+        stopping it. When unset, the node's bulk stop timeout is used
+        (180 seconds by default).
 - `start_on_boot` - (Optional) Automatically start container when the host
   system boots (defaults to `true`).
+- `purge_on_destroy` - (Optional) Whether to purge the container from backup,
+  replication and HA configurations on destroy (defaults to `true`). Proxmox
+  refuses to delete a container that is still referenced by an HA resource or
+  a replication job unless this is set.
+- `delete_unreferenced_disks_on_destroy` - (Optional) Whether to also delete
+  disks on any enabled storage that carry the container ID but are not
+  referenced in its configuration (defaults to `false`). Unlike the VM
+  resource, this is opt-in for containers so that deliberately detached
+  volumes are not removed on destroy.
 - `tags` - (Optional) A list of tags the container tags. This is only meta
   information (defaults to `[]`). Note: Proxmox always sorts the container tags and set them to lowercase.
   If tag contains capital letters, then Proxmox will always report a
@@ -350,13 +366,20 @@ The `mount_point.volume` attribute accepts three forms:
 - `timeout_create` - (Optional) Timeout for creating a container in seconds (defaults to 1800).
 - `timeout_clone` - (Optional) Timeout for cloning a container in seconds (defaults to 1800).
 - `timeout_delete` - (Optional) Timeout for deleting a container in seconds (defaults to 60).
+- `timeout_migrate` - (Optional) Timeout for migrating the container to another node, in seconds (defaults to
+  1800).
 - `timeout_update` - (Optional) Timeout for updating a container in seconds (defaults to 1800).
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on the host (defaults to `false`).
 - `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the container starts.
-    - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
-    - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
+    - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local unless allowed by `cidrs`) (defaults to `false`).
+    - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`) (defaults to `false`).
+    - `cidrs` - (Optional) Only addresses inside one of these CIDRs (e.g. `["10.0.0.0/8", "2001:db8::/64"]`) count when waiting. Setting this disables the default loopback/link-local address exclusion; the `lo` interface is still skipped unless `interfaces` is also set. Avoid catch-all CIDRs such as `0.0.0.0/0` or `::/0`: they also match link-local addresses, which can end the wait before the real address is assigned; use `ipv4` or `ipv6` to require a family instead. When `ipv4` or `ipv6` is `true`, at least one CIDR of that family is required.
+    - `interfaces` - (Optional) Only addresses on interfaces whose name fully matches one of these regular expressions (RE2, e.g. `["eth[0-9]+"]`) count when waiting. Setting this disables the default skip of the `lo` interface; loopback/link-local addresses stay excluded unless `cidrs` is also set.
+    - `timeout` - (Optional) How long to wait for an address after the provider starts or reboots the container (defaults to `5m`). On timeout the apply continues with a warning listing the addresses that were rejected.
 
     When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false`, the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
+
+    `cidrs` and `interfaces` are combined per address (an address must match both). They only decide when waiting stops; `ipv4` and `ipv6` are not filtered. When the block is set, create and any update that starts or reboots the container wait for up to `timeout`. Every refresh also waits, for up to 10 seconds, and if no address qualifies, `ipv4` and `ipv6` are left empty.
 - `vm_id` - (Optional) The container identifier
 - `features` - (Optional) The container feature flags. Changing flags (except nesting) is only allowed for `root@pam` authenticated user.
     - `nesting` - (Optional) Whether the container is nested (defaults to `false`)
@@ -365,6 +388,56 @@ The `mount_point.volume` attribute accepts three forms:
     - `mount` - (Optional) List of allowed mount types (`cifs` or `nfs`)
     - `mknod` - (Optional) Whether the container supports `mknod()` system call (defaults to `false`)
 - `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute).
+
+## Container migration
+
+Setting `migrate = true` makes a change to `node_name` migrate the container instead of destroying and
+recreating it.
+
+~> **Important:** containers cannot be migrated live. Unlike virtual machines, a running container is
+migrated by shutting it down, moving it, and starting it again on the target node, so every migration of
+a running container incurs downtime. Set `timeout_migrate` high enough to cover the shutdown grace
+period, the volume copy and the boot.
+
+A stopped container is migrated offline and is not started as a side effect. If `started = true`, it is
+started on the target node afterwards as usual.
+
+If the same apply also makes any other configuration change — including ones that would not need a
+restart on their own, such as `tags` or `description` — or changes `idmap`, or sets `started` to `false`,
+the provider shuts the container down, migrates it offline, applies the change on the target node, and then
+starts it (or leaves it stopped). This avoids starting the container with stale configuration and
+restarting it twice.
+
+The `timeout_update` clock restarts once the container has arrived on the target node, so a long volume
+copy cannot eat into the time available for the configuration write, start or reboot that follows it.
+
+Containers managed by Proxmox HA are set to the HA state `ignored` for the duration of the migration, so
+that HA does not intercept the shutdown, migration and start or relocate the container afterwards. Once the
+container is in its final run state on the target node, its original HA state is restored; if the apply
+changes `started`, a `started`, `stopped` or `disabled` HA state is restored to match it instead.
+
+Every migration needs `VM.Migrate` on the container and `Sys.Audit` on `/`, which the provider uses to check
+whether the container is HA-managed. Migrating an HA-managed container also needs `Sys.Console` on `/` to
+change its HA state.
+
+### Bind mounts
+
+A `mount_point` that references a host path rather than a storage volume blocks migration unless the
+mount point has `shared = true`. This asserts that the same path exists on all nodes in the cluster.
+
+~> **Note:** `shared` and `node_name` cannot be changed in the same apply. Proxmox validates the mount
+point against the container's current configuration when the migration starts, and the provider writes
+configuration changes to the target node after the move, so the migration is refused before the new
+`shared = true` takes effect. Apply `shared = true` first, then change `node_name`.
+
+~> **Warning:** if the asserted path does not exist on the target node, the configuration and volumes
+still move, but starting the container there fails. The container is left stopped on the target node and
+its configuration on the source node is gone — there is no automatic fail-back. Create the missing path
+on the target node, then start the container to recover.
+
+Migration behavior for `device_passthrough` devices has not been verified. A device passed through to a
+container is node-local, so the same device should be expected to need to exist on the target node, but
+this has not been tested — do not assume it behaves like a `shared` bind mount.
 
 ## Attribute Reference
 

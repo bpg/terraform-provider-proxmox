@@ -15,6 +15,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -169,9 +170,14 @@ func GetDiskDeviceObjects(
 	diskDeviceObjects := vms.CustomStorageDevices{}
 
 	for _, diskEntry := range diskDevices {
+		// State from older versions may hold a nil entry for a disk PVE no longer reports.
+		block, ok := diskEntry.(map[string]any)
+		if !ok || block == nil {
+			continue
+		}
+
 		diskDevice := &vms.CustomStorageDevice{}
 
-		block := diskEntry.(map[string]any)
 		datastoreID, _ := block[mkDiskDatastoreID].(string)
 		pathInDatastore := ""
 
@@ -211,7 +217,7 @@ func GetDiskDeviceObjects(
 				diskDevice.FileVolume = pathInDatastore
 			}
 		} else {
-			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+			diskDevice.FileVolume = newVolume(datastoreID, int64(size))
 		}
 
 		diskDevice.AIO = &aio
@@ -348,16 +354,16 @@ func createCustomDisk(
 	commands := []string{
 		`set -e`,
 		ssh.TrySudo,
-		`file_id=` + *disk.FileID,
-		`file_format=` + fileFormat,
-		`datastore_id_target=` + *disk.DatastoreID,
+		`file_id=` + ssh.ShellQuote(*disk.FileID),
+		`file_format=` + ssh.ShellQuote(fileFormat),
+		`datastore_id_target=` + ssh.ShellQuote(*disk.DatastoreID),
 		fmt.Sprintf(`vm_id=%d`, vmID),
-		fmt.Sprintf(`disk_options=%s`, disk.EncodeOptions()),
-		fmt.Sprintf(`disk_interface=%s`, iface),
-		`source_image=$(try_sudo /usr/sbin/pvesm path $file_id)`,
-		`imported_disk=$(try_sudo /usr/sbin/qm disk import $vm_id $source_image $datastore_id_target -format $file_format | grep unused0 | cut -d : -f 3 | cut -d \' -f 1)`,
-		`disk_id=${datastore_id_target}:$imported_disk,$disk_options`,
-		`try_sudo /usr/sbin/qm set $vm_id -${disk_interface} $disk_id`,
+		`disk_options=` + ssh.ShellQuote(disk.EncodeOptions()),
+		`disk_interface=` + ssh.ShellQuote(iface),
+		`source_image=$(try_sudo /usr/sbin/pvesm path "$file_id")`,
+		`imported_disk=$(try_sudo /usr/sbin/qm disk import "$vm_id" "$source_image" "$datastore_id_target" -format "$file_format" | grep unused0 | cut -d : -f 3 | cut -d \' -f 1)`,
+		`disk_id="${datastore_id_target}:${imported_disk},${disk_options}"`,
+		`try_sudo /usr/sbin/qm set "$vm_id" "-${disk_interface}" "$disk_id"`,
 	}
 
 	out, err := client.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
@@ -424,7 +430,10 @@ func Read(
 		disk[mkDiskPathInDatastore] = pathInDatastore
 
 		if dd.Format == nil {
-			if datastoreID != "" {
+			if f, ok := InferFormatFromVolume(pathInDatastore); ok && datastoreID != "" {
+				// the storage API needs VM.Config.Disk on the owner VM, which a read-only token doesn't have
+				disk[mkDiskFileFormat] = f
+			} else if datastoreID != "" {
 				// disk format may not be returned by config API if it is default for the storage, and that may be different
 				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
 				volume, e := client.Node(nodeName).Storage(datastoreID).GetDatastoreFile(ctx, dd.FileVolume)
@@ -603,7 +612,15 @@ func Read(
 				}
 			}
 
-			disks := utils.ListResourcesAttributeValue(currentDiskList, mkDiskInterface)
+			// Order by state, but only for disks PVE still reports: a missing one becomes an empty slot every update rejects.
+			disks := slices.DeleteFunc(
+				utils.ListResourcesAttributeValue(currentDiskList, mkDiskInterface),
+				func(iface string) bool {
+					_, exists := diskMap[iface]
+
+					return !exists
+				},
+			)
 			diskList = utils.OrderedListFromMapByKeyValues(diskMap, disks)
 		} else {
 			diskList = utils.OrderedListFromMap(diskMap)
@@ -614,6 +631,78 @@ func Read(
 	}
 
 	return diags
+}
+
+// volumeMovesWithDisk reports whether the volume planned for the new disk iface is held by a disk leaving the VM in this
+// update (an interface change). path_in_datastore is inherited by list position, so any other volume isn't iface's.
+func volumeMovesWithDisk(
+	iface string,
+	disk *vms.CustomStorageDevice,
+	planDisks vms.CustomStorageDevices,
+	currentDisks vms.CustomStorageDevices,
+) bool {
+	if disk == nil || disk.FileVolume == "" {
+		return false
+	}
+
+	for other, current := range currentDisks {
+		if other != iface && current != nil && planDisks[other] == nil && current.FileVolume == disk.FileVolume {
+			return true
+		}
+	}
+
+	return false
+}
+
+// withNewVolume returns a copy of disk that asks PVE for a new volume instead of attaching the planned one.
+func withNewVolume(disk *vms.CustomStorageDevice) *vms.CustomStorageDevice {
+	if disk.DatastoreID == nil || *disk.DatastoreID == "" || disk.Size == nil {
+		return disk
+	}
+
+	newDisk := *disk
+	newDisk.FileVolume = newVolume(*disk.DatastoreID, disk.Size.InGigabytes())
+
+	return &newDisk
+}
+
+// newVolume is the volume a disk asks PVE to allocate: `<datastore>:<size in GB>`.
+func newVolume(datastoreID string, sizeGB int64) string {
+	return fmt.Sprintf("%s:%d", datastoreID, sizeGB)
+}
+
+// pathInDatastoreConfigured reports whether the configuration sets path_in_datastore for the disk on
+// iface. An unknown path counts as set.
+func pathInDatastoreConfigured(config cty.Value, iface string) bool {
+	if config.IsNull() || !config.IsKnown() || !config.Type().IsObjectType() || !config.Type().HasAttribute(MkDisk) {
+		return false
+	}
+
+	disks := config.GetAttr(MkDisk)
+	if disks.IsNull() || !disks.IsKnown() {
+		return false
+	}
+
+	for _, block := range disks.AsValueSlice() {
+		if block.IsNull() || !block.IsKnown() || !block.Type().HasAttribute(mkDiskInterface) {
+			continue
+		}
+
+		diskInterface, _ := block.GetAttr(mkDiskInterface).Unmark()
+		if !diskInterface.IsKnown() || diskInterface.IsNull() || diskInterface.AsString() != iface {
+			continue
+		}
+
+		if !block.Type().HasAttribute(mkDiskPathInDatastore) {
+			return false
+		}
+
+		path, _ := block.GetAttr(mkDiskPathInDatastore).Unmark()
+
+		return !path.IsNull()
+	}
+
+	return false
 }
 
 // Update updates the disk configuration of a VM.
@@ -632,6 +721,17 @@ func Update(
 	rebootRequired := false
 
 	if d.HasChange(MkDisk) {
+		// Compare against the prior state, not the PVE config: both sides are built the same way, so an unchanged
+		// disk is skipped and options the provider doesn't model are kept.
+		oldList, _ := d.GetChange(MkDisk)
+
+		oldDisks, err := GetDiskDeviceObjects(d, nil, oldList.([]any))
+		if err != nil {
+			oldDisks = vms.CustomStorageDevices{}
+		}
+
+		config := d.GetRawConfig()
+
 		for iface, disk := range planDisks {
 			var tmp *vms.CustomStorageDevice
 
@@ -646,10 +746,13 @@ func Update(
 				} else {
 					// otherwise this is a blank disk that can be added directly via update API
 					tmp = disk
+
+					if !pathInDatastoreConfigured(config, iface) && !volumeMovesWithDisk(iface, disk, planDisks, currentDisks) {
+						tmp = withNewVolume(disk)
+					}
 				}
 			case currentDisks[iface] != nil:
-				// Check if the disk has actually changed before updating
-				if currentDisks[iface].Equals(disk) {
+				if oldDisks[iface].Equals(disk) {
 					// Disk hasn't changed, skip update
 					continue
 				}
@@ -711,4 +814,28 @@ func Update(
 	}
 
 	return rebootRequired, diags
+}
+
+// InferFormatFromVolume derives a disk image's format from its path in the datastore
+// without a storage API call. A file extension names the format; a name with no
+// extension is a block-storage volume, which Proxmox always exposes as raw. The
+// second value is false only when the extension is not a format this provider knows,
+// so the caller can fall back to the storage API.
+func InferFormatFromVolume(pathInDatastore string) (string, bool) {
+	base := pathInDatastore
+	if i := strings.LastIndex(base, "/"); i >= 0 {
+		base = base[i+1:]
+	}
+
+	dot := strings.LastIndex(base, ".")
+	if dot < 0 {
+		return "raw", true
+	}
+
+	switch ext := strings.ToLower(base[dot+1:]); ext {
+	case "raw", "qcow2", "vmdk":
+		return ext, true
+	default:
+		return "", false
+	}
 }

@@ -14,6 +14,8 @@ package test
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -21,6 +23,8 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -298,8 +302,6 @@ func TestAccResourceFile(t *testing.T) {
 // TestAccNodeStreamUpload verifies that NodeStreamUpload succeeds when the SSH
 // user relies on sudo to write to the snippets directory.
 func TestAccNodeStreamUpload(t *testing.T) {
-	t.Skip("disabled until NodeStreamUpload can chmod a sudo-written file as a non-root SSH user (#2987)")
-
 	te := InitEnvironment(t)
 
 	client := te.SSHClient()
@@ -311,7 +313,7 @@ func TestAccNodeStreamUpload(t *testing.T) {
 	fname := filepath.Base(f.Name())
 
 	t.Cleanup(func() {
-		err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
+		err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname)).Err()
 		if err != nil {
 			t.Logf("cleanup: failed to delete snippet %s: %v", fname, err)
 		}
@@ -339,6 +341,53 @@ func TestAccNodeStreamUpload(t *testing.T) {
 	require.Equal(t, "700", strings.TrimSpace(out))
 }
 
+func TestAccResourceFileSnippetFileMode(t *testing.T) {
+	te := InitEnvironment(t)
+
+	if te.SSHClient().Username() == "root" {
+		t.Skip("requires a non-root sudo SSH user")
+	}
+
+	fileName := SafeResourceName("hookscript") + ".sh"
+
+	te.AddTemplateVars(map[string]any{
+		"FileName": fileName,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "hookscript" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					file_mode    = "0700"
+					source_raw {
+						data      = "#!/usr/bin/env bash\nexit 0\n"
+						file_name = "{{.FileName}}"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_file.hookscript", map[string]string{
+						"file_mode": "0700",
+						"id":        fmt.Sprintf("local:snippets/%s", fileName),
+					}),
+					func(*terraform.State) error {
+						out := te.ExecuteNodeCommands([]string{"stat -c '%a' /var/lib/vz/snippets/" + fileName})
+						if mode := strings.TrimSpace(out); mode != "700" {
+							return fmt.Errorf("expected snippet mode 700, got %q", mode)
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func uploadSnippetFile(te *Environment, fileName string) {
 	te.t.Helper()
 
@@ -361,6 +410,86 @@ func uploadSnippetFile(te *Environment, fileName string) {
 func deleteSnippet(te *Environment, fname string) {
 	te.t.Helper()
 
-	err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
+	err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname)).Err()
 	require.NoError(te.t, err)
+}
+
+// TestAccDeleteDatastoreFileWaitsForTask verifies that deleting a datastore
+// file waits for the completion of the async deletion task started by PVE,
+// and surfaces the task's error if the deletion fails.
+//
+// Regression test for #3062: PVE storage DELETE returns 200 with the UPID of
+// an async imgdel task. A protected backup is used as the discriminator: the
+// imgdel worker fails with "cannot remove protected volume", but the HTTP
+// DELETE still returns 200. Without waiting for the task, the failure is
+// invisible and the delete appears to succeed while the file remains.
+func TestAccDeleteDatastoreFileWaitsForTask(t *testing.T) {
+	te := InitEnvironment(t)
+
+	sc := te.NodeStorageClient()
+
+	fname := "vzdump-qemu-999-2026_01_02-03_04_05.vma.zst"
+	volid := "backup/" + fname
+
+	t.Cleanup(func() {
+		// best effort: un-protect then delete
+		_ = te.NodeClient().DoRequest(
+			context.Background(), http.MethodPut,
+			te.NodeClient().ExpandPath(fmt.Sprintf("storage/%s/content/%s", sc.StorageName, url.PathEscape(volid))),
+			&struct {
+				Protected string `url:"protected"`
+			}{Protected: "0"},
+			nil,
+		)
+		_ = sc.DeleteDatastoreFile(context.Background(), volid).Err()
+	})
+
+	// Create a backup file directly in the datastore directory.
+	f, err := os.CreateTemp("", fname)
+	require.NoError(t, err)
+
+	_, werr := f.WriteString("# backup placeholder\n")
+	require.NoError(t, werr)
+	require.NoError(t, f.Close())
+
+	t.Cleanup(func() { _ = os.Remove(f.Name()) })
+
+	uf, uerr := os.Open(f.Name())
+	require.NoError(t, uerr)
+
+	t.Cleanup(func() { _ = uf.Close() })
+
+	// NodeStreamUpload appends the content-type subdir to remote_dir itself;
+	// for backups that on-disk subdir is "dump", so pass "/var/lib/vz" and
+	// "dump" as the content type to land in /var/lib/vz/dump/.
+	require.NoError(t, te.SSHClient().NodeStreamUpload(context.Background(), te.NodeName, "/var/lib/vz",
+		&api.FileUploadRequest{
+			ContentType: "dump",
+			FileName:    fname,
+			File:        uf,
+		},
+	))
+
+	// Protect it: only backups support the 'protected' attribute, and the
+	// imgdel worker refuses to remove protected volumes.
+	require.NoError(t, te.NodeClient().DoRequest(
+		context.Background(), http.MethodPut,
+		te.NodeClient().ExpandPath(fmt.Sprintf("storage/%s/content/%s", sc.StorageName, url.PathEscape(volid))),
+		&struct {
+			Protected string `url:"protected"`
+		}{Protected: "1"},
+		nil,
+	))
+
+	// With the fix, the delete must fail with the task's error...
+	err = sc.DeleteDatastoreFile(context.Background(), volid).Err()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "cannot remove protected volume")
+
+	// ...and the file must still exist (checked on the filesystem, since the
+	// test datastore may not declare the "backup" content type).
+	out, execErr := te.SSHClient().ExecuteNodeCommands(context.Background(), te.NodeName,
+		[]string{fmt.Sprintf("test -f /var/lib/vz/dump/%s && echo present", fname)})
+	require.NoError(t, execErr)
+	assert.Contains(t, string(out), "present", "protected file should still exist after failed delete")
 }

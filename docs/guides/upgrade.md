@@ -19,7 +19,7 @@ This guide documents breaking changes across provider versions and the recommend
      required_providers {
        proxmox = {
          source  = "bpg/proxmox"
-         version = "~> 0.112.0" # x-release-please-version
+         version = "~> 0.121.0" # x-release-please-version
        }
      }
    }
@@ -36,6 +36,163 @@ This guide documents breaking changes across provider versions and the recommend
 6. Apply when satisfied.
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
+
+## v0.122.0
+
+### Container rootfs `replicate` defaults to `true`
+
+The `disk.replicate` attribute of `proxmox_virtual_environment_container` now defaults to `true`, as documented and as Proxmox VE does, and `replicate = false` is applied on create. Before, the provider default was `false` but was never sent on create, so new containers were replicated while the state showed `false`, and `replicate = false` only took effect after a later change to the `disk` block.
+
+After upgrading, a container that does not set `replicate` and whose rootfs has `replicate=0` in Proxmox VE (for example after a `disk` change with the old default) plans an update to `replicate = true`. Other containers show no change.
+
+**Action required:** To keep the rootfs out of replication jobs, set `replicate = false` in the `disk` block before applying.
+
+## v0.121.0
+
+### `proxmox_acl` no longer adopts an existing ACL
+
+Creating a `proxmox_acl` (or `proxmox_virtual_environment_acl`) for a path, role and user, group or token that already has an ACL entry now fails with `Unable to Create ACL`, saying the ACL already exists. Before, the create succeeded and silently took over the existing entry, so a later `destroy` removed an ACL that Terraform never created. ACLs already in state are not affected.
+
+**Action required:** If an apply fails because the ACL already exists, import the ACL with the ID shown in the error (`{path}?{group|user@realm|user@realm!token}?{role}`), for example:
+
+```terraform
+import {
+  to = proxmox_acl.auditor
+  id = "/?acltest@pve?PVEAuditor"
+}
+```
+
+### Container `wait_for_ip` waits after start
+
+When `wait_for_ip` is set on a `proxmox_virtual_environment_container`, creating it, and any update that starts or reboots it, now waits for the configured address for up to the new `wait_for_ip.timeout` (default `5m`). Before, only refresh waited, for up to 10 seconds. Refresh is unchanged, and no plan changes.
+
+If the `wait_for_ip` condition is never met, for example `ipv4 = true` on a container without IPv4, those applies now take up to `timeout` longer and end with a warning.
+
+**Action required:** None for containers that get their address. Otherwise, fix the `wait_for_ip` condition, lower `wait_for_ip.timeout`, or remove the block.
+
+## v0.120.0
+
+### Imported VMs record a TPM, EFI disk and AMD SEV on default settings
+
+Importing a `proxmox_virtual_environment_vm` now records `tpm_state`, `efi_disk` and `amd_sev` whenever the VM has them. Before, a TPM on `local-lvm` at `v2.0`, an EFI disk on `local-lvm` with the default type and format, or AMD SEV with all default options was left out of state, so declaring it planned a new device, an empty one for the TPM and EFI disk. Devices on other settings were already recorded.
+
+This only affects new imports. A configuration without these blocks now plans to remove the TPM, EFI disk or AMD SEV after an import, the same as for a regular `disk`.
+
+**Action required:** After importing a VM, declare its `tpm_state`, `efi_disk` and `amd_sev` blocks, or generate them with `-generate-config-out`, before applying.
+
+### Imported VMs record a CD-ROM on any interface
+
+Importing a `proxmox_virtual_environment_vm` now records a `cdrom` block for the CD-ROM drive on whichever interface Proxmox reports it, for example `ide2`, the GUI default. Before, only a CD-ROM on `ide3` was recorded, so declaring an existing drive planned a new one. Cloud-init drives are not reported as `cdrom`.
+
+This only affects new imports. A configuration without a `cdrom` block now plans a `cdrom` change after an import.
+
+**Action required:** After importing a VM, declare its `cdrom` block, or generate it with `-generate-config-out`, before applying.
+
+## v0.119.0
+
+### `proxmox_ceph_pool` no longer manages storages
+
+The experimental `proxmox_ceph_pool` no longer creates or removes RBD storages: `add_storages` and `remove_storages` are removed. Pools are always created without a storage, and destroying a pool never removes a storage. RBD storages are managed by the new `proxmox_storage_rbd` resource. This also fixes importing a pool, which used to plan an update, or a replacement when `add_storages` was set.
+
+**Before:**
+
+```terraform
+resource "proxmox_ceph_pool" "vm" {
+  node_name    = "pve"
+  name         = "vm"
+  add_storages = true
+}
+```
+
+**After:**
+
+```terraform
+resource "proxmox_ceph_pool" "vm" {
+  node_name = "pve"
+  name      = "vm"
+}
+
+import {
+  to = proxmox_storage_rbd.vm
+  id = "vm" # add_storages named the storage after the pool
+}
+
+resource "proxmox_storage_rbd" "vm" {
+  id      = "vm"
+  pool    = proxmox_ceph_pool.vm.name # for an erasure-coded pool: metadata_pool_name
+  # data_pool = proxmox_ceph_pool.vm.data_pool.name # erasure-coded pools only
+  content = ["images", "rootdir"]
+}
+```
+
+**Action required:** Remove `add_storages` and `remove_storages` from your configuration. A storage that `add_storages` already created keeps working; to manage it, import it as a `proxmox_storage_rbd` as shown above. Destroy storages through their own resources: destroying the pool leaves them in place.
+
+### `proxmox_ceph_pool.remove_ecprofile` removed
+
+The erasure code profile of an erasure-coded pool is removed with the pool if Proxmox generated it (no `erasure_coding.profile` set), and kept if the pool named an existing `profile`.
+
+**Action required:** Remove `remove_ecprofile` from your configuration.
+
+### `proxmox_ceph_pool.erasure_coding` is now an object
+
+`erasure_coding` is an object with `k`, `m`, `failure_domain`, `device_class` and `profile` attributes, instead of Proxmox's `k=<int>,m=<int>,...` string. With `erasure_coding`, Proxmox creates the pools `<name>-data` and `<name>-metadata` rather than a pool named `name`, and the provider now reads both.
+
+**Before:**
+
+```terraform
+erasure_coding = "k=2,m=2,failure-domain=osd"
+```
+
+**After:**
+
+```terraform
+erasure_coding = {
+  k              = 2
+  m              = 2
+  failure_domain = "osd"
+}
+```
+
+**Action required:** Rewrite `erasure_coding` as an object. No existing state holds the string form, because creating an erasure-coded pool always failed before this version.
+
+### File ID and disk `serial` validation tightened
+
+File IDs (`<datastore_id>:<content_type>/<file_name>`) can no longer contain whitespace, `,` or `=`. This applies to `proxmox_virtual_environment_vm` (`disk.file_id`, `disk.import_from`, `cdrom.file_id`, the `initialization` `*_data_file_id` attributes), the `proxmox_virtual_environment_container` template `file_id`, `cdrom.file_id` on `proxmox_vm` and `proxmox_cloned_vm`, and `disk.import_from` on `proxmox_cloned_vm`, which also accepts an absolute path.
+
+Disk `serial` on `proxmox_virtual_environment_vm` and `proxmox_cloned_vm` may only contain letters, digits and `-%_.!~*'()`, up to 20 characters.
+
+Proxmox VE rejects these values anyway, so such a configuration already failed at apply time. A `,` in `serial` could also set other disk options silently. Now the error shows up at plan time.
+
+**Action required:** Rename any file whose name contains whitespace, `,` or `=`, and update the file IDs that point to it. Remove other characters from disk `serial` values.
+
+## v0.118.0
+
+### SDN zone `mtu` can be removed
+
+The `mtu` attribute on the SDN zone resources (`proxmox_sdn_zone_simple`, `proxmox_sdn_zone_vlan`, `proxmox_sdn_zone_qinq`, `proxmox_sdn_zone_vxlan`, `proxmox_sdn_zone_evpn` and their `proxmox_virtual_environment_*` aliases) is no longer computed. Removing it from the configuration now removes it from the zone, and the zone goes back to the Proxmox default.
+
+**Before:** Once set, `mtu` could not be removed. If `mtu` was not in the configuration, Terraform kept whatever value the zone had, including values set outside Terraform.
+
+**After:** If `mtu` is not in the configuration, Terraform plans to remove it from the zone (`mtu = 1450 -> null`), and `apply` deletes it. Like any other SDN change, it takes effect after the SDN configuration is applied.
+
+**Action required:** Run `terraform plan` after upgrading. If it shows `mtu` being removed from a zone where you want to keep it, add `mtu` to that zone's configuration.
+
+### SDN `peers` validation tightened
+
+The `peers` attribute on `proxmox_sdn_zone_vxlan`, `proxmox_sdn_controller_evpn` and `proxmox_sdn_controller_bgp` is now validated at plan time:
+
+- `peers = []` is rejected. Before, it was accepted but sent nothing, so Proxmox kept the previous peers.
+- Every entry must be a plain IPv4 or IPv6 address (no CIDR suffix, no hostname). Before, invalid entries were only rejected by Proxmox at apply time.
+
+**Action required:** If you set `peers = []` (for example on an EVPN controller that uses `fabric`), remove the `peers` attribute instead. Replace any entry that is not a plain IP address.
+
+### `file` `file_name` validation tightened
+
+The `file_name` attribute in the `source_file` and `source_raw` blocks of `proxmox_virtual_environment_file` must now be a plain file name. Values containing path separators (`/`, `\`), whitespace, or the special entries `.` and `..` are rejected at plan time. The same rule applies to a file name derived from `source_file.path` when `file_name` is not set.
+
+Proxmox VE itself cannot address a volume whose name contains whitespace: the API upload silently replaces spaces with `_`, and the delete endpoint refuses such a volume ID. So a resource with whitespace in its name could never be destroyed by the provider.
+
+**Action required:** Rename any file with whitespace or path separators in `file_name`. If such a resource already exists in state, remove it with `terraform state rm` and delete the file on the node manually, then re-create it under the new name.
 
 ## v0.109.0
 

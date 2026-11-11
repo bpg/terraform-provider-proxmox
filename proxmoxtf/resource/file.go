@@ -32,6 +32,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	nodestorage "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
@@ -106,7 +107,7 @@ func File() *schema.Resource {
 				Type: schema.TypeString,
 				Description: `The file mode in octal format, e.g. "0700" or "600".` +
 					`Note that the prefixes "0o" and "0x" are not supported!` +
-					`Setting this attribute is also only allowed for "root@pam" authenticated user.`,
+					`With a non-root SSH user, the provider sets the mode with "sudo chmod", which needs its own sudoers rule.`,
 				Optional:         true,
 				ValidateDiagFunc: validators.FileMode(),
 				ForceNew:         true,
@@ -134,8 +135,8 @@ func File() *schema.Resource {
 				Description: "The source file",
 				Optional:    true,
 				ForceNew:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return make([]interface{}, 1), nil
+				DefaultFunc: func() (any, error) {
+					return make([]any, 1), nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -160,11 +161,12 @@ func File() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentFileSourceFileChecksum,
 						},
 						mkResourceVirtualEnvironmentFileSourceFileFileName: {
-							Type:        schema.TypeString,
-							Description: "The file name to use instead of the source file name",
-							Optional:    true,
-							ForceNew:    true,
-							Default:     dvResourceVirtualEnvironmentFileSourceFileFileName,
+							Type:             schema.TypeString,
+							Description:      "The file name to use instead of the source file name",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentFileSourceFileFileName,
+							ValidateDiagFunc: validators.FileName(),
 						},
 						mkResourceVirtualEnvironmentFileSourceFileInsecure: {
 							Type:        schema.TypeBool,
@@ -191,8 +193,8 @@ func File() *schema.Resource {
 				Description: "The raw source",
 				Optional:    true,
 				ForceNew:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return make([]interface{}, 1), nil
+				DefaultFunc: func() (any, error) {
+					return make([]any, 1), nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -203,10 +205,11 @@ func File() *schema.Resource {
 							ForceNew:    true,
 						},
 						mkResourceVirtualEnvironmentFileSourceRawFileName: {
-							Type:        schema.TypeString,
-							Description: "The file name",
-							Required:    true,
-							ForceNew:    true,
+							Type:             schema.TypeString,
+							Description:      "The file name",
+							Required:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: validators.FileName(),
 						},
 						mkResourceVirtualEnvironmentFileSourceRawResize: {
 							Type:        schema.TypeInt,
@@ -389,8 +392,8 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 		}
 	}
 
-	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
-	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]any)
+	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]any)
 
 	sourceFilePathLocal := ""
 
@@ -412,14 +415,14 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 	// In case of a URL, we must first download the file before proceeding.
 	// This is due to lack of support for chunked transfers in the Proxmox VE API.
 	if len(sourceFile) > 0 {
-		sourceFileBlock := sourceFile[0].(map[string]interface{})
+		sourceFileBlock := sourceFile[0].(map[string]any)
 		sourceFilePath := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 		sourceFileChecksum := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChecksum].(string)
 		sourceFileMinTLS := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileMinTLS].(string)
 		sourceFileInsecure := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileInsecure].(bool)
 
 		if fileIsURL(d) {
-			tflog.Debug(ctx, "Downloading file from URL", map[string]interface{}{
+			tflog.Debug(ctx, "Downloading file from URL", map[string]any{
 				"url": sourceFilePath,
 			})
 
@@ -432,12 +435,17 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
 						MinVersion:         minTLSVersion,
-						InsecureSkipVerify: sourceFileInsecure,
+						InsecureSkipVerify: sourceFileInsecure, //nolint:gosec
 					},
 				},
 			}
 
-			res, err := httpClient.Get(sourceFilePath)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, sourceFilePath, nil)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			res, err := httpClient.Do(req) //nolint:bodyclose
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -453,7 +461,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 			defer func(name string) {
 				err := os.Remove(name)
 				if err != nil {
-					tflog.Error(ctx, "Failed to remove temporary file", map[string]interface{}{
+					tflog.Error(ctx, "Failed to remove temporary file", map[string]any{
 						"error": err,
 						"file":  name,
 					})
@@ -485,13 +493,14 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 			_, err = io.Copy(h, file)
 			diags = append(diags, diag.FromErr(err)...)
 			err = file.Close()
+
 			diags = append(diags, diag.FromErr(err)...)
 			if diags.HasError() {
 				return diags
 			}
 
 			calculatedChecksum := fmt.Sprintf("%x", h.Sum(nil))
-			tflog.Debug(ctx, "Calculated checksum", map[string]interface{}{
+			tflog.Debug(ctx, "Calculated checksum", map[string]any{
 				"source": sourceFilePath,
 				"sha256": calculatedChecksum,
 			})
@@ -508,7 +517,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 
 	//nolint:nestif
 	if len(sourceRaw) > 0 {
-		sourceRawBlock := sourceRaw[0].(map[string]interface{})
+		sourceRawBlock := sourceRaw[0].(map[string]any)
 		sourceRawData := sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawData].(string)
 		sourceRawResize := sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawResize].(int)
 
@@ -522,13 +531,14 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 
 		tempRawFile, e := os.CreateTemp(config.TempDir(), "raw")
 		if e != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(e)
 		}
 
 		tempRawFileName := tempRawFile.Name()
 		_, err = io.Copy(tempRawFile, bytes.NewBufferString(sourceRawData))
 		diags = append(diags, diag.FromErr(err)...)
 		err = tempRawFile.Close()
+
 		diags = append(diags, diag.FromErr(err)...)
 		if diags.HasError() {
 			return diags
@@ -537,7 +547,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 		defer func(name string) {
 			err := os.Remove(name)
 			if err != nil {
-				tflog.Error(ctx, "Failed to remove temporary file", map[string]interface{}{
+				tflog.Error(ctx, "Failed to remove temporary file", map[string]any{
 					"error": err,
 					"file":  name,
 				})
@@ -556,7 +566,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			tflog.Error(ctx, "Failed to close file", map[string]interface{}{
+			tflog.Error(ctx, "Failed to close file", map[string]any{
 				"error": err,
 			})
 		}
@@ -623,7 +633,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 			diags = append(diags, diag.FromErr(err)...)
 			return diags
 		}
-
 	}
 
 	volID, di := fileGetVolumeID(ctx, d, capi)
@@ -669,8 +678,8 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 
 func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.Client) (*string, diag.Diagnostics) {
 	contentType := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
-	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
-	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]any)
+	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]any)
 
 	ver := version.MinimumProxmoxVersion
 	if versionResp, err := c.Version().Version(ctx); err == nil {
@@ -683,13 +692,14 @@ func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.C
 
 	sourceFilePath := ""
 
-	if len(sourceFile) > 0 {
-		sourceFileBlock := sourceFile[0].(map[string]interface{})
+	switch {
+	case len(sourceFile) > 0:
+		sourceFileBlock := sourceFile[0].(map[string]any)
 		sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
-	} else if len(sourceRaw) > 0 {
-		sourceRawBlock := sourceRaw[0].(map[string]interface{})
+	case len(sourceRaw) > 0:
+		sourceRawBlock := sourceRaw[0].(map[string]any)
 		sourceFilePath = sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawFileName].(string)
-	} else {
+	default:
 		return nil, diag.Errorf(
 			"missing argument \"%s.%s\" or \"%s\"",
 			mkResourceVirtualEnvironmentFileSourceFile,
@@ -697,16 +707,18 @@ func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.C
 			mkResourceVirtualEnvironmentFileSourceRaw,
 		)
 	}
+
 	if contentType == "" {
-		if strings.HasSuffix(sourceFilePath, ".tar.gz") ||
-			strings.HasSuffix(sourceFilePath, ".tar.xz") {
+		switch {
+		case strings.HasSuffix(sourceFilePath, ".tar.gz") ||
+			strings.HasSuffix(sourceFilePath, ".tar.xz"):
 			contentType = "vztmpl"
-		} else if ver.SupportImportContentType() &&
+		case ver.SupportImportContentType() &&
 			(strings.HasSuffix(sourceFilePath, ".qcow2") ||
 				strings.HasSuffix(sourceFilePath, ".raw") ||
-				strings.HasSuffix(sourceFilePath, ".vmdk")) {
+				strings.HasSuffix(sourceFilePath, ".vmdk")):
 			contentType = "import"
-		} else {
+		default:
 			ext := strings.TrimLeft(strings.ToLower(filepath.Ext(sourceFilePath)), ".")
 
 			switch ext {
@@ -733,20 +745,21 @@ func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.C
 }
 
 func fileGetSourceFileName(d *schema.ResourceData) (*string, error) {
-	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
-	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]any)
+	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]any)
 
 	sourceFileFileName := ""
 	sourceFilePath := ""
 
-	if len(sourceFile) > 0 {
-		sourceFileBlock := sourceFile[0].(map[string]interface{})
+	switch {
+	case len(sourceFile) > 0:
+		sourceFileBlock := sourceFile[0].(map[string]any)
 		sourceFileFileName = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileFileName].(string)
 		sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
-	} else if len(sourceRaw) > 0 {
-		sourceRawBlock := sourceRaw[0].(map[string]interface{})
+	case len(sourceRaw) > 0:
+		sourceRawBlock := sourceRaw[0].(map[string]any)
 		sourceFileFileName = sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawFileName].(string)
-	} else {
+	default:
 		return nil, fmt.Errorf(
 			"missing argument \"%s.%s\"",
 			mkResourceVirtualEnvironmentFileSourceFile,
@@ -758,7 +771,7 @@ func fileGetSourceFileName(d *schema.ResourceData) (*string, error) {
 		if fileIsURL(d) {
 			downloadURL, err := url.ParseRequestURI(sourceFilePath)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to parse source file URL %q: %w", sourceFilePath, err)
 			}
 
 			path := strings.Split(downloadURL.Path, "/")
@@ -773,6 +786,10 @@ func fileGetSourceFileName(d *schema.ResourceData) (*string, error) {
 		} else {
 			sourceFileFileName = filepath.Base(sourceFilePath)
 		}
+	}
+
+	if err := validators.ValidateFileName(sourceFileFileName); err != nil {
+		return nil, fmt.Errorf("invalid file name: %w", err)
 	}
 
 	return &sourceFileFileName, nil
@@ -799,11 +816,11 @@ func fileGetVolumeID(ctx context.Context, d *schema.ResourceData, c proxmox.Clie
 }
 
 func fileIsURL(d *schema.ResourceData) bool {
-	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]any)
 	sourceFilePath := ""
 
 	if len(sourceFile) > 0 {
-		sourceFileBlock := sourceFile[0].(map[string]interface{})
+		sourceFileBlock := sourceFile[0].(map[string]any)
 		sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 	} else {
 		return false
@@ -811,6 +828,56 @@ func fileIsURL(d *schema.ResourceData) bool {
 
 	return strings.HasPrefix(sourceFilePath, "http://") ||
 		strings.HasPrefix(sourceFilePath, "https://")
+}
+
+func fileResolveNode(ctx context.Context, client proxmox.Client, preferredNode, datastoreID string, contentType *string) (string, error) {
+	nodes, err := client.Node("").ListNodes(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	for _, node := range nodes {
+		if node.Name == preferredNode {
+			return preferredNode, nil
+		}
+	}
+
+	// node_name is ForceNew, so the resolved node cannot be written back to state.
+	candidateErrors := []error{fmt.Errorf(
+		"node %q is no longer available and no online node exposes shared datastore %q with the required content type",
+		preferredNode, datastoreID,
+	)}
+
+	for _, node := range nodes {
+		if node.Status == nil || *node.Status != "online" {
+			continue
+		}
+
+		list, err := client.Node(node.Name).Storage(datastoreID).ListDatastores(ctx, &nodestorage.DatastoreListRequestBody{ID: &datastoreID})
+		if err != nil {
+			candidateErrors = append(candidateErrors, fmt.Errorf("node %q: %w", node.Name, err))
+			continue
+		}
+
+		for _, ds := range list {
+			if ds.ID != datastoreID || ds.Shared == nil || !bool(*ds.Shared) ||
+				ds.Enabled == nil || !bool(*ds.Enabled) || ds.Active == nil || !bool(*ds.Active) {
+				continue
+			}
+
+			if contentType != nil && (ds.ContentTypes == nil || !slices.Contains(*ds.ContentTypes, *contentType)) {
+				continue
+			}
+
+			tflog.Debug(ctx, "using shared datastore through another node", map[string]any{
+				"original_node": preferredNode, "node": node.Name, "datastore": datastoreID,
+			})
+
+			return node.Name, nil
+		}
+	}
+
+	return "", errors.Join(candidateErrors...)
 }
 
 func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -823,13 +890,18 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
-	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]any)
 	contentTypeStr := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
 
 	// Filter by content type if available for better performance
 	var contentType *string
 	if contentTypeStr != "" {
 		contentType = &contentTypeStr
+	}
+
+	nodeName, err = fileResolveNode(ctx, capi, nodeName, datastoreID, contentType)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx, contentType)
@@ -845,6 +917,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	var diags diag.Diagnostics
 
 	found := false
+
 	for _, v := range list {
 		if v.VolumeID == d.Id() {
 			found = true
@@ -895,6 +968,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			if diags.HasError() {
 				return diags
 			}
+
 			return nil
 		}
 	}
@@ -926,7 +1000,7 @@ func readFile(
 	defer func(f *os.File) {
 		e := f.Close()
 		if e != nil {
-			tflog.Error(ctx, "failed to close the file", map[string]interface{}{
+			tflog.Error(ctx, "failed to close the file", map[string]any{
 				"error": e.Error(),
 			})
 		}
@@ -1010,7 +1084,17 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 
-	err = capi.Node(nodeName).Storage(datastoreID).DeleteDatastoreFile(ctx, d.Id())
+	volumeID, err := fileParseVolumeID(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	nodeName, err = fileResolveNode(ctx, capi, nodeName, datastoreID, &volumeID.contentType)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	err = capi.Node(nodeName).Storage(datastoreID).DeleteDatastoreFile(ctx, d.Id()).Err()
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		return diag.FromErr(err)
 	}

@@ -8,6 +8,7 @@ package nodes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -149,6 +150,13 @@ func (c *Client) DeleteNetworkInterface(ctx context.Context, iface string) error
 		nil,
 	)
 	if err != nil {
+		// PVE rejects a missing interface with a 400 parameter error, which the shared matcher only maps for 404/500.
+		var httpErr *api.HTTPError
+		if errors.As(err, &httpErr) && httpErr.Code == http.StatusBadRequest &&
+			strings.Contains(httpErr.Message, "interface does not exist") {
+			err = errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
 		return fmt.Errorf("failed to delete network interface \"%s\" for node \"%s\": %w",
 			iface, c.NodeName, err,
 		)

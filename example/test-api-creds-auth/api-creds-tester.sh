@@ -7,7 +7,7 @@
 
 ## TODO:
 ##   remove PROXMOX_VE_OTP support
-##   test credential presidence in 'fake' section
+##   test credential precedence in 'fake' section
 ##   remove less-important fake tests
 ##   handle python requirements.txt (pyotp)
 
@@ -103,7 +103,7 @@ fake_ticket='PVE:base64@pve:19870727::UmljayBBc3RsZXk6IEkganVzdCB3YW5uYSB0ZWxsIH
 
 ## TODO
 ##   filter out less-interesting tests
-##   add all cred methods to tests ( user+pass, api-token, auth-ticket+csrf ) with combinations to fail with [to test credential precidence]
+##   add all cred methods to tests ( user+pass, api-token, auth-ticket+csrf ) with combinations to fail with [to test credential precedence]
 
 
 fake_type_1='api_token [fake]'

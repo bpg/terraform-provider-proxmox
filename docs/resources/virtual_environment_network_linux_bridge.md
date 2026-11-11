@@ -5,6 +5,7 @@ parent: Resources
 subcategory: Virtual Environment
 description: |-
   Manages a Linux Bridge network interface in a Proxmox VE node.
+  ~> Proxmox VE hides bridges from the interface list (GET /nodes/{node}/network) when the API user lacks SDN.Audit or SDN.Use on /sdn/zones/localnetwork/<iface> (a grant on / propagates). The provider reads this resource from that list, so a token without these privileges fails with "interface not found" after create or on import. Privilege-separated tokens (privsep=1, the pveum default) need the grant on the token itself, not only on the user.
 ---
 
 # Resource: proxmox_virtual_environment_network_linux_bridge
@@ -12,6 +13,8 @@ description: |-
 ~> **Deprecated:** Use [`proxmox_network_linux_bridge`](network_linux_bridge.md) instead. This resource will be removed in v1.0.
 
 Manages a Linux Bridge network interface in a Proxmox VE node.
+
+~> Proxmox VE hides bridges from the interface list (`GET /nodes/{node}/network`) when the API user lacks `SDN.Audit` or `SDN.Use` on `/sdn/zones/localnetwork/<iface>` (a grant on `/` propagates). The provider reads this resource from that list, so a token without these privileges fails with "interface not found" after create or on import. Privilege-separated tokens (`privsep=1`, the `pveum` default) need the grant on the token itself, not only on the user.
 
 ## Example Usage
 
@@ -70,6 +73,7 @@ resource "proxmox_virtual_environment_network_linux_vlan" "vlan99" {
 - `gateway6` (String) Default IPv6 gateway address.
 - `mtu` (Number) The interface MTU.
 - `ports` (List of String) The interface bridge ports.
+- `reload` (Boolean) Whether to reload the node network configuration after this interface is created, updated or deleted (defaults to `true`). When `false`, the change is only staged on the node and takes effect on the next reload. Any reload on the node, including one triggered by another resource, applies all staged changes.
 - `timeout_reload` (Number) Timeout for network reload operations in seconds (defaults to `100`).
 - `vids` (String) VLAN IDs allowed on the bridge (Linux Bridge `bridge-vids`). Space-separated list of VLAN IDs and/or hyphenated ranges (e.g. `"2-4094"`, `"1 20 130"`, or `"1 10-20 30"`). Requires `vlan_aware = true`. PVE/ifupdown2 fills in `2-4094` as the implicit default for VLAN-aware bridges when this attribute is omitted; the provider surfaces that default in state.
 - `vlan_aware` (Boolean) Whether the interface bridge is VLAN aware (defaults to `false`).

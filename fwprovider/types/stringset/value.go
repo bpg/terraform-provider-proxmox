@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Ensure the implementations satisfy the required interfaces.
@@ -86,6 +88,16 @@ func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics, 
 	return new(strings.Join(elems, o.separator))
 }
 
+// ValueCommaSeparatedList returns the set as a PVE comma-separated list, or nil when it is null, unknown or empty.
+func (v Value) ValueCommaSeparatedList(ctx context.Context, diags *diag.Diagnostics) *proxmoxtypes.CustomCommaSeparatedList {
+	elems := v.ValueList(ctx, diags)
+	if len(elems) == 0 {
+		return nil
+	}
+
+	return new(proxmoxtypes.CustomCommaSeparatedList(elems))
+}
+
 // NewValueList converts a slice of items to a new string set value.
 func NewValueList(items []string, diags *diag.Diagnostics) Value {
 	if len(items) == 0 {
@@ -116,6 +128,26 @@ func NewValueString(str *string, diags *diag.Diagnostics, opts ...Option) Value 
 	items := strings.Split(*str, o.separator)
 
 	return NewValueList(items, diags)
+}
+
+// NewValueCommaSeparatedList converts a PVE comma-separated list to a string set value.
+// A missing list and the PVE pending "deleted" marker both map to null.
+func NewValueCommaSeparatedList(list *proxmoxtypes.CustomCommaSeparatedList, diags *diag.Diagnostics) Value {
+	if list == nil || (len(*list) == 1 && (*list)[0] == "deleted") {
+		return NullValue()
+	}
+
+	return NewValueList(*list, diags)
+}
+
+// NewValueCommaSeparatedListOrEmpty is NewValueCommaSeparatedList for computed-only datasource attributes, which
+// must not be null after Read: a missing list maps to an empty set.
+func NewValueCommaSeparatedListOrEmpty(list *proxmoxtypes.CustomCommaSeparatedList, diags *diag.Diagnostics) Value {
+	if list == nil {
+		return NewValueList(nil, diags)
+	}
+
+	return NewValueList(*list, diags)
 }
 
 // NullValue returns a properly typed null Value.

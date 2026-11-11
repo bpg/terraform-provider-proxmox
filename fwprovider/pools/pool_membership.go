@@ -140,10 +140,10 @@ func (r *poolMembershipResource) Create(ctx context.Context, req resource.Create
 
 	switch plan.Type.ValueString() {
 	case MembershipTypeStorage:
-		storageList := (proxmoxtypes.CustomCommaSeparatedList)([]string{plan.StorageID.ValueString()})
+		storageList := proxmoxtypes.CustomCommaSeparatedList([]string{plan.StorageID.ValueString()})
 		body.Storage = &storageList
 	case MembershipTypeVm:
-		vmList := (proxmoxtypes.CustomCommaSeparatedList)([]string{strconv.FormatInt(plan.VmID.ValueInt64(), 10)})
+		vmList := proxmoxtypes.CustomCommaSeparatedList([]string{strconv.FormatInt(plan.VmID.ValueInt64(), 10)})
 		body.VMs = &vmList
 	default:
 		resp.Diagnostics.AddError("Cannot create pool membership", ErrInvalidMembershipType.Error())
@@ -251,10 +251,10 @@ func (r *poolMembershipResource) Delete(ctx context.Context, req resource.Delete
 
 	switch membershipType {
 	case MembershipTypeStorage:
-		storageList := (proxmoxtypes.CustomCommaSeparatedList)([]string{state.StorageID.ValueString()})
+		storageList := proxmoxtypes.CustomCommaSeparatedList([]string{state.StorageID.ValueString()})
 		body.Storage = &storageList
 	case MembershipTypeVm:
-		vmList := (proxmoxtypes.CustomCommaSeparatedList)([]string{strconv.FormatInt(state.VmID.ValueInt64(), 10)})
+		vmList := proxmoxtypes.CustomCommaSeparatedList([]string{strconv.FormatInt(state.VmID.ValueInt64(), 10)})
 		body.VMs = &vmList
 	default:
 		resp.Diagnostics.AddError("Cannot create pool membership", ErrInvalidMembershipType.Error())

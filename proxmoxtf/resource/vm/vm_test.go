@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
@@ -349,6 +350,8 @@ func TestVMSchema(t *testing.T) {
 	})
 	test.AssertListMaxItems(t, initializationSchema, mkInitializationIPConfig, network.MaxNetworkDevices)
 
+	test.AssertListMaxItems(t, s, mkHostUSB, maxResourceVirtualEnvironmentVMHostUSBDevices)
+
 	hostPCISchema := test.AssertNestedSchemaExistence(t, s, mkHostPCI)
 
 	test.AssertOptionalArguments(t, hostPCISchema, []string{
@@ -613,6 +616,104 @@ func Test_parseImportIDWIthNodeName(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tt.expectedNodeName, nodeName)
 			require.Equal(t, tt.expectedID, id)
+		})
+	}
+}
+
+func TestVMCloudInitPasswordDiffSuppress(t *testing.T) {
+	t.Parallel()
+
+	initializationSchema := test.AssertNestedSchemaExistence(t, VM().Schema, mkInitialization)
+	userAccountSchema := test.AssertNestedSchemaExistence(t, initializationSchema, mkInitializationUserAccount)
+	suppress := userAccountSchema[mkInitializationUserAccountPassword].DiffSuppressFunc
+
+	require.NotNil(t, suppress)
+
+	tests := []struct {
+		name     string
+		state    string
+		config   string
+		expected bool
+	}{
+		{"masked state, no configured password", MaskedPassword, "", true},
+		{"masked state, configured password (legacy state migrates)", MaskedPassword, "secret", false},
+		{"kept state, changed password", "secret", "other", false},
+		{"kept state, same password", "secret", "secret", false},
+		{"empty state, configured password", "", "secret", false},
+		{"empty state, no password", "", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, tt.expected, suppress(mkInitializationUserAccountPassword, tt.state, tt.config, nil))
+		})
+	}
+}
+
+func TestVMAppendRemovedIPConfigDeletes(t *testing.T) {
+	t.Parallel()
+
+	ipConfig := func(address string) map[string]any {
+		return map[string]any{
+			mkInitializationIPConfigIPv4: []any{
+				map[string]any{mkInitializationIPConfigIPv4Address: address},
+			},
+		}
+	}
+
+	initialization := func(ipConfigs ...any) []any {
+		return []any{map[string]any{mkInitializationIPConfig: ipConfigs}}
+	}
+
+	// emitted mimics the entries produced by vmGetCloudInitConfig: empty entries have no content.
+	addr := func(address string) vms.CustomCloudInitIPConfig {
+		return vms.CustomCloudInitIPConfig{IPv4: &address}
+	}
+	empty := vms.CustomCloudInitIPConfig{}
+	gateway := func(gw string) vms.CustomCloudInitIPConfig {
+		return vms.CustomCloudInitIPConfig{GatewayIPv6: &gw}
+	}
+
+	two := initialization(ipConfig("dhcp"), ipConfig("10.0.0.2/24"))
+
+	tests := []struct {
+		name     string
+		old      []any
+		new      []vms.CustomCloudInitIPConfig
+		del      []string
+		plan     vmPreMigrationDeletePlan
+		expected []string
+	}{
+		{"removed from the end", two, []vms.CustomCloudInitIPConfig{addr("dhcp")}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig1"}},
+		{"removed from the middle", initialization(ipConfig("a"), ipConfig("b"), ipConfig("c")), []vms.CustomCloudInitIPConfig{addr("a"), addr("c")}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig2"}},
+		{"first emptied, list not shortened", two, []vms.CustomCloudInitIPConfig{empty, addr("10.0.0.2/24")}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0"}},
+		{"last emptied, list not shortened", two, []vms.CustomCloudInitIPConfig{addr("dhcp"), empty}, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig1"}},
+		{"gateway only entry is kept", two, []vms.CustomCloudInitIPConfig{gateway("fe80::1"), addr("dhcp")}, nil, vmPreMigrationDeletePlan{}, nil},
+		{"all removed, block kept", two, nil, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0", "ipconfig1"}},
+		{"initialization block removed", initialization(ipConfig("dhcp")), nil, nil, vmPreMigrationDeletePlan{}, []string{"ipconfig0"}},
+		{"unchanged", initialization(ipConfig("dhcp")), []vms.CustomCloudInitIPConfig{addr("10.0.0.2/24")}, nil, vmPreMigrationDeletePlan{}, nil},
+		{"list grows", initialization(ipConfig("dhcp")), []vms.CustomCloudInitIPConfig{addr("dhcp"), addr("10.0.0.2/24")}, nil, vmPreMigrationDeletePlan{}, nil},
+		{"nothing before", []any{}, []vms.CustomCloudInitIPConfig{addr("dhcp")}, nil, vmPreMigrationDeletePlan{}, nil},
+		{"keeps existing deletes", two, []vms.CustomCloudInitIPConfig{addr("dhcp")}, []string{"usb0"}, vmPreMigrationDeletePlan{}, []string{"usb0", "ipconfig1"}},
+		{
+			"skips already planned delete",
+			two,
+			[]vms.CustomCloudInitIPConfig{addr("dhcp")},
+			nil,
+			vmPreMigrationDeletePlan{set: map[string]struct{}{"ipconfig1": {}}},
+			nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual := vmAppendRemovedIPConfigDeletes(tt.del, tt.old, tt.new, tt.plan)
+
+			require.Equal(t, tt.expected, actual)
 		})
 	}
 }

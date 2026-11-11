@@ -17,15 +17,15 @@ const (
 )
 
 type Zone struct {
-	ID         string  `json:"zone"                 url:"zone"`
-	Type       *string `json:"type,omitempty"       url:"type,omitempty"`
-	IPAM       *string `json:"ipam,omitempty"       url:"ipam,omitempty"`
-	DNS        *string `json:"dns,omitempty"        url:"dns,omitempty"`
-	ReverseDNS *string `json:"reversedns,omitempty" url:"reversedns,omitempty"`
-	DNSZone    *string `json:"dnszone,omitempty"    url:"dnszone,omitempty"`
-	Nodes      *string `json:"nodes,omitempty"      url:"nodes,omitempty"`
-	MTU        *int64  `json:"mtu,omitempty"        url:"mtu,omitempty"`
-	State      *string `json:"state,omitempty"      url:"state,omitempty"`
+	ID         string                   `json:"zone"                 url:"zone"`
+	Type       *string                  `json:"type,omitempty"       url:"type,omitempty"`
+	IPAM       *string                  `json:"ipam,omitempty"       url:"ipam,omitempty"`
+	DNS        *string                  `json:"dns,omitempty"        url:"dns,omitempty"`
+	ReverseDNS *string                  `json:"reversedns,omitempty" url:"reversedns,omitempty"`
+	DNSZone    *string                  `json:"dnszone,omitempty"    url:"dnszone,omitempty"`
+	Nodes      *string                  `json:"nodes,omitempty"      url:"nodes,omitempty"`
+	MTU        *types.CustomInt64Option `json:"mtu,omitempty"        url:"mtu,omitempty"`
+	State      *string                  `json:"state,omitempty"      url:"state,omitempty"`
 
 	// VLAN.
 	Bridge *string `json:"bridge,omitempty" url:"bridge,omitempty"`
@@ -35,7 +35,7 @@ type Zone struct {
 	ServiceVLANProtocol *string `json:"vlan-protocol,omitempty" url:"vlan-protocol,omitempty"`
 
 	// VXLAN.
-	Peers *string `json:"peers,omitempty" url:"peers,omitempty"`
+	Peers *types.CustomCommaSeparatedList `json:"peers,omitempty" url:"peers,omitempty,comma"`
 
 	// EVPN.
 	Controller              *string           `json:"controller,omitempty"                 url:"controller,omitempty"`

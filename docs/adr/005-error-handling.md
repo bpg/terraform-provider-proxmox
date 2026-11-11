@@ -236,22 +236,31 @@ Retry logic is centralized in the `proxmox/retry/` package, which provides three
 
 Key behaviors of `DoTask`:
 
-- `dispatchFn` is retried; `waitFn` errors are wrapped in `Unrecoverable` (no re-dispatch after wait failure)
+- `dispatchFn` is retried according to `WithRetryIf`
+- A failed task (`waitFn` error) is not re-dispatched, since it may have done partial work. The exception is a
+  lock timeout (`IsLockTimeout`): PVE gave up waiting for the lock before running the task, so it is re-dispatched
+  regardless of `WithRetryIf`
+- retry-go v5 honors `Unrecoverable` only in its default `RetryIf`, so `DoTask` checks `IsRecoverable` itself in
+  the custom predicate. Any new code that combines `RetryIf` with `Unrecoverable` must do the same
 - `nil` taskID with `nil` error means "already done" (e.g., "already running") — skips the wait
 - `WithAlreadyDoneCheck` is only applied on retry attempts, not the first attempt
 
 Common retry predicates:
 
-| Predicate               | Matches                                       |
-| ----------------------- | --------------------------------------------- |
-| `IsTransientAPIError`   | HTTP 5xx, "got no worker upid", "got timeout" |
-| `ErrorContains(substr)` | Error message contains substring              |
+| Predicate               | Matches                                        |
+| ----------------------- | ---------------------------------------------- |
+| `IsTransientAPIError`   | HTTP 5xx, "got no worker upid", "got timeout"  |
+| `ErrorContains(substr)` | Error message contains substring               |
+| `IsLockTimeout`         | PVE `lock_file` / `cfs_lock` lock wait timeout |
 
 Do not retry on:
 
 - 4xx client errors (except specific known-transient messages)
 - `ErrResourceDoesNotExist` (unless polling for creation)
 - Authentication failures (401, 403)
+- "got no worker upid" on a VM create, container create or container clone: PVE has already written the new guest's
+  config with `lock: create` (and locked the clone source), so the retry only finds that config. Fail with the root
+  cleanup commands (`qm`/`pct unlock` and `destroy`) in the error
 
 > **Delete predicate trap:** `ErrResourceDoesNotExist` can arrive via HTTP 500 (not just 404) because `proxmox/api/client.go` uses `errors.Join(ErrResourceDoesNotExist, httpError)` for 500 responses containing "does not exist". This means `IsTransientAPIError` alone will match these errors (it checks for 5xx). Delete operations must use a combined predicate:
 >

@@ -8,6 +8,7 @@ package resource
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -190,6 +191,73 @@ func Test_fileParseImportID(t *testing.T) {
 
 			if !reflect.DeepEqual(volID, tt.volID) {
 				t.Errorf("fileParseImportID() got volID = %v, want %v", volID, tt.volID)
+			}
+		})
+	}
+}
+
+func Test_fileGetSourceFileName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		raw     map[string]any
+		want    string
+		wantErr string
+	}{
+		{
+			name: "explicit raw file name",
+			raw:  map[string]any{"source_raw": []any{map[string]any{"data": "x", "file_name": "a.yaml"}}},
+			want: "a.yaml",
+		},
+		{
+			name: "name derived from a local path",
+			raw:  map[string]any{"source_file": []any{map[string]any{"path": "/tmp/dir/b.yaml"}}},
+			want: "b.yaml",
+		},
+		{
+			name: "name derived from a URL is percent-decoded",
+			raw:  map[string]any{"source_file": []any{map[string]any{"path": "https://host/dir/c%3Bd.yaml"}}},
+			want: "c;d.yaml",
+		},
+		{
+			name:    "derived name with whitespace is rejected",
+			raw:     map[string]any{"source_file": []any{map[string]any{"path": "https://host/my%20config.yaml"}}},
+			wantErr: "whitespace",
+		},
+		{
+			name:    "derived parent directory name is rejected",
+			raw:     map[string]any{"source_file": []any{map[string]any{"path": "/tmp/.."}}},
+			wantErr: "plain file name",
+		},
+		{
+			name:    "empty raw file name is rejected",
+			raw:     map[string]any{"source_raw": []any{map[string]any{"data": "x", "file_name": ""}}},
+			wantErr: "plain file name",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			d := schema.TestResourceDataRaw(t, File().Schema, tt.raw)
+
+			got, err := fileGetSourceFileName(d)
+			if tt.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("expected error containing %q, got %v", tt.wantErr, err)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if *got != tt.want {
+				t.Fatalf("expected %q, got %q", tt.want, *got)
 			}
 		})
 	}

@@ -118,6 +118,8 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
 
 **Functional coverage:** acceptance tests must cover all major use cases for the resource — not just one basic scenario. Test each distinct operational mode (e.g., different targeting strategies, list attributes with multiple elements, compound fields, nested objects). PRs with insufficient functional test coverage will be rejected during review. See [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement) for details.
 
+**No faked PVE API as proof:** tests against a mocked or faked Proxmox VE API (`httptest` servers, stub clients, hand-built responses) are not accepted as proof for behavior an acceptance test can exercise. If you don't have a Proxmox VE instance, write the acceptance test anyway and say in the PR that it wasn't run; a maintainer will run it. Fakes are fine only for conditions a live PVE can't produce on demand. See [ADR-006](docs/adr/006-testing-requirements.md#faked-pve-api-tests) for details.
+
 #### Prerequisites
 
 1. A running Proxmox instance (see [Development Proxmox Setup](docs/guides/dev-proxmox-setup.md))
@@ -139,6 +141,18 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
    PROXMOX_VE_ACC_NODE_SSH_ADDRESS="10.0.0.11"
    PROXMOX_VE_ACC_NODE_SSH_PORT="22"
    PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
+
+   # Datastore used for container root filesystems and mount points.
+   # Defaults to "local-lvm"; override it on clusters that use different storage.
+   PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID="local-zfs"
+
+   # CRUSH rule for the Ceph pools the Ceph tests create. Defaults to the cluster's default rule;
+   # set it when that rule's OSDs can't hold the test pools.
+   PROXMOX_VE_ACC_CEPH_CRUSH_RULE="replicated_rule"
+
+   # Device class for the erasure-coded test pools (k=2, m=2, failure domain `osd`, so at least
+   # four OSDs, of this class if set). Defaults to any class.
+   PROXMOX_VE_ACC_CEPH_EC_DEVICE_CLASS="hdd"
    ```
 
 Some tests require multi node cluster, a ZFS datastore and a spare disk to run. To include these (otherwise skipped) tests add additional configuration corresponding to the cluster.
@@ -148,6 +162,19 @@ PROXMOX_VE_ACC_NODE_2_NAME="pve2"
 PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
 PROXMOX_VE_ACC_ZFS_DISK="/dev/sdb"  # spare disk for proxmox_node_disk_zfs tests — will be fully wiped
 ```
+
+Some tests need root beyond the API token:
+
+- **SSH as `root`**: node commands (e.g. `pct exec`) and `root_ticket` tests. The SSH agent or key above works if it is
+  authorized for `root`; otherwise the root password below is used.
+- **API login as `root@pam`**: operations PVE restricts to a logged-in `root@pam` (e.g. container bind mounts); an API
+  token alone never qualifies. These tests log in with the root password when set, otherwise use a ticket minted over
+  the root SSH login above. A few (ACME, password-login logging) need the password and skip without it:
+
+  ```env
+  PROXMOX_VE_USERNAME="root@pam"
+  PROXMOX_VE_PASSWORD="<root password>"
+  ```
 
 > [!NOTE]
 >
@@ -177,9 +204,9 @@ For example, to run all VM-related tests: `./testacc TestAccResourceVM.*`
 
 > [!NOTE]
 >
-> - Acceptance test coverage is still in development.
-> - Only some resources and data sources are currently tested.
-> - Some tests may require specific Proxmox configuration.
+> - Acceptance tests are required for new or changed functionality (see [Functional coverage](#acceptance-tests) above).
+> - Some older resources still lack acceptance coverage; contributions adding tests for them are welcome.
+> - Some tests require specific Proxmox configuration (storage, networks, cloud images); see the `PROXMOX_VE_ACC_*` variables in `testacc.env`.
 
 ### Manual testing
 
@@ -389,7 +416,7 @@ Guidelines:
 
 **Proof of work is mandatory for all code changes.** Every PR must include evidence that the change works as expected:
 
-- Test output (unit tests, acceptance tests)
+- Test output (unit tests, acceptance tests); tests against a faked PVE API don't count as proof of API-facing behavior (see [Acceptance tests](#acceptance-tests))
 - Logs, screenshots, or terminal output demonstrating the fix/feature
 - Any other relevant information that demonstrates the change works as expected
 

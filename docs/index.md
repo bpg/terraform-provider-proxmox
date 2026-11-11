@@ -10,6 +10,12 @@ The provider needs to be configured with the proper endpoint and credentials bef
 
 Use the navigation to the left to read about the available resources.
 
+## Requirements
+
+- Proxmox VE 9.x. Proxmox VE 8.x works with some limitations and is not a testing priority; 7.x is not supported.
+- Terraform 1.6+ (tested in CI) or OpenTofu 1.6+ (supported, not exercised in CI). Write-only attributes require Terraform 1.11+ or OpenTofu 1.10+.
+- TLS 1.3 on the Proxmox VE API endpoint. Older TLS versions can be allowed with the `min_tls` provider argument.
+
 ## Getting Started
 
 To use this provider, you only need:
@@ -24,6 +30,15 @@ To use this provider, you only need:
 **Minimal configuration (no SSH):**
 
 ```hcl
+terraform {
+  required_providers {
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = "~> 0.121.0" # x-release-please-version
+    }
+  }
+}
+
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
 
@@ -40,6 +55,15 @@ provider "proxmox" {
 **With SSH access (only if needed for snippets or certain file uploads):**
 
 ```hcl
+terraform {
+  required_providers {
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = "~> 0.121.0" # x-release-please-version
+    }
+  }
+}
+
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
   username = "root@pam"
@@ -184,6 +208,8 @@ You can create an API Token via the Proxmox UI or the command line on the Proxmo
   ~> The list of available privileges has changed in PVE 9.0. The above list is only an example (and likely too permissive for most use cases). Please review and adjust to your needs.
   Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
 
+  ~> Keep `SDN.Audit` or `SDN.Use` in the role: PVE hides bridges from `GET /nodes/{node}/network` when the caller lacks either of them on `/sdn/zones/localnetwork/<iface>`. The provider uses that list to read `proxmox_network_linux_bridge` resources and to resolve node IP addresses for SSH, so a token without them fails with "interface not found" and falls back to DNS for the SSH node address. Privilege-separated tokens (`privsep=1`, the `pveum` default) need the privileges granted to the token itself.
+
 - Assign the role to the previously created user:
 
   ```sh
@@ -219,7 +245,32 @@ You may see errors like
 `error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or
 `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` or
 `Permission check failed (user != root@pam)` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
-The workaround is to use password authentication for those operations.
+Use password authentication for those operations, or let the provider mint a `root@pam` ticket over SSH, as described below.
+
+### Operations restricted to `root@pam`
+
+Affected operations include container bind mounts, feature flags on privileged containers, USB and PCI passthrough without a resource mapping, virtiofs directories, serial ports pointing at real devices, the VM CPU architecture, and `force`/`migration_network` on a migration.
+
+If the provider has SSH access to the nodes as `root`, it can mint a short-lived `root@pam` ticket on the node and use it for those calls, instead of a root password in the configuration:
+
+```hcl
+provider "proxmox" {
+  endpoint  = var.virtual_environment_endpoint
+  api_token = "root@pam!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+  ssh {
+    agent       = true
+    username    = "root"
+    root_ticket = true
+  }
+}
+```
+
+The setting is off by default. While it is on:
+
+- Every call under `/nodes/{node}/` runs and is logged as `root@pam`, so the token's permissions no longer limit those calls. Calls outside it, such as `/cluster` and `/access`, keep using the configured credentials.
+- The SSH user must be `root`, otherwise the provider refuses to start: minting needs a root shell, and `sudo` on `perl` is root-equivalent, like the `qm` and `pvesm` grants [SSH User](#ssh-user) warns about.
+- Tickets are minted per node, cached for an hour, and never logged.
 
 -> You can also configure additional Proxmox users and roles using [`virtual_environment_user`](https://bpg.sh/docs/resources/virtual_environment_user) and [`virtual_environment_role`](https://bpg.sh/docs/resources/virtual_environment_role) resources of the provider.
 
@@ -399,30 +450,58 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
   visudo -f /etc/sudoers.d/terraform
   ```
 
-  Add the following lines to the file:
+  Add the following line to the file. It is required for **any** SSH-backed feature: the provider probes for `sudo` availability by running `pvesm apiinfo`, and the features below rely on that probe before they write to the node.
 
   ```text
-  terraform ALL=(root) NOPASSWD: /usr/sbin/pvesm
-  terraform ALL=(root) NOPASSWD: /usr/sbin/qm
-  terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
+  terraform ALL=(root) NOPASSWD: /usr/sbin/pvesm apiinfo
   ```
 
-  If you use the `idmap` attribute on `proxmox_virtual_environment_container`, the provider edits the container configuration file via SSH. Add the following rules to allow `sed` and `tee` access to the LXC configuration directory:
+  !> **Security Warning:** Do **not** grant `sudo` on the whole `qm` or `pvesm` binaries (for example `NOPASSWD: /usr/sbin/qm` or `NOPASSWD: /usr/sbin/pvesm`). Both are **root-equivalent** when granted in full: `qm set --args` injects arbitrary arguments into the QEMU command line that Proxmox launches as root, `qm set --hookscript` runs a script as root at VM lifecycle events, and `pvesm export` writes a volume's bytes to any path as root. sudoers `*` wildcards span spaces and trailing arguments, so these options **cannot** be fenced off with an argument pattern — a rule broad enough to allow the provider's real call also allows the dangerous ones. Grant only the exact, safe rules shown here.
 
-  ```text
-  terraform ALL=(root) NOPASSWD: /usr/bin/sed -i * /etc/pve/lxc/*.conf
-  terraform ALL=(root) NOPASSWD: /usr/bin/tee -a /etc/pve/lxc/*.conf
-  ```
+  Then add rules only for the features you actually use.
 
-  If you're using a different datastore for snippets, not the default `local`, you should add the datastore's mount point to the sudoers file as well, for example:
+  The rules below use sudo's regular-expression syntax (an argument list that starts with `^` and ends with `$`), which needs sudo 1.9.10 or later (Proxmox VE 8 and later ship a newer version). A regular expression matches the provider's exact command line and nothing else.
 
-  ```text
-  terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
-  ```
+  - **Snippet uploads** — custom cloud-init and `proxmox_virtual_environment_file` with `content_type = "snippets"`. Grant `tee` on the snippets directory with a strict filename pattern:
 
-  You can find the mount point of the datastore by running `pvesh get /storage/<name>` on the Proxmox node.
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee ^/var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*$
+    ```
 
-  ~> **Security Warning:** Do not use wildcard patterns like `/var/lib/vz/*` in sudoers rules for `tee`. Such patterns allow path traversal attacks (e.g., `/var/lib/vz/../../../etc/sudoers.d/malicious`) that can lead to privilege escalation. Always restrict to specific subdirectories with strict filename patterns as shown above.
+    If your snippets datastore is not the default `local`, use its mount point instead of (or in addition to) `/var/lib/vz`, for example:
+
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee ^/mnt/pve/cephfs/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*$
+    ```
+
+    Find the mount point with `pvesh get /storage/<name>` on the Proxmox node.
+
+    With these rules, snippet file names must start with a letter, digit or `_` and contain only letters, digits, `_`, `.` and `-`. `sudo` refuses uploads of any other name.
+
+    If you set `file_mode` on `proxmox_virtual_environment_file`, for example to make a hook script executable, also grant `chmod` on the same directory:
+
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/chmod ^0[0-7]{3} /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*$
+    ```
+
+    This rule allows plain permission bits only. `sudo` refuses modes with the setuid, setgid or sticky bit, such as `4755`.
+
+  - **LXC `idmap`** on `proxmox_virtual_environment_container` — the provider edits the container configuration file via SSH:
+
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/sed ^-i /\^lxc\\\.idmap:/d /etc/pve/lxc/[0-9]+\.conf$
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee ^-a /etc/pve/lxc/[0-9]+\.conf$
+    ```
+
+  !> **Security Warning:** Do not use shell-style wildcards (`*`) in these rules, even after a strict filename pattern. sudoers matches all arguments as a single string, and `*` matches spaces, `/` and `../`. A rule such as `/usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_]*` therefore also allows writing to other paths (`/var/lib/vz/snippets/ab/../../../../etc/sudoers.d/malicious`, or a second file argument), and `/usr/bin/sed -i * …` allows running arbitrary commands through `sed`. Both lead to full privilege escalation. If you configured these rules from an earlier version of this guide, replace them with the ones above.
+
+  If your configuration uses **only** API-backed resources — for example VMs with `import_from` disks and no snippets or `idmap` — the provider never opens an SSH session, so you need no sudoers file at all.
+
+  **Custom disk images (`file_id`).** The legacy `file_id` attribute on a custom disk imports the image with an on-node `qm disk import` / `qm set` over SSH. This is why older versions of this guide granted `sudo` on the whole `qm` binary — **do not do that**, for the reasons in the warning above.
+
+  Prefer the `import_from` disk attribute instead. It performs the import through the Proxmox **API**, so it needs no SSH, no `sudo`, and no sudoers entry for the import.
+
+  If you must keep using `file_id` today, do not grant raw `qm`/`pvesm`. Put a root-owned wrapper script in front of them that accepts only the operations the provider needs — `pvesm path <volume>`, `qm disk import`, and `qm set -<iface> <volume>` — and rejects everything else (`--args`, `--hookscript`, and any other option). Grant `sudo` on the wrapper, not on `qm`/`pvesm`. This is a mitigation, not a full fix.
 
 - Copy your SSH public key to the `~/.ssh/authorized_keys` file of the `terraform` user on the target node.
 
@@ -446,6 +525,8 @@ The following methods are used to resolve the node name, in the specified order:
    2. Has an IPv6 address with IPv6 gateway configured, or
    3. Has an IPv4 address
 2. Resolve the Proxmox node name (usually a shortname) via DNS using the system DNS resolver of the machine running Terraform.
+
+~> The interface enumeration in step 1 is subject to PVE permission filtering: bridges are omitted from the list when the API user lacks `SDN.Audit` or `SDN.Use` on `/sdn/zones/localnetwork/<iface>`. If the node address lives on such a bridge, resolution falls through to DNS. See [Creating an API Token](#creating-an-api-token-on-the-proxmox-server).
 
 In some cases, this may not be the desired behavior — for example, when the node has multiple network interfaces and the one that should be used for SSH is not the first one.
 
@@ -563,17 +644,18 @@ All provider arguments can be configured via environment variables. This is the 
 
 **SSH Connection (optional — only if [SSH is required](#when-is-ssh-required)):**
 
-| Environment Variable              | Description                    |
-| --------------------------------- | ------------------------------ |
-| `PROXMOX_VE_SSH_USERNAME`         | SSH username                   |
-| `PROXMOX_VE_SSH_PASSWORD`         | SSH password                   |
-| `PROXMOX_VE_SSH_PRIVATE_KEY`      | SSH private key (PEM format)   |
-| `PROXMOX_VE_SSH_AGENT`            | Use SSH agent (`true`/`false`) |
-| `PROXMOX_VE_SSH_AUTH_SOCK`        | SSH agent socket path          |
-| `PROXMOX_VE_SSH_AGENT_FORWARDING` | Enable SSH agent forwarding    |
-| `PROXMOX_VE_SSH_SOCKS5_SERVER`    | SOCKS5 proxy server address    |
-| `PROXMOX_VE_SSH_SOCKS5_USERNAME`  | SOCKS5 proxy username          |
-| `PROXMOX_VE_SSH_SOCKS5_PASSWORD`  | SOCKS5 proxy password          |
+| Environment Variable              | Description                                                                       |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `PROXMOX_VE_SSH_USERNAME`         | SSH username                                                                      |
+| `PROXMOX_VE_SSH_PASSWORD`         | SSH password                                                                      |
+| `PROXMOX_VE_SSH_PRIVATE_KEY`      | SSH private key (PEM format)                                                      |
+| `PROXMOX_VE_SSH_AGENT`            | Use SSH agent (`true`/`false`)                                                    |
+| `PROXMOX_VE_SSH_AUTH_SOCK`        | SSH agent socket path                                                             |
+| `PROXMOX_VE_SSH_AGENT_FORWARDING` | Enable SSH agent forwarding                                                       |
+| `PROXMOX_VE_SSH_SOCKS5_SERVER`    | SOCKS5 proxy server address                                                       |
+| `PROXMOX_VE_SSH_SOCKS5_USERNAME`  | SOCKS5 proxy username                                                             |
+| `PROXMOX_VE_SSH_SOCKS5_PASSWORD`  | SOCKS5 proxy password                                                             |
+| `PROXMOX_VE_SSH_ROOT_TICKET`      | Run `root@pam`-only API operations with a ticket minted over SSH (`true`/`false`) |
 
 ## Argument Reference
 
@@ -604,6 +686,7 @@ In addition to [generic provider arguments](https://developer.hashicorp.com/terr
   - `socks5_server` - (Optional) The address of the SOCKS5 proxy server to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_SERVER`.
   - `socks5_username` - (Optional) The username to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_USERNAME`.
   - `socks5_password` - (Optional) The password to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_PASSWORD`.
+  - `root_ticket` - (Optional) Whether to run API calls under `/nodes/{node}/` with a `root@pam` ticket minted on that node over SSH, so an API token can perform the operations Proxmox VE restricts to a logged-in `root@pam` user — see [Operations restricted to `root@pam`](#operations-restricted-to-rootpam). Requires an SSH connection as `root`. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_ROOT_TICKET`.
   - `node_address_source` - (Optional) The method used to resolve node IP addresses for SSH connections. Set to `dns` to skip the Proxmox API-based resolution and use local DNS instead. DNS resolution prefers IPv4 but falls back to IPv6 if no IPv4 addresses are available. Useful in multi-subnet environments where the API may return an inaccessible IP (e.g., a Ceph network address). Defaults to `api`.
   - `node` - (Optional) The node configuration for the SSH connection. Can be specified multiple times to provide configuration for multiple nodes.
     - `name` - (Required) The name of the node.

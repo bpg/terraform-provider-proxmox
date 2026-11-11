@@ -378,3 +378,94 @@ func TestAccRealmOpenID(t *testing.T) {
 		},
 	})
 }
+
+func TestAccRealmOpenIDDefaultExclusive(t *testing.T) {
+	te := test.InitEnvironment(t)
+	primary := test.SafeResourceName("oidc-pri")
+	secondary := test.SafeResourceName("oidc-sec")
+	te.AddTemplateVars(map[string]interface{}{
+		"Primary":   primary,
+		"Secondary": secondary,
+	})
+
+	// default=1 on any realm strips the key from every other realm, so this must not run
+	// concurrently with other realm tests.
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_realm_openid" "secondary" {
+						realm      = "{{.Secondary}}"
+						issuer_url = "https://accounts.google.com"
+						client_id  = "test-client-id"
+						default    = false
+					}
+
+					resource "proxmox_realm_openid" "primary" {
+						realm      = "{{.Primary}}"
+						issuer_url = "https://accounts.google.com"
+						client_id  = "test-client-id"
+						comment    = "before"
+						default    = false
+
+						depends_on = [proxmox_realm_openid.secondary]
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_realm_openid.primary", "default", "false"),
+					resource.TestCheckResourceAttr("proxmox_realm_openid.secondary", "default", "false"),
+					testCheckOpenIDRealmDefaultKey(te, primary, true),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_realm_openid" "secondary" {
+						realm      = "{{.Secondary}}"
+						issuer_url = "https://accounts.google.com"
+						client_id  = "test-client-id"
+						default    = true
+					}
+
+					resource "proxmox_realm_openid" "primary" {
+						realm      = "{{.Primary}}"
+						issuer_url = "https://accounts.google.com"
+						client_id  = "test-client-id"
+						comment    = "after"
+						default    = false
+
+						depends_on = [proxmox_realm_openid.secondary]
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_realm_openid.primary", "default", "false"),
+					resource.TestCheckResourceAttr("proxmox_realm_openid.secondary", "default", "true"),
+					testCheckOpenIDRealmDefaultKey(te, primary, false),
+					testCheckOpenIDRealmDefaultKey(te, secondary, true),
+				),
+			},
+			{
+				ResourceName:            "proxmox_realm_openid.primary",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"client_key"},
+			},
+		},
+	})
+}
+
+// testCheckOpenIDRealmDefaultKey verifies, via a direct API read, whether PVE returns the
+// `default` key for the realm at all. PVE drops it from every other realm once one realm
+// is made the default, so "absent" proves the strip happened rather than a false-green.
+func testCheckOpenIDRealmDefaultKey(te *test.Environment, realm string, want bool) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		data, err := te.AccessClient().GetRealm(context.Background(), realm)
+		if err != nil {
+			return fmt.Errorf("reading OpenID realm %q: %w", realm, err)
+		}
+
+		if has := data.Default != nil; has != want {
+			return fmt.Errorf("realm %q: default key present=%t, want %t", realm, has, want)
+		}
+
+		return nil
+	}
+}

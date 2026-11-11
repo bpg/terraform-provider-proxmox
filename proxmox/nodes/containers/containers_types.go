@@ -17,6 +17,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 var (
@@ -30,8 +31,10 @@ var (
 
 // WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
 type WaitForIPConfig struct {
-	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
-	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local unless allowed by `cidrs`)
+	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`)
+
+	Filter ip.AddressFilter // Which addresses qualify; empty keeps the default exclusions
 }
 
 // CloneRequestBody contains the data for an container clone request.
@@ -253,16 +256,16 @@ type GetStatusResponseBody struct {
 
 // GetStatusResponseData contains the data from a container get status response.
 type GetStatusResponseData struct {
-	CPUCount         *float64         `json:"cpus,omitempty"`
-	Lock             *string          `json:"lock,omitempty"`
-	MemoryAllocation *int64           `json:"maxmem,omitempty"`
-	Name             *string          `json:"name,omitempty"`
-	RootDiskSize     *any             `json:"maxdisk,omitempty"`
-	Status           string           `json:"status,omitempty"`
-	SwapAllocation   *int64           `json:"maxswap,omitempty"`
-	Tags             *string          `json:"tags,omitempty"`
-	Uptime           *int             `json:"uptime,omitempty"`
-	VMID             *types.CustomInt `json:"vmid,omitempty"`
+	CPUCount         *types.CustomFloat64 `json:"cpus,omitempty"`
+	Lock             *string              `json:"lock,omitempty"`
+	MemoryAllocation *int64               `json:"maxmem,omitempty"`
+	Name             *string              `json:"name,omitempty"`
+	RootDiskSize     *any                 `json:"maxdisk,omitempty"`
+	Status           string               `json:"status,omitempty"`
+	SwapAllocation   *int64               `json:"maxswap,omitempty"`
+	Tags             *string              `json:"tags,omitempty"`
+	Uptime           *int                 `json:"uptime,omitempty"`
+	VMID             *types.CustomInt     `json:"vmid,omitempty"`
 }
 
 // ListResponseBody contains the body from a container list response.
@@ -277,6 +280,22 @@ type ListResponseData struct {
 	Template *types.CustomBool `json:"template,omitempty"`
 	Status   *string           `json:"status,omitempty"`
 	VMID     int               `json:"vmid,omitempty"`
+}
+
+// MigrateRequestBody contains the body for a container migration request.
+// LXC has no live migration: a running container is migrated by shutting it down, moving it, and
+// starting it again, which PVE performs server-side when restart is set.
+type MigrateRequestBody struct {
+	BandwidthLimit  *float64          `json:"bwlimit,omitempty"        url:"bwlimit,omitempty"`
+	RestartMigrate  *types.CustomBool `json:"restart,omitempty"        url:"restart,omitempty,int"`
+	ShutdownTimeout *int              `json:"timeout,omitempty"        url:"timeout,omitempty"`
+	TargetNode      string            `json:"target"                   url:"target"`
+	TargetStorage   *string           `json:"target-storage,omitempty" url:"target-storage,omitempty"`
+}
+
+// MigrateResponseBody contains the body from a container migrate response.
+type MigrateResponseBody struct {
+	Data *string `json:"data,omitempty"`
 }
 
 // GetNetworkInterfaceResponseBody contains the body from a container get network interface response.

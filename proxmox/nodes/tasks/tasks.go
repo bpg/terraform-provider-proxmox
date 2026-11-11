@@ -136,10 +136,27 @@ func (c *Client) DoTask(
 	dispatchFn func() (*string, error),
 	waitOpts ...TaskWaitOption,
 ) TaskResult {
+	return doTask(ctx, op, dispatchFn, func(ctx context.Context, taskID string) TaskResult {
+		return c.WaitForTask(ctx, taskID, waitOpts...)
+	})
+}
+
+func doTask(
+	ctx context.Context,
+	op *retry.Operation,
+	dispatchFn func() (*string, error),
+	waitFn func(ctx context.Context, taskID string) TaskResult,
+) TaskResult {
 	var result TaskResult
 
-	if err := op.DoTask(ctx, dispatchFn, func(ctx context.Context, taskID string) error {
-		result = c.WaitForTask(ctx, taskID, waitOpts...)
+	// A re-dispatch may finish without waiting, so a failed result from an earlier attempt must not leak out.
+	dispatch := func() (*string, error) {
+		result = TaskResult{}
+		return dispatchFn()
+	}
+
+	if err := op.DoTask(ctx, dispatch, func(ctx context.Context, taskID string) error {
+		result = waitFn(ctx, taskID)
 		return result.Err()
 	}); err != nil && result.Err() == nil {
 		return TaskFailed(err)
@@ -162,8 +179,7 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 	status, err := retrylib.NewWithData[*GetTaskStatusResponseData](
 		retrylib.Context(ctx),
 		retrylib.RetryIf(func(err error) bool {
-			var target *api.HTTPError
-			if errors.As(err, &target) {
+			if target, ok := errors.AsType[*api.HTTPError](err); ok {
 				if target.Code == http.StatusBadRequest {
 					// this is a special case to account for eventual consistency
 					// when creating a task -- the task may not be available via status API

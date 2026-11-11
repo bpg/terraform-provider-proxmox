@@ -7,6 +7,7 @@
 package ssh
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -54,11 +55,14 @@ const (
 
 const defaultDialTimeout = 30 * time.Second
 
+// docsURL points to the SSH connection section of the provider documentation.
+const docsURL = "https://bpg.sh/docs/#ssh-connection"
+
 // NewErrUserHasNoPermission creates a new error indicating that the SSH user does not have required permissions.
 func NewErrUserHasNoPermission(username string) error {
 	return fmt.Errorf("the SSH user '%s' does not have required permissions. "+
 		"Make sure 'sudo' is installed and the user is configured in sudoers file. "+
-		"Refer to the documentation for more details", username)
+		"Refer to the documentation for more details: %s", username, docsURL)
 }
 
 // Client is an interface for performing SSH requests against the Proxmox Nodes.
@@ -178,9 +182,12 @@ func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool
 }
 
 func (c *client) probeSudo(ctx context.Context, nodeName string) (bool, error) {
+	// Probe sudo via `pvesm apiinfo` only: it is read-only and safe to allow-list.
+	// We deliberately do not fall back to `qm --help`; granting sudo on `qm` is
+	// root-equivalent and is no longer a recommended sudoers configuration.
 	checkCmd := `if [ "$(id -u)" = "0" ]; then echo "0"; ` +
-		`elif [ $(sudo -n /usr/sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ] ` +
-		`|| sudo -n /usr/sbin/qm --help >/dev/null 2>&1; then echo "1"; else echo "0"; fi`
+		`elif [ $(sudo -n /usr/sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ]; ` +
+		`then echo "1"; else echo "0"; fi`
 
 	node, err := c.nodeResolver.Resolve(ctx, nodeName)
 	if err != nil {
@@ -306,16 +313,14 @@ func (c *client) executeCommands(ctx context.Context, sshClient *ssh.Client, com
 
 	script := strings.Join(commands, "; ")
 
-	output, err := sshSession.CombinedOutput(
-		fmt.Sprintf(
-			// explicitly use bash to support shell features like pipes and var assignment
-			"/bin/bash -c '%s'",
-			// shell script escaping for single quotes
-			strings.ReplaceAll(script, `'`, `'"'"'`),
-		),
-	)
+	// explicitly use bash to support shell features like pipes and var assignment
+	output, err := sshSession.CombinedOutput("/bin/bash -c " + ShellQuote(script))
 	if err != nil {
-		return nil, errors.New(string(output))
+		if out := strings.TrimSpace(string(output)); out != "" {
+			return nil, fmt.Errorf("remote command failed: %w (output: %s)", err, out)
+		}
+
+		return nil, fmt.Errorf("remote command failed: %w", err)
 	}
 
 	return output, nil
@@ -486,14 +491,19 @@ func (c *client) NodeStreamUpload(
 
 	remoteFilePath := strings.ReplaceAll(filepath.Join(remoteFileDir, d.FileName), `\`, "/")
 
-	err = c.uploadFile(ctx, sshClient, d, remoteFilePath, nodeName)
+	sudoEnv := ""
+	if sudoValue := c.getSudoValue(ctx, nodeName, nodeName != ""); sudoValue != "" {
+		sudoEnv = fmt.Sprintf("export TRY_SUDO_USE_SUDO=%s; ", sudoValue)
+	}
+
+	bytesUploaded, err := c.uploadFile(ctx, sshClient, d, remoteFilePath, sudoEnv)
 	if err != nil {
 		return err
 	}
 
-	err = c.checkUploadedFile(ctx, sshClient, remoteFilePath, fileSize)
-	if err != nil {
-		return err
+	if bytesUploaded != fileSize {
+		return fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
+			remoteFilePath, bytesUploaded, fileSize)
 	}
 
 	if d.Mode != "" {
@@ -502,8 +512,7 @@ func (c *client) NodeStreamUpload(
 			return fmt.Errorf("failed to parse file mode %q: %w", d.Mode, parseErr)
 		}
 
-		mode := uint32(parsedFileMode)
-		if err = c.changeModeUploadedFile(ctx, sshClient, remoteFilePath, os.FileMode(mode)); err != nil {
+		if err = c.changeModeUploadedFile(ctx, sshClient, remoteFilePath, parsedFileMode, sudoEnv); err != nil {
 			return err
 		}
 	}
@@ -515,129 +524,82 @@ func (c *client) NodeStreamUpload(
 	return nil
 }
 
+// uploadFile streams the file into tee and returns the number of bytes tee received. Counting tee's output on the
+// node catches a truncated stream that tee would otherwise accept with exit code 0, without reading the file back.
 func (c *client) uploadFile(
 	ctx context.Context,
 	sshClient *ssh.Client,
 	req *api.FileUploadRequest,
 	remoteFilePath string,
-	nodeName string,
-) error {
+	sudoEnv string,
+) (int64, error) {
 	sshSession, closer, err := c.openSession(ctx, sshClient)
 	defer closer()
 
 	if err != nil {
-		return fmt.Errorf("failed to open SSH session: %w", err)
+		return 0, fmt.Errorf("failed to open SSH session: %w", err)
 	}
 
-	sudoValue := c.getSudoValue(ctx, nodeName, nodeName != "")
-
-	sudoEnv := ""
-	if sudoValue != "" {
-		sudoEnv = fmt.Sprintf("export TRY_SUDO_USE_SUDO=%s; ", sudoValue)
-	}
+	var stdout, stderr bytes.Buffer
 
 	sshSession.Stdin = req.File
+	sshSession.Stdout = &stdout
+	sshSession.Stderr = &stderr
 
-	script := fmt.Sprintf(`%s%s; try_sudo /usr/bin/tee %s`, sudoEnv, TrySudo, remoteFilePath)
+	script := fmt.Sprintf(`%sset -o pipefail; %s; try_sudo /usr/bin/tee %s | wc -c`,
+		sudoEnv, TrySudo, ShellQuote(remoteFilePath))
 	// wrap in bash for shell compatibility (works regardless of user's default shell)
-	cmd := fmt.Sprintf(`/bin/bash -c '%s'`, strings.ReplaceAll(script, `'`, `'"'"'`))
+	cmd := "/bin/bash -c " + ShellQuote(script)
 
-	output, err := sshSession.CombinedOutput(cmd)
-	if err != nil {
-		if len(output) > 0 {
-			return fmt.Errorf("error transferring file: %w (output: %s)", err, string(output))
+	if err = sshSession.Run(cmd); err != nil {
+		if stderr.Len() > 0 {
+			return 0, fmt.Errorf("error transferring file: %w (output: %s)", err, stderr.String())
 		}
 
-		return fmt.Errorf("error transferring file: %w", err)
+		return 0, fmt.Errorf("error transferring file: %w", err)
 	}
 
-	return nil
-}
-
-func (c *client) checkUploadedFile(
-	ctx context.Context,
-	sshClient *ssh.Client,
-	remoteFilePath string,
-	fileSize int64,
-) error {
-	sftpClient, err := sftp.NewClient(sshClient)
+	bytesUploaded, err := strconv.ParseInt(strings.TrimSpace(stdout.String()), 10, 64)
 	if err != nil {
-		return fmt.Errorf("failed to create SFTP client: %w", err)
+		return 0, fmt.Errorf("failed to read uploaded size of %s: %w", remoteFilePath, err)
 	}
 
-	defer func(sftpClient *sftp.Client) {
-		e := sftpClient.Close()
-		if e != nil {
-			tflog.Warn(ctx, "failed to close SFTP client", map[string]any{
-				"error": e,
-			})
-		}
-	}(sftpClient)
-
-	remoteFile, err := sftpClient.Open(remoteFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to open remote file %s: %w", remoteFilePath, err)
-	}
-
-	remoteStat, err := remoteFile.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to read remote file %s: %w", remoteFilePath, err)
-	}
-
-	bytesUploaded := remoteStat.Size()
-	if bytesUploaded != fileSize {
-		return fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
-			remoteFilePath, bytesUploaded, fileSize)
-	}
-
-	return nil
+	return bytesUploaded, nil
 }
 
 func (c *client) changeModeUploadedFile(
 	ctx context.Context,
 	sshClient *ssh.Client,
 	remoteFilePath string,
-	fileMode os.FileMode,
+	fileMode uint64,
+	sudoEnv string,
 ) error {
-	sftpClient, err := sftp.NewClient(sshClient)
-	if err != nil {
-		return fmt.Errorf("failed to create SFTP client: %w", err)
-	}
+	// Four octal digits keep the command line matching the documented sudoers rule.
+	command := fmt.Sprintf("try_sudo /usr/bin/chmod %04o %s", fileMode, ShellQuote(remoteFilePath))
 
-	defer func(sftpClient *sftp.Client) {
-		e := sftpClient.Close()
-		if e != nil {
-			tflog.Warn(ctx, "failed to close SFTP client", map[string]any{
-				"error": e,
-			})
-		}
-	}(sftpClient)
-
-	remoteFile, err := sftpClient.Open(remoteFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to open remote file %s: %w", remoteFilePath, err)
-	}
-
-	remoteStat, err := remoteFile.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to read remote file %s: %w", remoteFilePath, err)
-	}
-
-	if err = sftpClient.Chmod(remoteFilePath, fileMode); err != nil {
-		return fmt.Errorf("failed to change file mode of remote file from %#o (%s) to %#o (%s): %w",
-			remoteStat.Mode().Perm(), remoteStat.Mode(), fileMode.Perm(), fileMode, err)
+	if _, err := c.executeCommands(ctx, sshClient, []string{sudoEnv + TrySudo, command}); err != nil {
+		return fmt.Errorf("failed to change file mode of remote file %s to %04o: %w", remoteFilePath, fileMode, err)
 	}
 
 	tflog.Debug(ctx, "changed mode of uploaded file", map[string]any{
-		"before": fmt.Sprintf("%#o (%s)", remoteStat.Mode().Perm(), remoteStat.Mode()),
-		"after":  fmt.Sprintf("%#o (%s)", fileMode.Perm(), fileMode),
+		"mode": fmt.Sprintf("%04o", fileMode),
 	})
 
 	return nil
 }
 
 // openNodeShell establishes a new SSH connection to a node.
+// Any failure is wrapped with a pointer to the SSH section of the provider documentation.
 func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Client, error) {
+	sshClient, err := c.dialNodeShell(ctx, node)
+	if err != nil {
+		return nil, fmt.Errorf("%w; this operation requires SSH access to the PVE node, see %s", err, docsURL)
+	}
+
+	return sshClient, nil
+}
+
+func (c *client) dialNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Client, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine the home directory: %w", err)

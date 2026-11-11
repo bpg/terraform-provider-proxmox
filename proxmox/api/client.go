@@ -20,6 +20,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/avast/retry-go/v5"
 	"github.com/google/go-querystring/query"
@@ -92,6 +93,9 @@ func NewConnection(endpoint string, insecure bool, minTLS string, extraHeaders m
 
 	var transport http.RoundTripper = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
+		// pveproxy closes a keep-alive connection after 5 s idle. Dropping ours sooner keeps a request from being written
+		// to a connection the server is closing, which fails with a bare EOF that Go does not retry for a PUT or POST.
+		IdleConnTimeout: 3 * time.Second,
 		TLSClientConfig: &tls.Config{
 			// deepcode ignore InsecureTLSConfig: the min TLS version is configurable
 			MinVersion:         version,
@@ -111,7 +115,7 @@ func NewConnection(endpoint string, insecure bool, minTLS string, extraHeaders m
 	// Keep the logging transport outermost: it records request headers, and it has no way of
 	// knowing that a user-defined header holds a credential. Use mitmproxy to inspect the wire.
 	if logging.IsDebugOrHigher() {
-		transport = logging.NewLoggingHTTPTransport(transport)
+		transport = newLogMaskingTransport(logging.NewLoggingHTTPTransport(transport))
 	}
 
 	// make sure the path does not contain "/api2/json"
@@ -159,6 +163,31 @@ func NewClient(creds Credentials, conn *Connection) (Client, error) {
 	return &client{
 		conn: conn,
 		auth: auth,
+	}, nil
+}
+
+// NewRootTicketClient returns a client that authenticates calls under /nodes/{node}/ with a
+// root@pam ticket minted on that node over SSH, and everything else with c's credentials.
+//
+// The SSH node resolver must keep the unwrapped client: resolving a node address is itself a call
+// under /nodes/{node}/ and would recurse.
+func NewRootTicketClient(c Client, executor NodeCommandExecutor) (Client, error) {
+	inner, ok := c.(*client)
+	if !ok {
+		return nil, errors.New("the root@pam ticket client can only wrap the default API client")
+	}
+
+	if executor.Username() != rootShellUsername {
+		return nil, fmt.Errorf(
+			"minting a root@pam ticket requires an SSH connection as %q, but the SSH user is %q; "+
+				"set the `username` field of the `ssh` block",
+			rootShellUsername, executor.Username(),
+		)
+	}
+
+	return &client{
+		conn: inner.conn,
+		auth: newRootTicketAuthenticator(inner.auth, executor),
 	}, nil
 }
 
@@ -253,8 +282,7 @@ func (c *client) DoRequest(
 	res, err := retry.NewWithData[*http.Response](
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
-			var urlErr *url.Error
-			if errors.As(err, &urlErr) {
+			if urlErr, ok := errors.AsType[*url.Error](err); ok {
 				return strings.ToUpper(urlErr.Op) == http.MethodGet
 			}
 
