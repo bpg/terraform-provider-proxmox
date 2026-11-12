@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.122.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.121.0...v0.122.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lxc:** allow container cpu.cores to be left unset ([#3293](https://github.com/bpg/terraform-provider-proxmox/issues/3293))
+* **lxc:** default rootfs replicate to true and apply it on create ([#3276](https://github.com/bpg/terraform-provider-proxmox/issues/3276))
+
+### Features
+
+* **ceph:** add proxmox_ceph_mds resource ([#3207](https://github.com/bpg/terraform-provider-proxmox/issues/3207)) ([aa51614](https://github.com/bpg/terraform-provider-proxmox/commit/aa51614d199aef49255104ac89bae98930fb904f))
+* **firewall:** support importing firewall aliases ([#3269](https://github.com/bpg/terraform-provider-proxmox/issues/3269)) ([477f41b](https://github.com/bpg/terraform-provider-proxmox/commit/477f41b01047b85d4c42fb7f06ecd149fbf4304e))
+
+
+### Bug Fixes
+
+* **access:** remove user token from state when deleted outside terraform ([#3283](https://github.com/bpg/terraform-provider-proxmox/issues/3283)) ([d098180](https://github.com/bpg/terraform-provider-proxmox/commit/d098180bfaf0e38fda90505afb0dfb58a69ed5c6))
+* **backup:** remove backup job from state when deleted outside terraform ([#3281](https://github.com/bpg/terraform-provider-proxmox/issues/3281)) ([154ff63](https://github.com/bpg/terraform-provider-proxmox/commit/154ff6352df431adbf97c2f3cc5f45284f6d9b3b))
+* **core:** don't reuse a handed-out VM ID when the next one is taken ([#3285](https://github.com/bpg/terraform-provider-proxmox/issues/3285)) ([5020492](https://github.com/bpg/terraform-provider-proxmox/commit/502049262ee9c0acc46e5ba9ec86998faf5fc8ef))
+* **hwmapping:** remove mappings from state when deleted outside terraform ([#3282](https://github.com/bpg/terraform-provider-proxmox/issues/3282)) ([5161ea8](https://github.com/bpg/terraform-provider-proxmox/commit/5161ea8950d0ce39cb35c5fd13d6a95364d8ce08))
+* **lxc:** allow container cpu.cores to be left unset ([#3293](https://github.com/bpg/terraform-provider-proxmox/issues/3293)) ([77a5490](https://github.com/bpg/terraform-provider-proxmox/commit/77a54900387fd0d10a04e2a40300d547ce8a794d))
+* **lxc:** default rootfs replicate to true and apply it on create ([#3276](https://github.com/bpg/terraform-provider-proxmox/issues/3276)) ([e3b5eaf](https://github.com/bpg/terraform-provider-proxmox/commit/e3b5eaf08238913fe744d8908b1cdc24b70a69bb))
+* **lxc:** update mount points in place instead of recreating container ([#3032](https://github.com/bpg/terraform-provider-proxmox/issues/3032)) ([18579f5](https://github.com/bpg/terraform-provider-proxmox/commit/18579f5c9534aed0c9422572507480402a9497c4))
+* **sdn:** allow dhcp_dns_server outside the subnet ([#3290](https://github.com/bpg/terraform-provider-proxmox/issues/3290)) ([35d1379](https://github.com/bpg/terraform-provider-proxmox/commit/35d13792e0024da8385f4be32bc036123935365b))
+* **storage:** keep generated_encryption_key known after in-place update ([#3279](https://github.com/bpg/terraform-provider-proxmox/issues/3279)) ([8ee8c5f](https://github.com/bpg/terraform-provider-proxmox/commit/8ee8c5f2c70bad92c4620c9b159767515c52e6ae))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (1.27.3 → 1.27.4) ([#3286](https://github.com/bpg/terraform-provider-proxmox/issues/3286)) ([2858ba3](https://github.com/bpg/terraform-provider-proxmox/commit/2858ba35ce52c62675068187d989be947790e279))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.18.1 → v7.18.2) ([#3287](https://github.com/bpg/terraform-provider-proxmox/issues/3287)) ([3b722d9](https://github.com/bpg/terraform-provider-proxmox/commit/3b722d90223ed461f97349795c121d7a8f20957b))
+* **deps:** update module golang.org/x/sync (v0.24.0 → v0.25.0) ([#3288](https://github.com/bpg/terraform-provider-proxmox/issues/3288)) ([73fa92f](https://github.com/bpg/terraform-provider-proxmox/commit/73fa92fd5ef421a119cada6735364e097720c59c))
+* **docs:** add required_providers block to the provider examples ([#3280](https://github.com/bpg/terraform-provider-proxmox/issues/3280)) ([bfb45e5](https://github.com/bpg/terraform-provider-proxmox/commit/bfb45e512e26d0412e33afb235f967d6323a2b91))
+
 ## [0.121.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.120.0...v0.121.0) (2026-11-09)
 
 
