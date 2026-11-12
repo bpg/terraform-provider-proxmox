@@ -559,6 +559,128 @@ func TestAccResourceContainerClone(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerCloneCPU(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDCloneA := 100000 + rand.Intn(99999)
+	accTestContainerIDCloneB := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":         imageFileName,
+		"TestContainerID":       accTestContainerID,
+		"TestContainerIDCloneA": accTestContainerIDCloneA,
+		"TestContainerIDCloneB": accTestContainerIDCloneB,
+	})
+
+	config := func(cpuA, cpuB string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{.TestContainerID}}
+			template  = true
+			cpu {
+				cores = 4
+				units = 2048
+			}
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-clone-cpu"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}
+		resource "proxmox_virtual_environment_container" "test_container_clone_a" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{.TestContainerIDCloneA}}
+			started   = false
+			` + cpuA + `
+			clone {
+				vm_id = proxmox_virtual_environment_container.test_container.id
+			}
+			initialization {
+				hostname = "test-clone-cpu-a"
+			}
+		}
+		resource "proxmox_virtual_environment_container" "test_container_clone_b" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{.TestContainerIDCloneB}}
+			started   = false
+			` + cpuB + `
+			clone {
+				vm_id = proxmox_virtual_environment_container.test_container.id
+			}
+			initialization {
+				hostname = "test-clone-cpu-b"
+			}
+		}`)
+	}
+
+	// 0 stands for "not in the container config"
+	checkCPU := func(vmID, cores, units int) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			cfg, err := te.NodeClient().Container(vmID).GetContainer(t.Context())
+			if err != nil {
+				return fmt.Errorf("failed to get container %d: %w", vmID, err)
+			}
+
+			gotCores, gotUnits := ptr.Or(cfg.CPUCores, 0), ptr.Or(cfg.CPUUnits, 0)
+			if gotCores != cores || gotUnits != units {
+				return fmt.Errorf("container %d: expected cores %d and cpuunits %d, got %d and %d",
+					vmID, cores, units, gotCores, gotUnits)
+			}
+
+			return nil
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config("", `cpu {
+					limit = 2
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCPU(accTestContainerIDCloneA, 4, 2048),
+					checkCPU(accTestContainerIDCloneB, 4, 2048),
+				),
+			},
+			{
+				Config: config(`cpu {
+					limit = 2
+				}`, `cpu {
+					cores = 2
+					limit = 2
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCPU(accTestContainerIDCloneA, 4, 2048),
+					checkCPU(accTestContainerIDCloneB, 2, 2048),
+				),
+			},
+			{
+				Config: config(`cpu {
+					limit = 2
+				}`, `cpu {
+					cores = 0
+					limit = 2
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCPU(accTestContainerIDCloneA, 4, 2048),
+					checkCPU(accTestContainerIDCloneB, 0, 2048),
+				),
+			},
+		},
+	})
+}
+
 // TestAccResourceContainerCloneUserAccount verifies that cloning a container with
 // `initialization.user_account` configured does not fail. PVE only accepts `ssh-public-keys`
 // and `password` when a container is created, not on the post-clone config update.
@@ -3326,6 +3448,16 @@ func TestAccResourceContainerCPUCoresUnset(t *testing.T) {
 				PlanOnly:  true,
 			},
 			{
+				Config: config(`cpu {
+					limit = 2
+				}`),
+				Check: checkCores(new(1)),
+			},
+			{
+				Config: config(""),
+				Check:  checkCores(new(1)),
+			},
+			{
 				PreConfig: setCores(4),
 				Config:    config(""),
 				Check:     checkCores(nil),
@@ -3374,10 +3506,10 @@ func TestAccResourceContainerCPUUnitsSetOutsideConfig(t *testing.T) {
 				Config: config,
 			},
 			{
-				// containers created while units defaulted to 1024 have cpuunits=1024 and no cpu block
+				// containers created while units defaulted to 1024 have cores=1, cpuunits=1024 and no cpu block
 				PreConfig: func() {
-					err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{CPUUnits: new(1024)})
-					require.NoError(t, err, "failed to set cpuunits")
+					err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{CPUCores: new(1), CPUUnits: new(1024)})
+					require.NoError(t, err, "failed to set cores and cpuunits")
 				},
 				Config: config,
 				Check: func(*terraform.State) error {
@@ -3388,6 +3520,10 @@ func TestAccResourceContainerCPUUnitsSetOutsideConfig(t *testing.T) {
 
 					if cfg.CPUUnits != nil {
 						return fmt.Errorf("expected no cpuunits in the container config, got %d", *cfg.CPUUnits)
+					}
+
+					if cfg.CPUCores == nil || *cfg.CPUCores != 1 {
+						return fmt.Errorf("expected cores 1 in the container config, got %v", cfg.CPUCores)
 					}
 
 					return nil
