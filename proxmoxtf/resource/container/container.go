@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -58,7 +59,7 @@ const (
 	dvInitializationUserAccountPassword = ""
 	dvInitializationEntrypoint          = ""
 	dvCPUArchitecture                   = "amd64"
-	dvCPUCores                          = 1
+	dvCPUCores                          = 0
 	dvCPULimit                          = float64(0)
 	dvCPUUnits                          = 0
 	dvDescription                       = ""
@@ -352,8 +353,8 @@ func Container() *schema.Resource {
 							Type:             schema.TypeInt,
 							Description:      "The number of CPU cores",
 							Optional:         true,
-							Default:          dvCPUCores,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 128)),
+							Computed:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 8192)),
 						},
 						mkCPULimit: {
 							Type:        schema.TypeFloat,
@@ -1447,25 +1448,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 	cpu := d.Get(mkCPU).([]any)
 
 	if len(cpu) > 0 && cpu[0] != nil {
-		cpuBlock := cpu[0].(map[string]any)
-
-		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
-		cpuCores := cpuBlock[mkCPUCores].(int)
-		cpuLimit := cpuBlock[mkCPULimit].(float64)
-		cpuUnits := cpuBlock[mkCPUUnits].(int)
-
-		updateBody.CPUArchitecture = &cpuArchitecture
-		updateBody.CPUCores = &cpuCores
-
-		if cpuLimit > 0 {
-			updateBody.CPULimit = &cpuLimit
-		} else {
-			updateBody.Delete = append(updateBody.Delete, "cpulimit")
-		}
-
-		if cpuUnits > 0 {
-			updateBody.CPUUnits = &cpuUnits
-		}
+		containerSetCPU(d, cpu[0].(map[string]any), updateBody)
 	}
 
 	hookScript := d.Get(mkHookScriptFileID).(string)
@@ -2224,7 +2207,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
-		CPUCores:             &cpuCores,
 		CPULimit:             &cpuLimit,
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
@@ -2243,6 +2225,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		TTY:                  &consoleTTYCount,
 		Unprivileged:         &unprivileged,
 		VMID:                 &vmID,
+	}
+
+	if cpuCores > 0 {
+		createBody.CPUCores = &cpuCores
 	}
 
 	if cpuUnits > 0 {
@@ -2626,6 +2612,58 @@ func containerGetMountPointsMap(mountPoint []any) (containers.CustomMountPoints,
 	return mountPointsMap, nil
 }
 
+// containerSetCPU fills the cpu settings of an update body. cores and units are computed: left out of the cpu block
+// they keep what the container has, and cores = 0 removes the setting. Without a cpu block both are removed, except
+// cores=1, which containers created before cores became optional have and read ignores.
+func containerSetCPU(d *schema.ResourceData, cpuBlock map[string]any, body *containers.UpdateRequestBody) {
+	cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
+	cpuCores := cpuBlock[mkCPUCores].(int)
+	cpuLimit := cpuBlock[mkCPULimit].(float64)
+	cpuUnits := cpuBlock[mkCPUUnits].(int)
+
+	var config cty.Value
+
+	hasBlock := false
+
+	if blocks, diags := d.GetRawConfigAt(cty.GetAttrPath(mkCPU)); !diags.HasError() &&
+		blocks.IsKnown() && !blocks.IsNull() && blocks.LengthInt() > 0 {
+		config = blocks.AsValueSlice()[0]
+		hasBlock = config.IsKnown() && !config.IsNull()
+	}
+
+	configured := func(attr string) bool {
+		return hasBlock && !config.GetAttr(attr).IsNull()
+	}
+
+	legacyCores := false
+
+	if old, _ := d.GetChange(mkCPU); len(old.([]any)) > 0 && old.([]any)[0] != nil {
+		legacyCores = old.([]any)[0].(map[string]any)[mkCPUCores].(int) == 1
+	}
+
+	body.CPUArchitecture = &cpuArchitecture
+
+	switch {
+	case configured(mkCPUCores) && cpuCores > 0:
+		body.CPUCores = &cpuCores
+	case configured(mkCPUCores), !hasBlock && !legacyCores:
+		body.Delete = append(body.Delete, "cores")
+	}
+
+	if cpuLimit > 0 {
+		body.CPULimit = &cpuLimit
+	} else {
+		body.Delete = append(body.Delete, "cpulimit")
+	}
+
+	switch {
+	case configured(mkCPUUnits):
+		body.CPUUnits = &cpuUnits
+	case !hasBlock:
+		body.Delete = append(body.Delete, "cpuunits")
+	}
+}
+
 func containerGetStartupBehavior(d *schema.ResourceData) *containers.CustomStartupBehavior {
 	startup := d.Get(mkStartup).([]any)
 	if len(startup) > 0 && startup[0] != nil {
@@ -2898,8 +2936,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if containerConfig.CPUCores != nil {
 		cpu[mkCPUCores] = *containerConfig.CPUCores
 	} else {
-		// Default value of "cores" is "1" according to the API documentation.
-		cpu[mkCPUCores] = 1
+		cpu[mkCPUCores] = 0
 	}
 
 	if containerConfig.CPULimit != nil {
@@ -2924,7 +2961,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 	} else if len(currentCPU) > 0 ||
 		cpu[mkCPUArchitecture] != dvCPUArchitecture ||
-		cpu[mkCPUCores] != dvCPUCores ||
+		// containers created before cores became optional have cores=1 and no cpu block
+		(cpu[mkCPUCores] != dvCPUCores && cpu[mkCPUCores] != 1) ||
 		cpu[mkCPULimit] != dvCPULimit ||
 		cpu[mkCPUUnits] != dvCPUUnits {
 		err := d.Set(mkCPU, []any{cpu})
@@ -3767,23 +3805,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 			return diag.FromErr(err)
 		}
 
-		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
-		cpuCores := cpuBlock[mkCPUCores].(int)
-		cpuLimit := cpuBlock[mkCPULimit].(float64)
-		cpuUnits := cpuBlock[mkCPUUnits].(int)
-
-		updateBody.CPUArchitecture = &cpuArchitecture
-		updateBody.CPUCores = &cpuCores
-
-		if cpuLimit > 0 {
-			updateBody.CPULimit = &cpuLimit
-		} else {
-			updateBody.Delete = append(updateBody.Delete, "cpulimit")
-		}
-
-		if cpuUnits > 0 {
-			updateBody.CPUUnits = &cpuUnits
-		}
+		containerSetCPU(d, cpuBlock, &updateBody)
 
 		bodyDirty = true
 	}

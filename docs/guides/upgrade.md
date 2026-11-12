@@ -47,6 +47,29 @@ After upgrading, a container that does not set `replicate` and whose rootfs has 
 
 **Action required:** To keep the rootfs out of replication jobs, set `replicate = false` in the `disk` block before applying.
 
+### Container `cpu.cores` no longer defaults to `1`
+
+The `cpu.cores` attribute of `proxmox_virtual_environment_container` no longer defaults to `1`. A container created without `cores` now has no `cores` setting in Proxmox VE and can use all host cores, which is the Proxmox VE default. Before, the provider always sent `cores`, as `1` when it was not configured, so a container limited by `cpu.limit` alone could not be described, and any change to its `cpu` block pinned it to one core.
+
+Existing containers keep their current `cores` value and show no change after upgrading. Removing `cores` from the configuration no longer resets it to `1`: the container keeps its current value. Set `cores = 0` to remove the setting from an existing container. A clone whose `cpu` block does not set `cores` now keeps the value of its source container, before it was set to `1`. The upper bound is now `8192`, as in Proxmox VE.
+
+**Action required:** To keep new containers on a single core, set it explicitly:
+
+```terraform
+resource "proxmox_virtual_environment_container" "example" {
+  # ...
+  cpu {
+    cores = 1
+  }
+}
+```
+
+### Container `cpu.units` not in the configuration is removed
+
+A container that does not set `cpu.units` but has `cpuunits` in Proxmox VE, for example one created with a provider version before v0.102.0 (which always sent `1024`), planned the removal of its `cpu` block on every run, and the apply changed nothing. The apply now removes `cpuunits` from the container, so Proxmox VE uses its own default (`100` on cgroup2) and the next plan is empty. The `cores` value of such a container is not changed.
+
+**Action required:** To keep the current weight, set it explicitly, for example `units = 1024` in the `cpu` block, before applying.
+
 ## v0.121.0
 
 ### `proxmox_acl` no longer adopts an existing ACL
