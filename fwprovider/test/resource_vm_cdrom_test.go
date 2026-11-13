@@ -124,6 +124,36 @@ func TestAccResourceVMCDROM(t *testing.T) {
 				}),
 			},
 		}},
+		{"remove cdrom block", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-cdrom"
+					cdrom {
+						file_id   = "none"
+						interface = "sata3"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_cdrom", map[string]string{
+					"cdrom.0.interface": "sata3",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-cdrom"
+				}`),
+				Check: NoResourceAttributesSet("proxmox_virtual_environment_vm.test_cdrom", []string{"cdrom.#"}),
+			},
+			{
+				RefreshState: true,
+				Check:        NoResourceAttributesSet("proxmox_virtual_environment_vm.test_cdrom", []string{"cdrom.#"}),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
