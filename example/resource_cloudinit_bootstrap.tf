@@ -43,6 +43,7 @@ resource "proxmox_virtual_environment_vm" "cloudinit_bootstrap" {
 resource "proxmox_cloudinit_bootstrap" "example" {
   vm_id        = proxmox_virtual_environment_vm.cloudinit_bootstrap.vm_id
   datastore_id = "local"
+  file_name    = "cloudinit-bootstrap-example-seed.iso"
 
   user_data = <<-EOT
     #cloud-config

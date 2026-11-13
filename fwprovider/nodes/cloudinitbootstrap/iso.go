@@ -7,13 +7,10 @@
 package cloudinitbootstrap
 
 import (
-	"crypto/sha256"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/diskfs/go-diskfs/backend"
 	"github.com/diskfs/go-diskfs/backend/file"
@@ -46,24 +43,6 @@ func seedFiles(name, userData, metaData, networkConfig, vendorData string) map[s
 	}
 
 	return files
-}
-
-// contentHash returns a short, stable hash over the seed file names and contents.
-func contentHash(files map[string]string) string {
-	names := make([]string, 0, len(files))
-	for n := range files {
-		names = append(names, n)
-	}
-
-	sort.Strings(names)
-
-	h := sha256.New()
-	for _, n := range names {
-		// Length-prefix each field so different splits of the same bytes can't collide.
-		_, _ = fmt.Fprintf(h, "%d:%s%d:%s", len(n), n, len(files[n]), files[n])
-	}
-
-	return hex.EncodeToString(h.Sum(nil))[:16]
 }
 
 // buildISO writes a NoCloud seed ISO with the given files into dir, a fresh private directory, and returns its path.

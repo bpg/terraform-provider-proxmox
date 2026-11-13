@@ -10,10 +10,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -45,6 +47,7 @@ type bootstrapModel struct {
 	ID            types.String `tfsdk:"id"`
 	VMID          types.Int64  `tfsdk:"vm_id"`
 	DatastoreID   types.String `tfsdk:"datastore_id"`
+	FileName      types.String `tfsdk:"file_name"`
 	Interface     types.String `tfsdk:"interface"`
 	UserData      types.String `tfsdk:"user_data"`
 	MetaData      types.String `tfsdk:"meta_data"`
@@ -92,7 +95,7 @@ func (r *bootstrapResource) Schema(
 			"[NoCloud](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html) seed ISO, without SSH.\n\n" +
 			"Create the VM with `started = false`, `lifecycle { ignore_changes = [started] }` (or the next apply stops it " +
 			"again) and an empty CD-ROM (`file_id = \"none\"`). On create this resource " +
-			"builds the seed ISO, uploads it to the datastore on the node the VM is on, attaches it, starts the VM, waits for " +
+			"builds the seed ISO, uploads it as `file_name` to the datastore on the node the VM is on, attaches it, starts the VM, waits for " +
 			"cloud-init to finish, then ejects and deletes the ISO. Nothing is left on the node afterwards, so the VM can be " +
 			"migrated freely.\n\n" +
 			"Completion is read from `" + cloudInitResultPath + "` through the QEMU guest agent, which must be installed in " +
@@ -128,6 +131,17 @@ func (r *bootstrapResource) Schema(
 			"datastore_id": schema.StringAttribute{
 				Description: "The datastore on the VM's node to upload the temporary ISO to. It must allow `iso` content.",
 				Required:    true,
+			},
+			"file_name": schema.StringAttribute{
+				Description: "The file name of the temporary seed ISO on `datastore_id`. It must end in `.iso` and use " +
+					"only letters, digits, `.`, `_` and `-` (Proxmox would rename other characters). Use a name no other " +
+					"ISO on the datastore has (across the cluster if it is shared): an existing file with this name is " +
+					"replaced when the bootstrap runs and deleted afterwards, even if another VM has it attached.",
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtMost(255),
+					stringvalidator.RegexMatches(isoFileNameRE, isoFileNameMsg),
+				},
 			},
 			"interface": schema.StringAttribute{
 				Description: "The CD-ROM interface to attach the ISO to. Defaults to `ide0` " +
@@ -182,9 +196,13 @@ func (r *bootstrapResource) Configure(
 	r.client = cfg.Client
 }
 
-// isoPrefix identifies seed ISOs this resource created for a VM, so leftovers from a failed run can be cleaned up.
-func isoPrefix(vmID int64) string {
-	return fmt.Sprintf("cloudinit-%d-", vmID)
+// isoFileNameRE matches the names the PVE upload API keeps as they are; it replaces other characters with "_".
+var isoFileNameRE = regexp.MustCompile(`^[A-Za-z0-9_.-]+\.iso$`)
+
+const isoFileNameMsg = "must end in .iso and use only letters, digits, '.', '_' and '-'"
+
+func seedVolumeID(datastore, fileName string) string {
+	return datastore + ":" + storage.ContentTypeISO + "/" + fileName
 }
 
 func (r *bootstrapResource) Create(
@@ -242,6 +260,7 @@ func (r *bootstrapResource) bootstrap(ctx context.Context, m *bootstrapModel) (t
 	vmID := m.VMID.ValueInt64()
 	iface := m.Interface.ValueString()
 	datastore := m.DatastoreID.ValueString()
+	fileName := m.FileName.ValueString()
 
 	nodeName, vm, err := r.vmOnCurrentNode(ctx, vmID)
 	if err != nil {
@@ -256,7 +275,7 @@ func (r *bootstrapResource) bootstrap(ctx context.Context, m *bootstrapModel) (t
 	}
 
 	// Remove what an earlier, failed or interrupted attempt left behind.
-	if err := r.removeSeedISOs(ctx, vm, datastoreClient, iface, datastore); err != nil {
+	if err := r.removeSeedISO(ctx, vm, datastoreClient, iface, datastore, fileName); err != nil {
 		return none, false, err
 	}
 
@@ -277,8 +296,7 @@ func (r *bootstrapResource) bootstrap(ctx context.Context, m *bootstrapModel) (t
 
 	files := seedFiles(vmName, m.UserData.ValueString(), m.MetaData.ValueString(),
 		m.NetworkConfig.ValueString(), m.VendorData.ValueString())
-	fileName := isoPrefix(vmID) + contentHash(files) + ".iso"
-	volID := datastore + ":" + storage.ContentTypeISO + "/" + fileName
+	volID := seedVolumeID(datastore, fileName)
 
 	if err := uploadISO(ctx, r.client, datastoreClient, files, fileName); err != nil {
 		return none, false, err
@@ -297,29 +315,29 @@ func (r *bootstrapResource) bootstrap(ctx context.Context, m *bootstrapModel) (t
 			"first boot, so replace the VM to bootstrap it again", err)
 	}
 
-	if err := r.removeSeedISOs(ctx, vm, datastoreClient, iface, datastore); err != nil {
+	if err := r.removeSeedISO(ctx, vm, datastoreClient, iface, datastore, fileName); err != nil {
 		return none, false, err
 	}
 
 	return waitForIPv4Addresses(ctx, vm)
 }
 
-// removeSeedISOs ejects this VM's seed ISO if the drive holds one and deletes all of its seed ISOs on the datastore.
-// It doesn't rely on what an earlier attempt recorded, so it also cleans up after interrupted or failed runs.
-func (r *bootstrapResource) removeSeedISOs(
+// removeSeedISO ejects the seed ISO if the drive holds it and deletes it from the datastore. It only needs the
+// configured name, not what an earlier attempt recorded, so it also cleans up after interrupted or failed runs.
+func (r *bootstrapResource) removeSeedISO(
 	ctx context.Context,
 	vm *vms.Client,
 	datastoreClient *storage.Client,
-	iface, datastore string,
+	iface, datastore, fileName string,
 ) error {
-	prefix := datastore + ":" + storage.ContentTypeISO + "/" + isoPrefix(int64(vm.VMID))
+	volID := seedVolumeID(datastore, fileName)
 
 	cfg, err := vm.GetVM(ctx)
 	if err != nil {
 		return err
 	}
 
-	if dev, ok := cfg.StorageDevices[iface]; ok && dev != nil && strings.HasPrefix(dev.FileVolume, prefix) {
+	if dev, ok := cfg.StorageDevices[iface]; ok && dev != nil && dev.FileVolume == volID {
 		if err := setCDROM(ctx, vm, iface, "none"); err != nil {
 			return err
 		}
@@ -327,6 +345,8 @@ func (r *bootstrapResource) removeSeedISOs(
 
 	contentType := storage.ContentTypeISO
 
+	// Listing first, because the file is usually already gone (before an upload, or destroying after a successful
+	// bootstrap), and a delete of a missing file fails as a task rather than with a not-found error.
 	files, err := datastoreClient.ListDatastoreFiles(ctx, &contentType)
 	if errors.Is(err, api.ErrResourceDoesNotExist) {
 		// No such datastore (e.g. a typo in a tainted state), so there is nothing to clean up and destroy must not block.
@@ -338,7 +358,7 @@ func (r *bootstrapResource) removeSeedISOs(
 	}
 
 	for _, f := range files {
-		if !strings.HasPrefix(f.VolumeID, prefix) {
+		if f.VolumeID != volID {
 			continue
 		}
 
@@ -570,7 +590,7 @@ func (r *bootstrapResource) Update(
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-// Delete removes seed ISOs a failed bootstrap left; after a successful one there is nothing to undo.
+// Delete removes the seed ISO a failed bootstrap left; after a successful one there is nothing to undo.
 // It runs before the VM is destroyed, because this resource depends on the VM.
 func (r *bootstrapResource) Delete(
 	ctx context.Context,
@@ -594,10 +614,11 @@ func (r *bootstrapResource) Delete(
 	}
 
 	if err == nil {
-		err = r.removeSeedISOs(ctx, vm, r.client.Node(nodeName).Storage(datastore), state.Interface.ValueString(), datastore)
+		err = r.removeSeedISO(ctx, vm, r.client.Node(nodeName).Storage(datastore), state.Interface.ValueString(),
+			datastore, state.FileName.ValueString())
 	}
 
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Clean Up Seed ISOs of VM %d", vmID), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Clean Up Seed ISO of VM %d", vmID), err.Error())
 	}
 }

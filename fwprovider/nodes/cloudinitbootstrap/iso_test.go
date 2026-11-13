@@ -42,18 +42,16 @@ func TestSeedFilesIncludesOptionalFiles(t *testing.T) {
 	}, files)
 }
 
-func TestContentHash(t *testing.T) {
+func TestISOFileNameRE(t *testing.T) {
 	t.Parallel()
 
-	a := contentHash(map[string]string{"user-data": "x", "meta-data": "y"})
+	for _, ok := range []string{"seed.iso", "dev.example-master-pool-0-cloud-init.iso"} {
+		assert.True(t, isoFileNameRE.MatchString(ok), ok)
+	}
 
-	assert.Len(t, a, 16)
-	assert.Equal(t, a, contentHash(map[string]string{"meta-data": "y", "user-data": "x"}), "must not depend on map order")
-	assert.NotEqual(t, a, contentHash(map[string]string{"user-data": "x", "meta-data": "y "}))
-	assert.NotEqual(t,
-		contentHash(map[string]string{"user-data": "ab", "meta-data": ""}),
-		contentHash(map[string]string{"user-data": "a", "meta-data": "b"}),
-	)
+	for _, bad := range []string{"", ".iso", "seed.img", "seed.iso.yaml", "a/seed.iso", `a\seed.iso`, "my seed.iso", "seed.ISO", "a+b.iso", "a:b.iso", "é.iso"} {
+		assert.False(t, isoFileNameRE.MatchString(bad), bad)
+	}
 }
 
 func TestBuildISO(t *testing.T) {
