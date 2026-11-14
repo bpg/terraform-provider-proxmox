@@ -111,7 +111,7 @@ const (
 	dvWaitForIPTimeout                  = "5m"
 	dvUnprivileged                      = false
 
-	maxNetworkInterfaces  = 10
+	maxNetworkInterfaces  = 32
 	maxPassthroughDevices = 128
 	maxMountPoints        = 256
 
