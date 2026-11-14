@@ -515,6 +515,49 @@ func TestContainerMountPointForceNew(t *testing.T) {
 			expectRequiresNew: false,
 		},
 		{
+			name: "resolved volume id of a sized allocation is not treated as a repoint",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm:8", mkMountPointPath: "/mnt/local1"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			// See https://github.com/bpg/terraform-provider-proxmox/issues/3295.
+			name: "repointing to another existing volume on the same datastore forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "linstor:pm-797c07b4_139", mkMountPointPath: "/srv/docker-data"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "linstor:vm-123123-disk-0", mkMountPointPath: "/srv/docker-data"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "swapping existing volumes and paths forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "linstor:pm-797c07b4_139", mkMountPointPath: "/srv/docker-data"},
+				{mkMountPointVolume: "linstor:pm-fbede1b0_139", mkMountPointPath: "/var/lib/docker/volumes"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "linstor:vm-123123-disk-0", mkMountPointPath: "/var/lib/docker/volumes"},
+				map[string]any{mkMountPointVolume: "linstor:vm-123123-disk-1", mkMountPointPath: "/srv/docker-data"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "mounting the same existing volume is not a repoint",
+			state: []map[string]string{
+				{mkMountPointVolume: "linstor:pm-797c07b4_139", mkMountPointPath: "/srv/docker-data"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "linstor:pm-797c07b4_139", mkMountPointPath: "/srv/data"},
+			},
+			expectRequiresNew: false,
+		},
+		{
 			name: "removing the last of three mount points is an in-place update",
 			state: []map[string]string{
 				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},

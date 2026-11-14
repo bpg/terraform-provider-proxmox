@@ -2450,6 +2450,10 @@ func containerGetTagsString(d *schema.ResourceData) string {
 	return strings.Join(sanitizedTags, ";")
 }
 
+// mountPointAllocationSizeRegex matches the size part of a "<datastore>:<size in GiB>" volume
+// allocation request, as parsed by pve-container (PVE::LXC::Config).
+var mountPointAllocationSizeRegex = regexp.MustCompile(`^\d+(\.\d+)?$`)
+
 // mountPointVolumeDiffSuppress reports whether an old/new mount point volume pair refers to the
 // same volume.
 //
@@ -2463,9 +2467,22 @@ func containerGetTagsString(d *schema.ResourceData) string {
 //
 //	"local-lvm:vm-101-disk-1" -> "local-lvm:vm-101-disk-1"
 //
-// which is a valid case.
+// which is a valid case. A different existing volume on the same datastore is a different volume:
+//
+//	"local-lvm:vm-101-disk-1" -> "local-lvm:vm-101-disk-2"
+//
+// is not suppressed.
 func mountPointVolumeDiffSuppress(_, oldVal, newVal string, _ *schema.ResourceData) bool {
-	return oldVal == newVal || strings.HasPrefix(oldVal, strings.Split(newVal, ":")[0]+":")
+	if oldVal == newVal {
+		return true
+	}
+
+	datastoreID, size, hasVolume := strings.Cut(newVal, ":")
+	if hasVolume && !mountPointAllocationSizeRegex.MatchString(size) {
+		return false
+	}
+
+	return strings.HasPrefix(oldVal, datastoreID+":")
 }
 
 // containerMountPointForceNew flags mount point changes that require recreating the container.

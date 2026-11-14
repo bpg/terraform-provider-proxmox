@@ -2394,6 +2394,112 @@ func TestAccResourceContainerMountPointVolumeReference(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerMountPointRepointExistingVolume verifies that pointing an existing mount
+// point at another existing volume on the same datastore replaces the container instead of being
+// diff-suppressed as the same volume.
+// See https://github.com/bpg/terraform-provider-proxmox/issues/3295.
+func TestAccResourceContainerMountPointRepointExistingVolume(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID1 := 100000 + rand.Intn(99999)
+	accTestContainerID2 := accTestContainerID1 + 1
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":    imageFileName,
+		"TestContainerID1": accTestContainerID1,
+		"TestContainerID2": accTestContainerID2,
+	})
+
+	config := func(sourceIndex int) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_container" "source" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{ .TestContainerID1 }}
+			started   = false
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			mount_point {
+				volume = "{{.ContainerDatastoreID}}"
+				size   = "1G"
+				path   = "/mnt/a"
+			}
+			mount_point {
+				volume = "{{.ContainerDatastoreID}}"
+				size   = "1G"
+				path   = "/mnt/b"
+			}
+			initialization {
+				hostname = "source"
+			}
+			network_interface {
+				name = "vmbr0"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}
+
+		resource "proxmox_virtual_environment_container" "target" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{ .TestContainerID2 }}
+			started   = false
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			mount_point {
+				volume = proxmox_virtual_environment_container.source.mount_point[%d].path_in_datastore
+				size   = "1G"
+				path   = "/mnt/shared"
+			}
+			initialization {
+				hostname = "target"
+			}
+			network_interface {
+				name = "vmbr0"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`, sourceIndex), WithRootPAMAuth())
+	}
+
+	sameVolume := func(sourceIndex int) resource.TestCheckFunc {
+		return resource.TestCheckResourceAttrPair(
+			"proxmox_virtual_environment_container.target", "mount_point.0.path_in_datastore",
+			"proxmox_virtual_environment_container.source", fmt.Sprintf("mount_point.%d.path_in_datastore", sourceIndex),
+		)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config(0),
+				Check:  sameVolume(0),
+			},
+			{
+				Config: config(1),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(
+							"proxmox_virtual_environment_container.target",
+							plancheck.ResourceActionDestroyBeforeCreate,
+						),
+					},
+				},
+				Check: sameVolume(1),
+			},
+		},
+	})
+}
+
 // Test that start_on_boot and features are applied on cloned containers and can be updated.
 // See https://github.com/bpg/terraform-provider-proxmox/issues/794
 func TestAccResourceContainerCloneStartOnBoot(t *testing.T) {
