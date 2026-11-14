@@ -270,8 +270,9 @@ The `mount_point.volume` attribute accepts three forms:
     is restarted. Removing or inserting a block before existing ones recreates
     the container, as does changing the `size` of an existing mount point or
     pointing its `volume` at a different datastore or host path. Changing
-    `volume` from one volume ID to another on the same datastore is not
-    detected. A removed volume mount stays on the datastore as an unused
+    `volume` to the ID of another existing volume is applied in place: the
+    new volume is attached and the previous one stays on the datastore as an
+    unused volume. A removed volume mount stays on the datastore as an unused
     volume; bind and device mounts are just dropped.
 
     - `acl` (Optional) Explicitly enable or disable ACL support.

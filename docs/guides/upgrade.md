@@ -37,6 +37,16 @@ This guide documents breaking changes across provider versions and the recommend
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
 
+## v0.123.0
+
+### Container `mount_point.volume` change to another volume ID is applied
+
+Changing `mount_point.volume` of `proxmox_virtual_environment_container` from one volume ID to another on the same datastore (for example `local-lvm:vm-100-disk-1` to `local-lvm:vm-100-disk-9`) is now planned and applied in place: the new volume is attached to the mount point, and the previous one stays on the datastore as an unused volume of the container. Before, the change was ignored: the plan showed no change to `volume`, and other changes to the same mount point, such as a new `path`, were applied to the old volume.
+
+After upgrading, a container whose configuration names a different volume ID than the one it actually mounts plans an in-place update that attaches the configured volume. A running container is restarted by the update. Configurations that use a datastore ID (`local-lvm`), or the ID of the volume that is mounted, show no change.
+
+**Action required:** Review the plan before applying. If the volume change is not intended, set `volume` to the ID the mount point has in the state (`terraform state show`, attribute `path_in_datastore`).
+
 ## v0.122.0
 
 ### Container rootfs `replicate` defaults to `true`

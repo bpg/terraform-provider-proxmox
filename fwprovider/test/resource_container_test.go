@@ -1580,6 +1580,223 @@ func TestAccResourceContainerMountPointRunning(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerMountPointVolumeRepoint(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{"ImageFileName": imageFileName})
+
+	type mount struct {
+		holderVolume int
+		path         string
+	}
+
+	tests := []struct {
+		name    string
+		changed []mount
+	}{
+		{"volumes changed at the same paths", []mount{{1, "/mnt/a"}, {0, "/mnt/b"}}},
+		{"volumes changed and paths swapped", []mount{{1, "/mnt/b"}, {0, "/mnt/a"}}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			holderID := 100000 + rand.Intn(99999)
+			containerID := holderID + 1
+
+			config := func(mounts []mount) string {
+				var mountPoints strings.Builder
+
+				for _, m := range mounts {
+					fmt.Fprintf(&mountPoints, `
+					    mount_point {
+							volume = proxmox_virtual_environment_container.holder.mount_point[%d].path_in_datastore
+							size   = "1G"
+							path   = %q
+					    }`, m.holderVolume, m.path)
+				}
+
+				return te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_virtual_environment_container" "holder" {
+				    node_name = "{{.NodeName}}"
+					vm_id     = %d
+					started   = false
+				    disk {
+						datastore_id = "{{.ContainerDatastoreID}}"
+						size         = 1
+					}
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}"
+						size   = "1G"
+						path   = "/mnt/first"
+				    }
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}"
+						size   = "1G"
+						path   = "/mnt/second"
+				    }
+				    initialization {
+				  		hostname = "test-holder"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}
+
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+					vm_id     = %d
+					started   = false
+				    disk {
+						datastore_id = "{{.ContainerDatastoreID}}"
+						size         = 1
+					}`+mountPoints.String()+`
+				    initialization {
+				  		hostname = "test-repoint"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}`, holderID, containerID))
+			}
+
+			checkMountPoints := func(mounts []mount) resource.TestCheckFunc {
+				return func(s *terraform.State) error {
+					holder := s.RootModule().Resources["proxmox_virtual_environment_container.holder"]
+					require.NotNil(t, holder, "holder is missing from state")
+
+					ctInfo, err := te.NodeClient().Container(containerID).GetContainer(t.Context())
+					require.NoError(t, err, "failed to get container")
+					require.Len(t, ctInfo.MountPoints, len(mounts))
+
+					for i, m := range mounts {
+						mp := ctInfo.MountPoints[fmt.Sprintf("mp%d", i)]
+						require.NotNil(t, mp, "mp%d is missing", i)
+
+						volume := holder.Primary.Attributes[fmt.Sprintf("mount_point.%d.path_in_datastore", m.holderVolume)]
+						require.NotEmpty(t, volume)
+						require.Equal(t, volume, mp.Volume, "mp%d is backed by a different volume", i)
+						require.Equal(t, m.path, mp.MountPoint, "mp%d is mounted at a different path", i)
+					}
+
+					return nil
+				}
+			}
+
+			initial := []mount{{0, "/mnt/a"}, {1, "/mnt/b"}}
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: config(initial),
+						Check:  checkMountPoints(initial),
+					},
+					{
+						Config: config(tt.changed),
+						ConfigPlanChecks: resource.ConfigPlanChecks{
+							PreApply: []plancheck.PlanCheck{
+								plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+							},
+						},
+						Check: checkMountPoints(tt.changed),
+					},
+				},
+			})
+		})
+	}
+
+	t.Run("own volumes swapped", func(t *testing.T) {
+		containerID := 100000 + rand.Intn(99999)
+
+		config := te.RenderConfig(fmt.Sprintf(`
+		variable "first" {
+			type    = string
+			default = "{{.ContainerDatastoreID}}"
+		}
+
+		variable "second" {
+			type    = string
+			default = "{{.ContainerDatastoreID}}"
+		}
+
+		resource "proxmox_virtual_environment_container" "test_container" {
+		    node_name = "{{.NodeName}}"
+			vm_id     = %d
+			started   = false
+		    disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 1
+			}
+		    mount_point {
+				volume = var.first
+				size   = "1G"
+				path   = "/mnt/a"
+		    }
+		    mount_point {
+				volume = var.second
+				size   = "1G"
+				path   = "/mnt/b"
+		    }
+		    initialization {
+		  		hostname = "test-repoint-own"
+		    }
+		    operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+		    }
+		}`, containerID))
+
+		var volumes [2]string
+
+		getVolumes := func() [2]string {
+			ctInfo, err := te.NodeClient().Container(containerID).GetContainer(t.Context())
+			require.NoError(t, err, "failed to get container")
+			require.Len(t, ctInfo.MountPoints, 2)
+			require.Equal(t, "/mnt/a", ctInfo.MountPoints["mp0"].MountPoint)
+			require.Equal(t, "/mnt/b", ctInfo.MountPoints["mp1"].MountPoint)
+
+			return [2]string{ctInfo.MountPoints["mp0"].Volume, ctInfo.MountPoints["mp1"].Volume}
+		}
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: config,
+					Check: func(*terraform.State) error {
+						volumes = getVolumes()
+						require.NotEqual(t, volumes[0], volumes[1])
+
+						return nil
+					},
+				},
+				{
+					PreConfig: func() {
+						t.Setenv("TF_VAR_first", volumes[1])
+						t.Setenv("TF_VAR_second", volumes[0])
+					},
+					Config: config,
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+						},
+					},
+					Check: func(*terraform.State) error {
+						require.Equal(t, [2]string{volumes[1], volumes[0]}, getVolumes())
+
+						return nil
+					},
+				},
+			},
+		})
+	})
+}
+
 // TestAccResourceContainerMountPointBindMount verifies that mount_point.volume accepts an
 // absolute host path to bind-mount a host directory into the container. Bind mounts take a
 // different code path than volume mounts: the API stores the host path verbatim in the
