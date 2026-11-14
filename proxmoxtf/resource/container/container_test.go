@@ -417,8 +417,9 @@ func mountPointStateAttrs(mountPoints ...map[string]string) map[string]string {
 }
 
 // TestContainerMountPointForceNew verifies that mount point changes only force container
-// recreation when the volume of an *existing* mount point is repointed or resized. Adding,
-// removing, or reconfiguring mount points must be handled in place by containerUpdate.
+// recreation when an *existing* mount point is moved to another datastore, host path or device,
+// or resized. Adding, removing, or reconfiguring mount points, and attaching another existing
+// volume by its ID, must be handled in place by containerUpdate.
 //
 // See https://github.com/bpg/terraform-provider-proxmox/issues/3028.
 func TestContainerMountPointForceNew(t *testing.T) {
@@ -475,7 +476,7 @@ func TestContainerMountPointForceNew(t *testing.T) {
 			expectRequiresNew: false,
 		},
 		{
-			name: "repointing the volume of an existing mount point forces recreation",
+			name: "repointing an existing bind mount to another host path forces recreation",
 			state: []map[string]string{
 				{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
 			},
@@ -577,6 +578,24 @@ func TestContainerMountPointForceNew(t *testing.T) {
 				},
 			},
 			expectRequiresNew: true,
+		},
+		{
+			name: "another size on a mount point with a volume id is an in-place update",
+			state: []map[string]string{
+				{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "4G",
+				},
+			},
+			config: []any{
+				map[string]any{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "8G",
+				},
+			},
+			expectRequiresNew: false,
 		},
 		{
 			// PVE resolves a datastore-only volume to a concrete volume ID; the resulting

@@ -761,8 +761,9 @@ func Container() *schema.Resource {
 				Description: "A mount point",
 				Optional:    true,
 				// Not ForceNew: adding, removing and reconfiguring mount points is applied in place by
-				// containerUpdate. Recreation is narrowed down to repointing or resizing an existing
-				// mount point, which is handled by containerMountPointForceNew in CustomizeDiff.
+				// containerUpdate. Recreation is narrowed down to moving an existing mount point to another
+				// datastore, host path or device, or resizing it, which is handled by
+				// containerMountPointForceNew in CustomizeDiff.
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkMountPointACL: {
@@ -1274,8 +1275,8 @@ func Container() *schema.Resource {
 					return false
 				},
 			),
-			// Mount points are updated in place; only repointing or resizing an existing one
-			// requires recreation.
+			// Mount points are updated in place; only moving an existing one to another datastore, host path
+			// or device, or resizing it, requires recreation.
 			containerMountPointForceNew,
 		),
 		Importer: &schema.ResourceImporter{
@@ -2490,8 +2491,8 @@ func mountPointIsVolumeID(volume string) bool {
 // containerMountPointForceNew flags mount point changes that require recreating the container.
 // Appending, removing trailing and reconfiguring mount points is applied in place by containerUpdate, as is
 // attaching another existing volume by its ID. Only mount points present on both sides of the diff are considered:
-// moving an existing mount point to another datastore, host path or device, changing its size, or shifting it to
-// another index cannot be done in place.
+// moving an existing mount point to another datastore, host path or device, changing the size of one that is not
+// attached by its volume ID, or shifting it to another index cannot be done in place.
 //
 // The replacement is flagged on the specific nested attribute rather than on the mkMountPoint
 // block: a block-level ForceNew only propagates to the list count, which is unchanged when an
@@ -2516,19 +2517,20 @@ func containerMountPointForceNew(_ context.Context, d *schema.ResourceDiff, _ an
 		oldVolume, _ := oldMountPoint[mkMountPointVolume].(string)
 		newVolume, _ := newMountPoint[mkMountPointVolume].(string)
 
-		repointed := !mountPointVolumeDiffSuppress("", oldVolume, newVolume, nil)
+		existingVolume := mountPointIsVolumeID(newVolume)
 
 		// Another existing volume is attached in place, PVE keeps the previous one as unused. Replacing the
 		// container instead would destroy the volumes it owns, including the one being attached.
-		if repointed && !mountPointIsVolumeID(newVolume) {
+		if !existingVolume && !mountPointVolumeDiffSuppress("", oldVolume, newVolume, nil) {
 			return forceNewMountPointAttr(d, i, mkMountPointVolume)
 		}
 
 		oldSize, _ := oldMountPoint[mkMountPointSize].(string)
 		newSize, _ := newMountPoint[mkMountPointSize].(string)
 
-		// the size of another volume is not a resize of the previous one
-		if !repointed && !mountPointSizeEqual(oldSize, newSize) {
+		// PVE reports the real size of an existing volume whatever size is requested, so a replacement cannot
+		// apply it either.
+		if !existingVolume && !mountPointSizeEqual(oldSize, newSize) {
 			return forceNewMountPointAttr(d, i, mkMountPointSize)
 		}
 

@@ -45,7 +45,9 @@ Changing `mount_point.volume` of `proxmox_virtual_environment_container` from on
 
 After upgrading, a container whose configuration names a different volume ID than the one it actually mounts plans an in-place update that attaches the configured volume. A running container is restarted by the update. Configurations that use a datastore ID (`local-lvm`), or the ID of the volume that is mounted, show no change.
 
-**Action required:** Review the plan before applying. If the volume change is not intended, set `volume` to the ID the mount point has in the state (`terraform state show`, attribute `path_in_datastore`).
+A `size` that differs from the real size of a volume mounted by its ID no longer replaces the container. Proxmox VE keeps the real size of an existing volume, so the difference shows as an in-place change on every plan until `size` is corrected.
+
+**Action required:** Review the plan before applying. If the volume change is not intended, set `volume` to the ID the mount point has in the state (`terraform state show`, attribute `path_in_datastore`). If it is intended, check that the volume exists, because Proxmox VE does not verify it on update, and set `size` to its real size.
 
 ## v0.122.0
 
