@@ -6462,6 +6462,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 		old, _ := d.GetChange(mkCDROM)
 
+		// The block was removed from the configuration: detach the drive instead of rewriting it
+		// with the default file ID, which would pass the host's physical CD-ROM through.
+		cdromRemoved := len(d.Get(mkCDROM).([]any)) == 0
+
 		if len(old.([]any)) > 0 && old.([]any)[0] != nil {
 			oldList := old.([]any)[0]
 			oldBlock := oldList.(map[string]any)
@@ -6472,21 +6476,23 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 				oldInterface = dvCDROMInterface
 			}
 
-			if oldInterface != cdromInterface {
+			if cdromRemoved || oldInterface != cdromInterface {
 				del = append(del, oldInterface)
 			}
 		}
 
-		if cdromFileID == "" {
-			cdromFileID = "cdrom"
+		if !cdromRemoved {
+			if cdromFileID == "" {
+				cdromFileID = "cdrom"
+			}
+
+			cdromMedia := "cdrom"
+
+			updateBody.AddCustomStorageDevice(cdromInterface, vms.CustomStorageDevice{
+				FileVolume: cdromFileID,
+				Media:      &cdromMedia,
+			})
 		}
-
-		cdromMedia := "cdrom"
-
-		updateBody.AddCustomStorageDevice(cdromInterface, vms.CustomStorageDevice{
-			FileVolume: cdromFileID,
-			Media:      &cdromMedia,
-		})
 	}
 
 	// Prepare the new CPU configuration.
