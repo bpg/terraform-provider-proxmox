@@ -274,9 +274,10 @@ The `mount_point.volume` attribute accepts three forms:
     applied in place: the new volume is attached and the previous one stays on
     the datastore as an unused volume. Proxmox VE does not check that the new
     volume exists, and it keeps the real size of an existing volume: a `size`
-    that differs from it is not applied and shows as a change on every plan.
-    A removed volume mount stays on the datastore as an unused volume; bind
-    and device mounts are just dropped.
+    that differs from it is not applied and shows as a change on every plan,
+    and each apply of that change restarts a running container. A removed
+    volume mount stays on the datastore as an unused volume; bind and device
+    mounts are just dropped.
 
     - `acl` (Optional) Explicitly enable or disable ACL support.
     - `backup` (Optional) Whether to include the mount point in backups (only
