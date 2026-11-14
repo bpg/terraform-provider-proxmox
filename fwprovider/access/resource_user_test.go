@@ -312,6 +312,49 @@ func TestAccResourceUserTokenUserDeletedOutside(t *testing.T) {
 	})
 }
 
+// TestAccResourceUserDeletedOutside checks that a user removed outside Terraform is dropped from state and
+// planned for creation, instead of failing the refresh.
+func TestAccResourceUserDeletedOutside(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+	userID := fmt.Sprintf("%s@pve", gofakeit.LetterN(10))
+
+	te.AddTemplateVars(map[string]any{
+		"UserID": userID,
+	})
+
+	// PVE answers a missing user with 403 to everyone but root@pam
+	config := te.RenderConfig(`resource "proxmox_virtual_environment_user" "user_gone" {
+		comment = "Managed by Terraform"
+		user_id = "{{.UserID}}"
+	}`, test.WithRootPAMAuth())
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				PreConfig: func() {
+					err := te.AccessClient().DeleteUser(context.Background(), userID)
+					require.NoError(t, err)
+				},
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_user.user_gone", plancheck.ResourceActionCreate),
+					},
+				},
+				Check: test.ResourceAttributes("proxmox_virtual_environment_user.user_gone", map[string]string{
+					"user_id": userID,
+				}),
+			},
+		},
+	})
+}
+
 // TestAccResourceUserACLNotManagedHere verifies that when a user has no inline
 // acl{} blocks and ACLs for that user are managed by separate proxmox_acl
 // resources, refresh does not produce a spurious diff and apply does not
