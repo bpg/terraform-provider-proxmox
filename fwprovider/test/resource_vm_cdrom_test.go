@@ -12,9 +12,13 @@
 package test
 
 import (
+	"context"
+	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccResourceVMCDROM(t *testing.T) {
@@ -124,36 +128,8 @@ func TestAccResourceVMCDROM(t *testing.T) {
 				}),
 			},
 		}},
-		{"remove cdrom block", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_cdrom" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					name 	  = "test-cdrom"
-					cdrom {
-						file_id   = "none"
-						interface = "sata3"
-					}
-				}`),
-				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_cdrom", map[string]string{
-					"cdrom.0.interface": "sata3",
-				}),
-			},
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_cdrom" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					name 	  = "test-cdrom"
-				}`),
-				Check: NoResourceAttributesSet("proxmox_virtual_environment_vm.test_cdrom", []string{"cdrom.#"}),
-			},
-			{
-				RefreshState: true,
-				Check:        NoResourceAttributesSet("proxmox_virtual_environment_vm.test_cdrom", []string{"cdrom.#"}),
-			},
-		}},
+		{"remove cdrom block on the default interface", removeCDROMSteps(te, "", "ide3")},
+		{"remove cdrom block on sata", removeCDROMSteps(te, `interface = "sata3"`, "sata3")},
 	}
 
 	for _, tt := range tests {
@@ -165,5 +141,75 @@ func TestAccResourceVMCDROM(t *testing.T) {
 				Steps:                    tt.steps,
 			})
 		})
+	}
+}
+
+func removeCDROMSteps(te *Environment, interfaceAttr, iface string) []resource.TestStep {
+	const name = "proxmox_virtual_environment_vm.test_cdrom"
+
+	checkDrives := func(attached bool) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			rs, ok := s.RootModule().Resources[name]
+			if !ok {
+				return fmt.Errorf("%s not found in state", name)
+			}
+
+			vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+			if err != nil {
+				return fmt.Errorf("failed to parse vm_id: %w", err)
+			}
+
+			vmConfig, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to get VM config: %w", err)
+			}
+
+			if attached {
+				if _, exists := vmConfig.StorageDevices[iface]; !exists {
+					return fmt.Errorf("%s is missing in Proxmox", iface)
+				}
+
+				return nil
+			}
+
+			for device, drive := range vmConfig.StorageDevices {
+				if drive != nil {
+					return fmt.Errorf("%s (%s) is still attached in Proxmox after the cdrom block was removed", device, drive.FileVolume)
+				}
+			}
+
+			return nil
+		}
+	}
+
+	return []resource.TestStep{
+		{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_vm" "test_cdrom" {
+				node_name = "{{.NodeName}}"
+				started   = false
+				name 	  = "test-cdrom"
+				cdrom {
+					file_id = "none"
+					` + interfaceAttr + `
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes(name, map[string]string{"cdrom.0.interface": iface}),
+				checkDrives(true),
+			),
+		},
+		{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_vm" "test_cdrom" {
+				node_name = "{{.NodeName}}"
+				started   = false
+				name 	  = "test-cdrom"
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				NoResourceAttributesSet(name, []string{"cdrom.#"}),
+				checkDrives(false),
+			),
+		},
 	}
 }
