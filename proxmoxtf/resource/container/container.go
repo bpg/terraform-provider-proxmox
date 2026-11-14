@@ -761,8 +761,9 @@ func Container() *schema.Resource {
 				Description: "A mount point",
 				Optional:    true,
 				// Not ForceNew: adding, removing and reconfiguring mount points is applied in place by
-				// containerUpdate. Recreation is narrowed down to repointing or resizing an existing
-				// mount point, which is handled by containerMountPointForceNew in CustomizeDiff.
+				// containerUpdate. Recreation is narrowed down to moving an existing mount point to another
+				// datastore, host path or device, or resizing it, which is handled by
+				// containerMountPointForceNew in CustomizeDiff.
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkMountPointACL: {
@@ -1274,8 +1275,8 @@ func Container() *schema.Resource {
 					return false
 				},
 			),
-			// Mount points are updated in place; only repointing or resizing an existing one
-			// requires recreation.
+			// Mount points are updated in place; only moving an existing one to another datastore, host path
+			// or device, or resizing it, requires recreation.
 			containerMountPointForceNew,
 		),
 		Importer: &schema.ResourceImporter{
@@ -2450,6 +2451,9 @@ func containerGetTagsString(d *schema.ResourceData) string {
 	return strings.Join(sanitizedTags, ";")
 }
 
+// mountPointAllocationSize matches the size part of a "<datastore>:<size in GiB>" allocation request.
+var mountPointAllocationSize = regexp.MustCompile(`^\d+(\.\d+)?$`)
+
 // mountPointVolumeDiffSuppress reports whether an old/new mount point volume pair refers to the
 // same volume.
 //
@@ -2459,19 +2463,36 @@ func containerGetTagsString(d *schema.ResourceData) string {
 //	"local-lvm" -> "local-lvm:vm-101-disk-1"
 //	"local-lvm:8" -> "local-lvm:vm-101-disk-1"
 //
-// There is also an option to mount an existing volume, so
+// There is also an option to mount an existing volume by its ID. That is not an allocation request,
+// so a different ID is a different volume, even on the same datastore:
 //
-//	"local-lvm:vm-101-disk-1" -> "local-lvm:vm-101-disk-1"
-//
-// which is a valid case.
+//	"local-lvm:vm-101-disk-1" -> "local-lvm:vm-101-disk-9"
 func mountPointVolumeDiffSuppress(_, oldVal, newVal string, _ *schema.ResourceData) bool {
-	return oldVal == newVal || strings.HasPrefix(oldVal, strings.Split(newVal, ":")[0]+":")
+	if oldVal == newVal {
+		return true
+	}
+
+	datastore, volume, _ := strings.Cut(newVal, ":")
+	if volume != "" && !mountPointAllocationSize.MatchString(volume) {
+		return false
+	}
+
+	return strings.HasPrefix(oldVal, datastore+":")
+}
+
+// mountPointIsVolumeID reports whether a mount point volume names an existing volume ("<datastore>:<volume>"),
+// as opposed to an allocation request, a host path or a device.
+func mountPointIsVolumeID(volume string) bool {
+	datastore, name, found := strings.Cut(volume, ":")
+
+	return found && name != "" && !strings.HasPrefix(datastore, "/") && !mountPointAllocationSize.MatchString(name)
 }
 
 // containerMountPointForceNew flags mount point changes that require recreating the container.
-// Appending, removing trailing and reconfiguring mount points is applied in place by containerUpdate, so only
-// mount points present on both sides of the diff are considered: repointing an existing mount
-// point to a different volume, changing its size, or shifting it to another index cannot be done in place.
+// Appending, removing trailing and reconfiguring mount points is applied in place by containerUpdate, as is
+// attaching another existing volume by its ID. Only mount points present on both sides of the diff are considered:
+// moving an existing mount point to another datastore, host path or device, changing the size of one that is not
+// attached by its volume ID, or shifting it to another index cannot be done in place.
 //
 // The replacement is flagged on the specific nested attribute rather than on the mkMountPoint
 // block: a block-level ForceNew only propagates to the list count, which is unchanged when an
@@ -2496,14 +2517,20 @@ func containerMountPointForceNew(_ context.Context, d *schema.ResourceDiff, _ an
 		oldVolume, _ := oldMountPoint[mkMountPointVolume].(string)
 		newVolume, _ := newMountPoint[mkMountPointVolume].(string)
 
-		if !mountPointVolumeDiffSuppress("", oldVolume, newVolume, nil) {
+		existingVolume := mountPointIsVolumeID(newVolume)
+
+		// Another existing volume is attached in place, PVE keeps the previous one as unused. Replacing the
+		// container instead would destroy the volumes it owns, including the one being attached.
+		if !existingVolume && !mountPointVolumeDiffSuppress("", oldVolume, newVolume, nil) {
 			return forceNewMountPointAttr(d, i, mkMountPointVolume)
 		}
 
 		oldSize, _ := oldMountPoint[mkMountPointSize].(string)
 		newSize, _ := newMountPoint[mkMountPointSize].(string)
 
-		if !mountPointSizeEqual(oldSize, newSize) {
+		// PVE reports the real size of an existing volume whatever size is requested, so a replacement cannot
+		// apply it either.
+		if !existingVolume && !mountPointSizeEqual(oldSize, newSize) {
 			return forceNewMountPointAttr(d, i, mkMountPointSize)
 		}
 

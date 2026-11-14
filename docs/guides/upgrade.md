@@ -37,6 +37,25 @@ This guide documents breaking changes across provider versions and the recommend
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
 
+## v0.123.0
+
+### Container `mount_point.volume` change to another volume ID is applied
+
+When you change `mount_point.volume` of a `proxmox_virtual_environment_container` from one volume ID to another, for example from `local-lvm:vm-100-disk-1` to `local-lvm:vm-100-disk-9`, the provider now applies the change. The container is updated in place: the new volume is mounted at that mount point, and the old volume is not deleted. It stays on the datastore and is listed as an unused volume of the container.
+
+Before, a change between two volumes on the same datastore was ignored without any warning. The plan showed no change to `volume`, and if you changed something else in the same block, such as `path`, it was applied to the old volume.
+
+What you see after upgrading depends on your configuration:
+
+- `volume` is a datastore ID (`local-lvm`), or the ID of the volume that is mounted now: nothing changes.
+- `volume` is the ID of a different volume than the one that is mounted now: the next plan shows an in-place update that mounts the volume from your configuration. Applying it restarts the container if it is running.
+- `size` differs from the real size of a volume mounted by its ID: the plan no longer replaces the container. Proxmox VE always keeps the real size of an existing volume, so the plan shows an in-place change to `size` every time until you correct the value, and every apply restarts the container if it is running.
+
+**Action required:** Review the plan before applying.
+
+- To keep the volume that is mounted now, set `volume` to the ID from the state (`terraform state show`, attribute `path_in_datastore`).
+- To switch to the other volume, check that it exists first. Proxmox VE accepts the ID of a volume that does not exist, and the container then fails to start. Also set `size` to the real size of that volume.
+
 ## v0.122.0
 
 ### Container rootfs `replicate` defaults to `true`
