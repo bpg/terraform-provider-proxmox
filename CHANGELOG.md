@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.123.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.122.0...v0.123.0) (2026-11-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lxc:** apply mount point volume change to another volume id ([#3301](https://github.com/bpg/terraform-provider-proxmox/issues/3301))
+
+### Bug Fixes
+
+* **lxc:** apply mount point volume change to another volume id ([#3301](https://github.com/bpg/terraform-provider-proxmox/issues/3301)) ([da50a39](https://github.com/bpg/terraform-provider-proxmox/commit/da50a3980d2da3f81d4ed21e29de342f230befae))
+* **vm:** detach the cdrom drive when the cdrom block is removed ([#3298](https://github.com/bpg/terraform-provider-proxmox/issues/3298)) ([4fd15c8](https://github.com/bpg/terraform-provider-proxmox/commit/4fd15c8ad62c73f6f2b3c1bccd51abe13a274561))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (08bcb99 → 5e8afd4) ([#3303](https://github.com/bpg/terraform-provider-proxmox/issues/3303)) ([6d9fd90](https://github.com/bpg/terraform-provider-proxmox/commit/6d9fd90f3aee8bb49be38aa6f0cfdf1fdc952057))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.18.2 → v7.18.3) ([#3304](https://github.com/bpg/terraform-provider-proxmox/issues/3304)) ([874d9fb](https://github.com/bpg/terraform-provider-proxmox/commit/874d9fb87301d5e13161b0fdb407c6c68cf45b53))
+* **deps:** update module golang.org/x/crypto (v0.58.0 → v0.59.0) ([#3305](https://github.com/bpg/terraform-provider-proxmox/issues/3305)) ([ee2b33a](https://github.com/bpg/terraform-provider-proxmox/commit/ee2b33a23cf702a1c2c4dd90037131fecc462370))
+
 ## [0.122.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.121.0...v0.122.0) (2026-11-12)
 
 
