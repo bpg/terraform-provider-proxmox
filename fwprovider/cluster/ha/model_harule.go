@@ -44,7 +44,7 @@ func (m *RuleModel) ImportFromAPI(rule harules.HARuleGetResponseData) diag.Diagn
 	m.Rule = types.StringValue(rule.Rule)
 	m.Type = types.StringValue(rule.Type)
 	m.Comment = types.StringPointerValue(rule.Comment)
-	m.Disable = rule.Disable.ToValue()
+	m.Disable = attribute.BoolValueFromCustomBoolPtr(rule.Disable)
 
 	// Parse resources string into a set.
 	resDiags := m.parseResources(rule.Resources)

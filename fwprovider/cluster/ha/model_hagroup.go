@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
@@ -26,8 +27,8 @@ type GroupModel struct {
 // ImportFromAPI imports the contents of a HA group model from the API's response data.
 func (m *GroupModel) ImportFromAPI(group hagroups.HAGroupGetResponseData) diag.Diagnostics {
 	m.Comment = types.StringPointerValue(group.Comment)
-	m.NoFailback = group.NoFailback.ToValue()
-	m.Restricted = group.Restricted.ToValue()
+	m.NoFailback = attribute.BoolValueFromCustomBoolPtr(group.NoFailback)
+	m.Restricted = attribute.BoolValueFromCustomBoolPtr(group.Restricted)
 
 	return m.parseHAGroupNodes(group.Nodes)
 }

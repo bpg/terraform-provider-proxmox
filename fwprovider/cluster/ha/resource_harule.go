@@ -33,7 +33,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	harules "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/rules"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 var (
@@ -268,14 +267,14 @@ func (r *haruleResource) Create(ctx context.Context, req resource.CreateRequest,
 	createRequest.Rule = ruleID
 	createRequest.Type = data.Type.ValueString()
 	createRequest.Comment = data.Comment.ValueStringPointer()
-	createRequest.Disable.FromValue(data.Disable)
+	createRequest.Disable = attribute.CustomBoolPtrFromValue(data.Disable)
 	createRequest.Resources = r.resourcesToString(data.Resources)
 
 	switch data.Type.ValueString() {
 	case RuleTypeNodeAffinity:
 		nodesStr := r.nodesToString(data.Nodes)
 		createRequest.Nodes = &nodesStr
-		createRequest.Strict = proxmoxtypes.CustomBoolPtr(data.Strict.ValueBoolPointer())
+		createRequest.Strict = attribute.CustomBoolPtrFromValue(data.Strict)
 	case RuleTypeResourceAffinity:
 		createRequest.Affinity = data.Affinity.ValueStringPointer()
 	}
@@ -331,7 +330,7 @@ func (r *haruleResource) Update(ctx context.Context, req resource.UpdateRequest,
 	updateRequest := &harules.HARuleUpdateRequestBody{}
 	updateRequest.Type = data.Type.ValueString()
 	updateRequest.Comment = data.Comment.ValueStringPointer()
-	updateRequest.Disable.FromValue(data.Disable)
+	updateRequest.Disable = attribute.CustomBoolPtrFromValue(data.Disable)
 	updateRequest.Resources = r.resourcesToString(data.Resources)
 
 	var deleteFields []string
@@ -344,7 +343,7 @@ func (r *haruleResource) Update(ctx context.Context, req resource.UpdateRequest,
 	case RuleTypeNodeAffinity:
 		nodesStr := r.nodesToString(data.Nodes)
 		updateRequest.Nodes = &nodesStr
-		updateRequest.Strict = proxmoxtypes.CustomBoolPtr(data.Strict.ValueBoolPointer())
+		updateRequest.Strict = attribute.CustomBoolPtrFromValue(data.Strict)
 	case RuleTypeResourceAffinity:
 		updateRequest.Affinity = data.Affinity.ValueStringPointer()
 	}
