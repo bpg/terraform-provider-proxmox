@@ -698,6 +698,67 @@ func TestContainerMountPointForceNew(t *testing.T) {
 	}
 }
 
+// TestContainerMountPointOmittedSize verifies that a mount point without size in the configuration does not plan a
+// "size -> null" change against the size PVE reported, while a different size is still planned.
+//
+// See https://github.com/bpg/terraform-provider-proxmox/issues/3300.
+func TestContainerMountPointOmittedSize(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		volume     string
+		configSize string
+		expectDiff bool
+	}{
+		{"allocated with a datastore size and no size", "local-lvm:1", "", false},
+		{"size removed from the configuration", "local-lvm", "", false},
+		{"same size spelled in another unit", "local-lvm", "1024M", false},
+		{"other size", "local-lvm:vm-100-disk-1", "2G", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			state := &terraform.InstanceState{
+				ID: "100",
+				Attributes: mountPointStateAttrs(map[string]string{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/a",
+					mkMountPointSize:   "1G",
+				}),
+			}
+
+			mountPoint := map[string]any{mkMountPointVolume: tt.volume, mkMountPointPath: "/mnt/a"}
+			if tt.configSize != "" {
+				mountPoint[mkMountPointSize] = tt.configSize
+			}
+
+			config := terraform.NewResourceConfigRaw(map[string]any{
+				mkNodeName:   "pve",
+				mkVMID:       100,
+				mkMountPoint: []any{mountPoint},
+			})
+
+			diff, err := Container().Diff(t.Context(), state, config, nil)
+			require.NoError(t, err)
+
+			var sizeDiff *terraform.ResourceAttrDiff
+			if diff != nil {
+				sizeDiff = diff.Attributes[mkMountPoint+".0."+mkMountPointSize]
+			}
+
+			if tt.expectDiff {
+				require.NotNil(t, sizeDiff, "expected a size diff")
+				assert.Equal(t, "2G", sizeDiff.New)
+			} else {
+				assert.Nil(t, sizeDiff, "unexpected size diff")
+			}
+		})
+	}
+}
+
 func TestMountPointVolumeDiffSuppress(t *testing.T) {
 	t.Parallel()
 

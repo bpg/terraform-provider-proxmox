@@ -824,6 +824,7 @@ func Container() *schema.Resource {
 							Optional:         true,
 							Default:          dvMountPointSize,
 							ValidateDiagFunc: validators.FileSize(),
+							DiffSuppressFunc: mountPointSizeDiffSuppress,
 						},
 						mkMountPointVolume: {
 							Type:             schema.TypeString,
@@ -2554,6 +2555,12 @@ func forceNewMountPointAttr(d *schema.ResourceDiff, index int, attr string) erro
 	}
 
 	return nil
+}
+
+// mountPointSizeDiffSuppress hides a size that is omitted from the configuration, or spelled differently, while the
+// state holds the size PVE reports for the volume.
+func mountPointSizeDiffSuppress(_, oldVal, newVal string, _ *schema.ResourceData) bool {
+	return mountPointSizeEqual(oldVal, newVal)
 }
 
 // mountPointSizeEqual compares two mount point sizes by value, so that equivalent spellings
