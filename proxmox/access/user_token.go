@@ -111,5 +111,5 @@ func isNoSuchTokenErr(err error) bool {
 		return false
 	}
 
-	return strings.Contains(httpErr.Message, "no such token '") || strings.Contains(httpErr.Message, "no such user ('")
+	return strings.Contains(httpErr.Message, "no such token '") || isNoSuchUserErr(err)
 }
