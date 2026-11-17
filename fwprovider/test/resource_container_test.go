@@ -3528,6 +3528,85 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerNetworkInterfacesAboveTen(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := func(count int) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			unprivileged = true
+			started      = false
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-many-nics"
+				dynamic "ip_config" {
+					for_each = range(%[1]d)
+					content {
+						ipv4 {
+							address = "192.0.2.${ip_config.value + 10}/24"
+						}
+					}
+				}
+			}
+			dynamic "network_interface" {
+				for_each = range(%[1]d)
+				content {
+					name   = "eth${network_interface.value}"
+					bridge = "vmbr0"
+				}
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`, count), WithRootPAMAuth())
+	}
+
+	checkInterfaces := func(count int) resource.TestCheckFunc {
+		return resource.ComposeTestCheckFunc(
+			ResourceAttributes(accTestContainerName, map[string]string{
+				"network_interface.#":          strconv.Itoa(count),
+				"initialization.0.ip_config.#": strconv.Itoa(count),
+			}),
+			func(*terraform.State) error {
+				ctInfo, err := te.NodeClient().Container(accTestContainerID).GetContainer(t.Context())
+				require.NoError(t, err, "failed to get container")
+				require.Len(t, ctInfo.NetworkInterfaces, count)
+
+				last := ctInfo.NetworkInterfaces[fmt.Sprintf("net%d", count-1)]
+				require.NotNil(t, last)
+				require.Equal(t, fmt.Sprintf("eth%d", count-1), last.Name)
+				require.NotNil(t, last.IPv4Address)
+				require.Equal(t, fmt.Sprintf("192.0.2.%d/24", count-1+10), *last.IPv4Address)
+
+				return nil
+			},
+		)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{Config: config(12), Check: checkInterfaces(12)},
+			{Config: config(11), Check: checkInterfaces(11)},
+		},
+	})
+}
+
 // TestAccResourceContainerCPULimitWithoutCores covers a container whose configuration sets cpulimit but not cores.
 // PVE then fills cpus in the status response from cpulimit and returns it as a string, which the read must accept.
 func TestAccResourceContainerCPULimitWithoutCores(t *testing.T) {
