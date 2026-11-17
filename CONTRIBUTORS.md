@@ -293,6 +293,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/lucas-rbarros"><img src="https://avatars.githubusercontent.com/u/70347936?v=4&size=100" width="100px" height="100px" alt="Lucas Barros"/><br /><sub><b>Lucas Barros</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=lbarrosby" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=lbarrosby" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/pigam"><img src="https://avatars.githubusercontent.com/u/38874936?v=4&size=100" width="100px" height="100px" alt="Pierre Gambarotto"/><br /><sub><b>Pierre Gambarotto</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=pigam" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://instantnode.eu"><img src="https://avatars.githubusercontent.com/u/227785302?v=4&size=100" width="100px" height="100px" alt="Luxend"/><br /><sub><b>Luxend</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=luxend0" title="Code">💻</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
