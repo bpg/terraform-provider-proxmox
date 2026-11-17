@@ -14,15 +14,37 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 )
 
 type ResourceAttributeOption func(*schema.SetAttribute)
 
+// WithRequired makes the attribute required and rejects an empty set.
 func WithRequired() ResourceAttributeOption {
 	return func(attribute *schema.SetAttribute) {
 		attribute.Required = true
 		attribute.Optional = false
 		attribute.Computed = false
+		attribute.Validators = append(attribute.Validators, setvalidator.SizeAtLeast(1))
+	}
+}
+
+// WithOptionalNonComputed makes the attribute optional without Computed, so removing it from the configuration plans
+// a null value. An empty set is rejected: it would be sent as nothing and could not be told apart from a removal.
+func WithOptionalNonComputed() ResourceAttributeOption {
+	return func(attribute *schema.SetAttribute) {
+		attribute.Optional = true
+		attribute.Required = false
+		attribute.Computed = false
+		attribute.Validators = append(attribute.Validators, setvalidator.SizeAtLeast(1))
+	}
+}
+
+// WithIPAddresses requires every element to be a plain IPv4 or IPv6 address, matching PVE's "ip-list" format.
+func WithIPAddresses() ResourceAttributeOption {
+	return func(attribute *schema.SetAttribute) {
+		attribute.Validators = append(attribute.Validators, setvalidator.ValueStringsAre(validators.IPAddress()))
 	}
 }
 

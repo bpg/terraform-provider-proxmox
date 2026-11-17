@@ -396,20 +396,20 @@ func (r *downloadFileResource) Create(
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	fileMetadata, err := r.getURLMetadata(
-		ctx,
-		&plan,
-	)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error initiating file download",
-			"Could not get file metadata, unexpected error: "+err.Error(),
-		)
-
-		return
-	}
-
 	if plan.FileName.IsUnknown() {
+		fileMetadata, err := r.getURLMetadata(
+			ctx,
+			&plan,
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error initiating file download",
+				"Could not get file metadata, unexpected error: "+err.Error(),
+			)
+
+			return
+		}
+
 		plan.FileName = types.StringValue(*fileMetadata.Filename)
 	}
 
@@ -430,7 +430,7 @@ func (r *downloadFileResource) Create(
 
 	storageClient := nodesClient.Storage(plan.Storage.ValueString())
 
-	err = storageClient.DownloadFileByURL(ctx, &downloadFileReq)
+	err := storageClient.DownloadFileByURL(ctx, &downloadFileReq)
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
 		fileID := plan.ContentType.ValueString() + "/" + plan.FileName.ValueString()
 

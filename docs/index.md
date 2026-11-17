@@ -30,6 +30,15 @@ To use this provider, you only need:
 **Minimal configuration (no SSH):**
 
 ```hcl
+terraform {
+  required_providers {
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = "~> 0.122.0" # x-release-please-version
+    }
+  }
+}
+
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
 
@@ -46,6 +55,15 @@ provider "proxmox" {
 **With SSH access (only if needed for snippets or certain file uploads):**
 
 ```hcl
+terraform {
+  required_providers {
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = "~> 0.122.0" # x-release-please-version
+    }
+  }
+}
+
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
   username = "root@pam"
@@ -442,28 +460,40 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
 
   Then add rules only for the features you actually use.
 
+  The rules below use sudo's regular-expression syntax (an argument list that starts with `^` and ends with `$`), which needs sudo 1.9.10 or later (Proxmox VE 8 and later ship a newer version). A regular expression matches the provider's exact command line and nothing else.
+
   - **Snippet uploads** — custom cloud-init and `proxmox_virtual_environment_file` with `content_type = "snippets"`. Grant `tee` on the snippets directory with a strict filename pattern:
 
     ```text
-    terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee ^/var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*$
     ```
 
     If your snippets datastore is not the default `local`, use its mount point instead of (or in addition to) `/var/lib/vz`, for example:
 
     ```text
-    terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee ^/mnt/pve/cephfs/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*$
     ```
 
     Find the mount point with `pvesh get /storage/<name>` on the Proxmox node.
 
+    With these rules, snippet file names must start with a letter, digit or `_` and contain only letters, digits, `_`, `.` and `-`. `sudo` refuses uploads of any other name.
+
+    If you set `file_mode` on `proxmox_virtual_environment_file`, for example to make a hook script executable, also grant `chmod` on the same directory:
+
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/chmod ^0[0-7]{3} /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*$
+    ```
+
+    This rule allows plain permission bits only. `sudo` refuses modes with the setuid, setgid or sticky bit, such as `4755`.
+
   - **LXC `idmap`** on `proxmox_virtual_environment_container` — the provider edits the container configuration file via SSH:
 
     ```text
-    terraform ALL=(root) NOPASSWD: /usr/bin/sed -i * /etc/pve/lxc/*.conf
-    terraform ALL=(root) NOPASSWD: /usr/bin/tee -a /etc/pve/lxc/*.conf
+    terraform ALL=(root) NOPASSWD: /usr/bin/sed ^-i /\^lxc\\\.idmap:/d /etc/pve/lxc/[0-9]+\.conf$
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee ^-a /etc/pve/lxc/[0-9]+\.conf$
     ```
 
-  !> **Security Warning:** Do not use broad wildcards like `/var/lib/vz/*` in a `tee` rule. `*` matches `../`, so such a rule allows path-traversal writes (`/var/lib/vz/../../../etc/sudoers.d/malicious`) and full privilege escalation. Always restrict to a specific subdirectory with a strict filename pattern as shown above.
+  !> **Security Warning:** Do not use shell-style wildcards (`*`) in these rules, even after a strict filename pattern. sudoers matches all arguments as a single string, and `*` matches spaces, `/` and `../`. A rule such as `/usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_]*` therefore also allows writing to other paths (`/var/lib/vz/snippets/ab/../../../../etc/sudoers.d/malicious`, or a second file argument), and `/usr/bin/sed -i * …` allows running arbitrary commands through `sed`. Both lead to full privilege escalation. If you configured these rules from an earlier version of this guide, replace them with the ones above.
 
   If your configuration uses **only** API-backed resources — for example VMs with `import_from` disks and no snippets or `idmap` — the provider never opens an SSH session, so you need no sudoers file at all.
 

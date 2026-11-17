@@ -24,6 +24,10 @@ func TestFileID(t *testing.T) {
 		{"invalid", "invalid", false},
 		{"valid", "local:vztmpl/zen-dns-0.1.tar.zst", true},
 		{"valid when datastore name has dots", "terraform.proxmox.storage.compute.zen:vztmpl/zen-dns-0.1.tar.zst", true},
+		{"valid with characters PVE accepts", "local:iso/a+b@c~d.iso", true},
+		{"comma", "local:iso/a,b.iso", false},
+		{"equals sign", "local:iso/a=b.iso", false},
+		{"whitespace", "local:iso/a b.iso", false},
 	}
 
 	for _, tt := range tests {
@@ -67,6 +71,42 @@ func TestFileMode(t *testing.T) {
 			t.Parallel()
 
 			f := FileMode()
+			res := f(tt.value, nil)
+
+			if tt.valid {
+				require.Empty(t, res, "validate: '%s'", tt.value)
+			} else {
+				require.NotEmpty(t, res, "validate: '%s'", tt.value)
+			}
+		})
+	}
+}
+
+func TestFileName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value string
+		valid bool
+	}{
+		{"empty", "", true},
+		{"plain", "cloud-init.yaml", true},
+		{"shell characters", "a;{touch,x}", true},
+		{"space", "my config.yaml", false},
+		{"tab", "my\tconfig.yaml", false},
+		{"forward slash", "sub/dir.yaml", false},
+		{"backslash", `sub\dir.yaml`, false},
+		{"parent traversal", "../escape.yaml", false},
+		{"dot", ".", false},
+		{"dot", "..", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := FileName()
 			res := f(tt.value, nil)
 
 			if tt.valid {

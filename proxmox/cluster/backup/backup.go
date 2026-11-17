@@ -8,10 +8,12 @@ package backup
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -42,6 +44,10 @@ func (c *Client) Get(ctx context.Context, id string) (*GetResponseData, error) {
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(url.PathEscape(id)), nil, resBody)
 	if err != nil {
+		if isNoSuchJobErr(err) {
+			err = errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
 		return nil, fmt.Errorf("error reading backup job: %w", err)
 	}
 
@@ -76,8 +82,23 @@ func (c *Client) Update(ctx context.Context, id string, data *UpdateRequestBody)
 func (c *Client) Delete(ctx context.Context, id string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(url.PathEscape(id)), nil, nil)
 	if err != nil {
+		if isNoSuchJobErr(err) {
+			err = errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
 		return fmt.Errorf("error deleting backup job: %w", err)
 	}
 
 	return nil
+}
+
+// isNoSuchJobErr matches the "No such job '<id>'" parameter error that PVE returns
+// (HTTP 400 for a read, HTTP 500 for a delete) when the backup job does not exist.
+func isNoSuchJobErr(err error) bool {
+	var httpErr *api.HTTPError
+	if !errors.As(err, &httpErr) {
+		return false
+	}
+
+	return strings.Contains(httpErr.Message, "No such job '")
 }

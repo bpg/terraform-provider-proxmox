@@ -12,6 +12,8 @@
 package test
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -369,6 +371,369 @@ func TestAccResourceSDNControllerEVPN(t *testing.T) {
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+func TestAccResourceSDNControllerBGP(t *testing.T) {
+	// Cannot run in parallel due to SDN applier functionality affecting global state
+
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"Create and read controller", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node_name = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":                          "ctrlB",
+					"node_name":                   te.NodeName,
+					"peers.#":                     "1",
+					"peers.0":                     "10.0.0.1",
+					"asn":                         "65000",
+					"ebgp":                        "false",
+					"bgp_multipath_as_path_relax": "false",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_bgp.controller_bgp", []string{
+					"ebgp_multihop",
+					"loopback",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node_name = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":        "ctrlB",
+					"node_name": te.NodeName,
+					"peers.#":   "1",
+					"peers.0":   "10.0.0.1",
+					"asn":       "65000",
+				}),
+			),
+			ResourceName:      "proxmox_sdn_controller_bgp.controller_bgp",
+			ImportStateId:     "ctrlB",
+			ImportState:       true,
+			ImportStateVerify: true,
+		}}},
+		{"Update peers", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node_name = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1", "10.0.0.2"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":        "ctrlB",
+					"node_name": te.NodeName,
+					"peers.#":   "2",
+					"peers.0":   "10.0.0.1",
+					"peers.1":   "10.0.0.2",
+					"asn":       "65000",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node_name = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.3"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":        "ctrlB",
+					"node_name": te.NodeName,
+					"peers.#":   "1",
+					"peers.0":   "10.0.0.3",
+					"asn":       "65000",
+				}),
+			),
+		}}},
+		{"Add and remove optional fields", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node_name = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  ebgp = true
+				  ebgp_multihop = 3
+				  loopback = "dummy0"
+				  bgp_multipath_as_path_relax = true
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":                          "ctrlB",
+					"node_name":                   te.NodeName,
+					"peers.#":                     "1",
+					"peers.0":                     "10.0.0.1",
+					"asn":                         "65000",
+					"ebgp":                        "true",
+					"ebgp_multihop":               "3",
+					"loopback":                    "dummy0",
+					"bgp_multipath_as_path_relax": "true",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node_name = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  ebgp = true
+				  ebgp_multihop = 3
+				  loopback = "dummy0"
+				  bgp_multipath_as_path_relax = true
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			ResourceName:      "proxmox_sdn_controller_bgp.controller_bgp",
+			ImportStateId:     "ctrlB",
+			ImportState:       true,
+			ImportStateVerify: true,
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node_name = "{{.NodeName}}"
+				  asn  = 65001
+				  peers = ["10.0.0.1"]
+				  ebgp = true
+				  ebgp_multihop = 3
+				  loopback = "dummy0"
+				  bgp_multipath_as_path_relax = true
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"asn":           "65001",
+					"ebgp":          "true",
+					"ebgp_multihop": "3",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node_name = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  depends_on = [
+				    proxmox_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_sdn_applier" "main" {
+				  depends_on = [
+				    proxmox_sdn_controller_bgp.controller_bgp
+				  ]
+				}
+				resource "proxmox_sdn_applier" "finalizer" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_sdn_controller_bgp.controller_bgp", map[string]string{
+					"id":                          "ctrlB",
+					"node_name":                   te.NodeName,
+					"peers.#":                     "1",
+					"peers.0":                     "10.0.0.1",
+					"asn":                         "65000",
+					"ebgp":                        "false",
+					"bgp_multipath_as_path_relax": "false",
+				}),
+				NoResourceAttributesSet("proxmox_sdn_controller_bgp.controller_bgp", []string{
+					"ebgp_multihop",
+					"loopback",
+				}),
+			),
+		}}},
+		{"Reject ebgp_multihop without ebgp", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_sdn_controller_bgp" "controller_bgp" {
+				  id   = "ctrlB"
+				  node_name = "{{.NodeName}}"
+				  asn  = 65000
+				  peers = ["10.0.0.1"]
+				  ebgp_multihop = 3
+				}
+			`),
+			PlanOnly:    true,
+			ExpectError: regexp.MustCompile(`(?s)requires\s+"ebgp"\s+set\s+to\s+true`),
+		}}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+func TestAccResourceSDNControllerPeers(t *testing.T) {
+	// Cannot run in parallel due to SDN applier functionality affecting global state
+
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name     string
+		resource string
+		attrs    string
+	}{
+		{"EVPN", "proxmox_sdn_controller_evpn", ``},
+		{"BGP", "proxmox_sdn_controller_bgp", `node_name = "{{.NodeName}}"`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			address := tt.resource + ".controller"
+			config := func(peers string) string {
+				return te.RenderConfig(fmt.Sprintf(`
+					resource "%s" "controller" {
+					  id    = "ctrlP"
+					  asn   = 65000
+					  peers = %s
+					  %s
+					  depends_on = [
+					    proxmox_sdn_applier.finalizer
+					  ]
+					}
+
+					resource "proxmox_sdn_applier" "main" {
+					  depends_on = [
+					    %s
+					  ]
+					}
+					resource "proxmox_sdn_applier" "finalizer" {}
+				`, tt.resource, peers, tt.attrs, address))
+			}
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: config(`["fd00::1", "fd00::2"]`),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr(address, "peers.#", "2"),
+							resource.TestCheckTypeSetElemAttr(address, "peers.*", "fd00::1"),
+							resource.TestCheckTypeSetElemAttr(address, "peers.*", "fd00::2"),
+						),
+					},
+					{
+						ResourceName:      address,
+						ImportStateId:     "ctrlP",
+						ImportState:       true,
+						ImportStateVerify: true,
+					},
+					{
+						Config:      config(`[]`),
+						PlanOnly:    true,
+						ExpectError: regexp.MustCompile(`(?s)must\s+contain\s+at\s+least\s+1\s+elements`),
+					},
+					{
+						Config:      config(`["10.0.0.0/24", "peer.example.com"]`),
+						PlanOnly:    true,
+						ExpectError: regexp.MustCompile(`(?s)must\s+be\s+a\s+valid\s+IPv4\s+or\s+IPv6\s+address`),
+					},
+					{
+						// Post-test destroy uses the last config, which must be valid.
+						Config:   config(`["fd00::1", "fd00::2"]`),
+						PlanOnly: true,
+					},
+				},
 			})
 		})
 	}

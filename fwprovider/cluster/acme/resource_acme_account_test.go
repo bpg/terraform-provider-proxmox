@@ -42,7 +42,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 						contact = "le.ge9ro@passmail.net"
 						directory = "https://acme-staging-v02.api.letsencrypt.org/directory"
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
-					}`, test.WithRootUser()),
+					}`, test.WithRootPassword()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_acme_account.test_account", map[string]string{
 						"name":      accountName,
@@ -74,7 +74,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
 						eab_hmac_key = "test-hmac-key"
 						eab_kid = "test-kid"
-					}`, test.WithRootUser()),
+					}`, test.WithRootPassword()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_acme_account.test_account_eab", map[string]string{
 						"name":         fmt.Sprintf("%s-eab", accountName),
@@ -94,7 +94,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 						contact = "le.ge9ro@passmail.net"
 						directory = "https://acme-staging-v02.api.letsencrypt.org/directory"
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
-					}`, test.WithRootUser()),
+					}`, test.WithRootPassword()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_acme_account.test_account_update", map[string]string{
 						"name": fmt.Sprintf("%s-update", accountName),
@@ -108,7 +108,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 						contact = "le.ge9ro@passmail.net"
 						directory = "https://acme-staging-v02.api.letsencrypt.org/directory"
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
-					}`, test.WithRootUser()),
+					}`, test.WithRootPassword()),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_acme_account.test_account_update", map[string]string{
 						"name": fmt.Sprintf("%s-update", accountName),
@@ -124,7 +124,7 @@ func TestAccResourceACMEAccount(t *testing.T) {
 						contact = "le.ge9ro@passmail.net"
 						directory = "invalid-url"
 						tos = "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
-					}`, test.WithRootUser()),
+					}`, test.WithRootPassword()),
 				ExpectError: regexp.MustCompile(`must be a valid URL`),
 			},
 		}},

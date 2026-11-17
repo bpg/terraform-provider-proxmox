@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 // TestVMAgentWaitForIPDisabledSchema verifies the agent.wait_for_ip block exposes a `disabled`
@@ -83,9 +84,9 @@ func TestAgentWaitForIPConfigFromBlock(t *testing.T) {
 			want:  &vms.WaitForIPConfig{Skip: true},
 		},
 		{
-			name:  "disabled false, no family -> wait for any (nil)",
+			name:  "disabled false, no family -> wait for any",
 			block: map[string]any{mkAgentWaitForIPDisabled: false},
-			want:  nil,
+			want:  &vms.WaitForIPConfig{},
 		},
 		{
 			name:  "disabled false, ipv4 -> wait for ipv4",
@@ -103,9 +104,17 @@ func TestAgentWaitForIPConfigFromBlock(t *testing.T) {
 			want:  &vms.WaitForIPConfig{IPv4: true},
 		},
 		{
-			name:  "empty block waits for any (nil)",
+			name:  "empty block waits for any",
 			block: map[string]any{},
-			want:  nil,
+			want:  &vms.WaitForIPConfig{},
+		},
+		{
+			name: "filter only -> config without family",
+			block: map[string]any{
+				"cidrs":      schema.NewSet(schema.HashString, []any{"10.0.0.0/8"}),
+				"interfaces": schema.NewSet(schema.HashString, []any{}),
+			},
+			want: &vms.WaitForIPConfig{Filter: ip.AddressFilter{CIDRs: []string{"10.0.0.0/8"}}},
 		},
 	}
 
@@ -115,5 +124,19 @@ func TestAgentWaitForIPConfigFromBlock(t *testing.T) {
 
 			require.Equal(t, tt.want, agentWaitForIPConfigFromBlock(tt.block))
 		})
+	}
+}
+
+func TestValidateWaitForIPCIDR(t *testing.T) {
+	t.Parallel()
+
+	for _, v := range []string{"10.0.0.0/8", "10.0.0.1/8", "fe80::/10", "::ffff:10.0.0.0/104"} {
+		_, errs := validateWaitForIPCIDR(v, "cidrs")
+		require.Empty(t, errs, v)
+	}
+
+	for _, v := range []string{"not-a-cidr", "10.0.0.0/08", "10.0.0.0/33", "10.0.0.0"} {
+		_, errs := validateWaitForIPCIDR(v, "cidrs")
+		require.NotEmpty(t, errs, v)
 	}
 }

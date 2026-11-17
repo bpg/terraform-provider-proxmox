@@ -20,7 +20,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/controllers"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 var (
@@ -42,13 +41,7 @@ func (m *evpnModel) fromAPI(name string, data *controllers.ControllerData, diags
 	m.ASNumber = types.Int64PointerValue(data.ASNumber)
 	m.FabricID = m.handleDeletedStringValue(data.Fabric)
 
-	if data.Peers != nil {
-		peers := make([]string, len(*data.Peers))
-		copy(peers, *data.Peers)
-		m.Peers = m.handleDeletedStringSetValue(peers, diags)
-	} else {
-		m.Peers = stringset.NullValue()
-	}
+	m.Peers = stringset.NewValueCommaSeparatedList(data.Peers, diags)
 
 	if data.Pending != nil {
 		if data.Pending.ASNumber != nil {
@@ -60,9 +53,7 @@ func (m *evpnModel) fromAPI(name string, data *controllers.ControllerData, diags
 		}
 
 		if data.Pending.Peers != nil {
-			peers := make([]string, len(*data.Pending.Peers))
-			copy(peers, *data.Pending.Peers)
-			m.Peers = m.handleDeletedStringSetValue(peers, diags)
+			m.Peers = stringset.NewValueCommaSeparatedList(data.Pending.Peers, diags)
 		}
 	}
 }
@@ -73,13 +64,7 @@ func (m *evpnModel) fromAPIForDatasource(name string, data *controllers.Controll
 	m.ASNumber = attribute.Int64ValueFromPtr(data.ASNumber)
 	m.FabricID = attribute.StringValueFromPtr(data.Fabric)
 
-	if data.Peers != nil {
-		peers := make([]string, len(*data.Peers))
-		copy(peers, *data.Peers)
-		m.Peers = m.handleDeletedStringSetValue(peers, diags)
-	} else {
-		m.Peers = stringset.NewValueList([]string{}, diags)
-	}
+	m.Peers = stringset.NewValueCommaSeparatedListOrEmpty(data.Peers, diags)
 }
 
 func (m *evpnModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *controllers.Controller {
@@ -88,15 +73,7 @@ func (m *evpnModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *control
 	data.ASNumber = attribute.Int64PtrFromValue(m.ASNumber)
 	data.Fabric = attribute.StringPtrFromValue(m.FabricID)
 
-	var peers []string
-	diags.Append(m.Peers.ElementsAs(ctx, &peers, false)...)
-
-	if len(peers) > 0 {
-		p := proxmoxtypes.CustomCommaSeparatedList(peers)
-		data.Peers = &p
-	} else {
-		data.Peers = nil
-	}
+	data.Peers = m.Peers.ValueCommaSeparatedList(ctx, diags)
 
 	return data
 }
@@ -187,15 +164,12 @@ func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Description: "ID of the fabric this EVPN controller belongs to.",
 				Optional:    true,
 			},
-			"peers": schema.SetAttribute{
-				CustomType: stringset.Type{
-					SetType: types.SetType{
-						ElemType: types.StringType,
-					},
-				},
-				Description: "Set of BGP peer IP addresses for the EVPN controller.",
-				Optional:    true,
-			},
+			"peers": stringset.ResourceAttribute(
+				"Set of BGP peer IP addresses for the EVPN controller.",
+				"",
+				stringset.WithOptionalNonComputed(),
+				stringset.WithIPAddresses(),
+			),
 		}),
 	}
 }

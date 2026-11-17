@@ -12,6 +12,7 @@
 package hardwaremapping_test
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -20,8 +21,10 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
@@ -1090,6 +1093,117 @@ func TestAccResourceHardwareMappingCommentSpecialChars(t *testing.T) {
 	)
 }
 
+// TestAccResourceHardwareMappingDirDeletedOutside checks that a directory mapping removed outside Terraform is
+// dropped from state and planned for creation, instead of failing the refresh.
+func TestAccResourceHardwareMappingDirDeletedOutside(t *testing.T) {
+	data, te := testAccResourceHardwareMappingInit(t)
+
+	config := fmt.Sprintf(`
+		resource "proxmox_hardware_mapping_dir" "test" {
+			name = "%s"
+			map  = [{ node = "%s", path = "%s" }]
+		}`,
+		data.Names[0],
+		te.NodeName,
+		data.MapPathsDir[0],
+	)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				PreConfig: func() {
+					err := te.ClusterClient().HardwareMapping().Delete(context.Background(), proxmoxtypes.TypeDir, data.Names[0])
+					require.NoError(t, err)
+				},
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestHardwareMappingNameDir, plancheck.ResourceActionCreate),
+					},
+				},
+				Check: resource.TestCheckResourceAttr(accTestHardwareMappingNameDir, "name", data.Names[0]),
+			},
+		},
+	})
+}
+
+func TestAccResourceHardwareMappingPCIDeletedOutside(t *testing.T) {
+	data, te := testAccResourceHardwareMappingInit(t)
+
+	config := fmt.Sprintf(`
+		resource "proxmox_hardware_mapping_pci" "test" {
+			name = "%s"
+			map  = [{ id = "%s", node = "%s", path = "%s" }]
+		}`,
+		data.Names[0],
+		data.MapDeviceIDs[0],
+		te.NodeName,
+		data.MapPathsPCI[0],
+	)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				PreConfig: func() {
+					err := te.ClusterClient().HardwareMapping().Delete(context.Background(), proxmoxtypes.TypePCI, data.Names[0])
+					require.NoError(t, err)
+				},
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestHardwareMappingNamePCI, plancheck.ResourceActionCreate),
+					},
+				},
+				Check: resource.TestCheckResourceAttr(accTestHardwareMappingNamePCI, "name", data.Names[0]),
+			},
+		},
+	})
+}
+
+func TestAccResourceHardwareMappingUSBDeletedOutside(t *testing.T) {
+	data, te := testAccResourceHardwareMappingInit(t)
+
+	config := fmt.Sprintf(`
+		resource "proxmox_hardware_mapping_usb" "test" {
+			name = "%s"
+			map  = [{ id = "%s", node = "%s" }]
+		}`,
+		data.Names[0],
+		data.MapDeviceIDs[0],
+		te.NodeName,
+	)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				PreConfig: func() {
+					err := te.ClusterClient().HardwareMapping().Delete(context.Background(), proxmoxtypes.TypeUSB, data.Names[0])
+					require.NoError(t, err)
+				},
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestHardwareMappingNameUSB, plancheck.ResourceActionCreate),
+					},
+				},
+				Check: resource.TestCheckResourceAttr(accTestHardwareMappingNameUSB, "name", data.Names[0]),
+			},
+		},
+	})
+}
+
 // TestAccResourceHardwareMappingDirImportNonExistent verifies that importing a non-existent directory mapping
 // returns an error instead of silently removing it from state.
 func TestAccResourceHardwareMappingDirImportNonExistent(t *testing.T) {
@@ -1106,7 +1220,7 @@ func TestAccResourceHardwareMappingDirImportNonExistent(t *testing.T) {
 				ResourceName:  accTestHardwareMappingNameDir,
 				ImportState:   true,
 				ImportStateId: "nonexistent-dir-mapping",
-				ExpectError:   regexp.MustCompile(`Cannot import non-existent remote object|not found`),
+				ExpectError:   regexp.MustCompile(`Directory Mapping Not Found`),
 			},
 		},
 	})
@@ -1128,7 +1242,7 @@ func TestAccResourceHardwareMappingPCIImportNonExistent(t *testing.T) {
 				ResourceName:  accTestHardwareMappingNamePCI,
 				ImportState:   true,
 				ImportStateId: "nonexistent-pci-mapping",
-				ExpectError:   regexp.MustCompile(`Cannot import non-existent remote object|not found`),
+				ExpectError:   regexp.MustCompile(`PCI Hardware Mapping Not Found`),
 			},
 		},
 	})
@@ -1150,7 +1264,7 @@ func TestAccResourceHardwareMappingUSBImportNonExistent(t *testing.T) {
 				ResourceName:  accTestHardwareMappingNameUSB,
 				ImportState:   true,
 				ImportStateId: "nonexistent-usb-mapping",
-				ExpectError:   regexp.MustCompile(`Cannot import non-existent remote object|not found`),
+				ExpectError:   regexp.MustCompile(`USB Hardware Mapping Not Found`),
 			},
 		},
 	})

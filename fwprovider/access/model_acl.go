@@ -29,10 +29,38 @@ type aclResourceModel struct {
 
 const aclIDFormat = "{path}?{group|user@realm|user@realm!token}?{role}"
 
-func (r *aclResourceModel) generateID() types.String {
-	entityID := r.GroupID.ValueString() + r.TokenID.ValueString() + r.UserID.ValueString()
+func (r *aclResourceModel) entityID() string {
+	return r.GroupID.ValueString() + r.TokenID.ValueString() + r.UserID.ValueString()
+}
 
-	return types.StringValue(r.Path + "?" + entityID + "?" + r.RoleID)
+func (r *aclResourceModel) generateID() types.String {
+	return types.StringValue(r.Path + "?" + r.entityID() + "?" + r.RoleID)
+}
+
+// findIn returns the entry of acls that matches the path, role and group, user or token of the model.
+func (r *aclResourceModel) findIn(acls []access.ACLGetResponseData) *access.ACLGetResponseData {
+	for i := range acls {
+		acl := &acls[i]
+
+		var entityID types.String
+
+		switch acl.Type {
+		case "group":
+			entityID = r.GroupID
+		case "token":
+			entityID = r.TokenID
+		case "user":
+			entityID = r.UserID
+		default:
+			continue
+		}
+
+		if acl.UserOrGroupID == entityID.ValueString() && acl.Path == r.Path && acl.RoleID == r.RoleID {
+			return acl
+		}
+	}
+
+	return nil
 }
 
 func parseACLResourceModelFromID(id string) (*aclResourceModel, error) {

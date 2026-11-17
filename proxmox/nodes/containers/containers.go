@@ -22,18 +22,33 @@ import (
 
 var errContainerAlreadyRunning = errors.New("container is already running")
 
+// PVE writes the new CT's config with "lock: create" before it forks the worker and keeps it when the fork fails, so a
+// retry after "got no worker upid" would only find that config and take "already exists" for success.
+func retryCreateIf(err error) bool {
+	return retry.IsTransientAPIError(err) && !retry.IsNoWorkerUPID(err)
+}
+
 // CloneContainer clones a container.
 // The returned TaskResult carries any warnings from the task log.
 func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) tasks.TaskResult {
 	op := retry.NewTaskOperation("container clone",
 		retry.WithBaseDelay(10*time.Second),
-		retry.WithRetryIf(retry.IsTransientAPIError),
+		retry.WithRetryIf(retryCreateIf),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return c.Tasks().DoTask(ctx, op,
+	res := c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CloneContainerAsync(ctx, d) },
 	)
+	if retry.IsNoWorkerUPID(res.Err()) {
+		return tasks.TaskFailed(fmt.Errorf(
+			"%w\nPVE left CT %d with a locked, empty config and CT %d locked; to clean up, run as root on the node: "+
+				"pct unlock %d && pct unlock %d && pct destroy %d",
+			res.Err(), d.VMIDNew, c.VMID, c.VMID, d.VMIDNew, d.VMIDNew,
+		))
+	}
+
+	return res
 }
 
 // CloneContainerAsync clones a container asynchronously.
@@ -56,13 +71,21 @@ func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (
 // The returned TaskResult carries any warnings from the task log.
 func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) tasks.TaskResult {
 	op := retry.NewTaskOperation("container create",
-		retry.WithRetryIf(retry.IsTransientAPIError),
+		retry.WithRetryIf(retryCreateIf),
 		retry.WithAlreadyDoneCheck(retry.ErrorContains("already exists")),
 	)
 
-	return c.Tasks().DoTask(ctx, op,
+	res := c.Tasks().DoTask(ctx, op,
 		func() (*string, error) { return c.CreateContainerAsync(ctx, d) },
 	)
+	if retry.IsNoWorkerUPID(res.Err()) && d.VMID != nil {
+		return tasks.TaskFailed(fmt.Errorf(
+			"%w\nPVE left CT %d with a locked, empty config; to remove it, run as root on the node: pct unlock %d && pct destroy %d",
+			res.Err(), *d.VMID, *d.VMID, *d.VMID,
+		))
+	}
+
+	return res
 }
 
 // CreateContainerAsync creates a container asynchronously.
@@ -219,7 +242,15 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 		}),
 	)
 
-	var ifaces []GetNetworkInterfacesData
+	cfg := WaitForIPConfig{}
+	if waitForIPConfig != nil {
+		cfg = *waitForIPConfig
+	}
+
+	var (
+		ifaces   []GetNetworkInterfacesData
+		rejected []string
+	)
 
 	err := op.DoPoll(ctxWithTimeout, func() error {
 		var err error
@@ -229,28 +260,20 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 			return err
 		}
 
-		hasIPv4, hasIPv6 := c.checkIPAddresses(ifaces)
+		byName := map[string][]string{}
 
-		if waitForIPConfig == nil {
-			if !hasIPv4 && !hasIPv6 {
-				return errNoIPsYet
+		for _, iface := range ifaces {
+			if iface.IPAddresses != nil {
+				for _, addr := range *iface.IPAddresses {
+					byName[iface.Name] = append(byName[iface.Name], addr.Address)
+				}
 			}
-
-			return nil
 		}
 
-		requiredIPv4 := waitForIPConfig.IPv4
-		requiredIPv6 := waitForIPConfig.IPv6
+		match := cfg.Filter.Match(byName)
+		rejected = match.Rejected
 
-		if !requiredIPv4 && !requiredIPv6 {
-			if !hasIPv4 && !hasIPv6 {
-				return errNoIPsYet
-			}
-
-			return nil
-		}
-
-		if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
+		if !match.Satisfied(cfg.IPv4, cfg.IPv6) {
 			return errNoIPsYet
 		}
 
@@ -258,7 +281,7 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	})
 
 	if errors.Is(err, context.DeadlineExceeded) {
-		return nil, errors.New("timeout while waiting for container IP addresses")
+		return nil, fmt.Errorf("timeout while waiting for container IP addresses%s", ip.RejectedSuffix(rejected))
 	}
 
 	if err != nil {
@@ -266,34 +289,6 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	}
 
 	return ifaces, nil
-}
-
-// checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
-func (c *Client) checkIPAddresses(
-	ifaces []GetNetworkInterfacesData,
-) (bool, bool) {
-	hasIPv4 := false
-	hasIPv6 := false
-
-	for _, iface := range ifaces {
-		if iface.Name == "lo" || iface.IPAddresses == nil || len(*iface.IPAddresses) == 0 {
-			continue
-		}
-
-		for _, ipAddr := range *iface.IPAddresses {
-			if !ip.IsValidGlobalUnicast(ipAddr.Address) {
-				continue
-			}
-
-			if ip.IsIPv4(ipAddr.Address) {
-				hasIPv4 = true
-			} else if ip.IsIPv6(ipAddr.Address) {
-				hasIPv6 = true
-			}
-		}
-	}
-
-	return hasIPv4, hasIPv6
 }
 
 // MigrateContainer migrates a container to a different node.

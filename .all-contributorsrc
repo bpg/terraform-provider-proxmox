@@ -1999,6 +1999,89 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ag2014",
+      "name": "@lex",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6313014?v=4",
+      "profile": "https://github.com/ag2014",
+      "contributions": [
+        "tool",
+        "maintenance"
+      ]
+    },
+    {
+      "login": "Aureliolo",
+      "name": "Aurelio Amoroso",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19254254?v=4",
+      "profile": "https://github.com/Aureliolo",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "rpalexis",
+      "name": "Rulx Philome Alexis",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8262648?v=4",
+      "profile": "http://rulx.dev",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "mvanhorn",
+      "name": "Matt Van Horn",
+      "avatar_url": "https://avatars.githubusercontent.com/u/455140?v=4",
+      "profile": "https://github.com/mvanhorn",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "dionoss",
+      "name": "Dion Avé",
+      "avatar_url": "https://avatars.githubusercontent.com/u/49995652?v=4",
+      "profile": "https://github.com/dionoss",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "rsegers",
+      "name": "rsegers",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3670848?v=4",
+      "profile": "https://github.com/rsegers",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "sarankumar1325",
+      "name": "sarankumar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/120080287?v=4",
+      "profile": "https://github.com/sarankumar1325",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "lbarrosby",
+      "name": "Lucas Barros",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70347936?v=4",
+      "profile": "https://www.linkedin.com/in/lucas-rbarros",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    },
+    {
+      "login": "pigam",
+      "name": "Pierre Gambarotto",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38874936?v=4",
+      "profile": "https://github.com/pigam",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

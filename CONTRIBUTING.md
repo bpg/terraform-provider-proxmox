@@ -145,6 +145,14 @@ Acceptance tests run against a real Proxmox instance and verify the provider's f
    # Datastore used for container root filesystems and mount points.
    # Defaults to "local-lvm"; override it on clusters that use different storage.
    PROXMOX_VE_ACC_CONTAINER_DATASTORE_ID="local-zfs"
+
+   # CRUSH rule for the Ceph pools the Ceph tests create. Defaults to the cluster's default rule;
+   # set it when that rule's OSDs can't hold the test pools.
+   PROXMOX_VE_ACC_CEPH_CRUSH_RULE="replicated_rule"
+
+   # Device class for the erasure-coded test pools (k=2, m=2, failure domain `osd`, so at least
+   # four OSDs, of this class if set). Defaults to any class.
+   PROXMOX_VE_ACC_CEPH_EC_DEVICE_CLASS="hdd"
    ```
 
 Some tests require multi node cluster, a ZFS datastore and a spare disk to run. To include these (otherwise skipped) tests add additional configuration corresponding to the cluster.
@@ -154,6 +162,19 @@ PROXMOX_VE_ACC_NODE_2_NAME="pve2"
 PROXMOX_VE_ACC_ZFS_DATASTORE_ID="zfs"
 PROXMOX_VE_ACC_ZFS_DISK="/dev/sdb"  # spare disk for proxmox_node_disk_zfs tests — will be fully wiped
 ```
+
+Some tests need root beyond the API token:
+
+- **SSH as `root`**: node commands (e.g. `pct exec`) and `root_ticket` tests. The SSH agent or key above works if it is
+  authorized for `root`; otherwise the root password below is used.
+- **API login as `root@pam`**: operations PVE restricts to a logged-in `root@pam` (e.g. container bind mounts); an API
+  token alone never qualifies. These tests log in with the root password when set, otherwise use a ticket minted over
+  the root SSH login above. A few (ACME, password-login logging) need the password and skip without it:
+
+  ```env
+  PROXMOX_VE_USERNAME="root@pam"
+  PROXMOX_VE_PASSWORD="<root password>"
+  ```
 
 > [!NOTE]
 >

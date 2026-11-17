@@ -25,13 +25,13 @@ type Controller struct {
 
 	// BGP and EVPN.
 	ASNumber *int64                          `json:"asn,omitempty"   url:"asn,omitempty"`
-	Peers    *types.CustomCommaSeparatedList `json:"peers,omitempty" url:"peers,omitempty"`
+	Peers    *types.CustomCommaSeparatedList `json:"peers,omitempty" url:"peers,omitempty,comma"`
 
 	// BGP.
-	BgpMultiPathAsRelax *types.CustomBool `json:"bgp-multipath-as-relax,omitempty" url:"bgp-multipath-as-relax,omitempty,int"`
-	EBGP                *types.CustomBool `json:"ebgp,omitempty"                   url:"ebgp,omitempty,int"`
-	EBPGMultiHop        *int64            `json:"ebgp-multihop,omitempty"          url:"ebgp-multihop,omitempty,int"`
-	Loopback            *string           `json:"loopback,omitempty"               url:"loopback,omitempty"`
+	BgpMultiPathAsRelax *types.CustomBool        `json:"bgp-multipath-as-path-relax,omitempty" url:"bgp-multipath-as-path-relax,omitempty,int"`
+	EBGP                *types.CustomBool        `json:"ebgp,omitempty"                        url:"ebgp,omitempty,int"`
+	EBPGMultiHop        *types.CustomInt64Option `json:"ebgp-multihop,omitempty"               url:"ebgp-multihop,omitempty,int"`
+	Loopback            *string                  `json:"loopback,omitempty"                    url:"loopback,omitempty"`
 
 	// BGP and ISIS.
 	Nodes *types.CustomCommaSeparatedList `json:"node,omitempty" url:"node,omitempty"`

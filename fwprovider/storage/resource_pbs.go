@@ -183,6 +183,10 @@ func (r *pbsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			Description: "The encryption key returned by Proxmox when `generate_encryption_key` is true.",
 			Computed:    true,
 			Sensitive:   true,
+			PlanModifiers: []planmodifier.String{
+				// PVE returns the key only on create, so keep the prior value on update.
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"shared": schema.BoolAttribute{
 			Description: "Whether the storage is shared across all nodes.",

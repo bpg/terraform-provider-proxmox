@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -301,8 +302,6 @@ func TestAccResourceFile(t *testing.T) {
 // TestAccNodeStreamUpload verifies that NodeStreamUpload succeeds when the SSH
 // user relies on sudo to write to the snippets directory.
 func TestAccNodeStreamUpload(t *testing.T) {
-	t.Skip("disabled until NodeStreamUpload can chmod a sudo-written file as a non-root SSH user (#2987)")
-
 	te := InitEnvironment(t)
 
 	client := te.SSHClient()
@@ -340,6 +339,53 @@ func TestAccNodeStreamUpload(t *testing.T) {
 
 	out := te.ExecuteNodeCommands([]string{"stat -c '%a' /var/lib/vz/snippets/" + fname})
 	require.Equal(t, "700", strings.TrimSpace(out))
+}
+
+func TestAccResourceFileSnippetFileMode(t *testing.T) {
+	te := InitEnvironment(t)
+
+	if te.SSHClient().Username() == "root" {
+		t.Skip("requires a non-root sudo SSH user")
+	}
+
+	fileName := SafeResourceName("hookscript") + ".sh"
+
+	te.AddTemplateVars(map[string]any{
+		"FileName": fileName,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "hookscript" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					file_mode    = "0700"
+					source_raw {
+						data      = "#!/usr/bin/env bash\nexit 0\n"
+						file_name = "{{.FileName}}"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_file.hookscript", map[string]string{
+						"file_mode": "0700",
+						"id":        fmt.Sprintf("local:snippets/%s", fileName),
+					}),
+					func(*terraform.State) error {
+						out := te.ExecuteNodeCommands([]string{"stat -c '%a' /var/lib/vz/snippets/" + fileName})
+						if mode := strings.TrimSpace(out); mode != "700" {
+							return fmt.Errorf("expected snippet mode 700, got %q", mode)
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
 }
 
 func uploadSnippetFile(te *Environment, fileName string) {

@@ -92,6 +92,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_fabric_ospf.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_fabric_node_openfabric.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_fabric_node_ospf.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/sdn_controller_bgp.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/sdn_controller_evpn.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/sdn_fabric_node_openfabric.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/sdn_fabric_node_ospf.md ./docs/data-sources/
@@ -127,6 +128,8 @@ import (
 //go:generate cp ./build/docs-gen/resources/apt_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_apt_standard_repository.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/apt_standard_repository.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/ceph_fs.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/ceph_mds.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/ceph_pool.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/node_disk_zfs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_cloned_vm.md ./docs/resources/
@@ -180,6 +183,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_vlan.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_vxlan.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/sdn_applier.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/sdn_controller_bgp.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/sdn_controller_evpn.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/sdn_fabric_node_openfabric.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/sdn_fabric_node_ospf.md ./docs/resources/
@@ -199,12 +203,14 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_nfs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_pbs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_storage_zfspool.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/storage_cephfs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_cifs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_directory.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_lvm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_lvmthin.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_nfs.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_pbs.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/storage_rbd.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/storage_zfspool.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_user_token.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_vm2.md ./docs/resources/

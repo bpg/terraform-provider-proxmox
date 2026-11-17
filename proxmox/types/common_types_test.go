@@ -132,3 +132,52 @@ func TestCustomInt_UnmarshalJSON_NullPointer(t *testing.T) {
 		t.Fatalf("expected nil count pointer when JSON is null")
 	}
 }
+
+func TestCustomInt64Option_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		json    string
+		want    int64
+		wantErr bool
+	}{
+		{"integer", "2", 2, false},
+		{"quoted integer", "\"2\"", 2, false},
+		{"deleted marker", "\"deleted\"", 0, false},
+		{"invalid string", "\"abc\"", 0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var v CustomInt64Option
+
+			err := v.UnmarshalJSON([]byte(tt.json))
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("error=%v, wantErr=%v", err, tt.wantErr)
+			}
+
+			if !tt.wantErr && int64(v) != tt.want {
+				t.Fatalf("got=%d, want=%d", int64(v), tt.want)
+			}
+		})
+	}
+}
+
+func TestCustomInt64Option_UnmarshalJSON_InStruct(t *testing.T) {
+	t.Parallel()
+
+	var body struct {
+		MultiHop *CustomInt64Option `json:"ebgp-multihop"`
+	}
+
+	payload := []byte(`{"ebgp-multihop":"deleted"}`)
+	if err := json.Unmarshal(payload, &body); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if body.MultiHop == nil || int64(*body.MultiHop) != 0 {
+		t.Fatalf("expected non-nil pointer with value 0 for the deleted marker")
+	}
+}

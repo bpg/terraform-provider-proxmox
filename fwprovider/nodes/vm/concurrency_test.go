@@ -25,7 +25,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-func TestBatchCreate(t *testing.T) {
+func TestAccBatchCreate(t *testing.T) {
 	t.Parallel()
 
 	const (

@@ -175,7 +175,7 @@ func TestUploadFileSurfacesUnderlyingError(t *testing.T) {
 			c := &client{}
 			req := &api.FileUploadRequest{FileName: "user-data.yml", File: tmp}
 
-			err = c.uploadFile(context.Background(), sshClient, req, "/var/lib/vz/snippets/user-data.yml", "")
+			_, err = c.uploadFile(context.Background(), sshClient, req, "/var/lib/vz/snippets/user-data.yml", "")
 			if err == nil {
 				t.Fatal("expected an error from the non-zero remote exit, got nil")
 			}

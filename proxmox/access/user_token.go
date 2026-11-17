@@ -8,9 +8,11 @@ package access
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -44,6 +46,10 @@ func (c *Client) CreateUserToken(
 func (c *Client) DeleteUserToken(ctx context.Context, userid string, id string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.userTokenPath(userid, id), nil, nil)
 	if err != nil {
+		if isNoSuchTokenErr(err) {
+			err = errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
 		return fmt.Errorf("error deleting user token: %w", err)
 	}
 
@@ -56,6 +62,10 @@ func (c *Client) GetUserToken(ctx context.Context, userid string, id string) (*U
 
 	err := c.DoRequest(ctx, http.MethodGet, c.userTokenPath(userid, id), nil, resBody)
 	if err != nil {
+		if isNoSuchTokenErr(err) {
+			err = errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
 		return nil, fmt.Errorf("error retrieving user token: %w", err)
 	}
 
@@ -90,4 +100,16 @@ func (c *Client) UpdateUserToken(ctx context.Context, userid string, id string, 
 	}
 
 	return nil
+}
+
+// isNoSuchTokenErr matches the messages that PVE returns (via HTTP 500) when reading or deleting a token
+// that does not exist: "no such token '<token>' for user '<user>'", or "no such user ('<user>')" when the
+// user itself is gone.
+func isNoSuchTokenErr(err error) bool {
+	var httpErr *api.HTTPError
+	if !errors.As(err, &httpErr) {
+		return false
+	}
+
+	return strings.Contains(httpErr.Message, "no such token '") || strings.Contains(httpErr.Message, "no such user ('")
 }

@@ -13,6 +13,7 @@ package test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"regexp"
@@ -36,10 +37,6 @@ func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
 	te := InitEnvironment(t)
-	dirName := fmt.Sprintf("dir_%s", gofakeit.LetterN(8))
-	te.AddTemplateVars(map[string]interface{}{
-		"DirName": dirName,
-	})
 
 	tests := []struct {
 		name string
@@ -107,6 +104,70 @@ func TestAccResourceVM(t *testing.T) {
 				}`),
 			ExpectError: regexp.MustCompile(`invalid value for name \(must be a valid DNS name\)`),
 			PlanOnly:    true,
+		}}},
+		{"disk serial with characters PVE rejects", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						serial       = "a,discard=on"
+					}
+				}`),
+			ExpectError: regexp.MustCompile(`invalid value for serial \(must contain only`),
+			PlanOnly:    true,
+		}}},
+		{"disk file_id with a comma", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						file_id      = "local:iso/a,b.img"
+					}
+				}`),
+			ExpectError: regexp.MustCompile(`(?s)expected file_id to be a valid file identifier.*got local:iso/a,b.img`),
+			PlanOnly:    true,
+		}}},
+		{"cdrom file_id with an equals sign", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					cdrom {
+						file_id = "local:iso/a=b.iso"
+					}
+				}`),
+			ExpectError: regexp.MustCompile(`(?s)expected file_id to be a valid file identifier.*got local:iso/a=b.iso`),
+			PlanOnly:    true,
+		}}},
+		{"file_id and serial with characters PVE accepts", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					cdrom {
+						file_id = "local:iso/a+b@c~d.iso"
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						serial       = "AB-1_2.x%21~*'()"
+					}
+				}`),
+			PlanOnly:           true,
+			ExpectNonEmptyPlan: true,
 		}}},
 		{"initialization interface collides with disk", []resource.TestStep{
 			{
@@ -239,30 +300,6 @@ func TestAccResourceVM(t *testing.T) {
 			},
 			{
 				RefreshState: true,
-			},
-		}},
-		{"set cpu.architecture as non root is not supported", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_cpu_arch" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					cpu {
-						architecture = "x86_64"
-					}
-				}`, WithAPIToken()),
-				ExpectError: regexp.MustCompile(`can only be set by the root account`),
-			},
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "template" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					cpu {
-						architecture = "x86_64"
-					}
-				}`, WithRootUser()),
-				Destroy: false,
 			},
 		}},
 		{"update memory block", []resource.TestStep{
@@ -432,108 +469,6 @@ func TestAccResourceVM(t *testing.T) {
 						"watchdog.0.enabled": "false",
 						"watchdog.0.model":   "ib700",
 						"watchdog.0.action":  "reset",
-					}),
-				),
-			},
-		}},
-		{"update rng block", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_vm" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					
-					rng {
-						source = "/dev/urandom"
-					}
-				}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-						"rng.0.source":    "/dev/urandom",
-						"rng.0.max_bytes": "1024",
-						"rng.0.period":    "1000",
-					}),
-				),
-			}, {
-				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_vm" "test_vm" {
-						node_name = "{{.NodeName}}"
-						started   = false
-				
-						rng {
-							source = "/dev/urandom"
-							max_bytes = 2048
-							period = 500
-						}
-					}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-						"rng.0.source":    "/dev/urandom",
-						"rng.0.max_bytes": "2048",
-						"rng.0.period":    "500",
-					}),
-				),
-			}, {
-				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_vm" "test_vm" {
-						node_name = "{{.NodeName}}"
-						started   = false
-				
-						rng {
-							source = "/dev/random"
-							max_bytes = 512
-							period = 200
-						}
-					}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-						"rng.0.source":    "/dev/random",
-						"rng.0.max_bytes": "512",
-						"rng.0.period":    "200",
-					}),
-				),
-			},
-		}},
-		{"create virtiofs block", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
-						name      = "{{.DirName}}"
-
-						map = [{
-							node = "{{.NodeName}}"
-							path = "/mnt"
-						}]
-					}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_hardware_mapping_dir.test", map[string]string{
-						"name":       dirName,
-						"map.0.node": te.NodeName,
-						"map.0.path": "/mnt",
-					}),
-				),
-			},
-			{
-				Config: te.RenderConfig(`
-					resource "proxmox_virtual_environment_vm" "test_vm" {
-						node_name = "{{.NodeName}}"
-						started   = false
-
-						virtiofs {
-							mapping = "{{.DirName}}"
-							cache = "always"
-							direct_io = true
-							expose_acl = false
-							expose_xattr = false
-						}
-					}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-						"virtiofs.0.mapping":      dirName,
-						"virtiofs.0.cache":        "always",
-						"virtiofs.0.direct_io":    "true",
-						"virtiofs.0.expose_acl":   "false",
-						"virtiofs.0.expose_xattr": "false",
 					}),
 				),
 			},
@@ -770,6 +705,179 @@ func TestAccResourceVM(t *testing.T) {
 	}
 }
 
+// TestAccResourceVMRootOnlyAttributes covers attributes PVE lets only root@pam set. They live apart from
+// TestAccResourceVM because RenderConfig skips the whole test when root credentials are missing.
+func TestAccResourceVMRootOnlyAttributes(t *testing.T) {
+	t.Parallel()
+
+	te := InitEnvironment(t)
+	dirName := fmt.Sprintf("dir_%s", gofakeit.LetterN(8))
+	te.AddTemplateVars(map[string]interface{}{
+		"DirName": dirName,
+	})
+
+	tests := []struct {
+		name string
+		step []resource.TestStep
+	}{
+		{"set cpu.architecture as non root is not supported", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cpu_arch" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					cpu {
+						architecture = "x86_64"
+					}
+				}`, WithAPIToken()),
+				ExpectError: regexp.MustCompile(`can only be set by the root account`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					cpu {
+						architecture = "x86_64"
+					}
+				}`, WithRootPAMAuth()),
+				Destroy: false,
+			},
+		}},
+		{"update rng block", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					rng {
+						source = "/dev/urandom"
+					}
+				}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"rng.0.source":    "/dev/urandom",
+						"rng.0.max_bytes": "1024",
+						"rng.0.period":    "1000",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+				
+						rng {
+							source = "/dev/urandom"
+							max_bytes = 2048
+							period = 500
+						}
+					}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"rng.0.source":    "/dev/urandom",
+						"rng.0.max_bytes": "2048",
+						"rng.0.period":    "500",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+				
+						rng {
+							source = "/dev/random"
+							max_bytes = 512
+							period = 200
+						}
+					}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"rng.0.source":    "/dev/random",
+						"rng.0.max_bytes": "512",
+						"rng.0.period":    "200",
+					}),
+				),
+			},
+		}},
+		{"create virtiofs block", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+						name      = "{{.DirName}}"
+
+						map = [{
+							node = "{{.NodeName}}"
+							path = "/mnt"
+						}]
+					}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_hardware_mapping_dir.test", map[string]string{
+						"name":       dirName,
+						"map.0.node": te.NodeName,
+						"map.0.path": "/mnt",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+
+						virtiofs {
+							mapping = "{{.DirName}}"
+							cache = "always"
+							direct_io = true
+							expose_acl = false
+							expose_xattr = false
+						}
+					}`, WithRootPAMAuth()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"virtiofs.0.mapping":      dirName,
+						"virtiofs.0.cache":        "always",
+						"virtiofs.0.direct_io":    "true",
+						"virtiofs.0.expose_acl":   "false",
+						"virtiofs.0.expose_xattr": "false",
+					}),
+				),
+			},
+		}},
+		{"clone cpu.architecture", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					cpu {
+						architecture = "x86_64"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+				}`, WithRootPAMAuth()),
+		}}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.step,
+			})
+		})
+	}
+}
+
 func TestAccResourceVMImport(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -902,6 +1010,169 @@ func TestAccResourceVMImportEffectiveDefaults(t *testing.T) {
 
 					return nil
 				},
+			},
+		},
+	})
+}
+
+func TestAccResourceVMImportDefaultTPMEFIDiskAndAMDSEV(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+
+	// amd-sev is root-only, so create the VM with qm over root SSH.
+	_, err := te.ExecuteNodeCommandsContext(context.Background(), []string{fmt.Sprintf(
+		"qm create %d --bios ovmf --efidisk0 local-lvm:1 --tpmstate0 local-lvm:1,version=v2.0 --amd-sev type=std,allow-smt=1", vmID,
+	)})
+	require.NoError(t, err, "failed to create bare VM %d", vmID)
+
+	t.Cleanup(func() {
+		_ = te.NodeClient().VM(vmID).DeleteVM(context.Background(), true, true).Err()
+	})
+
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_tpm_efi" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+					}`),
+				ResourceName:  "proxmox_virtual_environment_vm.vm_tpm_efi",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, vmID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+
+					want := map[string]string{
+						"tpm_state.#":                  "1",
+						"tpm_state.0.datastore_id":     "local-lvm",
+						"tpm_state.0.version":          "v2.0",
+						"efi_disk.#":                   "1",
+						"efi_disk.0.datastore_id":      "local-lvm",
+						"efi_disk.0.file_format":       "raw",
+						"efi_disk.0.type":              "2m",
+						"efi_disk.0.pre_enrolled_keys": "false",
+						"amd_sev.#":                    "1",
+						"amd_sev.0.type":               "std",
+					}
+
+					var errs []error
+
+					for k, v := range want {
+						if got := attrs[k]; got != v {
+							errs = append(errs, fmt.Errorf("%s = %q, want %q", k, got, v))
+						}
+					}
+
+					return errors.Join(errs...)
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceVMImportCDROMOnIDE2(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+
+	_, err := te.ExecuteNodeCommandsContext(context.Background(), []string{fmt.Sprintf(
+		"qm create %d --ide0 local-lvm:cloudinit --ide2 none,media=cdrom", vmID,
+	)})
+	require.NoError(t, err, "failed to create bare VM %d", vmID)
+
+	t.Cleanup(func() {
+		_ = te.NodeClient().VM(vmID).DeleteVM(context.Background(), true, true).Err()
+	})
+
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_cdrom" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+					}`),
+				ResourceName:  "proxmox_virtual_environment_vm.vm_cdrom",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, vmID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+
+					want := map[string]string{
+						"cdrom.#":           "1",
+						"cdrom.0.interface": "ide2",
+						"cdrom.0.file_id":   "none",
+					}
+
+					var errs []error
+
+					for k, v := range want {
+						if got := attrs[k]; got != v {
+							errs = append(errs, fmt.Errorf("%s = %q, want %q", k, got, v))
+						}
+					}
+
+					return errors.Join(errs...)
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceVMUndeclaredDefaultTPMAndEFIDisk(t *testing.T) {
+	te := InitEnvironment(t)
+
+	vmID := 100000 + rand.Intn(99999)
+	te.AddTemplateVars(map[string]any{"TestVMID": vmID})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_undeclared" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+						started   = false
+						bios      = "ovmf"
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.vm_undeclared", "tpm_state.#", "0"),
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.vm_undeclared", "efi_disk.#", "0"),
+				),
+			},
+			{
+				PreConfig: func() {
+					err := te.NodeClient().VM(vmID).UpdateVM(context.Background(), &vms.UpdateRequestBody{
+						EFIDisk:  &vms.CustomEFIDisk{FileVolume: "local-lvm:1"},
+						TPMState: &vms.CustomTPMState{FileVolume: "local-lvm:1", Version: new("v2.0")},
+					})
+					require.NoError(t, err)
+				},
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_undeclared" {
+						node_name = "{{.NodeName}}"
+						vm_id     = {{.TestVMID}}
+						started   = false
+						bios      = "ovmf"
+					}`),
+				PlanOnly: true,
 			},
 		},
 	})
@@ -1774,6 +2045,193 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				}),
 			),
 		}}},
+		{"wait for IP with address filter", func() []resource.TestStep {
+			vmConfig := func(agentTimeout, waitForIP string) string {
+				return te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "cloud_config" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name = "{{.NodeName}}"
+					overwrite = true
+					source_raw {
+						data = <<-EOF
+						#cloud-config
+						runcmd:
+						  - apt update
+						  - apt install -y qemu-guest-agent
+						  - systemctl enable qemu-guest-agent
+						  - systemctl start qemu-guest-agent
+						EOF
+						file_name = "{{.TestName}}-wait-filter-cloud-config.yaml"
+					}
+				}
+
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter" {
+					node_name = "{{.NodeName}}"
+					started   = true
+					stop_on_destroy = true
+					reboot_after_update = false
+					agent {
+						enabled = true
+						timeout = "` + agentTimeout + `"
+						wait_for_ip {
+							` + waitForIP + `
+						}
+					}
+					cpu {
+						cores = 2
+					}
+					memory {
+						dedicated = 2048
+					}
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = "{{.ImageFileID}}"
+						interface    = "virtio0"
+						iothread     = true
+						discard      = "on"
+						size         = 20
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+						ip_config {
+							ipv4 {
+								address = "192.0.2.10/24"
+							}
+						}
+						user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`)
+			}
+
+			// The second NIC carries a static global address that default waiting would accept, like docker0 does.
+			return []resource.TestStep{
+				{
+					// Matching interface filter: the wait completes, and outputs stay unfiltered (lo is still listed).
+					Config: vmConfig("15m", `
+							ipv4       = true
+							interfaces = ["e.*"]`),
+					Check: resource.ComposeTestCheckFunc(
+						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
+							"ipv4_addresses.#": "3",
+						}),
+						resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm.test_vm_wait_filter",
+							"agent.0.wait_for_ip.0.interfaces.*", "e.*"),
+					),
+				},
+				{
+					Config: vmConfig("20s", `
+							ipv4  = true
+							cidrs = ["192.0.2.0/24"]`),
+					Check: resource.ComposeTestCheckFunc(
+						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
+							"ipv4_addresses.#": "3",
+						}),
+						resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm.test_vm_wait_filter",
+							"agent.0.wait_for_ip.0.cidrs.*", "192.0.2.0/24"),
+					),
+				},
+				{
+					// reboot_after_update = false keeps the agent up across these agent changes, so empty addresses
+					// prove the filter rejected the second NIC's address.
+					Config: vmConfig("20s", `
+							interfaces = ["lo"]
+							cidrs      = ["192.0.2.0/24"]`),
+					Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_filter", map[string]string{
+						"ipv4_addresses.#": "0",
+					}),
+				},
+			}
+		}()},
+		{"wait for IP address filter validation", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							cidrs = ["not-a-cidr"]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`to be a valid CIDR Value`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							cidrs = ["10.0.0.0/08"]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`to be a valid CIDR Value`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							interfaces = ["eth("]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`error parsing regexp`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							ipv6  = true
+							cidrs = ["10.0.0.0/8"]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`ipv6 = true requires at least one IPv6 entry in cidrs`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_filter_invalid" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					agent {
+						enabled = true
+						wait_for_ip {
+							disabled   = true
+							interfaces = ["eth0"]
+						}
+					}
+				}`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`cannot be combined with disabled = true`),
+			},
+		}},
 		{"network device disconnected", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -1980,6 +2438,18 @@ func TestAccResourceVMClone(t *testing.T) {
 
 	te := InitEnvironment(t)
 
+	hookScriptName := sanitizeTemplateName(t.Name()) + "-hookscript.sh"
+	hookScriptID := "local:snippets/" + hookScriptName
+
+	te.AddTemplateVars(map[string]any{"HookScriptID": hookScriptID})
+	t.Cleanup(func() {
+		// t.Context() is already canceled when cleanups run.
+		_, err := te.ExecuteNodeCommandsContext(context.Background(), []string{"rm -f /var/lib/vz/snippets/" + hookScriptName})
+		if err != nil {
+			t.Logf("cleanup: failed to delete snippet %s: %v", hookScriptName, err)
+		}
+	})
+
 	tests := []struct {
 		name string
 		step []resource.TestStep
@@ -2038,24 +2508,6 @@ func TestAccResourceVMClone(t *testing.T) {
 				"boot_order.#": "1",
 				"boot_order.0": "scsi0",
 			}),
-		}}},
-		{"clone cpu.architecture as root", []resource.TestStep{{
-			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "template" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					template  = true
-					cpu {
-						architecture = "x86_64"
-					}
-				}
-				resource "proxmox_virtual_environment_vm" "clone" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					clone {
-						vm_id = proxmox_virtual_environment_vm.template.vm_id
-					}
-				}`, WithRootUser()),
 		}}},
 		{"clone machine type", []resource.TestStep{{
 			Config: te.RenderConfig(`
@@ -2294,6 +2746,65 @@ func TestAccResourceVMClone(t *testing.T) {
 				}),
 			),
 		}}},
+		// A template hookscript can only be set as root (e.g. `qm set`). Cloning it with an API token must not
+		// write hookscript, whether it is omitted (inherited) or explicitly set to the inherited value.
+		{"clone inherits template hookscript", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "template_hookscript" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						template  = true
+						lifecycle {
+							ignore_changes = [hook_script_file_id]
+						}
+					}`),
+				Check: func(s *terraform.State) error {
+					rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.template_hookscript"]
+					if !ok {
+						return fmt.Errorf("resource template_hookscript not found in state")
+					}
+
+					te.ExecuteNodeCommands([]string{
+						fmt.Sprintf("printf '#!/bin/bash\\nexit 0\\n' > /var/lib/vz/snippets/%s", hookScriptName),
+						fmt.Sprintf("chmod +x /var/lib/vz/snippets/%s", hookScriptName),
+						fmt.Sprintf("qm set %s --hookscript %s", rs.Primary.Attributes["vm_id"], hookScriptID),
+					})
+
+					return nil
+				},
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "template_hookscript" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						template  = true
+						lifecycle {
+							ignore_changes = [hook_script_file_id]
+						}
+					}
+					resource "proxmox_virtual_environment_vm" "clone_hookscript" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						clone {
+							vm_id = proxmox_virtual_environment_vm.template_hookscript.vm_id
+						}
+					}
+					resource "proxmox_virtual_environment_vm" "clone_hookscript_explicit" {
+						node_name           = "{{.NodeName}}"
+						started             = false
+						hook_script_file_id = "{{.HookScriptID}}"
+						clone {
+							vm_id = proxmox_virtual_environment_vm.template_hookscript.vm_id
+						}
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkVMHookScript(te, "proxmox_virtual_environment_vm.clone_hookscript", hookScriptID),
+					checkVMHookScript(te, "proxmox_virtual_environment_vm.clone_hookscript_explicit", hookScriptID),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
@@ -2305,6 +2816,32 @@ func TestAccResourceVMClone(t *testing.T) {
 				Steps:                    tt.step,
 			})
 		})
+	}
+}
+
+// checkVMHookScript asserts the hookscript of the VM in the Proxmox config, not just in the Terraform state.
+func checkVMHookScript(te *Environment, resourceName string, expected string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource %s not found in state", resourceName)
+		}
+
+		vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+		if err != nil {
+			return fmt.Errorf("failed to parse vm_id: %w", err)
+		}
+
+		cfg, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+		if err != nil {
+			return fmt.Errorf("failed to get VM config: %w", err)
+		}
+
+		if cfg.HookScript == nil || *cfg.HookScript != expected {
+			return fmt.Errorf("%s: expected hookscript %q, got %v", resourceName, expected, cfg.HookScript)
+		}
+
+		return nil
 	}
 }
 
@@ -2598,7 +3135,7 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 						device = "hostpci0"
 						id     = "{{.HostPCIID}}"
 					}
-				}`, WithRootUser()),
+				}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "node_name", te.NodeName),
 					resource.TestCheckResourceAttr(resourceName, "hostpci.#", "1"),
@@ -2614,7 +3151,7 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 					stop_on_destroy = true
 					migrate         = true
 					name            = "test-migrate-hostpci"
-				}`, WithRootUser()),
+				}`, WithRootPAMAuth()),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionUpdate),
@@ -2624,6 +3161,96 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "node_name", te.Node2Name),
 					resource.TestCheckResourceAttr(resourceName, "hostpci.#", "0"),
 				),
+			},
+		},
+	})
+}
+
+// TestAccResourceVMHostUSBBeyondUSB3 checks that usb4 and higher are read back, imported, and removed
+// (issue #3009).
+func TestAccResourceVMHostUSBBeyondUSB3(t *testing.T) {
+	te := InitEnvironment(t)
+
+	testVMID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID":    testVMID,
+		"MappingName": SafeResourceName("usb-map"),
+	})
+
+	resourceName := "proxmox_virtual_environment_vm.test_usb"
+
+	blocks := []string{
+		`host = "1234:0001"`,
+		`host = "1234:0002"`,
+		`host = "1234:0003"`,
+		`host = "1234:0004"`,
+		`mapping = proxmox_hardware_mapping_usb.test.name
+						usb3    = true`,
+		`host = "1234:0006"
+						usb3 = true`,
+	}
+
+	usbConfig := func(count int) string {
+		var usb strings.Builder
+
+		for _, block := range blocks[:count] {
+			fmt.Fprintf(&usb, `
+					usb {
+						%s
+					}`, block)
+		}
+
+		return te.RenderConfig(`
+				resource "proxmox_hardware_mapping_usb" "test" {
+					name = "{{.MappingName}}"
+					map  = [{
+						id   = "1234:0005"
+						node = "{{.NodeName}}"
+					}]
+				}
+
+				resource "proxmox_virtual_environment_vm" "test_usb" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+					started   = false
+					machine   = "q35"
+					`+usb.String()+`
+				}`, WithRootPAMAuth())
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: usbConfig(6),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "usb.#", "6"),
+					resource.TestCheckResourceAttrPair(resourceName, "usb.4.mapping", "proxmox_hardware_mapping_usb.test", "name"),
+					resource.TestCheckResourceAttr(resourceName, "usb.4.usb3", "true"),
+					resource.TestCheckResourceAttr(resourceName, "usb.5.host", "1234:0006"),
+					resource.TestCheckResourceAttr(resourceName, "usb.5.usb3", "true"),
+				),
+			},
+			{
+				Config:   usbConfig(6),
+				PlanOnly: true,
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, testVMID),
+			},
+			{
+				Config: usbConfig(4),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "usb.#", "4"),
+				),
+			},
+			{
+				Config:   usbConfig(4),
+				PlanOnly: true,
 			},
 		},
 	})

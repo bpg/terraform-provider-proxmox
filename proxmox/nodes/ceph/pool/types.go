@@ -57,6 +57,7 @@ type StatusResponseBody struct {
 // arrives as the rule name (no separate _name field), and application is reported
 // via application_list when verbose=1 is set.
 type StatusResponseData struct {
+	ID              int64    `json:"id"`
 	Name            string   `json:"name"`
 	ApplicationList []string `json:"application_list,omitempty"`
 	CrushRule       string   `json:"crush_rule,omitempty"`

@@ -12,12 +12,13 @@ import (
 	"fmt"
 	"maps"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -49,7 +50,7 @@ func (m *genericModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Di
 	m.DNS = m.handleDeletedValue(data.DNS)
 	m.DNSZone = m.handleDeletedValue(data.DNSZone)
 	m.IPAM = m.handleDeletedValue(data.IPAM)
-	m.MTU = types.Int64PointerValue(data.MTU)
+	m.MTU = mtuFromAPI(data.MTU)
 	m.Nodes = stringset.NewValueString(data.Nodes, diags, stringset.WithSeparator(","))
 	m.ReverseDNS = m.handleDeletedValue(data.ReverseDNS)
 	m.State = m.handleDeletedValue(data.State)
@@ -89,8 +90,8 @@ func (m *genericModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Di
 			hasPendingChanges = true
 		}
 
-		if data.Pending.MTU != nil && *data.Pending.MTU != 0 {
-			m.MTU = types.Int64Value(*data.Pending.MTU)
+		if data.Pending.MTU != nil {
+			m.MTU = mtuFromAPI(data.Pending.MTU)
 			hasPendingChanges = true
 		}
 
@@ -116,11 +117,18 @@ func (m *genericModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zone
 	data.DNSZone = m.DNSZone.ValueStringPointer()
 	data.Nodes = m.Nodes.ValueStringPointer(ctx, diags, stringset.WithSeparator(","))
 
-	if attribute.IsDefined(m.MTU) {
-		data.MTU = m.MTU.ValueInt64Pointer()
-	}
+	data.MTU = proxmoxtypes.CustomInt64OptionPtr(attribute.Int64PtrFromValue(m.MTU))
 
 	return data
+}
+
+// mtuFromAPI maps the pending "deleted" marker (parsed as 0) to null; 0 is not a valid MTU.
+func mtuFromAPI(v *proxmoxtypes.CustomInt64Option) types.Int64 {
+	if v == nil || *v == 0 {
+		return types.Int64Null()
+	}
+
+	return types.Int64Value(int64(*v))
 }
 
 func (m *genericModel) getID() string {
@@ -158,8 +166,7 @@ func (m *genericModel) checkDeletedFields(state *genericModel) []string {
 	attribute.CheckDelete(m.DNS, state.DNS, &toDelete, "dns")
 	attribute.CheckDelete(m.ReverseDNS, state.ReverseDNS, &toDelete, "reversedns")
 	attribute.CheckDelete(m.DNSZone, state.DNSZone, &toDelete, "dnszone")
-	// Note: MTU intentionally omitted - cannot be unset once configured due to Proxmox API limitation
-	// (pending object returns "deleted" string which cannot unmarshal to int64)
+	attribute.CheckDelete(m.MTU, state.MTU, &toDelete, "mtu")
 	attribute.CheckDelete(m.Nodes, state.Nodes, &toDelete, "nodes")
 	attribute.CheckDelete(m.State, state.State, &toDelete, "state")
 
@@ -192,12 +199,10 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 			Optional:    true,
 		},
 		"mtu": schema.Int64Attribute{
-			Description: "MTU value for the zone. There is no support to reset this value back to PVE default " +
-				"once set due to API limitation.",
-			Optional: true,
-			Computed: true,
-			PlanModifiers: []planmodifier.Int64{
-				int64planmodifier.UseNonNullStateForUnknown(),
+			Description: "MTU value for the zone.",
+			Optional:    true,
+			Validators: []validator.Int64{
+				int64validator.AtLeast(1),
 			},
 		},
 		"nodes": stringset.ResourceAttribute("The Proxmox nodes which the zone and associated VNets should be deployed on", "", stringset.WithOptional()),

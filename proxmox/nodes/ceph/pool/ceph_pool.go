@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/google/go-querystring/query"
@@ -104,6 +105,33 @@ func (c *Client) Update(ctx context.Context, name string, body *UpdateRequestBod
 
 		return resBody.Data, nil
 	})
+}
+
+// UpdateSizeFirst updates a pool like Update, but sends a size that differs from currentSize on its own first. Ceph
+// resets min_size whenever size changes, and Proxmox VE skips a requested min_size that equals the value it read
+// before applying size, so that min_size would be lost (Proxmox bug 8193). Once supported releases fix that, callers
+// can go back to Update.
+func (c *Client) UpdateSizeFirst(ctx context.Context, name string, body *UpdateRequestBody, currentSize *int64) tasks.TaskResult {
+	if body.Size == nil || (currentSize != nil && *body.Size == *currentSize) {
+		return c.Update(ctx, name, body)
+	}
+
+	sized := c.Update(ctx, name, &UpdateRequestBody{Size: body.Size})
+	if sized.Err() != nil {
+		return sized
+	}
+
+	result := c.Update(ctx, name, body)
+	if !sized.HasWarnings() {
+		return result
+	}
+
+	warnings := slices.Concat(sized.Warnings(), result.Warnings())
+	if err := result.Err(); err != nil {
+		return tasks.TaskFailedWithWarnings(err, warnings)
+	}
+
+	return tasks.TaskOKWithWarnings(warnings)
 }
 
 // Delete destroys a Ceph pool and waits for the dispatch task to complete.

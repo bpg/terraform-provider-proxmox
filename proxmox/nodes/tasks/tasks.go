@@ -128,20 +128,44 @@ func (w withIgnoreStatus) apply(opts *taskWaitOptions) {
 // DoTask dispatches an async PVE task with retry and waits for its result.
 // On dispatch failure, the returned TaskResult wraps the dispatch error.
 // On success or task failure, the TaskResult comes from WaitForTask. When the task
-// was already done (e.g. retry's isAlreadyDone predicate) or the dispatch returned
-// no task ID (e.g. VM already running), a zero-value TaskOK() is returned.
+// was already done (a retry's dispatch error matched WithAlreadyDoneCheck, or its task
+// failure matched WithAlreadyDoneTaskCheck) or the dispatch returned no task ID (e.g. VM
+// already running), a zero-value TaskOK() is returned.
 func (c *Client) DoTask(
 	ctx context.Context,
 	op *retry.Operation,
 	dispatchFn func() (*string, error),
 	waitOpts ...TaskWaitOption,
 ) TaskResult {
+	return doTask(ctx, op, dispatchFn, func(ctx context.Context, taskID string) TaskResult {
+		return c.WaitForTask(ctx, taskID, waitOpts...)
+	})
+}
+
+func doTask(
+	ctx context.Context,
+	op *retry.Operation,
+	dispatchFn func() (*string, error),
+	waitFn func(ctx context.Context, taskID string) TaskResult,
+) TaskResult {
 	var result TaskResult
 
-	if err := op.DoTask(ctx, dispatchFn, func(ctx context.Context, taskID string) error {
-		result = c.WaitForTask(ctx, taskID, waitOpts...)
+	// A re-dispatch may finish without waiting, so a failed result from an earlier attempt must not leak out.
+	dispatch := func() (*string, error) {
+		result = TaskResult{}
+		return dispatchFn()
+	}
+
+	err := op.DoTask(ctx, dispatch, func(ctx context.Context, taskID string) error {
+		result = waitFn(ctx, taskID)
 		return result.Err()
-	}); err != nil && result.Err() == nil {
+	})
+
+	switch {
+	case err == nil && result.Err() != nil:
+		// WithAlreadyDoneTaskCheck matched the retry's task failure
+		return TaskOK()
+	case err != nil && result.Err() == nil:
 		return TaskFailed(err)
 	}
 

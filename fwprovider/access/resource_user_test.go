@@ -19,6 +19,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -193,6 +194,122 @@ func TestAccResourceUserToken(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestAccResourceUserTokenDeletedOutside checks that a token removed outside Terraform is dropped from
+// state and planned for creation, instead of failing the refresh.
+func TestAccResourceUserTokenDeletedOutside(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+	userID := fmt.Sprintf("%s@pve", gofakeit.LetterN(10))
+	tokenName := gofakeit.LetterN(8)
+
+	te.AddTemplateVars(map[string]any{
+		"UserID":    userID,
+		"TokenName": tokenName,
+	})
+
+	config := te.RenderConfig(`resource "proxmox_user_token" "user_token_gone" {
+		token_name = "{{.TokenName}}"
+		user_id    = "{{.UserID}}"
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		PreCheck: func() {
+			err := te.AccessClient().CreateUser(context.Background(), &access.UserCreateRequestBody{
+				ID:       userID,
+				Password: gofakeit.Password(true, true, true, true, false, 8),
+			})
+			require.NoError(t, err)
+
+			t.Cleanup(func() {
+				err = te.AccessClient().DeleteUser(context.Background(), userID)
+				require.NoError(t, err)
+			})
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				PreConfig: func() {
+					err := te.AccessClient().DeleteUserToken(context.Background(), userID, tokenName)
+					require.NoError(t, err)
+				},
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_user_token.user_token_gone", plancheck.ResourceActionCreate),
+					},
+				},
+				Check: test.ResourceAttributes("proxmox_user_token.user_token_gone", map[string]string{
+					"id": fmt.Sprintf("%s!%s", userID, tokenName),
+				}),
+			},
+			{
+				Config: config,
+				Check: func(*terraform.State) error {
+					return te.AccessClient().DeleteUserToken(context.Background(), userID, tokenName)
+				},
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceUserTokenUserDeletedOutside(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+	userID := fmt.Sprintf("%s@pve", gofakeit.LetterN(10))
+	tokenName := gofakeit.LetterN(8)
+
+	te.AddTemplateVars(map[string]any{
+		"UserID":    userID,
+		"TokenName": tokenName,
+	})
+
+	// PVE answers a missing user with 403 to everyone but root@pam
+	config := te.RenderConfig(`resource "proxmox_user_token" "user_gone" {
+		token_name = "{{.TokenName}}"
+		user_id    = "{{.UserID}}"
+	}`, test.WithRootPAMAuth())
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		PreCheck: func() {
+			err := te.AccessClient().CreateUser(context.Background(), &access.UserCreateRequestBody{
+				ID:       userID,
+				Password: gofakeit.Password(true, true, true, true, false, 8),
+			})
+			require.NoError(t, err)
+
+			t.Cleanup(func() {
+				_ = te.AccessClient().DeleteUser(context.Background(), userID)
+			})
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				PreConfig: func() {
+					err := te.AccessClient().DeleteUser(context.Background(), userID)
+					require.NoError(t, err)
+				},
+				Config:   config,
+				PlanOnly: true,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PostApplyPostRefresh: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_user_token.user_gone", plancheck.ResourceActionCreate),
+					},
+				},
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
 }
 
 // TestAccResourceUserACLNotManagedHere verifies that when a user has no inline

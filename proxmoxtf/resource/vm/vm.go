@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -154,7 +155,8 @@ const (
 	maxResourceVirtualEnvironmentVMSerialDevices = 4
 	// see /usr/share/perl5/PVE/QemuServer/PCI.pm.
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 16
-	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
+	// see /usr/share/perl5/PVE/QemuServer/USB.pm: "our $MAX_USB_DEVICES = 14".
+	maxResourceVirtualEnvironmentVMHostUSBDevices = 14
 	// hardcoded /usr/share/perl5/PVE/QemuServer/Memory.pm: "our $MAX_NUMA = 8".
 	maxResourceVirtualEnvironmentVMNUMADevices  = 8
 	maxResourceVirtualEnvironmentVirtiofsShares = 8
@@ -424,7 +426,7 @@ func VM() *schema.Resource {
 						MaxItems:    1,
 						MinItems:    0,
 						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
+							Schema: AddWaitForIPFilterSchema(map[string]*schema.Schema{
 								mkAgentWaitForIPDisabled: {
 									Type:        schema.TypeBool,
 									Description: "Disable waiting for the agent to report an IP address; set to true to skip the lookup entirely",
@@ -433,17 +435,17 @@ func VM() *schema.Resource {
 								},
 								mkAgentWaitForIPIPv4: {
 									Type:        schema.TypeBool,
-									Description: "Wait for at least one IPv4 address (non-loopback, non-link-local)",
+									Description: "Wait for at least one IPv4 address (non-loopback, non-link-local unless allowed by `cidrs`)",
 									Optional:    true,
 									Default:     false,
 								},
 								mkAgentWaitForIPIPv6: {
 									Type:        schema.TypeBool,
-									Description: "Wait for at least one IPv6 address (non-loopback, non-link-local)",
+									Description: "Wait for at least one IPv6 address (non-loopback, non-link-local unless allowed by `cidrs`)",
 									Optional:    true,
 									Default:     false,
 								},
-							},
+							}),
 						},
 					},
 				},
@@ -713,11 +715,10 @@ func VM() *schema.Resource {
 						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 16)),
 					},
 					mkCPUType: {
-						Type:             schema.TypeString,
-						Description:      "The emulated CPU type",
-						Optional:         true,
-						Default:          dvCPUType,
-						ValidateDiagFunc: CPUTypeValidator(),
+						Type:        schema.TypeString,
+						Description: "The emulated CPU type",
+						Optional:    true,
+						Default:     dvCPUType,
 					},
 					mkCPUUnits: {
 						Type:        schema.TypeInt,
@@ -1131,6 +1132,7 @@ func VM() *schema.Resource {
 					},
 				},
 			},
+			MaxItems: maxResourceVirtualEnvironmentVMHostUSBDevices,
 		},
 		mkHotplug: {
 			Type: schema.TypeString,
@@ -1499,10 +1501,12 @@ func VM() *schema.Resource {
 						Default:     dvStartupUpDelay,
 					},
 					mkStartupDownDelay: {
-						Type:        schema.TypeInt,
-						Description: "A non-negative number defining the delay in seconds before the next VM is shut down",
-						Optional:    true,
-						Default:     dvStartupDownDelay,
+						Type: schema.TypeInt,
+						Description: "A non-negative number defining the shutdown timeout in seconds. When the node stops all guests " +
+							"(e.g. on host shutdown), Proxmox VE waits this long for the VM to shut down " +
+							"before stopping it. It is also the default timeout for a shutdown of this VM that doesn't set one",
+						Optional: true,
+						Default:  dvStartupDownDelay,
 					},
 				},
 			},
@@ -1768,6 +1772,7 @@ func VM() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			customdiff.All(network.CustomizeDiff()...),
 			initializationInterfaceCollisionDiff,
+			WaitForIPFilterDiff(mkAgent+".0."+mkAgentWaitForIP),
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
@@ -1955,6 +1960,20 @@ func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, default
 	}
 
 	return defaultValue, nil
+}
+
+// findExistingCDROM returns the first (sorted) interface holding a non-cloud-init CD-ROM, or "" if there is none.
+func findExistingCDROM(vmConfig *vms.GetResponseData, vmID int) string {
+	devs := vmConfig.StorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
+		return device.Media != nil && *device.Media == "cdrom" && !device.IsCloudInitDrive(vmID)
+	})
+
+	ifaces := slices.Sorted(maps.Keys(devs))
+	if len(ifaces) == 0 {
+		return ""
+	}
+
+	return ifaces[0]
 }
 
 // Return a pointer to the storage device configuration based on a name. The device name is assumed to be a
@@ -2830,12 +2849,12 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	}
 
 	hookScript := d.Get(mkHookScriptFileID).(string)
-	currentHookScript := vmConfig.HookScript
 
+	// Writing hookscript requires a root@pam password session (API tokens get HTTP 500): keep the inherited one.
 	if len(hookScript) > 0 {
-		updateBody.HookScript = &hookScript
-	} else if currentHookScript != nil {
-		del = append(del, "hookscript")
+		if vmConfig.HookScript == nil || *vmConfig.HookScript != hookScript {
+			updateBody.HookScript = &hookScript
+		}
 	}
 
 	if len(watchdog) > 0 && watchdog[0] != nil {
@@ -4410,6 +4429,11 @@ func vmReadCustom(
 	nodeName := d.Get(mkNodeName).(string)
 	clone := d.Get(mkClone).([]any)
 
+	// The importer sets only the ID and node name; vm_id is written at the end of the first read.
+	//nolint:staticcheck
+	_, hasVMID := d.GetOkExists(mkVMID)
+	importing := !hasVMID
+
 	// Compare the agent configuration to the one stored in the state.
 	currentAgent := d.Get(mkAgent).([]any)
 
@@ -4523,7 +4547,7 @@ func vmReadCustom(
 					err := d.Set(mkAMDSEV, []any{amdsev})
 					diags = append(diags, diag.FromErr(err)...)
 				}
-			} else if len(currentAMDSEV) > 0 ||
+			} else if importing || len(currentAMDSEV) > 0 ||
 				amdsev[mkAMDSEVType] != dvAMDSEVType ||
 				amdsev[mkAMDSEVAllowSMT] != dvAMDSEVAllowSMT ||
 				amdsev[mkAMDSEVKernelHashes] != dvAMDSEVKernelHashes ||
@@ -4588,6 +4612,10 @@ func vmReadCustom(
 	if len(currentCDROM) > 0 && currentCDROM[0] != nil {
 		currentBlock := currentCDROM[0].(map[string]any)
 		currentInterface = currentBlock[mkCDROMInterface].(string)
+	} else if importing {
+		if iface := findExistingCDROM(vmConfig, vmID); iface != "" {
+			currentInterface = iface
+		}
 	}
 
 	cdromIDEDevice := getStorageDevice(vmConfig, currentInterface)
@@ -4765,6 +4793,9 @@ func vmReadCustom(
 
 		if vmConfig.EFIDisk.Format != nil {
 			efiDisk[mkEFIDiskFileFormat] = *vmConfig.EFIDisk.Format
+		} else if f, ok := disk.InferFormatFromVolume(strings.Join(fileIDParts[1:], ":")); ok {
+			// Same inference as for regular disks: a bare volume name is block storage, raw.
+			efiDisk[mkEFIDiskFileFormat] = f
 		} else {
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
@@ -4804,7 +4835,7 @@ func vmReadCustom(
 				err := d.Set(mkEFIDisk, []any{efiDisk})
 				diags = append(diags, diag.FromErr(err)...)
 			}
-		} else if len(currentEfiDisk) > 0 ||
+		} else if importing || len(currentEfiDisk) > 0 ||
 			efiDisk[mkEFIDiskDatastoreID] != dvEFIDiskDatastoreID ||
 			efiDisk[mkEFIDiskType] != dvEFIDiskType ||
 			efiDisk[mkEFIDiskPreEnrolledKeys] != dvEFIDiskPreEnrolledKeys ||
@@ -4833,7 +4864,7 @@ func vmReadCustom(
 				err := d.Set(mkTPMState, []any{tpmState})
 				diags = append(diags, diag.FromErr(err)...)
 			}
-		} else if len(currentTPMState) > 0 ||
+		} else if importing || len(currentTPMState) > 0 ||
 			tpmState[mkTPMStateDatastoreID] != dvTPMStateDatastoreID ||
 			tpmState[mkTPMStateVersion] != dvTPMStateVersion {
 			err := d.Set(mkTPMState, []any{tpmState})
@@ -4935,8 +4966,7 @@ func vmReadCustom(
 	currentUSBList := d.Get(mkHostUSB).([]any)
 	usbMap := map[string]any{}
 
-	usbDevices := getUSBInfo(vmConfig, d)
-	for pi, pp := range usbDevices {
+	for pi, pp := range vmConfig.USBDevices {
 		if (pp == nil) || (pp.HostDevice == nil && pp.Mapping == nil) {
 			continue
 		}
@@ -6340,8 +6370,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		rebootRequired = true
 	}
 
-	// Prepare the new agent configuration.
-	if d.HasChange(mkAgent) {
+	// Only these keys are stored by PVE; timeout and wait_for_ip are provider-side and must not trigger a reboot.
+	if d.HasChanges(
+		mkAgent+".0."+mkAgentEnabled,
+		mkAgent+".0."+mkAgentTrim,
+		mkAgent+".0."+mkAgentType,
+	) {
 		agentBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
@@ -6428,6 +6462,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 		old, _ := d.GetChange(mkCDROM)
 
+		// The block was removed from the configuration: detach the drive instead of rewriting it
+		// with the default file ID, which would pass the host's physical CD-ROM through.
+		cdromRemoved := len(d.Get(mkCDROM).([]any)) == 0
+
 		if len(old.([]any)) > 0 && old.([]any)[0] != nil {
 			oldList := old.([]any)[0]
 			oldBlock := oldList.(map[string]any)
@@ -6438,21 +6476,23 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 				oldInterface = dvCDROMInterface
 			}
 
-			if oldInterface != cdromInterface {
+			if cdromRemoved || oldInterface != cdromInterface {
 				del = append(del, oldInterface)
 			}
 		}
 
-		if cdromFileID == "" {
-			cdromFileID = "cdrom"
+		if !cdromRemoved {
+			if cdromFileID == "" {
+				cdromFileID = "cdrom"
+			}
+
+			cdromMedia := "cdrom"
+
+			updateBody.AddCustomStorageDevice(cdromInterface, vms.CustomStorageDevice{
+				FileVolume: cdromFileID,
+				Media:      &cdromMedia,
+			})
 		}
-
-		cdromMedia := "cdrom"
-
-		updateBody.AddCustomStorageDevice(cdromInterface, vms.CustomStorageDevice{
-			FileVolume: cdromFileID,
-			Media:      &cdromMedia,
-		})
 	}
 
 	// Prepare the new CPU configuration.
@@ -7654,17 +7694,6 @@ func getNUMAInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*
 	return numaDevices
 }
 
-func getUSBInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomUSBDevice {
-	usbDevices := map[string]*vms.CustomUSBDevice{}
-
-	usbDevices["usb0"] = resp.USBDevice0
-	usbDevices["usb1"] = resp.USBDevice1
-	usbDevices["usb2"] = resp.USBDevice2
-	usbDevices["usb3"] = resp.USBDevice3
-
-	return usbDevices
-}
-
 func parseImportIDWithNodeName(id string) (string, string, error) {
 	nodeName, id, found := strings.Cut(id, "/")
 
@@ -7724,7 +7753,7 @@ func getAgentWaitForIPConfig(d *schema.ResourceData) *vms.WaitForIPConfig {
 }
 
 // agentWaitForIPConfigFromBlock translates a wait_for_ip block into a WaitForIPConfig.
-// disabled=true disables the agent IP wait entirely (Skip); otherwise nil means "wait for any".
+// disabled=true disables the agent IP wait entirely (Skip); an empty config waits for any address.
 // The switch defaults to false (do not skip) so that state written before the switch existed —
 // where the key reads back as its zero value — keeps querying the agent (see #2928).
 func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
@@ -7732,17 +7761,11 @@ func agentWaitForIPConfigFromBlock(block map[string]any) *vms.WaitForIPConfig {
 		return &vms.WaitForIPConfig{Skip: true}
 	}
 
-	config := &vms.WaitForIPConfig{
-		IPv4: getBoolFromBlock(block, mkAgentWaitForIPIPv4),
-		IPv6: getBoolFromBlock(block, mkAgentWaitForIPIPv6),
+	return &vms.WaitForIPConfig{
+		IPv4:   getBoolFromBlock(block, mkAgentWaitForIPIPv4),
+		IPv6:   getBoolFromBlock(block, mkAgentWaitForIPIPv6),
+		Filter: WaitForIPFilterFromBlock(block),
 	}
-
-	// if both are false, return nil for backward compatibility (wait for any)
-	if !config.IPv4 && !config.IPv6 {
-		return nil
-	}
-
-	return config
 }
 
 func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (string, error) {

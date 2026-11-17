@@ -291,7 +291,7 @@ func (m *backupJobModel) fillCommonFields(
 		}
 	}
 
-	// ExcludePath: convert types.List to comma-separated string
+	// ExcludePath: PVE takes an array, sent as repeated form keys
 	if !m.ExcludePath.IsNull() && !m.ExcludePath.IsUnknown() {
 		var paths []string
 
@@ -299,8 +299,7 @@ func (m *backupJobModel) fillCommonFields(
 		diags.Append(d...)
 
 		if !d.HasError() && len(paths) > 0 {
-			excludeStr := strings.Join(paths, ",")
-			common.ExcludePath = &excludeStr
+			common.ExcludePath = paths
 		}
 	}
 

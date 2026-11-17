@@ -82,3 +82,31 @@ func TestPBSStorageModel_FromAPI_EncryptionKeyFingerprint(t *testing.T) {
 			"EncryptionKeyFingerprint should be null when no encryption key, got: %s", model.EncryptionKeyFingerprint)
 	})
 }
+
+func TestPBSStorageModel_FromAPI_ClearsFingerprintWhenOmitted(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	server := "pbs.example.com"
+	datastore := "backup1"
+	username := "user@pbs"
+	storageID := "pbs-test"
+
+	model := &PBSStorageModel{
+		modelBase: modelBase{
+			ID:           types.StringValue(storageID),
+			Nodes:        types.SetNull(types.StringType),
+			ContentTypes: types.SetNull(types.StringType),
+		},
+		Fingerprint: types.StringValue("old-fingerprint"),
+	}
+
+	err := model.fromAPI(ctx, &storage.DatastoreGetResponseData{
+		ID:        &storageID,
+		Server:    &server,
+		Datastore: &datastore,
+		Username:  &username,
+	})
+	require.NoError(t, err)
+	require.True(t, model.Fingerprint.IsNull())
+}

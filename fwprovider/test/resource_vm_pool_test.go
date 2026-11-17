@@ -57,7 +57,7 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 							started   = false
 							name      = "test-pool-vm"
 							pool_id   = proxmox_virtual_environment_pool.test_pool1.pool_id
-						}`, WithRootUser()),
+						}`, WithRootPAMAuth()),
 					Check: resource.ComposeTestCheckFunc(
 						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_pool", map[string]string{
 							"pool_id": poolName1,
@@ -102,7 +102,7 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 							started   = false
 							name      = "test-pool-change-vm"
 							pool_id   = proxmox_virtual_environment_pool.test_pool1.pool_id
-						}`, WithRootUser()),
+						}`, WithRootPAMAuth()),
 					Check: resource.ComposeTestCheckFunc(
 						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_pool_change", map[string]string{
 							"pool_id": poolName1,
@@ -127,7 +127,7 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 							started   = false
 							name      = "test-pool-change-vm"
 							pool_id   = proxmox_virtual_environment_pool.test_pool2.pool_id
-						}`, WithRootUser()),
+						}`, WithRootPAMAuth()),
 					Check: resource.ComposeTestCheckFunc(
 						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_pool_change", map[string]string{
 							"pool_id": poolName2,
@@ -143,7 +143,7 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 						node_name = "{{.NodeName}}"
 						started   = false
 						name      = "test-no-pool-vm"
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm_no_pool", map[string]string{
 						"pool_id": "",
@@ -178,7 +178,7 @@ func TestAccResourceVMPoolDetection(t *testing.T) {
 							started   = false
 							name      = "test-drift-vm"
 							pool_id   = proxmox_virtual_environment_pool.test_pool1.pool_id
-						}`, WithRootUser()),
+						}`, WithRootPAMAuth()),
 					Check: resource.ComposeTestCheckFunc(
 						ResourceAttributes("proxmox_virtual_environment_vm.test_vm_drift", map[string]string{
 							"pool_id": poolName1,
@@ -244,7 +244,7 @@ func TestAccResourceVMPoolDetectionLegacy(t *testing.T) {
 						started   = false
 						name      = "test-pool-legacy-vm"
 						pool_id   = proxmox_virtual_environment_pool.test_pool1.pool_id
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm_pool_legacy", map[string]string{
 						"pool_id": poolName1,
@@ -306,7 +306,7 @@ func TestAccResourceVMPoolDetectionManual(t *testing.T) {
 						started   = false
 						name      = "test-manual-vm"
 						pool_id   = proxmox_virtual_environment_pool.test_pool1.pool_id
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm_manual", map[string]string{
 						"pool_id": poolName1,
@@ -331,7 +331,7 @@ func TestAccResourceVMPoolDetectionManual(t *testing.T) {
 						started   = false
 						name      = "test-manual-vm"
 						pool_id   = proxmox_virtual_environment_pool.test_pool2.pool_id
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm_manual", map[string]string{
 						"pool_id": poolName2,
@@ -380,7 +380,7 @@ func TestAccResourceVMPoolMembership(t *testing.T) {
 					resource "proxmox_virtual_environment_pool_membership" "test" {
 						vm_id   = proxmox_virtual_environment_vm.test.id
 						pool_id = proxmox_virtual_environment_pool.test.pool_id
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_pool_membership.test", map[string]string{
 						"pool_id": poolName,
@@ -402,7 +402,7 @@ func TestAccResourceVMPoolMembership(t *testing.T) {
 					resource "proxmox_virtual_environment_pool_membership" "test" {
 						vm_id   = proxmox_virtual_environment_vm.test.id
 						pool_id = proxmox_virtual_environment_pool.test.pool_id
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_pool_membership.test", map[string]string{
 						"pool_id": poolName,
@@ -444,7 +444,7 @@ func TestAccResourceVMPoolMembershipLegacy(t *testing.T) {
 					resource "proxmox_virtual_environment_pool_membership" "test" {
 						vm_id   = proxmox_virtual_environment_vm.test.id
 						pool_id = proxmox_virtual_environment_pool.test.pool_id
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_pool_membership.test", map[string]string{
 						"pool_id": poolName,
@@ -474,7 +474,7 @@ func TestAccResourceVMPoolMembershipLegacy(t *testing.T) {
 					resource "proxmox_virtual_environment_pool_membership" "test" {
 						vm_id   = proxmox_virtual_environment_vm.test.id
 						pool_id = proxmox_virtual_environment_pool.test.pool_id
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_pool_membership.test", map[string]string{
 						"pool_id": poolName,
@@ -528,7 +528,7 @@ func TestAccResourceVMPoolMembershipWithExplicitPoolID(t *testing.T) {
 						name      = "explicit-pool-vm"
 						started   = false
 						pool_id   = proxmox_virtual_environment_pool.test1.pool_id
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test", map[string]string{
 						"pool_id": poolName1,
@@ -550,7 +550,7 @@ func TestAccResourceVMPoolMembershipWithExplicitPoolID(t *testing.T) {
 						name      = "explicit-pool-vm"
 						started   = false
 						pool_id   = proxmox_virtual_environment_pool.test2.pool_id
-					}`, WithRootUser()),
+					}`, WithRootPAMAuth()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test", map[string]string{
 						"pool_id": poolName2,

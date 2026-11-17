@@ -68,8 +68,8 @@ func (m *ZFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 		return err
 	}
 
-	if datastore.ZFSPool != nil {
-		m.ZFSPool = types.StringValue(*datastore.ZFSPool)
+	if datastore.Pool != nil {
+		m.ZFSPool = types.StringValue(*datastore.Pool)
 	}
 
 	if datastore.ThinProvision != nil {

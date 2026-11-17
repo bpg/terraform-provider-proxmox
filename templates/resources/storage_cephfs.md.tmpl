@@ -1,0 +1,34 @@
+---
+layout: page
+title: {{.Name}}
+parent: Resources
+subcategory: Virtual Environment
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}}: {{.Name}}
+
+~> **Experimental.** Schema and behavior may change in future releases. Pin the provider version if stability matters.
+
+{{ .Description | trimspace }}
+
+Proxmox VE mounts an enabled storage on the node where it's created, and its status daemon keeps the storage mounted on every node the storage is available on. Mount options (`options`) take effect when Proxmox VE next mounts it.
+
+~> Destroying or disabling the storage doesn't unmount it: the mount stays until it's unmounted with `umount /mnt/pve/<id>` on each node, or the node reboots. Changing `fs_name`, `subdir` or `fuse` replaces the storage, which likewise doesn't unmount the old one.
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ codefile "terraform" .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}
+{{- if .HasImport }}
+
+## Import
+
+Import is supported using the following syntax:
+
+{{ codefile "shell" .ImportFile }}
+{{- end }}
