@@ -339,6 +339,13 @@ func (r *haruleResource) Update(ctx context.Context, req resource.UpdateRequest,
 		deleteFields = append(deleteFields, "comment")
 	}
 
+	// PVE ignores disable=0 on update, so clearing the flag needs delete=disable.
+	if !data.Disable.ValueBool() && state.Disable.ValueBool() {
+		updateRequest.Disable = nil
+
+		deleteFields = append(deleteFields, "disable")
+	}
+
 	switch data.Type.ValueString() {
 	case RuleTypeNodeAffinity:
 		nodesStr := r.nodesToString(data.Nodes)
