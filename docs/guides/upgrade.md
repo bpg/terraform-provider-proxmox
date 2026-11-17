@@ -19,7 +19,7 @@ This guide documents breaking changes across provider versions and the recommend
      required_providers {
        proxmox = {
          source  = "bpg/proxmox"
-         version = "~> 0.122.0" # x-release-please-version
+         version = "~> 0.123.0" # x-release-please-version
        }
      }
    }
