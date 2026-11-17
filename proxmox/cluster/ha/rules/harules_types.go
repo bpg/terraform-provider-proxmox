@@ -33,7 +33,7 @@ type HARuleDataBase struct {
 	// The rule's comment, if defined.
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
 	// Whether the HA rule is disabled.
-	Disable types.CustomBool `json:"disable,omitempty" url:"disable,int"`
+	Disable *types.CustomBool `json:"disable,omitempty" url:"disable,omitempty,int"`
 	// The HA rule type: node-affinity or resource-affinity.
 	Type string `json:"type" url:"type"`
 	// A comma-separated list of HA resource IDs (e.g. vm:100,ct:101).
