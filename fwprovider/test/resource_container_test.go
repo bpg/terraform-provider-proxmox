@@ -1467,6 +1467,82 @@ func TestAccResourceContainerMountPoint(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerMountPointOmittedSize checks that a mount point without size settles after apply, both when
+// the volume is allocated with "<datastore>:<size>" and when size is removed from the configuration.
+//
+// See https://github.com/bpg/terraform-provider-proxmox/issues/3300.
+func TestAccResourceContainerMountPointOmittedSize(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := func(mountPoints string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+		    node_name = "{{.NodeName}}"
+			vm_id     = {{ .TestContainerID }}
+			started   = false
+		    disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 1
+			}` + mountPoints + `
+		    initialization {
+		  		hostname = "test-mp-size"
+		    }
+		    operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+		    }
+		}`)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config(`
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}:1"
+						path   = "/mnt/a"
+				    }
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}"
+						size   = "1G"
+						path   = "/mnt/b"
+				    }`),
+				Check: ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
+					"mount_point.0.size": "1G",
+					"mount_point.1.size": "1G",
+				}),
+			},
+			{
+				Config: config(`
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}:1"
+						path   = "/mnt/a"
+				    }
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}"
+						path   = "/mnt/b"
+				    }`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_container.test_container",
+							plancheck.ResourceActionNoop),
+					},
+				},
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerMountPointRunning(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
