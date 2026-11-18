@@ -54,6 +54,7 @@ type bootstrapModel struct {
 	NetworkConfig types.String `tfsdk:"network_config"`
 	VendorData    types.String `tfsdk:"vendor_data"`
 	Timeout       types.Int64  `tfsdk:"timeout"`
+	SeedFileID    types.String `tfsdk:"seed_file_id"`
 	IPv4Addresses types.Map    `tfsdk:"ipv4_addresses"`
 }
 
@@ -97,22 +98,27 @@ func (r *bootstrapResource) Schema(
 			"again) and an empty CD-ROM (`file_id = \"none\"`). On create this resource " +
 			"builds the seed ISO, uploads it as `file_name` to the datastore on the node the VM is on, attaches it, starts the VM, waits for " +
 			"cloud-init to finish, then ejects and deletes the ISO. Nothing is left on the node afterwards, so the VM can be " +
-			"migrated freely.\n\n" +
+			"migrated freely. The resource never overwrites or deletes a file it didn't upload: if `file_name` already " +
+			"exists on the datastore, creation fails.\n\n" +
 			"Completion is read from `" + cloudInitResultPath + "` through the QEMU guest agent, which must be installed in " +
 			"the guest (installing it from the same cloud-init config works). The wait survives guest reboots such as " +
 			"`package_reboot_if_required`. If cloud-init reports errors or the wait times out, creation fails, the ISO " +
-			"stays attached for debugging and the resource is tainted. cloud-init only runs on a VM's first boot, so " +
-			"replace the VM to bootstrap it again. Applying again while the VM is running, e.g. after a failed or interrupted " +
-			"apply, only removes the ISO and fails. Don't stop the VM and apply again: booting it a second time does not " +
-			"run cloud-init's setup again, so the bootstrap could report success. Destroying the resource also removes " +
-			"the ISO.\n\n" +
+			"stays attached for debugging (`seed_file_id` names it) and the resource is tainted. While a local ISO is " +
+			"attached, the VM can't be migrated. cloud-init applies the seed only on a VM's first boot, so replace the VM " +
+			"to bootstrap it again. Applying again without replacing the VM removes the ISO and then fails, because the VM " +
+			"is already running. Don't stop the VM and apply again: booting it a second time does not run cloud-init's " +
+			"setup again, so the bootstrap could report success. If only removing the ISO fails after cloud-init finished, " +
+			"the VM is bootstrapped: don't replace it or apply again, but eject and delete the ISO by hand, then run " +
+			"`untaint` on this resource. Destroying the resource deletes only an ISO it uploaded and left behind; after a " +
+			"successful bootstrap it deletes nothing.\n\n" +
 			"cloud-init only reports the errors of its last boot. An error before a reboot it triggers itself (e.g. " +
 			"`package_reboot_if_required` after a failed package install) is not reported; check " +
 			"`/var/log/cloud-init.log` in the guest if a bootstrapped VM looks incomplete.\n\n" +
 			"After cloud-init finishes, creation waits up to 2 minutes for every network device " +
 			"to get an IPv4 address, then warns if one still has none.\n\n" +
-			"Use `lifecycle.replace_triggered_by` on the VM so a replaced VM is bootstrapped again. If the VM is deleted " +
-			"outside Terraform, the bootstrap is removed from state on refresh, so it is created again with the VM. " +
+			"Use `lifecycle.replace_triggered_by` on the VM's `id` so a replaced VM is bootstrapped again. If the VM is " +
+			"deleted outside Terraform, the bootstrap is removed from state on refresh, so it is created again with the VM. " +
+			"A seed ISO that a failed bootstrap left on the datastore is not deleted then; refresh warns about it. " +
 			"Changing any attribute but `vm_id` later only updates state and does not affect the running VM.\n\n" +
 			"Seed contents are stored in Terraform state, inside the guest under `/var/lib/cloud`, and in provider debug " +
 			"logs (`TF_LOG=DEBUG` logs the uploaded ISO). While the ISO is on the datastore (during the bootstrap, or " +
@@ -133,11 +139,14 @@ func (r *bootstrapResource) Schema(
 				Required:    true,
 			},
 			"file_name": schema.StringAttribute{
-				Description: "The file name of the temporary seed ISO on `datastore_id`. It must end in `.iso` and use " +
-					"only letters, digits, `.`, `_` and `-` (Proxmox would rename other characters). Use a name no other " +
-					"ISO on the datastore has (across the cluster if it is shared): an existing file with this name is " +
-					"replaced when the bootstrap runs and deleted afterwards, even if another VM has it attached.",
-				Required: true,
+				Description: "The file name of the temporary seed ISO on `datastore_id`. Defaults to " +
+					"`cloudinit-bootstrap-<vm_id>.iso`. It must end in `.iso` and use only letters, digits, `.`, `_` and `-` " +
+					"(Proxmox would rename other characters). Creation fails if a file with this name already exists on the " +
+					"datastore (across the cluster if it is shared). On storage shared between clusters, VM IDs can repeat, " +
+					"so include something cluster-specific in the name.",
+				Optional:      true,
+				Computed:      true,
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(255),
 					stringvalidator.RegexMatches(isoFileNameRE, isoFileNameMsg),
@@ -161,6 +170,12 @@ func (r *bootstrapResource) Schema(
 				Computed:    true,
 				Default:     int64default.StaticInt64(1800),
 				Validators:  []validator.Int64{int64validator.AtLeast(1)},
+			},
+			"seed_file_id": schema.StringAttribute{
+				Description: "The volume ID of the seed ISO this resource uploaded, while it is still on the datastore " +
+					"(after a failed or interrupted bootstrap). Empty otherwise. Destroying the resource deletes only this file.",
+				Computed:      true,
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"ipv4_addresses": schema.MapAttribute{
 				Description: "IPv4 addresses of the VM's network devices reported by the guest agent, keyed by " +
@@ -205,6 +220,25 @@ func seedVolumeID(datastore, fileName string) string {
 	return datastore + ":" + storage.ContentTypeISO + "/" + fileName
 }
 
+func defaultFileName(vmID int64) string {
+	return fmt.Sprintf("cloudinit-bootstrap-%d.iso", vmID)
+}
+
+// seedCleanupError means cloud-init finished, so the VM is bootstrapped, but removing the seed ISO failed.
+type seedCleanupError struct {
+	vmID               int64
+	node, iface, volID string
+	err                error
+}
+
+func (e *seedCleanupError) Error() string {
+	return fmt.Sprintf("cloud-init finished and VM %d is bootstrapped; only removing %s failed: %v. "+
+		"Don't replace the VM and don't apply yet: on node %s eject it (qm set %d --%s none,media=cdrom) and delete it "+
+		"(pvesm free %s), then run untaint on this resource.", e.vmID, e.volID, e.err, e.node, e.vmID, e.iface, e.volID)
+}
+
+func (e *seedCleanupError) Unwrap() error { return e.err }
+
 func (r *bootstrapResource) Create(
 	ctx context.Context,
 	req resource.CreateRequest,
@@ -221,13 +255,26 @@ func (r *bootstrapResource) Create(
 	vmID := plan.VMID.ValueInt64()
 	plan.ID = types.StringValue(fmt.Sprintf("%d", vmID))
 
+	if plan.FileName.IsUnknown() {
+		plan.FileName = types.StringValue(defaultFileName(vmID))
+	}
+
 	ips, complete, err := r.bootstrap(ctx, &plan)
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Bootstrap VM %d", vmID), err.Error())
+		summary := fmt.Sprintf("Unable to Bootstrap VM %d", vmID)
 
-		// A (tainted) state makes destroy or the next replacement remove any seed ISO left attached.
-		plan.IPv4Addresses = types.MapValueMust(ipListType(), map[string]attr.Value{})
-		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		if _, ok := errors.AsType[*seedCleanupError](err); ok {
+			summary = fmt.Sprintf("Unable to Remove Seed ISO of VM %d", vmID)
+		}
+
+		resp.Diagnostics.AddError(summary, err.Error())
+
+		// seed_file_id is known once an ISO may have been uploaded. Only then is a (tainted) state stored, so destroy or
+		// the next replacement removes exactly that file; earlier failures leave nothing behind and store nothing.
+		if !plan.SeedFileID.IsUnknown() {
+			plan.IPv4Addresses = types.MapValueMust(ipListType(), map[string]attr.Value{})
+			resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		}
 
 		return
 	}
@@ -274,14 +321,29 @@ func (r *bootstrapResource) bootstrap(ctx context.Context, m *bootstrapModel) (t
 		return none, false, err
 	}
 
-	// Remove what an earlier, failed or interrupted attempt left behind.
-	if err := r.removeSeedISO(ctx, vm, datastoreClient, iface, datastore, fileName); err != nil {
+	if status.Status == "running" {
+		return none, false, fmt.Errorf("VM %d is already running and cloud-init applies the seed only on a VM's "+
+			"first boot: replace the VM to bootstrap it again", vmID)
+	}
+
+	volID := seedVolumeID(datastore, fileName)
+
+	// Checked once, outside the upload's retries: PVE overwrites on upload, so this is the only guard against
+	// replacing a file this resource didn't upload.
+	exists, err := isoListed(ctx, datastoreClient, volID)
+	if errors.Is(err, api.ErrResourceDoesNotExist) {
+		return none, false, fmt.Errorf("datastore %q not found on node %s", datastore, nodeName)
+	}
+
+	if err != nil {
 		return none, false, err
 	}
 
-	if status.Status == "running" {
-		return none, false, fmt.Errorf("VM %d is already running and cloud-init only runs on first boot: "+
-			"replace the VM to bootstrap it again", vmID)
+	if exists {
+		return none, false, fmt.Errorf("%s already exists in the datastore and this resource didn't upload it, so it "+
+			"was left alone. If it's a leftover seed ISO (it may hold secrets), eject it from any VM using it and delete "+
+			"it on node %s (pvesm free %s), then apply again; otherwise set file_name to an unused name",
+			volID, nodeName, volID)
 	}
 
 	cfg, err := vm.GetVM(ctx)
@@ -296,7 +358,10 @@ func (r *bootstrapResource) bootstrap(ctx context.Context, m *bootstrapModel) (t
 
 	files := seedFiles(vmName, m.UserData.ValueString(), m.MetaData.ValueString(),
 		m.NetworkConfig.ValueString(), m.VendorData.ValueString())
-	volID := seedVolumeID(datastore, fileName)
+
+	// Recorded before the upload: a failed or cancelled upload can still leave the file, and destroy or the next
+	// replacement must remove it.
+	m.SeedFileID = types.StringValue(volID)
 
 	if err := uploadISO(ctx, r.client, datastoreClient, files, fileName); err != nil {
 		return none, false, err
@@ -311,61 +376,73 @@ func (r *bootstrapResource) bootstrap(ctx context.Context, m *bootstrapModel) (t
 	}
 
 	if err := waitForCloudInit(ctx, vm, time.Duration(m.Timeout.ValueInt64())*time.Second); err != nil {
-		return none, false, fmt.Errorf("%w; the seed ISO is left attached for debugging. cloud-init only runs on "+
-			"first boot, so replace the VM to bootstrap it again", err)
+		return none, false, fmt.Errorf("%w; the seed ISO is left attached for debugging. cloud-init applies the seed "+
+			"only on a VM's first boot, so replace the VM to bootstrap it again", err)
 	}
 
-	if err := r.removeSeedISO(ctx, vm, datastoreClient, iface, datastore, fileName); err != nil {
-		return none, false, err
+	if err := r.removeSeedISO(ctx, vm, datastoreClient, iface, volID); err != nil {
+		return none, false, &seedCleanupError{vmID: vmID, node: nodeName, iface: iface, volID: volID, err: err}
 	}
+
+	m.SeedFileID = types.StringNull()
 
 	return waitForIPv4Addresses(ctx, vm)
 }
 
-// removeSeedISO ejects the seed ISO if the drive holds it and deletes it from the datastore. It only needs the
-// configured name, not what an earlier attempt recorded, so it also cleans up after interrupted or failed runs.
+// isoListed reports whether volID is in the datastore's ISO listing. A missing datastore is returned as
+// api.ErrResourceDoesNotExist.
+func isoListed(ctx context.Context, datastoreClient *storage.Client, volID string) (bool, error) {
+	contentType := storage.ContentTypeISO
+
+	files, err := datastoreClient.ListDatastoreFiles(ctx, &contentType)
+	if err != nil {
+		return false, fmt.Errorf("unable to list ISOs for %s: %w", volID, err)
+	}
+
+	for _, f := range files {
+		if f.VolumeID == volID {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// removeSeedISO ejects volID if the drive holds it, then deletes it if it's listed as an ISO, so it never touches
+// anything but the seed ISO this resource recorded.
 func (r *bootstrapResource) removeSeedISO(
 	ctx context.Context,
 	vm *vms.Client,
 	datastoreClient *storage.Client,
-	iface, datastore, fileName string,
+	iface, volID string,
 ) error {
-	volID := seedVolumeID(datastore, fileName)
-
 	cfg, err := vm.GetVM(ctx)
 	if err != nil {
 		return err
 	}
 
+	// Eject first: PVE deletes an ISO even while a VM has it attached, and that VM then can't start.
 	if dev, ok := cfg.StorageDevices[iface]; ok && dev != nil && dev.FileVolume == volID {
 		if err := setCDROM(ctx, vm, iface, "none"); err != nil {
 			return err
 		}
 	}
 
-	contentType := storage.ContentTypeISO
-
-	// Listing first, because the file is usually already gone (before an upload, or destroying after a successful
-	// bootstrap), and a delete of a missing file fails as a task rather than with a not-found error.
-	files, err := datastoreClient.ListDatastoreFiles(ctx, &contentType)
+	// Listing first, because the file may already be gone (a failed upload, or a manual cleanup), and a delete of a
+	// missing file fails as a task rather than with a not-found error.
+	listed, err := isoListed(ctx, datastoreClient, volID)
 	if errors.Is(err, api.ErrResourceDoesNotExist) {
-		// No such datastore (e.g. a typo in a tainted state), so there is nothing to clean up and destroy must not block.
+		// The datastore is gone, so there is nothing left to delete and destroy must not block.
 		return nil
 	}
 
-	if err != nil {
-		return fmt.Errorf("unable to list ISOs on %s: %w", datastore, err)
+	if err != nil || !listed {
+		return err
 	}
 
-	for _, f := range files {
-		if f.VolumeID != volID {
-			continue
-		}
-
-		err := datastoreClient.DeleteDatastoreFile(ctx, f.VolumeID).Err()
-		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
-			return fmt.Errorf("unable to delete %s: %w", f.VolumeID, err)
-		}
+	err = datastoreClient.DeleteDatastoreFile(ctx, volID).Err()
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
+		return fmt.Errorf("unable to delete %s: %w", volID, err)
 	}
 
 	return nil
@@ -532,6 +609,14 @@ func (r *bootstrapResource) Read(
 	case errors.Is(err, cluster.ErrVMDoesNotExist):
 		// The VM was deleted outside Terraform. It is planned as a create, which replace_triggered_by doesn't catch,
 		// so the bootstrap has to be created again too.
+		if volID := state.SeedFileID.ValueString(); volID != "" {
+			// PVE keeps ISOs when it destroys a VM, and without this state nothing deletes it later.
+			resp.Diagnostics.AddWarning("Seed ISO Left on Datastore",
+				fmt.Sprintf("VM %d no longer exists, but the seed ISO %s that a failed bootstrap left may still be on the "+
+					"datastore (it may hold secrets). Delete it with pvesm free %s on a node that has it.",
+					state.VMID.ValueInt64(), volID, volID))
+		}
+
 		resp.State.RemoveResource(ctx)
 
 		return
@@ -590,8 +675,9 @@ func (r *bootstrapResource) Update(
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-// Delete removes the seed ISO a failed bootstrap left; after a successful one there is nothing to undo.
-// It runs before the VM is destroyed, because this resource depends on the VM.
+// Delete removes the seed ISO a failed bootstrap left (seed_file_id); after a successful one there is nothing to undo.
+// It runs before the VM is destroyed, because this resource depends on the VM. seed_file_id is state, not private
+// state, because Terraform doesn't pass a tainted object's private state to its Delete.
 func (r *bootstrapResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
@@ -605,8 +691,13 @@ func (r *bootstrapResource) Delete(
 		return
 	}
 
+	volID := state.SeedFileID.ValueString()
+	if volID == "" {
+		return
+	}
+
 	vmID := state.VMID.ValueInt64()
-	datastore := state.DatastoreID.ValueString()
+	datastore, _, _ := strings.Cut(volID, ":")
 
 	nodeName, vm, err := r.vmOnCurrentNode(ctx, vmID)
 	if errors.Is(err, cluster.ErrVMDoesNotExist) {
@@ -614,8 +705,7 @@ func (r *bootstrapResource) Delete(
 	}
 
 	if err == nil {
-		err = r.removeSeedISO(ctx, vm, r.client.Node(nodeName).Storage(datastore), state.Interface.ValueString(),
-			datastore, state.FileName.ValueString())
+		err = r.removeSeedISO(ctx, vm, r.client.Node(nodeName).Storage(datastore), state.Interface.ValueString(), volID)
 	}
 
 	if err != nil {

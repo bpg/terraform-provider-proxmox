@@ -48,7 +48,8 @@ func uploadISO(ctx context.Context, client proxmox.Client, ds *storage.Client, f
 	}
 
 	// Uploads run in parallel with other heavy API work and pveproxy sometimes drops the connection (EOF).
-	// Retrying is safe: PVE overwrites an existing file with the same name.
+	// Retrying is safe: PVE overwrites an existing file, and the caller checked the name was free, so only our own
+	// partial upload can be there.
 	op := retry.NewAPICallOperation("cloud-init ISO upload",
 		retry.WithAttempts(4),
 		retry.WithBaseDelay(2*time.Second),

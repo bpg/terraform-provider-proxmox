@@ -5,11 +5,11 @@ parent: Resources
 subcategory: Virtual Environment
 description: |-
   Bootstraps a VM with cloud-init through a temporary NoCloud https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html seed ISO, without SSH.
-  Create the VM with started = false, lifecycle { ignore_changes = [started] } (or the next apply stops it again) and an empty CD-ROM (file_id = "none"). On create this resource builds the seed ISO, uploads it as file_name to the datastore on the node the VM is on, attaches it, starts the VM, waits for cloud-init to finish, then ejects and deletes the ISO. Nothing is left on the node afterwards, so the VM can be migrated freely.
-  Completion is read from /run/cloud-init/result.json through the QEMU guest agent, which must be installed in the guest (installing it from the same cloud-init config works). The wait survives guest reboots such as package_reboot_if_required. If cloud-init reports errors or the wait times out, creation fails, the ISO stays attached for debugging and the resource is tainted. cloud-init only runs on a VM's first boot, so replace the VM to bootstrap it again. Applying again while the VM is running, e.g. after a failed or interrupted apply, only removes the ISO and fails. Don't stop the VM and apply again: booting it a second time does not run cloud-init's setup again, so the bootstrap could report success. Destroying the resource also removes the ISO.
+  Create the VM with started = false, lifecycle { ignore_changes = [started] } (or the next apply stops it again) and an empty CD-ROM (file_id = "none"). On create this resource builds the seed ISO, uploads it as file_name to the datastore on the node the VM is on, attaches it, starts the VM, waits for cloud-init to finish, then ejects and deletes the ISO. Nothing is left on the node afterwards, so the VM can be migrated freely. The resource never overwrites or deletes a file it didn't upload: if file_name already exists on the datastore, creation fails.
+  Completion is read from /run/cloud-init/result.json through the QEMU guest agent, which must be installed in the guest (installing it from the same cloud-init config works). The wait survives guest reboots such as package_reboot_if_required. If cloud-init reports errors or the wait times out, creation fails, the ISO stays attached for debugging (seed_file_id names it) and the resource is tainted. While a local ISO is attached, the VM can't be migrated. cloud-init applies the seed only on a VM's first boot, so replace the VM to bootstrap it again. Applying again without replacing the VM removes the ISO and then fails, because the VM is already running. Don't stop the VM and apply again: booting it a second time does not run cloud-init's setup again, so the bootstrap could report success. If only removing the ISO fails after cloud-init finished, the VM is bootstrapped: don't replace it or apply again, but eject and delete the ISO by hand, then run untaint on this resource. Destroying the resource deletes only an ISO it uploaded and left behind; after a successful bootstrap it deletes nothing.
   cloud-init only reports the errors of its last boot. An error before a reboot it triggers itself (e.g. package_reboot_if_required after a failed package install) is not reported; check /var/log/cloud-init.log in the guest if a bootstrapped VM looks incomplete.
   After cloud-init finishes, creation waits up to 2 minutes for every network device to get an IPv4 address, then warns if one still has none.
-  Use lifecycle.replace_triggered_by on the VM so a replaced VM is bootstrapped again. If the VM is deleted outside Terraform, the bootstrap is removed from state on refresh, so it is created again with the VM. Changing any attribute but vm_id later only updates state and does not affect the running VM.
+  Use lifecycle.replace_triggered_by on the VM's id so a replaced VM is bootstrapped again. If the VM is deleted outside Terraform, the bootstrap is removed from state on refresh, so it is created again with the VM. A seed ISO that a failed bootstrap left on the datastore is not deleted then; refresh warns about it. Changing any attribute but vm_id later only updates state and does not affect the running VM.
   Seed contents are stored in Terraform state, inside the guest under /var/lib/cloud, and in provider debug logs (TF_LOG=DEBUG logs the uploaded ISO). While the ISO is on the datastore (during the bootstrap, or after a failed one), anyone who can read ISOs there can read it.
 ---
 
@@ -17,15 +17,15 @@ description: |-
 
 Bootstraps a VM with cloud-init through a temporary [NoCloud](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html) seed ISO, without SSH.
 
-Create the VM with `started = false`, `lifecycle { ignore_changes = [started] }` (or the next apply stops it again) and an empty CD-ROM (`file_id = "none"`). On create this resource builds the seed ISO, uploads it as `file_name` to the datastore on the node the VM is on, attaches it, starts the VM, waits for cloud-init to finish, then ejects and deletes the ISO. Nothing is left on the node afterwards, so the VM can be migrated freely.
+Create the VM with `started = false`, `lifecycle { ignore_changes = [started] }` (or the next apply stops it again) and an empty CD-ROM (`file_id = "none"`). On create this resource builds the seed ISO, uploads it as `file_name` to the datastore on the node the VM is on, attaches it, starts the VM, waits for cloud-init to finish, then ejects and deletes the ISO. Nothing is left on the node afterwards, so the VM can be migrated freely. The resource never overwrites or deletes a file it didn't upload: if `file_name` already exists on the datastore, creation fails.
 
-Completion is read from `/run/cloud-init/result.json` through the QEMU guest agent, which must be installed in the guest (installing it from the same cloud-init config works). The wait survives guest reboots such as `package_reboot_if_required`. If cloud-init reports errors or the wait times out, creation fails, the ISO stays attached for debugging and the resource is tainted. cloud-init only runs on a VM's first boot, so replace the VM to bootstrap it again. Applying again while the VM is running, e.g. after a failed or interrupted apply, only removes the ISO and fails. Don't stop the VM and apply again: booting it a second time does not run cloud-init's setup again, so the bootstrap could report success. Destroying the resource also removes the ISO.
+Completion is read from `/run/cloud-init/result.json` through the QEMU guest agent, which must be installed in the guest (installing it from the same cloud-init config works). The wait survives guest reboots such as `package_reboot_if_required`. If cloud-init reports errors or the wait times out, creation fails, the ISO stays attached for debugging (`seed_file_id` names it) and the resource is tainted. While a local ISO is attached, the VM can't be migrated. cloud-init applies the seed only on a VM's first boot, so replace the VM to bootstrap it again. Applying again without replacing the VM removes the ISO and then fails, because the VM is already running. Don't stop the VM and apply again: booting it a second time does not run cloud-init's setup again, so the bootstrap could report success. If only removing the ISO fails after cloud-init finished, the VM is bootstrapped: don't replace it or apply again, but eject and delete the ISO by hand, then run `untaint` on this resource. Destroying the resource deletes only an ISO it uploaded and left behind; after a successful bootstrap it deletes nothing.
 
 cloud-init only reports the errors of its last boot. An error before a reboot it triggers itself (e.g. `package_reboot_if_required` after a failed package install) is not reported; check `/var/log/cloud-init.log` in the guest if a bootstrapped VM looks incomplete.
 
 After cloud-init finishes, creation waits up to 2 minutes for every network device to get an IPv4 address, then warns if one still has none.
 
-Use `lifecycle.replace_triggered_by` on the VM so a replaced VM is bootstrapped again. If the VM is deleted outside Terraform, the bootstrap is removed from state on refresh, so it is created again with the VM. Changing any attribute but `vm_id` later only updates state and does not affect the running VM.
+Use `lifecycle.replace_triggered_by` on the VM's `id` so a replaced VM is bootstrapped again. If the VM is deleted outside Terraform, the bootstrap is removed from state on refresh, so it is created again with the VM. A seed ISO that a failed bootstrap left on the datastore is not deleted then; refresh warns about it. Changing any attribute but `vm_id` later only updates state and does not affect the running VM.
 
 Seed contents are stored in Terraform state, inside the guest under `/var/lib/cloud`, and in provider debug logs (`TF_LOG=DEBUG` logs the uploaded ISO). While the ISO is on the datastore (during the bootstrap, or after a failed one), anyone who can read ISOs there can read it.
 
@@ -73,7 +73,6 @@ resource "proxmox_virtual_environment_vm" "example" {
 resource "proxmox_cloudinit_bootstrap" "example" {
   vm_id        = proxmox_virtual_environment_vm.example.vm_id
   datastore_id = "local"
-  file_name    = "cloudinit-${proxmox_virtual_environment_vm.example.vm_id}.iso" # unique on the datastore
 
   user_data = <<-EOT
     #cloud-config
@@ -133,7 +132,6 @@ resource "proxmox_virtual_environment_vm" "multi_nic" {
 resource "proxmox_cloudinit_bootstrap" "multi_nic" {
   vm_id        = proxmox_virtual_environment_vm.multi_nic.vm_id
   datastore_id = "local"
-  file_name    = "cloudinit-${proxmox_virtual_environment_vm.multi_nic.vm_id}.iso"
 
   user_data = <<-EOT
     #cloud-config
@@ -164,12 +162,12 @@ resource "proxmox_cloudinit_bootstrap" "multi_nic" {
 ### Required
 
 - `datastore_id` (String) The datastore on the VM's node to upload the temporary ISO to. It must allow `iso` content.
-- `file_name` (String) The file name of the temporary seed ISO on `datastore_id`. It must end in `.iso` and use only letters, digits, `.`, `_` and `-` (Proxmox would rename other characters). Use a name no other ISO on the datastore has (across the cluster if it is shared): an existing file with this name is replaced when the bootstrap runs and deleted afterwards, even if another VM has it attached.
 - `user_data` (String, Sensitive) The `user-data` file contents, e.g. a `#cloud-config` document.
 - `vm_id` (Number) The VM to bootstrap. Its node is looked up at apply time.
 
 ### Optional
 
+- `file_name` (String) The file name of the temporary seed ISO on `datastore_id`. Defaults to `cloudinit-bootstrap-<vm_id>.iso`. It must end in `.iso` and use only letters, digits, `.`, `_` and `-` (Proxmox would rename other characters). Creation fails if a file with this name already exists on the datastore (across the cluster if it is shared). On storage shared between clusters, VM IDs can repeat, so include something cluster-specific in the name.
 - `interface` (String) The CD-ROM interface to attach the ISO to. Defaults to `ide0` (`ide2` is the `initialization` default).
 - `meta_data` (String, Sensitive) The `meta-data` file contents. Defaults to `instance-id` and `local-hostname` set to the VM name.
 - `network_config` (String, Sensitive) The `network-config` file contents (network config version 1 or 2).
@@ -180,3 +178,4 @@ resource "proxmox_cloudinit_bootstrap" "multi_nic" {
 
 - `id` (String) The VM ID.
 - `ipv4_addresses` (Map of List of String) IPv4 addresses of the VM's network devices reported by the guest agent, keyed by guest interface name. Refreshed while the VM is running and every device has an address; the last known addresses are kept otherwise.
+- `seed_file_id` (String) The volume ID of the seed ISO this resource uploaded, while it is still on the datastore (after a failed or interrupted bootstrap). Empty otherwise. Destroying the resource deletes only this file.
