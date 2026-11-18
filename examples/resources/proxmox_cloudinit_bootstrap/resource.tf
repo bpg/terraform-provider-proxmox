@@ -126,5 +126,7 @@ resource "proxmox_cloudinit_bootstrap" "multi_nic" {
 
   lifecycle {
     replace_triggered_by = [proxmox_virtual_environment_vm.multi_nic.id]
+    # network_config follows the VM's NICs, so adding one would change it; keep the VM as it is.
+    ignore_changes = [user_data, meta_data, network_config, vendor_data]
   }
 }

@@ -160,6 +160,8 @@ resource "proxmox_cloudinit_bootstrap" "multi_nic" {
 
   lifecycle {
     replace_triggered_by = [proxmox_virtual_environment_vm.multi_nic.id]
+    # network_config follows the VM's NICs, so adding one would change it; keep the VM as it is.
+    ignore_changes = [user_data, meta_data, network_config, vendor_data]
   }
 }
 ```
@@ -186,4 +188,4 @@ resource "proxmox_cloudinit_bootstrap" "multi_nic" {
 
 - `id` (String) The VM ID.
 - `ipv4_addresses` (Map of List of String) IPv4 addresses of the VM's network devices reported by the guest agent, keyed by guest interface name. Refreshed while the VM is running and every device has an address; the last known addresses are kept otherwise.
-- `seed_file_id` (String) The volume ID of the seed ISO this resource uploaded, while it is still on the datastore (after a failed or interrupted bootstrap). Empty otherwise. Destroying the resource deletes only this file.
+- `seed_file_id` (String) The volume ID of the seed ISO this resource uploaded, while it is still on the datastore (after a failed or interrupted bootstrap). Empty otherwise; refresh clears it once the file is gone. Destroying the resource deletes only this file.

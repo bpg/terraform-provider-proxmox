@@ -311,10 +311,16 @@ func checkISOExists(te *test.Environment, nodeName, fileName string) resource.Te
 func deleteISO(t *testing.T, te *test.Environment, fileName string) {
 	t.Helper()
 
+	// A delete of a missing file fails as a task, so skip files a step already removed.
+	isos, err := seedISOs(context.Background(), te, te.NodeName, fileName)
+	if err != nil || len(isos) == 0 {
+		return
+	}
+
 	nodes := te.NodeClient()
 	nodes.NodeName = te.NodeName
 
-	err := nodes.Storage("local").DeleteDatastoreFile(context.Background(), "local:iso/"+fileName).Err()
+	err = nodes.Storage("local").DeleteDatastoreFile(context.Background(), "local:iso/"+fileName).Err()
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		t.Errorf("unable to delete %s: %v", fileName, err)
 	}
@@ -392,8 +398,6 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 
 			cfg := vmConfig(te, te.NodeName) + bootstrapConfig("", 0, networkConfig)
 
-			var staleSeed string
-
 			return []resource.TestStep{{
 				Config:      vmConfig(te, te.NodeName) + bootstrapConfig("", -1, ""),
 				PlanOnly:    true,
@@ -409,7 +413,6 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 				// A file at the seed name that this resource didn't upload fails the bootstrap and is left alone.
 				PreConfig: func() {
 					name := testSeedName(t, te)
-					staleSeed = name
 					uploadStaleISO(t, te, name)
 					t.Cleanup(func() { deleteISO(t, te, name) })
 				},
@@ -418,8 +421,9 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 			}, {
 				// The failure stored nothing (a plain create, not a tainted replace), and the stale file survived it.
 				PreConfig: func() {
-					require.NoError(t, checkISOExists(te, te.NodeName, staleSeed)(nil))
-					deleteISO(t, te, staleSeed)
+					name := testSeedName(t, te)
+					require.NoError(t, checkISOExists(te, te.NodeName, name)(nil))
+					deleteISO(t, te, name)
 					uploadStaleISO(t, te, testName(te)+otherSuffix)
 					t.Cleanup(func() { deleteISO(t, te, testName(te)+otherSuffix) })
 				},
@@ -452,10 +456,10 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 				ExpectError: regexp.MustCompile(`user_data changed, but cloud-init applies the seed only`),
 			}, {
 				// The failed update saved nothing: the original config plans no changes, and the VM is untouched.
-				Config:   cfg,
-				PlanOnly: true,
-			}, {
 				Config: cfg,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
 				Check: resource.ComposeTestCheckFunc(
 					checkCleanedUp(te, te.NodeName),
 					resource.TestMatchResourceAttr(bootstrapAddr, "ipv4_addresses.lan0.#", regexp.MustCompile(`^[1-9]`)),
@@ -491,12 +495,18 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 				// After a successful bootstrap destroy deletes nothing, not even a file at the seed name.
 				PreConfig: func() {
 					name := testSeedName(t, te)
-					staleSeed = name
 					uploadStaleISO(t, te, name)
 					t.Cleanup(func() { deleteISO(t, te, name) })
 				},
 				Config: vmConfig(te, te.NodeName),
-				Check:  func(*terraform.State) error { return checkISOExists(te, te.NodeName, staleSeed)(nil) },
+				Check: func(s *terraform.State) error {
+					id, err := vmID(s)
+					if err != nil {
+						return err
+					}
+
+					return checkISOExists(te, te.NodeName, seedName(id))(s)
+				},
 			}}
 		}},
 		{"cloud-init errors fail and a retry removes the seed ISO", func(t *testing.T, te *test.Environment) []resource.TestStep {
@@ -508,10 +518,17 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 				Config:      cfg,
 				ExpectError: regexp.MustCompile(`cloud-init finished with errors`),
 			}, {
-				// The failed bootstrap recorded the seed ISO it left attached.
-				PreConfig:    func() { requireSeedAttached(t, te) },
-				RefreshState: true,
-				Check:        checkSeedRecorded(true),
+				// The failed bootstrap recorded the seed ISO it left attached, and refresh keeps it while it's there. The
+				// tainted bootstrap still plans a replace.
+				PreConfig:          func() { requireSeedAttached(t, te) },
+				RefreshState:       true,
+				ExpectNonEmptyPlan: true,
+				RefreshPlanChecks: resource.RefreshPlanChecks{
+					PostRefresh: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(bootstrapAddr, plancheck.ResourceActionDestroyBeforeCreate),
+					},
+				},
+				Check: checkSeedRecorded(true),
 			}, {
 				// Retrying on the same VM can't help: destroying the tainted bootstrap removes exactly the recorded seed
 				// ISO, then the new one says to replace the VM.
