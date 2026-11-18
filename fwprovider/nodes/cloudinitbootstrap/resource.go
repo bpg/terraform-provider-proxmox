@@ -75,7 +75,7 @@ func (r *bootstrapResource) Metadata(
 	resp.TypeName = "proxmox_cloudinit_bootstrap"
 }
 
-// contentString is a seed file attribute. Changing it is stored in place: cloud-init only runs on first boot.
+// contentString is a seed file attribute. cloud-init applies the seed only on first boot, so Update rejects changes.
 func contentString(desc string, required bool) schema.StringAttribute {
 	return schema.StringAttribute{
 		Description: desc,
@@ -119,7 +119,11 @@ func (r *bootstrapResource) Schema(
 			"Use `lifecycle.replace_triggered_by` on the VM's `id` so a replaced VM is bootstrapped again. If the VM is " +
 			"deleted outside Terraform, the bootstrap is removed from state on refresh, so it is created again with the VM. " +
 			"A seed ISO that a failed bootstrap left on the datastore is not deleted then; refresh warns about it. " +
-			"Changing any attribute but `vm_id` later only updates state and does not affect the running VM.\n\n" +
+			"Changing `user_data`, `meta_data`, `network_config` or `vendor_data` after the bootstrap can't reach the VM: " +
+			"the plan shows an in-place update, and the apply fails. To keep existing VMs, add those attributes to " +
+			"`lifecycle.ignore_changes`; VMs created or replaced later get the current content. To apply a change, replace " +
+			"the VM: with `replace_triggered_by` on the VM's `id`, `-replace=<VM address>` is enough, otherwise also " +
+			"replace this resource. Changing any other attribute only updates state.\n\n" +
 			"Seed contents are stored in Terraform state, inside the guest under `/var/lib/cloud`, and in provider debug " +
 			"logs (`TF_LOG=DEBUG` logs the uploaded ISO). While the ISO is on the datastore (during the bootstrap, or " +
 			"after a failed one), anyone who can read ISOs there can read it.",
@@ -658,17 +662,55 @@ func (r *bootstrapResource) currentIPv4Addresses(ctx context.Context, vmID int64
 	return ips, nil
 }
 
-// Update only stores the new values: the bootstrap already ran, and cloud-init does not run again on the same VM.
+// changedSeedAttrs lists the seed content attributes that differ. Empty and unset are the same seed.
+func changedSeedAttrs(plan, state bootstrapModel) []string {
+	attrs := []struct {
+		name        string
+		plan, state types.String
+	}{
+		{"user_data", plan.UserData, state.UserData},
+		{"meta_data", plan.MetaData, state.MetaData},
+		{"network_config", plan.NetworkConfig, state.NetworkConfig},
+		{"vendor_data", plan.VendorData, state.VendorData},
+	}
+
+	var changed []string
+
+	for _, a := range attrs {
+		if a.plan.ValueString() != a.state.ValueString() {
+			changed = append(changed, a.name)
+		}
+	}
+
+	return changed
+}
+
+// Update stores changes that don't affect the VM. A seed content change can't reach it, so it fails rather than being
+// stored silently. The error is raised here and not at plan time, because a plan error would also block replacing the
+// VM, which is how such a change is applied.
 func (r *bootstrapResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
 ) {
-	var plan bootstrapModel
+	var plan, state bootstrapModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Returning before State.Set keeps the old state, so the next plan shows the change again.
+	if changed := changedSeedAttrs(plan, state); len(changed) > 0 {
+		vmID := state.VMID.ValueInt64()
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Update Cloud-init Bootstrap of VM %d", vmID),
+			fmt.Sprintf("%s changed, but cloud-init applies the seed only on a VM's first boot, so the change can't reach "+
+				"VM %d. No changes were saved. To bootstrap with the new content, replace the VM and this resource (apply "+
+				"with -replace=<VM address> -replace=<this resource's address>). To keep the existing VM, add the changed "+
+				"attributes to this resource's lifecycle.ignore_changes.", strings.Join(changed, ", "), vmID))
+
 		return
 	}
 

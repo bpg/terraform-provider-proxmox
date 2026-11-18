@@ -48,8 +48,16 @@ resource "proxmox_cloudinit_bootstrap" "example" {
   EOT
 
   lifecycle {
-    # Bootstrap a replaced VM again.
+    # Bootstrap a replaced VM again. Use the VM's id: the whole VM would also
+    # trigger on in-place VM updates.
     replace_triggered_by = [proxmox_virtual_environment_vm.example.id]
+
+    # cloud-init applies the seed only on a VM's first boot, so a content change
+    # fails the apply. Ignoring it keeps existing VMs as they are; VMs created or
+    # replaced later get the current content. To apply a change to a VM, replace it
+    # by applying with -replace=proxmox_virtual_environment_vm.example (quote
+    # addresses with keys, e.g. -replace='proxmox_virtual_environment_vm.vm["a"]').
+    ignore_changes = [user_data, meta_data, network_config, vendor_data]
   }
 }
 

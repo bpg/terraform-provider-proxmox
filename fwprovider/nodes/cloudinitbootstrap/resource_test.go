@@ -442,17 +442,29 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 				Config:   cfg,
 				PlanOnly: true,
 			}, {
-				// Content changes after bootstrap are stored in place and must not touch the running VM.
+				// A content change after the bootstrap can't reach the VM, so the update fails.
 				Config: vmConfig(te, te.NodeName) + bootstrapConfig(`- [echo, changed]`, 0, networkConfig),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(bootstrapAddr, plancheck.ResourceActionUpdate),
 					},
 				},
+				ExpectError: regexp.MustCompile(`user_data changed, but cloud-init applies the seed only`),
+			}, {
+				// The failed update saved nothing: the original config plans no changes, and the VM is untouched.
+				Config:   cfg,
+				PlanOnly: true,
+			}, {
+				Config: cfg,
 				Check: resource.ComposeTestCheckFunc(
 					checkCleanedUp(te, te.NodeName),
 					resource.TestMatchResourceAttr(bootstrapAddr, "ipv4_addresses.lan0.#", regexp.MustCompile(`^[1-9]`)),
 				),
+			}, {
+				// ignore_changes keeps the bootstrapped VM as it is.
+				Config: vmConfig(te, te.NodeName) + bootstrapConfig(`- [echo, changed]`, 0,
+					networkConfig+"\n  lifecycle {\n    ignore_changes = [user_data]\n  }"),
+				PlanOnly: true,
 			}, {
 				// A refresh while the VM is stopped keeps the last known addresses.
 				PreConfig:    func() { _, vm := testVM(t, te); require.NoError(t, vm.StopVM(context.Background()).Err()) },
