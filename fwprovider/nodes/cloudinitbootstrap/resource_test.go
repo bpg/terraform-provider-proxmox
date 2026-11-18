@@ -411,7 +411,7 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 			}, {
 				Config:      vmConfig(te, te.NodeName) + bootstrapConfig("", 0, `file_name = "seeds/a.iso"`),
 				PlanOnly:    true,
-				ExpectError: regexp.MustCompile(`must end in .iso and use only letters`),
+				ExpectError: regexp.MustCompile(`must\s+end\s+in\s+.iso\s+and\s+use\s+only\s+letters`),
 			}, {
 				// Create the VM alone first, so a stale seed ISO can be planted before the bootstrap.
 				Config: vmConfig(te, te.NodeName),
@@ -423,7 +423,7 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 					t.Cleanup(func() { deleteISO(t, te, name) })
 				},
 				Config:      cfg,
-				ExpectError: regexp.MustCompile(`already exists in the datastore and this resource didn't upload it`),
+				ExpectError: regexp.MustCompile(`already\s+exists\s+in\s+the\s+datastore\s+and\s+this\s+resource\s+didn't\s+upload\s+it`),
 			}, {
 				// The failure stored nothing (a plain create, not a tainted replace), and the stale file survived it.
 				PreConfig: func() {
@@ -459,7 +459,7 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 						plancheck.ExpectResourceAction(bootstrapAddr, plancheck.ResourceActionUpdate),
 					},
 				},
-				ExpectError: regexp.MustCompile(`user_data changed, but cloud-init applies the seed only`),
+				ExpectError: regexp.MustCompile(`user_data\s+changed,\s+but\s+cloud-init\s+applies\s+the\s+seed\s+only`),
 			}, {
 				// The failed update saved nothing: the original config plans no changes, and the VM is untouched.
 				Config: cfg,
@@ -522,7 +522,7 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 
 			return []resource.TestStep{{
 				Config:      cfg,
-				ExpectError: regexp.MustCompile(`cloud-init finished with errors`),
+				ExpectError: regexp.MustCompile(`cloud-init\s+finished\s+with\s+errors`),
 			}, {
 				// The failed bootstrap recorded the seed ISO it left attached, and refresh keeps it while it's there. The
 				// tainted bootstrap still plans a replace.
