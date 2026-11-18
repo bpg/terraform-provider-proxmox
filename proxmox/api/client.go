@@ -115,7 +115,7 @@ func NewConnection(endpoint string, insecure bool, minTLS string, extraHeaders m
 	// Keep the logging transport outermost: it records request headers, and it has no way of
 	// knowing that a user-defined header holds a credential. Use mitmproxy to inspect the wire.
 	if logging.IsDebugOrHigher() {
-		transport = newLogMaskingTransport(logging.NewLoggingHTTPTransport(transport))
+		transport = newLoggingTransport(transport)
 	}
 
 	// make sure the path does not contain "/api2/json"
