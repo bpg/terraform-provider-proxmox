@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -329,6 +330,7 @@ func diskAttribute() schema.Attribute {
 				"datastore_id": schema.StringAttribute{
 					Description: "Target datastore for new disks when file is not provided.",
 					Optional:    true,
+					Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 				},
 				"size_gb": schema.Int64Attribute{
 					Description: "Disk size (GiB) when creating new disks. **Note:** Disk shrinking is not " +
@@ -377,9 +379,15 @@ func diskAttribute() schema.Attribute {
 					Optional:    true,
 				},
 				"import_from": schema.StringAttribute{
-					Description: "Import source volume/file id.",
-					Optional:    true,
-					Validators:  []validator.String{validators.ImportFrom()},
+					Description: "Import source volume/file id for a new disk. Requires `datastore_id`. The disk gets " +
+						"the size of the source, and is grown to `size_gb` when that is set. A `size_gb` smaller " +
+						"than the source fails the apply after the import, as Proxmox VE cannot shrink a disk. " +
+						"Ignored for a disk that already exists.",
+					Optional: true,
+					Validators: []validator.String{
+						validators.ImportFrom(),
+						stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("file")),
+					},
 				},
 				"media": schema.StringAttribute{
 					Description: "Disk media (e.g., disk, cdrom).",

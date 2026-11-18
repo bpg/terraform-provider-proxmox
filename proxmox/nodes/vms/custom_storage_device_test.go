@@ -7,6 +7,7 @@
 package vms
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -139,4 +140,26 @@ func TestCustomStorageDevice_IsCloudInitDrive(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestCustomStorageDevice_EncodeValues_ImportFrom(t *testing.T) {
+	t.Parallel()
+
+	t.Run("allocates the disk on the datastore", func(t *testing.T) {
+		t.Parallel()
+
+		device := &CustomStorageDevice{DatastoreID: new("local-lvm"), ImportFrom: new("local:import/disk.qcow2")}
+		values := url.Values{}
+
+		require.NoError(t, device.EncodeValues("virtio1", &values))
+		assert.Equal(t, "file=local-lvm:0,import-from=local:import/disk.qcow2,", values.Get("virtio1"))
+	})
+
+	t.Run("fails without a datastore", func(t *testing.T) {
+		t.Parallel()
+
+		device := &CustomStorageDevice{ImportFrom: new("local:import/disk.qcow2")}
+
+		require.ErrorContains(t, device.EncodeValues("virtio1", &url.Values{}), "requires a datastore")
+	})
 }
