@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.123.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.123.0...v0.123.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **core:** refuse a redirect from the api endpoint to plain http ([#3321](https://github.com/bpg/terraform-provider-proxmox/issues/3321)) ([acb58fb](https://github.com/bpg/terraform-provider-proxmox/commit/acb58fbbd6f18088439beb7a8dcbb4b5890b278f))
+* **docs:** correct sudoers guidance for lxc idmap ([41cda40](https://github.com/bpg/terraform-provider-proxmox/commit/41cda4098b5c9a1e62cd5fb525bed0c084889221))
+* **provider:** keep uploaded file content out of debug HTTP logs ([#3323](https://github.com/bpg/terraform-provider-proxmox/issues/3323)) ([4755bcd](https://github.com/bpg/terraform-provider-proxmox/commit/4755bcddb2d76234afb26d56e469a78ba724732e))
+* **vm:** fix cloned vm crash when a disk uses import_from ([#3316](https://github.com/bpg/terraform-provider-proxmox/issues/3316)) ([81c09af](https://github.com/bpg/terraform-provider-proxmox/commit/81c09af0f6f6869f31948e7c51ddf2fc658433f8))
+
 ## [0.123.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.122.0...v0.123.0) (2026-11-17)
 
 
