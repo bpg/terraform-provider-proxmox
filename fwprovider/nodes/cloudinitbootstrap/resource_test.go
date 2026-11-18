@@ -313,7 +313,13 @@ func deleteISO(t *testing.T, te *test.Environment, fileName string) {
 
 	// A delete of a missing file fails as a task, so skip files a step already removed.
 	isos, err := seedISOs(context.Background(), te, te.NodeName, fileName)
-	if err != nil || len(isos) == 0 {
+	if err != nil {
+		t.Errorf("unable to list ISOs to delete %s: %v", fileName, err)
+
+		return
+	}
+
+	if len(isos) == 0 {
 		return
 	}
 
