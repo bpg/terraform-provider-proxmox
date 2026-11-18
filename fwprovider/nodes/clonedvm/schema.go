@@ -330,6 +330,7 @@ func diskAttribute() schema.Attribute {
 				"datastore_id": schema.StringAttribute{
 					Description: "Target datastore for new disks when file is not provided.",
 					Optional:    true,
+					Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 				},
 				"size_gb": schema.Int64Attribute{
 					Description: "Disk size (GiB) when creating new disks. **Note:** Disk shrinking is not " +

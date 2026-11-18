@@ -967,6 +967,7 @@ func TestAccResourceClonedVMDiskValidation(t *testing.T) {
 		{"import_from with an absolute path", `import_from = "/mnt/images/a+b.qcow2"`, nil},
 		{"serial with characters PVE rejects", `serial = "a,discard=on"`, regexp.MustCompile(`(?s)serial.*must contain`)},
 		{"import_from with file", "file = \"local-lvm:vm-100-disk-1\"\nimport_from = \"local:import/a.qcow2\"", regexp.MustCompile(`(?s)file.*cannot\s+be\s+specified\s+when.*import_from`)},
+		{"empty datastore_id", `datastore_id = ""`, regexp.MustCompile(`(?s)datastore_id\s+string\s+length\s+must\s+be\s+at\s+least\s+1`)},
 		{"import_from with a comma", `import_from = "local:import/a,b.qcow2"`, regexp.MustCompile(`(?s)import_from.*without\s+whitespace.*got:\s+local:import/a,b.qcow2`)},
 	}
 
