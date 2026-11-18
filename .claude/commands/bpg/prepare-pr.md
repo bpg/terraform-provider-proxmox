@@ -355,7 +355,7 @@ Keep all HTML comments from the template. Keep the Community Note section verbat
 
 ---
 
-🤖 *This PR was authored with the help of [Claude Code](https://www.anthropic.com/claude-code) ({MODEL_NAME}). All changes have been reviewed and verified by a human.*
+🤖 _This PR was authored with the help of [Claude Code](https://www.anthropic.com/claude-code) ({MODEL_NAME}). All changes have been reviewed and verified by a human._
 ```
 
 Replace each placeholder with actual gathered values.
@@ -409,9 +409,11 @@ Update `.dev/${ISSUE_NUM}_SESSION_STATE.md` using Read and Edit tools:
 - [ ] PR body written to `.dev/{ISSUE}_PR_BODY.md` with title on first line
 - [ ] PR creation command provided to user (with `--title` and `--body-file`)
 - [ ] Session state updated with PR preparation status
-</success_criteria>
+      </success_criteria>
 
 <tips>
+- Keep the whole body concise (aim for under ~4,500 characters): 2-5 sentences on the problem, a few bullets for the change, one line for what is not covered. In Proof of Work show only the FAIL/PASS lines with the failing assertion, the suite totals, and at most one small table. Skip the usage example for a pure bug fix
+- The footer at the end of the template is the maintainer's own and is always included, with the model name filled in. It is not the "Generated with Claude Code" / `Co-Authored-By` attribution that CLAUDE.md forbids
 - Run `/bpg:ready` first to ensure all checks pass and test output is captured
 - The proof of work section is what reviewers check first — make it thorough
 - Keep test output trimmed: RUN/PASS/FAIL lines + summary, not full terraform noise

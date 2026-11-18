@@ -172,7 +172,20 @@ func (r *usbResource) ImportState(
 	}
 
 	resource.ImportStatePassthroughID(ctx, path.Root(schemaAttrNameTerraformID), req, resp)
-	r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
+
+	found, diags := r.read(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !found {
+		resp.Diagnostics.AddError("USB Hardware Mapping Not Found", fmt.Sprintf("USB hardware mapping %q was not found", req.ID))
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
 }
 
 // Metadata defines the name of the USB hardware mapping.

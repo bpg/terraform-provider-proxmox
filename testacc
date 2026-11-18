@@ -22,7 +22,8 @@ Run acceptance tests for the Proxmox Terraform provider.
 
 Arguments:
   TEST_NAME             Name of the test to run (e.g., TestAccResourceVM2CPU)
-                       Supports patterns like TestAccResourceVM.* for multiple tests
+                       Any go test -run regular expression is accepted too,
+                       e.g. 'TestAccResourceVM.*', 'TestA|TestB', 'TestAccX/sub_case'
                        If omitted, runs all acceptance tests
 
 Options:
@@ -43,17 +44,24 @@ Examples:
   ./testacc --tier heavy                       # Heavy tests only (~15 min)
   ./testacc --tier light,medium                # Light + medium (~3.5 min)
   ./testacc --tier all                         # All tiers with smart parallelism
-  ./testacc --resource vm                      # All VM-related tests
-  ./testacc --resource sdn                     # All SDN tests
-  ./testacc TestAccResourceVM2CPU              # Single test by name
+  ./testacc --resource vm                      # Tests in files tagged //testacc:resource=vm
+  ./testacc --resource sdn                     # Tests in files tagged //testacc:resource=sdn
+  ./testacc TestAccResourceVM2CPU              # Single test by exact name
   ./testacc "TestAccDatasource.*"              # Pattern match
+  ./testacc "^TestAccResourceContainer"        # Every test whose name starts with it
+  ./testacc "TestAccA|TestAccB"                # Several tests
+  ./testacc "^TestAccResourceVM$/multiline"    # Subtests of one test
   ./testacc --no-proxy TestAccDatasourceFile   # Without proxy
   ./testacc TestAccDatasourceFile -- -count 2  # Extra go test flags
 
 Notes:
-  - Single test names use exact matching (^TestName$) for efficiency
-  - Patterns with .* or * match multiple tests
-  - The script automatically finds the package containing the test
+  - Plain test names (letters, digits, _) use exact matching (^TestName$)
+  - Names with any other character (e.g. * . | ^ $ /) are patterns and are
+    passed to go test -run unchanged
+  - The script automatically finds the packages containing the tests, and
+    falls back to all packages when a pattern can't be resolved to names
+  - --resource X runs only the TestAcc* functions defined in files tagged
+    //testacc:resource=X, not every test of their packages
   - Always quote pattern arguments to prevent shell expansion
   - --tier and --resource cannot be combined with a TEST_NAME
 
@@ -68,38 +76,85 @@ Environment:
 EOF
 }
 
+# Find the package of each test function matching a test name or pattern.
+# Usage: find_test_package "TestName" "is_pattern"
+# Returns: space-separated list of Go package paths
 find_test_package() {
     test_name="${1:-}"
     is_pattern="${2:-0}"
+    all_pkgs="${BASE_PKG}/fwprovider/..."
 
     if [ -z "$test_name" ]; then
-        printf '%s\n' "${BASE_PKG}/fwprovider/..."
+        printf '%s\n' "$all_pkgs"
         return
     fi
 
-    # If it's a pattern, search all packages for efficiency
-    if [ "$is_pattern" = "1" ]; then
-        printf 'Searching all packages for pattern match\n' >&2
-        printf '%s\n' "${BASE_PKG}/fwprovider/..."
+    # Only the top-level test names matter for the lookup: drop the subtest
+    # part (everything after the first /) and split the alternatives on |.
+    top_level=${test_name%%/*}
+
+    found_dirs=""
+    OLD_IFS="$IFS"
+    IFS='|'
+    set -f
+    for alt in $top_level; do
+        IFS="$OLD_IFS"
+        name_prefix=""
+        name_suffix=""
+
+        if [ "$is_pattern" = "1" ]; then
+            # Unanchored alternatives match any name that contains them.
+            name_prefix="[A-Za-z0-9_]*"
+            name_suffix="[A-Za-z0-9_]*"
+            case "$alt" in
+                ^*) alt=${alt#^}; name_prefix="" ;;
+            esac
+            case "$alt" in
+                *\$) alt=${alt%\$}; name_suffix="" ;;
+            esac
+        fi
+
+        case "$alt" in
+            ''|*[!A-Za-z0-9_]*)
+                # Empty or still a regular expression: can't resolve it to names.
+                found_dirs=""
+                break
+                ;;
+        esac
+
+        alt_files=$(find ./fwprovider -name "*_test.go" -type f -print0 2>/dev/null | \
+                    xargs -0 grep -l "^func ${name_prefix}${alt}${name_suffix}(" 2>/dev/null || true)
+
+        if [ -z "$alt_files" ]; then
+            found_dirs=""
+            break
+        fi
+
+        for f in $alt_files; do
+            printf 'Found test in: %s\n' "$f" >&2
+            found_dirs="$found_dirs
+$(dirname "$f")"
+        done
+    done
+    set +f
+    IFS="$OLD_IFS"
+
+    if [ -z "$found_dirs" ]; then
+        if [ "$is_pattern" = "1" ]; then
+            printf 'Searching all packages for pattern match\n' >&2
+        else
+            printf 'Warning: Test '\''%s'\'' not found in codebase\n' "$test_name" >&2
+            printf '         Searching all packages (this may be slower)\n' >&2
+        fi
+        printf '%s\n' "$all_pkgs"
         return
     fi
 
-    # For exact test names, find the specific package
-    # Search only in test files for the function definition
-    test_file=$(find ./fwprovider -name "*_test.go" -type f -print0 2>/dev/null | \
-                xargs -0 grep -l "^func ${test_name}(" 2>/dev/null | head -n 1)
-
-    if [ -z "$test_file" ]; then
-        printf 'Warning: Test '\''%s'\'' not found in codebase\n' "$test_name" >&2
-        printf '         Searching all packages (this may be slower)\n' >&2
-        printf '%s\n' "${BASE_PKG}/fwprovider/..."
-        return
-    fi
-
-    package_dir=$(dirname "$test_file")
-    package_path=$(printf '%s\n' "$package_dir" | sed 's|^\./||')
-    printf 'Found test in: %s\n' "$test_file" >&2
-    printf '%s\n' "${BASE_PKG}/${package_path}"
+    printf '%s\n' "$found_dirs" \
+        | sed '/^$/d' \
+        | sort -u \
+        | sed "s|^\./|${BASE_PKG}/|" \
+        | tr '\n' ' '
 }
 
 validate_env_file() {
@@ -171,6 +226,20 @@ $dir"
     printf '%s\n' "$matching_dirs" \
         | sed "s|^\./|${BASE_PKG}/|" \
         | tr '\n' ' '
+}
+
+# List the TestAcc* functions defined in files with the given annotation.
+# Usage: discover_tests "resource" "vm"
+# Returns: |-separated list of test function names (empty string if none found)
+discover_tests() {
+    annotation_key="$1"
+    annotation_value="$2"
+
+    grep -rl "//testacc:${annotation_key}=${annotation_value}$" ./fwprovider/ 2>/dev/null \
+        | xargs grep -h '^func TestAcc[A-Za-z0-9_]*(' 2>/dev/null \
+        | sed 's/^func \(TestAcc[A-Za-z0-9_]*\)(.*/\1/' \
+        | sort -u \
+        | paste -sd '|' -
 }
 
 # Discover all unique values for an annotation key.
@@ -364,6 +433,11 @@ run_resource() {
         return 1
     fi
 
+    resource_tests=$(discover_tests "resource" "$resource_name")
+    if [ -n "$resource_tests" ]; then
+        RUN_ARG="-run ^(${resource_tests})\$"
+    fi
+
     printf '\n=== Resource: %s ===\n' "$resource_name" >&2
 
     run_go_test "${PACKAGES:-1}" "${PARALLEL:-4}" "$resource_pkgs"
@@ -374,7 +448,7 @@ RUN_ARG=""
 IS_PATTERN=0
 if [ -n "$TEST_NAME" ]; then
     case "$TEST_NAME" in
-        *'*'*)
+        *[!A-Za-z0-9_]*)
             RUN_ARG="-run ${TEST_NAME}"
             IS_PATTERN=1
             printf 'Running tests matching pattern: %s\n' "$TEST_NAME" >&2

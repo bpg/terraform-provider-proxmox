@@ -18,8 +18,10 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
@@ -326,6 +328,55 @@ func TestAccResourceACMEDNSPluginWriteOnly(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestAccResourceACMEDNSPluginDeletedOutside checks that a plugin removed outside Terraform is
+// dropped from state and planned for creation, instead of failing the refresh.
+func TestAccResourceACMEDNSPluginDeletedOutside(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+	pluginName := test.SafeResourceName("test-plugin-gone")
+	te.AddTemplateVars(map[string]any{
+		"PluginName": pluginName,
+	})
+
+	config := te.RenderConfig(`
+		resource "proxmox_acme_dns_plugin" "test_plugin_gone" {
+			plugin = "{{.PluginName}}"
+			api    = "cf"
+			data = {
+				"CF_API_EMAIL" = "test@example.com"
+				"CF_API_KEY"   = "test-api-key"
+			}
+		}`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				PreConfig: func() {
+					err := te.ClusterClient().ACME().Plugins().Delete(context.Background(), pluginName)
+					require.NoError(t, err)
+				},
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(
+							"proxmox_acme_dns_plugin.test_plugin_gone",
+							plancheck.ResourceActionCreate,
+						),
+					},
+				},
+				Check: test.ResourceAttributes("proxmox_acme_dns_plugin.test_plugin_gone", map[string]string{
+					"plugin": pluginName,
+				}),
+			},
+		},
+	})
 }
 
 // testCheckACMEPluginDataStored verifies, via a direct API read, that the plugin's

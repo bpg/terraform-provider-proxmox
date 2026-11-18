@@ -8,6 +8,7 @@ package access
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -200,7 +202,13 @@ func (r *userTokenResource) Read(ctx context.Context, req resource.ReadRequest, 
 
 	data, err := r.client.Access().GetUserToken(ctx, state.UserID.ValueString(), state.TokenName.ValueString())
 	if err != nil {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
 		resp.Diagnostics.AddError("Error reading user token", err.Error())
+
 		return
 	}
 
@@ -273,7 +281,7 @@ func (r *userTokenResource) Delete(ctx context.Context, req resource.DeleteReque
 	}
 
 	err := r.client.Access().DeleteUserToken(ctx, state.UserID.ValueString(), state.TokenName.ValueString())
-	if err != nil {
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		resp.Diagnostics.AddError("Error deleting user token", err.Error())
 		return
 	}

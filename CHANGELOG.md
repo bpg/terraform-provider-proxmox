@@ -1,5 +1,94 @@
 # Changelog
 
+## [0.123.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.122.0...v0.123.0) (2026-11-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lxc:** apply mount point volume change to another volume id ([#3301](https://github.com/bpg/terraform-provider-proxmox/issues/3301))
+
+### Bug Fixes
+
+* **access:** remove user from state when deleted outside terraform ([#3297](https://github.com/bpg/terraform-provider-proxmox/issues/3297)) ([7b15c3f](https://github.com/bpg/terraform-provider-proxmox/commit/7b15c3ff4aab50a342f4b534ad8620fdf92bea77))
+* **ha:** omit unknown bool attributes from HA rule and group requests ([#3309](https://github.com/bpg/terraform-provider-proxmox/issues/3309)) ([cc310d0](https://github.com/bpg/terraform-provider-proxmox/commit/cc310d09a011563170f723814e31f21020339d1b))
+* **lxc:** apply mount point volume change to another volume id ([#3301](https://github.com/bpg/terraform-provider-proxmox/issues/3301)) ([da50a39](https://github.com/bpg/terraform-provider-proxmox/commit/da50a3980d2da3f81d4ed21e29de342f230befae))
+* **lxc:** stop planning size removal for a mount point without size ([#3308](https://github.com/bpg/terraform-provider-proxmox/issues/3308)) ([f43cd2c](https://github.com/bpg/terraform-provider-proxmox/commit/f43cd2c37fb5289dda13bee88b63ca3f17ff5901))
+* **lxc:** update the maximum number of interfaces ([#3307](https://github.com/bpg/terraform-provider-proxmox/issues/3307)) ([228bc87](https://github.com/bpg/terraform-provider-proxmox/commit/228bc874cbabe8ec37b9583711754eab7a681479))
+* **vm:** detach the cdrom drive when the cdrom block is removed ([#3298](https://github.com/bpg/terraform-provider-proxmox/issues/3298)) ([4fd15c8](https://github.com/bpg/terraform-provider-proxmox/commit/4fd15c8ad62c73f6f2b3c1bccd51abe13a274561))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (08bcb99 → 5e8afd4) ([#3303](https://github.com/bpg/terraform-provider-proxmox/issues/3303)) ([6d9fd90](https://github.com/bpg/terraform-provider-proxmox/commit/6d9fd90f3aee8bb49be38aa6f0cfdf1fdc952057))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.18.2 → v7.18.3) ([#3304](https://github.com/bpg/terraform-provider-proxmox/issues/3304)) ([874d9fb](https://github.com/bpg/terraform-provider-proxmox/commit/874d9fb87301d5e13161b0fdb407c6c68cf45b53))
+* **deps:** update module golang.org/x/crypto (v0.58.0 → v0.59.0) ([#3305](https://github.com/bpg/terraform-provider-proxmox/issues/3305)) ([ee2b33a](https://github.com/bpg/terraform-provider-proxmox/commit/ee2b33a23cf702a1c2c4dd90037131fecc462370))
+
+## [0.122.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.121.0...v0.122.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lxc:** allow container cpu.cores to be left unset ([#3293](https://github.com/bpg/terraform-provider-proxmox/issues/3293))
+* **lxc:** default rootfs replicate to true and apply it on create ([#3276](https://github.com/bpg/terraform-provider-proxmox/issues/3276))
+
+### Features
+
+* **ceph:** add proxmox_ceph_mds resource ([#3207](https://github.com/bpg/terraform-provider-proxmox/issues/3207)) ([aa51614](https://github.com/bpg/terraform-provider-proxmox/commit/aa51614d199aef49255104ac89bae98930fb904f))
+* **firewall:** support importing firewall aliases ([#3269](https://github.com/bpg/terraform-provider-proxmox/issues/3269)) ([477f41b](https://github.com/bpg/terraform-provider-proxmox/commit/477f41b01047b85d4c42fb7f06ecd149fbf4304e))
+
+
+### Bug Fixes
+
+* **access:** remove user token from state when deleted outside terraform ([#3283](https://github.com/bpg/terraform-provider-proxmox/issues/3283)) ([d098180](https://github.com/bpg/terraform-provider-proxmox/commit/d098180bfaf0e38fda90505afb0dfb58a69ed5c6))
+* **backup:** remove backup job from state when deleted outside terraform ([#3281](https://github.com/bpg/terraform-provider-proxmox/issues/3281)) ([154ff63](https://github.com/bpg/terraform-provider-proxmox/commit/154ff6352df431adbf97c2f3cc5f45284f6d9b3b))
+* **core:** don't reuse a handed-out VM ID when the next one is taken ([#3285](https://github.com/bpg/terraform-provider-proxmox/issues/3285)) ([5020492](https://github.com/bpg/terraform-provider-proxmox/commit/502049262ee9c0acc46e5ba9ec86998faf5fc8ef))
+* **hwmapping:** remove mappings from state when deleted outside terraform ([#3282](https://github.com/bpg/terraform-provider-proxmox/issues/3282)) ([5161ea8](https://github.com/bpg/terraform-provider-proxmox/commit/5161ea8950d0ce39cb35c5fd13d6a95364d8ce08))
+* **lxc:** allow container cpu.cores to be left unset ([#3293](https://github.com/bpg/terraform-provider-proxmox/issues/3293)) ([77a5490](https://github.com/bpg/terraform-provider-proxmox/commit/77a54900387fd0d10a04e2a40300d547ce8a794d))
+* **lxc:** default rootfs replicate to true and apply it on create ([#3276](https://github.com/bpg/terraform-provider-proxmox/issues/3276)) ([e3b5eaf](https://github.com/bpg/terraform-provider-proxmox/commit/e3b5eaf08238913fe744d8908b1cdc24b70a69bb))
+* **lxc:** update mount points in place instead of recreating container ([#3032](https://github.com/bpg/terraform-provider-proxmox/issues/3032)) ([18579f5](https://github.com/bpg/terraform-provider-proxmox/commit/18579f5c9534aed0c9422572507480402a9497c4))
+* **sdn:** allow dhcp_dns_server outside the subnet ([#3290](https://github.com/bpg/terraform-provider-proxmox/issues/3290)) ([35d1379](https://github.com/bpg/terraform-provider-proxmox/commit/35d13792e0024da8385f4be32bc036123935365b))
+* **storage:** keep generated_encryption_key known after in-place update ([#3279](https://github.com/bpg/terraform-provider-proxmox/issues/3279)) ([8ee8c5f](https://github.com/bpg/terraform-provider-proxmox/commit/8ee8c5f2c70bad92c4620c9b159767515c52e6ae))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (1.27.3 → 1.27.4) ([#3286](https://github.com/bpg/terraform-provider-proxmox/issues/3286)) ([2858ba3](https://github.com/bpg/terraform-provider-proxmox/commit/2858ba35ce52c62675068187d989be947790e279))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.18.1 → v7.18.2) ([#3287](https://github.com/bpg/terraform-provider-proxmox/issues/3287)) ([3b722d9](https://github.com/bpg/terraform-provider-proxmox/commit/3b722d90223ed461f97349795c121d7a8f20957b))
+* **deps:** update module golang.org/x/sync (v0.24.0 → v0.25.0) ([#3288](https://github.com/bpg/terraform-provider-proxmox/issues/3288)) ([73fa92f](https://github.com/bpg/terraform-provider-proxmox/commit/73fa92fd5ef421a119cada6735364e097720c59c))
+* **docs:** add required_providers block to the provider examples ([#3280](https://github.com/bpg/terraform-provider-proxmox/issues/3280)) ([bfb45e5](https://github.com/bpg/terraform-provider-proxmox/commit/bfb45e512e26d0412e33afb235f967d6323a2b91))
+
+## [0.121.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.120.0...v0.121.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **access:** fail to create an acl that already exists ([#3268](https://github.com/bpg/terraform-provider-proxmox/issues/3268))
+
+### Features
+
+* **ceph:** add proxmox_ceph_fs and proxmox_storage_cephfs ([#3209](https://github.com/bpg/terraform-provider-proxmox/issues/3209)) ([5c51404](https://github.com/bpg/terraform-provider-proxmox/commit/5c51404222d74d411b880b864fe550b083486e63))
+* **lxc:** wait for `wait_for_ip` address after container start ([#3255](https://github.com/bpg/terraform-provider-proxmox/issues/3255)) ([5cff49a](https://github.com/bpg/terraform-provider-proxmox/commit/5cff49a7d104211a74d035e5807646a7529148dd))
+
+
+### Bug Fixes
+
+* **access:** fail to create an acl that already exists ([#3268](https://github.com/bpg/terraform-provider-proxmox/issues/3268)) ([8f28653](https://github.com/bpg/terraform-provider-proxmox/commit/8f2865316da0860a4fdfc34ab50fce29f9136b6c))
+* **acme:** remove dns plugin from state when deleted outside terraform ([#3259](https://github.com/bpg/terraform-provider-proxmox/issues/3259)) ([d152d21](https://github.com/bpg/terraform-provider-proxmox/commit/d152d21980c2437908071f4c69a5d4a71f4b9b99))
+* **vm,lxc:** don't retry a create that failed with `got no worker upid` ([#3257](https://github.com/bpg/terraform-provider-proxmox/issues/3257)) ([1f3c6cb](https://github.com/bpg/terraform-provider-proxmox/commit/1f3c6cbb4e8566d98963cd9d4a72fc3a4178841a))
+* **vm:** don't touch inherited hookscript on clone ([#3084](https://github.com/bpg/terraform-provider-proxmox/issues/3084)) ([8bd7bc4](https://github.com/bpg/terraform-provider-proxmox/commit/8bd7bc4b994babe576f4f1585805eb356dc47007))
+* **vm:** read back usb4 and higher host USB devices ([#3258](https://github.com/bpg/terraform-provider-proxmox/issues/3258)) ([78c2e33](https://github.com/bpg/terraform-provider-proxmox/commit/78c2e336ef0131afe9367ea6cc1a25088381c0ff))
+
+
+### Miscellaneous
+
+* **ci:** update actions/add-to-project digest (5afcf98 → f2c1f1f) ([#3265](https://github.com/bpg/terraform-provider-proxmox/issues/3265)) ([231b5c2](https://github.com/bpg/terraform-provider-proxmox/commit/231b5c2f5b318872b138300a185317e61fe54e82))
+* **deps:** update image golang (2920bb1 → e519d3b) ([#3261](https://github.com/bpg/terraform-provider-proxmox/issues/3261)) ([7d2120b](https://github.com/bpg/terraform-provider-proxmox/commit/7d2120bbfa4abe2de3f6bdb57772d4f65e31676b))
+* **deps:** update module github.com/avast/retry-go/v5 (v5.0.0 → v5.1.1) ([#3262](https://github.com/bpg/terraform-provider-proxmox/issues/3262)) ([5da2888](https://github.com/bpg/terraform-provider-proxmox/commit/5da2888790d57febee42b18efda03f3e54005966))
+* **docs:** add example and import usage to linux_bond ([#3272](https://github.com/bpg/terraform-provider-proxmox/issues/3272)) ([34d5077](https://github.com/bpg/terraform-provider-proxmox/commit/34d507771bd97af9260ebda71301c2ce52195294))
+* **docs:** describe startup down_delay as a shutdown timeout ([#3271](https://github.com/bpg/terraform-provider-proxmox/issues/3271)) ([38f0445](https://github.com/bpg/terraform-provider-proxmox/commit/38f04451743935a66b626c240e3f05edb80ae802))
+* **docs:** move acl upgrade note to v0.121.0 ([#3274](https://github.com/bpg/terraform-provider-proxmox/issues/3274)) ([3e39be5](https://github.com/bpg/terraform-provider-proxmox/commit/3e39be5dec10be491c71f10044b1d22ddc2bb78b))
+* **test:** accept go test -run patterns in testacc ([#3270](https://github.com/bpg/terraform-provider-proxmox/issues/3270)) ([c71600b](https://github.com/bpg/terraform-provider-proxmox/commit/c71600bb4d64001793c9346c8dfbe75271652e6a))
+
 ## [0.120.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.119.0...v0.120.0) (2026-11-02)
 
 

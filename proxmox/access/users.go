@@ -8,10 +8,12 @@ package access
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -65,6 +67,10 @@ func (c *Client) GetUser(ctx context.Context, id string) (*UserGetResponseData, 
 
 	err := c.DoRequest(ctx, http.MethodGet, c.userPath(id), nil, resBody)
 	if err != nil {
+		if isNoSuchUserErr(err) {
+			err = errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
 		return nil, fmt.Errorf("error retrieving user: %w", err)
 	}
 
@@ -113,4 +119,15 @@ func (c *Client) UpdateUser(ctx context.Context, id string, d *UserUpdateRequest
 	}
 
 	return nil
+}
+
+// isNoSuchUserErr matches the message that PVE returns (via HTTP 500) when reading a user that does not exist:
+// "no such user ('<user>')". Only root@pam gets it; other callers get a 403 from the permission check.
+func isNoSuchUserErr(err error) bool {
+	var httpErr *api.HTTPError
+	if !errors.As(err, &httpErr) {
+		return false
+	}
+
+	return strings.Contains(httpErr.Message, "no such user ('")
 }

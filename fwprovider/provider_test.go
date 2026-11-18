@@ -22,12 +22,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-func TestIDGenerator_Sequence(t *testing.T) {
+func TestAccIDGenerator_Sequence(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -119,7 +122,120 @@ func TestIDGenerator_Sequence(t *testing.T) {
 	wg.Wait()
 }
 
-func TestIDGenerator_Random(t *testing.T) {
+func TestAccIDGenerator_SequenceNoReuseBeforeCreate(t *testing.T) {
+	if utils.GetAnyStringEnv("TF_ACC") == "" {
+		t.Skip("Acceptance tests are disabled")
+	}
+
+	t.Setenv("TMPDIR", t.TempDir())
+
+	te := test.InitEnvironment(t)
+	ctx := context.Background()
+
+	gen := cluster.NewIDGenerator(te.ClusterClient(), cluster.IDGeneratorConfig{RandomIDs: false})
+
+	firstID, err := gen.NextID(ctx)
+	require.NoError(t, err)
+
+	busyIDs := []int{firstID + 1, firstID + 2}
+	createBusyVMs(ctx, t, te, busyIDs)
+
+	ids := []int{firstID}
+
+	for range 3 {
+		id, err := gen.NextID(ctx)
+		require.NoError(t, err)
+
+		ids = append(ids, id)
+	}
+
+	seen := map[int]bool{}
+
+	for _, id := range ids {
+		assert.False(t, seen[id], "ID %d handed out twice: %v", id, ids)
+		assert.NotContains(t, busyIDs, id)
+
+		seen[id] = true
+	}
+}
+
+func TestAccIDGenerator_SequenceSkipsGuestsHiddenFromToken(t *testing.T) {
+	const numBusyIDs = 40
+
+	if utils.GetAnyStringEnv("TF_ACC") == "" {
+		t.Skip("Acceptance tests are disabled")
+	}
+
+	t.Setenv("TMPDIR", t.TempDir())
+
+	te := test.InitEnvironment(t)
+	ctx := context.Background()
+
+	userID := test.SafeResourceName("idgen") + "@pve"
+	tokenName := "noacl"
+
+	require.NoError(t, te.AccessClient().CreateUser(ctx, &access.UserCreateRequestBody{ID: userID}))
+
+	t.Cleanup(func() {
+		_ = te.AccessClient().DeleteUserToken(context.Background(), userID, tokenName)
+		_ = te.AccessClient().DeleteUser(context.Background(), userID)
+	})
+
+	token, err := te.AccessClient().CreateUserToken(ctx, userID, tokenName, &access.UserTokenCreateRequestBody{
+		PrivSeparate: proxmoxtypes.CustomBool(true).Pointer(),
+	})
+	require.NoError(t, err)
+
+	creds, err := api.NewCredentials("", "", "", token, "", "")
+	require.NoError(t, err)
+
+	conn, err := api.NewConnection(utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT"), true, "", nil)
+	require.NoError(t, err)
+
+	limitedClient, err := api.NewClient(creds, conn)
+	require.NoError(t, err)
+
+	gen := cluster.NewIDGenerator(&cluster.Client{Client: limitedClient}, cluster.IDGeneratorConfig{RandomIDs: false})
+
+	firstID, err := gen.NextID(ctx)
+	require.NoError(t, err)
+
+	busyIDs := make([]int, numBusyIDs)
+	for i := range busyIDs {
+		busyIDs[i] = firstID + 1 + i
+	}
+
+	createBusyVMs(ctx, t, te, busyIDs)
+
+	id, err := gen.NextID(ctx)
+	require.NoError(t, err)
+	assert.Greater(t, id, firstID+numBusyIDs)
+}
+
+func createBusyVMs(ctx context.Context, t *testing.T, te *test.Environment, ids []int) {
+	t.Helper()
+
+	t.Cleanup(func() {
+		var wg sync.WaitGroup
+
+		for _, id := range ids {
+			wg.Go(func() {
+				if result := te.NodeClient().VM(id).DeleteVM(ctx, true, true); result.Err() != nil {
+					t.Logf("cleanup warning: failed to delete VM %d: %v", id, result.Err())
+				}
+			})
+		}
+
+		wg.Wait()
+	})
+
+	for _, id := range ids {
+		result := te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: id})
+		require.NoError(t, result.Err(), "failed to create VM %d", id)
+	}
+}
+
+func TestAccIDGenerator_Random(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -160,7 +276,7 @@ func TestIDGenerator_Random(t *testing.T) {
 	}
 }
 
-func TestProviderAuth(t *testing.T) {
+func TestAccProviderAuth(t *testing.T) {
 	if utils.GetAnyStringEnv("TF_ACC") == "" {
 		t.Skip("Acceptance tests are disabled")
 	}

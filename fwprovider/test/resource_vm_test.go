@@ -2438,6 +2438,18 @@ func TestAccResourceVMClone(t *testing.T) {
 
 	te := InitEnvironment(t)
 
+	hookScriptName := sanitizeTemplateName(t.Name()) + "-hookscript.sh"
+	hookScriptID := "local:snippets/" + hookScriptName
+
+	te.AddTemplateVars(map[string]any{"HookScriptID": hookScriptID})
+	t.Cleanup(func() {
+		// t.Context() is already canceled when cleanups run.
+		_, err := te.ExecuteNodeCommandsContext(context.Background(), []string{"rm -f /var/lib/vz/snippets/" + hookScriptName})
+		if err != nil {
+			t.Logf("cleanup: failed to delete snippet %s: %v", hookScriptName, err)
+		}
+	})
+
 	tests := []struct {
 		name string
 		step []resource.TestStep
@@ -2734,6 +2746,65 @@ func TestAccResourceVMClone(t *testing.T) {
 				}),
 			),
 		}}},
+		// A template hookscript can only be set as root (e.g. `qm set`). Cloning it with an API token must not
+		// write hookscript, whether it is omitted (inherited) or explicitly set to the inherited value.
+		{"clone inherits template hookscript", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "template_hookscript" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						template  = true
+						lifecycle {
+							ignore_changes = [hook_script_file_id]
+						}
+					}`),
+				Check: func(s *terraform.State) error {
+					rs, ok := s.RootModule().Resources["proxmox_virtual_environment_vm.template_hookscript"]
+					if !ok {
+						return fmt.Errorf("resource template_hookscript not found in state")
+					}
+
+					te.ExecuteNodeCommands([]string{
+						fmt.Sprintf("printf '#!/bin/bash\\nexit 0\\n' > /var/lib/vz/snippets/%s", hookScriptName),
+						fmt.Sprintf("chmod +x /var/lib/vz/snippets/%s", hookScriptName),
+						fmt.Sprintf("qm set %s --hookscript %s", rs.Primary.Attributes["vm_id"], hookScriptID),
+					})
+
+					return nil
+				},
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "template_hookscript" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						template  = true
+						lifecycle {
+							ignore_changes = [hook_script_file_id]
+						}
+					}
+					resource "proxmox_virtual_environment_vm" "clone_hookscript" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						clone {
+							vm_id = proxmox_virtual_environment_vm.template_hookscript.vm_id
+						}
+					}
+					resource "proxmox_virtual_environment_vm" "clone_hookscript_explicit" {
+						node_name           = "{{.NodeName}}"
+						started             = false
+						hook_script_file_id = "{{.HookScriptID}}"
+						clone {
+							vm_id = proxmox_virtual_environment_vm.template_hookscript.vm_id
+						}
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkVMHookScript(te, "proxmox_virtual_environment_vm.clone_hookscript", hookScriptID),
+					checkVMHookScript(te, "proxmox_virtual_environment_vm.clone_hookscript_explicit", hookScriptID),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
@@ -2745,6 +2816,32 @@ func TestAccResourceVMClone(t *testing.T) {
 				Steps:                    tt.step,
 			})
 		})
+	}
+}
+
+// checkVMHookScript asserts the hookscript of the VM in the Proxmox config, not just in the Terraform state.
+func checkVMHookScript(te *Environment, resourceName string, expected string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource %s not found in state", resourceName)
+		}
+
+		vmID, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
+		if err != nil {
+			return fmt.Errorf("failed to parse vm_id: %w", err)
+		}
+
+		cfg, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+		if err != nil {
+			return fmt.Errorf("failed to get VM config: %w", err)
+		}
+
+		if cfg.HookScript == nil || *cfg.HookScript != expected {
+			return fmt.Errorf("%s: expected hookscript %q, got %v", resourceName, expected, cfg.HookScript)
+		}
+
+		return nil
 	}
 }
 
@@ -3064,6 +3161,96 @@ func TestAccResourceVMMigrateRemoveHostPCI(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "node_name", te.Node2Name),
 					resource.TestCheckResourceAttr(resourceName, "hostpci.#", "0"),
 				),
+			},
+		},
+	})
+}
+
+// TestAccResourceVMHostUSBBeyondUSB3 checks that usb4 and higher are read back, imported, and removed
+// (issue #3009).
+func TestAccResourceVMHostUSBBeyondUSB3(t *testing.T) {
+	te := InitEnvironment(t)
+
+	testVMID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"TestVMID":    testVMID,
+		"MappingName": SafeResourceName("usb-map"),
+	})
+
+	resourceName := "proxmox_virtual_environment_vm.test_usb"
+
+	blocks := []string{
+		`host = "1234:0001"`,
+		`host = "1234:0002"`,
+		`host = "1234:0003"`,
+		`host = "1234:0004"`,
+		`mapping = proxmox_hardware_mapping_usb.test.name
+						usb3    = true`,
+		`host = "1234:0006"
+						usb3 = true`,
+	}
+
+	usbConfig := func(count int) string {
+		var usb strings.Builder
+
+		for _, block := range blocks[:count] {
+			fmt.Fprintf(&usb, `
+					usb {
+						%s
+					}`, block)
+		}
+
+		return te.RenderConfig(`
+				resource "proxmox_hardware_mapping_usb" "test" {
+					name = "{{.MappingName}}"
+					map  = [{
+						id   = "1234:0005"
+						node = "{{.NodeName}}"
+					}]
+				}
+
+				resource "proxmox_virtual_environment_vm" "test_usb" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+					started   = false
+					machine   = "q35"
+					`+usb.String()+`
+				}`, WithRootPAMAuth())
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: usbConfig(6),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "usb.#", "6"),
+					resource.TestCheckResourceAttrPair(resourceName, "usb.4.mapping", "proxmox_hardware_mapping_usb.test", "name"),
+					resource.TestCheckResourceAttr(resourceName, "usb.4.usb3", "true"),
+					resource.TestCheckResourceAttr(resourceName, "usb.5.host", "1234:0006"),
+					resource.TestCheckResourceAttr(resourceName, "usb.5.usb3", "true"),
+				),
+			},
+			{
+				Config:   usbConfig(6),
+				PlanOnly: true,
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, testVMID),
+			},
+			{
+				Config: usbConfig(4),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "usb.#", "4"),
+				),
+			},
+			{
+				Config:   usbConfig(4),
+				PlanOnly: true,
 			},
 		},
 	})

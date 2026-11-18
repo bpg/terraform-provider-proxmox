@@ -134,14 +134,15 @@ file, finalized.
 
 ### Cluster / placement
 
-| Capability          | Target PR | Status | Notes                      |
-| ------------------- | --------- | ------ | -------------------------- |
-| startup             | #18       | todo   | —                          |
-| pool_id             | #18       | todo   | —                          |
-| protection          | #18       | todo   | —                          |
-| hook_script_file_id | #18       | todo   | —                          |
-| amd_sev             | #18       | todo   | —                          |
-| migrate             | #19       | todo   | Depends on full device set |
+| Capability                                                                           | Target PR | Status | Notes                                                                     |
+| ------------------------------------------------------------------------------------ | --------- | ------ | ------------------------------------------------------------------------- |
+| startup                                                                              | #18       | todo   | —                                                                         |
+| pool_id                                                                              | #18       | todo   | —                                                                         |
+| protection                                                                           | #18       | todo   | —                                                                         |
+| hook_script_file_id                                                                  | #18       | todo   | —                                                                         |
+| amd_sev                                                                              | #18       | todo   | —                                                                         |
+| migrate                                                                              | #19       | todo   | Depends on full device set                                                |
+| migrate: targetstorage mapping (`targetstorage`), conntrack (`with-conntrack-state`) | #19       | todo   | From #2545; both on PVE 9.2 `POST qemu/{vmid}/migrate`, SDK sends neither |
 
 ### Lifecycle / runtime
 

@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -58,7 +59,7 @@ const (
 	dvInitializationUserAccountPassword = ""
 	dvInitializationEntrypoint          = ""
 	dvCPUArchitecture                   = "amd64"
-	dvCPUCores                          = 1
+	dvCPUCores                          = 0
 	dvCPULimit                          = float64(0)
 	dvCPUUnits                          = 0
 	dvDescription                       = ""
@@ -66,7 +67,7 @@ const (
 	dvDiskACL                           = false
 	dvDiskDatastoreID                   = "local"
 	dvDiskQuota                         = false
-	dvDiskReplicate                     = false
+	dvDiskReplicate                     = true
 	dvDiskSize                          = 4
 	dvFeaturesNesting                   = false
 	dvFeaturesKeyControl                = false
@@ -110,7 +111,7 @@ const (
 	dvWaitForIPTimeout                  = "5m"
 	dvUnprivileged                      = false
 
-	maxNetworkInterfaces  = 10
+	maxNetworkInterfaces  = 32
 	maxPassthroughDevices = 128
 	maxMountPoints        = 256
 
@@ -352,8 +353,8 @@ func Container() *schema.Resource {
 							Type:             schema.TypeInt,
 							Description:      "The number of CPU cores",
 							Optional:         true,
-							Default:          dvCPUCores,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 128)),
+							Computed:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 8192)),
 						},
 						mkCPULimit: {
 							Type:        schema.TypeFloat,
@@ -759,7 +760,10 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "A mount point",
 				Optional:    true,
-				ForceNew:    true,
+				// Not ForceNew: adding, removing and reconfiguring mount points is applied in place by
+				// containerUpdate. Recreation is narrowed down to moving an existing mount point to another
+				// datastore, host path or device, or resizing it, which is handled by
+				// containerMountPointForceNew in CustomizeDiff.
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkMountPointACL: {
@@ -819,24 +823,14 @@ func Container() *schema.Resource {
 							Description:      "Volume size (only used for volume mount points)",
 							Optional:         true,
 							Default:          dvMountPointSize,
-							ForceNew:         true,
 							ValidateDiagFunc: validators.FileSize(),
+							DiffSuppressFunc: mountPointSizeDiffSuppress,
 						},
 						mkMountPointVolume: {
-							Type:        schema.TypeString,
-							Description: "Volume, device or directory to mount into the container",
-							Required:    true,
-							ForceNew:    true,
-							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
-								// For *new* volume mounts PVE returns an actual volume ID which is saved in the state,
-								// so on reapply the provider will try override it:
-								//   "local-lvm" -> "local-lvm:vm-101-disk-1"
-								//   "local-lvm:8" -> "local-lvm:vm-101-disk-1"
-								// There is also an option to mount an existing volume, so
-								//   "local-lvm:vm-101-disk-1" -> "local-lvm:vm-101-disk-1"
-								// which is a valid case.
-								return oldVal == newVal || strings.HasPrefix(oldVal, strings.Split(newVal, ":")[0]+":")
-							},
+							Type:             schema.TypeString,
+							Description:      "Volume, device or directory to mount into the container",
+							Required:         true,
+							DiffSuppressFunc: mountPointVolumeDiffSuppress,
 						},
 						mkMountPointPathInDatastore: {
 							Type:        schema.TypeString,
@@ -1076,10 +1070,12 @@ func Container() *schema.Resource {
 							Default:     dvStartupUpDelay,
 						},
 						mkStartupDownDelay: {
-							Type:        schema.TypeInt,
-							Description: "A non-negative number defining the delay in seconds before the next container is shut down",
-							Optional:    true,
-							Default:     dvStartupDownDelay,
+							Type: schema.TypeInt,
+							Description: "A non-negative number defining the shutdown timeout in seconds. When the node stops all guests " +
+								"(e.g. on host shutdown), Proxmox VE waits this long for the container to shut down " +
+								"before stopping it",
+							Optional: true,
+							Default:  dvStartupDownDelay,
 						},
 					},
 				},
@@ -1280,6 +1276,9 @@ func Container() *schema.Resource {
 					return false
 				},
 			),
+			// Mount points are updated in place; only moving an existing one to another datastore, host path
+			// or device, or resizing it, requires recreation.
+			containerMountPointForceNew,
 		),
 		Importer: &schema.ResourceImporter{
 			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
@@ -1451,25 +1450,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) di
 	cpu := d.Get(mkCPU).([]any)
 
 	if len(cpu) > 0 && cpu[0] != nil {
-		cpuBlock := cpu[0].(map[string]any)
-
-		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
-		cpuCores := cpuBlock[mkCPUCores].(int)
-		cpuLimit := cpuBlock[mkCPULimit].(float64)
-		cpuUnits := cpuBlock[mkCPUUnits].(int)
-
-		updateBody.CPUArchitecture = &cpuArchitecture
-		updateBody.CPUCores = &cpuCores
-
-		if cpuLimit > 0 {
-			updateBody.CPULimit = &cpuLimit
-		} else {
-			updateBody.Delete = append(updateBody.Delete, "cpulimit")
-		}
-
-		if cpuUnits > 0 {
-			updateBody.CPUUnits = &cpuUnits
-		}
+		containerSetCPU(d, cpu[0].(map[string]any), updateBody)
 	}
 
 	hookScript := d.Get(mkHookScriptFileID).(string)
@@ -2081,7 +2062,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		len(diskMountOptions) > 0 ||
 		bool(diskACL) ||
 		bool(diskQuota) ||
-		bool(diskReplicate)) {
+		!bool(diskReplicate)) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
@@ -2098,9 +2079,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 			rootFS.Quota = &diskQuota
 		}
 
-		if diskReplicate {
-			rootFS.Replicate = &diskReplicate
-		}
+		rootFS.Replicate = &diskReplicate
 	}
 
 	networkInterface := d.Get(mkNetworkInterface).([]any)
@@ -2230,7 +2209,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
-		CPUCores:             &cpuCores,
 		CPULimit:             &cpuLimit,
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
@@ -2249,6 +2227,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		TTY:                  &consoleTTYCount,
 		Unprivileged:         &unprivileged,
 		VMID:                 &vmID,
+	}
+
+	if cpuCores > 0 {
+		createBody.CPUCores = &cpuCores
 	}
 
 	if cpuUnits > 0 {
@@ -2470,6 +2452,139 @@ func containerGetTagsString(d *schema.ResourceData) string {
 	return strings.Join(sanitizedTags, ";")
 }
 
+// mountPointAllocationSize matches the size part of a "<datastore>:<size in GiB>" allocation request.
+var mountPointAllocationSize = regexp.MustCompile(`^\d+(\.\d+)?$`)
+
+// mountPointVolumeDiffSuppress reports whether an old/new mount point volume pair refers to the
+// same volume.
+//
+// For *new* volume mounts PVE returns an actual volume ID which is saved in the state,
+// so on reapply the provider will try override it:
+//
+//	"local-lvm" -> "local-lvm:vm-101-disk-1"
+//	"local-lvm:8" -> "local-lvm:vm-101-disk-1"
+//
+// There is also an option to mount an existing volume by its ID. That is not an allocation request,
+// so a different ID is a different volume, even on the same datastore:
+//
+//	"local-lvm:vm-101-disk-1" -> "local-lvm:vm-101-disk-9"
+func mountPointVolumeDiffSuppress(_, oldVal, newVal string, _ *schema.ResourceData) bool {
+	if oldVal == newVal {
+		return true
+	}
+
+	datastore, volume, _ := strings.Cut(newVal, ":")
+	if volume != "" && !mountPointAllocationSize.MatchString(volume) {
+		return false
+	}
+
+	return strings.HasPrefix(oldVal, datastore+":")
+}
+
+// mountPointIsVolumeID reports whether a mount point volume names an existing volume ("<datastore>:<volume>"),
+// as opposed to an allocation request, a host path or a device.
+func mountPointIsVolumeID(volume string) bool {
+	datastore, name, found := strings.Cut(volume, ":")
+
+	return found && name != "" && !strings.HasPrefix(datastore, "/") && !mountPointAllocationSize.MatchString(name)
+}
+
+// containerMountPointForceNew flags mount point changes that require recreating the container.
+// Appending, removing trailing and reconfiguring mount points is applied in place by containerUpdate, as is
+// attaching another existing volume by its ID. Only mount points present on both sides of the diff are considered:
+// moving an existing mount point to another datastore, host path or device, changing the size of one that is not
+// attached by its volume ID, or shifting it to another index cannot be done in place.
+//
+// The replacement is flagged on the specific nested attribute rather than on the mkMountPoint
+// block: a block-level ForceNew only propagates to the list count, which is unchanged when an
+// existing mount point is modified in place.
+func containerMountPointForceNew(_ context.Context, d *schema.ResourceDiff, _ any) error {
+	oldRaw, newRaw := d.GetChange(mkMountPoint)
+
+	oldList, _ := oldRaw.([]any)
+	newList, _ := newRaw.([]any)
+
+	for i := range min(len(oldList), len(newList)) {
+		oldMountPoint, ok := oldList[i].(map[string]any)
+		if !ok {
+			continue
+		}
+
+		newMountPoint, ok := newList[i].(map[string]any)
+		if !ok {
+			continue
+		}
+
+		oldVolume, _ := oldMountPoint[mkMountPointVolume].(string)
+		newVolume, _ := newMountPoint[mkMountPointVolume].(string)
+
+		existingVolume := mountPointIsVolumeID(newVolume)
+
+		// Another existing volume is attached in place, PVE keeps the previous one as unused. Replacing the
+		// container instead would destroy the volumes it owns, including the one being attached.
+		if !existingVolume && !mountPointVolumeDiffSuppress("", oldVolume, newVolume, nil) {
+			return forceNewMountPointAttr(d, i, mkMountPointVolume)
+		}
+
+		oldSize, _ := oldMountPoint[mkMountPointSize].(string)
+		newSize, _ := newMountPoint[mkMountPointSize].(string)
+
+		// PVE reports the real size of an existing volume whatever size is requested, so a replacement cannot
+		// apply it either.
+		if !existingVolume && !mountPointSizeEqual(oldSize, newSize) {
+			return forceNewMountPointAttr(d, i, mkMountPointSize)
+		}
+
+		oldPath, _ := oldMountPoint[mkMountPointPath].(string)
+		newPath, _ := newMountPoint[mkMountPointPath].(string)
+
+		// mount_point.N maps to mpN: an add or remove that shifts a surviving block would remount its volume elsewhere
+		if len(oldList) != len(newList) && strings.TrimPrefix(oldPath, "/") != strings.TrimPrefix(newPath, "/") {
+			return forceNewMountPointAttr(d, i, mkMountPointPath)
+		}
+	}
+
+	return nil
+}
+
+func forceNewMountPointAttr(d *schema.ResourceDiff, index int, attr string) error {
+	key := fmt.Sprintf("%s.%d.%s", mkMountPoint, index, attr)
+
+	if err := d.ForceNew(key); err != nil {
+		return fmt.Errorf("failed to require replacement for %q: %w", key, err)
+	}
+
+	return nil
+}
+
+// mountPointSizeDiffSuppress hides a size that is omitted from the configuration, or spelled differently, while the
+// state holds the size PVE reports for the volume.
+func mountPointSizeDiffSuppress(_, oldVal, newVal string, _ *schema.ResourceData) bool {
+	return mountPointSizeEqual(oldVal, newVal)
+}
+
+// mountPointSizeEqual compares two mount point sizes by value, so that equivalent spellings
+// (e.g. "4G" and "4096M") are not mistaken for a resize.
+func mountPointSizeEqual(oldSize, newSize string) bool {
+	if oldSize == newSize {
+		return true
+	}
+
+	// An unset size in the configuration means "whatever PVE reported", not a resize.
+	if newSize == dvMountPointSize {
+		return true
+	}
+
+	oldParsed, oldErr := types.ParseDiskSize(oldSize)
+	newParsed, newErr := types.ParseDiskSize(newSize)
+
+	if oldErr != nil || newErr != nil {
+		return false
+	}
+
+	return oldParsed == newParsed
+}
+
 func containerGetMountPointsMap(mountPoint []any) (containers.CustomMountPoints, error) {
 	mountPointsMap := make(containers.CustomMountPoints, len(mountPoint))
 
@@ -2529,6 +2644,58 @@ func containerGetMountPointsMap(mountPoint []any) (containers.CustomMountPoints,
 	}
 
 	return mountPointsMap, nil
+}
+
+// containerSetCPU fills the cpu settings of an update body. cores and units are computed: left out of the cpu block
+// they keep what the container has, and cores = 0 removes the setting. Without a cpu block both are removed, except
+// cores=1, which containers created before cores became optional have and read ignores.
+func containerSetCPU(d *schema.ResourceData, cpuBlock map[string]any, body *containers.UpdateRequestBody) {
+	cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
+	cpuCores := cpuBlock[mkCPUCores].(int)
+	cpuLimit := cpuBlock[mkCPULimit].(float64)
+	cpuUnits := cpuBlock[mkCPUUnits].(int)
+
+	var config cty.Value
+
+	hasBlock := false
+
+	if blocks, diags := d.GetRawConfigAt(cty.GetAttrPath(mkCPU)); !diags.HasError() &&
+		blocks.IsKnown() && !blocks.IsNull() && blocks.LengthInt() > 0 {
+		config = blocks.AsValueSlice()[0]
+		hasBlock = config.IsKnown() && !config.IsNull()
+	}
+
+	configured := func(attr string) bool {
+		return hasBlock && !config.GetAttr(attr).IsNull()
+	}
+
+	legacyCores := false
+
+	if old, _ := d.GetChange(mkCPU); len(old.([]any)) > 0 && old.([]any)[0] != nil {
+		legacyCores = old.([]any)[0].(map[string]any)[mkCPUCores].(int) == 1
+	}
+
+	body.CPUArchitecture = &cpuArchitecture
+
+	switch {
+	case configured(mkCPUCores) && cpuCores > 0:
+		body.CPUCores = &cpuCores
+	case configured(mkCPUCores), !hasBlock && !legacyCores:
+		body.Delete = append(body.Delete, "cores")
+	}
+
+	if cpuLimit > 0 {
+		body.CPULimit = &cpuLimit
+	} else {
+		body.Delete = append(body.Delete, "cpulimit")
+	}
+
+	switch {
+	case configured(mkCPUUnits):
+		body.CPUUnits = &cpuUnits
+	case !hasBlock:
+		body.Delete = append(body.Delete, "cpuunits")
+	}
 }
 
 func containerGetStartupBehavior(d *schema.ResourceData) *containers.CustomStartupBehavior {
@@ -2803,8 +2970,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if containerConfig.CPUCores != nil {
 		cpu[mkCPUCores] = *containerConfig.CPUCores
 	} else {
-		// Default value of "cores" is "1" according to the API documentation.
-		cpu[mkCPUCores] = 1
+		cpu[mkCPUCores] = 0
 	}
 
 	if containerConfig.CPULimit != nil {
@@ -2829,7 +2995,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 	} else if len(currentCPU) > 0 ||
 		cpu[mkCPUArchitecture] != dvCPUArchitecture ||
-		cpu[mkCPUCores] != dvCPUCores ||
+		// containers created before cores became optional have cores=1 and no cpu block
+		(cpu[mkCPUCores] != dvCPUCores && cpu[mkCPUCores] != 1) ||
 		cpu[mkCPULimit] != dvCPULimit ||
 		cpu[mkCPUUnits] != dvCPUUnits {
 		err := d.Set(mkCPU, []any{cpu})
@@ -2842,7 +3009,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	if containerConfig.RootFS != nil {
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
 		disk[mkDiskACL] = containerConfig.RootFS.ACL
-		disk[mkDiskReplicate] = containerConfig.RootFS.Replicate
+		disk[mkDiskReplicate] = bool(ptr.Or(containerConfig.RootFS.Replicate, true))
 		disk[mkDiskQuota] = containerConfig.RootFS.Quota
 		disk[mkDiskDatastoreID] = volumeParts[0]
 		disk[mkDiskPathInDatastore] = containerConfig.RootFS.Volume
@@ -2856,6 +3023,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	} else {
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkDiskDatastoreID] = "local"
+		disk[mkDiskReplicate] = dvDiskReplicate
 		disk[mkDiskSize] = dvDiskSize
 		disk[mkDiskMountOptions] = []string{}
 		disk[mkDiskPathInDatastore] = ""
@@ -3671,23 +3839,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 			return diag.FromErr(err)
 		}
 
-		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
-		cpuCores := cpuBlock[mkCPUCores].(int)
-		cpuLimit := cpuBlock[mkCPULimit].(float64)
-		cpuUnits := cpuBlock[mkCPUUnits].(int)
-
-		updateBody.CPUArchitecture = &cpuArchitecture
-		updateBody.CPUCores = &cpuCores
-
-		if cpuLimit > 0 {
-			updateBody.CPULimit = &cpuLimit
-		} else {
-			updateBody.Delete = append(updateBody.Delete, "cpulimit")
-		}
-
-		if cpuUnits > 0 {
-			updateBody.CPUUnits = &cpuUnits
-		}
+		containerSetCPU(d, cpuBlock, &updateBody)
 
 		bodyDirty = true
 	}
@@ -3989,7 +4141,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 
 	// Prepare the new mount point configuration.
 	if d.HasChange(mkMountPoint) {
-		_, newMountPoints := d.GetChange(mkMountPoint)
+		oldMountPoints, newMountPoints := d.GetChange(mkMountPoint)
 
 		mountPoints := newMountPoints.([]any)
 
@@ -3999,6 +4151,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 		}
 
 		updateBody.MountPoints = mountPointsMap
+
+		// Detach mount points that were dropped from the configuration. Detaching leaves the
+		// underlying volume in place (PVE marks it "unused"), so no data is destroyed.
+		oldMountPointsList, _ := oldMountPoints.([]any)
+		for i := len(mountPoints); i < len(oldMountPointsList); i++ {
+			updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("mp%d", i))
+		}
 
 		rebootRequired = true
 		bodyDirty = true

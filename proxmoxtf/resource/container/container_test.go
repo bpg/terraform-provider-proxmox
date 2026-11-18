@@ -7,10 +7,13 @@
 package resource
 
 import (
+	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -373,6 +376,419 @@ func TestContainerSchema(t *testing.T) {
 		mkOperatingSystemTemplateFileID: schema.TypeString,
 		mkOperatingSystemType:           schema.TypeString,
 	})
+}
+
+// mountPointStateAttrs builds the flatmap state attributes for a list of mount points.
+func mountPointStateAttrs(mountPoints ...map[string]string) map[string]string {
+	attrs := map[string]string{
+		mkVMID:                     "100",
+		mkNodeName:                 "pve",
+		mkMountPoint + ".#":        strconv.Itoa(len(mountPoints)),
+		mkNetworkInterface + ".#":  "0",
+		mkDisk + ".#":              "0",
+		mkInitialization + ".#":    "0",
+		mkOperatingSystem + ".#":   "0",
+		mkDevicePassthrough + ".#": "0",
+		mkIDMap + ".#":             "0",
+		// Unrelated ForceNew attributes: pinned to their defaults so they do not contribute
+		// RequiresNew to the diff under test.
+		mkTemplate:     "false",
+		mkUnprivileged: "false",
+		mkPoolID:       "",
+	}
+
+	for i, mp := range mountPoints {
+		prefix := fmt.Sprintf("%s.%d.", mkMountPoint, i)
+		attrs[prefix+mkMountPointMountOptions+".#"] = "0"
+		attrs[prefix+mkMountPointACL] = "false"
+		attrs[prefix+mkMountPointBackup] = "false"
+		attrs[prefix+mkMountPointQuota] = "false"
+		attrs[prefix+mkMountPointReadOnly] = "false"
+		attrs[prefix+mkMountPointReplicate] = "true"
+		attrs[prefix+mkMountPointShared] = "false"
+		attrs[prefix+mkMountPointSize] = ""
+
+		for k, v := range mp {
+			attrs[prefix+k] = v
+		}
+	}
+
+	return attrs
+}
+
+// TestContainerMountPointForceNew verifies that mount point changes only force container
+// recreation when an *existing* mount point is moved to another datastore, host path or device,
+// or resized. Adding, removing, or reconfiguring mount points, and attaching another existing
+// volume by its ID, must be handled in place by containerUpdate.
+//
+// See https://github.com/bpg/terraform-provider-proxmox/issues/3028.
+func TestContainerMountPointForceNew(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name              string
+		state             []map[string]string
+		config            []any
+		expectRequiresNew bool
+	}{
+		{
+			name: "adding a mount point is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/local1"},
+				map[string]any{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name:  "adding the first mount point is an in-place update",
+			state: nil,
+			config: []any{
+				map[string]any{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "removing a mount point is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+				{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/local1"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "toggling read_only on an existing mount point is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			config: []any{
+				map[string]any{
+					mkMountPointVolume:   "/mnt/pve/share",
+					mkMountPointPath:     "/mnt/share",
+					mkMountPointReadOnly: true,
+				},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "repointing an existing bind mount to another host path forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "/mnt/pve/other", mkMountPointPath: "/mnt/share"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "attaching another volume by id is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm:vm-100-disk-9", mkMountPointPath: "/mnt/local1"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "attaching another volume by id with its own size is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1", mkMountPointSize: "4G"},
+			},
+			config: []any{
+				map[string]any{
+					mkMountPointVolume: "tank:subvol-200-disk-1",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "8G",
+				},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "attaching a volume by id in place of a bind mount is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/share"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm:vm-100-disk-9", mkMountPointPath: "/mnt/share"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "moving a mount point to another datastore forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "tank", mkMountPointPath: "/mnt/local1"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "replacing a volume with a bind mount forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "/mnt/pve/share", mkMountPointPath: "/mnt/local1"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "swapping the volumes and paths of two mount points is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/b"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/b"},
+				map[string]any{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "allocation request with a size is not treated as a repoint",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm:8", mkMountPointPath: "/mnt/local1"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "resizing an existing mount point forces recreation",
+			state: []map[string]string{
+				{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "4G",
+				},
+			},
+			config: []any{
+				map[string]any{
+					mkMountPointVolume: "local-lvm",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "8G",
+				},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "another size on a mount point with a volume id is an in-place update",
+			state: []map[string]string{
+				{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "4G",
+				},
+			},
+			config: []any{
+				map[string]any{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "8G",
+				},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			// PVE resolves a datastore-only volume to a concrete volume ID; the resulting
+			// state-vs-config drift must not be mistaken for a repoint.
+			name: "resolved volume id is not treated as a repoint",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/local1"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/local1"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "removing the last of three mount points is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/b"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-3", mkMountPointPath: "/mnt/c"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/a"},
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/b"},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "removing a middle mount point forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/b"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-3", mkMountPointPath: "/mnt/c"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/a"},
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/c"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "removing the first of two mount points forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/b"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/b"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "inserting a mount point before an existing one forces recreation",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+				{mkMountPointVolume: "local-lvm:vm-100-disk-2", mkMountPointPath: "/mnt/c"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/a"},
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/b"},
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/c"},
+			},
+			expectRequiresNew: true,
+		},
+		{
+			name: "changing the path of an existing mount point is an in-place update",
+			state: []map[string]string{
+				{mkMountPointVolume: "local-lvm:vm-100-disk-1", mkMountPointPath: "/mnt/a"},
+			},
+			config: []any{
+				map[string]any{mkMountPointVolume: "local-lvm", mkMountPointPath: "/mnt/b"},
+			},
+			expectRequiresNew: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			container := Container()
+
+			state := &terraform.InstanceState{
+				ID:         "100",
+				Attributes: mountPointStateAttrs(tt.state...),
+			}
+
+			config := terraform.NewResourceConfigRaw(map[string]any{
+				mkNodeName:   "pve",
+				mkVMID:       100,
+				mkMountPoint: tt.config,
+			})
+
+			diff, err := container.Diff(t.Context(), state, config, nil)
+			require.NoError(t, err)
+			require.NotNil(t, diff, "expected a non-empty diff")
+
+			assert.Equal(t, tt.expectRequiresNew, diff.RequiresNew(),
+				"unexpected RequiresNew; diff attributes: %v", diff.Attributes)
+		})
+	}
+}
+
+// TestContainerMountPointOmittedSize verifies that a mount point without size in the configuration does not plan a
+// "size -> null" change against the size PVE reported, while a different size is still planned.
+//
+// See https://github.com/bpg/terraform-provider-proxmox/issues/3300.
+func TestContainerMountPointOmittedSize(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		volume     string
+		configSize string
+		expectDiff bool
+	}{
+		{"allocated with a datastore size and no size", "local-lvm:1", "", false},
+		{"size removed from the configuration", "local-lvm", "", false},
+		{"same size spelled in another unit", "local-lvm", "1024M", false},
+		{"other size", "local-lvm:vm-100-disk-1", "2G", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			state := &terraform.InstanceState{
+				ID: "100",
+				Attributes: mountPointStateAttrs(map[string]string{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/a",
+					mkMountPointSize:   "1G",
+				}),
+			}
+
+			mountPoint := map[string]any{mkMountPointVolume: tt.volume, mkMountPointPath: "/mnt/a"}
+			if tt.configSize != "" {
+				mountPoint[mkMountPointSize] = tt.configSize
+			}
+
+			config := terraform.NewResourceConfigRaw(map[string]any{
+				mkNodeName:   "pve",
+				mkVMID:       100,
+				mkMountPoint: []any{mountPoint},
+			})
+
+			diff, err := Container().Diff(t.Context(), state, config, nil)
+			require.NoError(t, err)
+
+			var sizeDiff *terraform.ResourceAttrDiff
+			if diff != nil {
+				sizeDiff = diff.Attributes[mkMountPoint+".0."+mkMountPointSize]
+			}
+
+			if tt.expectDiff {
+				require.NotNil(t, sizeDiff, "expected a size diff")
+				assert.Equal(t, "2G", sizeDiff.New)
+			} else {
+				assert.Nil(t, sizeDiff, "unexpected size diff")
+			}
+		})
+	}
+}
+
+func TestMountPointVolumeDiffSuppress(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		oldVal   string
+		newVal   string
+		suppress bool
+	}{
+		{"same volume id", "local-lvm:vm-100-disk-1", "local-lvm:vm-100-disk-1", true},
+		{"datastore resolved to a volume id", "local-lvm:vm-100-disk-1", "local-lvm", true},
+		{"datastore with size resolved to a volume id", "local-lvm:vm-100-disk-1", "local-lvm:8", true},
+		{"datastore with fractional size resolved to a volume id", "local-lvm:vm-100-disk-1", "local-lvm:0.5", true},
+		{"datastore with empty volume resolved to a volume id", "local-lvm:vm-100-disk-1", "local-lvm:", true},
+		{"other volume on the same datastore", "local-lvm:vm-100-disk-1", "local-lvm:vm-100-disk-9", false},
+		{"volume of another guest on the same datastore", "linstor:pm-797c07b4_139", "linstor:vm-123123-disk-0", false},
+		{"other datastore", "local-lvm:vm-100-disk-1", "tank", false},
+		{"other volume on another datastore", "local-lvm:vm-100-disk-1", "tank:subvol-100-disk-1", false},
+		{"same bind mount", "/mnt/pve/share", "/mnt/pve/share", true},
+		{"other bind mount", "/mnt/pve/share", "/mnt/pve/other", false},
+		{"other device with a shared prefix", "/dev/disk/by-path/pci-0000:00:1f.2-ata-1", "/dev/disk/by-path/pci-0000:00:1f.2-ata-2", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.suppress, mountPointVolumeDiffSuppress("", tt.oldVal, tt.newVal, nil))
+		})
+	}
 }
 
 func TestInitializationEntrypointValidation(t *testing.T) {

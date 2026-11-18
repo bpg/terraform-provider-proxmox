@@ -2063,6 +2063,34 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "lbarrosby",
+      "name": "Lucas Barros",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70347936?v=4",
+      "profile": "https://www.linkedin.com/in/lucas-rbarros",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    },
+    {
+      "login": "pigam",
+      "name": "Pierre Gambarotto",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38874936?v=4",
+      "profile": "https://github.com/pigam",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "luxend0",
+      "name": "Luxend",
+      "avatar_url": "https://avatars.githubusercontent.com/u/227785302?v=4",
+      "profile": "https://instantnode.eu",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

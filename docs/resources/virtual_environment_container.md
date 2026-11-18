@@ -199,10 +199,16 @@ The `mount_point.volume` attribute accepts three forms:
         - `arm64` - ARM (64-bit).
         - `armhf` - ARM (32 bit).
         - `i386` - x86 (32 bit).
-    - `cores` - (Optional) The number of CPU cores (defaults to `1`).
+    - `cores` - (Optional) The number of CPU cores (between `1` and `8192`). When unset,
+        a new container has no `cores` setting and can use all host cores, and a clone
+        keeps the value of its source. Removing the attribute keeps the current value, set
+        `0` to remove the setting from the container. Removing the whole `cpu` block also
+        removes the setting, unless it is `1`.
     - `limit` - (Optional) Limit of CPU usage. Value `0` indicates no limit (defaults to `0`).
     - `units` - (Optional) The CPU units (between `1` and `500000`). When unset,
-        Proxmox applies its own default.
+        Proxmox applies its own default to a new container, and a clone keeps the value of
+        its source. Removing the attribute keeps the current value, removing the whole
+        `cpu` block removes the setting from the container.
 - `description` - (Optional) The description.
 - `disk` - (Optional) The root filesystem (rootfs) storage configuration.
     Selects the Proxmox storage pool the container's root volume is created
@@ -257,6 +263,22 @@ The `mount_point.volume` attribute accepts three forms:
 - `mount_point` - (Optional) An additional volume mount or host bind mount
     (multiple blocks supported). Use this for data volumes, shared
     directories, or attaching pre-existing PVE volumes.
+
+    -> Mount points are positional: the first block is `mp0` in Proxmox VE, the
+    second `mp1`, and so on. Appending a block, removing the last block, or
+    reconfiguring an existing one is applied in place, and a running container
+    is restarted. Removing or inserting a block before existing ones recreates
+    the container, as does changing the `size` of a mount point whose `volume`
+    is a datastore ID, or pointing its `volume` at a different datastore ID or
+    host path. Changing `volume` to the ID of another existing volume is
+    applied in place: the new volume is attached and the previous one stays on
+    the datastore as an unused volume. Proxmox VE does not check that the new
+    volume exists, and it keeps the real size of an existing volume: a `size`
+    that differs from it is not applied and shows as a change on every plan,
+    and each apply of that change restarts a running container. A removed
+    volume mount stays on the datastore as an unused volume; bind and device
+    mounts are just dropped.
+
     - `acl` (Optional) Explicitly enable or disable ACL support.
     - `backup` (Optional) Whether to include the mount point in backups (only
         used for volume mount points, defaults to `false`).
@@ -335,8 +357,11 @@ The `mount_point.volume` attribute accepts three forms:
         order (defaults to `-1`, meaning no specific order).
     - `up_delay` - (Optional) A non-negative number defining the delay in
         seconds before the next container is started.
-    - `down_delay` - (Optional) A non-negative number defining the delay in
-        seconds before the next container is shut down.
+    - `down_delay` - (Optional) A non-negative number defining the shutdown
+        timeout in seconds. When the node stops all guests (e.g. on host
+        shutdown), Proxmox VE waits this long for the container to shut down before
+        stopping it. When unset, the node's bulk stop timeout is used
+        (180 seconds by default).
 - `start_on_boot` - (Optional) Automatically start container when the host
   system boots (defaults to `true`).
 - `purge_on_destroy` - (Optional) Whether to purge the container from backup,

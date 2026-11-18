@@ -208,6 +208,10 @@ func (d *CustomStorageDevice) EncodeOptions() string {
 // EncodeValues converts a CustomStorageDevice struct to a URL value.
 func (d *CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 	if d.ImportFrom != nil && *d.ImportFrom != "" {
+		if d.DatastoreID == nil {
+			return fmt.Errorf("unable to encode storage device %q: import from %q requires a datastore", key, *d.ImportFrom)
+		}
+
 		d.FileVolume = *d.DatastoreID + ":" + "0"
 	}
 

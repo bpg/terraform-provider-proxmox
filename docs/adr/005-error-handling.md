@@ -244,6 +244,11 @@ Key behaviors of `DoTask`:
   the custom predicate. Any new code that combines `RetryIf` with `Unrecoverable` must do the same
 - `nil` taskID with `nil` error means "already done" (e.g., "already running") — skips the wait
 - `WithAlreadyDoneCheck` is only applied on retry attempts, not the first attempt
+- `WithAlreadyDoneCheck` matches dispatch errors only. A retry whose task fails is still a failure, since a
+  generic "already exists" there usually comes from storage (a leftover volume), not from the object itself
+- `WithAlreadyDoneTaskCheck` covers APIs that only check for existing state inside the task (e.g. Ceph MDS
+  create). It matches the task failure of a retry that follows a failed dispatch, and its predicate must name the
+  object, not just "already exists"
 
 Common retry predicates:
 

@@ -353,7 +353,9 @@ output "ubuntu_vm_public_key" {
     hotplug list, disk resizes on a running VM are applied live without a
     reboot. When `disk` is excluded, the provider will reboot the VM after
     resize (controlled by `reboot_after_update`).
-- `usb` - (Optional) A host USB device mapping (multiple blocks supported).
+- `usb` - (Optional) A host USB device mapping (multiple blocks supported, up to 14).
+    Proxmox VE only starts a VM with `usb5` and up on machine type >= 7.1 with
+    an `l26` or Windows > 7 `operating_system`.
     - `host` - (Optional) The Host USB device or port or the value `spice`. Use either this or `mapping`.
     - `mapping` - (Optional) The cluster-wide resource mapping name of the device, for example "usbdevice". Use either this or `host`.
     - `usb3` - (Optional) Makes the USB device a USB3 device for the VM
@@ -548,8 +550,12 @@ output "ubuntu_vm_public_key" {
         order (defaults to `-1`, meaning no specific order).
     - `up_delay` - (Optional) A non-negative number defining the delay in
         seconds before the next VM is started.
-    - `down_delay` - (Optional) A non-negative number defining the delay in
-        seconds before the next VM is shut down.
+    - `down_delay` - (Optional) A non-negative number defining the shutdown
+        timeout in seconds. When the node stops all guests (e.g. on host
+        shutdown), Proxmox VE waits this long for the VM to shut down before
+        stopping it. It is also the default timeout for a shutdown of this
+        VM that doesn't set one. When unset, the node's bulk stop timeout is
+        used (180 seconds by default).
 - `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults
     to `true`).
 - `tags` - (Optional) A list of tags of the VM. This is only meta information (
@@ -607,7 +613,7 @@ output "ubuntu_vm_public_key" {
     - `expose_acl` - (Optional) Enable POSIX ACLs, implies xattr support
     - `expose_xattr` - (Optional) Enable support for extended attributes
 - `vm_id` - (Optional) The VM identifier.
-- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute).
+- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute). When cloning a VM, the hookscript is inherited from the template unless this attribute is explicitly set. Note that setting or changing a hookscript requires a direct `root@pam` password session; API tokens (including one issued for `root@pam`) are rejected by Proxmox with "only root can set 'hookscript' config".
 - `watchdog` - (Optional) The watchdog configuration. Once enabled (by a guest action), the watchdog must be periodically polled by an agent inside the guest or else the watchdog will reset the guest (or execute the respective action specified).
     - `enabled` - (Optional) Whether the watchdog is enabled (defaults to `false`).
     - `model` - (Optional) The watchdog type to emulate (defaults to `i6300esb`).

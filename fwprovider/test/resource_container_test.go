@@ -23,10 +23,12 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -551,6 +553,128 @@ func TestAccResourceContainerClone(t *testing.T) {
 
 						return nil
 					},
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerCloneCPU(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDCloneA := 100000 + rand.Intn(99999)
+	accTestContainerIDCloneB := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":         imageFileName,
+		"TestContainerID":       accTestContainerID,
+		"TestContainerIDCloneA": accTestContainerIDCloneA,
+		"TestContainerIDCloneB": accTestContainerIDCloneB,
+	})
+
+	config := func(cpuA, cpuB string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{.TestContainerID}}
+			template  = true
+			cpu {
+				cores = 4
+				units = 2048
+			}
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-clone-cpu"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}
+		resource "proxmox_virtual_environment_container" "test_container_clone_a" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{.TestContainerIDCloneA}}
+			started   = false
+			` + cpuA + `
+			clone {
+				vm_id = proxmox_virtual_environment_container.test_container.id
+			}
+			initialization {
+				hostname = "test-clone-cpu-a"
+			}
+		}
+		resource "proxmox_virtual_environment_container" "test_container_clone_b" {
+			node_name = "{{.NodeName}}"
+			vm_id     = {{.TestContainerIDCloneB}}
+			started   = false
+			` + cpuB + `
+			clone {
+				vm_id = proxmox_virtual_environment_container.test_container.id
+			}
+			initialization {
+				hostname = "test-clone-cpu-b"
+			}
+		}`)
+	}
+
+	// 0 stands for "not in the container config"
+	checkCPU := func(vmID, cores, units int) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			cfg, err := te.NodeClient().Container(vmID).GetContainer(t.Context())
+			if err != nil {
+				return fmt.Errorf("failed to get container %d: %w", vmID, err)
+			}
+
+			gotCores, gotUnits := ptr.Or(cfg.CPUCores, 0), ptr.Or(cfg.CPUUnits, 0)
+			if gotCores != cores || gotUnits != units {
+				return fmt.Errorf("container %d: expected cores %d and cpuunits %d, got %d and %d",
+					vmID, cores, units, gotCores, gotUnits)
+			}
+
+			return nil
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config("", `cpu {
+					limit = 2
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCPU(accTestContainerIDCloneA, 4, 2048),
+					checkCPU(accTestContainerIDCloneB, 4, 2048),
+				),
+			},
+			{
+				Config: config(`cpu {
+					limit = 2
+				}`, `cpu {
+					cores = 2
+					limit = 2
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCPU(accTestContainerIDCloneA, 4, 2048),
+					checkCPU(accTestContainerIDCloneB, 2, 2048),
+				),
+			},
+			{
+				Config: config(`cpu {
+					limit = 2
+				}`, `cpu {
+					cores = 0
+					limit = 2
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCPU(accTestContainerIDCloneA, 4, 2048),
+					checkCPU(accTestContainerIDCloneB, 0, 2048),
 				),
 			},
 		},
@@ -1274,11 +1398,549 @@ func TestAccResourceContainerMountPoint(t *testing.T) {
 						type             = "alpine"
 				    }
 				}`),
+				// Adding a mount point must be applied in place, not by recreating the container.
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
 					"mount_point.#": "2",
 				}),
 			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+					vm_id = {{ .TestContainerID }}
+				  	started   = false
+				    disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					// drop the second mount point again
+				    mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "mnt/local1"
+				    }
+				    initialization {
+				  		hostname = "test"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}`),
+				// Removing a mount point must also be applied in place.
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
+						"mount_point.#": "1",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						_, ok := ctInfo.MountPoints["mp1"]
+						require.False(te.t, ok, `"mp1" should have been detached from the container`)
+
+						return nil
+					},
+				),
+			},
 		},
+	})
+}
+
+// TestAccResourceContainerMountPointOmittedSize checks that a mount point without size settles after apply, both when
+// the volume is allocated with "<datastore>:<size>" and when size is removed from the configuration.
+//
+// See https://github.com/bpg/terraform-provider-proxmox/issues/3300.
+func TestAccResourceContainerMountPointOmittedSize(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := func(mountPoints string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+		    node_name = "{{.NodeName}}"
+			vm_id     = {{ .TestContainerID }}
+			started   = false
+		    disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 1
+			}` + mountPoints + `
+		    initialization {
+		  		hostname = "test-mp-size"
+		    }
+		    operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+		    }
+		}`)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config(`
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}:1"
+						path   = "/mnt/a"
+				    }
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}"
+						size   = "1G"
+						path   = "/mnt/b"
+				    }`),
+				Check: ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
+					"mount_point.0.size": "1G",
+					"mount_point.1.size": "1G",
+				}),
+			},
+			{
+				Config: config(`
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}:1"
+						path   = "/mnt/a"
+				    }
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}"
+						path   = "/mnt/b"
+				    }`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_container.test_container",
+							plancheck.ResourceActionNoop),
+					},
+				},
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerMountPointRunning(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := func(paths ...string) string {
+		var mountPoints strings.Builder
+
+		for _, path := range paths {
+			fmt.Fprintf(&mountPoints, `
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}"
+						size   = "1G"
+						path   = %q
+				    }`, path)
+		}
+
+		return te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+					vm_id = {{ .TestContainerID }}
+				    disk {
+						datastore_id = "{{.ContainerDatastoreID}}"
+						size         = 4
+					}` + mountPoints.String() + `
+				    initialization {
+				  		hostname = "test"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}`)
+	}
+
+	volumes := map[string]string{}
+
+	checkMountPoints := func(paths ...string) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			ct := te.NodeClient().Container(accTestContainerID)
+
+			ctInfo, err := ct.GetContainer(t.Context())
+			require.NoError(te.t, err, "failed to get container")
+			require.Len(te.t, ctInfo.MountPoints, len(paths))
+
+			for i, path := range paths {
+				mp := ctInfo.MountPoints[fmt.Sprintf("mp%d", i)]
+				require.NotNil(te.t, mp, "mp%d is missing", i)
+				require.Equal(te.t, path, mp.MountPoint)
+
+				if volume, ok := volumes[path]; ok {
+					require.Equal(te.t, volume, mp.Volume, "%s is backed by a different volume", path)
+				}
+
+				volumes[path] = mp.Volume
+			}
+
+			status, err := ct.GetContainerStatus(t.Context())
+			require.NoError(te.t, err, "failed to get container status")
+			require.Equal(te.t, "running", status.Status)
+
+			return nil
+		}
+	}
+
+	expectAction := func(action plancheck.ResourceActionType) resource.ConfigPlanChecks {
+		return resource.ConfigPlanChecks{
+			PreApply: []plancheck.PlanCheck{plancheck.ExpectResourceAction(accTestContainerName, action)},
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config("/mnt/a"),
+				Check:  checkMountPoints("/mnt/a"),
+			},
+			{
+				Config:           config("/mnt/a", "/mnt/b", "/mnt/c"),
+				ConfigPlanChecks: expectAction(plancheck.ResourceActionUpdate),
+				Check:            checkMountPoints("/mnt/a", "/mnt/b", "/mnt/c"),
+			},
+			{
+				Config:           config("/mnt/a", "/mnt/b"),
+				ConfigPlanChecks: expectAction(plancheck.ResourceActionUpdate),
+				Check:            checkMountPoints("/mnt/a", "/mnt/b"),
+			},
+			{
+				PreConfig:        func() { clear(volumes) },
+				Config:           config("/mnt/b"),
+				ConfigPlanChecks: expectAction(plancheck.ResourceActionDestroyBeforeCreate),
+				Check:            checkMountPoints("/mnt/b"),
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerMountPointVolumeRepoint(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{"ImageFileName": imageFileName})
+
+	const ownVolume = -1
+
+	type mount struct {
+		holderVolume int
+		path         string
+	}
+
+	initial := []mount{{0, "/mnt/a"}, {1, "/mnt/b"}}
+
+	tests := []struct {
+		name        string
+		initial     []mount
+		changed     []mount
+		changedSize string
+		planAfter   plancheck.ResourceActionType
+	}{
+		{"volumes changed at the same paths", initial, []mount{{1, "/mnt/a"}, {0, "/mnt/b"}}, "1G", plancheck.ResourceActionNoop},
+		{"volumes changed and paths swapped", initial, []mount{{1, "/mnt/b"}, {0, "/mnt/a"}}, "1G", plancheck.ResourceActionNoop},
+		{"other volumes at swapped paths", initial, []mount{{2, "/mnt/b"}, {3, "/mnt/a"}}, "1G", plancheck.ResourceActionNoop},
+		{
+			"own volume changed to another volume",
+			[]mount{{ownVolume, "/mnt/a"}},
+			[]mount{{0, "/mnt/a"}},
+			"1G",
+			plancheck.ResourceActionNoop,
+		},
+		{"volumes changed with another size", initial, []mount{{1, "/mnt/a"}, {0, "/mnt/b"}}, "2G", plancheck.ResourceActionUpdate},
+	}
+
+	var holderMountPoints strings.Builder
+
+	for i := range 4 {
+		fmt.Fprintf(&holderMountPoints, `
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}"
+						size   = "1G"
+						path   = "/mnt/%d"
+				    }`, i)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			holderID := 100000 + rand.Intn(99999)
+			containerID := holderID + 1
+
+			config := func(mounts []mount, size string) string {
+				var mountPoints strings.Builder
+
+				for _, m := range mounts {
+					volume := fmt.Sprintf("proxmox_virtual_environment_container.holder.mount_point[%d].path_in_datastore", m.holderVolume)
+					if m.holderVolume == ownVolume {
+						volume = `"{{.ContainerDatastoreID}}"`
+					}
+
+					fmt.Fprintf(&mountPoints, `
+					    mount_point {
+							volume = %s
+							size   = %q
+							path   = %q
+					    }`, volume, size, m.path)
+				}
+
+				return te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_virtual_environment_container" "holder" {
+				    node_name = "{{.NodeName}}"
+					vm_id     = %d
+					started   = false
+				    disk {
+						datastore_id = "{{.ContainerDatastoreID}}"
+						size         = 1
+					}`+holderMountPoints.String()+`
+				    initialization {
+				  		hostname = "test-holder"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}
+
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+					vm_id     = %d
+					started   = false
+				    disk {
+						datastore_id = "{{.ContainerDatastoreID}}"
+						size         = 1
+					}`+mountPoints.String()+`
+				    initialization {
+				  		hostname = "test-repoint"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}`, holderID, containerID))
+			}
+
+			var ownVolumes []string
+
+			checkMountPoints := func(mounts []mount) resource.TestCheckFunc {
+				return func(s *terraform.State) error {
+					holder := s.RootModule().Resources["proxmox_virtual_environment_container.holder"]
+					require.NotNil(t, holder, "holder is missing from state")
+
+					ct := te.NodeClient().Container(containerID)
+
+					ctInfo, err := ct.GetContainer(t.Context())
+					require.NoError(t, err, "failed to get container")
+					require.Len(t, ctInfo.MountPoints, len(mounts))
+
+					mounted := map[string]bool{}
+
+					for i, m := range mounts {
+						mp := ctInfo.MountPoints[fmt.Sprintf("mp%d", i)]
+						require.NotNil(t, mp, "mp%d is missing", i)
+						require.Equal(t, m.path, mp.MountPoint, "mp%d is mounted at a different path", i)
+
+						mounted[mp.Volume] = true
+
+						if m.holderVolume == ownVolume {
+							ownVolumes = append(ownVolumes, mp.Volume)
+
+							continue
+						}
+
+						volume := holder.Primary.Attributes[fmt.Sprintf("mount_point.%d.path_in_datastore", m.holderVolume)]
+						require.NotEmpty(t, volume)
+						require.Equal(t, volume, mp.Volume, "mp%d is backed by a different volume", i)
+					}
+
+					var rawConfig struct {
+						Data map[string]any `json:"data"`
+					}
+
+					require.NoError(t, ct.DoRequest(t.Context(), http.MethodGet, ct.ExpandPath("config"), nil, &rawConfig))
+
+					var unused []any
+
+					for key, value := range rawConfig.Data {
+						if strings.HasPrefix(key, "unused") {
+							unused = append(unused, value)
+						}
+					}
+
+					for _, volume := range ownVolumes {
+						if !mounted[volume] {
+							require.Contains(t, unused, volume, "detached volume is not kept as unused")
+						}
+					}
+
+					return nil
+				}
+			}
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: config(tt.initial, "1G"),
+						Check:  checkMountPoints(tt.initial),
+					},
+					{
+						Config: config(tt.changed, tt.changedSize),
+						ConfigPlanChecks: resource.ConfigPlanChecks{
+							PreApply: []plancheck.PlanCheck{
+								plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+							},
+							PostApplyPostRefresh: []plancheck.PlanCheck{
+								plancheck.ExpectResourceAction(accTestContainerName, tt.planAfter),
+							},
+						},
+						ExpectNonEmptyPlan: tt.planAfter != plancheck.ResourceActionNoop,
+						Check:              checkMountPoints(tt.changed),
+					},
+				},
+			})
+		})
+	}
+
+	t.Run("own volumes swapped on a running container", func(t *testing.T) {
+		containerID := 100000 + rand.Intn(99999)
+
+		config := te.RenderConfig(fmt.Sprintf(`
+		variable "first" {
+			type    = string
+			default = "{{.ContainerDatastoreID}}"
+		}
+
+		variable "second" {
+			type    = string
+			default = "{{.ContainerDatastoreID}}"
+		}
+
+		resource "proxmox_virtual_environment_container" "test_container" {
+		    node_name = "{{.NodeName}}"
+			vm_id     = %d
+		    disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 1
+			}
+		    mount_point {
+				volume = var.first
+				size   = "1G"
+				path   = "/mnt/a"
+		    }
+		    mount_point {
+				volume = var.second
+				size   = "1G"
+				path   = "/mnt/b"
+		    }
+		    initialization {
+		  		hostname = "test-repoint-own"
+				ip_config {
+				  	ipv4 {
+						address = "dhcp"
+				  	}
+				}
+		    }
+		    network_interface {
+		  	    name = "vmbr0"
+		    }
+		    operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+		    }
+		}`, containerID))
+
+		var volumes [2]string
+
+		getVolumes := func() [2]string {
+			ct := te.NodeClient().Container(containerID)
+
+			ctInfo, err := ct.GetContainer(t.Context())
+			require.NoError(t, err, "failed to get container")
+			require.Len(t, ctInfo.MountPoints, 2)
+			require.Equal(t, "/mnt/a", ctInfo.MountPoints["mp0"].MountPoint)
+			require.Equal(t, "/mnt/b", ctInfo.MountPoints["mp1"].MountPoint)
+
+			status, err := ct.GetContainerStatus(t.Context())
+			require.NoError(t, err, "failed to get container status")
+			require.Equal(t, "running", status.Status)
+
+			return [2]string{ctInfo.MountPoints["mp0"].Volume, ctInfo.MountPoints["mp1"].Volume}
+		}
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: config,
+					Check: func(*terraform.State) error {
+						volumes = getVolumes()
+						require.NotEqual(t, volumes[0], volumes[1])
+
+						return nil
+					},
+				},
+				{
+					PreConfig: func() {
+						t.Setenv("TF_VAR_first", volumes[1])
+						t.Setenv("TF_VAR_second", volumes[0])
+					},
+					Config: config,
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+						},
+					},
+					Check: func(*terraform.State) error {
+						require.Equal(t, [2]string{volumes[1], volumes[0]}, getVolumes())
+
+						return nil
+					},
+				},
+			},
+		})
 	})
 }
 
@@ -2942,9 +3604,87 @@ func TestAccResourceContainerCPUUnitsDefault(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerNetworkInterfacesAboveTen(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := func(count int) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			unprivileged = true
+			started      = false
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-many-nics"
+				dynamic "ip_config" {
+					for_each = range(%[1]d)
+					content {
+						ipv4 {
+							address = "192.0.2.${ip_config.value + 10}/24"
+						}
+					}
+				}
+			}
+			dynamic "network_interface" {
+				for_each = range(%[1]d)
+				content {
+					name   = "eth${network_interface.value}"
+					bridge = "vmbr0"
+				}
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`, count), WithRootPAMAuth())
+	}
+
+	checkInterfaces := func(count int) resource.TestCheckFunc {
+		return resource.ComposeTestCheckFunc(
+			ResourceAttributes(accTestContainerName, map[string]string{
+				"network_interface.#":          strconv.Itoa(count),
+				"initialization.0.ip_config.#": strconv.Itoa(count),
+			}),
+			func(*terraform.State) error {
+				ctInfo, err := te.NodeClient().Container(accTestContainerID).GetContainer(t.Context())
+				require.NoError(t, err, "failed to get container")
+				require.Len(t, ctInfo.NetworkInterfaces, count)
+
+				last := ctInfo.NetworkInterfaces[fmt.Sprintf("net%d", count-1)]
+				require.NotNil(t, last)
+				require.Equal(t, fmt.Sprintf("eth%d", count-1), last.Name)
+				require.NotNil(t, last.IPv4Address)
+				require.Equal(t, fmt.Sprintf("192.0.2.%d/24", count-1+10), *last.IPv4Address)
+
+				return nil
+			},
+		)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{Config: config(12), Check: checkInterfaces(12)},
+			{Config: config(11), Check: checkInterfaces(11)},
+		},
+	})
+}
+
 // TestAccResourceContainerCPULimitWithoutCores covers a container whose configuration sets cpulimit but not cores.
 // PVE then fills cpus in the status response from cpulimit and returns it as a string, which the read must accept.
-// The provider always sends cores, so the test removes it through the API.
 func TestAccResourceContainerCPULimitWithoutCores(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
@@ -2985,25 +3725,252 @@ func TestAccResourceContainerCPULimitWithoutCores(t *testing.T) {
 			{
 				Config: config,
 				Check: ResourceAttributes(accTestContainerName, map[string]string{
-					"cpu.0.cores": "1",
-					"cpu.0.limit": "2",
+					"cpu.0.cores": "^0$",
+					"cpu.0.limit": "^2$",
 				}),
 			},
 			{
 				PreConfig: func() {
 					ct := te.NodeClient().Container(accTestContainerID)
 
-					err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{Delete: []string{"cores"}})
-					require.NoError(t, err, "failed to remove cores")
-
 					status, err := ct.GetContainerStatus(t.Context())
 					require.NoError(t, err, "failed to get container status")
 					require.NotNil(t, status.CPUCount)
 					require.InDelta(t, 2, float64(*status.CPUCount), 1e-9)
 				},
-				// The refresh must read the container. The read reports a missing cores as 1, so the plan is empty.
+				// The refresh must read the container.
 				Config:   config,
 				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerCPUCoresUnset(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := func(cpu string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name    = "{{.NodeName}}"
+			vm_id        = {{.TestContainerID}}
+			started      = false
+			unprivileged = true
+			` + cpu + `
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			initialization {
+				hostname = "test-cpu-cores-unset"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`)
+	}
+
+	ct := te.NodeClient().Container(accTestContainerID)
+
+	checkCores := func(want *int) resource.TestCheckFunc {
+		return func(*terraform.State) error {
+			cfg, err := ct.GetContainer(t.Context())
+			if err != nil {
+				return fmt.Errorf("failed to get container: %w", err)
+			}
+
+			switch {
+			case want == nil && cfg.CPUCores != nil:
+				return fmt.Errorf("expected no cores in the container config, got %d", *cfg.CPUCores)
+			case want != nil && cfg.CPUCores == nil:
+				return fmt.Errorf("expected cores %d in the container config, got none", *want)
+			case want != nil && *cfg.CPUCores != *want:
+				return fmt.Errorf("expected cores %d in the container config, got %d", *want, *cfg.CPUCores)
+			}
+
+			return nil
+		}
+	}
+
+	setCores := func(cores int) func() {
+		return func() {
+			err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{CPUCores: &cores})
+			require.NoError(t, err, "failed to set cores")
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config(`cpu {
+					limit = 2
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCores(nil),
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"cpu.0.cores": "^0$",
+						"cpu.0.limit": "^2$",
+					}),
+				),
+			},
+			{
+				Config: config(`cpu {
+					limit = 3
+				}`),
+				Check: checkCores(nil),
+			},
+			{
+				ResourceName:  accTestContainerName,
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%d", te.NodeName, accTestContainerID),
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported state, got %d", len(states))
+					}
+
+					attrs := states[0].Attributes
+					if attrs["cpu.0.cores"] != "0" || attrs["cpu.0.limit"] != "3" {
+						return fmt.Errorf("expected cores=0 limit=3 after import, got cores=%q limit=%q",
+							attrs["cpu.0.cores"], attrs["cpu.0.limit"])
+					}
+
+					return nil
+				},
+			},
+			{
+				Config: config(`cpu {
+					cores = 2
+					limit = 3
+				}`),
+				Check: checkCores(new(2)),
+			},
+			{
+				Config: config(`cpu {
+					limit = 3
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					checkCores(new(2)),
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"cpu.0.cores": "^2$",
+					}),
+				),
+			},
+			{
+				Config: config(`cpu {
+					cores = 256
+					limit = 3
+				}`),
+				Check: checkCores(new(256)),
+			},
+			{
+				Config: config(`cpu {
+					cores = 0
+					limit = 3
+				}`),
+				Check: checkCores(nil),
+			},
+			{
+				Config: config(""),
+				Check:  checkCores(nil),
+			},
+			{
+				// containers created before cores became optional have cores=1 and no cpu block
+				PreConfig: setCores(1),
+				Config:    config(""),
+				PlanOnly:  true,
+			},
+			{
+				Config: config(`cpu {
+					limit = 2
+				}`),
+				Check: checkCores(new(1)),
+			},
+			{
+				Config: config(""),
+				Check:  checkCores(new(1)),
+			},
+			{
+				PreConfig: setCores(4),
+				Config:    config(""),
+				Check:     checkCores(nil),
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerCPUUnitsSetOutsideConfig(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := te.RenderConfig(`
+	resource "proxmox_virtual_environment_container" "test_container" {
+		node_name    = "{{.NodeName}}"
+		vm_id        = {{.TestContainerID}}
+		started      = false
+		unprivileged = true
+		disk {
+			datastore_id = "{{.ContainerDatastoreID}}"
+			size         = 4
+		}
+		initialization {
+			hostname = "test-cpu-units-outside"
+		}
+		operating_system {
+			template_file_id = "local:vztmpl/{{.ImageFileName}}"
+			type             = "alpine"
+		}
+	}`)
+
+	ct := te.NodeClient().Container(accTestContainerID)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				// containers created while units defaulted to 1024 have cores=1, cpuunits=1024 and no cpu block
+				PreConfig: func() {
+					err := ct.UpdateContainer(t.Context(), &containers.UpdateRequestBody{CPUCores: new(1), CPUUnits: new(1024)})
+					require.NoError(t, err, "failed to set cores and cpuunits")
+				},
+				Config: config,
+				Check: func(*terraform.State) error {
+					cfg, err := ct.GetContainer(t.Context())
+					if err != nil {
+						return fmt.Errorf("failed to get container: %w", err)
+					}
+
+					if cfg.CPUUnits != nil {
+						return fmt.Errorf("expected no cpuunits in the container config, got %d", *cfg.CPUUnits)
+					}
+
+					if cfg.CPUCores == nil || *cfg.CPUCores != 1 {
+						return fmt.Errorf("expected cores 1 in the container config, got %v", cfg.CPUCores)
+					}
+
+					return nil
+				},
 			},
 		},
 	})
@@ -3269,6 +4236,74 @@ func TestAccResourceContainerDiskACLOnlyAtCreate(t *testing.T) {
 			},
 		},
 	})
+}
+
+// TestAccResourceContainerDiskReplicateAtCreate verifies that the rootfs `replicate` value is applied on create:
+// `replicate = false` is sent as `replicate=0`, and the default matches the PVE default of replicating.
+func TestAccResourceContainerDiskReplicateAtCreate(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName": imageFileName,
+	})
+
+	tests := []struct {
+		name      string
+		replicate string
+		expected  bool
+	}{
+		{"explicit false", "replicate = false", false},
+		{"default", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			containerID := 100000 + rand.Intn(99999)
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps: []resource.TestStep{
+					{
+						Config: te.RenderConfig(fmt.Sprintf(`
+						resource "proxmox_virtual_environment_container" "test_container" {
+							node_name    = "{{.NodeName}}"
+							vm_id        = %d
+							unprivileged = true
+							started      = false
+							disk {
+								datastore_id = "{{.ContainerDatastoreID}}"
+								%s
+							}
+							initialization {
+								hostname = "test-disk-replicate"
+							}
+							operating_system {
+								template_file_id = "local:vztmpl/{{.ImageFileName}}"
+								type             = "alpine"
+							}
+						}`, containerID, tt.replicate)),
+						Check: resource.ComposeTestCheckFunc(
+							ResourceAttributes(accTestContainerName, map[string]string{
+								"disk.0.replicate": strconv.FormatBool(tt.expected),
+							}),
+							func(*terraform.State) error {
+								ctInfo, err := te.NodeClient().Container(containerID).GetContainer(t.Context())
+								require.NoError(t, err, "failed to get container")
+								require.NotNil(t, ctInfo.RootFS, "rootfs should not be nil")
+
+								require.Equal(t, tt.expected, bool(ptr.Or(ctInfo.RootFS.Replicate, true)),
+									"rootfs replicate on the API after create")
+
+								return nil
+							},
+						),
+					},
+				},
+			})
+		})
+	}
 }
 
 // TestAccResourceContainerFeaturesRefresh verifies that `containerRead` refreshes the
@@ -3654,7 +4689,7 @@ func TestAccResourceContainerNoDiskBlock(t *testing.T) {
 						"disk.0.size":      "4",
 						"disk.0.acl":       "false",
 						"disk.0.quota":     "false",
-						"disk.0.replicate": "false",
+						"disk.0.replicate": "true",
 					}),
 				),
 				ExpectNonEmptyPlan: true,

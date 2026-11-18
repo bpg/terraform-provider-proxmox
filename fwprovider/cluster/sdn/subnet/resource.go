@@ -387,7 +387,6 @@ func (r *Resource) ValidateConfig(ctx context.Context, req resource.ValidateConf
 	}
 
 	checkIPInCIDR("gateway", cfg.Gateway.StringValue)
-	checkIPInCIDR("dhcp_dns_server", cfg.DhcpDnsServer.StringValue)
 
 	if cfg.DhcpRange != nil {
 		r := cfg.DhcpRange

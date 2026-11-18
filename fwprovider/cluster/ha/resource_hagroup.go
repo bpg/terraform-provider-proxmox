@@ -161,8 +161,8 @@ func (r *hagroupResource) Create(ctx context.Context, req resource.CreateRequest
 	createRequest.ID = groupID
 	createRequest.Comment = data.Comment.ValueStringPointer()
 	createRequest.Nodes = r.groupNodesToString(data.Nodes)
-	createRequest.NoFailback.FromValue(data.NoFailback)
-	createRequest.Restricted.FromValue(data.Restricted)
+	createRequest.NoFailback = attribute.CustomBoolPtrFromValue(data.NoFailback)
+	createRequest.Restricted = attribute.CustomBoolPtrFromValue(data.Restricted)
 	createRequest.Type = "group"
 
 	err := r.client.Create(ctx, createRequest)
@@ -216,8 +216,8 @@ func (r *hagroupResource) Update(ctx context.Context, req resource.UpdateRequest
 	updateRequest := &hagroups.HAGroupUpdateRequestBody{}
 	updateRequest.Comment = data.Comment.ValueStringPointer()
 	updateRequest.Nodes = r.groupNodesToString(data.Nodes)
-	updateRequest.NoFailback.FromValue(data.NoFailback)
-	updateRequest.Restricted.FromValue(data.Restricted)
+	updateRequest.NoFailback = attribute.CustomBoolPtrFromValue(data.NoFailback)
+	updateRequest.Restricted = attribute.CustomBoolPtrFromValue(data.Restricted)
 
 	if updateRequest.Comment == nil && !state.Comment.IsNull() {
 		updateRequest.Delete = []string{"comment"}

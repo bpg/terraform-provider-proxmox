@@ -115,7 +115,7 @@ func NewConnection(endpoint string, insecure bool, minTLS string, extraHeaders m
 	// Keep the logging transport outermost: it records request headers, and it has no way of
 	// knowing that a user-defined header holds a credential. Use mitmproxy to inspect the wire.
 	if logging.IsDebugOrHigher() {
-		transport = newLogMaskingTransport(logging.NewLoggingHTTPTransport(transport))
+		transport = newLoggingTransport(transport)
 	}
 
 	// make sure the path does not contain "/api2/json"
@@ -124,9 +124,28 @@ func NewConnection(endpoint string, insecure bool, minTLS string, extraHeaders m
 	return &Connection{
 		endpoint: strings.TrimRight(u.String(), "/"),
 		httpClient: &http.Client{
-			Transport: transport,
+			Transport:     transport,
+			CheckRedirect: rejectEndpointDowngrade(u.Host),
 		},
 	}, nil
+}
+
+// rejectEndpointDowngrade stops a redirect chain that started at the API endpoint from leaving HTTPS: Go keeps the
+// Authorization and Cookie headers on a same-host redirect regardless of scheme. Other URLs fetched through the shared
+// client carry no credentials and keep the default policy.
+func rejectEndpointDowngrade(endpointHost string) func(*http.Request, []*http.Request) error {
+	return func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 10 {
+			return errors.New("stopped after 10 redirects")
+		}
+
+		origin := via[0].URL
+		if origin.Scheme == "https" && strings.EqualFold(origin.Host, endpointHost) && req.URL.Scheme != "https" {
+			return fmt.Errorf("refusing to follow a redirect from the API endpoint to non-HTTPS URL %s", req.URL.Redacted())
+		}
+
+		return nil
+	}
 }
 
 // VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.

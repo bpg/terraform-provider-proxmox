@@ -119,6 +119,9 @@ func (m *PBSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 
 	if datastore.Fingerprint != nil {
 		m.Fingerprint = types.StringValue(*datastore.Fingerprint)
+	} else {
+		// API omits fingerprint when it was deleted; clear state so plan/apply converge.
+		m.Fingerprint = types.StringNull()
 	}
 
 	if datastore.Shared != nil {

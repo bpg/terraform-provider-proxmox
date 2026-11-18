@@ -19,7 +19,7 @@ This guide documents breaking changes across provider versions and the recommend
      required_providers {
        proxmox = {
          source  = "bpg/proxmox"
-         version = "~> 0.120.0" # x-release-please-version
+         version = "~> 0.123.0" # x-release-please-version
        }
      }
    }
@@ -37,7 +37,72 @@ This guide documents breaking changes across provider versions and the recommend
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
 
+## v0.123.0
+
+### Container `mount_point.volume` change to another volume ID is applied
+
+When you change `mount_point.volume` of a `proxmox_virtual_environment_container` from one volume ID to another, for example from `local-lvm:vm-100-disk-1` to `local-lvm:vm-100-disk-9`, the provider now applies the change. The container is updated in place: the new volume is mounted at that mount point, and the old volume is not deleted. It stays on the datastore and is listed as an unused volume of the container.
+
+Before, a change between two volumes on the same datastore was ignored without any warning. The plan showed no change to `volume`, and if you changed something else in the same block, such as `path`, it was applied to the old volume.
+
+What you see after upgrading depends on your configuration:
+
+- `volume` is a datastore ID (`local-lvm`), or the ID of the volume that is mounted now: nothing changes.
+- `volume` is the ID of a different volume than the one that is mounted now: the next plan shows an in-place update that mounts the volume from your configuration. Applying it restarts the container if it is running.
+- `size` differs from the real size of a volume mounted by its ID: the plan no longer replaces the container. Proxmox VE always keeps the real size of an existing volume, so the plan shows an in-place change to `size` every time until you correct the value, and every apply restarts the container if it is running.
+
+**Action required:** Review the plan before applying.
+
+- To keep the volume that is mounted now, set `volume` to the ID from the state (`terraform state show`, attribute `path_in_datastore`).
+- To switch to the other volume, check that it exists first. Proxmox VE accepts the ID of a volume that does not exist, and the container then fails to start. Also set `size` to the real size of that volume.
+
+## v0.122.0
+
+### Container rootfs `replicate` defaults to `true`
+
+The `disk.replicate` attribute of `proxmox_virtual_environment_container` now defaults to `true`, as documented and as Proxmox VE does, and `replicate = false` is applied on create. Before, the provider default was `false` but was never sent on create, so new containers were replicated while the state showed `false`, and `replicate = false` only took effect after a later change to the `disk` block.
+
+After upgrading, a container that does not set `replicate` and whose rootfs has `replicate=0` in Proxmox VE (for example after a `disk` change with the old default) plans an update to `replicate = true`. Other containers show no change.
+
+**Action required:** To keep the rootfs out of replication jobs, set `replicate = false` in the `disk` block before applying.
+
+### Container `cpu.cores` no longer defaults to `1`
+
+The `cpu.cores` attribute of `proxmox_virtual_environment_container` no longer defaults to `1`. A container created without `cores` now has no `cores` setting in Proxmox VE and can use all host cores, which is the Proxmox VE default. Before, the provider always sent `cores`, as `1` when it was not configured, so a container limited by `cpu.limit` alone could not be described, and any change to its `cpu` block pinned it to one core.
+
+Existing containers keep their current `cores` value and show no change after upgrading. Removing `cores` from the configuration no longer resets it to `1`: the container keeps its current value. Set `cores = 0` to remove the setting from an existing container. A clone whose `cpu` block does not set `cores` now keeps the value of its source container, before it was set to `1`. The upper bound is now `8192`, as in Proxmox VE.
+
+**Action required:** To keep new containers on a single core, set it explicitly:
+
+```terraform
+resource "proxmox_virtual_environment_container" "example" {
+  # ...
+  cpu {
+    cores = 1
+  }
+}
+```
+
+### Container `cpu.units` not in the configuration is removed
+
+A container that does not set `cpu.units` but has `cpuunits` in Proxmox VE, for example one created with a provider version before v0.102.0 (which always sent `1024`), planned the removal of its `cpu` block on every run, and the apply changed nothing. The apply now removes `cpuunits` from the container, so Proxmox VE uses its own default (`100` on cgroup2) and the next plan is empty. The `cores` value of such a container is not changed.
+
+**Action required:** To keep the current weight, set it explicitly, for example `units = 1024` in the `cpu` block, before applying.
+
 ## v0.121.0
+
+### `proxmox_acl` no longer adopts an existing ACL
+
+Creating a `proxmox_acl` (or `proxmox_virtual_environment_acl`) for a path, role and user, group or token that already has an ACL entry now fails with `Unable to Create ACL`, saying the ACL already exists. Before, the create succeeded and silently took over the existing entry, so a later `destroy` removed an ACL that Terraform never created. ACLs already in state are not affected.
+
+**Action required:** If an apply fails because the ACL already exists, import the ACL with the ID shown in the error (`{path}?{group|user@realm|user@realm!token}?{role}`), for example:
+
+```terraform
+import {
+  to = proxmox_acl.auditor
+  id = "/?acltest@pve?PVEAuditor"
+}
+```
 
 ### Container `wait_for_ip` waits after start
 
