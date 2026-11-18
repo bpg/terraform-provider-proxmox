@@ -14,6 +14,8 @@ package clonedvm_test
 import (
 	"context"
 	"fmt"
+	"maps"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -565,28 +567,114 @@ func TestAccResourceClonedVM(t *testing.T) {
 						checkDiskSlot(te, resName, "scsi1", true),
 					),
 				},
-				{
-					Config: te.RenderConfig(baseConfig + `
-					resource "proxmox_cloned_vm" "disk_test" {
-						node_name = "{{.NodeName}}"
-						name      = "fwk-cloned-disk"
-						started   = false
+			},
+		})
+	})
 
-						clone = {
-							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+	t.Run("DiskImportFrom", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+
+		config := func(description string) string {
+			return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_download_file" "image" {
+				content_type        = "import"
+				datastore_id        = "local"
+				node_name           = "{{.NodeName}}"
+				url                 = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+				file_name           = "{{.TestName}}.qcow2"
+				overwrite_unmanaged = true
+			}
+
+			resource "proxmox_virtual_environment_vm" "template_vm" {
+				node_name = "{{.NodeName}}"
+				started   = false
+				template  = true
+
+				disk {
+					datastore_id = "local-lvm"
+					interface    = "scsi0"
+					size         = 8
+				}
+			}
+
+			resource "proxmox_cloned_vm" "import_from_test" {
+				node_name   = "{{.NodeName}}"
+				name        = "fwk-cloned-import-from"
+				description = %q
+				started     = false
+
+				clone = {
+					source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+				}
+
+				disk = {
+					scsi0 = {
+						import_from = proxmox_virtual_environment_download_file.image.id
+					}
+
+					virtio1 = {
+						datastore_id = "local-lvm"
+						import_from  = proxmox_virtual_environment_download_file.image.id
+					}
+
+					virtio2 = {
+						datastore_id = "local-lvm"
+						import_from  = proxmox_virtual_environment_download_file.image.id
+						size_gb      = 8
+					}
+				}
+			}
+			`, description))
+		}
+
+		resName := "proxmox_cloned_vm.import_from_test"
+
+		var imported map[string]string
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: config("created"),
+					Check: func(s *terraform.State) error {
+						disks, err := rawDisks(te, s, resName)
+						if err != nil {
+							return err
 						}
 
-						disk = {
-							virtio0 = {
-								datastore_id = "local-lvm"
-								import_from  = "local-lvm:vm-${proxmox_virtual_environment_vm.template_vm.vm_id}-disk-0"
+						for slot, pattern := range map[string]string{
+							"scsi0":   `^local-lvm:vm-\d+-disk-\d+,.*size=8G`,
+							"virtio1": `^local-lvm:vm-\d+-disk-\d+,.*size=\d+[MG]`,
+							"virtio2": `^local-lvm:vm-\d+-disk-\d+,.*size=8G`,
+						} {
+							if !regexp.MustCompile(pattern).MatchString(disks[slot]) {
+								return fmt.Errorf("disk %s is %q, expected to match %s", slot, disks[slot], pattern)
 							}
 						}
-					}
-					`),
-					Check: resource.ComposeTestCheckFunc(
-						checkDiskSlot(te, resName, "virtio0", true),
-					),
+
+						if len(disks) != 3 {
+							return fmt.Errorf("expected scsi0, virtio1 and virtio2 only, got %v", disks)
+						}
+
+						imported = disks
+
+						return nil
+					},
+				},
+				{
+					Config: config("updated"),
+					Check: func(s *terraform.State) error {
+						disks, err := rawDisks(te, s, resName)
+						if err != nil {
+							return err
+						}
+
+						if !maps.Equal(disks, imported) {
+							return fmt.Errorf("disks changed on an unrelated update: before %v, after %v", imported, disks)
+						}
+
+						return nil
+					},
 				},
 			},
 		})
@@ -819,6 +907,40 @@ func checkDiskSlot(te *test.Environment, resourceName, slot string, expected boo
 	}
 }
 
+func rawDisks(te *test.Environment, s *terraform.State, resourceName string) (map[string]string, error) {
+	rs, ok := s.RootModule().Resources[resourceName]
+	if !ok {
+		return nil, fmt.Errorf("resource %s not found", resourceName)
+	}
+
+	vmid, err := strconv.Atoi(rs.Primary.Attributes["id"])
+	if err != nil {
+		return nil, err
+	}
+
+	vm := te.NodeClient().VM(vmid)
+
+	var resBody struct {
+		Data map[string]any `json:"data,omitempty"`
+	}
+
+	if err := vm.DoRequest(context.Background(), http.MethodGet, vm.ExpandPath("config"), nil, &resBody); err != nil {
+		return nil, err
+	}
+
+	disks := map[string]string{}
+
+	for k, v := range resBody.Data {
+		for _, prefix := range []string{"scsi", "virtio", "sata", "ide", "unused"} {
+			if _, isSlot := slotIndex(k, prefix); isSlot {
+				disks[k] = fmt.Sprint(v)
+			}
+		}
+	}
+
+	return disks, nil
+}
+
 func slotIndex(slot string, prefix string) (int, bool) {
 	if !strings.HasPrefix(slot, prefix) {
 		return 0, false
@@ -844,6 +966,7 @@ func TestAccResourceClonedVMDiskValidation(t *testing.T) {
 	}{
 		{"import_from with an absolute path", `import_from = "/mnt/images/a+b.qcow2"`, nil},
 		{"serial with characters PVE rejects", `serial = "a,discard=on"`, regexp.MustCompile(`(?s)serial.*must contain`)},
+		{"import_from with file", "file = \"local-lvm:vm-100-disk-1\"\nimport_from = \"local:import/a.qcow2\"", regexp.MustCompile(`(?s)file.*cannot\s+be\s+specified\s+when.*import_from`)},
 		{"import_from with a comma", `import_from = "local:import/a,b.qcow2"`, regexp.MustCompile(`(?s)import_from.*without\s+whitespace.*got:\s+local:import/a,b.qcow2`)},
 	}
 

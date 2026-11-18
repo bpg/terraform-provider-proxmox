@@ -700,20 +700,34 @@ func applyDisks(
 			device.FileVolume = currentDevice.FileVolume
 		}
 
+		// import_from only creates a disk, an existing one is never imported again
+		imported := isNewDisk && device.FileVolume == "" && !cfg.ImportFrom.IsUnknown() && !cfg.ImportFrom.IsNull()
+
 		if device.FileVolume == "" {
 			if cfg.DatastoreID.IsUnknown() || cfg.DatastoreID.IsNull() {
-				diags.AddError("Missing datastore_id", fmt.Sprintf("Disk %q requires either file or datastore_id+size_gb", slot))
+				diags.AddError(
+					"Missing datastore_id",
+					fmt.Sprintf("Disk %q requires either file, or datastore_id with size_gb or import_from", slot),
+				)
+
 				return nil
 			}
 
 			device.DatastoreID = cfg.DatastoreID.ValueStringPointer()
 
-			if cfg.SizeGB.IsUnknown() || cfg.SizeGB.IsNull() || cfg.SizeGB.ValueInt64() == 0 {
-				diags.AddError("Missing size_gb", fmt.Sprintf("Disk %q requires size_gb when file is not provided", slot))
-				return nil
-			}
+			switch {
+			case imported:
+				device.ImportFrom = cfg.ImportFrom.ValueStringPointer()
+			case cfg.SizeGB.IsUnknown() || cfg.SizeGB.IsNull() || cfg.SizeGB.ValueInt64() == 0:
+				diags.AddError(
+					"Missing size_gb",
+					fmt.Sprintf("Disk %q requires size_gb when neither file nor import_from is provided", slot),
+				)
 
-			device.FileVolume = fmt.Sprintf("%s:%d", cfg.DatastoreID.ValueString(), cfg.SizeGB.ValueInt64())
+				return nil
+			default:
+				device.FileVolume = fmt.Sprintf("%s:%d", cfg.DatastoreID.ValueString(), cfg.SizeGB.ValueInt64())
+			}
 		}
 
 		if !cfg.AIO.IsUnknown() && !cfg.AIO.IsNull() {
@@ -722,9 +736,17 @@ func applyDisks(
 
 		if !cfg.SizeGB.IsUnknown() && !cfg.SizeGB.IsNull() && cfg.SizeGB.ValueInt64() > 0 {
 			desiredGB := cfg.SizeGB.ValueInt64()
-			if isNewDisk {
+
+			switch {
+			case imported:
+				// the imported disk has the size of its source, grow it afterwards
+				resizes = append(resizes, &vms.ResizeDiskRequestBody{
+					Disk: slot,
+					Size: *proxmoxtypes.DiskSizeFromGigabytes(desiredGB),
+				})
+			case isNewDisk:
 				device.Size = proxmoxtypes.DiskSizeFromGigabytes(desiredGB)
-			} else if currentDevice.Size != nil {
+			case currentDevice.Size != nil:
 				currentGB := currentDevice.Size.InGigabytes()
 				if desiredGB < currentGB {
 					diags.AddError(
@@ -770,10 +792,6 @@ func applyDisks(
 
 		if isNewDisk && !cfg.SSD.IsUnknown() && !cfg.SSD.IsNull() {
 			device.SSD = proxmoxtypes.CustomBoolPtr(cfg.SSD.ValueBoolPointer())
-		}
-
-		if !cfg.ImportFrom.IsUnknown() && !cfg.ImportFrom.IsNull() {
-			device.ImportFrom = cfg.ImportFrom.ValueStringPointer()
 		}
 
 		if !cfg.Format.IsUnknown() && !cfg.Format.IsNull() {
