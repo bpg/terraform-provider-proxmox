@@ -249,11 +249,18 @@ func testVM(t *testing.T, te *test.Environment) (string, *vms.Client) {
 		require.NoError(t, err)
 
 		for _, v := range list {
-			if v.Name == name {
-				nodes := te.NodeClient()
-				nodes.NodeName = v.NodeName
+			if v.Name != name {
+				continue
+			}
 
-				return v.NodeName, nodes.VM(v.VMID)
+			nodes := te.NodeClient()
+			nodes.NodeName = v.NodeName
+			vm := nodes.VM(v.VMID)
+
+			// Cluster resources can list a reused VM ID under the name of an earlier VM for a while, so check the config.
+			cfg, err := vm.GetVM(context.Background())
+			if err == nil && cfg.Name != nil && *cfg.Name == name {
+				return v.NodeName, vm
 			}
 		}
 
