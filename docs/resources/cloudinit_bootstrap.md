@@ -10,7 +10,7 @@ description: |-
   cloud-init only reports the errors of its last boot. An error before a reboot it triggers itself (e.g. package_reboot_if_required after a failed package install) is not reported; check /var/log/cloud-init.log in the guest if a bootstrapped VM looks incomplete.
   After cloud-init finishes, creation waits up to 2 minutes for every network device to get an IPv4 address, then warns if one still has none.
   Use lifecycle.replace_triggered_by on the VM's id so a replaced VM is bootstrapped again. If the VM is deleted outside Terraform, the bootstrap is removed from state on refresh, so it is created again with the VM. A seed ISO that a failed bootstrap left on the datastore is not deleted then; refresh warns about it. Changing user_data, meta_data, network_config or vendor_data after the bootstrap can't reach the VM: the plan shows an in-place update, and the apply fails. To keep existing VMs, add those attributes to lifecycle.ignore_changes; VMs created or replaced later get the current content. To apply a change, replace the VM: with replace_triggered_by on the VM's id, -replace=<VM address> is enough, otherwise also replace this resource. Changing any other attribute only updates state.
-  Seed contents are stored in Terraform state, inside the guest under /var/lib/cloud, and in provider debug logs (TF_LOG=DEBUG logs the uploaded ISO). While the ISO is on the datastore (during the bootstrap, or after a failed one), anyone who can read ISOs there can read it.
+  Seed contents are stored in Terraform state and inside the guest under /var/lib/cloud. While the ISO is on the datastore (during the bootstrap, or after a failed one), anyone who can read ISOs there can read it.
 ---
 
 # Resource: proxmox_cloudinit_bootstrap
@@ -27,7 +27,7 @@ After cloud-init finishes, creation waits up to 2 minutes for every network devi
 
 Use `lifecycle.replace_triggered_by` on the VM's `id` so a replaced VM is bootstrapped again. If the VM is deleted outside Terraform, the bootstrap is removed from state on refresh, so it is created again with the VM. A seed ISO that a failed bootstrap left on the datastore is not deleted then; refresh warns about it. Changing `user_data`, `meta_data`, `network_config` or `vendor_data` after the bootstrap can't reach the VM: the plan shows an in-place update, and the apply fails. To keep existing VMs, add those attributes to `lifecycle.ignore_changes`; VMs created or replaced later get the current content. To apply a change, replace the VM: with `replace_triggered_by` on the VM's `id`, `-replace=<VM address>` is enough, otherwise also replace this resource. Changing any other attribute only updates state.
 
-Seed contents are stored in Terraform state, inside the guest under `/var/lib/cloud`, and in provider debug logs (`TF_LOG=DEBUG` logs the uploaded ISO). While the ISO is on the datastore (during the bootstrap, or after a failed one), anyone who can read ISOs there can read it.
+Seed contents are stored in Terraform state and inside the guest under `/var/lib/cloud`. While the ISO is on the datastore (during the bootstrap, or after a failed one), anyone who can read ISOs there can read it.
 
 ## Example Usage
 

@@ -124,9 +124,8 @@ func (r *bootstrapResource) Schema(
 			"`lifecycle.ignore_changes`; VMs created or replaced later get the current content. To apply a change, replace " +
 			"the VM: with `replace_triggered_by` on the VM's `id`, `-replace=<VM address>` is enough, otherwise also " +
 			"replace this resource. Changing any other attribute only updates state.\n\n" +
-			"Seed contents are stored in Terraform state, inside the guest under `/var/lib/cloud`, and in provider debug " +
-			"logs (`TF_LOG=DEBUG` logs the uploaded ISO). While the ISO is on the datastore (during the bootstrap, or " +
-			"after a failed one), anyone who can read ISOs there can read it.",
+			"Seed contents are stored in Terraform state and inside the guest under `/var/lib/cloud`. While the ISO is on " +
+			"the datastore (during the bootstrap, or after a failed one), anyone who can read ISOs there can read it.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description:   "The VM ID.",
