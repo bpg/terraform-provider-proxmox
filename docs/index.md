@@ -478,7 +478,7 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
 
     With these rules, snippet file names must start with a letter, digit or `_` and contain only letters, digits, `_`, `.` and `-`. `sudo` refuses uploads of any other name.
 
-    If you set `file_mode` on `proxmox_virtual_environment_file`, for example to make a hook script executable, also grant `chmod` on the same directory:
+    If you set `file_mode` on `proxmox_virtual_environment_file` to set a specific mode on an uploaded file, also grant `chmod` on the same directory:
 
     ```text
     terraform ALL=(root) NOPASSWD: /usr/bin/chmod ^0[0-7]{3} /var/lib/vz/snippets/[a-zA-Z0-9_][a-zA-Z0-9_.-]*$
@@ -486,14 +486,11 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
 
     This rule allows plain permission bits only. `sudo` refuses modes with the setuid, setgid or sticky bit, such as `4755`.
 
-  - **LXC `idmap`** on `proxmox_virtual_environment_container` — the provider edits the container configuration file via SSH:
+  - **LXC `idmap`** on `proxmox_virtual_environment_container` — **this feature has no safe least-privilege sudoers rule.** To set `idmap`, the provider edits the container configuration file over SSH (`sed -i` to drop old `lxc.idmap:` lines, `tee -a` to append new ones). sudoers can pin a command's arguments but never its standard input, so any rule that lets the provider append to `/etc/pve/lxc/<id>.conf` also lets the SSH user append `hookscript:` or `lxc.hook.pre-start:` to **any** guest's config — lines Proxmox runs as **root** at that guest's next start. That reaches the exact root-equivalent privilege the warning above forbids, without `qm`. Granting `sed -i` on the same file is independently root-equivalent, because `sed`'s `e` command runs a shell.
 
-    ```text
-    terraform ALL=(root) NOPASSWD: /usr/bin/sed ^-i /\^lxc\\\.idmap:/d /etc/pve/lxc/[0-9]+\.conf$
-    terraform ALL=(root) NOPASSWD: /usr/bin/tee ^-a /etc/pve/lxc/[0-9]+\.conf$
-    ```
+    Do **not** grant `tee` or `sed` on `/etc/pve/lxc/*.conf`. If an earlier version of this guide had you add such rules, remove them. To keep using the `idmap` attribute, either run the provider's SSH connection as `root` for the affected containers (`root` needs no sudoers entry), or front the write with a root-owned wrapper that accepts only well-formed `lxc.idmap:` lines and rejects everything else — the same mitigation shown for `file_id` below. A provider-shipped helper for this is planned.
 
-  !> **Security Warning:** Do not use shell-style wildcards (`*`) in these rules, even after a strict filename pattern. sudoers matches all arguments as a single string, and `*` matches spaces, `/` and `../`. A rule such as `/usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_]*` therefore also allows writing to other paths (`/var/lib/vz/snippets/ab/../../../../etc/sudoers.d/malicious`, or a second file argument), and `/usr/bin/sed -i * …` allows running arbitrary commands through `sed`. Both lead to full privilege escalation. If you configured these rules from an earlier version of this guide, replace them with the ones above.
+  !> **Security Warning:** Do not use shell-style wildcards (`*`) in the snippet rule, even after a strict filename pattern. sudoers matches all arguments as a single string, and `*` matches spaces, `/` and `../`. A rule such as `/usr/bin/tee /var/lib/vz/snippets/[a-zA-Z0-9_]*` therefore also allows writing to other paths (`/var/lib/vz/snippets/ab/../../../../etc/sudoers.d/malicious`, or a second file argument), which is full privilege escalation. Use the anchored `^…$` pattern shown above.
 
   If your configuration uses **only** API-backed resources — for example VMs with `import_from` disks and no snippets or `idmap` — the provider never opens an SSH session, so you need no sudoers file at all.
 
