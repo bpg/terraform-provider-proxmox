@@ -21,6 +21,7 @@ type bootstrapModel struct {
 	NetworkConfig types.String `tfsdk:"network_config"`
 	VendorData    types.String `tfsdk:"vendor_data"`
 	Timeout       types.Int64  `tfsdk:"timeout"`
+	NodeName      types.String `tfsdk:"node_name"`
 	SeedFileID    types.String `tfsdk:"seed_file_id"`
 	IPv4Addresses types.Map    `tfsdk:"ipv4_addresses"`
 }

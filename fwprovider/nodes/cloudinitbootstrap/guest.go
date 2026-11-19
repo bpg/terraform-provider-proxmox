@@ -151,6 +151,9 @@ func waitForCloudInit(ctx context.Context, vm *vms.Client, timeout time.Duration
 		return fmt.Errorf("cancelled while waiting for cloud-init to finish: %w", ctx.Err())
 	case pollCtx.Err() != nil && lastErr == nil:
 		return fmt.Errorf("timed out after %s waiting for cloud-init to finish", timeout)
+	case pollCtx.Err() != nil && strings.Contains(lastErr.Error(), "not running"):
+		return fmt.Errorf("timed out after %s waiting for cloud-init to finish: the guest agent never answered (last "+
+			"error: %w). Check that qemu-guest-agent is installed and started in the guest, e.g. by user_data", timeout, lastErr)
 	case pollCtx.Err() != nil:
 		return fmt.Errorf("timed out after %s waiting for cloud-init to finish (last error: %w)", timeout, lastErr)
 	default:

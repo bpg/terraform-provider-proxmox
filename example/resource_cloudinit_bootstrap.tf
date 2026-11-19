@@ -63,7 +63,6 @@ resource "proxmox_cloudinit_bootstrap" "example" {
 
   lifecycle {
     replace_triggered_by = [proxmox_virtual_environment_vm.cloudinit_bootstrap.id]
-    ignore_changes       = [user_data, meta_data, network_config, vendor_data]
   }
 }
 

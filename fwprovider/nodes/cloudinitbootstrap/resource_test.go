@@ -555,7 +555,7 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 						plancheck.ExpectResourceAction(bootstrapAddr, plancheck.ResourceActionDestroyBeforeCreate),
 					},
 				},
-				ExpectError: regexp.MustCompile(`already\s+running\s+and\s+cloud-init\s+applies\s+the\s+seed\s+only`),
+				ExpectError: regexp.MustCompile(`already\s+running,\s+and\s+cloud-init\s+applies\s+the\s+seed\s+only`),
 			}, {
 				PreConfig: func() { requireSeedRemoved(t, te) },
 				Config:    vmConfig(te, te.NodeName),
