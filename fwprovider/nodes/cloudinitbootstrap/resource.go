@@ -30,6 +30,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -43,21 +44,6 @@ var (
 	_ resource.Resource              = &bootstrapResource{}
 	_ resource.ResourceWithConfigure = &bootstrapResource{}
 )
-
-type bootstrapModel struct {
-	ID            types.String `tfsdk:"id"`
-	VMID          types.Int64  `tfsdk:"vm_id"`
-	DatastoreID   types.String `tfsdk:"datastore_id"`
-	FileName      types.String `tfsdk:"file_name"`
-	Interface     types.String `tfsdk:"interface"`
-	UserData      types.String `tfsdk:"user_data"`
-	MetaData      types.String `tfsdk:"meta_data"`
-	NetworkConfig types.String `tfsdk:"network_config"`
-	VendorData    types.String `tfsdk:"vendor_data"`
-	Timeout       types.Int64  `tfsdk:"timeout"`
-	SeedFileID    types.String `tfsdk:"seed_file_id"`
-	IPv4Addresses types.Map    `tfsdk:"ipv4_addresses"`
-}
 
 type bootstrapResource struct {
 	client proxmox.Client
@@ -128,11 +114,7 @@ func (r *bootstrapResource) Schema(
 			"Seed contents are stored in Terraform state and inside the guest under `/var/lib/cloud`. While the ISO is on " +
 			"the datastore (during the bootstrap, or after a failed one), anyone who can read ISOs there can read it.",
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description:   "The VM ID.",
-				Computed:      true,
-				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			},
+			"id": attribute.ResourceID("The VM ID."),
 			"vm_id": schema.Int64Attribute{
 				Description:   "The VM to bootstrap. Its node is looked up at apply time.",
 				Required:      true,
