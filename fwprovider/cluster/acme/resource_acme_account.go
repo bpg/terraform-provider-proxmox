@@ -104,6 +104,9 @@ func (r *acmeAccountResource) Schema(
 					),
 				},
 				Optional: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"eab_hmac_key": schema.StringAttribute{
 				Description: "The HMAC key for External Account Binding.",
@@ -130,10 +133,16 @@ func (r *acmeAccountResource) Schema(
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString("default"),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"tos": schema.StringAttribute{
 				Description: "The URL of CA TermsOfService - setting this indicates agreement.",
 				Optional:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 		},
 	}
