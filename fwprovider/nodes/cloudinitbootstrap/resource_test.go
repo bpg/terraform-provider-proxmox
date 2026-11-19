@@ -15,6 +15,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"os"
 	"regexp"
 	"strconv"
@@ -23,8 +24,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -64,7 +68,25 @@ type vmOpts struct {
 	replacedBy string
 	// initialization gives the VM a Proxmox cloud-init drive on ide2.
 	initialization bool
+	// noWaitForIP stops the VM resource from waiting for agent IPs, for a guest whose agent can't report them.
+	noWaitForIP bool
+	// extraDisk adds a small disk on that slot.
+	extraDisk string
+	// endpoint routes the provider through this URL (a proxy) instead of the configured endpoint.
+	endpoint string
 }
+
+// imageConfig downloads the cloud image the test VMs import.
+const imageConfig = `
+resource "proxmox_virtual_environment_download_file" "image" {
+  content_type        = "import"
+  datastore_id        = "local"
+  node_name           = "{{.NodeName}}"
+  url                 = "{{.CloudImagesServer}}/noble/current/noble-server-cloudimg-amd64.img"
+  file_name           = "{{.TestName}}.qcow2" # Ubuntu .img files are qcow2; .raw would not boot
+  overwrite_unmanaged = true
+}
+`
 
 // vmConfig renders a stopped VM with an empty ide0 CD-ROM, ready to be bootstrapped.
 func vmConfig(te *test.Environment, nodeName string) string {
@@ -81,6 +103,10 @@ func vmConfigWith(te *test.Environment, nodeName string, o vmOpts) string {
 	}
 
 	agent := "agent {\n    enabled = true\n  }"
+	if o.noWaitForIP {
+		agent = "agent {\n    enabled = true\n    wait_for_ip {\n      disabled = true\n    }\n  }"
+	}
+
 	if o.noAgent {
 		agent = ""
 	}
@@ -89,23 +115,25 @@ func vmConfigWith(te *test.Environment, nodeName string, o vmOpts) string {
 		agent += "\n\n  initialization {\n    datastore_id = \"local\"\n    interface    = \"ide2\"\n  }"
 	}
 
+	extraDisk := ""
+	if o.extraDisk != "" {
+		extraDisk = "disk {\n    datastore_id = \"local\"\n    interface    = \"" + o.extraDisk + "\"\n    size         = 1\n  }"
+	}
+
+	var opts []test.RenderConfigOption
+	if o.endpoint != "" {
+		opts = append(opts, test.WithInsecureEndpoint(o.endpoint))
+	}
+
 	lifecycle := "ignore_changes = [started]"
 	if o.replacedBy != "" {
 		lifecycle += "\n    replace_triggered_by = [" + o.replacedBy + "]"
 	}
 
-	return te.RenderConfig(`
-resource "proxmox_virtual_environment_download_file" "image" {
-  content_type        = "import"
-  datastore_id        = "local"
-  node_name           = "{{.NodeName}}"
-  url                 = "{{.CloudImagesServer}}/noble/current/noble-server-cloudimg-amd64.img"
-  file_name           = "{{.TestName}}.qcow2" # Ubuntu .img files are qcow2; .raw would not boot
-  overwrite_unmanaged = true
-}
-
+	return te.RenderConfig(imageConfig+`
 resource "proxmox_virtual_environment_vm" "test" {
-  node_name       = "` + nodeName + `"
+  node_name       = "`+nodeName+`"
+  vm_id           = {{.TestVMID}}
   name            = "{{.TestName}}"
   machine         = "q35"
   started         = false
@@ -123,20 +151,22 @@ resource "proxmox_virtual_environment_vm" "test" {
     size         = 8
   }
 
+  `+extraDisk+`
+
   cdrom {
-    interface = "` + o.cdrom + `"
+    interface = "`+o.cdrom+`"
     file_id   = "none"
   }
 
-  ` + networkDevices(o.nics) + `
+  `+networkDevices(o.nics)+`
 
-  ` + agent + `
+  `+agent+`
 
   lifecycle {
-    ` + lifecycle + `
+    `+lifecycle+`
   }
 }
-`)
+`, opts...)
 }
 
 const userData = `<<-EOT
@@ -182,9 +212,13 @@ func seedName(vmID int) string {
 }
 
 func vmID(s *terraform.State) (int, error) {
-	rs, ok := s.RootModule().Resources[vmAddr]
+	return vmIDOf(s, vmAddr)
+}
+
+func vmIDOf(s *terraform.State, addr string) (int, error) {
+	rs, ok := s.RootModule().Resources[addr]
 	if !ok {
-		return 0, fmt.Errorf("%s not found in state", vmAddr)
+		return 0, fmt.Errorf("%s not found in state", addr)
 	}
 
 	id, err := strconv.Atoi(rs.Primary.Attributes["vm_id"])
@@ -416,8 +450,12 @@ func requireSeedRemoved(t *testing.T, te *test.Environment) {
 
 // checkGuestFile reads a file in the guest through the agent, to prove which seed the VM booted with.
 func checkGuestFile(te *test.Environment, nodeName, path, want string) resource.TestCheckFunc {
+	return checkGuestFileOf(te, nodeName, vmAddr, path, want)
+}
+
+func checkGuestFileOf(te *test.Environment, nodeName, addr, path, want string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		id, err := vmID(s)
+		id, err := vmIDOf(s, addr)
 		if err != nil {
 			return err
 		}
@@ -447,6 +485,151 @@ func requireNoSeed(t *testing.T, te *test.Environment) {
 	isos, err := seedISOs(context.Background(), te, nodeName, seedName(vm.VMID))
 	require.NoError(t, err)
 	require.Empty(t, isos, "seed ISO left on the datastore")
+}
+
+// requireDisk checks a disk is still attached on iface, so a failed precheck didn't swap it for the seed.
+func requireDisk(t *testing.T, te *test.Environment, iface string) {
+	t.Helper()
+
+	_, vm := testVM(t, te)
+
+	cfg, err := vm.GetVM(context.Background())
+	require.NoError(t, err)
+
+	dev := cfg.StorageDevices[iface]
+	require.NotNil(t, dev, "%s must still be attached", iface)
+	require.True(t, dev.Media == nil || *dev.Media != "cdrom", "%s must still be a disk, got %+v", iface, dev)
+	require.Contains(t, dev.FileVolume, fmt.Sprintf("vm-%d-disk-", vm.VMID))
+}
+
+// sharedSeedSuffix ends the file name both bootstraps use in the shared-name test.
+const sharedSeedSuffix = "-shared.iso"
+
+// sharedNameConfig renders VMs a and b, and with bootstraps their bootstraps, each seed writing its own marker. With
+// distinct false both bootstraps use the same file_name.
+func sharedNameConfig(te *test.Environment, bootstraps, distinct bool) string {
+	vm := func(n string, offset int) string {
+		return fmt.Sprintf(`
+resource "proxmox_virtual_environment_vm" "%[1]s" {
+  node_name       = "{{.NodeName}}"
+  vm_id           = {{.TestVMID}} + %[2]d
+  name            = "{{.TestName}}-%[1]s"
+  machine         = "q35"
+  started         = false
+  stop_on_destroy = true
+
+  memory {
+    dedicated = 2048
+  }
+
+  disk {
+    datastore_id = "local"
+    import_from  = proxmox_virtual_environment_download_file.image.id
+    interface    = "virtio0"
+    size         = 8
+  }
+
+  cdrom {
+    interface = "ide0"
+    file_id   = "none"
+  }
+
+  %[3]s
+
+  agent {
+    enabled = true
+  }
+
+  lifecycle {
+    ignore_changes = [started]
+  }
+}
+`, n, offset, networkDevices(1))
+	}
+
+	bootstrap := func(n string) string {
+		fileName := "{{.TestName}}" + sharedSeedSuffix
+		if distinct {
+			fileName = "{{.TestName}}-" + n + ".iso"
+		}
+
+		marker := fmt.Sprintf(`- [sh, -c, "mkdir -p /var/lib/bootstrap-test && echo %s > /var/lib/bootstrap-test/seed"]`, n)
+
+		return fmt.Sprintf(`
+resource "proxmox_cloudinit_bootstrap" "%[1]s" {
+  vm_id        = proxmox_virtual_environment_vm.%[1]s.vm_id
+  datastore_id = "local"
+  file_name    = "%[2]s"
+  user_data    = %[3]s
+}
+`, n, fileName, fmt.Sprintf(userData, marker))
+	}
+
+	cfg := imageConfig + vm("a", 0) + vm("b", 1)
+
+	if bootstraps {
+		cfg += bootstrap("a") + bootstrap("b")
+	}
+
+	return te.RenderConfig(cfg)
+}
+
+// checkOneSharedNameWinner checks exactly one of the two bootstraps is in state, its VM booted its own seed, and the
+// other VM is still stopped with an empty drive and no seed left on the datastore.
+func checkOneSharedNameWinner(te *test.Environment) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		res := s.RootModule().Resources
+		_, aOK := res["proxmox_cloudinit_bootstrap.a"]
+		_, bOK := res["proxmox_cloudinit_bootstrap.b"]
+
+		if aOK == bOK {
+			return fmt.Errorf("want exactly one bootstrap in state, got a=%t b=%t", aOK, bOK)
+		}
+
+		winner, loser := "a", "b"
+		if bOK {
+			winner, loser = "b", "a"
+		}
+
+		loserID, err := vmIDOf(s, "proxmox_virtual_environment_vm."+loser)
+		if err != nil {
+			return err
+		}
+
+		nodes := te.NodeClient()
+		nodes.NodeName = te.NodeName
+		vm := nodes.VM(loserID)
+
+		status, err := vm.GetVMStatus(context.Background())
+		if err != nil {
+			return err
+		}
+
+		if status.Status != "stopped" {
+			return fmt.Errorf("VM %s is %s, want stopped: its bootstrap failed before starting it", loser, status.Status)
+		}
+
+		cfg, err := vm.GetVM(context.Background())
+		if err != nil {
+			return err
+		}
+
+		if dev := cfg.StorageDevices["ide0"]; dev == nil || dev.FileVolume != "none" {
+			return fmt.Errorf("ide0 of VM %s = %+v, want none", loser, dev)
+		}
+
+		isos, err := seedISOs(context.Background(), te, te.NodeName, testName(te)+sharedSeedSuffix)
+		if err != nil {
+			return err
+		}
+
+		if len(isos) > 0 {
+			return fmt.Errorf("shared seed ISO left on the datastore: %v", isos)
+		}
+
+		return checkGuestFileOf(te, te.NodeName, "proxmox_virtual_environment_vm."+winner, "/var/lib/bootstrap-test/seed",
+			winner)(s)
+	}
 }
 
 // testSeedName is the default seed ISO name of the test VM, for steps that run before it is in state.
@@ -631,8 +814,15 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 				Config:      vmConfigWith(te, te.NodeName, vmOpts{cdrom: "ide2"}) + bootstrapConfig(`- ["false"]`, 0, ""),
 				ExpectError: regexp.MustCompile(`ide0\s+on\s+VM\s+\d+\s+must\s+be\s+an\s+empty\s+CD-ROM,\s+but\s+it\s+is\s+not\s+configured`),
 			}, {
-				// The failed prechecks stored nothing, so this is a plain create.
+				// A disk on the slot would be detached for the seed.
 				PreConfig: func() { requireNoSeed(t, te) },
+				Config: vmConfigWith(te, te.NodeName, vmOpts{extraDisk: "scsi1"}) +
+					bootstrapConfig(`- ["false"]`, 0, `interface = "scsi1"`),
+				ExpectError: regexp.MustCompile(`scsi1\s+on\s+VM\s+\d+\s+must\s+be\s+an\s+empty\s+CD-ROM,\s+but\s+it\s+is\s+a\s+disk\s+\(`),
+			}, {
+				// The failed prechecks stored nothing, so this is a plain create, and the disk was left alone. The VM
+				// update removes it again.
+				PreConfig: func() { requireDisk(t, te, "scsi1"); requireNoSeed(t, te) },
 				Config:    cfg,
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
@@ -665,7 +855,7 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 						plancheck.ExpectResourceAction(bootstrapAddr, plancheck.ResourceActionDestroyBeforeCreate),
 					},
 				},
-				ExpectError: regexp.MustCompile(`already\s+running,\s+and\s+cloud-init\s+applies\s+the\s+seed\s+only`),
+				ExpectError: regexp.MustCompile(`already\s+running,\s+and\s+cloud-init\s+applies\s+the\s+seed\s+only\s+on\s+a\s+VM's\s+first\s+boot.\s+For\s+a\s+new\s+VM,\s+set\s+started\s+=\s+false`),
 			}, {
 				PreConfig: func() { requireSeedRemoved(t, te) },
 				Config:    vmConfig(te, te.NodeName),
@@ -685,6 +875,81 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 			}, {
 				PreConfig: func() { requireNoSeed(t, te) },
 				Config:    vmConfigWith(te, te.NodeName, vmOpts{initialization: true}),
+			}}
+		}},
+		{"IP wait failure only warns", func(t *testing.T, te *test.Environment) []resource.TestStep {
+			t.Helper()
+
+			// The agent can't report network interfaces, but still reads files, so cloud-init's result can be read.
+			blockNICs := `- [echo, blocked]
+    write_files:
+      - path: /etc/qemu/qemu-ga.conf
+        content: |
+          [general]
+          block-rpcs=guest-network-get-interfaces`
+
+			return []resource.TestStep{{
+				Config: vmConfigWith(te, te.NodeName, vmOpts{noWaitForIP: true}) + bootstrapConfig(blockNICs, 0, ""),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue(bootstrapAddr, tfjsonpath.New("ipv4_addresses"), knownvalue.MapSizeExact(0)),
+				},
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					// Not tainted: the bootstrapped VM is kept.
+					PostApplyPostRefresh: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					checkCleanedUp(te, te.NodeName),
+					checkSeedRecorded(false),
+				),
+			}}
+		}},
+		{"two bootstraps sharing a seed name", func(t *testing.T, te *test.Environment) []resource.TestStep {
+			t.Helper()
+
+			return []resource.TestStep{{
+				// The VMs first, so both bootstraps start together and race for the name.
+				Config: sharedNameConfig(te, false, false),
+			}, {
+				ExpectError: regexp.MustCompile(`already\s+exists\s+in\s+the\s+datastore\s+and\s+this\s+resource\s+didn't\s+upload\s+it`),
+				Config:      sharedNameConfig(te, true, false),
+			}, {
+				// One bootstrap won and booted its own seed; the other failed before uploading and stored nothing.
+				RefreshState:       true,
+				ExpectNonEmptyPlan: true,
+				Check:              checkOneSharedNameWinner(te),
+			}, {
+				Config: sharedNameConfig(te, true, true),
+				Check: resource.ComposeTestCheckFunc(
+					checkGuestFileOf(te, te.NodeName, "proxmox_virtual_environment_vm.a", "/var/lib/bootstrap-test/seed", "a"),
+					checkGuestFileOf(te, te.NodeName, "proxmox_virtual_environment_vm.b", "/var/lib/bootstrap-test/seed", "b"),
+				),
+			}}
+		}},
+		{"cluster list lag keeps the bootstrap", func(t *testing.T, te *test.Environment) []resource.TestStep {
+			t.Helper()
+
+			// The proxy answers every cluster resource list with no VMs, as a lagging node does right after a create.
+			proxied := vmOpts{endpoint: test.NewEmptyClusterListProxy(t)}
+
+			return []resource.TestStep{{
+				// Create finds the VM by reading its config on each node. It fails on purpose, so Read and Delete have a
+				// seed ISO to handle.
+				Config:      vmConfigWith(te, te.NodeName, proxied) + bootstrapConfig(`- ["false"]`, 0, ""),
+				ExpectError: regexp.MustCompile(`cloud-init\s+finished\s+with\s+errors`),
+			}, {
+				// Read finds the VM on node_name, so the bootstrap and its recorded seed ISO stay in state.
+				RefreshState:       true,
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkSeedRecorded(true),
+					resource.TestCheckResourceAttr(bootstrapAddr, "node_name", te.NodeName),
+				),
+			}, {
+				// Delete finds the VM the same way and removes exactly the recorded seed ISO.
+				Config: vmConfigWith(te, te.NodeName, proxied),
+			}, {
+				PreConfig: func() { requireSeedRemoved(t, te) },
+				Config:    vmConfigWith(te, te.NodeName, proxied),
 			}}
 		}},
 		{"replacement bootstraps the new VM with the new content", func(t *testing.T, te *test.Environment) []resource.TestStep {
@@ -802,6 +1067,8 @@ resource "proxmox_cloudinit_bootstrap" "test" {
 		t.Run(tt.name, func(t *testing.T) {
 			// One environment per subtest gives each its own test name, so their image files don't collide.
 			te := test.InitEnvironment(t)
+			// Own VM IDs too: a VM deleted outside Terraform frees its ID, and another subtest's VM must not get it.
+			te.AddTemplateVars(map[string]any{"TestVMID": 100000 + rand.IntN(899000)})
 
 			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
