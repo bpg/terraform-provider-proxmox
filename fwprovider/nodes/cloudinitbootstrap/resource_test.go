@@ -41,7 +41,7 @@ const bootstrapAddr = "proxmox_cloudinit_bootstrap.test"
 const otherSuffix = "-other.iso"
 
 // The guest needs network access to install qemu-guest-agent; the bridge defaults to vmbr0.
-func networkDevice() string {
+func networkDevices(n int) string {
 	bridge := os.Getenv("PROXMOX_VE_ACC_CLOUDINIT_BRIDGE")
 	if bridge == "" {
 		bridge = "vmbr0"
@@ -52,11 +52,48 @@ func networkDevice() string {
 		vlan = "0"
 	}
 
-	return fmt.Sprintf("network_device {\n  bridge = %q\n  vlan_id = %s\n}", bridge, vlan)
+	return strings.Repeat(fmt.Sprintf("network_device {\n  bridge = %q\n  vlan_id = %s\n}\n", bridge, vlan), n)
+}
+
+// vmOpts varies the test VM; the zero value is a VM ready to be bootstrapped on ide0.
+type vmOpts struct {
+	noAgent bool
+	cdrom   string // CD-ROM slot, ide0 if empty
+	nics    int    // 1 if 0
+	// replacedBy is added to the VM's replace_triggered_by.
+	replacedBy string
+	// initialization gives the VM a Proxmox cloud-init drive on ide2.
+	initialization bool
 }
 
 // vmConfig renders a stopped VM with an empty ide0 CD-ROM, ready to be bootstrapped.
 func vmConfig(te *test.Environment, nodeName string) string {
+	return vmConfigWith(te, nodeName, vmOpts{})
+}
+
+func vmConfigWith(te *test.Environment, nodeName string, o vmOpts) string {
+	if o.cdrom == "" {
+		o.cdrom = "ide0"
+	}
+
+	if o.nics == 0 {
+		o.nics = 1
+	}
+
+	agent := "agent {\n    enabled = true\n  }"
+	if o.noAgent {
+		agent = ""
+	}
+
+	if o.initialization {
+		agent += "\n\n  initialization {\n    datastore_id = \"local\"\n    interface    = \"ide2\"\n  }"
+	}
+
+	lifecycle := "ignore_changes = [started]"
+	if o.replacedBy != "" {
+		lifecycle += "\n    replace_triggered_by = [" + o.replacedBy + "]"
+	}
+
 	return te.RenderConfig(`
 resource "proxmox_virtual_environment_download_file" "image" {
   content_type        = "import"
@@ -87,18 +124,16 @@ resource "proxmox_virtual_environment_vm" "test" {
   }
 
   cdrom {
-    interface = "ide0"
+    interface = "` + o.cdrom + `"
     file_id   = "none"
   }
 
-  ` + networkDevice() + `
+  ` + networkDevices(o.nics) + `
 
-  agent {
-    enabled = true
-  }
+  ` + agent + `
 
   lifecycle {
-    ignore_changes = [started]
+    ` + lifecycle + `
   }
 }
 `)
@@ -186,6 +221,11 @@ func seedISOs(ctx context.Context, te *test.Environment, nodeName, fileName stri
 
 // checkCleanedUp verifies through the API that the VM is running with an empty drive and its seed ISO is gone.
 func checkCleanedUp(te *test.Environment, nodeName string) resource.TestCheckFunc {
+	return checkCleanedUpOn(te, nodeName, "ide0", "")
+}
+
+// checkCleanedUpOn is checkCleanedUp for a custom CD-ROM slot and seed file name (the default name if empty).
+func checkCleanedUpOn(te *test.Environment, nodeName, iface, fileName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ctx := context.Background()
 
@@ -212,11 +252,16 @@ func checkCleanedUp(te *test.Environment, nodeName string) resource.TestCheckFun
 			return err
 		}
 
-		if dev := cfg.StorageDevices["ide0"]; dev == nil || dev.FileVolume != "none" {
-			return fmt.Errorf("ide0 of VM %d = %+v, want none", id, dev)
+		if dev := cfg.StorageDevices[iface]; dev == nil || dev.FileVolume != "none" {
+			return fmt.Errorf("%s of VM %d = %+v, want none", iface, id, dev)
 		}
 
-		isos, err := seedISOs(ctx, te, nodeName, seedName(id))
+		name := fileName
+		if name == "" {
+			name = seedName(id)
+		}
+
+		isos, err := seedISOs(ctx, te, nodeName, name)
 		if err != nil {
 			return err
 		}
@@ -357,7 +402,7 @@ func requireSeedAttached(t *testing.T, te *test.Environment) {
 func requireSeedRemoved(t *testing.T, te *test.Environment) {
 	t.Helper()
 
-	nodeName, vm := testVM(t, te)
+	_, vm := testVM(t, te)
 
 	cfg, err := vm.GetVM(context.Background())
 	require.NoError(t, err)
@@ -366,9 +411,42 @@ func requireSeedRemoved(t *testing.T, te *test.Environment) {
 	require.NotNil(t, dev)
 	require.Equal(t, "none", dev.FileVolume)
 
+	requireNoSeed(t, te)
+}
+
+// checkGuestFile reads a file in the guest through the agent, to prove which seed the VM booted with.
+func checkGuestFile(te *test.Environment, nodeName, path, want string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		id, err := vmID(s)
+		if err != nil {
+			return err
+		}
+
+		nodes := te.NodeClient()
+		nodes.NodeName = nodeName
+
+		got, err := nodes.VM(id).GetFileFromAgent(context.Background(), path)
+		if err != nil {
+			return fmt.Errorf("unable to read %s in VM %d: %w", path, id, err)
+		}
+
+		if strings.TrimSpace(got) != want {
+			return fmt.Errorf("%s in VM %d = %q, want %q", path, id, got, want)
+		}
+
+		return nil
+	}
+}
+
+// requireNoSeed checks the test VM's default seed ISO isn't on the datastore.
+func requireNoSeed(t *testing.T, te *test.Environment) {
+	t.Helper()
+
+	nodeName, vm := testVM(t, te)
+
 	isos, err := seedISOs(context.Background(), te, nodeName, seedName(vm.VMID))
 	require.NoError(t, err)
-	require.Empty(t, isos)
+	require.Empty(t, isos, "seed ISO left on the datastore")
 }
 
 // testSeedName is the default seed ISO name of the test VM, for steps that run before it is in state.
@@ -452,6 +530,7 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 					checkISOExists(te, te.NodeName, testName(te)+otherSuffix),
 					resource.TestCheckResourceAttr(bootstrapAddr, "interface", "ide0"),
 					resource.TestCheckResourceAttr(bootstrapAddr, "timeout", "1800"),
+					resource.TestCheckResourceAttr(bootstrapAddr, "node_name", te.NodeName),
 					resource.TestMatchResourceAttr(bootstrapAddr, "ipv4_addresses.lan0.#", regexp.MustCompile(`^[1-9]`)),
 				),
 			}, {
@@ -482,6 +561,21 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 				Config: vmConfig(te, te.NodeName) + bootstrapConfig(`- [echo, changed]`, 0,
 					networkConfig+"\n  lifecycle {\n    ignore_changes = [user_data]\n  }"),
 				PlanOnly: true,
+			}, {
+				// Other attributes update in place and leave the VM alone.
+				Config: vmConfig(te, te.NodeName) + bootstrapConfig("", 600, networkConfig),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(bootstrapAddr, plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction(vmAddr, plancheck.ResourceActionNoop),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					checkCleanedUp(te, te.NodeName),
+					resource.TestCheckResourceAttr(bootstrapAddr, "timeout", "600"),
+					resource.TestCheckResourceAttr(bootstrapAddr, "node_name", te.NodeName),
+					resource.TestMatchResourceAttr(bootstrapAddr, "ipv4_addresses.lan0.#", regexp.MustCompile(`^[1-9]`)),
+				),
 			}, {
 				// A refresh while the VM is stopped keeps the last known addresses.
 				PreConfig:    func() { _, vm := testVM(t, te); require.NoError(t, vm.StopVM(context.Background()).Err()) },
@@ -528,7 +622,23 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 			cfg := vmConfig(te, te.NodeName) + bootstrapConfig(`- ["false"]`, 0, "")
 
 			return []resource.TestStep{{
-				Config:      cfg,
+				// Without the guest agent the wait could never finish, so the bootstrap fails before uploading anything.
+				Config:      vmConfigWith(te, te.NodeName, vmOpts{noAgent: true}) + bootstrapConfig(`- ["false"]`, 0, ""),
+				ExpectError: regexp.MustCompile(`guest\s+agent\s+is\s+disabled\s+on\s+VM`),
+			}, {
+				// Attaching the seed to a slot without an empty CD-ROM would replace what is there, so that fails too.
+				PreConfig:   func() { requireNoSeed(t, te) },
+				Config:      vmConfigWith(te, te.NodeName, vmOpts{cdrom: "ide2"}) + bootstrapConfig(`- ["false"]`, 0, ""),
+				ExpectError: regexp.MustCompile(`ide0\s+on\s+VM\s+\d+\s+must\s+be\s+an\s+empty\s+CD-ROM,\s+but\s+it\s+is\s+not\s+configured`),
+			}, {
+				// The failed prechecks stored nothing, so this is a plain create.
+				PreConfig: func() { requireNoSeed(t, te) },
+				Config:    cfg,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(bootstrapAddr, plancheck.ResourceActionCreate),
+					},
+				},
 				ExpectError: regexp.MustCompile(`cloud-init\s+finished\s+with\s+errors`),
 			}, {
 				// The failed bootstrap recorded the seed ISO it left attached, and refresh keeps it while it's there. The
@@ -565,6 +675,97 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 				),
 			}}
 		}},
+		{"PVE cloud-init drive fails before the upload", func(t *testing.T, te *test.Environment) []resource.TestStep {
+			t.Helper()
+
+			return []resource.TestStep{{
+				// A clone of a template with a cloud-init drive would boot with two NoCloud seeds.
+				Config:      vmConfigWith(te, te.NodeName, vmOpts{initialization: true}) + bootstrapConfig("", 0, ""),
+				ExpectError: regexp.MustCompile(`has\s+a\s+Proxmox\s+cloud-init\s+drive\s+on\s+ide2`),
+			}, {
+				PreConfig: func() { requireNoSeed(t, te) },
+				Config:    vmConfigWith(te, te.NodeName, vmOpts{initialization: true}),
+			}}
+		}},
+		{"replacement bootstraps the new VM with the new content", func(t *testing.T, te *test.Environment) []resource.TestStep {
+			t.Helper()
+
+			fileName := testName(te) + "-seed.iso"
+
+			// The seed's version drives the VM's replacement, the way a module rotates a key.
+			cfg := func(version string) string {
+				return vmConfigWith(te, te.NodeName, vmOpts{cdrom: "sata1", nics: 2, replacedBy: "terraform_data.seed"}) +
+					fmt.Sprintf(`
+resource "terraform_data" "seed" {
+  input = %[1]q
+}
+
+resource "proxmox_cloudinit_bootstrap" "test" {
+  vm_id        = proxmox_virtual_environment_vm.test.vm_id
+  datastore_id = "local"
+  file_name    = %[2]q
+  interface    = "sata1"
+  user_data    = <<-EOT
+    #cloud-config
+    packages: [qemu-guest-agent]
+    write_files:
+      - path: /var/lib/bootstrap-test/user-data
+        content: %[1]s
+    runcmd:
+      - [systemctl, enable, --now, qemu-guest-agent]
+  EOT
+  # user_data's keys replace vendor_data's, so the marker uses a key user_data doesn't set.
+  vendor_data = <<-EOT
+    #cloud-config
+    bootcmd:
+      - [sh, -c, "mkdir -p /var/lib/bootstrap-test && echo vendor > /var/lib/bootstrap-test/vendor-data"]
+  EOT
+  network_config = yamlencode({
+    version = 1
+    config = [for i, nic in proxmox_virtual_environment_vm.test.network_device : {
+      type        = "physical"
+      name        = "lan${i}"
+      mac_address = lower(nic.mac_address)
+      subnets     = [{ type = "dhcp" }]
+    }]
+  })
+
+  lifecycle {
+    replace_triggered_by = [proxmox_virtual_environment_vm.test.id]
+  }
+}
+`, version, fileName)
+			}
+
+			check := func(version string) resource.TestCheckFunc {
+				return resource.ComposeTestCheckFunc(
+					checkCleanedUpOn(te, te.NodeName, "sata1", fileName),
+					checkGuestFile(te, te.NodeName, "/var/lib/bootstrap-test/user-data", version),
+					checkGuestFile(te, te.NodeName, "/var/lib/bootstrap-test/vendor-data", "vendor"),
+					resource.TestCheckResourceAttr(bootstrapAddr, "file_name", fileName),
+					resource.TestCheckResourceAttr(bootstrapAddr, "interface", "sata1"),
+					resource.TestMatchResourceAttr(bootstrapAddr, "ipv4_addresses.lan0.#", regexp.MustCompile(`^[1-9]`)),
+					resource.TestMatchResourceAttr(bootstrapAddr, "ipv4_addresses.lan1.#", regexp.MustCompile(`^[1-9]`)),
+				)
+			}
+
+			return []resource.TestStep{{
+				Config: cfg("v1"),
+				Check:  check("v1"),
+			}, {
+				Config: cfg("v2"),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(vmAddr, plancheck.ResourceActionDestroyBeforeCreate),
+						plancheck.ExpectResourceAction(bootstrapAddr, plancheck.ResourceActionDestroyBeforeCreate),
+					},
+				},
+				Check: check("v2"),
+			}, {
+				Config:   cfg("v2"),
+				PlanOnly: true,
+			}}
+		}},
 	}
 
 	if os.Getenv("PROXMOX_VE_ACC_NODE_2_NAME") != "" {
@@ -585,6 +786,13 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 						},
 					},
 					Check: checkCleanedUp(te, te.Node2Name),
+				}, {
+					// Refresh records the node the VM moved to, and that doesn't show as a change.
+					RefreshState: true,
+					Check:        resource.TestCheckResourceAttr(bootstrapAddr, "node_name", te.Node2Name),
+				}, {
+					Config:   vmConfig(te, te.Node2Name) + bootstrapConfig("", 0, ""),
+					PlanOnly: true,
 				}}
 			},
 		})
