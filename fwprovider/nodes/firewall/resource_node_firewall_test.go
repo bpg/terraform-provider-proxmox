@@ -40,6 +40,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 						"log_level_out":                        "nolog",
 						"log_level_forward":                    "nolog",
 						"ndp":                                  "true",
+						"nf_conntrack_allow_invalid":           "false",
 						"nf_conntrack_max":                     "262144",
 						"nf_conntrack_tcp_timeout_established": "432000",
 						"nftables":                             "false",
@@ -58,6 +59,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 							log_level_out                        = "alert"
 							log_level_forward                    = "warning"
 							ndp                                  = true
+							nf_conntrack_allow_invalid = true
 							nf_conntrack_max                     = 999999999
 							nf_conntrack_tcp_timeout_established = 999999999
 							nftables                             = true
@@ -73,6 +75,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 						"log_level_out":                        "alert",
 						"log_level_forward":                    "warning",
 						"ndp":                                  "true",
+						"nf_conntrack_allow_invalid":           "true",
 						"nf_conntrack_max":                     "999999999",
 						"nf_conntrack_tcp_timeout_established": "999999999",
 						"nftables":                             "true",
@@ -124,6 +127,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 						"log_level_out":                        "nolog",
 						"log_level_forward":                    "nolog",
 						"ndp":                                  "true",
+						"nf_conntrack_allow_invalid":           "false",
 						"nf_conntrack_max":                     "262144",
 						"nf_conntrack_tcp_timeout_established": "432000",
 						"nftables":                             "false",
