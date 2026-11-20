@@ -4,12 +4,12 @@ title: proxmox_cloudinit_bootstrap
 parent: Resources
 subcategory: Virtual Environment
 description: |-
-  Bootstraps a stopped VM with cloud-init through a temporary NoCloud https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html seed ISO, without SSH. The ISO is removed once cloud-init finishes, so the VM can be migrated freely.
+  Bootstraps a stopped VM with cloud-init through a temporary NoCloud seed ISO, without SSH. The ISO is removed once cloud-init finishes, so the VM can be migrated freely.
 ---
 
 # Resource: proxmox_cloudinit_bootstrap
 
-Bootstraps a stopped VM with cloud-init through a temporary [NoCloud](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html) seed ISO, without SSH. The ISO is removed once cloud-init finishes, so the VM can be migrated freely.
+Bootstraps a stopped VM with cloud-init through a temporary NoCloud seed ISO, without SSH. The ISO is removed once cloud-init finishes, so the VM can be migrated freely.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ It also needs, without checking:
 
 ## How it works
 
-On create, the resource looks up the VM's node, builds the seed ISO and uploads it as `file_name` to `datastore_id` on that node. It attaches the ISO, starts the VM, and reads `/run/cloud-init/result.json` through the guest agent until cloud-init finishes. The wait carries on through reboots that cloud-init triggers itself, such as `package_reboot_if_required`. Then it ejects and deletes the ISO, so nothing is left on the node and the VM can be migrated freely.
+On create, the resource looks up the VM's node, builds the [NoCloud](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html) seed ISO and uploads it as `file_name` to `datastore_id` on that node. It attaches the ISO, starts the VM, and reads `/run/cloud-init/result.json` through the guest agent until cloud-init finishes. The wait carries on through reboots that cloud-init triggers itself, such as `package_reboot_if_required`. Then it ejects and deletes the ISO, so nothing is left on the node and the VM can be migrated freely.
 
 Afterwards it waits up to 2 minutes for every network device to get an IPv4 address. If an address is still missing, or the agent doesn't report the network interfaces, creation only warns: `ipv4_addresses` is incomplete or empty, and later refreshes fill it in.
 

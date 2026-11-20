@@ -82,7 +82,7 @@ func (r *bootstrapResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Bootstraps a stopped VM with cloud-init through a temporary NoCloud seed ISO, without SSH.",
 		MarkdownDescription: "Bootstraps a stopped VM with cloud-init through a temporary " +
-			"[NoCloud](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html) seed ISO, without SSH. " +
+			"NoCloud seed ISO, without SSH. " +
 			"The ISO is removed once cloud-init finishes, so the VM can be migrated freely.",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID("The VM ID."),
