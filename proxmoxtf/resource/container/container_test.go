@@ -422,6 +422,23 @@ func mountPointStateAttrs(mountPoints ...map[string]string) map[string]string {
 // volume by its ID, must be handled in place by containerUpdate.
 //
 // See https://github.com/bpg/terraform-provider-proxmox/issues/3028.
+func TestMountPointResizes(t *testing.T) {
+	t.Parallel()
+
+	mp := func(volume, size string) any {
+		return map[string]any{mkMountPointVolume: volume, mkMountPointSize: size}
+	}
+
+	old := []any{mp("local-lvm:vm-100-disk-1", "1G"), mp("local-lvm:vm-100-disk-2", "1G"), mp("local-lvm", "1G")}
+	grown := []any{mp("local-lvm", "2G"), mp("local-lvm:vm-100-disk-9", "2G"), mp("local-lvm", "1G")}
+
+	// Only mp0 grows; mp1 points at an existing volume ID and mp2 is unchanged.
+	got := mountPointResizes(old, grown)
+	require.Len(t, got, 1)
+	assert.Equal(t, "mp0", got[0].Disk)
+	assert.Equal(t, "2G", got[0].Size)
+}
+
 func TestContainerMountPointForceNew(t *testing.T) {
 	t.Parallel()
 

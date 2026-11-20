@@ -5079,6 +5079,9 @@ func TestAccResourceContainerMountPointResize(t *testing.T) {
 			vm_id          = {{.TestContainerID}}
 			timeout_delete = {{.TimeoutDelete}}
 			unprivileged   = true
+			initialization {
+				hostname = "mp-resize"
+			}
 			disk {
 				datastore_id = "{{.ContainerDatastoreID}}"
 				size         = 4

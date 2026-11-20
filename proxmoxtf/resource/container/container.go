@@ -2593,6 +2593,28 @@ func mountPointSizeGrows(oldSize, newSize string) bool {
 	return oldErr == nil && newErr == nil && newParsed > oldParsed
 }
 
+// mountPointResizes returns the `pct resize` requests for mount points whose size grew. A mount point whose
+// volume is an existing volume ID is skipped: PVE keeps the real size of such a volume (see
+// containerMountPointForceNew), and a changed volume would otherwise grow the one about to be detached.
+func mountPointResizes(oldList, newList []any) []*containers.ResizeRequestBody {
+	var resizes []*containers.ResizeRequestBody
+
+	for i := range min(len(oldList), len(newList)) {
+		oldMP, _ := oldList[i].(map[string]any)
+		newMP, _ := newList[i].(map[string]any)
+
+		newVolume, _ := newMP[mkMountPointVolume].(string)
+		oldSize, _ := oldMP[mkMountPointSize].(string)
+		newSize, _ := newMP[mkMountPointSize].(string)
+
+		if !mountPointIsVolumeID(newVolume) && mountPointSizeGrows(oldSize, newSize) {
+			resizes = append(resizes, &containers.ResizeRequestBody{Disk: fmt.Sprintf("mp%d", i), Size: newSize})
+		}
+	}
+
+	return resizes
+}
+
 func containerGetMountPointsMap(mountPoint []any) (containers.CustomMountPoints, error) {
 	mountPointsMap := make(containers.CustomMountPoints, len(mountPoint))
 
@@ -4171,20 +4193,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 		}
 
 		// Grow volumes in place. The mount point config cannot resize an existing volume, `pct resize` can.
-		for i := range min(len(oldMountPointsList), len(mountPoints)) {
-			oldMP, _ := oldMountPointsList[i].(map[string]any)
-			newMP, _ := mountPoints[i].(map[string]any)
-
-			oldSize, _ := oldMP[mkMountPointSize].(string)
-			newSize, _ := newMP[mkMountPointSize].(string)
-
-			if mountPointSizeGrows(oldSize, newSize) {
-				pendingMountPointResizes = append(pendingMountPointResizes, &containers.ResizeRequestBody{
-					Disk: fmt.Sprintf("mp%d", i),
-					Size: newSize,
-				})
-			}
-		}
+		pendingMountPointResizes = mountPointResizes(oldMountPointsList, mountPoints)
 
 		rebootRequired = true
 		bodyDirty = true
