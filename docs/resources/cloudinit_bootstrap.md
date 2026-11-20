@@ -17,7 +17,7 @@ Creation checks these before uploading anything, and fails without changing the 
 
 - The VM is stopped: create it with `started = false`.
 - The guest agent is enabled (`agent { enabled = true }`).
-- `interface` (default `ide0`) is a free slot or an empty CD-ROM (`cdrom { interface = "ide0" file_id = "none" }`). On a free slot an empty CD-ROM stays after the bootstrap.
+- `interface` (default `ide0`) is a free slot or an empty CD-ROM (`cdrom { interface = "ide0" file_id = "none" }`). On a free slot an empty CD-ROM stays after the bootstrap. Avoid `ide3` when the VM has no `cdrom` block: the VM resource manages that slot by default and removes the leftover CD-ROM on the next apply.
 - The VM has no Proxmox cloud-init drive (no `initialization` block). For a clone of a template that has one, replace the drive with an empty CD-ROM on the same slot and set `interface` to it.
 
 It also needs, without checking:
@@ -38,6 +38,8 @@ The resource never overwrites or deletes a file it didn't upload. If `file_name`
 ## Example Usage
 
 ```terraform
+# The datastore must allow the "Import" content type, which is off by default
+# (Datacenter > Storage).
 resource "proxmox_download_file" "ubuntu_cloud_image" {
   content_type = "import"
   datastore_id = "local"
@@ -231,7 +233,7 @@ Seed contents are stored in Terraform state and inside the guest under `/var/lib
 ### Optional
 
 - `file_name` (String) The file name of the temporary seed ISO on `datastore_id`. Defaults to `cloudinit-bootstrap-<vm_id>.iso`. It must end in `.iso` and use only letters, digits, `.`, `_` and `-` (Proxmox would rename other characters). Creation fails if a file with this name already exists on the datastore. A custom name must be unique on the datastore across all configurations that bootstrap VMs there.
-- `interface` (String) The slot to attach the seed ISO to, one of `ide[0-3]`, `sata[0-5]` or `scsi[0-30]`. Defaults to `ide0`. The slot must be free or hold an empty CD-ROM (`file_id = "none"`); on a free slot an empty CD-ROM stays after the bootstrap. Creation fails if the slot holds a disk or an ISO.
+- `interface` (String) The slot to attach the seed ISO to, one of `ide[0-3]`, `sata[0-5]` or `scsi[0-30]`. Defaults to `ide0`. The slot must be free or hold an empty CD-ROM (`file_id = "none"`); on a free slot an empty CD-ROM stays after the bootstrap. Creation fails if the slot holds a disk or an ISO. Avoid `ide3` when the VM has no `cdrom` block: the VM resource manages that slot by default and removes the leftover CD-ROM on the next apply.
 - `meta_data` (String, Sensitive) The `meta-data` file contents. Defaults to `instance-id` and `local-hostname` set to the VM name.
 - `network_config` (String, Sensitive) The `network-config` file contents (network config version 1 or 2).
 - `timeout` (Number) How long to wait for cloud-init to finish, in seconds. Defaults to `1800`.

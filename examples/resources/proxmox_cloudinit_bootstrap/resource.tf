@@ -1,3 +1,5 @@
+# The datastore must allow the "Import" content type, which is off by default
+# (Datacenter > Storage).
 resource "proxmox_download_file" "ubuntu_cloud_image" {
   content_type = "import"
   datastore_id = "local"

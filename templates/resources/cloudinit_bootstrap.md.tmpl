@@ -17,7 +17,7 @@ Creation checks these before uploading anything, and fails without changing the 
 
 - The VM is stopped: create it with `started = false`.
 - The guest agent is enabled (`agent { enabled = true }`).
-- `interface` (default `ide0`) is a free slot or an empty CD-ROM (`cdrom { interface = "ide0" file_id = "none" }`). On a free slot an empty CD-ROM stays after the bootstrap.
+- `interface` (default `ide0`) is a free slot or an empty CD-ROM (`cdrom { interface = "ide0" file_id = "none" }`). On a free slot an empty CD-ROM stays after the bootstrap. Avoid `ide3` when the VM has no `cdrom` block: the VM resource manages that slot by default and removes the leftover CD-ROM on the next apply.
 - The VM has no Proxmox cloud-init drive (no `initialization` block). For a clone of a template that has one, replace the drive with an empty CD-ROM on the same slot and set `interface` to it.
 
 It also needs, without checking:

@@ -115,7 +115,9 @@ func (r *bootstrapResource) Schema(
 				Description: "The slot to attach the seed ISO to.",
 				MarkdownDescription: "The slot to attach the seed ISO to, one of `ide[0-3]`, `sata[0-5]` or `scsi[0-30]`. " +
 					"Defaults to `ide0`. The slot must be free or hold an empty CD-ROM (`file_id = \"none\"`); on a free slot " +
-					"an empty CD-ROM stays after the bootstrap. Creation fails if the slot holds a disk or an ISO.",
+					"an empty CD-ROM stays after the bootstrap. Creation fails if the slot holds a disk or an ISO. Avoid `ide3` " +
+					"when the VM has no `cdrom` block: the VM resource manages that slot by default and removes the leftover " +
+					"CD-ROM on the next apply.",
 				Optional: true,
 				Computed: true,
 				Default:  stringdefault.StaticString("ide0"),
