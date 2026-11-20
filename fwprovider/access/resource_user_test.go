@@ -312,6 +312,41 @@ func TestAccResourceUserTokenUserDeletedOutside(t *testing.T) {
 	})
 }
 
+// TestAccResourceUserDeletedOutsideWithACL checks that destroy succeeds for a user with inline
+// acl blocks that was removed outside Terraform, when Delete runs without a refresh.
+func TestAccResourceUserDeletedOutsideWithACL(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+	userID := fmt.Sprintf("%s@pve", gofakeit.LetterN(10))
+
+	te.AddTemplateVars(map[string]any{
+		"UserID": userID,
+	})
+
+	config := te.RenderConfig(`resource "proxmox_virtual_environment_user" "user_gone" {
+		user_id = "{{.UserID}}"
+
+		acl {
+			path    = "/"
+			role_id = "PVEAuditor"
+		}
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: func(*terraform.State) error {
+					return te.AccessClient().DeleteUser(context.Background(), userID)
+				},
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
 // TestAccResourceUserDeletedOutside checks that a user removed outside Terraform is dropped from state and
 // planned for creation, instead of failing the refresh.
 func TestAccResourceUserDeletedOutside(t *testing.T) {
