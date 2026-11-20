@@ -1,3 +1,12 @@
+resource "proxmox_download_file" "ubuntu_cloud_image" {
+  content_type = "import"
+  datastore_id = "local"
+  node_name    = "pve"
+  url          = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  # Ubuntu .img files are qcow2.
+  file_name = "noble-server-cloudimg-amd64.qcow2"
+}
+
 resource "proxmox_virtual_environment_vm" "example" {
   node_name = "pve"
   name      = "example"
@@ -12,12 +21,13 @@ resource "proxmox_virtual_environment_vm" "example" {
 
   disk {
     datastore_id = "local-lvm"
-    import_from  = "local:import/noble-server-cloudimg-amd64.qcow2"
+    import_from  = proxmox_download_file.ubuntu_cloud_image.id
     interface    = "virtio0"
     size         = 20
   }
 
-  # Empty drive the seed ISO is attached to.
+  # Empty drive the seed ISO is attached to. Optional: on a free slot the
+  # bootstrap leaves an empty CD-ROM behind.
   cdrom {
     interface = "ide0"
     file_id   = "none"
@@ -57,8 +67,10 @@ resource "proxmox_cloudinit_bootstrap" "example" {
   }
 }
 
-# The guest's IPv4 addresses by interface name, e.g.
-# proxmox_cloudinit_bootstrap.example.ipv4_addresses["eth0"][0]
+# The guest's IPv4 addresses by the interface names the guest reports.
+output "example_ipv4_addresses" {
+  value = proxmox_cloudinit_bootstrap.example.ipv4_addresses
+}
 
 # A VM with two NICs. Without `initialization`, Proxmox generates no network config,
 # so `network_config` names the NICs by the MACs Proxmox assigned.
@@ -72,7 +84,7 @@ resource "proxmox_virtual_environment_vm" "multi_nic" {
 
   disk {
     datastore_id = "local-lvm"
-    import_from  = "local:import/noble-server-cloudimg-amd64.qcow2"
+    import_from  = proxmox_download_file.ubuntu_cloud_image.id
     interface    = "virtio0"
     size         = 20
   }
