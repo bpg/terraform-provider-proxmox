@@ -548,3 +548,19 @@ func (b *UpdateRequestBody) IsEmpty() bool {
 
 	return reflect.DeepEqual(*b, UpdateRequestBody{})
 }
+
+// GetAgentFileReadRequestBody contains the query for an agent file-read request.
+type GetAgentFileReadRequestBody struct {
+	File string `json:"file" url:"file"`
+}
+
+// GetAgentFileReadResponseBody contains the body from an agent file-read response.
+type GetAgentFileReadResponseBody struct {
+	Data *GetAgentFileReadResponseData `json:"data,omitempty"`
+}
+
+// GetAgentFileReadResponseData contains the data from an agent file-read response.
+type GetAgentFileReadResponseData struct {
+	Content   string            `json:"content"`
+	Truncated *types.CustomBool `json:"truncated,omitempty"`
+}

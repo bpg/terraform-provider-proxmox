@@ -132,6 +132,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/ceph_mds.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/ceph_pool.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/node_disk_zfs.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/cloudinit_bootstrap.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/cluster_options.md ./docs/resources/
