@@ -2530,8 +2530,8 @@ func containerMountPointForceNew(_ context.Context, d *schema.ResourceDiff, _ an
 		newSize, _ := newMountPoint[mkMountPointSize].(string)
 
 		// PVE reports the real size of an existing volume whatever size is requested, so a replacement cannot
-		// apply it either.
-		if !existingVolume && !mountPointSizeEqual(oldSize, newSize) {
+		// apply it either. Growing is applied in place by containerUpdate, shrinking is not possible.
+		if !existingVolume && !mountPointSizeEqual(oldSize, newSize) && !mountPointSizeGrows(oldSize, newSize) {
 			return forceNewMountPointAttr(d, i, mkMountPointSize)
 		}
 
@@ -2583,6 +2583,14 @@ func mountPointSizeEqual(oldSize, newSize string) bool {
 	}
 
 	return oldParsed == newParsed
+}
+
+// mountPointSizeGrows reports whether newSize is a larger size than oldSize, compared by value.
+func mountPointSizeGrows(oldSize, newSize string) bool {
+	oldParsed, oldErr := types.ParseDiskSize(oldSize)
+	newParsed, newErr := types.ParseDiskSize(newSize)
+
+	return oldErr == nil && newErr == nil && newParsed > oldParsed
 }
 
 func containerGetMountPointsMap(mountPoint []any) (containers.CustomMountPoints, error) {
@@ -3781,7 +3789,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 	rebootRequired := false
 	container := Container()
 
-	var pendingResize *containers.ResizeRequestBody
+	var (
+		pendingResize            *containers.ResizeRequestBody
+		pendingMountPointResizes []*containers.ResizeRequestBody
+	)
 
 	// Retrieve the clone argument as the update logic varies for clones.
 	clone := d.Get(mkClone).([]any)
@@ -4159,6 +4170,22 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 			updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("mp%d", i))
 		}
 
+		// Grow volumes in place. The mount point config cannot resize an existing volume, `pct resize` can.
+		for i := range min(len(oldMountPointsList), len(mountPoints)) {
+			oldMP, _ := oldMountPointsList[i].(map[string]any)
+			newMP, _ := mountPoints[i].(map[string]any)
+
+			oldSize, _ := oldMP[mkMountPointSize].(string)
+			newSize, _ := newMP[mkMountPointSize].(string)
+
+			if mountPointSizeGrows(oldSize, newSize) {
+				pendingMountPointResizes = append(pendingMountPointResizes, &containers.ResizeRequestBody{
+					Disk: fmt.Sprintf("mp%d", i),
+					Size: newSize,
+				})
+			}
+		}
+
 		rebootRequired = true
 		bodyDirty = true
 	}
@@ -4375,6 +4402,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 
 	if pendingResize != nil {
 		resizeDiags := sdkresource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, pendingResize), "Container disk resize")
+		if resizeDiags.HasError() {
+			return resizeDiags
+		}
+
+		updateDiags = append(updateDiags, resizeDiags...)
+	}
+
+	for _, resize := range pendingMountPointResizes {
+		resizeDiags := sdkresource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, resize), "Container mount point resize")
 		if resizeDiags.HasError() {
 			return resizeDiags
 		}

@@ -268,9 +268,10 @@ The `mount_point.volume` attribute accepts three forms:
     second `mp1`, and so on. Appending a block, removing the last block, or
     reconfiguring an existing one is applied in place, and a running container
     is restarted. Removing or inserting a block before existing ones recreates
-    the container, as does changing the `size` of a mount point whose `volume`
+    the container, as does decreasing the `size` of a mount point whose `volume`
     is a datastore ID, or pointing its `volume` at a different datastore ID or
-    host path. Changing `volume` to the ID of another existing volume is
+    host path. Increasing the `size` of such a mount point resizes the volume
+    in place. Changing `volume` to the ID of another existing volume is
     applied in place: the new volume is attached and the previous one stays on
     the datastore as an unused volume. Proxmox VE does not check that the new
     volume exists, and it keeps the real size of an existing volume: a `size`

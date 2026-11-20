@@ -562,7 +562,7 @@ func TestContainerMountPointForceNew(t *testing.T) {
 			expectRequiresNew: false,
 		},
 		{
-			name: "resizing an existing mount point forces recreation",
+			name: "growing an existing mount point is an in-place resize",
 			state: []map[string]string{
 				{
 					mkMountPointVolume: "local-lvm:vm-100-disk-1",
@@ -575,6 +575,24 @@ func TestContainerMountPointForceNew(t *testing.T) {
 					mkMountPointVolume: "local-lvm",
 					mkMountPointPath:   "/mnt/local1",
 					mkMountPointSize:   "8G",
+				},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "shrinking an existing mount point forces recreation",
+			state: []map[string]string{
+				{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "8G",
+				},
+			},
+			config: []any{
+				map[string]any{
+					mkMountPointVolume: "local-lvm",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "4G",
 				},
 			},
 			expectRequiresNew: true,
