@@ -31,8 +31,6 @@ jobs:
   check:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
-    permissions:
-      contents: read
     outputs:
       state: ${{ steps.find.outputs.state }}
       release_id: ${{ steps.find.outputs.release_id }}
@@ -65,7 +63,7 @@ jobs:
             echo "waiting for the release-please draft for $TAG ($i/24)"
             sleep 5
           done
-          [ "$n" -eq 1 ] || { echo "::error::no release found for $TAG"; exit 1; }
+          [ "$n" -eq 1 ] || { echo "::error::no release found for $TAG. Once release-please has created the draft, use 'Re-run all jobs'."; exit 1; }
 
           draft=$(jq -r '.[0].draft' <<<"$rels")
           name=$(jq -r '.[0].name' <<<"$rels")
@@ -141,8 +139,6 @@ jobs:
     if: needs.check.outputs.state == 'draft'
     runs-on: ubuntu-26.04
     timeout-minutes: 15
-    permissions:
-      contents: read
     steps:
       - name: Generate Short Lived OAuth App Token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -162,24 +158,27 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_ID: ${{ needs.check.outputs.release_id }}
-          # Primary key of the signing subkey above, so rotating the subkey doesn't change this.
+          # Primary key of the goreleaser job's signing subkey, so a subkey rotation doesn't change this.
           SIGNING_PRIMARY_FPR: F21132514C87DE5BB384667C0B3405B36193A495
         run: |
           set -euo pipefail
           PUBKEY="$GITHUB_WORKSPACE/.github/release-signing-key.pub.asc"
           mkdir -p "$RUNNER_TEMP/assets" && cd "$RUNNER_TEMP/assets"
 
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > release.json
+
           # an API edit of a draft that omits tag_name detaches the tag, and it would publish as `untagged-...`
-          [ "$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq .tag_name)" = "$TAG" ] \
+          [ "$(jq -r .tag_name release.json)" = "$TAG" ] \
             || { echo "::error::the draft's tag_name is not $TAG (detached from its tag?). Repair: gh api -X PATCH repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID -f tag_name=$TAG"; exit 1; }
 
           # only fully uploaded assets count; the count check below catches a half-uploaded one
-          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.assets[] | select(.state == "uploaded") | "\(.id) \(.name)"' > list.txt
+          jq -r '.assets[] | select(.state == "uploaded") | "\(.id) \(.name)"' release.json > list.txt
           while read -r aid name; do
             gh api -H 'Accept: application/octet-stream' "repos/$GITHUB_REPOSITORY/releases/assets/$aid" > "$name"
           done < list.txt
 
-          sums=$(ls ./*_SHA256SUMS); sums=${sums#./}
+          sums=$(ls ./*_SHA256SUMS 2>/dev/null) || { echo "::error::no *_SHA256SUMS asset on the draft"; exit 1; }
+          sums=${sums#./}
           [ -s "$sums.sig" ] || { echo "::error::missing $sums.sig"; exit 1; }
 
           # every file listed in SHA256SUMS, plus SHA256SUMS itself and its signature
@@ -191,12 +190,11 @@ jobs:
           # verify with the public key only, and require the expected primary key (any key in a keyring would pass)
           export GNUPGHOME="$RUNNER_TEMP/gnupg"; mkdir -m 700 "$GNUPGHOME"
           gpg --batch --import "$PUBKEY"
-          verdict=$(gpg --batch --status-fd 1 --verify "$sums.sig" "$sums")
+          verdict=$(gpg --batch --status-fd 1 --verify "$sums.sig" "$sums") || true
           awk -v fpr="$SIGNING_PRIMARY_FPR" '$1 == "[GNUPG:]" && $2 == "VALIDSIG" && $NF == fpr { ok = 1 } END { exit !ok }' <<<"$verdict" \
-            || { echo "::error::signature is not valid for primary key $SIGNING_PRIMARY_FPR (was the signing subkey rotated? update .github/release-signing-key.pub.asc)"; exit 1; }
+            || { echo "::error::signature is not valid for primary key $SIGNING_PRIMARY_FPR (signing subkey rotated? update .github/release-signing-key.pub.asc and the import fingerprint)"; exit 1; }
 
-          body=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq .body)
-          [ -n "$body" ] || { echo "::error::release notes are empty"; exit 1; }
+          [ -n "$(jq -r '.body // empty' release.json)" ] || { echo "::error::release notes are empty"; exit 1; }
 
       - name: Publish the release
         env:

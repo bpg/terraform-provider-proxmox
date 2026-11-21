@@ -474,9 +474,8 @@ We use [release-please](https://github.com/googleapis/release-please) GitHub Act
 2. The PR includes an auto-generated changelog and version bump.
 3. Maintainers review and merge the release PR.
 4. release-please creates the GitHub release as a draft, and the `Publish Release` workflow attaches and signs the
-   assets, verifies them, and then publishes the release. GitHub releases are immutable, so a published release
-   can't be changed, only superseded by a new version. If the workflow fails, the release stays a draft and nothing
-   is public: fix the cause and use "Re-run all jobs".
+   assets, verifies them, and then publishes the release. If the workflow fails, the release stays a draft and
+   nothing is public: fix the cause and use "Re-run all jobs".
 5. The published release then reaches:
    - GitHub Releases
    - Terraform Registry
@@ -486,8 +485,8 @@ For a name or tag mismatch, delete or rename the stray draft. If a draft lost it
 the error message. Edit a draft's notes with `gh release edit <tag>`, which keeps the tag; an API edit without
 `tag_name` detaches it.
 
-When the signing key or subkey is rotated, update the public key in `.github/release-signing-key.pub.asc`, the primary
-key pin (`SIGNING_PRIMARY_FPR`) and the import `fingerprint` in `.github/workflows/publish.yml`.
+When the signing subkey is rotated, update the public key in `.github/release-signing-key.pub.asc` and the import
+`fingerprint` in `.github/workflows/publish.yml`. A new primary key also needs `SIGNING_PRIMARY_FPR` updated there.
 
 The repository setting "Immutable releases" is expected to be on. With it on, a published release can't be changed,
 only superseded by a new version.
