@@ -47,7 +47,11 @@ release:
   extra_files:
     - glob: 'terraform-registry-manifest.json'
       name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
-  # If you want to manually examine the release before its live, uncomment this line:
-  # draft: true
+  # Immutable releases: release-please creates the release as a draft, GoReleaser attaches the
+  # assets to it (matched by release name == tag) and must not publish it; publish.yml does that last.
+  draft: true
+  use_existing_draft: true
+  replace_existing_artifacts: true
+  mode: keep-existing
 changelog:
   disable: true
