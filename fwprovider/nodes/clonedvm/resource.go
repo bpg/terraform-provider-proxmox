@@ -694,10 +694,15 @@ func applyDisks(
 
 		device := vms.CustomStorageDevice{}
 
+		// start from the current device, so options the disk has from the template
+		// and that the configuration does not set keep their value
+		if !isNewDisk {
+			device = *currentDevice
+			device.ImportFrom = nil
+		}
+
 		if !cfg.File.IsUnknown() && !cfg.File.IsNull() {
 			device.FileVolume = cfg.File.ValueString()
-		} else if !isNewDisk {
-			device.FileVolume = currentDevice.FileVolume
 		}
 
 		// import_from only creates a disk, an existing one is never imported again
