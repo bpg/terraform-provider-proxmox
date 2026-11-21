@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
@@ -416,6 +417,61 @@ func mountPointStateAttrs(mountPoints ...map[string]string) map[string]string {
 	return attrs
 }
 
+func TestMountPointResizes(t *testing.T) {
+	t.Parallel()
+
+	mp := func(volume, size string) any {
+		return map[string]any{mkMountPointVolume: volume, mkMountPointSize: size}
+	}
+
+	old := []any{mp("local-lvm:vm-100-disk-1", "1G"), mp("local-lvm:vm-100-disk-2", "1G"), mp("local-lvm", "1G")}
+	grown := []any{mp("local-lvm", "2G"), mp("local-lvm:vm-100-disk-9", "2G"), mp("local-lvm", "1G")}
+
+	// Only mp0 grows; mp1 points at an existing volume ID and mp2 is unchanged.
+	got := mountPointResizes(old, grown, nil)
+	require.Len(t, got, 1)
+	assert.Equal(t, "mp0", got[0].Disk)
+	assert.Equal(t, "2G", got[0].Size)
+
+	// Once the volume exists, d.Get reports the allocated ID for an unchanged allocation request ("local"), so the
+	// configured volume decides: mp0 is still resized, and mp1 stays skipped.
+	applied := []any{mp("local-lvm:vm-100-disk-1", "2G"), mp("local-lvm:vm-100-disk-9", "2G"), mp("local-lvm:vm-100-disk-3", "1G")}
+	got = mountPointResizes(old, applied, []string{"local-lvm", "local-lvm:vm-100-disk-9", "local-lvm"})
+	require.Len(t, got, 1)
+	assert.Equal(t, "mp0", got[0].Disk)
+
+	assert.Empty(t, mountPointResizes(old, applied, nil), "without the config, an allocated ID looks like an existing volume")
+}
+
+// TestMountPointConfigVolumes verifies the volumes are read from the raw configuration, not the applied state.
+func TestMountPointConfigVolumes(t *testing.T) {
+	t.Parallel()
+
+	mpBlock := func(volume cty.Value) cty.Value {
+		return cty.ObjectVal(map[string]cty.Value{mkMountPointVolume: volume})
+	}
+
+	state := &terraform.InstanceState{
+		ID: "100",
+		RawConfig: cty.ObjectVal(map[string]cty.Value{
+			mkMountPoint: cty.TupleVal([]cty.Value{
+				mpBlock(cty.StringVal("local")),
+				mpBlock(cty.StringVal("local-lvm:vm-100-disk-9")),
+				mpBlock(cty.UnknownVal(cty.String)),
+				mpBlock(cty.NullVal(cty.String)),
+			}),
+		}),
+	}
+
+	d, err := schema.InternalMap(Container().Schema).Data(state, nil)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"local", "local-lvm:vm-100-disk-9", "", ""}, mountPointConfigVolumes(d))
+
+	// No raw config (e.g. a bare ResourceData): callers fall back to the planned volumes.
+	assert.Empty(t, mountPointConfigVolumes(schema.TestResourceDataRaw(t, Container().Schema, map[string]any{})))
+}
+
 // TestContainerMountPointForceNew verifies that mount point changes only force container
 // recreation when an *existing* mount point is moved to another datastore, host path or device,
 // or resized. Adding, removing, or reconfiguring mount points, and attaching another existing
@@ -562,7 +618,7 @@ func TestContainerMountPointForceNew(t *testing.T) {
 			expectRequiresNew: false,
 		},
 		{
-			name: "resizing an existing mount point forces recreation",
+			name: "growing an existing mount point is an in-place resize",
 			state: []map[string]string{
 				{
 					mkMountPointVolume: "local-lvm:vm-100-disk-1",
@@ -575,6 +631,24 @@ func TestContainerMountPointForceNew(t *testing.T) {
 					mkMountPointVolume: "local-lvm",
 					mkMountPointPath:   "/mnt/local1",
 					mkMountPointSize:   "8G",
+				},
+			},
+			expectRequiresNew: false,
+		},
+		{
+			name: "shrinking an existing mount point forces recreation",
+			state: []map[string]string{
+				{
+					mkMountPointVolume: "local-lvm:vm-100-disk-1",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "8G",
+				},
+			},
+			config: []any{
+				map[string]any{
+					mkMountPointVolume: "local-lvm",
+					mkMountPointPath:   "/mnt/local1",
+					mkMountPointSize:   "4G",
 				},
 			},
 			expectRequiresNew: true,

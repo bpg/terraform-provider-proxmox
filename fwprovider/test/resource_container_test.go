@@ -5057,3 +5057,75 @@ func TestAccResourceContainerDestroyPurgesHAResource(t *testing.T) {
 		},
 	})
 }
+
+// Growing a mount point resizes its volume in place instead of recreating the container (#2995).
+func TestAccResourceContainerMountPointResize(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	config := func(size string) string {
+		return te.RenderConfig(`
+		resource "proxmox_virtual_environment_container" "test_container" {
+			node_name      = "{{.NodeName}}"
+			vm_id          = {{.TestContainerID}}
+			timeout_delete = {{.TimeoutDelete}}
+			unprivileged   = true
+			initialization {
+				hostname = "mp-resize"
+			}
+			disk {
+				datastore_id = "{{.ContainerDatastoreID}}"
+				size         = 4
+			}
+			mount_point {
+				volume = "{{.ContainerDatastoreID}}"
+				size   = "`+size+`"
+				path   = "mnt/data"
+			}
+			network_interface {
+				name = "vmbr0"
+			}
+			operating_system {
+				template_file_id = "local:vztmpl/{{.ImageFileName}}"
+				type             = "alpine"
+			}
+		}`, WithRootPAMAuth())
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config("1G"),
+				Check:  ResourceAttributes(accTestContainerName, map[string]string{"mount_point.0.size": "1G"}),
+			},
+			{
+				Config: config("2G"),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: ResourceAttributes(accTestContainerName, map[string]string{"mount_point.0.size": "2G"}),
+			},
+			{
+				// shrinking is not possible in place
+				Config: config("1G"),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(accTestContainerName, plancheck.ResourceActionDestroyBeforeCreate),
+					},
+				},
+			},
+		},
+	})
+}
