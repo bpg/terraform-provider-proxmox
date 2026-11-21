@@ -504,7 +504,7 @@ func userDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 		}
 
 		err = client.Access().UpdateACL(ctx, aclBody)
-		if err != nil {
+		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 			return diag.FromErr(err)
 		}
 	}
