@@ -680,6 +680,69 @@ func TestAccResourceClonedVM(t *testing.T) {
 		})
 	})
 
+	t.Run("ResizeInheritedDiskKeepsOptions", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "template_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						template  = true
+
+						disk {
+							datastore_id = "local-lvm"
+							interface    = "scsi0"
+							size         = 8
+							discard      = "on"
+							ssd          = true
+							cache        = "writeback"
+						}
+					}
+
+					resource "proxmox_cloned_vm" "resize_inherited" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-resize-inherited"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						disk = {
+							scsi0 = {
+								size_gb = 16
+							}
+						}
+					}
+					`),
+					Check: checkDiskOptions(te, "proxmox_cloned_vm.resize_inherited", "scsi0", func(disk *vms.CustomStorageDevice) error {
+						if disk.Size == nil || disk.Size.InGigabytes() != 16 {
+							return fmt.Errorf("expected scsi0 size 16G, got %v", disk.Size)
+						}
+
+						if disk.Discard == nil || *disk.Discard != "on" {
+							return fmt.Errorf("expected scsi0 discard=on from the template, got %v", disk.Discard)
+						}
+
+						if disk.SSD == nil || !bool(*disk.SSD) {
+							return fmt.Errorf("expected scsi0 ssd=1 from the template, got %v", disk.SSD)
+						}
+
+						if disk.Cache == nil || *disk.Cache != "writeback" {
+							return fmt.Errorf("expected scsi0 cache=writeback from the template, got %v", disk.Cache)
+						}
+
+						return nil
+					}),
+				},
+			},
+		})
+	})
+
 	t.Run("Import", func(t *testing.T) {
 		te := test.InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
@@ -780,6 +843,36 @@ func checkNetworkSlot(te *test.Environment, resourceName, slot string, expected 
 		}
 
 		return nil
+	}
+}
+
+func checkDiskOptions(
+	te *test.Environment,
+	resourceName, slot string,
+	check func(disk *vms.CustomStorageDevice) error,
+) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource %s not found", resourceName)
+		}
+
+		vmid, err := strconv.Atoi(rs.Primary.Attributes["id"])
+		if err != nil {
+			return fmt.Errorf("parsing the id of %s: %w", resourceName, err)
+		}
+
+		config, err := te.NodeClient().VM(vmid).GetVM(context.Background())
+		if err != nil {
+			return err
+		}
+
+		disk := config.StorageDevices[slot]
+		if disk == nil {
+			return fmt.Errorf("slot %s not found for %s", slot, resourceName)
+		}
+
+		return check(disk)
 	}
 }
 
