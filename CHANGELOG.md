@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.124.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.123.1...v0.124.0) (2026-11-21)
+
+
+### Features
+
+* **vm:** add proxmox_cloudinit_bootstrap resource ([#3260](https://github.com/bpg/terraform-provider-proxmox/issues/3260)) ([7555007](https://github.com/bpg/terraform-provider-proxmox/commit/7555007c470f910c490ebaa8b38eb6aaae8777d4))
+
+
+### Bug Fixes
+
+* **acme:** replace account when directory, tos or name changes ([#3326](https://github.com/bpg/terraform-provider-proxmox/issues/3326)) ([dd92ccc](https://github.com/bpg/terraform-provider-proxmox/commit/dd92ccc4d3ccb2c5bf0b33775c1d8411b40ff88e))
+* **vm:** allow a free slot for the cloud-init bootstrap seed ISO ([#3330](https://github.com/bpg/terraform-provider-proxmox/issues/3330)) ([d3c35c8](https://github.com/bpg/terraform-provider-proxmox/commit/d3c35c8135e6e3c970693069f41417c6320fe83a))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v3.3.0 → v3.4.0) ([#3341](https://github.com/bpg/terraform-provider-proxmox/issues/3341)) ([360b863](https://github.com/bpg/terraform-provider-proxmox/commit/360b8639f1f86cd639069410542621d789b8a829))
+* **ci:** update actions/setup-go digest (b7ad1da → d8cbb80) ([#3340](https://github.com/bpg/terraform-provider-proxmox/issues/3340)) ([f30b42d](https://github.com/bpg/terraform-provider-proxmox/commit/f30b42d9099eeb4fc83ab892e3a38736a1e767d8))
+* **deps:** update image golang (5e8afd4 → 205c763) ([#3335](https://github.com/bpg/terraform-provider-proxmox/issues/3335)) ([3fe07da](https://github.com/bpg/terraform-provider-proxmox/commit/3fe07dac95c58ff9aad1adc486576ed9d403f51a))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.18.3 → v7.18.10) ([#3336](https://github.com/bpg/terraform-provider-proxmox/issues/3336)) ([8f4a2c0](https://github.com/bpg/terraform-provider-proxmox/commit/8f4a2c0f773aa98a2371a576be339aff9fff8e0b))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.40.1 → v2.41.1) ([#3337](https://github.com/bpg/terraform-provider-proxmox/issues/3337)) ([a967f23](https://github.com/bpg/terraform-provider-proxmox/commit/a967f23af38ce510b5dfcaf56c341d70374caca3))
+* **deps:** update module golang.org/x/net (v0.62.0 → v0.63.0) ([#3338](https://github.com/bpg/terraform-provider-proxmox/issues/3338)) ([16bda01](https://github.com/bpg/terraform-provider-proxmox/commit/16bda01691d6d91918426f13ad5ff71cc8182c12))
+
 ## [0.123.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.123.0...v0.123.1) (2026-11-18)
 
 
