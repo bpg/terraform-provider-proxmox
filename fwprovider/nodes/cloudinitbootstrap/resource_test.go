@@ -809,16 +809,11 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 				Config:      vmConfigWith(te, te.NodeName, vmOpts{noAgent: true}) + bootstrapConfig(`- ["false"]`, 0, ""),
 				ExpectError: regexp.MustCompile(`guest\s+agent\s+is\s+disabled\s+on\s+VM`),
 			}, {
-				// Attaching the seed to a slot without an empty CD-ROM would replace what is there, so that fails too.
-				PreConfig:   func() { requireNoSeed(t, te) },
-				Config:      vmConfigWith(te, te.NodeName, vmOpts{cdrom: "ide2"}) + bootstrapConfig(`- ["false"]`, 0, ""),
-				ExpectError: regexp.MustCompile(`ide0\s+on\s+VM\s+\d+\s+must\s+be\s+an\s+empty\s+CD-ROM,\s+but\s+it\s+is\s+not\s+configured`),
-			}, {
-				// A disk on the slot would be detached for the seed.
+				// A disk on the slot would be detached for the seed, so that fails too.
 				PreConfig: func() { requireNoSeed(t, te) },
 				Config: vmConfigWith(te, te.NodeName, vmOpts{extraDisk: "scsi1"}) +
 					bootstrapConfig(`- ["false"]`, 0, `interface = "scsi1"`),
-				ExpectError: regexp.MustCompile(`scsi1\s+on\s+VM\s+\d+\s+must\s+be\s+an\s+empty\s+CD-ROM,\s+but\s+it\s+is\s+a\s+disk\s+\(`),
+				ExpectError: regexp.MustCompile(`scsi1\s+on\s+VM\s+\d+\s+must\s+be\s+free\s+or\s+an\s+empty\s+CD-ROM,\s+but\s+it\s+is\s+a\s+disk\s+\(`),
 			}, {
 				// The failed prechecks stored nothing, so this is a plain create, and the disk was left alone. The VM
 				// update removes it again.
@@ -863,6 +858,19 @@ func TestAccResourceCloudInitBootstrap(t *testing.T) {
 					checkCleanedUp(te, te.NodeName),
 					checkISOExists(te, te.NodeName, testName(te)+otherSuffix),
 				),
+			}}
+		}},
+		{"free slot gets the seed CD-ROM", func(t *testing.T, te *test.Environment) []resource.TestStep {
+			t.Helper()
+
+			cfg := vmConfigWith(te, te.NodeName, vmOpts{cdrom: "ide2"}) + bootstrapConfig("", 0, "")
+
+			return []resource.TestStep{{
+				Config: cfg,
+				Check:  checkCleanedUp(te, te.NodeName),
+			}, {
+				Config:   cfg,
+				PlanOnly: true,
 			}}
 		}},
 		{"PVE cloud-init drive fails before the upload", func(t *testing.T, te *test.Environment) []resource.TestStep {

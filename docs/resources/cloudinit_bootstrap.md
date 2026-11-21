@@ -4,12 +4,12 @@ title: proxmox_cloudinit_bootstrap
 parent: Resources
 subcategory: Virtual Environment
 description: |-
-  Bootstraps a stopped VM with cloud-init through a temporary NoCloud https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html seed ISO, without SSH. The ISO is removed once cloud-init finishes, so the VM can be migrated freely.
+  Bootstraps a stopped VM with cloud-init through a temporary NoCloud seed ISO, without SSH. The ISO is removed once cloud-init finishes, so the VM can be migrated freely.
 ---
 
 # Resource: proxmox_cloudinit_bootstrap
 
-Bootstraps a stopped VM with cloud-init through a temporary [NoCloud](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html) seed ISO, without SSH. The ISO is removed once cloud-init finishes, so the VM can be migrated freely.
+Bootstraps a stopped VM with cloud-init through a temporary NoCloud seed ISO, without SSH. The ISO is removed once cloud-init finishes, so the VM can be migrated freely.
 
 ## Requirements
 
@@ -17,7 +17,7 @@ Creation checks these before uploading anything, and fails without changing the 
 
 - The VM is stopped: create it with `started = false`.
 - The guest agent is enabled (`agent { enabled = true }`).
-- `interface` (default `ide0`) is an empty CD-ROM (`cdrom { interface = "ide0" file_id = "none" }`).
+- `interface` (default `ide0`) is a free slot or an empty CD-ROM (`cdrom { interface = "ide0" file_id = "none" }`). On a free slot an empty CD-ROM stays after the bootstrap. Avoid `ide3` when the VM has no `cdrom` block: the VM resource manages that slot by default and removes the leftover CD-ROM on the next apply.
 - The VM has no Proxmox cloud-init drive (no `initialization` block). For a clone of a template that has one, replace the drive with an empty CD-ROM on the same slot and set `interface` to it.
 
 It also needs, without checking:
@@ -27,7 +27,7 @@ It also needs, without checking:
 
 ## How it works
 
-On create, the resource looks up the VM's node, builds the seed ISO and uploads it as `file_name` to `datastore_id` on that node. It attaches the ISO, starts the VM, and reads `/run/cloud-init/result.json` through the guest agent until cloud-init finishes. The wait carries on through reboots that cloud-init triggers itself, such as `package_reboot_if_required`. Then it ejects and deletes the ISO, so nothing is left on the node and the VM can be migrated freely.
+On create, the resource looks up the VM's node, builds the [NoCloud](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html) seed ISO and uploads it as `file_name` to `datastore_id` on that node. It attaches the ISO, starts the VM, and reads `/run/cloud-init/result.json` through the guest agent until cloud-init finishes. The wait carries on through reboots that cloud-init triggers itself, such as `package_reboot_if_required`. Then it ejects and deletes the ISO, so nothing is left on the node and the VM can be migrated freely.
 
 Afterwards it waits up to 2 minutes for every network device to get an IPv4 address. If an address is still missing, or the agent doesn't report the network interfaces, creation only warns: `ipv4_addresses` is incomplete or empty, and later refreshes fill it in.
 
@@ -38,6 +38,17 @@ The resource never overwrites or deletes a file it didn't upload. If `file_name`
 ## Example Usage
 
 ```terraform
+# The datastore must allow the "Import" content type, which is off by default
+# (Datacenter > Storage).
+resource "proxmox_download_file" "ubuntu_cloud_image" {
+  content_type = "import"
+  datastore_id = "local"
+  node_name    = "pve"
+  url          = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  # Ubuntu .img files are qcow2.
+  file_name = "noble-server-cloudimg-amd64.qcow2"
+}
+
 resource "proxmox_virtual_environment_vm" "example" {
   node_name = "pve"
   name      = "example"
@@ -52,12 +63,13 @@ resource "proxmox_virtual_environment_vm" "example" {
 
   disk {
     datastore_id = "local-lvm"
-    import_from  = "local:import/noble-server-cloudimg-amd64.qcow2"
+    import_from  = proxmox_download_file.ubuntu_cloud_image.id
     interface    = "virtio0"
     size         = 20
   }
 
-  # Empty drive the seed ISO is attached to.
+  # Empty drive the seed ISO is attached to. Optional: on a free slot the
+  # bootstrap leaves an empty CD-ROM behind.
   cdrom {
     interface = "ide0"
     file_id   = "none"
@@ -97,8 +109,10 @@ resource "proxmox_cloudinit_bootstrap" "example" {
   }
 }
 
-# The guest's IPv4 addresses by interface name, e.g.
-# proxmox_cloudinit_bootstrap.example.ipv4_addresses["eth0"][0]
+# The guest's IPv4 addresses by the interface names the guest reports.
+output "example_ipv4_addresses" {
+  value = proxmox_cloudinit_bootstrap.example.ipv4_addresses
+}
 
 # A VM with two NICs. Without `initialization`, Proxmox generates no network config,
 # so `network_config` names the NICs by the MACs Proxmox assigned.
@@ -112,7 +126,7 @@ resource "proxmox_virtual_environment_vm" "multi_nic" {
 
   disk {
     datastore_id = "local-lvm"
-    import_from  = "local:import/noble-server-cloudimg-amd64.qcow2"
+    import_from  = proxmox_download_file.ubuntu_cloud_image.id
     interface    = "virtio0"
     size         = 20
   }
@@ -219,7 +233,7 @@ Seed contents are stored in Terraform state and inside the guest under `/var/lib
 ### Optional
 
 - `file_name` (String) The file name of the temporary seed ISO on `datastore_id`. Defaults to `cloudinit-bootstrap-<vm_id>.iso`. It must end in `.iso` and use only letters, digits, `.`, `_` and `-` (Proxmox would rename other characters). Creation fails if a file with this name already exists on the datastore. A custom name must be unique on the datastore across all configurations that bootstrap VMs there.
-- `interface` (String) The empty CD-ROM drive to attach the seed ISO to, one of `ide[0-3]`, `sata[0-5]` or `scsi[0-30]`. Defaults to `ide0`. Creation fails unless the VM has an empty CD-ROM (`file_id = "none"`) there.
+- `interface` (String) The slot to attach the seed ISO to, one of `ide[0-3]`, `sata[0-5]` or `scsi[0-30]`. Defaults to `ide0`. The slot must be free or hold an empty CD-ROM (`file_id = "none"`); on a free slot an empty CD-ROM stays after the bootstrap. Creation fails if the slot holds a disk or an ISO. Avoid `ide3` when the VM has no `cdrom` block: the VM resource manages that slot by default and removes the leftover CD-ROM on the next apply.
 - `meta_data` (String, Sensitive) The `meta-data` file contents. Defaults to `instance-id` and `local-hostname` set to the VM name.
 - `network_config` (String, Sensitive) The `network-config` file contents (network config version 1 or 2).
 - `timeout` (Number) How long to wait for cloud-init to finish, in seconds. Defaults to `1800`.

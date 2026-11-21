@@ -82,7 +82,7 @@ func (r *bootstrapResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Bootstraps a stopped VM with cloud-init through a temporary NoCloud seed ISO, without SSH.",
 		MarkdownDescription: "Bootstraps a stopped VM with cloud-init through a temporary " +
-			"[NoCloud](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html) seed ISO, without SSH. " +
+			"NoCloud seed ISO, without SSH. " +
 			"The ISO is removed once cloud-init finishes, so the VM can be migrated freely.",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID("The VM ID."),
@@ -112,10 +112,12 @@ func (r *bootstrapResource) Schema(
 				},
 			},
 			"interface": schema.StringAttribute{
-				Description: "The empty CD-ROM drive to attach the seed ISO to.",
-				MarkdownDescription: "The empty CD-ROM drive to attach the seed ISO to, one of `ide[0-3]`, `sata[0-5]` or " +
-					"`scsi[0-30]`. Defaults to `ide0`. Creation fails unless the VM has an empty CD-ROM (`file_id = \"none\"`) " +
-					"there.",
+				Description: "The slot to attach the seed ISO to.",
+				MarkdownDescription: "The slot to attach the seed ISO to, one of `ide[0-3]`, `sata[0-5]` or `scsi[0-30]`. " +
+					"Defaults to `ide0`. The slot must be free or hold an empty CD-ROM (`file_id = \"none\"`); on a free slot " +
+					"an empty CD-ROM stays after the bootstrap. Creation fails if the slot holds a disk or an ISO. Avoid `ide3` " +
+					"when the VM has no `cdrom` block: the VM resource manages that slot by default and removes the leftover " +
+					"CD-ROM on the next apply.",
 				Optional: true,
 				Computed: true,
 				Default:  stringdefault.StaticString("ide0"),
@@ -458,7 +460,7 @@ func (r *bootstrapResource) uploadSeed(
 }
 
 // checkVMConfig fails before anything is uploaded when the bootstrap can't work: the wait needs the guest agent, and
-// attaching the seed replaces whatever is on iface.
+// attaching the seed replaces whatever is on iface. A free slot is fine, PVE creates the CD-ROM there.
 func checkVMConfig(cfg *vms.GetResponseData, vmID int64, iface string) error {
 	if cfg.Agent == nil || cfg.Agent.Enabled == nil || !bool(*cfg.Agent.Enabled) {
 		return fmt.Errorf("the QEMU guest agent is disabled on VM %d, and this resource reads cloud-init's result "+
@@ -481,7 +483,7 @@ func checkVMConfig(cfg *vms.GetResponseData, vmID int64, iface string) error {
 
 	switch {
 	case dev == nil:
-		found = "not configured"
+		return nil
 	case dev.Media == nil || *dev.Media != "cdrom":
 		found = fmt.Sprintf("a disk (%s)", dev.FileVolume)
 	case dev.FileVolume == "cdrom":
@@ -492,9 +494,8 @@ func checkVMConfig(cfg *vms.GetResponseData, vmID int64, iface string) error {
 		return nil
 	}
 
-	return fmt.Errorf("%s on VM %d must be an empty CD-ROM, but it is %s, and attaching the seed ISO would replace "+
-		"it. Add an empty CD-ROM there (cdrom { interface = \"%s\" file_id = \"none\" }), or set interface to a slot "+
-		"that has one", iface, vmID, found, iface)
+	return fmt.Errorf("%s on VM %d must be free or an empty CD-ROM, but it is %s, and attaching the seed ISO would "+
+		"replace it. Set interface to a free slot or to one that has an empty CD-ROM", iface, vmID, found)
 }
 
 // isoListed reports whether volID is in the datastore's ISO listing. A missing datastore is returned as

@@ -51,7 +51,7 @@ func TestCheckVMConfig(t *testing.T) {
 		{"agent type only", `{"agent":"type=virtio","ide0":"none,media=cdrom"}`, "ide0", "guest agent is disabled"},
 		{"agent disabled", `{"agent":"enabled=0","ide0":"none,media=cdrom"}`, "ide0", "guest agent is disabled"},
 		{"no agent", `{"ide0":"none,media=cdrom"}`, "ide0", "guest agent is disabled"},
-		{"no slot", `{"agent":"1"}`, "ide0", "ide0 on VM 100 must be an empty CD-ROM, but it is not configured"},
+		{"no slot", `{"agent":"1"}`, "ide0", ""},
 		{"disk on slot", `{"agent":"1","ide0":"local:100/vm-100-disk-0.qcow2,size=8G"}`, "ide0", "a disk (local:100/vm-100-disk-0.qcow2)"},
 		{"ISO in slot", `{"agent":"1","ide0":"local:iso/other.iso,media=cdrom"}`, "ide0", "a CD-ROM holding local:iso/other.iso"},
 		{"host drive", `{"agent":"1","ide0":"cdrom,media=cdrom"}`, "ide0", "the host's CD drive"},

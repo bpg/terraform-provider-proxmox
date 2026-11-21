@@ -17,7 +17,7 @@ Creation checks these before uploading anything, and fails without changing the 
 
 - The VM is stopped: create it with `started = false`.
 - The guest agent is enabled (`agent { enabled = true }`).
-- `interface` (default `ide0`) is an empty CD-ROM (`cdrom { interface = "ide0" file_id = "none" }`).
+- `interface` (default `ide0`) is a free slot or an empty CD-ROM (`cdrom { interface = "ide0" file_id = "none" }`). On a free slot an empty CD-ROM stays after the bootstrap. Avoid `ide3` when the VM has no `cdrom` block: the VM resource manages that slot by default and removes the leftover CD-ROM on the next apply.
 - The VM has no Proxmox cloud-init drive (no `initialization` block). For a clone of a template that has one, replace the drive with an empty CD-ROM on the same slot and set `interface` to it.
 
 It also needs, without checking:
@@ -27,7 +27,7 @@ It also needs, without checking:
 
 ## How it works
 
-On create, the resource looks up the VM's node, builds the seed ISO and uploads it as `file_name` to `datastore_id` on that node. It attaches the ISO, starts the VM, and reads `/run/cloud-init/result.json` through the guest agent until cloud-init finishes. The wait carries on through reboots that cloud-init triggers itself, such as `package_reboot_if_required`. Then it ejects and deletes the ISO, so nothing is left on the node and the VM can be migrated freely.
+On create, the resource looks up the VM's node, builds the [NoCloud](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html) seed ISO and uploads it as `file_name` to `datastore_id` on that node. It attaches the ISO, starts the VM, and reads `/run/cloud-init/result.json` through the guest agent until cloud-init finishes. The wait carries on through reboots that cloud-init triggers itself, such as `package_reboot_if_required`. Then it ejects and deletes the ISO, so nothing is left on the node and the VM can be migrated freely.
 
 Afterwards it waits up to 2 minutes for every network device to get an IPv4 address. If an address is still missing, or the agent doesn't report the network interfaces, creation only warns: `ipv4_addresses` is incomplete or empty, and later refreshes fill it in.
 
