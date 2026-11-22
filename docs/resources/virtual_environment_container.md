@@ -455,6 +455,11 @@ Migration behavior for `device_passthrough` devices has not been verified. A dev
 container is node-local, so the same device should be expected to need to exist on the target node, but
 this has not been tested — do not assume it behaves like a `shared` bind mount.
 
+## Attribute Reference
+
+- `ipv4` - The map of IPv4 addresses per network devices. Returns the first address for each network device, if multiple addresses are assigned.
+- `ipv6` - The map of IPv6 addresses per network device. Returns the first address for each network device, if multiple addresses are assigned.
+
 ## Example: Shared data volumes
 
 In this example container `data_holder` holds two data volumes, and is not used
@@ -473,8 +478,9 @@ errors or even data corruption.
 
 ```hcl
 resource "proxmox_virtual_environment_container" "data_holder" {
-  node_name = "first-node"
-  started   = false
+  node_name     = "first-node"
+  started       = false
+  start_on_boot = false
 
   mount_point {
     volume = "local-lvm"
@@ -521,21 +527,14 @@ list. Inserting or removing a block before existing ones shifts the positions
 and recreates the holder container and its volumes.
 
 -> On the consumer, either omit `size` on a borrowed mount point or copy it
-verbatim from the holder. Proxmox VE keeps the real size of an existing
-volume, so a different value — including a different spelling of the same
-size, such as `"1024M"` for a `1G` volume — is not applied and shows as a
-change on every plan.
+verbatim from the holder. The volume already exists and Proxmox VE manages
+its real size; matching the holder's `size` exactly keeps plans clean.
 
 ~> Do *not* migrate the holder while a consumer uses its volumes: keep
 `migrate = false` (the default) and do not change its `node_name`. Migrating
 the holder copies its volumes to the target node but cannot remove the source
 copies that a running consumer still mounts, which leaves the live data
 stranded on the source node.
-
-## Attribute Reference
-
-- `ipv4` - The map of IPv4 addresses per network devices. Returns the first address for each network device, if multiple addresses are assigned.
-- `ipv6` - The map of IPv6 addresses per network device. Returns the first address for each network device, if multiple addresses are assigned.
 
 ## Import
 
