@@ -12,11 +12,15 @@
 package vm_test
 
 import (
+	"context"
+	"fmt"
 	"math/rand"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
@@ -199,4 +203,93 @@ func TestAccResourceVMShort(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestAccResourceVM2AgentFreezeFS(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+	resourceName := "proxmox_vm.test_agent"
+
+	checkFreezeFS := func(wantDisabled bool) resource.TestCheckFunc {
+		return func(state *terraform.State) error {
+			rs, ok := state.RootModule().Resources[resourceName]
+			if !ok {
+				return fmt.Errorf("resource %q not found", resourceName)
+			}
+
+			vmID, err := strconv.Atoi(rs.Primary.ID)
+			if err != nil {
+				return fmt.Errorf("failed to parse VM ID %q: %w", rs.Primary.ID, err)
+			}
+
+			config, err := te.NodeClient().VM(vmID).GetVM(context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to get VM %d config: %w", vmID, err)
+			}
+
+			if wantDisabled {
+				if config.Agent == nil || config.Agent.FreezeFS == nil {
+					return fmt.Errorf("VM %d has no freeze_fs API value", vmID)
+				}
+				if *config.Agent.FreezeFS {
+					return fmt.Errorf("VM %d freeze_fs is enabled, want disabled", vmID)
+				}
+			} else if config.Agent != nil && config.Agent.FreezeFS != nil && !*config.Agent.FreezeFS {
+				return fmt.Errorf("VM %d freeze_fs is disabled, want enabled", vmID)
+			}
+
+			return nil
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_vm" "test_agent" {
+						node_name = "{{.NodeName}}"
+						name      = "test-agent-freeze-fs"
+						agent = {
+							enabled   = true
+							trim      = false
+							type      = "virtio"
+							freeze_fs = false
+						}
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes(resourceName, map[string]string{
+						"agent.enabled":   "true",
+						"agent.trim":      "false",
+						"agent.type":      "virtio",
+						"agent.freeze_fs": "false",
+					}),
+					checkFreezeFS(true),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_vm" "test_agent" {
+						node_name = "{{.NodeName}}"
+						name      = "test-agent-freeze-fs"
+						agent = {
+							enabled   = true
+							trim      = true
+							type      = "virtio"
+							freeze_fs = true
+						}
+					}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes(resourceName, map[string]string{
+						"agent.enabled":   "true",
+						"agent.trim":      "true",
+						"agent.type":      "virtio",
+						"agent.freeze_fs": "true",
+					}),
+					checkFreezeFS(false),
+				),
+			},
+		},
+	})
 }

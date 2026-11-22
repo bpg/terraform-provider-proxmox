@@ -20,6 +20,7 @@ type CustomAgent struct {
 	Enabled         *types.CustomBool `json:"enabled,omitempty"   url:"enabled,int"`
 	TrimClonedDisks *types.CustomBool `json:"fstrim_cloned_disks" url:"fstrim_cloned_disks,int"`
 	Type            *string           `json:"type"                url:"type"`
+	FreezeFS        *types.CustomBool `json:"freeze_fs,omitempty" url:"freeze_fs,omitempty,int"`
 }
 
 // EncodeValues converts a CustomAgent struct to a URL value.
@@ -44,6 +45,10 @@ func (r *CustomAgent) EncodeValues(key string, v *url.Values) error {
 
 	if r.Type != nil {
 		values = append(values, fmt.Sprintf("type=%s", *r.Type))
+	}
+
+	if r.FreezeFS != nil && !*r.FreezeFS {
+		values = append(values, "freeze-fs-on-backup=0")
 	}
 
 	if len(values) > 0 {
@@ -76,6 +81,8 @@ func (r *CustomAgent) UnmarshalJSON(b []byte) error {
 				r.TrimClonedDisks = types.CustomBool(v[1] == "1").Pointer()
 			case "type":
 				r.Type = &v[1]
+			case "freeze-fs", "freeze-fs-on-backup", "guest-fsfreeze":
+				r.FreezeFS = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}

@@ -23,6 +23,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/agent"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
@@ -157,6 +158,7 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	}
 
 	// fill out create body fields with values from other resource blocks
+	agent.FillCreateBody(ctx, plan.Agent, createBody, diags)
 	cdrom.FillCreateBody(ctx, plan.CDROM, createBody, diags)
 	cpu.FillCreateBody(ctx, plan.CPU, createBody, diags)
 	rng.FillCreateBody(ctx, plan.RNG, createBody, diags)
@@ -275,6 +277,7 @@ func (r *Resource) update(ctx context.Context, plan, state Model, diags *diag.Di
 	}
 
 	// fill out update body fields with values from other resource blocks
+	agent.FillUpdateBody(ctx, plan.Agent, state.Agent, updateBody, diags)
 	cdrom.FillUpdateBody(ctx, plan.CDROM, state.CDROM, updateBody, diags)
 	cpu.FillUpdateBody(ctx, plan.CPU, state.CPU, updateBody, diags)
 	rng.FillUpdateBody(ctx, plan.RNG, state.RNG, updateBody, diags)
