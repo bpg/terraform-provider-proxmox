@@ -45,6 +45,9 @@ var (
 	_         resource.ResourceWithConfigure   = &downloadFileResource{}
 	_         resource.ResourceWithImportState = &downloadFileResource{}
 	httpRegex                                  = regexp.MustCompile(`https?://.*`)
+
+	// errFileNotListed reports a successful datastore listing that does not contain the file.
+	errFileNotListed = errors.New("file does not exists in datastore")
 )
 
 type sizeRequiresReplaceModifier struct{}
@@ -557,7 +560,7 @@ func (r *downloadFileResource) read(
 		}
 	}
 
-	return fmt.Errorf("file does not exists in datastore")
+	return errFileNotListed
 }
 
 // Read reads file from datastore.
@@ -579,19 +582,21 @@ func (r *downloadFileResource) Read(
 	setOriginalValue := []byte(strconv.FormatInt(state.Size.ValueInt64(), 10))
 	resp.Private.SetKey(ctx, "original_state_size", setOriginalValue)
 
+	// Only a successful listing without the file proves it is gone. A failed listing (an unreachable datastore, a
+	// mount error, a timeout, an authentication error) keeps the resource in state.
 	err := r.read(ctx, &state)
-	if err != nil {
-		if strings.Contains(err.Error(), "failed to authenticate") {
-			resp.Diagnostics.AddError("Failed to authenticate", err.Error())
-
-			return
-		}
-
+	if errors.Is(err, errFileNotListed) {
 		resp.Diagnostics.AddWarning(
 			"The file does not exist in datastore and resource must be recreated.",
 			err.Error(),
 		)
 		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Read Download File %q", state.ID.ValueString()), err.Error())
 
 		return
 	}
