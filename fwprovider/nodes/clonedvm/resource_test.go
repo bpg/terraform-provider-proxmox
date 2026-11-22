@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -193,6 +194,51 @@ func TestAccResourceClonedVM(t *testing.T) {
 					Check: resource.ComposeTestCheckFunc(
 						checkNetworkSlot(te, "proxmox_cloned_vm.unmanaged", "net0", true),
 					),
+				},
+			},
+		})
+	})
+
+	t.Run("FailedCreateKeepsVMInState", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
+
+		clonedVM := func(diskSize string) string {
+			return te.RenderConfig(templateWithOneNet + fmt.Sprintf(`
+					resource "proxmox_cloned_vm" "failed_create" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-failed-create"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						disk = {
+							virtio1 = {
+								datastore_id = "local-lvm"
+								%s
+							}
+						}
+					}
+					`, diskSize))
+		}
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					// The clone succeeds and the disk step fails, so the VM must stay in the state (tainted).
+					Config:      clonedVM(""),
+					ExpectError: regexp.MustCompile(`Missing size_gb`),
+				},
+				{
+					Config: clonedVM("size_gb = 1"),
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction("proxmox_cloned_vm.failed_create", plancheck.ResourceActionReplace),
+						},
+					},
 				},
 			},
 		})
