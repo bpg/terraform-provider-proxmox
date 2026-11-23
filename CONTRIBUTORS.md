@@ -296,7 +296,7 @@
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://instantnode.eu"><img src="https://avatars.githubusercontent.com/u/227785302?v=4&size=100" width="100px" height="100px" alt="Luxend"/><br /><sub><b>Luxend</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=luxend0" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/QuantumNinja31"><img src="https://avatars.githubusercontent.com/u/120321384?v=4&size=100" width="100px" height="100px" alt="QuantumNinja31"/><br /><sub><b>QuantumNinja31</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=QuantumNinja31" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://szakky.github.io/blog/"><img src="https://avatars.githubusercontent.com/u/181095899?v=4&size=100" width="100px" height="100px" alt="Shiozaki Yuya"/><br /><sub><b>Shiozaki Yuya</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=szakky" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/pulls?q=is%3Apr+reviewed-by%3Aszakky" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://szakky.github.io/blog/"><img src="https://avatars.githubusercontent.com/u/181095899?v=4&size=100" width="100px" height="100px" alt="Shiozaki Yuya"/><br /><sub><b>Shiozaki Yuya</b></sub></a><br /></td>
     </tr>
   </tbody>
   <tfoot>
