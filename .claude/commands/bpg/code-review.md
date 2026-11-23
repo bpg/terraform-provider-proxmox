@@ -297,29 +297,39 @@ If API client code is changed:
 
 If no API client code was changed, skip this step entirely.
 
-## Step 8c: Independent Scrutiny
+### 8c: Independent Scrutiny
 
 Before showing anything, have a separate agent try to refute the review. A wrong finding posted to a contributor costs
 more than a missed nit, and the agents in Step 5 share your framing of the PR.
 
-**When to run:** if any issue passed the Step 7 filter, or the PR is Medium or Large, or it changes files under
-`proxmox/`. Otherwise (a Small PR with a clean verdict and no API client change) skip it and say so in Step 9.
+**When to run:** if the issue list holds any issue scored 50 or above (a test failure from Step 8a counts), or the PR
+is Medium or Large, or it changes files under `proxmox/`. Otherwise (a Small PR with a clean verdict and no API client
+change) skip it and say so in Step 9.
 
 **Build the claim list.** Number each claim and write it as a plain statement, with the file and line it is about, and
 without the reasoning that led to it:
 
-1. Every issue that passed the Step 7 filter, including valid existing PR comments from Step 4b.
-2. Every below-threshold note you intend to mention in Step 9.
-3. The facts the verdict rests on, for example: "the new error mapping changes behaviour for no other caller", "the new
-   test fails without the fix", "PVE returns X for Y", "the test reaches the changed code".
-4. Results from Step 8, stated as observations: which tests ran, under which credentials, and what passed or failed with
-   which files reverted.
+1. Every issue scored 50 or above, including valid existing PR comments from Step 4b and test failures from Step 8a.
+2. Every below-threshold note you intend to mention to the user.
+3. The facts the verdict rests on, for example: "the new error mapping changes behaviour for no other caller", "PVE
+   returns X for Y", "the test reaches the changed code".
+4. Results from Step 8, stated as observations: which tests ran and what passed or failed. Add the credentials used, or
+   a run with part of the change reverted, only if you did that and have the output.
+
+When the PR adds a feature, an attribute or a new resource, the verdict rests on design facts too. State the ones that
+apply as claims, for example: "every new attribute maps to a PVE parameter of the same type and default", "an existing
+configuration plans no change after the upgrade", "each new field is handled in create, read, update, delete and
+import", "the tests cover every input mode and an import round-trip", "the generated docs match the schema".
+
+Only list a fact you have evidence for. If the verdict needs one you have not checked, check it first.
 
 **Launch one `review-skeptic` agent** (`.claude/agents/review-skeptic.md`) in the foreground. If that agent type is not
-available in the session, launch a general-purpose agent and tell it to read `.claude/agents/review-skeptic.md` first and
-follow it. The prompt must contain:
+available in the session, launch a general-purpose agent and tell it to read that file first and follow it. Give the
+absolute path of the file in the main checkout, not in the worktree: the PR under review may not contain it. The prompt
+must contain:
 
-- the PR number, the worktree path (`$WORKTREE`) and the base branch
+- the shell safety rules from Step 5
+- the PR number, the absolute worktree path and the base branch
 - the numbered claim list
 - the scoring rubric from Step 5, verbatim
 - the guideline file list from Step 3
@@ -328,15 +338,15 @@ Do not include your own reasoning, the Step 5 agent outputs, or the verdict you 
 
 **Apply the result:**
 
-| Agent verdict | What to do                                                                                                                                        |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CONFIRMED`   | Keep the claim as is.                                                                                                                             |
-| `REFUTED`     | Read the cited evidence yourself. If it holds, drop the issue (score 0) or correct the fact. Never post a refuted issue.                          |
-| `UNPROVEN`    | Keep the issue only if your own evidence is something you ran or read, and say in Details what is unverified.                                     |
-| New finding   | Verify it yourself against the worktree before adding it; the agent's mistakes read as confidently as its findings. Then apply the Step 7 filter. |
+| Agent verdict | What to do                                                                                                                                                                                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CONFIRMED`   | Keep the claim as is.                                                                                                                                                                                                                                               |
+| `REFUTED`     | Read the cited evidence yourself. If it holds, drop the issue (score 0) or correct the fact. Never post a refuted issue.                                                                                                                                            |
+| `UNPROVEN`    | Issue: keep it only if your own evidence is something you ran or read, and say in Details what is unverified. Fact or observation: the verdict may rest on it only if you ran or read it yourself; otherwise settle it now or list it as open in the Scrutiny line. |
+| New finding   | Verify it yourself against the worktree before adding it; the agent's mistakes read as confidently as its findings. Then apply the Step 7 filter.                                                                                                                   |
 
 If a refuted fact changes the verdict (for example the test turns out not to cover the fix), go back to the step that
-produced it instead of patching the wording.
+produced it instead of patching the wording. Then send only the changed claims to a new agent, once.
 
 Record "Outside this PR" items for Step 9; they are not findings against the PR.
 
@@ -359,7 +369,7 @@ Found N issues (M total identified, K filtered as low confidence):
 
 1. (Score: 85) <brief description>
    File: `fwprovider/resource_vm.go:10-15`
-   Category: <one of: Bug, Guidelines, Historical, Prior PR, Code comments, Existing PR Comment>
+   Category: <one of: Bug, Guidelines, Historical, Prior PR, Code comments, Existing PR Comment, Test Failure, Scrutiny>
    Details: <explanation and suggestion>
 
 2. ...
@@ -380,8 +390,8 @@ No issues found. Checked for bugs and contributor guidelines compliance.
 **Scrutiny:** <N claims checked: X confirmed, Y refuted, Z unproven | skipped: small PR, clean verdict>
 ```
 
-In both formats, list any "Outside this PR" items from Step 8c under a separate **Outside this PR** heading, marked as
-reproduced or as a hypothesis.
+In both formats, list any "Outside this PR" items from Step 8c under a separate **Outside this PR** heading. Each one is a
+hypothesis unless you reproduced it yourself; say which.
 
 ## Step 9b: Offer to Post as Pending GitHub Comments
 
@@ -485,7 +495,7 @@ Write a session state file to `.dev/review_PR_NUMBER_SESSION_STATE.md`.
 
 - **Score:** 85
 - **File:** `path/to/file.go:10-15`
-- **Category:** Bug / Guidelines / Historical context / Existing PR Comment
+- **Category:** Bug / Guidelines / Historical context / Existing PR Comment / Test Failure / Scrutiny
 - **Description:** Detailed description
 - **Suggestion:** What should be changed
 
@@ -513,7 +523,7 @@ Record every claim sent to the `review-skeptic` agent in Step 8c, or "Skipped" w
 | 1   | Brief claim | CONFIRMED | `path/to/file.go:10` | —                |
 | 2   | Brief claim | REFUTED   | `path/to/other.go:5` | Issue 4 dropped  |
 
-**Outside this PR:** [related bugs in code the PR does not touch, reproduced or hypothesis]
+**Outside this PR:** [related bugs in code the PR does not touch; hypothesis unless reproduced by the reviewer]
 
 **Not verified:** [what the agent could not check]
 

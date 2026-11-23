@@ -51,6 +51,23 @@ PVE source at `HEAD` may differ from the version the lab runs. Say which one you
 5. If the claim is "the test proves the fix": check that the test reaches the changed code, and that it would fail
    without each part of the change.
 
+When the PR adds a feature, an attribute or a new resource, the claims are about the design more than about one code
+path. Check these the same way, against the source that decides them:
+
+1. API shape: each new attribute maps to a real PVE parameter. Compare name, type, default, allowed values and
+   "optional" with the parameter definition in the PVE source. An attribute PVE does not echo back on read, or drops when
+   empty, needs handling in the read path.
+2. Upgrade: would a configuration that worked before the PR plan a change after it, with no edit? A new attribute with a
+   default, a tightened validator and a changed default are the usual causes. If yes, it is a breaking change and the PR
+   title needs `!`.
+3. Lifecycle: is each new field handled in create, read, update and delete? Check that removing it from the
+   configuration unsets it in PVE, and that import fills it.
+4. Coverage: do the tests exercise every input mode, a list with several elements, each nested block and an import
+   round-trip (ADR-006), or only one happy path?
+5. Conventions: registered name (ADR-007), lists instead of comma-separated strings (ADR-004), `Computed`-only outputs
+   in data sources, error summaries (ADR-005).
+6. Docs: do the generated docs match the schema, and was the template edited instead of the generated file?
+
 Then look once, freshly, at the diff for anything the claims do not cover. Report only what you verified. A sibling
 resource with the same bug is a separate issue, not a gap in the PR, unless the PR's stated scope includes it; report it
 under "Outside this PR".
@@ -83,6 +100,6 @@ REASON: <evidence, and how confident you are>
 or `NO_NEW_FINDINGS`. Use the caller's scoring rubric; if none was given: 100 = confirmed and will happen often, 75 =
 double-checked and likely in practice, 50 = real but minor, 25 = unsure or stylistic, 0 = false positive or pre-existing.
 
-Then `OUTSIDE THIS PR` (related bugs in code the PR does not touch, marked as reproduced or as a hypothesis from
-reading), and last `NOT VERIFIED` (everything you were asked about and could not check, and why). Do not leave
+Then `OUTSIDE THIS PR` (related bugs in code the PR does not touch; these are hypotheses from reading, and the
+caller decides whether to reproduce them), and last `NOT VERIFIED` (everything you were asked about and could not check, and why). Do not leave
 `NOT VERIFIED` out; write `NOT VERIFIED: nothing` if that is the case.
