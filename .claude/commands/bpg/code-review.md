@@ -133,6 +133,7 @@ Launch review agents based on PR size. **Each agent's prompt must include the wo
 **Every agent prompt must include:**
 
 1. The shell safety rules:
+
    > When running shell commands: never use `cd X && command` compounds — use `git -C <path>` for git commands and the Read tool for file reads. Never use `$(...)` command substitution. Use literal/absolute paths instead.
 
 2. The scoring rubric (so agents self-score — see below).
@@ -183,29 +184,29 @@ Include this rubric verbatim in every agent prompt:
 
 a. **Guidelines compliance:** Audit the changes against `CONTRIBUTING.md` (the primary contributor guidelines) and any relevant `CLAUDE.md` files. Check the following areas from CONTRIBUTING.md:
 
-   - Coding conventions and style
-   - Commit message format
-   - PR scope (one change per PR, no mixed concerns)
-   - Proof of work and DCO sign-off
-   - Framework-only for new resources
-   - Documentation workflow and test placement
+- Coding conventions and style
+- Commit message format
+- PR scope (one change per PR, no mixed concerns)
+- Proof of work and DCO sign-off
+- Framework-only for new resources
+- Documentation workflow and test placement
 
-   Additionally check:
+Additionally check:
 
-   - **New resources/data sources:** must follow [ADR-007](docs/adr/007-resource-type-name-migration.md) Phase 1 — `Metadata` must hardcode `resp.TypeName = "proxmox_..."` instead of using `req.ProviderTypeName + "_suffix"`
-   - **Functional test coverage** per [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement) — tests must cover all major use cases (different input modes, list attributes with multiple elements, compound fields, nested objects, import round-trips), not just one happy path
-   - **Comma-separated API values** per [ADR-004](docs/adr/004-schema-design-conventions.md#comma-separated-api-values--terraform-lists) — must be exposed as Terraform list/set attributes, not raw strings
-   - **Datasource schema attributes** per CLAUDE.md "Datasource Schema Attributes" — output attributes in datasources must be `Computed: true` only (never `Optional`). Only lookup keys should be `Required`. Nested blocks must use datasource-specific schemas with `Computed`-only attributes, not reuse resource schemas that have `Optional+Computed`. Nil API values in Computed fields must map to defaults (`""`, `false`, empty collections), not null.
+- **New resources/data sources:** must follow [ADR-007](docs/adr/007-resource-type-name-migration.md) Phase 1 — `Metadata` must hardcode `resp.TypeName = "proxmox_..."` instead of using `req.ProviderTypeName + "_suffix"`
+- **Functional test coverage** per [ADR-006](docs/adr/006-testing-requirements.md#functional-coverage-requirement) — tests must cover all major use cases (different input modes, list attributes with multiple elements, compound fields, nested objects, import round-trips), not just one happy path
+- **Comma-separated API values** per [ADR-004](docs/adr/004-schema-design-conventions.md#comma-separated-api-values--terraform-lists) — must be exposed as Terraform list/set attributes, not raw strings
+- **Datasource schema attributes** per CLAUDE.md "Datasource Schema Attributes" — output attributes in datasources must be `Computed: true` only (never `Optional`). Only lookup keys should be `Required`. Nested blocks must use datasource-specific schemas with `Computed`-only attributes, not reuse resource schemas that have `Optional+Computed`. Nil API values in Computed fields must map to defaults (`""`, `false`, empty collections), not null.
 
-   Note: CLAUDE.md is guidance for Claude agents, so not all of its instructions apply during code review of human contributions.
+Note: CLAUDE.md is guidance for Claude agents, so not all of its instructions apply during code review of human contributions.
 
 b. **Bug scan:** Read the file changes in the pull request (`gh pr diff <number>`), then do a shallow scan for obvious bugs. Avoid reading extra context beyond the changes, focusing just on the changes themselves. Focus on large bugs, and avoid small issues and nitpicks. Ignore likely false positives.
 
 c. **Historical context:** For each file changed in the PR, examine recent history to identify bugs or regressions:
 
-   - Run `git -C "$WORKTREE" log -10 --oneline -- <file>` for recent commit context
-   - Run `git -C "$WORKTREE" blame -L <start>,<end> -- <file>` for the specific changed line ranges
-   - Look for: reverted changes being re-introduced, recently fixed bugs being re-broken, patterns that contradict established conventions in the file's history
+- Run `git -C "$WORKTREE" log -10 --oneline -- <file>` for recent commit context
+- Run `git -C "$WORKTREE" blame -L <start>,<end> -- <file>` for the specific changed line ranges
+- Look for: reverted changes being re-introduced, recently fixed bugs being re-broken, patterns that contradict established conventions in the file's history
 
 d. **Prior PR comments:** Find the last 10 merged PRs that touched the same files. Use `git -C "$WORKTREE" log --pretty=format:"%H" -10 -- <file>` to get commits that touched each file, then `gh pr list --state merged --search "<commit SHA>"` to find associated PRs. Read comments on those PRs and check for any that may also apply to the current PR.
 
@@ -296,6 +297,59 @@ If API client code is changed:
 
 If no API client code was changed, skip this step entirely.
 
+### 8c: Independent Scrutiny
+
+Before showing anything, have a separate agent try to refute the review. A wrong finding posted to a contributor costs
+more than a missed nit, and the agents in Step 5 share your framing of the PR.
+
+**When to run:** if the issue list holds any issue scored 50 or above (a test failure from Step 8a counts), or the PR
+is Medium or Large, or it changes files under `proxmox/`. Otherwise (a Small PR with a clean verdict and no API client
+change) skip it and say so in Step 9.
+
+**Build the claim list.** Number each claim and write it as a plain statement, with the file and line it is about, and
+without the reasoning that led to it:
+
+1. Every issue scored 50 or above, including valid existing PR comments from Step 4b and test failures from Step 8a.
+2. Every below-threshold note you intend to mention to the user.
+3. The facts the verdict rests on, for example: "the new error mapping changes behaviour for no other caller", "PVE
+   returns X for Y", "the test reaches the changed code".
+4. Results from Step 8, stated as observations: which tests ran and what passed or failed. Add the credentials used, or
+   a run with part of the change reverted, only if you did that and have the output.
+
+When the PR adds a feature, an attribute or a new resource, the verdict rests on design facts too. State the ones that
+apply as claims, for example: "every new attribute maps to a PVE parameter of the same type and default", "an existing
+configuration plans no change after the upgrade", "each new field is handled in create, read, update, delete and
+import", "the tests cover every input mode and an import round-trip", "the generated docs match the schema".
+
+Only list a fact you have evidence for. If the verdict needs one you have not checked, check it first.
+
+**Launch one `review-skeptic` agent** (`.claude/agents/review-skeptic.md`) in the foreground. If that agent type is not
+available in the session, launch a general-purpose agent and tell it to read that file first and follow it. Give the
+absolute path of the file in the main checkout, not in the worktree: the PR under review may not contain it. The prompt
+must contain:
+
+- the shell safety rules from Step 5
+- the PR number, the absolute worktree path and the base branch
+- the numbered claim list
+- the scoring rubric from Step 5, verbatim
+- the guideline file list from Step 3
+
+Do not include your own reasoning, the Step 5 agent outputs, or the verdict you expect.
+
+**Apply the result:**
+
+| Agent verdict | What to do                                                                                                                                                                                                                                                                                                                              |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CONFIRMED`   | Keep the claim. If the agent added a `NOTE`, correct the Details or the scope of the claim to match it.                                                                                                                                                                                                                                 |
+| `REFUTED`     | Read the cited evidence yourself. If it holds: drop the issue (score 0) when the issue is false, keep the issue and replace the suggestion when only the suggestion is wrong, or correct the fact. Never post an issue or a suggestion that the evidence refutes. If it does not hold, keep the claim and say why in the Scrutiny line. |
+| `UNPROVEN`    | Issue: keep it only if your own evidence is something you ran or read, and say in Details what is unverified. Fact or observation: the verdict may rest on it only if you ran or read it yourself; otherwise settle it now or list it as open in the Scrutiny line.                                                                     |
+| New finding   | Verify it yourself against the worktree before adding it; the agent's mistakes read as confidently as its findings. Then apply the Step 7 filter.                                                                                                                                                                                       |
+
+If a refuted fact changes the verdict (for example the test turns out not to cover the fix), go back to the step that
+produced it instead of patching the wording. Then send only the changed claims to a new agent, once.
+
+Record the "Outside this PR" items and the `NOT VERIFIED` list for Steps 9 and 10. They are not findings against the PR.
+
 ---
 
 ## Step 9: Display Results
@@ -315,10 +369,14 @@ Found N issues (M total identified, K filtered as low confidence):
 
 1. (Score: 85) <brief description>
    File: `fwprovider/resource_vm.go:10-15`
-   Category: <one of: Bug, Guidelines, Historical, Prior PR, Code comments, Existing PR Comment>
+   Category: <one of: Bug, Guidelines, Historical, Prior PR, Code comments, Existing PR Comment, Test Failure, Scrutiny>
    Details: <explanation and suggestion>
 
 2. ...
+
+**Scrutiny:** <N claims checked: X confirmed, Y refuted, Z unproven | skipped: small PR, clean verdict>
+<one line per refuted or unproven claim, and what changed because of it>
+**Not verified:** <what the scrutiny agent could not check | nothing>
 ```
 
 Format for no issues:
@@ -329,7 +387,14 @@ Format for no issues:
 **Summary:** [1-2 sentence PR summary from Step 4]
 
 No issues found. Checked for bugs and contributor guidelines compliance.
+
+**Scrutiny:** <N claims checked: X confirmed, Y refuted, Z unproven | skipped: small PR, clean verdict>
+<one line per refuted or unproven claim, and what changed because of it>
+**Not verified:** <what the scrutiny agent could not check | nothing>
 ```
+
+In both formats, list any "Outside this PR" items from Step 8c under a separate **Outside this PR** heading. Each one is a
+hypothesis unless you reproduced it yourself; say which.
 
 ## Step 9b: Offer to Post as Pending GitHub Comments
 
@@ -379,6 +444,9 @@ Write a session state file to `.dev/review_PR_NUMBER_SESSION_STATE.md`.
 - **PR Size:** Small/Medium/Large (N lines changed)
 - **Files Changed:** [list of files]
 - **Agents Run:** [which agents were run based on PR size]
+- **Scrutiny:** [N claims: X confirmed, Y refuted, Z unproven; one line per refuted or unproven claim | skipped, with reason]
+- **Outside this PR:** [related bugs in code the PR does not touch; hypothesis unless reproduced by the reviewer | none]
+- **Not verified:** [what the scrutiny agent could not check | nothing]
 ```
 
 **For reviews with issues, use this full format:**
@@ -422,9 +490,9 @@ Write a session state file to `.dev/review_PR_NUMBER_SESSION_STATE.md`.
 
 ## Issues Found (Score >= 50)
 
-| # | Score | Description | File | Status |
-|---|-------|-------------|------|--------|
-| 1 | 85 | Brief description | `path/to/file.go:10` | Open |
+| #   | Score | Description       | File                 | Status |
+| --- | ----- | ----------------- | -------------------- | ------ |
+| 1   | 85    | Brief description | `path/to/file.go:10` | Open   |
 
 ### Issue Details
 
@@ -432,7 +500,7 @@ Write a session state file to `.dev/review_PR_NUMBER_SESSION_STATE.md`.
 
 - **Score:** 85
 - **File:** `path/to/file.go:10-15`
-- **Category:** Bug / Guidelines / Historical context / Existing PR Comment
+- **Category:** Bug / Guidelines / Historical context / Existing PR Comment / Test Failure / Scrutiny
 - **Description:** Detailed description
 - **Suggestion:** What should be changed
 
@@ -442,11 +510,27 @@ Write a session state file to `.dev/review_PR_NUMBER_SESSION_STATE.md`.
 
 Record every issue from all review agents here, regardless of score.
 
-| # | Score | Agent | Description | File | Reason Filtered |
-|---|-------|-------|-------------|------|-----------------|
-| 1 | 85 | Bug scan | Brief description | `path/to/file.go:10` | — (included) |
-| 2 | 40 | Guidelines | Brief description | `path/to/other.go:5` | Low confidence |
-| 3 | 25 | Historical | Brief description | `path/to/file.go:20` | Likely false positive |
+| #   | Score | Agent      | Description       | File                      | Reason Filtered             |
+| --- | ----- | ---------- | ----------------- | ------------------------- | --------------------------- |
+| 1   | 85    | Bug scan   | Brief description | `path/to/file.go:10`      | — (included)                |
+| 2   | 40    | Guidelines | Brief description | `path/to/other.go:5`      | Low confidence              |
+| 3   | 25    | Historical | Brief description | `path/to/file.go:20`      | Likely false positive       |
+| 4   | 0     | Guidelines | Brief description | `path/to/file_test.go:30` | Refuted in scrutiny: reason |
+
+---
+
+## Scrutiny
+
+Record every claim sent to the `review-skeptic` agent in Step 8c, or "Skipped" with the reason.
+
+| #   | Claim       | Verdict   | Evidence             | Effect on review |
+| --- | ----------- | --------- | -------------------- | ---------------- |
+| 1   | Brief claim | CONFIRMED | `path/to/file.go:10` | —                |
+| 2   | Brief claim | REFUTED   | `path/to/other.go:5` | Issue 4 dropped  |
+
+**Outside this PR:** [related bugs in code the PR does not touch; hypothesis unless reproduced by the reviewer]
+
+**Not verified:** [what the agent could not check]
 
 ---
 
