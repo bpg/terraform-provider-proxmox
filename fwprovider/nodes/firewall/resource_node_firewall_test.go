@@ -15,8 +15,11 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
+	nodefirewall "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/firewall"
 )
 
 func TestAccResourceNodeFirewallOptions(t *testing.T) {
@@ -51,6 +54,23 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 				),
 			},
 			{
+				PreConfig: func() {
+					err := te.NodeClient().Firewall().SetNodeOptions(t.Context(), &nodefirewall.OptionsPutRequestBody{
+						Delete: []string{"nf_conntrack_allow_invalid"},
+					})
+					require.NoError(t, err)
+				},
+				Config: te.RenderConfig(`
+						resource "proxmox_node_firewall" "test" {
+							node_name      = "{{.NodeName}}"
+						}
+					`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
+				Check: resource.TestCheckResourceAttr("proxmox_node_firewall.test", "nf_conntrack_allow_invalid", "false"),
+			},
+			{
 				Config: te.RenderConfig(`
 						resource "proxmox_node_firewall" "test" {
 							node_name                            = "{{.NodeName}}"
@@ -59,7 +79,7 @@ func TestAccResourceNodeFirewallOptions(t *testing.T) {
 							log_level_out                        = "alert"
 							log_level_forward                    = "warning"
 							ndp                                  = true
-							nf_conntrack_allow_invalid = true
+							nf_conntrack_allow_invalid           = true
 							nf_conntrack_max                     = 999999999
 							nf_conntrack_tcp_timeout_established = 999999999
 							nftables                             = true

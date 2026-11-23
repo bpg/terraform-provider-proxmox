@@ -79,7 +79,7 @@ func (m *nodeFirewallOptionsModel) importFromOptionsAPI(opts *nodefirewall.Optio
 	m.LogLevelOut = types.StringPointerValue(opts.LogLevelOut)
 	m.LogLevelForward = types.StringPointerValue(opts.LogLevelForward)
 	m.NDP = types.BoolPointerValue(opts.NDP.PointerBool())
-	m.NFConntrackAllowInvalid = types.BoolPointerValue(opts.NFConntrackAllowInvalid.PointerBool())
+	m.NFConntrackAllowInvalid = attribute.BoolValueFromCustomBoolPtr(opts.NFConntrackAllowInvalid)
 	m.NFConntrackMax = types.Int64PointerValue(opts.NFConntrackMax)
 	m.NFConntrackTCPTimeoutEstablished = types.Int64PointerValue(opts.NFConntrackTCPTimeoutEstablished)
 	m.NFTables = types.BoolPointerValue(opts.NFTables.PointerBool())
