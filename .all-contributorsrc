@@ -2100,6 +2100,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "szakky",
+      "name": "Shiozaki Yuya",
+      "avatar_url": "https://avatars.githubusercontent.com/u/181095899?v=4",
+      "profile": "https://szakky.github.io/blog/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
