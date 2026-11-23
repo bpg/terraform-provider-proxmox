@@ -338,17 +338,17 @@ Do not include your own reasoning, the Step 5 agent outputs, or the verdict you 
 
 **Apply the result:**
 
-| Agent verdict | What to do                                                                                                                                                                                                                                                          |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CONFIRMED`   | Keep the claim as is.                                                                                                                                                                                                                                               |
-| `REFUTED`     | Read the cited evidence yourself. If it holds, drop the issue (score 0) or correct the fact. Never post a refuted issue.                                                                                                                                            |
-| `UNPROVEN`    | Issue: keep it only if your own evidence is something you ran or read, and say in Details what is unverified. Fact or observation: the verdict may rest on it only if you ran or read it yourself; otherwise settle it now or list it as open in the Scrutiny line. |
-| New finding   | Verify it yourself against the worktree before adding it; the agent's mistakes read as confidently as its findings. Then apply the Step 7 filter.                                                                                                                   |
+| Agent verdict | What to do                                                                                                                                                                                                                                                                                                                              |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CONFIRMED`   | Keep the claim. If the agent added a `NOTE`, correct the Details or the scope of the claim to match it.                                                                                                                                                                                                                                 |
+| `REFUTED`     | Read the cited evidence yourself. If it holds: drop the issue (score 0) when the issue is false, keep the issue and replace the suggestion when only the suggestion is wrong, or correct the fact. Never post an issue or a suggestion that the evidence refutes. If it does not hold, keep the claim and say why in the Scrutiny line. |
+| `UNPROVEN`    | Issue: keep it only if your own evidence is something you ran or read, and say in Details what is unverified. Fact or observation: the verdict may rest on it only if you ran or read it yourself; otherwise settle it now or list it as open in the Scrutiny line.                                                                     |
+| New finding   | Verify it yourself against the worktree before adding it; the agent's mistakes read as confidently as its findings. Then apply the Step 7 filter.                                                                                                                                                                                       |
 
 If a refuted fact changes the verdict (for example the test turns out not to cover the fix), go back to the step that
 produced it instead of patching the wording. Then send only the changed claims to a new agent, once.
 
-Record "Outside this PR" items for Step 9; they are not findings against the PR.
+Record the "Outside this PR" items and the `NOT VERIFIED` list for Steps 9 and 10. They are not findings against the PR.
 
 ---
 
@@ -376,6 +376,7 @@ Found N issues (M total identified, K filtered as low confidence):
 
 **Scrutiny:** <N claims checked: X confirmed, Y refuted, Z unproven | skipped: small PR, clean verdict>
 <one line per refuted or unproven claim, and what changed because of it>
+**Not verified:** <what the scrutiny agent could not check | nothing>
 ```
 
 Format for no issues:
@@ -388,6 +389,8 @@ Format for no issues:
 No issues found. Checked for bugs and contributor guidelines compliance.
 
 **Scrutiny:** <N claims checked: X confirmed, Y refuted, Z unproven | skipped: small PR, clean verdict>
+<one line per refuted or unproven claim, and what changed because of it>
+**Not verified:** <what the scrutiny agent could not check | nothing>
 ```
 
 In both formats, list any "Outside this PR" items from Step 8c under a separate **Outside this PR** heading. Each one is a
@@ -442,6 +445,8 @@ Write a session state file to `.dev/review_PR_NUMBER_SESSION_STATE.md`.
 - **Files Changed:** [list of files]
 - **Agents Run:** [which agents were run based on PR size]
 - **Scrutiny:** [N claims: X confirmed, Y refuted, Z unproven; one line per refuted or unproven claim | skipped, with reason]
+- **Outside this PR:** [related bugs in code the PR does not touch; hypothesis unless reproduced by the reviewer | none]
+- **Not verified:** [what the scrutiny agent could not check | nothing]
 ```
 
 **For reviews with issues, use this full format:**
