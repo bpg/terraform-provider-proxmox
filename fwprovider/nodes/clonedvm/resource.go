@@ -699,6 +699,9 @@ func applyDisks(
 		if !isNewDisk {
 			device = *currentDevice
 			device.ImportFrom = nil
+			// the format is derived from the volume's file extension when the disk
+			// line is read, sending it back would store it on the disk
+			device.Format = nil
 		}
 
 		if !cfg.File.IsUnknown() && !cfg.File.IsNull() {
@@ -795,7 +798,9 @@ func applyDisks(
 			device.Serial = cfg.Serial.ValueStringPointer()
 		}
 
-		if isNewDisk && !cfg.SSD.IsUnknown() && !cfg.SSD.IsNull() {
+		// PVE rejects ssd on virtio disks, so on an existing disk it is only set on
+		// the other buses
+		if (isNewDisk || !strings.HasPrefix(slot, "virtio")) && !cfg.SSD.IsUnknown() && !cfg.SSD.IsNull() {
 			device.SSD = proxmoxtypes.CustomBoolPtr(cfg.SSD.ValueBoolPointer())
 		}
 

@@ -107,3 +107,117 @@ func TestApplyDisksConfiguredOptionOverridesInherited(t *testing.T) {
 	assert.NotContains(t, encoded, "cache=writeback")
 	assert.Contains(t, encoded, "discard=on")
 }
+
+func TestApplyDisksSSDOnInheritedDisk(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		slot     string
+		line     string
+		ssd      bool
+		contains string
+		excludes string
+	}{
+		{
+			name:     "ssd=false overrides the template on scsi",
+			slot:     "scsi0",
+			line:     `"local-lvm:vm-102-disk-0,discard=on,size=8G,ssd=1"`,
+			ssd:      false,
+			contains: "ssd=0",
+			excludes: "ssd=1",
+		},
+		{
+			name:     "ssd=true is set on an inherited sata disk",
+			slot:     "sata0",
+			line:     `"local-lvm:vm-102-disk-0,size=8G,ssd=0"`,
+			ssd:      true,
+			contains: "ssd=1",
+			excludes: "ssd=0",
+		},
+		{
+			name:     "ssd is not sent on an inherited virtio disk",
+			slot:     "virtio0",
+			line:     `"local-lvm:vm-102-disk-0,discard=on,size=8G"`,
+			ssd:      true,
+			contains: "discard=on",
+			excludes: "ssd=",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			current := &vms.CustomStorageDevice{}
+			require.NoError(t, current.UnmarshalJSON([]byte(tt.line)))
+
+			currentConfig := &vms.GetResponseData{
+				StorageDevices: vms.CustomStorageDevices{tt.slot: current},
+			}
+
+			cfg := nullDiskModel()
+			cfg.SSD = types.BoolValue(tt.ssd)
+
+			body := &vms.UpdateRequestBody{}
+			diags := diag.Diagnostics{}
+
+			applyDisks(map[string]DiskModel{tt.slot: cfg}, currentConfig, body, &diags)
+			require.False(t, diags.HasError(), diags)
+
+			encoded := encodeDisk(t, body, tt.slot)
+			assert.Contains(t, encoded, tt.contains)
+			assert.NotContains(t, encoded, tt.excludes)
+		})
+	}
+}
+
+func TestApplyDisksDoesNotSendDerivedFormat(t *testing.T) {
+	t.Parallel()
+
+	newCurrentConfig := func(t *testing.T) *vms.GetResponseData {
+		t.Helper()
+
+		current := &vms.CustomStorageDevice{}
+		require.NoError(t, current.UnmarshalJSON([]byte(
+			`"local:102/vm-102-disk-0.qcow2,aio=io_uring,size=1G,ssd=0"`,
+		)))
+		require.NotNil(t, current.Format, "format should be derived from the file extension")
+
+		return &vms.GetResponseData{
+			StorageDevices: vms.CustomStorageDevices{"scsi0": current},
+		}
+	}
+
+	t.Run("format not configured", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := nullDiskModel()
+		cfg.SizeGB = types.Int64Value(2)
+
+		body := &vms.UpdateRequestBody{}
+		diags := diag.Diagnostics{}
+
+		applyDisks(map[string]DiskModel{"scsi0": cfg}, newCurrentConfig(t), body, &diags)
+		require.False(t, diags.HasError(), diags)
+
+		encoded := encodeDisk(t, body, "scsi0")
+		assert.NotContains(t, encoded, "format=")
+		assert.Contains(t, encoded, "aio=io_uring")
+	})
+
+	t.Run("format configured", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := nullDiskModel()
+		cfg.Format = types.StringValue("raw")
+
+		body := &vms.UpdateRequestBody{}
+		diags := diag.Diagnostics{}
+
+		applyDisks(map[string]DiskModel{"scsi0": cfg}, newCurrentConfig(t), body, &diags)
+		require.False(t, diags.HasError(), diags)
+
+		assert.Contains(t, encodeDisk(t, body, "scsi0"), "format=raw")
+	})
+}

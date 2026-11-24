@@ -683,11 +683,7 @@ func TestAccResourceClonedVM(t *testing.T) {
 	t.Run("ResizeInheritedDiskKeepsOptions", func(t *testing.T) {
 		te := test.InitEnvironment(t)
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: te.AccProviders,
-			Steps: []resource.TestStep{
-				{
-					Config: te.RenderConfig(`
+		templateConfig := `
 					resource "proxmox_virtual_environment_vm" "template_vm" {
 						node_name = "{{.NodeName}}"
 						started   = false
@@ -702,7 +698,13 @@ func TestAccResourceClonedVM(t *testing.T) {
 							cache        = "writeback"
 						}
 					}
+`
 
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(templateConfig + `
 					resource "proxmox_cloned_vm" "resize_inherited" {
 						node_name = "{{.NodeName}}"
 						name      = "fwk-cloned-resize-inherited"
@@ -734,6 +736,46 @@ func TestAccResourceClonedVM(t *testing.T) {
 
 						if disk.Cache == nil || *disk.Cache != "writeback" {
 							return fmt.Errorf("expected scsi0 cache=writeback from the template, got %v", disk.Cache)
+						}
+
+						return nil
+					}),
+				},
+				{
+					Config: te.RenderConfig(templateConfig + `
+					resource "proxmox_cloned_vm" "resize_inherited" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-resize-inherited"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						disk = {
+							scsi0 = {
+								size_gb = 16
+								cache   = "none"
+								ssd     = false
+							}
+						}
+					}
+					`),
+					Check: checkDiskOptions(te, "proxmox_cloned_vm.resize_inherited", "scsi0", func(disk *vms.CustomStorageDevice) error {
+						if disk.Size == nil || disk.Size.InGigabytes() != 16 {
+							return fmt.Errorf("expected scsi0 size 16G, got %v", disk.Size)
+						}
+
+						if disk.Discard == nil || *disk.Discard != "on" {
+							return fmt.Errorf("expected scsi0 discard=on from the template, got %v", disk.Discard)
+						}
+
+						if disk.SSD == nil || bool(*disk.SSD) {
+							return fmt.Errorf("expected scsi0 ssd=0 from the configuration, got %v", disk.SSD)
+						}
+
+						if disk.Cache == nil || *disk.Cache != "none" {
+							return fmt.Errorf("expected scsi0 cache=none from the configuration, got %v", disk.Cache)
 						}
 
 						return nil
