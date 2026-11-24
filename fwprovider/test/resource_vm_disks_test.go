@@ -3250,6 +3250,214 @@ func TestAccResourceVMEFIDiskStorageMigration(t *testing.T) {
 	})
 }
 
+// TestAccResourceVMDiskMoveOnline verifies that changing datastore_id of a running VM's disks and EFI disk moves them
+// without a reboot, and that a move combined with a non-hotpluggable option change still takes the offline path.
+//
+// The disks are created on PROXMOX_VE_ACC_DISK_MOVE_SOURCE_DATASTORE_ID (default "local-lvm") and live-moved to
+// PROXMOX_VE_ACC_ZFS_DATASTORE_ID. PROXMOX_VE_ACC_DISK_MOVE_VM_ID optionally pins the VM ID. The disks are blank,
+// so the test needs no SSH access: a running QEMU process is all the live move requires.
+func TestAccResourceVMDiskMoveOnline(t *testing.T) {
+	te := InitEnvironment(t)
+	if te.ZfsDatastoreID == "" {
+		t.Skip("skipping: PROXMOX_VE_ACC_ZFS_DATASTORE_ID is not set")
+	}
+
+	sourceDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_DISK_MOVE_SOURCE_DATASTORE_ID")
+	if sourceDatastoreID == "" {
+		sourceDatastoreID = "local-lvm"
+	}
+
+	targetDatastoreID := te.ZfsDatastoreID
+
+	vmIDLine := ""
+	if id := utils.GetAnyStringEnv("PROXMOX_VE_ACC_DISK_MOVE_VM_ID"); id != "" {
+		vmIDLine = "vm_id = " + id
+	}
+
+	const resourceName = "proxmox_virtual_environment_vm.test_disk_move_online"
+
+	config := func(datastoreID, cache string, rebootAfterUpdate bool) string {
+		return te.RenderConfig(fmt.Sprintf(`
+		resource "proxmox_virtual_environment_vm" "test_disk_move_online" {
+			node_name           = "{{.NodeName}}"
+			%[4]s
+			started             = true
+			stop_on_destroy     = true
+			reboot_after_update = %[1]t
+			name                = "test-disk-move-online"
+			tags                = ["tfacc", "disk-move-online"]
+			bios                = "ovmf"
+
+			efi_disk {
+				datastore_id = "%[2]s"
+				type         = "4m"
+			}
+			disk {
+				datastore_id = "%[2]s"
+				interface    = "scsi0"
+				size         = 8
+				cache        = "%[3]s"
+			}
+			disk {
+				datastore_id = "%[2]s"
+				interface    = "scsi1"
+				size         = 1
+				aio          = "io_uring"
+			}
+		}`, rebootAfterUpdate, datastoreID, cache, vmIDLine))
+	}
+
+	var capturedUptime int
+
+	vmID := func(s *terraform.State) (int, error) {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return 0, fmt.Errorf("resource not found")
+		}
+
+		return strconv.Atoi(rs.Primary.Attributes["vm_id"])
+	}
+
+	uptime := func(s *terraform.State) (int, error) {
+		id, err := vmID(s)
+		if err != nil {
+			return 0, err
+		}
+
+		status, err := te.NodeClient().VM(id).GetVMStatus(context.Background())
+		if err != nil {
+			return 0, fmt.Errorf("failed to get VM status: %w", err)
+		}
+
+		if status.Uptime == nil {
+			return 0, fmt.Errorf("VM uptime is nil")
+		}
+
+		return *status.Uptime, nil
+	}
+
+	captureUptime := func(s *terraform.State) error {
+		// wait for uptime to accumulate
+		time.Sleep(5 * time.Second)
+
+		u, err := uptime(s)
+		if err != nil {
+			return err
+		}
+
+		t.Logf("captured uptime: %d", u)
+		capturedUptime = u
+
+		return nil
+	}
+
+	checkVolumes := func(datastoreID string) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			id, err := vmID(s)
+			if err != nil {
+				return err
+			}
+
+			vmConfig, err := te.NodeClient().VM(id).GetVM(context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to get VM config: %w", err)
+			}
+
+			for _, iface := range []string{"scsi0", "scsi1"} {
+				dev := vmConfig.StorageDevices[iface]
+				if dev == nil || !strings.HasPrefix(dev.FileVolume, datastoreID+":") {
+					return fmt.Errorf("%s not on datastore %s: %+v", iface, datastoreID, dev)
+				}
+			}
+
+			if scsi1 := vmConfig.StorageDevices["scsi1"]; scsi1.AIO == nil || *scsi1.AIO != "io_uring" {
+				return fmt.Errorf("scsi1 lost aio=io_uring: %+v", scsi1)
+			}
+
+			if vmConfig.EFIDisk == nil || !strings.HasPrefix(vmConfig.EFIDisk.FileVolume, datastoreID+":") {
+				return fmt.Errorf("efidisk0 not on datastore %s: %+v", datastoreID, vmConfig.EFIDisk)
+			}
+
+			for iface := range vmConfig.StorageDevices {
+				if strings.HasPrefix(iface, "unused") {
+					return fmt.Errorf("source volume left behind as %s", iface)
+				}
+			}
+
+			return nil
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config(sourceDatastoreID, "none", false),
+				Check: resource.ComposeTestCheckFunc(
+					checkVolumes(sourceDatastoreID),
+					captureUptime,
+				),
+			},
+			{
+				// reboot_after_update = false: an offline move would fail with a policy error.
+				Config: config(targetDatastoreID, "none", false),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(resourceName, map[string]string{
+						"disk.0.datastore_id":     targetDatastoreID,
+						"disk.1.datastore_id":     targetDatastoreID,
+						"disk.1.aio":              "io_uring",
+						"efi_disk.0.datastore_id": targetDatastoreID,
+					}),
+					checkVolumes(targetDatastoreID),
+					func(s *terraform.State) error {
+						u, err := uptime(s)
+						if err != nil {
+							return err
+						}
+
+						t.Logf("live move: uptime before=%d, after=%d", capturedUptime, u)
+
+						if u < capturedUptime {
+							return fmt.Errorf("VM was restarted by the disk move: uptime before=%d, after=%d", capturedUptime, u)
+						}
+
+						return nil
+					},
+					captureUptime,
+				),
+			},
+			{
+				// A cache change is a pending change on a running VM, so the move goes offline.
+				Config: config(sourceDatastoreID, "writeback", true),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(resourceName, map[string]string{
+						"disk.0.datastore_id": sourceDatastoreID,
+						"disk.0.cache":        "writeback",
+					}),
+					checkVolumes(sourceDatastoreID),
+					func(s *terraform.State) error {
+						u, err := uptime(s)
+						if err != nil {
+							return err
+						}
+
+						t.Logf("offline move: uptime before=%d, after=%d", capturedUptime, u)
+
+						if u >= capturedUptime {
+							return fmt.Errorf("expected a restart for the offline move: uptime before=%d, after=%d", capturedUptime, u)
+						}
+
+						return nil
+					},
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		},
+	})
+}
+
 func TestAccResourceVMDiskLinkedCloneResizeAndMove(t *testing.T) {
 	t.Parallel()
 

@@ -255,7 +255,10 @@ output "ubuntu_vm_public_key" {
             guest when possible.
         - `unsafe` - Write directly to the disk bypassing the host cache.
     - `datastore_id` - (Optional) The identifier for the datastore to create
-        the disk in (defaults to `local-lvm`).
+        the disk in (defaults to `local-lvm`). Changing it moves the disk to the
+        new datastore. A running VM keeps running while the disk is moved,
+        unless other options of the same disk change in the same apply, in
+        which case the VM is shut down for the move.
     - `path_in_datastore` - (Optional) The in-datastore path to the disk image.
         ***Experimental.*** Use to attach another VM's disks,
         or (as root only) host's filesystem paths (`datastore_id` empty string).
@@ -309,7 +312,8 @@ output "ubuntu_vm_public_key" {
 - `efi_disk` - (Optional) The efi disk device (required if `bios` is set
     to `ovmf`). See [Example: UEFI boot](#example-uefi-boot).
     - `datastore_id` (Optional) The identifier for the datastore to create
-        the disk in (defaults to `local-lvm`).
+        the disk in (defaults to `local-lvm`). Changing it moves the disk to the
+        new datastore without stopping a running VM.
     - `file_format` (Optional) The file format (defaults to `raw`).
     - `type` (Optional) Size and type of the OVMF EFI disk. `4m` is newer and
         recommended, and required for Secure Boot. For backwards compatibility

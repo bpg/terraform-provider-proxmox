@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
@@ -714,6 +715,44 @@ func TestVMAppendRemovedIPConfigDeletes(t *testing.T) {
 			actual := vmAppendRemovedIPConfigDeletes(tt.del, tt.old, tt.new, tt.plan)
 
 			require.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestVMDiskMoveRequiresShutdown(t *testing.T) {
+	t.Parallel()
+
+	device := func(datastoreID string, sizeGB int64, cache string) *vms.CustomStorageDevice {
+		return &vms.CustomStorageDevice{
+			FileVolume:  datastoreID + ":vm-100-disk-0",
+			DatastoreID: &datastoreID,
+			Size:        types.DiskSizeFromGigabytes(sizeGB),
+			Cache:       &cache,
+		}
+	}
+
+	tests := []struct {
+		name     string
+		iface    string
+		oldDisk  *vms.CustomStorageDevice
+		newDisk  *vms.CustomStorageDevice
+		expected bool
+	}{
+		{"scsi datastore only", "scsi0", device("fastpool", 8, "none"), device("vmpool", 8, "none"), false},
+		{"scsi datastore and size", "scsi0", device("fastpool", 8, "none"), device("vmpool", 16, "none"), false},
+		{"virtio datastore only", "virtio0", device("fastpool", 8, "none"), device("vmpool", 8, "none"), false},
+		{"sata datastore only", "sata1", device("fastpool", 8, "none"), device("vmpool", 8, "none"), false},
+		{"ide datastore only", "ide1", device("fastpool", 8, "none"), device("vmpool", 8, "none"), false},
+		{"scsi datastore and cache", "scsi0", device("fastpool", 8, "none"), device("vmpool", 8, "writeback"), true},
+		{"efi disk", "efidisk0", device("fastpool", 1, "none"), device("vmpool", 1, "none"), false},
+		{"tpm state", "tpmstate0", device("fastpool", 1, "none"), device("vmpool", 1, "none"), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, tt.expected, vmDiskMoveRequiresShutdown(tt.iface, tt.oldDisk, tt.newDisk))
 		})
 	}
 }

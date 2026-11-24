@@ -339,6 +339,82 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	require.NotContains(t, updateBody.CustomStorageDevices, "scsi0", "Update body should not contain the unchanged disk scsi0")
 }
 
+// TestDiskUpdateSkipsDatastoreOnlyChange verifies that a disk whose only change is its datastore is left to
+// move_disk instead of being re-sent in the config update, while a move combined with an option change is still sent.
+func TestDiskUpdateSkipsDatastoreOnlyChange(t *testing.T) {
+	t.Parallel()
+
+	disk := func(iface, datastoreID string, size int, cache string) map[string]any {
+		return map[string]any{
+			mkDiskInterface:   iface,
+			mkDiskDatastoreID: datastoreID,
+			mkDiskSize:        size,
+			mkDiskCache:       cache,
+		}
+	}
+
+	prior := schema.TestResourceDataRaw(t, Schema(), map[string]any{
+		MkDisk: []any{
+			disk("scsi0", "fastpool", 10, "none"),
+			disk("scsi1", "fastpool", 10, "none"),
+			disk("scsi2", "fastpool", 10, "none"),
+		},
+	})
+	prior.SetId("100")
+	state := prior.State()
+
+	sm := schema.InternalMap(Schema())
+
+	diff, err := sm.Diff(context.Background(), state, terraform.NewResourceConfigRaw(map[string]any{
+		MkDisk: []any{
+			disk("scsi0", "vmpool", 10, "none"),
+			disk("scsi1", "vmpool", 20, "none"),
+			disk("scsi2", "vmpool", 10, "writeback"),
+		},
+	}), nil, nil, true)
+	require.NoError(t, err)
+
+	d, err := sm.Data(state, diff)
+	require.NoError(t, err)
+
+	planDisks, err := GetDiskDeviceObjects(d, nil, nil)
+	require.NoError(t, err)
+
+	currentDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{FileVolume: "fastpool:vm-100-disk-0", Size: types.DiskSizeFromGigabytes(10)},
+		"scsi1": &vms.CustomStorageDevice{FileVolume: "fastpool:vm-100-disk-1", Size: types.DiskSizeFromGigabytes(10)},
+		"scsi2": &vms.CustomStorageDevice{FileVolume: "fastpool:vm-100-disk-2", Size: types.DiskSizeFromGigabytes(10)},
+	}
+
+	updateBody := &vms.UpdateRequestBody{}
+
+	_, diags := Update(context.Background(), nil, "test-node", 100, d, planDisks, currentDisks, updateBody)
+	require.False(t, diags.HasError())
+
+	require.NotContains(t, updateBody.CustomStorageDevices, "scsi0", "datastore-only change is applied by move_disk")
+	require.NotContains(t, updateBody.CustomStorageDevices, "scsi1", "datastore and size change is applied by move_disk and resize")
+	require.Contains(t, updateBody.CustomStorageDevices, "scsi2", "option change must still be sent")
+}
+
+func TestOnlyLocationOrSizeChanged(t *testing.T) {
+	t.Parallel()
+
+	device := func(datastoreID string, sizeGB int64, cache string) *vms.CustomStorageDevice {
+		return &vms.CustomStorageDevice{
+			DatastoreID: &datastoreID,
+			Size:        types.DiskSizeFromGigabytes(sizeGB),
+			Cache:       &cache,
+		}
+	}
+
+	require.True(t, OnlyLocationOrSizeChanged(device("a", 8, "none"), device("b", 8, "none")))
+	require.True(t, OnlyLocationOrSizeChanged(device("a", 8, "none"), device("b", 16, "none")))
+	require.True(t, OnlyLocationOrSizeChanged(device("a", 8, "none"), device("a", 8, "none")))
+	require.False(t, OnlyLocationOrSizeChanged(device("a", 8, "none"), device("b", 8, "writeback")))
+	require.False(t, OnlyLocationOrSizeChanged(nil, device("b", 8, "none")))
+	require.False(t, OnlyLocationOrSizeChanged(device("a", 8, "none"), nil))
+}
+
 // TestImportFromDiskNotReimportedOnSizeChange tests issue #2385:
 // when a disk with import_from is resized in Proxmox GUI, terraform should NOT
 // attempt to re-import the disk (which would fail with "cannot shrink" error).
