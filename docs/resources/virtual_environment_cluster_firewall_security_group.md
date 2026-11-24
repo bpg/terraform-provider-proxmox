@@ -7,6 +7,8 @@ subcategory: Virtual Environment
 
 # Resource: proxmox_virtual_environment_cluster_firewall_security_group
 
+~> **Deprecated:** Use [`proxmox_cluster_firewall_security_group`](cluster_firewall_security_group.md) instead. This resource will be removed in v1.0.
+
 A security group is a collection of rules, defined at cluster level, which can
 be used in all VMs' rules. For example, you can define a group named “webserver”
 with rules to open the http and https ports.

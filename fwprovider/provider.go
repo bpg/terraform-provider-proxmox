@@ -29,6 +29,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/backup"
 	cephstatus "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ceph/status"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/cpumodel"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
@@ -676,6 +677,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		clonedvm.NewShortResource,
 		cpumodel.NewResource,
 		diskzfs.NewZFSPoolResource,
+		firewall.NewSecurityGroupResource, // proxmox_cluster_firewall_security_group
 		ha.NewHAGroupResource,
 		ha.NewHAGroupShortResource, // proxmox_hagroup
 		ha.NewHAResourceResource,
@@ -778,6 +780,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		cephstatus.NewDataSource, // proxmox_ceph_status
 		datastores.NewDataSource,
 		datastores.NewShortDataSource,
+		firewall.NewSecurityGroupsDataSource, // proxmox_cluster_firewall_security_groups
 		nodeconfig.NewNodeConfigDataSource,
 		nodeHardware.NewPCIDataSource,
 		ha.NewHAGroupDataSource,
