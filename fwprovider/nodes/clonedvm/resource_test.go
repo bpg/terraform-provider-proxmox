@@ -785,6 +785,65 @@ func TestAccResourceClonedVM(t *testing.T) {
 		})
 	})
 
+	t.Run("InheritedDiskOnFileStorageKeepsNoFormat", func(t *testing.T) {
+		te := test.InitEnvironment(t)
+
+		resource.Test(t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "template_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+						template  = true
+
+						disk {
+							datastore_id = "local"
+							file_format  = "qcow2"
+							interface    = "scsi0"
+							size         = 1
+						}
+					}
+
+					resource "proxmox_cloned_vm" "file_storage" {
+						node_name = "{{.NodeName}}"
+						name      = "fwk-cloned-file-storage"
+						started   = false
+
+						clone = {
+							source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						}
+
+						disk = {
+							scsi0 = {
+								size_gb = 2
+							}
+						}
+					}
+					`),
+					Check: func(s *terraform.State) error {
+						disks, err := rawDisks(te, s, "proxmox_cloned_vm.file_storage")
+						if err != nil {
+							return err
+						}
+
+						// the volume name ends in .qcow2, which the client reads back as a format
+						if strings.Contains(disks["scsi0"], "format=") {
+							return fmt.Errorf("expected no format on scsi0, got %q", disks["scsi0"])
+						}
+
+						if !strings.Contains(disks["scsi0"], "size=2G") {
+							return fmt.Errorf("expected scsi0 size 2G, got %q", disks["scsi0"])
+						}
+
+						return nil
+					},
+				},
+			},
+		})
+	})
+
 	t.Run("Import", func(t *testing.T) {
 		te := test.InitEnvironment(t)
 		te.AddTemplateVars(map[string]any{"ImageFileID": imageFileID})
