@@ -485,8 +485,12 @@ For a name or tag mismatch, delete or rename the stray draft. If a draft lost it
 the error message. Edit a draft's notes with `gh release edit <tag>`, which keeps the tag; an API edit without
 `tag_name` detaches it.
 
+A re-run uses the files of the tagged commit. If the fix is in a repository file (the workflow, `.goreleaser.yaml` or
+the public key), move the tag to a commit that has the fix; that push starts a new run.
+
 When the signing subkey is rotated, update the public key in `.github/release-signing-key.pub.asc` and the import
-`fingerprint` in `.github/workflows/publish.yml`. A new primary key also needs `SIGNING_PRIMARY_FPR` updated there.
+`fingerprint` in `.github/workflows/publish.yml` before the next release is tagged. A new primary key also needs
+`SIGNING_PRIMARY_FPR` updated there.
 
 The repository setting "Immutable releases" is expected to be on. With it on, a published release can't be changed,
 only superseded by a new version.

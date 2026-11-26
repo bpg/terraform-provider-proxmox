@@ -16,6 +16,8 @@ on:
 # Releases are immutable: release-please creates the release as a draft (with its tag), the goreleaser job
 # attaches and signs the assets while it is still a draft, and the publish job publishes it last, after checking it.
 # If any job fails the release stays a draft and nothing is public: fix the cause and use "Re-run all jobs".
+# A re-run uses the files of the tagged commit. A fix in a repository file (this workflow, .goreleaser.yaml, the
+# public key) needs the tag moved to a commit that has it; that push starts a new run.
 permissions:
   contents: read
 
@@ -63,7 +65,17 @@ jobs:
             echo "waiting for the release-please draft for $TAG ($i/24)"
             sleep 5
           done
-          [ "$n" -eq 1 ] || { echo "::error::no release found for $TAG. Once release-please has created the draft, use 'Re-run all jobs'."; exit 1; }
+          if [ "$n" -ne 1 ]; then
+            # a draft that lost its tag no longer matches by tag_name: look for it by name to give the repair command
+            stray=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" \
+              | jq -s -r --arg t "$TAG" 'add | [.[] | select(.draft and .name == $t)] | .[0].id // empty') || stray=""
+            if [ -n "$stray" ]; then
+              echo "::error::no release has the tag $TAG, but draft $stray is named $TAG (detached from its tag?). Repair: gh api -X PATCH repos/$GITHUB_REPOSITORY/releases/$stray -f tag_name=$TAG, then use 'Re-run all jobs'."
+            else
+              echo "::error::no release found for $TAG. Once release-please has created the draft, use 'Re-run all jobs'."
+            fi
+            exit 1
+          fi
 
           draft=$(jq -r '.[0].draft' <<<"$rels")
           name=$(jq -r '.[0].name' <<<"$rels")
@@ -192,7 +204,7 @@ jobs:
           gpg --batch --import "$PUBKEY"
           verdict=$(gpg --batch --status-fd 1 --verify "$sums.sig" "$sums") || true
           awk -v fpr="$SIGNING_PRIMARY_FPR" '$1 == "[GNUPG:]" && $2 == "VALIDSIG" && $NF == fpr { ok = 1 } END { exit !ok }' <<<"$verdict" \
-            || { echo "::error::signature is not valid for primary key $SIGNING_PRIMARY_FPR (signing subkey rotated? update .github/release-signing-key.pub.asc and the import fingerprint)"; exit 1; }
+            || { echo "::error::signature is not valid for primary key $SIGNING_PRIMARY_FPR (signing subkey rotated? update .github/release-signing-key.pub.asc and the import fingerprint, then move the tag to that commit; a re-run alone uses the old files)"; exit 1; }
 
           [ -n "$(jq -r '.body // empty' release.json)" ] || { echo "::error::release notes are empty"; exit 1; }
 
