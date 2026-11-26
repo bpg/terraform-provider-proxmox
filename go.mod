@@ -22,7 +22,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.23.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.41.1
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
-	github.com/pkg/sftp v1.13.12
+	github.com/pkg/sftp v1.13.13
 	github.com/rogpeppe/go-internal v1.16.0
 	github.com/skeema/knownhosts v1.3.3
 	github.com/stretchr/testify v1.12.1
