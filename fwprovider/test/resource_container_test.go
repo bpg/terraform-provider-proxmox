@@ -5057,3 +5057,112 @@ func TestAccResourceContainerDestroyPurgesHAResource(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourceContainerMemoryUpdateWithoutReboot covers memory changes on a running container. PVE applies dedicated
+// memory and swap to a running container live, so an update must change the running limits without a reboot.
+func TestAccResourceContainerMemoryUpdateWithoutReboot(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]any{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	containerConfig := func(dedicated, swap int) string {
+		return te.RenderConfig(fmt.Sprintf(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name      = "{{.NodeName}}"
+				vm_id          = {{.TestContainerID}}
+				timeout_delete = {{ .TimeoutDelete }}
+				unprivileged   = true
+				started        = true
+				disk {
+					datastore_id = "{{.ContainerDatastoreID}}"
+					size         = 4
+				}
+				memory {
+					dedicated = %d
+					swap      = %d
+				}
+				initialization {
+					hostname = "test-memory-update"
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}`, dedicated, swap))
+	}
+
+	step := func(dedicated, swap int) resource.TestStep {
+		return resource.TestStep{
+			Config: containerConfig(dedicated, swap),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes(accTestContainerName, map[string]string{
+					"memory.0.dedicated": strconv.Itoa(dedicated),
+					"memory.0.swap":      strconv.Itoa(swap),
+				}),
+				assertContainerRunningMemory(te, accTestContainerID, dedicated, swap),
+				assertContainerStartedWithoutReboot(te, accTestContainerID),
+			),
+		}
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			step(512, 512),
+			step(768, 512), // dedicated only
+			step(768, 256), // swap only
+			step(640, 384), // both
+		},
+	})
+}
+
+// assertContainerRunningMemory requires the running container's memory and swap limits, as PVE reports them in
+// status/current, to match the configured values in MiB.
+func assertContainerRunningMemory(te *Environment, containerID, dedicatedMiB, swapMiB int) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		var resBody struct {
+			Data struct {
+				Status  string `json:"status"`
+				MaxMem  int64  `json:"maxmem"`
+				MaxSwap int64  `json:"maxswap"`
+			} `json:"data"`
+		}
+
+		nodeClient := te.NodeClient()
+		path := nodeClient.ExpandPath(fmt.Sprintf("lxc/%d/status/current", containerID))
+
+		if err := nodeClient.DoRequest(context.Background(), http.MethodGet, path, nil, &resBody); err != nil {
+			return fmt.Errorf("reading status of container %d: %w", containerID, err)
+		}
+
+		if resBody.Data.Status != "running" {
+			return fmt.Errorf("expected container %d to be running, got %q", containerID, resBody.Data.Status)
+		}
+
+		if want := int64(dedicatedMiB) * 1024 * 1024; resBody.Data.MaxMem != want {
+			return fmt.Errorf("expected running container %d maxmem %d, got %d", containerID, want, resBody.Data.MaxMem)
+		}
+
+		if want := int64(swapMiB) * 1024 * 1024; resBody.Data.MaxSwap != want {
+			return fmt.Errorf("expected running container %d maxswap %d, got %d", containerID, want, resBody.Data.MaxSwap)
+		}
+
+		return nil
+	}
+}
