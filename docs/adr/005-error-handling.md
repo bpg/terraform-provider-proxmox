@@ -243,7 +243,9 @@ Key behaviors of `DoTask`:
 - retry-go v5 honors `Unrecoverable` only in its default `RetryIf`, so `DoTask` checks `IsRecoverable` itself in
   the custom predicate. Any new code that combines `RetryIf` with `Unrecoverable` must do the same
 - `nil` taskID with `nil` error means "already done" (e.g., "already running") — skips the wait
-- `WithAlreadyDoneCheck` is only applied on retry attempts, not the first attempt
+- `WithAlreadyDoneCheck` means success only on a retry that follows a failed dispatch. On a first attempt, or after a
+  dispatch that went through, a matching error is PVE refusing the request (e.g. the VM ID is taken), so it is
+  returned without a retry, even when `WithRetryIf` matches it
 - `WithAlreadyDoneCheck` matches dispatch errors only. A retry whose task fails is still a failure, since a
   generic "already exists" there usually comes from storage (a leftover volume), not from the object itself
 - `WithAlreadyDoneTaskCheck` covers APIs that only check for existing state inside the task (e.g. Ceph MDS

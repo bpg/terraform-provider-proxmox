@@ -397,6 +397,68 @@ func TestCloneContainerRetries(t *testing.T) {
 		"expected exactly 2 POST calls (1 failure + 1 success), proving retry occurred")
 }
 
+// TestCreateContainerTakenIDNotRetried verifies that CreateContainer does not retry PVE's refusal of an ID that
+// another guest holds, since that guest is not ours.
+func TestCreateContainerTakenIDNotRetried(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api2/json/lxc", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		writeJSON(w, map[string]any{
+			"data":    nil,
+			"message": "CT 100 already exists on node 'pve'\n",
+		})
+	})
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	result := client.CreateContainer(t.Context(), &CreateRequestBody{})
+	require.Error(t, result.Err())
+	assert.Contains(t, result.Err().Error(), "already exists")
+
+	assert.Equal(t, 1, captures.countPOST("/lxc"),
+		"expected exactly 1 POST call (a taken ID is not retried)")
+}
+
+// TestCloneContainerTakenIDNotRetried verifies that CloneContainer does not retry PVE's refusal of an ID that
+// another guest holds.
+func TestCloneContainerTakenIDNotRetried(t *testing.T) {
+	t.Parallel()
+
+	captures := &requestCaptures{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api2/json/lxc/100/clone", func(w http.ResponseWriter, r *http.Request) {
+		captures.add(r.Method, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		writeJSON(w, map[string]any{
+			"data":    nil,
+			"message": "unable to create CT 101: config file already exists\n",
+		})
+	})
+
+	server := newTestServer(t, mux)
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+
+	result := client.CloneContainer(t.Context(), &CloneRequestBody{})
+	require.Error(t, result.Err())
+	assert.Contains(t, result.Err().Error(), "already exists")
+
+	assert.Equal(t, 1, captures.countPOST("/clone"),
+		"expected exactly 1 POST call (a taken ID is not retried)")
+}
+
 // containerStatusHandler returns a handler that responds with the given container status.
 func containerStatusHandler(captures *requestCaptures, status string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -162,6 +162,71 @@ func TestDoTask_AlreadyDoneIgnoredOnFirstAttempt(t *testing.T) {
 	assert.Contains(t, err.Error(), "already exists")
 }
 
+func TestDoTask_AlreadyDoneTakenIDNotRetried(t *testing.T) {
+	t.Parallel()
+
+	op := NewTaskOperation("test-op",
+		WithBaseDelay(1*time.Millisecond),
+		WithRetryIf(IsTransientAPIError),
+		WithAlreadyDoneCheck(ErrorContains("already exists")),
+	)
+
+	dispatched := 0
+
+	err := op.DoTask(t.Context(),
+		func() (*string, error) {
+			dispatched++
+
+			// PVE refuses a taken ID with HTTP 500, which IsTransientAPIError matches.
+			return nil, &api.HTTPError{
+				Code:    http.StatusInternalServerError,
+				Message: "unable to create VM 100 - VM 100 already exists on node 'pve'",
+			}
+		},
+		func(_ context.Context, _ string) error { return nil },
+	)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already exists")
+	assert.Equal(t, 1, dispatched)
+}
+
+func TestDoTask_AlreadyDoneIgnoredAfterLockTimeout(t *testing.T) {
+	t.Parallel()
+
+	op := NewTaskOperation("test-op",
+		WithBaseDelay(1*time.Millisecond),
+		WithRetryIf(IsTransientAPIError),
+		WithAlreadyDoneCheck(ErrorContains("already exists")),
+	)
+
+	dispatched := 0
+
+	err := op.DoTask(t.Context(),
+		func() (*string, error) {
+			dispatched++
+			if dispatched == 1 {
+				id := "UPID:test:1234"
+
+				return &id, nil
+			}
+
+			return nil, &api.HTTPError{
+				Code:    http.StatusInternalServerError,
+				Message: "unable to create VM 100 - VM 100 already exists on node 'pve'",
+			}
+		},
+		func(_ context.Context, _ string) error {
+			return errors.New("can't lock file '/var/lock/qemu-server/lock-100.conf' - got timeout")
+		},
+	)
+
+	// The first dispatch went through and its task failed, so the taken ID is not our earlier attempt.
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already exists")
+	assert.Equal(t, 2, dispatched)
+}
+
 func TestDoTask_AlreadyDoneTaskOnRetry(t *testing.T) {
 	t.Parallel()
 
