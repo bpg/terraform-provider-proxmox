@@ -45,6 +45,7 @@ type nodeFirewallOptionsModel struct {
 	LogLevelOut                      types.String `tfsdk:"log_level_out"`
 	LogLevelForward                  types.String `tfsdk:"log_level_forward"`
 	NDP                              types.Bool   `tfsdk:"ndp"`
+	NFConntrackAllowInvalid          types.Bool   `tfsdk:"nf_conntrack_allow_invalid"`
 	NFConntrackMax                   types.Int64  `tfsdk:"nf_conntrack_max"`
 	NFConntrackTCPTimeoutEstablished types.Int64  `tfsdk:"nf_conntrack_tcp_timeout_established"`
 	NFTables                         types.Bool   `tfsdk:"nftables"`
@@ -61,6 +62,7 @@ func (m *nodeFirewallOptionsModel) toOptionsRequestBody() *nodefirewall.OptionsP
 	body.LogLevelOut = m.LogLevelOut.ValueStringPointer()
 	body.LogLevelForward = m.LogLevelForward.ValueStringPointer()
 	body.NDP = proxmoxtypes.CustomBoolPtr(m.NDP.ValueBoolPointer())
+	body.NFConntrackAllowInvalid = proxmoxtypes.CustomBoolPtr(m.NFConntrackAllowInvalid.ValueBoolPointer())
 	body.NFConntrackMax = m.NFConntrackMax.ValueInt64Pointer()
 	body.NFConntrackTCPTimeoutEstablished = m.NFConntrackTCPTimeoutEstablished.ValueInt64Pointer()
 	body.NFTables = proxmoxtypes.CustomBoolPtr(m.NFTables.ValueBoolPointer())
@@ -77,6 +79,7 @@ func (m *nodeFirewallOptionsModel) importFromOptionsAPI(opts *nodefirewall.Optio
 	m.LogLevelOut = types.StringPointerValue(opts.LogLevelOut)
 	m.LogLevelForward = types.StringPointerValue(opts.LogLevelForward)
 	m.NDP = types.BoolPointerValue(opts.NDP.PointerBool())
+	m.NFConntrackAllowInvalid = attribute.BoolValueFromCustomBoolPtr(opts.NFConntrackAllowInvalid)
 	m.NFConntrackMax = types.Int64PointerValue(opts.NFConntrackMax)
 	m.NFConntrackTCPTimeoutEstablished = types.Int64PointerValue(opts.NFConntrackTCPTimeoutEstablished)
 	m.NFTables = types.BoolPointerValue(opts.NFTables.PointerBool())
@@ -174,6 +177,12 @@ func (r *nodeFirewallOptionsResource) Schema(
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
+			},
+			"nf_conntrack_allow_invalid": schema.BoolAttribute{
+				Description: "Allow invalid packets on connection tracking (defaults to `false`).",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"nf_conntrack_max": schema.Int64Attribute{
 				Description: "Maximum number of tracked connections (defaults to `262144`). Minimum value " +
@@ -398,7 +407,7 @@ func (r *nodeFirewallOptionsResource) Delete(
 
 	toDelete := []string{
 		"enable", "log_level_in", "log_level_out", "log_level_forward",
-		"ndp", "nf_conntrack_max", "nf_conntrack_tcp_timeout_established", "nftables",
+		"ndp", "nf_conntrack_allow_invalid", "nf_conntrack_max", "nf_conntrack_tcp_timeout_established", "nftables",
 		"nosmurfs", "smurf_log_level", "tcp_flags_log_level",
 	}
 

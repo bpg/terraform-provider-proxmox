@@ -55,6 +55,10 @@ func (c *Client) CreateUser(ctx context.Context, d *UserCreateRequestBody) error
 func (c *Client) DeleteUser(ctx context.Context, id string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.userPath(id), nil, nil)
 	if err != nil {
+		if isNoSuchUserErr(err) {
+			err = errors.Join(api.ErrResourceDoesNotExist, err)
+		}
+
 		return fmt.Errorf("error deleting user: %w", err)
 	}
 

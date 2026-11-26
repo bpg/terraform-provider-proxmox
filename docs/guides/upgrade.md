@@ -19,7 +19,7 @@ This guide documents breaking changes across provider versions and the recommend
      required_providers {
        proxmox = {
          source  = "bpg/proxmox"
-         version = "~> 0.123.1" # x-release-please-version
+         version = "~> 0.124.0" # x-release-please-version
        }
      }
    }
@@ -36,6 +36,23 @@ This guide documents breaking changes across provider versions and the recommend
 6. Apply when satisfied.
 
 -> **Tip:** Upgrade one minor version at a time when crossing multiple breaking changes. This makes it easier to isolate issues.
+
+## v0.124.0
+
+### VM and container create and clone no longer adopt an existing guest
+
+Creating or cloning a VM or container (`proxmox_virtual_environment_vm`, `proxmox_vm`, `proxmox_virtual_environment_vm2`, `proxmox_cloned_vm`, `proxmox_virtual_environment_cloned_vm` or `proxmox_virtual_environment_container`) with a `vm_id` or `id` that another guest already holds now fails with Proxmox VE's refusal: `already exists`, or `config file already exists` for a clone on the same node. Before, the apply succeeded and silently took over the other guest, so a later `destroy` deleted a guest that Terraform never created. A clone with `proxmox_virtual_environment_vm` did so only with `clone.retries` above 1. Guests already in state are not affected.
+
+**Action required:** If an apply fails because the ID is taken, pick a free ID, or import the guest with the ID `{node}/{vm_id}`, for example:
+
+```terraform
+import {
+  to = proxmox_virtual_environment_vm.example
+  id = "pve/990"
+}
+```
+
+With an automatic ID, another client may have taken it between the lookup and the create, so run the apply again.
 
 ## v0.123.0
 

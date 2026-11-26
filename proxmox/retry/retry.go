@@ -58,7 +58,7 @@ func WithRetryIf(fn func(error) bool) Option {
 
 // WithAlreadyDoneCheck sets a predicate that detects when a retry attempt finds
 // evidence that the first attempt already succeeded (e.g. "already exists").
-// Only checked on retry attempts, not the first attempt.
+// Only a retry that follows a failed dispatch counts it as done. Otherwise a matching error is final and not retried.
 func WithAlreadyDoneCheck(fn func(error) bool) Option {
 	return func(o *Operation) { o.isAlreadyDone = fn }
 }
@@ -141,14 +141,13 @@ func NewTaskOperation(name string, opts ...Option) *Operation {
 // according to the operation's retry configuration. Errors from waitFn are
 // unrecoverable to prevent re-dispatch after a wait failure, unless they match
 // the operation's task retry predicate (lock timeouts for task operations).
-// The isAlreadyDone check (if configured) is only applied on retry attempts, and the
-// isTaskDone check only to the task of a retry that follows a failed dispatch.
+// A dispatch error matching isAlreadyDone (if configured) is success only when the previous dispatch failed, and
+// final otherwise. The isTaskDone check likewise only applies to the task of a retry that follows a failed dispatch.
 func (o *Operation) DoTask(
 	ctx context.Context,
 	dispatchFn func() (*string, error),
 	waitFn func(ctx context.Context, taskID string) error,
 ) error {
-	retrying := false
 	dispatchFailed := false
 
 	retryOpts := []retrylib.Option{
@@ -175,16 +174,14 @@ func (o *Operation) DoTask(
 		return o.retryIf == nil || o.retryIf(err)
 	}))
 
-	retryOpts = append(retryOpts, retrylib.OnRetry(func(n uint, err error) {
-		retrying = true
-
-		if o.logOnRetry {
+	if o.logOnRetry {
+		retryOpts = append(retryOpts, retrylib.OnRetry(func(n uint, err error) {
 			tflog.Warn(ctx, "retrying "+o.name, map[string]any{
 				"attempt": n,
 				"error":   err.Error(),
 			})
-		}
-	}))
+		}))
+	}
 
 	//nolint:wrapcheck // errors from dispatchFn/waitFn pass through intentionally
 	return retrylib.New(retryOpts...).Do(func() error {
@@ -194,7 +191,12 @@ func (o *Operation) DoTask(
 
 		dispatchFailed = err != nil
 		if err != nil {
-			if retrying && o.isAlreadyDone != nil && o.isAlreadyDone(err) {
+			if o.isAlreadyDone != nil && o.isAlreadyDone(err) {
+				// On a first attempt, or after a dispatch that went through, PVE is refusing the request.
+				if !afterDispatchError {
+					return retrylib.Unrecoverable(err)
+				}
+
 				return nil
 			}
 

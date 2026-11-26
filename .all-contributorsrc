@@ -1880,7 +1880,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/6570292?v=4",
       "profile": "https://github.com/venkatamutyala",
       "contributions": [
-        "code"
+        "code",
+        "review"
       ]
     },
     {
@@ -2088,6 +2089,24 @@
       "name": "Luxend",
       "avatar_url": "https://avatars.githubusercontent.com/u/227785302?v=4",
       "profile": "https://instantnode.eu",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "QuantumNinja31",
+      "name": "QuantumNinja31",
+      "avatar_url": "https://avatars.githubusercontent.com/u/120321384?v=4",
+      "profile": "https://github.com/QuantumNinja31",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "szakky",
+      "name": "Shiozaki Yuya",
+      "avatar_url": "https://avatars.githubusercontent.com/u/181095899?v=4",
+      "profile": "https://szakky.github.io/blog/",
       "contributions": [
         "code"
       ]

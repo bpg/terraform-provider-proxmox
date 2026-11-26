@@ -44,6 +44,13 @@ func TestCreateVMRetry(t *testing.T) {
 			wantPosts: 1,
 		},
 		{
+			// PVE refuses a create onto an ID that another guest holds, and that guest is not ours
+			name:      "taken ID is not retried",
+			responses: []response{alreadyExists},
+			wantErr:   "already exists",
+			wantPosts: 1,
+		},
+		{
 			// the first create may have gone through, so "already exists" on the retry counts as done
 			name:      "proxy timeout is retried",
 			responses: []response{{596, ""}, alreadyExists},
