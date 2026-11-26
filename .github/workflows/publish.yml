@@ -1,4 +1,4 @@
-# This GitHub action can publish assets for release when a tag is created.
+# This GitHub action attaches, signs and publishes the assets of a release when its tag is created.
 # Currently its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
 #
 # This uses an action (crazy-max/ghaction-import-gpg) that assumes you set your
@@ -13,14 +13,29 @@ on:
     tags:
       - "v*"
 
+# Releases are immutable: release-please creates the release as a draft (with its tag), the goreleaser job
+# attaches and signs the assets while it is still a draft, and the publish job publishes it last, after checking it.
+# If any job fails the release stays a draft and nothing is public: fix the cause and use "Re-run all jobs".
+# A re-run uses the files of the tagged commit. A fix in a repository file (this workflow, .goreleaser.yaml, the
+# public key) needs the tag moved to a commit that has it; that push starts a new run.
 permissions:
-  id-token: write
   contents: read
-  attestations: write
+
+concurrency:
+  group: publish-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.ref_name }}
 
 jobs:
-  goreleaser:
+  # Find the release-please draft for this tag. Publishing is irreversible, so refuse anything ambiguous.
+  check:
     runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    outputs:
+      state: ${{ steps.find.outputs.state }}
+      release_id: ${{ steps.find.outputs.release_id }}
     steps:
       - name: Generate Short Lived OAuth App Token
         uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
@@ -30,7 +45,71 @@ jobs:
           private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
           owner: "${{ github.repository_owner }}"
           repositories: "${{ github.event.repository.name }}"
+      - name: Find the draft release
+        id: find
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          n=0
+          # The tag is created before the draft release, so this workflow can start first: wait for it.
+          for i in $(seq 1 24); do
+            rels=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" | jq -s --arg t "$TAG" 'add | [.[] | select(.tag_name == $t)]') \
+              || { echo "API error, retrying ($i/24)"; sleep 5; continue; }
+            n=$(jq 'length' <<<"$rels")
+            if [ "$n" -gt 1 ]; then
+              echo "::error::$n releases match $TAG; refusing to guess"
+              exit 1
+            fi
+            [ "$n" -eq 1 ] && break
+            echo "waiting for the release-please draft for $TAG ($i/24)"
+            sleep 5
+          done
+          if [ "$n" -ne 1 ]; then
+            # a draft that lost its tag no longer matches by tag_name: look for it by name to give the repair command
+            stray=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" \
+              | jq -s -r --arg t "$TAG" 'add | [.[] | select(.draft and .name == $t)] | .[0].id // empty') || stray=""
+            if [ -n "$stray" ]; then
+              echo "::error::no release has the tag $TAG, but draft $stray is named $TAG (detached from its tag?). Repair: gh api -X PATCH repos/$GITHUB_REPOSITORY/releases/$stray -f tag_name=$TAG, then use 'Re-run all jobs'."
+            else
+              echo "::error::no release found for $TAG. Once release-please has created the draft, use 'Re-run all jobs'."
+            fi
+            exit 1
+          fi
 
+          draft=$(jq -r '.[0].draft' <<<"$rels")
+          name=$(jq -r '.[0].name' <<<"$rels")
+          id=$(jq -r '.[0].id' <<<"$rels")
+
+          if [ "$draft" != "true" ]; then
+            echo "::notice::$TAG is already published (and immutable); nothing to do"
+            echo "state=published" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # GoReleaser's use_existing_draft matches the draft by release NAME, and silently creates a second release on a miss.
+          [ "$name" = "$TAG" ] || { echo "::error::draft name '$name' != tag '$TAG'"; exit 1; }
+
+          echo "state=draft" >> "$GITHUB_OUTPUT"
+          echo "release_id=$id" >> "$GITHUB_OUTPUT"
+
+  goreleaser:
+    needs: check
+    if: needs.check.outputs.state == 'draft'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+    steps:
+      - name: Generate Short Lived OAuth App Token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        id: app-token
+        with:
+          client-id: "${{ secrets.BOT_APP_ID }}"
+          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
+          owner: "${{ github.repository_owner }}"
+          repositories: "${{ github.event.repository.name }}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -61,3 +140,85 @@ jobs:
           subject-path: ./dist/*.zip
         env:
           GITHUB_TOKEN: "${{ steps.app-token.outputs.token }}"
+
+      - name: Explain a failed run
+        if: failure()
+        run: echo "::error::Release $TAG is still a DRAFT and nothing is public. Fix the cause, then use 'Re-run all jobs'; the assets are replaced."
+
+  # Publishing is irreversible (assets and tag lock), so verify the draft first.
+  publish:
+    needs: [check, goreleaser]
+    if: needs.check.outputs.state == 'draft'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - name: Generate Short Lived OAuth App Token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        id: app-token
+        with:
+          client-id: "${{ secrets.BOT_APP_ID }}"
+          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
+          owner: "${{ github.repository_owner }}"
+          repositories: "${{ github.event.repository.name }}"
+      - name: Checkout (for the public signing key)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          persist-credentials: false
+
+      - name: Verify the draft's assets
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RELEASE_ID: ${{ needs.check.outputs.release_id }}
+          # Primary key of the goreleaser job's signing subkey, so a subkey rotation doesn't change this.
+          SIGNING_PRIMARY_FPR: F21132514C87DE5BB384667C0B3405B36193A495
+        run: |
+          set -euo pipefail
+          PUBKEY="$GITHUB_WORKSPACE/.github/release-signing-key.pub.asc"
+          mkdir -p "$RUNNER_TEMP/assets" && cd "$RUNNER_TEMP/assets"
+
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > release.json
+
+          # an API edit of a draft that omits tag_name detaches the tag, and it would publish as `untagged-...`
+          [ "$(jq -r .tag_name release.json)" = "$TAG" ] \
+            || { echo "::error::the draft's tag_name is not $TAG (detached from its tag?). Repair: gh api -X PATCH repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID -f tag_name=$TAG"; exit 1; }
+
+          # only fully uploaded assets count; the count check below catches a half-uploaded one
+          jq -r '.assets[] | select(.state == "uploaded") | "\(.id) \(.name)"' release.json > list.txt
+          while read -r aid name; do
+            gh api -H 'Accept: application/octet-stream' "repos/$GITHUB_REPOSITORY/releases/assets/$aid" > "$name"
+          done < list.txt
+
+          sums=$(ls ./*_SHA256SUMS 2>/dev/null) || { echo "::error::no *_SHA256SUMS asset on the draft"; exit 1; }
+          sums=${sums#./}
+          [ -s "$sums.sig" ] || { echo "::error::missing $sums.sig"; exit 1; }
+
+          # every file listed in SHA256SUMS, plus SHA256SUMS itself and its signature
+          expected=$(( $(wc -l < "$sums") + 2 ))
+          actual=$(wc -l < list.txt)
+          [ "$actual" -eq "$expected" ] || { echo "::error::expected $expected assets, found $actual"; exit 1; }
+
+          sha256sum -c "$sums"
+          # verify with the public key only, and require the expected primary key (any key in a keyring would pass)
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"; mkdir -m 700 "$GNUPGHOME"
+          gpg --batch --import "$PUBKEY"
+          verdict=$(gpg --batch --status-fd 1 --verify "$sums.sig" "$sums") || true
+          awk -v fpr="$SIGNING_PRIMARY_FPR" '$1 == "[GNUPG:]" && $2 == "VALIDSIG" && $NF == fpr { ok = 1 } END { exit !ok }' <<<"$verdict" \
+            || { echo "::error::signature is not valid for primary key $SIGNING_PRIMARY_FPR (signing subkey rotated? update .github/release-signing-key.pub.asc and the import fingerprint, then move the tag to that commit; a re-run alone uses the old files)"; exit 1; }
+
+          [ -n "$(jq -r '.body // empty' release.json)" ] || { echo "::error::release notes are empty"; exit 1; }
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RELEASE_ID: ${{ needs.check.outputs.release_id }}
+        run: |
+          set -euo pipefail
+          out=$(gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false -f tag_name="$TAG" \
+            --jq '"published \(.tag_name): draft=\(.draft) immutable=\(.immutable)"')
+          echo "$out"
+          grep -q 'immutable=true' <<<"$out" || echo "::warning::$TAG was published but is not immutable; is the repository setting on?"
+
+      - name: Explain a failed run
+        if: failure()
+        run: echo "::error::Release $TAG was NOT published and is still a draft. Fix the cause, then use 'Re-run all jobs' (a failed gate needs the assets re-uploaded)."

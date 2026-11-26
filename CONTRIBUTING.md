@@ -473,8 +473,26 @@ We use [release-please](https://github.com/googleapis/release-please) GitHub Act
 1. The action creates a release PR based on commit messages.
 2. The PR includes an auto-generated changelog and version bump.
 3. Maintainers review and merge the release PR.
-4. The release is automatically published to:
+4. release-please creates the GitHub release as a draft, and the `Publish Release` workflow attaches and signs the
+   assets, verifies them, and then publishes the release. If the workflow fails, the release stays a draft and
+   nothing is public: fix the cause and use "Re-run all jobs".
+5. The published release then reaches:
    - GitHub Releases
    - Terraform Registry
+
+If a release stays a draft, check the failed `Publish Release` run in the Actions tab; the error says what to fix.
+For a name or tag mismatch, delete or rename the stray draft. If a draft lost its tag, repair it with the command in
+the error message. Edit a draft's notes with `gh release edit <tag>`, which keeps the tag; an API edit without
+`tag_name` detaches it.
+
+A re-run uses the files of the tagged commit. If the fix is in a repository file (the workflow, `.goreleaser.yaml` or
+the public key), move the tag to a commit that has the fix; that push starts a new run.
+
+When the signing subkey is rotated, update the public key in `.github/release-signing-key.pub.asc` and the import
+`fingerprint` in `.github/workflows/publish.yml` before the next release is tagged. A new primary key also needs
+`SIGNING_PRIMARY_FPR` updated there.
+
+The repository setting "Immutable releases" is expected to be on. With it on, a published release can't be changed,
+only superseded by a new version.
 
 We aim to release new versions every 1–2 weeks.
