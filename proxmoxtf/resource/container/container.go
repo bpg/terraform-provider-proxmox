@@ -4089,7 +4089,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.Swap = &memorySwap
 
-		rebootRequired = true
+		// PVE applies memory and swap to a running container live
 		bodyDirty = true
 	}
 
