@@ -460,6 +460,82 @@ this has not been tested — do not assume it behaves like a `shared` bind mount
 - `ipv4` - The map of IPv4 addresses per network devices. Returns the first address for each network device, if multiple addresses are assigned.
 - `ipv6` - The map of IPv6 addresses per network device. Returns the first address for each network device, if multiple addresses are assigned.
 
+## Example: Shared data volumes
+
+In this example container `data_holder` holds two data volumes, and is not used
+as an actual container, but only as an owner of the volumes.
+It is never started.
+
+Container `data_user` mounts those volumes at `/mnt/data0` and `/mnt/data1`.
+**Container `data_user` can be *re-created/replaced* without losing data stored
+on volumes owned by `data_holder`.**
+
+~> **Experimental** Please test your configuration first in an environment where you can tolerate the potential data loss.
+
+~> Do *not* simultaneously run more than one container using the same volume.
+For most filesystems, mounting one volume in multiple containers will cause
+errors or even data corruption.
+
+```hcl
+resource "proxmox_virtual_environment_container" "data_holder" {
+  node_name     = "first-node"
+  started       = false
+  start_on_boot = false
+
+  mount_point {
+    volume = "local-lvm"
+    size   = "1G"
+    path   = "/mnt/data0"
+  }
+
+  mount_point {
+    volume = "local-lvm"
+    size   = "4G"
+    path   = "/mnt/data1"
+  }
+
+  # ... disk, initialization, network_interface, operating_system, etc.
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "proxmox_virtual_environment_container" "data_user" {
+  node_name = "first-node"
+
+  # mounted volumes from data_holder
+  mount_point {
+    volume = proxmox_virtual_environment_container.data_holder.mount_point[0].path_in_datastore
+    size   = "1G"
+    path   = "/mnt/data0"
+  }
+
+  mount_point {
+    volume = proxmox_virtual_environment_container.data_holder.mount_point[1].path_in_datastore
+    size   = "4G"
+    path   = "/mnt/data1"
+  }
+
+  # ... disk, initialization, network_interface, operating_system, etc.
+}
+```
+
+-> Mount points are positional: `mount_point[0]` is `mp0`, `mount_point[1]` is
+`mp1`, and so on. Always *append* new mount points at the end of the holder's
+list. Inserting or removing a block before existing ones shifts the positions
+and recreates the holder container and its volumes.
+
+-> On the consumer, either omit `size` on a borrowed mount point or copy it
+verbatim from the holder. The volume already exists and Proxmox VE manages
+its real size; matching the holder's `size` exactly keeps plans clean.
+
+~> Do *not* migrate the holder while a consumer uses its volumes: keep
+`migrate = false` (the default) and do not change its `node_name`. Migrating
+the holder copies its volumes to the target node but cannot remove the source
+copies that a running consumer still mounts, which leaves the live data
+stranded on the source node.
+
 ## Import
 
 Instances can be imported using the `node_name` and the `vm_id`, e.g.,
