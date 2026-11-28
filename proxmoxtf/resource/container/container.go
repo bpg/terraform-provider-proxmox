@@ -2489,6 +2489,33 @@ func mountPointIsVolumeID(volume string) bool {
 	return found && name != "" && !strings.HasPrefix(datastore, "/") && !mountPointAllocationSize.MatchString(name)
 }
 
+// mountPointConfigVolumes returns the `volume` of each mount point block as written in the configuration.
+// d.Get cannot be used for this: the diff for an allocation request such as "local" is suppressed once the
+// volume exists, so it reports the allocated "<datastore>:<volume>" instead. Entries that are unset or unknown
+// are empty strings.
+func mountPointConfigVolumes(d *schema.ResourceData) []string {
+	blocks, diags := d.GetRawConfigAt(cty.GetAttrPath(mkMountPoint))
+	if diags.HasError() || !blocks.IsKnown() || blocks.IsNull() {
+		return nil
+	}
+
+	var volumes []string
+
+	for _, block := range blocks.AsValueSlice() {
+		volume := ""
+
+		if block.IsKnown() && !block.IsNull() {
+			if v := block.GetAttr(mkMountPointVolume); v.IsKnown() && !v.IsNull() {
+				volume = v.AsString()
+			}
+		}
+
+		volumes = append(volumes, volume)
+	}
+
+	return volumes
+}
+
 // containerMountPointForceNew flags mount point changes that require recreating the container.
 // Appending, removing trailing and reconfiguring mount points is applied in place by containerUpdate, as is
 // attaching another existing volume by its ID. Only mount points present on both sides of the diff are considered:
@@ -2530,8 +2557,8 @@ func containerMountPointForceNew(_ context.Context, d *schema.ResourceDiff, _ an
 		newSize, _ := newMountPoint[mkMountPointSize].(string)
 
 		// PVE reports the real size of an existing volume whatever size is requested, so a replacement cannot
-		// apply it either.
-		if !existingVolume && !mountPointSizeEqual(oldSize, newSize) {
+		// apply it either. Growing is applied in place by containerUpdate, shrinking is not possible.
+		if !existingVolume && !mountPointSizeEqual(oldSize, newSize) && !mountPointSizeGrows(oldSize, newSize) {
 			return forceNewMountPointAttr(d, i, mkMountPointSize)
 		}
 
@@ -2583,6 +2610,42 @@ func mountPointSizeEqual(oldSize, newSize string) bool {
 	}
 
 	return oldParsed == newParsed
+}
+
+// mountPointSizeGrows reports whether newSize is a larger size than oldSize, compared by value.
+func mountPointSizeGrows(oldSize, newSize string) bool {
+	oldParsed, oldErr := types.ParseDiskSize(oldSize)
+	newParsed, newErr := types.ParseDiskSize(newSize)
+
+	return oldErr == nil && newErr == nil && newParsed > oldParsed
+}
+
+// mountPointResizes returns the `pct resize` requests for mount points whose size grew. A mount point whose
+// volume is an existing volume ID is skipped: PVE keeps the real size of such a volume (see
+// containerMountPointForceNew), and a changed volume would otherwise grow the one about to be detached.
+// configVolumes holds the volumes as configured (see mountPointConfigVolumes); an empty or missing entry falls
+// back to the planned value in newList.
+func mountPointResizes(oldList, newList []any, configVolumes []string) []*containers.ResizeRequestBody {
+	var resizes []*containers.ResizeRequestBody
+
+	for i := range min(len(oldList), len(newList)) {
+		oldMP, _ := oldList[i].(map[string]any)
+		newMP, _ := newList[i].(map[string]any)
+
+		newVolume, _ := newMP[mkMountPointVolume].(string)
+		if i < len(configVolumes) && configVolumes[i] != "" {
+			newVolume = configVolumes[i]
+		}
+
+		oldSize, _ := oldMP[mkMountPointSize].(string)
+		newSize, _ := newMP[mkMountPointSize].(string)
+
+		if !mountPointIsVolumeID(newVolume) && mountPointSizeGrows(oldSize, newSize) {
+			resizes = append(resizes, &containers.ResizeRequestBody{Disk: fmt.Sprintf("mp%d", i), Size: newSize})
+		}
+	}
+
+	return resizes
 }
 
 func containerGetMountPointsMap(mountPoint []any) (containers.CustomMountPoints, error) {
@@ -3781,7 +3844,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 	rebootRequired := false
 	container := Container()
 
-	var pendingResize *containers.ResizeRequestBody
+	var (
+		pendingResize            *containers.ResizeRequestBody
+		pendingMountPointResizes []*containers.ResizeRequestBody
+	)
 
 	// Retrieve the clone argument as the update logic varies for clones.
 	clone := d.Get(mkClone).([]any)
@@ -4159,6 +4225,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 			updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("mp%d", i))
 		}
 
+		// Grow volumes in place. The mount point config cannot resize an existing volume, `pct resize` can.
+		pendingMountPointResizes = mountPointResizes(oldMountPointsList, mountPoints, mountPointConfigVolumes(d))
+
 		rebootRequired = true
 		bodyDirty = true
 	}
@@ -4375,6 +4444,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) (update
 
 	if pendingResize != nil {
 		resizeDiags := sdkresource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, pendingResize), "Container disk resize")
+		if resizeDiags.HasError() {
+			return resizeDiags
+		}
+
+		updateDiags = append(updateDiags, resizeDiags...)
+	}
+
+	for _, resize := range pendingMountPointResizes {
+		resizeDiags := sdkresource.TaskResultDiags(containerAPI.ResizeContainerDisk(ctx, resize), "Container mount point resize")
 		if resizeDiags.HasError() {
 			return resizeDiags
 		}
