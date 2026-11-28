@@ -166,6 +166,22 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
+	// The VM exists from here on. Store what Delete needs, so a failure in a later step leaves a tainted resource
+	// that the next apply replaces, instead of a VM outside the state.
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), plan.ID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("node_name"), plan.NodeName)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("clone"), plan.Clone)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("stop_on_destroy"), plan.StopOnDestroy)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("purge_on_destroy"), plan.PurgeOnDestroy)...)
+	resp.Diagnostics.Append(
+		resp.State.SetAttribute(ctx, path.Root("delete_unreferenced_disks_on_destroy"), plan.DeleteUnreferencedDisksOnDestroy)...,
+	)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("timeouts"), plan.Timeouts)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	vmAPI := r.client.Node(targetNode).VM(int(plan.ID.ValueInt64()))
 
 	// Read current VM config to get existing disk file paths before updating
