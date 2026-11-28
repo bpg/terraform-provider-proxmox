@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.124.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.124.0...v0.124.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* **lxc:** keep mount point volume while an update is pending ([#3368](https://github.com/bpg/terraform-provider-proxmox/issues/3368)) ([2db0266](https://github.com/bpg/terraform-provider-proxmox/commit/2db0266277f24dbebbc25f0b364892980f71a917))
+
+
+### Miscellaneous
+
+* **ci:** publish releases as drafts and verify assets first ([#3334](https://github.com/bpg/terraform-provider-proxmox/issues/3334)) ([5644614](https://github.com/bpg/terraform-provider-proxmox/commit/56446144b268a6a29aa32cec4e2eadfa61a0aaa1))
+
 ## [0.124.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.123.1...v0.124.0) (2026-11-26)
 
 
