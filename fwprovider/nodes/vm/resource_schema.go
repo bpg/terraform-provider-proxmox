@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/agent"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
@@ -41,6 +42,7 @@ func (r *Resource) Schema(
 			"<br><br>It is a Proof of Concept, highly experimental and **will** change in future. " +
 			"It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.",
 		Attributes: map[string]schema.Attribute{
+			"agent": agent.ResourceSchema(),
 			"cdrom": cdrom.ResourceSchema(),
 			"cpu":   cpu.ResourceSchema(),
 			"description": schema.StringAttribute{

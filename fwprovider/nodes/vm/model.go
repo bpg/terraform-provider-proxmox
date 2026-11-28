@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/agent"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
@@ -31,6 +32,7 @@ import (
 // Note: for computed fields / blocks we have to use an Object type (or an alias),
 // or a custom type in order to hold an unknown value.
 type Model struct {
+	Agent                            agent.Value     `tfsdk:"agent"`
 	Description                      types.String    `tfsdk:"description"`
 	CDROM                            cdrom.Value     `tfsdk:"cdrom"`
 	CPU                              cpu.Value       `tfsdk:"cpu"`
@@ -160,6 +162,7 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 	model.VGA = vga.NewValue(ctx, config, diags)
 
 	model.CDROM = cdrom.NewValue(ctx, config, diags)
+	model.Agent = agent.NewValue(ctx, config, diags)
 
 	return true
 }
