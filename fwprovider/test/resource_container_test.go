@@ -1656,6 +1656,100 @@ func TestAccResourceContainerMountPointRunning(t *testing.T) {
 	})
 }
 
+// TestAccResourceContainerMountPointPendingUpdate checks that a mount point keeps its volume while a change to it is
+// still pending: PVE returns a pending mount point exactly as it was sent, until the container starts again.
+func TestAccResourceContainerMountPointPendingUpdate(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	config := func(backup bool) string {
+		return te.RenderConfig(fmt.Sprintf(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+					vm_id = {{ .TestContainerID }}
+				    disk {
+						datastore_id = "{{.ContainerDatastoreID}}"
+						size         = 4
+					}
+				    mount_point {
+						volume = "{{.ContainerDatastoreID}}"
+						size   = "1G"
+						path   = "/mnt/data"
+						backup = %t
+				    }
+				    initialization {
+				  		hostname = "test"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+				    }
+				}`, backup))
+	}
+
+	var volume string
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config(false),
+				Check: func(s *terraform.State) error {
+					volume = s.RootModule().Resources[accTestContainerName].Primary.Attributes["mount_point.0.volume"]
+					require.NotEmpty(te.t, volume)
+
+					return nil
+				},
+			},
+			{
+				// the change the provider sends on update, left pending as the container is not rebooted
+				PreConfig: func() {
+					size := "1G"
+
+					err := te.NodeClient().Container(accTestContainerID).UpdateContainer(t.Context(), &containers.UpdateRequestBody{
+						MountPoints: containers.CustomMountPoints{
+							"mp0": &containers.CustomMountPoint{
+								Backup:     proxmoxtypes.CustomBool(true).Pointer(),
+								DiskSize:   &size,
+								MountPoint: "/mnt/data",
+								Volume:     volume,
+							},
+						},
+					})
+					require.NoError(te.t, err)
+				},
+				Config: config(true),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
+				Check: func(s *terraform.State) error {
+					attrs := s.RootModule().Resources[accTestContainerName].Primary.Attributes
+					require.Equal(te.t, volume, attrs["mount_point.0.volume"])
+					require.Equal(te.t, "true", attrs["mount_point.0.backup"])
+
+					return nil
+				},
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerMountPointVolumeRepoint(t *testing.T) {
 	te := InitEnvironment(t)
 	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())

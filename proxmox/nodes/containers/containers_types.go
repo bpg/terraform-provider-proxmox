@@ -928,6 +928,8 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 				r.Shared = types.CustomBool(v[1] == "1").Pointer()
 			case "size":
 				r.DiskSize = &v[1]
+			case "volume":
+				r.Volume = v[1]
 			}
 		}
 	}
