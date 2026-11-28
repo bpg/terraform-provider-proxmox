@@ -49,11 +49,30 @@ func TestAccResourceDownloadFile(t *testing.T) {
 	fakeFileQCOW2 := fileServer.AddFile("/fake_file.qcow2", "fake_file.qcow2", content)
 	checksum := fileServer.GetFileSHA256("/fake_file.iso")
 
+	refreshStore := test.SafeResourceName("dl-refresh")
+
 	te.AddTemplateVars(map[string]interface{}{
 		"FakeFileISO":   fakeFileISO,
 		"FakeFileQCOW2": fakeFileQCOW2,
 		"Checksum":      checksum,
+		"RefreshStore":  refreshStore,
 	})
+
+	refreshConfig := te.RenderConfig(`
+		resource "proxmox_storage_directory" "refresh" {
+			id      = "{{.RefreshStore}}"
+			path    = "/var/lib/vz"
+			nodes   = ["{{.NodeName}}"]
+			content = ["iso"]
+		}
+
+		resource "proxmox_download_file" "refresh" {
+			content_type = "iso"
+			node_name    = "{{.NodeName}}"
+			datastore_id = proxmox_storage_directory.refresh.id
+			url          = "{{.FakeFileISO}}"
+			file_name    = "fake_refresh_file.iso"
+		}`)
 
 	tests := []struct {
 		name  string
@@ -315,6 +334,30 @@ func TestAccResourceDownloadFile(t *testing.T) {
 			ConfigPlanChecks: resource.ConfigPlanChecks{
 				PreApply: []plancheck.PlanCheck{
 					plancheck.ExpectResourceAction("proxmox_download_file.iso_image3", plancheck.ResourceActionDestroyBeforeCreate),
+				},
+			},
+		}}},
+		{"refresh keeps the file while its datastore is unavailable", []resource.TestStep{{
+			Config: refreshConfig,
+		}, {
+			PreConfig:   func() { te.ExecuteNodeCommands([]string{"pvesm set " + refreshStore + " --disable 1"}) },
+			Config:      refreshConfig,
+			PlanOnly:    true,
+			ExpectError: regexp.MustCompile(`Unable to Read Download File`),
+		}, {
+			PreConfig: func() { te.ExecuteNodeCommands([]string{"pvesm set " + refreshStore + " --disable 0"}) },
+			Config:    refreshConfig,
+			PlanOnly:  true,
+		}, {
+			// the available datastore no longer lists the file: the next apply downloads it again
+			PreConfig: func() {
+				err := te.NodeClient().Storage(refreshStore).DeleteDatastoreFile(context.Background(), "iso/fake_refresh_file.iso").Err()
+				require.NoError(t, err)
+			},
+			Config: refreshConfig,
+			ConfigPlanChecks: resource.ConfigPlanChecks{
+				PreApply: []plancheck.PlanCheck{
+					plancheck.ExpectResourceAction("proxmox_download_file.refresh", plancheck.ResourceActionCreate),
 				},
 			},
 		}}},
