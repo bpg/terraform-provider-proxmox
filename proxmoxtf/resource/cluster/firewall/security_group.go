@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/migration"
 	proxmoxapi "github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
@@ -68,11 +69,12 @@ func SecurityGroup() *schema.Resource {
 	structure.MergeSchema(s, firewall.Rules().Schema)
 
 	return &schema.Resource{
-		Schema:        s,
-		CreateContext: selectFirewallAPI(SecurityGroupCreate),
-		ReadContext:   selectFirewallAPI(SecurityGroupRead),
-		UpdateContext: selectFirewallAPI(SecurityGroupUpdate),
-		DeleteContext: selectFirewallAPI(SecurityGroupDelete),
+		DeprecationMessage: migration.DeprecationMessage("proxmox_cluster_firewall_security_group"),
+		Schema:             s,
+		CreateContext:      selectFirewallAPI(SecurityGroupCreate),
+		ReadContext:        selectFirewallAPI(SecurityGroupRead),
+		UpdateContext:      selectFirewallAPI(SecurityGroupUpdate),
+		DeleteContext:      selectFirewallAPI(SecurityGroupDelete),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
