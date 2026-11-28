@@ -6655,14 +6655,14 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	// preserving UEFI variable data instead of creating a new empty disk.
 	if d.HasChange(mkEFIDisk) {
 		if vmEfiDiskDatastoreChanged(d) {
+			// No reboot needed: move_disk mirrors the EFI disk of a running VM.
 			tflog.Warn(ctx, "EFI disk datastore is changing; the disk will be moved via move_disk API. "+
 				"Any other EFI disk attribute changes in this apply will take effect on the next apply.")
 		} else {
 			efiDisk := vmGetEfiDisk(d, nil)
 			updateBody.EFIDisk = efiDisk
+			rebootRequired = true
 		}
-
-		rebootRequired = true
 	}
 
 	// Prepare the new tpm state configuration.
@@ -7394,8 +7394,9 @@ func vmPlanDiskLocationAndSizeChanges(
 					},
 				)
 
-				// Cannot be done while VM is running.
-				changes.shutdownForDisksRequired = true
+				if vmDiskMoveRequiresShutdown(oldIface, oldDisk, diskNewEntries[oldIface]) {
+					changes.shutdownForDisksRequired = true
+				}
 			} else {
 				return nil, diag.Errorf(
 					"Cannot move %s:%s to datastore %s in VM %d configuration, it is not owned by this VM!",
@@ -7474,6 +7475,22 @@ func vmPlanDiskLocationAndSizeChanges(
 	}
 
 	return changes, nil
+}
+
+// vmDiskMoveRequiresShutdown reports whether moving the disk on iface to another datastore needs a stopped VM.
+// PVE moves the disks of a running VM with drive-mirror, but refuses to move the TPM state while the VM runs.
+// A disk whose other options change in the same apply keeps the offline path: on a running VM those options are
+// stored as a pending change that still references the source volume, which the move then deletes.
+func vmDiskMoveRequiresShutdown(iface string, oldDisk, newDisk *vms.CustomStorageDevice) bool {
+	switch iface {
+	case "tpmstate0":
+		return true
+	case "efidisk0":
+		// Other EFI disk changes are not sent while its datastore changes, see vmUpdate.
+		return false
+	default:
+		return !disk.OnlyLocationOrSizeChanged(oldDisk, newDisk)
+	}
 }
 
 // vmUpdateDiskLocation moves disks between datastores.
